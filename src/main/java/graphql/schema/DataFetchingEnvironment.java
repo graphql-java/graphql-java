@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.GraphQLContext;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
@@ -237,6 +238,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
     @Nullable
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
 
+
     /**
      * @return the {@link org.dataloader.DataLoaderRegistry} in play
      */
@@ -270,4 +272,17 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @return the coerced variables that have been passed to the query that is being executed
      */
     Map<String, Object> getVariables();
+
+
+    /**
+     * A method that should only be used by the GraphQL Java library itself.
+     * It is not intended for public use.
+     *
+     * @return an internal representation of the DataFetchingEnvironment
+     */
+    @Internal
+    default Object toInternal() {
+        throw new UnsupportedOperationException();
+    }
+
 }

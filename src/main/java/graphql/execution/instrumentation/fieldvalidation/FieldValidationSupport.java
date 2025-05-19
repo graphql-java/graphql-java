@@ -7,6 +7,7 @@ import graphql.Internal;
 import graphql.analysis.QueryTraverser;
 import graphql.analysis.QueryVisitorFieldEnvironment;
 import graphql.analysis.QueryVisitorStub;
+import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ResultPath;
 import graphql.language.Field;
@@ -140,7 +141,7 @@ class FieldValidationSupport {
         FieldValidationEnvironmentImpl(ExecutionContext executionContext, Map<ResultPath, List<FieldAndArguments>> fieldArgumentsMap) {
             this.executionContext = executionContext;
             this.fieldArgumentsMap = fieldArgumentsMap;
-            this.fieldArguments = fieldArgumentsMap.values().stream().flatMap(List::stream).collect(ImmutableList.toImmutableList());
+            this.fieldArguments = ImmutableKit.flatMapList(fieldArgumentsMap.values());
         }
 
 

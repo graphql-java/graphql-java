@@ -11,7 +11,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 @ExperimentalApi
 public class IncrementalExecutionResultImpl extends ExecutionResultImpl implements IncrementalExecutionResult {
@@ -66,11 +65,11 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
         map.put("hasNext", hasNext);
 
         if (this.incremental != null) {
-            map.put("incremental",
-                    this.incremental.stream()
-                            .map(IncrementalPayload::toSpecification)
-                            .collect(Collectors.toCollection(LinkedList::new))
-            );
+            LinkedList<Map<String, Object>> linkedList = new LinkedList<>();
+            for (IncrementalPayload incrementalPayload : this.incremental) {
+                linkedList.add(incrementalPayload.toSpecification());
+            }
+            map.put("incremental", linkedList);
         }
 
         return map;

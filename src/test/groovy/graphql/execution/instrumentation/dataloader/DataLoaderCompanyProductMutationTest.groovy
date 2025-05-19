@@ -48,16 +48,16 @@ class DataLoaderCompanyProductMutationTest extends Specification {
                 newTypeWiring("Company").dataFetcher("projects", {
                     environment ->
                         DataLoaderCompanyProductBackend.Company source = environment.getSource()
-                        return backend.getProjectsLoader().load(source.getId())
+                        return environment.getDataLoader("projects-dl").load(source.getId())
                 }))
                 .type(
-                newTypeWiring("Query").dataFetcher("companies", {
-                    environment -> backend.getCompanies()
-                }))
+                        newTypeWiring("Query").dataFetcher("companies", {
+                            environment -> backend.getCompanies()
+                        }))
                 .type(
-                newTypeWiring("Mutation").dataFetcher("addCompany", {
-                    environment -> backend.addCompany()
-                }))
+                        newTypeWiring("Mutation").dataFetcher("addCompany", {
+                            environment -> backend.addCompany()
+                        }))
                 .build()
 
         def registry = new DataLoaderRegistry()
@@ -71,6 +71,7 @@ class DataLoaderCompanyProductMutationTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .dataLoaderRegistry(registry)
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): false])
                 .build()
 
         when:

@@ -1,7 +1,6 @@
 package graphql.collect
 
 import com.google.common.collect.ImmutableList
-import com.google.common.collect.ImmutableMap
 import spock.lang.Specification
 
 class ImmutableKitTest extends Specification {
@@ -62,5 +61,17 @@ class ImmutableKitTest extends Specification {
         set = ImmutableKit.addToSet(set, "c", "d", "e", "f")
         then:
         set == ["a", "b", "c", "d", "e", "f"] as Set
+    }
+
+    def "flatMapList works"() {
+        def listOfLists = [
+                ["A", "B"],
+                ["C"],
+                ["D", "E"],
+        ]
+        when:
+        def flatList = ImmutableKit.flatMapList(listOfLists)
+        then:
+        flatList == ["A", "B", "C", "D", "E",]
     }
 }

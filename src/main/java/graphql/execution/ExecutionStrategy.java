@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import graphql.DuckTyped;
 import graphql.EngineRunningState;
 import graphql.ExecutionResult;
@@ -14,7 +13,6 @@ import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
-import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.incremental.DeferredExecutionSupport;
@@ -29,7 +27,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldParamete
 import graphql.execution.reactive.ReactiveSupport;
 import graphql.extensions.ExtensionsBuilder;
 import graphql.introspection.Introspection;
-import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.normalized.ExecutableNormalizedField;
 import graphql.normalized.ExecutableNormalizedOperation;
@@ -38,12 +35,10 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
-import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -64,7 +59,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
-import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
 import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
@@ -260,7 +254,7 @@ public abstract class ExecutionStrategy {
                 overallResult.whenComplete(resolveObjectCtx::onCompleted);
                 return overallResult;
             } else {
-                Map<String, Object> fieldValueMap = buildFieldValueMap(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
+                Map<String, Object> fieldValueMap = executionContext.getResponseMapFactory().createInsertionOrdered(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
                 resolveObjectCtx.onCompleted(fieldValueMap, null);
                 return fieldValueMap;
             }
@@ -281,28 +275,15 @@ public abstract class ExecutionStrategy {
                 handleValueException(overallResult, exception, executionContext);
                 return;
             }
-            Map<String, Object> resolvedValuesByField = buildFieldValueMap(fieldNames, results);
+            Map<String, Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldNames, results);
             overallResult.complete(resolvedValuesByField);
         };
-    }
-
-    @NonNull
-    private static Map<String, Object> buildFieldValueMap(List<String> fieldNames, List<Object> results) {
-        Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
-        int ix = 0;
-        for (Object fieldValue : results) {
-            String fieldName = fieldNames.get(ix++);
-            resolvedValuesByField.put(fieldName, fieldValue);
-        }
-        return resolvedValuesByField;
     }
 
     DeferredExecutionSupport createDeferredExecutionSupport(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedSelectionSet fields = parameters.getFields();
 
-        return Optional.ofNullable(executionContext.getGraphQLContext())
-                .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
-                .orElse(false) ?
+        return executionContext.hasIncrementalSupport() ?
                 new DeferredExecutionSupport.DeferredExecutionSupportImpl(
                         fields,
                         parameters,
@@ -329,8 +310,7 @@ public abstract class ExecutionStrategy {
             MergedField currentField = fields.getSubField(fieldName);
 
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
+            ExecutionStrategyParameters newParameters = parameters.transform(currentField, fieldPath, parameters);
 
             if (!deferredExecutionSupport.isDeferredField(currentField)) {
                 Object fieldValueInfo = resolveFieldWithInfo(executionContext, newParameters);
@@ -420,6 +400,7 @@ public abstract class ExecutionStrategy {
         }
 
         MergedField field = parameters.getField();
+        String pathString = parameters.getPath().toString();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
@@ -470,7 +451,7 @@ public abstract class ExecutionStrategy {
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
         Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject);
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject, dataFetchingEnvironment);
         fetchCtx.onDispatched();
         fetchCtx.onFetchedValue(fetchedObject);
         // if it's a subscription, leave any reactive objects alone
@@ -625,14 +606,9 @@ public abstract class ExecutionStrategy {
                 instrumentationParams, executionContext.getInstrumentationState()
         ));
 
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
-
-        ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                builder.executionStepInfo(executionStepInfo)
-                        .source(fetchedValue.getFetchedValue())
-                        .localContext(fetchedValue.getLocalContext())
-                        .nonNullFieldValidator(nonNullableFieldValidator)
-        );
+        ExecutionStrategyParameters newParameters = parameters.transform(executionStepInfo,
+                fetchedValue.getLocalContext(),
+                fetchedValue.getFetchedValue());
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
         ctxCompleteField.onDispatched();
@@ -789,17 +765,13 @@ public abstract class ExecutionStrategy {
 
             ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, indexedPath);
 
-            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
-
             FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
-            ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                    builder.executionStepInfo(stepInfoForListElement)
-                            .nonNullFieldValidator(nonNullableFieldValidator)
-                            .localContext(value.getLocalContext())
-                            .path(indexedPath)
-                            .source(value.getFetchedValue())
-            );
+            ExecutionStrategyParameters newParameters = parameters.transform(stepInfoForListElement,
+                    indexedPath,
+                    value.getLocalContext(),
+                    value.getFetchedValue());
+
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
         }
@@ -931,20 +903,14 @@ public abstract class ExecutionStrategy {
         MergedSelectionSet subFields = fieldCollector.collectFields(
                 collectorParameters,
                 parameters.getField(),
-                Optional.ofNullable(executionContext.getGraphQLContext())
-                        .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
-                        .orElse(false)
+                executionContext.hasIncrementalSupport()
         );
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);
 
-        ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                builder.executionStepInfo(newExecutionStepInfo)
-                        .fields(subFields)
-                        .nonNullFieldValidator(nonNullableFieldValidator)
-                        .source(result)
-        );
+        ExecutionStrategyParameters newParameters = parameters.transform(newExecutionStepInfo,
+                subFields,
+                result);
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
         return executionContext.getQueryStrategy().executeObject(executionContext, newParameters);
@@ -1094,48 +1060,10 @@ public abstract class ExecutionStrategy {
                                                         ExecutionStrategyParameters parameters,
                                                         GraphQLFieldDefinition fieldDefinition,
                                                         GraphQLObjectType fieldContainer) {
-        MergedField field = parameters.getField();
-        ExecutionStepInfo parentStepInfo = parameters.getExecutionStepInfo();
-        GraphQLOutputType fieldType = fieldDefinition.getType();
-        List<GraphQLArgument> fieldArgDefs = fieldDefinition.getArguments();
-        Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues = ImmutableMapWithNullValues::emptyMap;
-        //
-        // no need to create args at all if there are none on the field def
-        //
-        if (!fieldArgDefs.isEmpty()) {
-            argumentValues = getArgumentValues(executionContext, fieldArgDefs, field.getArguments());
-        }
-
-
-        return newExecutionStepInfo()
-                .type(fieldType)
-                .fieldDefinition(fieldDefinition)
-                .fieldContainer(fieldContainer)
-                .field(field)
-                .path(parameters.getPath())
-                .parentInfo(parentStepInfo)
-                .arguments(argumentValues)
-                .build();
-    }
-
-    @NonNull
-    private static Supplier<ImmutableMapWithNullValues<String, Object>> getArgumentValues(ExecutionContext executionContext,
-                                                                                          List<GraphQLArgument> fieldArgDefs,
-                                                                                          List<Argument> fieldArgs) {
-        Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
-        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        Supplier<ImmutableMapWithNullValues<String, Object>> argValuesSupplier = () -> {
-            Map<String, Object> resolvedValues = ValuesResolver.getArgumentValues(codeRegistry,
-                    fieldArgDefs,
-                    fieldArgs,
-                    executionContext.getCoercedVariables(),
-                    executionContext.getGraphQLContext(),
-                    executionContext.getLocale());
-
-            return ImmutableMapWithNullValues.copyOf(resolvedValues);
-        };
-        argumentValues = FpKit.intraThreadMemoize(argValuesSupplier);
-        return argumentValues;
+        return executionStepInfoFactory.createExecutionStepInfo(executionContext,
+                parameters,
+                fieldDefinition,
+                fieldContainer);
     }
 
     // Errors that result from the execution of deferred fields are kept in the deferred context only.

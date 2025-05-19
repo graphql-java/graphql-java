@@ -4,6 +4,7 @@ import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
-@Fork(3)
+@Fork(2)
 public class DataLoaderPerformance {
 
     static Owner o1 = new Owner("O-1", "Andi", List.of("P-1", "P-2", "P-3"));
@@ -184,6 +185,7 @@ public class DataLoaderPerformance {
         DataLoaderRegistry registry = DataLoaderRegistry.newRegistry().register(ownerDLName, ownerDL).register(petDLName, petDL).build();
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(myState.query).dataLoaderRegistry(registry).build();
+        executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true);
         ExecutionResult execute = myState.graphQL.execute(executionInput);
         Assert.assertTrue(execute.isDataPresent());
         Assert.assertTrue(execute.getErrors().isEmpty());
