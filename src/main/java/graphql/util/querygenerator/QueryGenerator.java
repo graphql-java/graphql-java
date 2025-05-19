@@ -29,12 +29,12 @@ public class QueryGenerator {
             throw new IllegalArgumentException("Type " + typeName + " is not an output type");
         }
 
-        return buildFields((GraphQLOutputType) type, new LinkedList<>());
+        return buildFields((GraphQLOutputType) type, new Stack<>());
     }
 
     private List<FieldData> buildFields(
             GraphQLOutputType type,
-            Queue<FieldCoordinates> path
+            Stack<FieldCoordinates> visited
     ) {
         GraphQLOutputType unwrappedType = GraphQLTypeUtil.unwrapAllAs(type);
 
@@ -53,15 +53,21 @@ public class QueryGenerator {
                                 fieldDef.getName()
                         );
 
-                        if(path.contains(fieldCoordinates)) {
+                        if(visited.contains(fieldCoordinates)) {
+                            // TODO: maybe add 'cyclicDependencyIdentified' to the result
+                            System.out.println("Cycle detected: " + fieldCoordinates);
                             return null;
                         }
 
-                        path.add(fieldCoordinates);
+                        visited.add(fieldCoordinates);
 
-                        List<FieldData> fieldsData = buildFields(fieldDef.getType(), path);
+                        List<FieldData> fieldsData = buildFields(fieldDef.getType(), visited);
 
-                        path.remove();
+                        FieldCoordinates polled = visited.pop();
+
+                        if(polled != fieldCoordinates) {
+                            System.out.println("Unexpected field coordinates: " + polled);
+                        }
 
                         // null fieldsData means that the field is a scalar or enum type
                         // empty fieldsData means that the field is a type, but all its fields were filtered out

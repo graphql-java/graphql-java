@@ -6,7 +6,49 @@ import org.junit.Assert
 import spock.lang.Specification
 
 class QueryGeneratorTest extends Specification {
-    def schema = TestUtil.schema("""
+    def printer = new QueryGeneratorPrinter(" ", 2, 0)
+
+    def "generate fields for simple type"() {
+        given:
+        def schema = """
+        type Query {
+            bar: Bar
+        }
+        
+        type Bar {
+           id: ID!
+           name: String
+           type: TypeEnum
+           foos: [String!]!
+        }
+        
+        enum TypeEnum {
+            FOO
+            BAR
+        }
+        
+"""
+
+        def typeName = "Bar"
+        def expected = """
+{
+  id
+  name
+  type
+  foos
+}
+"""
+
+        when:
+        def passed = executeTest(schema, typeName, expected)
+
+        then:
+        passed
+    }
+
+    def "generate fields for type with nested type"() {
+        given:
+        def schema = """
         type Query {
             foo: Foo
         }
@@ -17,109 +59,94 @@ class QueryGeneratorTest extends Specification {
             bars: [Bar]
         }
         
-        type FooFoo {
-            id: ID!
-            name: String
-            fooFoo: FooFoo
-        }
-        
-        type FooBarFoo {
-            id: ID!
-            name: String
-            barFoo: BarFoo
-        }
-        
-        type BarFoo {
-            id: ID!
-            name: String
-            fooBarFoo: FooBarFoo
-        }
-        
         type Bar {
            id: ID!
            name: String
-           type: TypeEnum
         }
-        
-        enum TypeEnum {
-            FOO
-            BAR
-        }
-        
-        """)
-
-    def queryGenerator = new QueryGenerator(
-            QueryGenerator.defaultOptions()
-                    .schema(schema)
-                    .build()
-    )
-
-    def printer = new QueryGeneratorPrinter(" ", 2, 0)
-
-    def "generate fields for simple type"() {
-        given:
-
-        def typeName = "Bar"
-
-        when:
-        def result = queryGenerator.generateQuery(typeName)
-
-        then:
-        String printed = printer.print(result)
-
-        Assert.assertEquals("""
-{
-  id
-  name
-  type
-}
-""".trim(), printed.trim())
-    }
-
-    def "generate fields for type with nested type"() {
-        given:
+"""
 
         def typeName = "Foo"
-
-        when:
-        def result = queryGenerator.generateQuery(typeName)
-
-        then:
-        String printed = printer.print(result)
-
-        Assert.assertEquals("""
+        def expected = """
 {
   id
   bar {
     id
     name
-    type
   }
   bars {
     id
     name
-    type
   }
 }
-""".trim(), printed.trim())
+"""
+
+        when:
+        def passed = executeTest(schema, typeName,  expected)
+
+        then:
+        passed
     }
 
     def "straight forward cyclic dependency"() {
         given:
-
+        def schema = """
+        type Query {
+            fooFoo: FooFoo
+        }
+        
+        type FooFoo {
+            id: ID!
+            name: String
+            fooFoo: FooFoo
+        }
+"""
         def typeName = "FooFoo"
-
-        when:
-        def result = queryGenerator.generateQuery(typeName)
-
-        then:
-        String printed = printer.print(result)
-
-        Assert.assertEquals("""
+        def expected = """
 {
   id
   name
   fooFoo {
+    id
+    name
+  }
+}
+"""
+
+        when:
+        def passed = executeTest(schema, typeName, expected)
+
+        then:
+        passed
+    }
+
+    def "cyclic dependency with 2 fields of the same type"() {
+        given:
+        def schema = """
+        type Query {
+            fooFoo: FooFoo
+        }
+        
+        type FooFoo {
+            id: ID!
+            name: String
+            fooFoo: FooFoo
+            fooFoo2: FooFoo
+        }
+"""
+        def typeName = "FooFoo"
+        def expected = """
+{
+  id
+  name
+  fooFoo {
+    id
+    name
+    fooFoo2 {
+      id
+      name
+    }
+  }
+  fooFoo2 {
     id
     name
     fooFoo {
@@ -128,45 +155,84 @@ class QueryGeneratorTest extends Specification {
     }
   }
 }
-""".trim(), printed.trim())
+"""
+
+        when:
+        def passed = executeTest(schema, typeName, expected)
+
+        then:
+        passed
     }
 
     def "transitive cyclic dependency"() {
         given:
-
-        def typeName = "FooBarFoo"
-
-        when:
-        def result = queryGenerator.generateQuery(typeName)
-
-        then:
-        String printed = printer.print(result)
-
-        Assert.assertEquals("""
+        def schema = """
+        type Query {
+            foo: Foo
+        }
+        
+        type Foo {
+            id: ID!
+            name: String
+            bar: Bar
+        }
+        
+        type Bar {
+            id: ID!
+            name: String
+            baz: Baz
+        }
+        
+        type Baz {
+            id: ID!
+            name: String
+            foo: Foo
+        }
+        
+"""
+        def typeName = "Foo"
+        def expected = """
 {
   id
   name
-  barFoo {
+  bar {
     id
     name
-    fooBarFoo {
+    baz {
       id
       name
-      barFoo {
+      foo {
         id
         name
-        fooBarFoo {
-          id
-          name
-          barFoo {
-            id
-            name
-          }
-        }
       }
     }
   }
 }
-""".trim(), printed.trim())
+"""
+
+        when:
+        def passed = executeTest(schema, typeName, expected)
+
+        then:
+        passed
+    }
+
+    private boolean executeTest(
+            String schema,
+            String typeName,
+            String expected
+    ) {
+        def queryGenerator = new QueryGenerator(
+                QueryGenerator.defaultOptions()
+                        .schema(TestUtil.schema(schema))
+                        .build()
+        )
+
+        def result = queryGenerator.generateQuery(typeName)
+        String printed = printer.print(result)
+
+        Assert.assertEquals(expected.trim(), printed.trim())
+
+        return true
     }
 }
