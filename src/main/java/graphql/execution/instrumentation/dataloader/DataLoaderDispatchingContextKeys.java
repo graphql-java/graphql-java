@@ -1,8 +1,8 @@
 package graphql.execution.instrumentation.dataloader;
 
 
-import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
+import graphql.Internal;
 import org.jspecify.annotations.NullMarked;
 
 import java.time.Duration;
@@ -10,7 +10,7 @@ import java.time.Duration;
 /**
  * GraphQLContext keys related to DataLoader dispatching.
  */
-@ExperimentalApi
+@Internal
 @NullMarked
 public final class DataLoaderDispatchingContextKeys {
     private DataLoaderDispatchingContextKeys() {
