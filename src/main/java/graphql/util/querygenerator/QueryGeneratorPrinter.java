@@ -1,38 +1,74 @@
 package graphql.util.querygenerator;
 
+import graphql.Assert;
+import graphql.language.AstPrinter;
+import graphql.parser.Parser;
+
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class QueryGeneratorPrinter {
-    private final String indentationString;
-    private final int indentationSpaces;
-    private final int startingIndentationLevel;
+    public String print(
+            String operationFieldPath,
+            @Nullable String operationName,
+            @Nullable String arguments,
+            List<QueryGeneratorFieldSelection.FieldSelection> fields
+    ) {
+        String[] fieldPathParts = operationFieldPath.split("\\.");
 
-    public QueryGeneratorPrinter(String indentationString, int indentationSpaces, int startingIndentationLevel) {
-        this.indentationString = indentationString;
-        this.indentationSpaces = indentationSpaces;
-        this.startingIndentationLevel = startingIndentationLevel;
+        String raw = fields.stream()
+                .map(this::printField)
+                .collect(Collectors.joining(
+                        "",
+                        printOperationStart(fieldPathParts, operationName, arguments),
+                        printOperationEnd(fieldPathParts)
+                ));
+
+        return AstPrinter.printAst(Parser.parse(raw));
     }
 
-    public String print(List<QueryGenerator.FieldData> fields) {
-        String initialIndentation = startingIndentationLevel == 0 ? ""
-                : indentationString.repeat(this.startingIndentationLevel * this.indentationSpaces);
-
-        return fields.stream()
-                .map(field -> printField(field, startingIndentationLevel + 1))
-                .collect(Collectors.joining("", initialIndentation + "{\n", initialIndentation + "}\n"));
-    }
-
-    private String printField(QueryGenerator.FieldData fieldData, int level) {
-        String indentation = indentationString.repeat(level * this.indentationSpaces);
+    private String printOperationStart(
+            String[] fieldPathParts,
+            @Nullable String operationName,
+            @Nullable String arguments
+    ) {
+        String operation = fieldPathParts[0].toLowerCase();
         StringBuilder sb = new StringBuilder();
-        sb.append(indentation).append(fieldData.name);
-        if (fieldData.fields != null && !fieldData.fields.isEmpty()) {
-            sb.append(" {\n");
-            for (QueryGenerator.FieldData subField : fieldData.fields) {
-                sb.append(printField(subField, level + 1));
+        sb.append(operation);
+
+        if (operationName != null) {
+            sb.append(" ").append(operationName).append(" ");
+        }
+
+        sb.append(" {\n");
+        for (int i = 1; i < fieldPathParts.length; i++) {
+            sb.append(fieldPathParts[i]);
+
+            if (i == fieldPathParts.length - 1) {
+                if (arguments != null) {
+                    sb.append(arguments);
+                }
             }
-            sb.append(indentation).append("}\n");
+
+            sb.append(" {\n");
+        }
+        return sb.toString();
+    }
+
+    private String printOperationEnd(String[] fieldPathParts) {
+        return "}\n".repeat(fieldPathParts.length);
+    }
+
+    private String printField(QueryGeneratorFieldSelection.FieldSelection fieldSelection) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(fieldSelection.name);
+        if (fieldSelection.fields != null && !fieldSelection.fields.isEmpty()) {
+            sb.append(" {\n");
+            for (QueryGeneratorFieldSelection.FieldSelection subField : fieldSelection.fields) {
+                sb.append(printField(subField));
+            }
+            sb.append("}\n");
         } else {
             sb.append("\n");
         }

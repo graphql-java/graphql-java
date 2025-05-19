@@ -1,110 +1,59 @@
 package graphql.util.querygenerator;
 
-import graphql.schema.*;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLSchema;
 
 import javax.annotation.Nullable;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toList;
+import java.util.List;
 
 public class QueryGenerator {
     private final QueryGeneratorOptions options;
     private final GraphQLSchema schema;
+    private final QueryGeneratorFieldSelection fieldSelectionGenerator;
+    private final QueryGeneratorPrinter printer;
 
     public QueryGenerator(QueryGeneratorOptions options) {
         this.options = options;
         this.schema = options.getSchema();
+        this.fieldSelectionGenerator = new QueryGeneratorFieldSelection(options);
+        // TODO pass args as options
+        this.printer = new QueryGeneratorPrinter();
     }
 
-    public List<FieldData> generateQuery(String typeName) {
-        GraphQLType type = this.schema.getType(typeName);
-
-        if (type == null) {
-            throw new IllegalArgumentException("Type " + typeName + " not found in schema");
-        }
-
-        if (!(type instanceof GraphQLOutputType)) {
-            throw new IllegalArgumentException("Type " + typeName + " is not an output type");
-        }
-
-        return buildFields((GraphQLOutputType) type, new Stack<>());
-    }
-
-    private List<FieldData> buildFields(
-            GraphQLOutputType type,
-            Stack<FieldCoordinates> visited
+    public String generateQuery(
+            String operationFieldPath,
+            @Nullable String operationName,
+            @Nullable String arguments
     ) {
-        GraphQLOutputType unwrappedType = GraphQLTypeUtil.unwrapAllAs(type);
+        String[] fieldParts = operationFieldPath.split("\\.");
+        String operation = fieldParts[0];
 
-        if (unwrappedType instanceof GraphQLScalarType
-                || unwrappedType instanceof GraphQLEnumType) {
-            return null;
+        if( fieldParts.length < 2) {
+            throw new IllegalArgumentException("Field path must contain at least an operation and a field");
         }
 
-        if (unwrappedType instanceof GraphQLObjectType) {
-            List<GraphQLFieldDefinition> fields = ((GraphQLObjectType) unwrappedType).getFieldDefinitions();
-
-            return fields.stream()
-                    .map(fieldDef -> {
-                        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates(
-                                (GraphQLObjectType) unwrappedType,
-                                fieldDef.getName()
-                        );
-
-                        if(visited.contains(fieldCoordinates)) {
-                            // TODO: maybe add 'cyclicDependencyIdentified' to the result
-                            System.out.println("Cycle detected: " + fieldCoordinates);
-                            return null;
-                        }
-
-                        visited.add(fieldCoordinates);
-
-                        List<FieldData> fieldsData = buildFields(fieldDef.getType(), visited);
-
-                        FieldCoordinates polled = visited.pop();
-
-                        if(polled != fieldCoordinates) {
-                            System.out.println("Unexpected field coordinates: " + polled);
-                        }
-
-                        // null fieldsData means that the field is a scalar or enum type
-                        // empty fieldsData means that the field is a type, but all its fields were filtered out
-                        if(fieldsData != null && fieldsData.isEmpty())  {
-                            return null;
-                        }
-
-                        return  new FieldData(fieldDef.getName(), fieldsData);
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(toList());
+        if (!operation.equals("Query") && !operation.equals("Mutation") && !operation.equals("Subscription")) {
+            throw new IllegalArgumentException("Operation must be 'Query', 'Mutation' or 'Subscription'");
         }
 
-        throw new IllegalArgumentException("Unsupported type: " + type.getClass().getName());
-    }
+        GraphQLFieldsContainer type = schema.getObjectType(operation);
 
-    public static class FieldData {
-        public final String name;
-        public final List<FieldData> fields;
-
-        public FieldData(String name, List<FieldData> fields) {
-            this.name = name;
-            this.fields = fields;
+        for (int i = 1; i < fieldParts.length; i++) {
+            String fieldName = fieldParts[i];
+            GraphQLFieldDefinition fieldDefinition = type.getFieldDefinition(fieldName);
+            if (fieldDefinition == null) {
+                throw new IllegalArgumentException("Field " + fieldName + " not found in type " + type.getName());
+            }
+            if (!(fieldDefinition.getType() instanceof GraphQLFieldsContainer)) {
+                throw new IllegalArgumentException("Type " + fieldDefinition.getType() + " is not a field container");
+            }
+            type = (GraphQLFieldsContainer) fieldDefinition.getType();
         }
 
-    }
+        List<QueryGeneratorFieldSelection.FieldSelection> fieldSelectionList =
+                this.fieldSelectionGenerator.generateFieldSelection(type.getName());
 
-    public static class QueryGeneratorResult {
-
-    }
-
-    public static QueryGeneratorOptions.QueryGeneratorOptionsBuilder builder() {
-        return new QueryGeneratorOptions.QueryGeneratorOptionsBuilder();
-    }
-
-    public static QueryGeneratorOptions.QueryGeneratorOptionsBuilder defaultOptions() {
-        return new QueryGeneratorOptions.QueryGeneratorOptionsBuilder()
-                .maxDepth(5);
+        return printer.print(operationFieldPath, operationName, arguments, fieldSelectionList);
     }
 }
