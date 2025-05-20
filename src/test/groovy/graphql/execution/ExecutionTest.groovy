@@ -53,7 +53,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput), Profiler.NO_OP)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput, Profiler.NO_OP), Profiler.NO_OP)
 
         then:
         queryStrategy.execute == 1
@@ -73,7 +73,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput), Profiler.NO_OP)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput, Profiler.NO_OP), Profiler.NO_OP)
 
         then:
         queryStrategy.execute == 0
@@ -93,7 +93,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput), Profiler.NO_OP)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput, Profiler.NO_OP), Profiler.NO_OP)
 
         then:
         queryStrategy.execute == 0
@@ -130,7 +130,7 @@ class ExecutionTest extends Specification {
 
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput), Profiler.NO_OP)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput, Profiler.NO_OP), Profiler.NO_OP)
 
         then:
         queryStrategy.execute == 0

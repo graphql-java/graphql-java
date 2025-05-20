@@ -421,10 +421,10 @@ public class GraphQL {
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         Profiler profiler = executionInput.isProfileExecution() ? new ProfilerImpl(executionInput.getGraphQLContext()) : Profiler.NO_OP;
-        profiler.start();
-        EngineRunningState engineRunningState = new EngineRunningState(executionInput);
+        EngineRunningState engineRunningState = new EngineRunningState(executionInput, profiler);
         return engineRunningState.engineRun(() -> {
             ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
+            profiler.setExecutionId(executionInputWithId.getExecutionId());
             engineRunningState.updateExecutionId(executionInputWithId.getExecutionId());
 
             CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));

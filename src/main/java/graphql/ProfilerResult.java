@@ -1,5 +1,7 @@
 package graphql;
 
+import graphql.execution.ExecutionId;
+
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
@@ -9,15 +11,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 @ExperimentalApi
 public class ProfilerResult {
 
-    public static String PROFILER_CONTEXT_KEY = "__GJ_PROFILER";
+    public static final String PROFILER_CONTEXT_KEY = "__GJ_PROFILER";
+
+    private volatile ExecutionId executionId;
+    private long startTime;
+    private long endTime;
+    private long engineTotalRunningTime;
+    private final Set<String> fieldsFetched = ConcurrentHashMap.newKeySet();
 
     private final AtomicInteger totalDataFetcherInvocations = new AtomicInteger();
     private final AtomicInteger totalPropertyDataFetcherInvocations = new AtomicInteger();
 
 
-    private final Set<String> fieldsFetched = ConcurrentHashMap.newKeySet();
     private final Map<String, Integer> dataFetcherInvocationCount = new ConcurrentHashMap<>();
     private final Map<String, DataFetcherType> dataFetcherTypeMap = new ConcurrentHashMap<>();
+
 
     public enum DataFetcherType {
         PROPERTY_DATA_FETCHER,
@@ -31,7 +39,8 @@ public class ProfilerResult {
 
     }
 
-    private Map<String, ResultType> queryPathToResultType;
+
+    // setters are package private to prevent exposure
 
     void setDataFetcherType(String key, DataFetcherType dataFetcherType) {
         dataFetcherTypeMap.putIfAbsent(key, dataFetcherType);
@@ -47,6 +56,16 @@ public class ProfilerResult {
 
     void addFieldFetched(String fieldPath) {
         fieldsFetched.add(fieldPath);
+    }
+
+    void setExecutionId(ExecutionId executionId) {
+        this.executionId = executionId;
+    }
+
+    void setTimes(long startTime, long endTime, long engineTotalRunningTime) {
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.engineTotalRunningTime = engineTotalRunningTime;
     }
 
 
@@ -87,4 +106,34 @@ public class ProfilerResult {
         return totalDataFetcherInvocations.get() - totalPropertyDataFetcherInvocations.get();
     }
 
+    public long getStartTime() {
+        return startTime;
+    }
+
+    public long getEndTime() {
+        return endTime;
+    }
+
+    public long getEngineTotalRunningTime() {
+        return engineTotalRunningTime;
+    }
+
+    public long getTotalExecutionTime() {
+        return endTime - startTime;
+    }
+
+    @Override
+    public String toString() {
+        return "ProfilerResult{" +
+                "executionId=" + executionId +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", engineTotalRunningTime=" + engineTotalRunningTime +
+                ", fieldsFetched=" + fieldsFetched +
+                ", totalDataFetcherInvocations=" + totalDataFetcherInvocations +
+                ", totalPropertyDataFetcherInvocations=" + totalPropertyDataFetcherInvocations +
+                ", dataFetcherInvocationCount=" + dataFetcherInvocationCount +
+                ", dataFetcherTypeMap=" + dataFetcherTypeMap +
+                '}';
+    }
 }

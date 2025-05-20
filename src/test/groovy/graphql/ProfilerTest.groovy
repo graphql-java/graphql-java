@@ -4,6 +4,9 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import spock.lang.Specification
 
+import java.time.Duration
+import java.util.concurrent.CompletableFuture
+
 class ProfilerTest extends Specification {
 
 
@@ -73,5 +76,54 @@ class ProfilerTest extends Specification {
         profilerResult.getTotalCustomDataFetcherInvocations() == 4
         profilerResult.getTotalPropertyDataFetcherInvocations() == 3
     }
+
+    def "records timing"() {
+        given:
+        def sdl = '''
+            type Query {
+                foo: Foo
+            }
+            type Foo {
+                id: String
+            }
+        '''
+        def schema = TestUtil.schema(sdl, [
+                Query: [
+                        foo: { DataFetchingEnvironment dfe ->
+                            return CompletableFuture.supplyAsync {
+                                Thread.sleep(500)
+                                "1"
+                            }
+                        } as DataFetcher],
+                Foo  : [
+                        id: { DataFetchingEnvironment dfe ->
+                            return CompletableFuture.supplyAsync {
+                                Thread.sleep(500)
+                                dfe.source
+                            }
+                        } as DataFetcher
+                ]])
+        def graphql = GraphQL.newGraphQL(schema).build();
+
+        ExecutionInput ei = ExecutionInput.newExecutionInput()
+                .query("{ foo { id  } }")
+                .profileExecution(true)
+                .build()
+
+        when:
+        def result = graphql.execute(ei)
+        def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
+
+        then:
+        result.getData() == [foo: [id: "1"]]
+        // the total execution time must be more than 1 second,
+        // the engine should take less than 500ms
+        profilerResult.getTotalExecutionTime() > Duration.ofSeconds(1).toNanos()
+        profilerResult.getEngineTotalRunningTime() > Duration.ofMillis(1).toNanos()
+        profilerResult.getEngineTotalRunningTime() < Duration.ofMillis(500).toNanos()
+
+
+    }
+
 
 }
