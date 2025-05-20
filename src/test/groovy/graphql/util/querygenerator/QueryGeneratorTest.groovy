@@ -27,7 +27,6 @@ class QueryGeneratorTest extends Specification {
             FOO
             BAR
         }
-        
 """
 
         def fieldPath = "Query.bar"
@@ -69,7 +68,8 @@ query barTestOperation {
                 "barTestOperation",
                 "(filter: \"some filter\")",
                 null,
-                expectedWithOperation
+                expectedWithOperation,
+                QueryGeneratorOptions.defaultOptions().build()
         )
 
         then:
@@ -452,7 +452,7 @@ subscription {
   }
 }
 """
-        def passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected)
+        def passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
 
         then:
         passed
@@ -470,7 +470,7 @@ subscription {
   }
 }
 """
-        passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected)
+        passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
 
         then:
         passed
@@ -479,7 +479,7 @@ subscription {
         fieldPath = "Query.foo"
         classifierType = "Foo"
 
-        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected)
+        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
 
         then:
         def e = thrown(IllegalArgumentException)
@@ -489,7 +489,7 @@ subscription {
         fieldPath = "Query.node"
         classifierType = "BazDoesntImplementNode"
 
-        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected)
+        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
 
         then:
         e = thrown(IllegalArgumentException)
@@ -539,7 +539,7 @@ subscription {
   }
 }
 """
-        def passed = executeTest(schema, fieldPath, null, null, classifierType, expected)
+        def passed = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
 
         then:
         passed
@@ -557,7 +557,7 @@ subscription {
   }
 }
 """
-        passed = executeTest(schema, fieldPath, null, null, classifierType, expected)
+        passed = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
 
         then:
         passed
@@ -566,13 +566,138 @@ subscription {
         fieldPath = "Query.something"
         classifierType = "BazIsNotPartOfUnion"
 
-        executeTest(schema, fieldPath, null, null, classifierType, expected)
+        executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
 
         then:
         def e = thrown(IllegalArgumentException)
         e.message == "BazIsNotPartOfUnion not found in type Something"
     }
 
+    def "simple field limit"() {
+        given:
+        def schema = """
+        type Query {
+          foo: Foo
+        }
+        
+        type Foo {
+            field1: String
+            field2: String
+            field3: String
+            field4: String
+            field5: String
+        }
+"""
+
+
+        when:
+        def fieldPath = "Query.foo"
+        def expected = """
+{
+  foo {
+    ... on Foo {
+      field1
+      field2
+      field3
+    }
+  }
+}
+"""
+
+        def options = QueryGeneratorOptions
+                .defaultOptions()
+                .maxFieldCount(3)
+                .build()
+
+        def passed = executeTest(schema, fieldPath, null, null, null, expected, options)
+
+        then:
+        passed
+    }
+
+    def "field limit enforcement may result in less fields than the MAX"() {
+        given:
+        def schema = """
+        type Query {
+          foo: Foo
+        }
+        
+        type Foo {
+            id: ID!
+            bar: Bar
+            name: String
+            age: Int
+        }
+        
+        type Bar {
+            id: ID!
+            name: String
+        }
+"""
+
+
+        when: "A limit would result on a field container (Foo.bar) having empty field selection"
+        def options = QueryGeneratorOptions
+                .defaultOptions()
+                .maxFieldCount(3)
+                .build()
+
+        def fieldPath = "Query.foo"
+        def expected = """
+{
+  foo {
+    ... on Foo {
+      id
+      name
+    }
+  }
+}
+"""
+
+        def passed = executeTest(schema, fieldPath, null, null, null, expected, options)
+
+        then:
+        passed
+    }
+
+    def "max field limit is enforced"() {
+        given:
+        def queryFieldCount = 20_000
+        def queryFields = (1..queryFieldCount).collect { "  field$it: String" }.join("\n")
+
+        def schema = """
+    type Query {
+      largeType: LargeType
+    }
+
+    type LargeType {
+$queryFields
+    }
+"""
+
+
+        when:
+
+        def fieldPath = "Query.largeType"
+
+        def resultFieldCount = 10_000
+        def resultFields = (1..resultFieldCount).collect { "      field$it" }.join("\n")
+
+        def expected = """
+{
+  largeType {
+    ... on LargeType {
+$resultFields
+    }
+  }
+}
+"""
+
+        def passed = executeTest(schema, fieldPath, expected)
+
+        then:
+        passed
+    }
 
     private static boolean executeTest(
             String schemaDefinition,
@@ -585,7 +710,8 @@ subscription {
                 null,
                 null,
                 null,
-                expected
+                expected,
+                QueryGeneratorOptions.defaultOptions().build()
         )
     }
 
@@ -595,14 +721,11 @@ subscription {
             String operationName,
             String arguments,
             String typeClassifier,
-            String expected
+            String expected,
+            QueryGeneratorOptions options
     ) {
         def schema = TestUtil.schema(schemaDefinition)
-        def queryGenerator = new QueryGenerator(
-                QueryGeneratorFieldSelection.defaultOptions()
-                        .schema(schema)
-                        .build()
-        )
+        def queryGenerator = new QueryGenerator(schema, options)
 
         def result = queryGenerator.generateQuery(fieldPath, operationName, arguments, typeClassifier)
 
@@ -618,9 +741,7 @@ subscription {
 
         def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
 
-        println query
-
-        if(!errors.isEmpty()) {
+        if (!errors.isEmpty()) {
             Assert.fail("Validation errors: " + errors.collect { it.getMessage() }.join(", "))
         }
 

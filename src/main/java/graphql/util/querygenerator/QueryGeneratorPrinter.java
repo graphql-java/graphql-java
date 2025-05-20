@@ -69,20 +69,20 @@ public class QueryGeneratorPrinter {
 
             sb.append(" {\n");
 
-//            if(isLastField && typeClassifier != null) {
-//                sb.append("... on ").append(typeClassifier).append(" {\n");
-//            }
-
         }
         return sb.toString();
     }
 
     private String printOperationEnd(String[] fieldPathParts) {
-//        return "}\n".repeat(fieldPathParts.length + (hasTypeClassifier ? 1 : 0));
         return "}\n".repeat(fieldPathParts.length);
     }
 
     private String printField(QueryGeneratorFieldSelection.FieldSelection fieldSelection) {
+        // It is possible that some container fields ended up with empty fields (due to filtering etc). We shouldn't print those
+        if(fieldSelection.fields != null && fieldSelection.fields.isEmpty()) {
+            return "";
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append(fieldSelection.name);
         if (fieldSelection.fields != null && !fieldSelection.fields.isEmpty()) {

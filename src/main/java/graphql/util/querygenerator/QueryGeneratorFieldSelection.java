@@ -1,5 +1,6 @@
 package graphql.util.querygenerator;
 
+import graphql.normalized.nf.NormalizedDocumentFactory;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -20,13 +21,13 @@ public class QueryGeneratorFieldSelection {
     private final QueryGeneratorOptions options;
     private final GraphQLSchema schema;
 
-    private static GraphQLObjectType emptyObjectType = GraphQLObjectType.newObject()
+    private static final GraphQLObjectType emptyObjectType = GraphQLObjectType.newObject()
             .name("Empty")
             .build();
 
-    public QueryGeneratorFieldSelection(QueryGeneratorOptions options) {
+    public QueryGeneratorFieldSelection(GraphQLSchema schema, QueryGeneratorOptions options) {
         this.options = options;
-        this.schema = options.getSchema();
+        this.schema = schema;
     }
 
     FieldSelection generateFieldSelection(String typeName) {
@@ -52,19 +53,24 @@ public class QueryGeneratorFieldSelection {
         fieldSelectionQueue.add(root);
 
         Set<FieldCoordinates> visited = new HashSet<>();
+        int totalFieldCount = 0;
 
-        while(!containersQueue.isEmpty()) {
+        while (!containersQueue.isEmpty()) {
             GraphQLFieldsContainer container = containersQueue.poll();
             FieldSelection fieldSelection = fieldSelectionQueue.poll();
 
-            for(GraphQLFieldDefinition fieldDef : container.getFieldDefinitions()) {
-                if(hasRequiredArgs(fieldDef)) {
+            for (GraphQLFieldDefinition fieldDef : container.getFieldDefinitions()) {
+                if (totalFieldCount >= options.getMaxFieldCount()) {
+                    break;
+                }
+
+                if (hasRequiredArgs(fieldDef)) {
                     continue;
                 }
 
                 FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates(container, fieldDef.getName());
 
-                if(visited.contains(fieldCoordinates)) {
+                if (visited.contains(fieldCoordinates)) {
                     continue;
                 }
 
@@ -79,12 +85,18 @@ public class QueryGeneratorFieldSelection {
 
                 fieldSelectionQueue.add(newFieldSelection);
 
-                if(isFieldContainer) {
+                if (isFieldContainer) {
                     visited.add(fieldCoordinates);
                     containersQueue.add((GraphQLFieldsContainer) unwrappedType);
                 } else {
                     containersQueue.add(emptyObjectType);
                 }
+
+                totalFieldCount++;
+            }
+
+            if (totalFieldCount >= options.getMaxFieldCount()) {
+                break;
             }
         }
 
@@ -116,14 +128,5 @@ public class QueryGeneratorFieldSelection {
 
     public static class QueryGeneratorResult {
 
-    }
-
-    public static QueryGeneratorOptions.QueryGeneratorOptionsBuilder builder() {
-        return new QueryGeneratorOptions.QueryGeneratorOptionsBuilder();
-    }
-
-    public static QueryGeneratorOptions.QueryGeneratorOptionsBuilder defaultOptions() {
-        return new QueryGeneratorOptions.QueryGeneratorOptionsBuilder()
-                .maxDepth(5);
     }
 }

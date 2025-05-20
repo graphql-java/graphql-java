@@ -1,48 +1,46 @@
 package graphql.util.querygenerator;
 
-import graphql.schema.GraphQLSchema;
-
 public class QueryGeneratorOptions {
-    private final GraphQLSchema schema;
-    private final int maxDepth;
+    private final int maxFieldCount;
 
-    public QueryGeneratorOptions(GraphQLSchema schema, int maxDepth) {
-        this.schema = schema;
-        this.maxDepth = maxDepth;
+    private static final int MAX_FIELD_COUNT_LIMIT = 10_000;
+
+    public QueryGeneratorOptions(int maxFieldCount) {
+        this.maxFieldCount = maxFieldCount;
     }
 
-    public GraphQLSchema getSchema() {
-        return schema;
-    }
-
-    public int getMaxDepth() {
-        return maxDepth;
+    public int getMaxFieldCount() {
+        return maxFieldCount;
     }
 
 
     public static class QueryGeneratorOptionsBuilder {
-        private int maxDepth;
-        private GraphQLSchema schema;
+        private int maxFieldCount;
 
-        QueryGeneratorOptionsBuilder maxDepth(int maxDepth) {
-            this.maxDepth = maxDepth;
-            return this;
-        }
-
-        QueryGeneratorOptionsBuilder schema(GraphQLSchema schema) {
-            this.schema = schema;
+        QueryGeneratorOptionsBuilder maxFieldCount(int maxFieldCount) {
+            if (maxFieldCount < 0) {
+                throw new IllegalArgumentException("Max field count cannot be negative");
+            }
+            if (maxFieldCount > MAX_FIELD_COUNT_LIMIT) {
+                throw new IllegalArgumentException("Max field count cannot exceed " + MAX_FIELD_COUNT_LIMIT);
+            }
+            this.maxFieldCount = maxFieldCount;
             return this;
         }
 
         public QueryGeneratorOptions build() {
-            if (schema == null) {
-                throw new IllegalArgumentException("Schema cannot be null");
-            }
-
             return new QueryGeneratorOptions(
-                    schema,
-                    maxDepth
+                    maxFieldCount
             );
         }
+    }
+
+    public static QueryGeneratorOptions.QueryGeneratorOptionsBuilder builder() {
+        return new QueryGeneratorOptions.QueryGeneratorOptionsBuilder();
+    }
+
+    public static QueryGeneratorOptions.QueryGeneratorOptionsBuilder defaultOptions() {
+        return new QueryGeneratorOptions.QueryGeneratorOptionsBuilder()
+                .maxFieldCount(MAX_FIELD_COUNT_LIMIT);
     }
 }

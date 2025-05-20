@@ -16,10 +16,10 @@ public class QueryGenerator {
     private final QueryGeneratorFieldSelection fieldSelectionGenerator;
     private final QueryGeneratorPrinter printer;
 
-    public QueryGenerator(QueryGeneratorOptions options) {
+    public QueryGenerator(GraphQLSchema schema, QueryGeneratorOptions options) {
         this.options = options;
-        this.schema = options.getSchema();
-        this.fieldSelectionGenerator = new QueryGeneratorFieldSelection(options);
+        this.schema = schema;
+        this.fieldSelectionGenerator = new QueryGeneratorFieldSelection(schema, options);
         this.printer = new QueryGeneratorPrinter();
     }
 
