@@ -26,13 +26,16 @@ public class ProfilerResult {
     private final Map<String, Integer> dataFetcherInvocationCount = new ConcurrentHashMap<>();
     private final Map<String, DataFetcherType> dataFetcherTypeMap = new ConcurrentHashMap<>();
 
+    // the key is the whole result key, not just the query path
+    private final Map<String, DataFetcherResultType> dataFetcherResultType = new ConcurrentHashMap<>();
+
 
     public enum DataFetcherType {
         PROPERTY_DATA_FETCHER,
         CUSTOM
     }
 
-    public enum ResultType {
+    public enum DataFetcherResultType {
         COMPLETABLE_FUTURE_COMPLETED,
         COMPLETABLE_FUTURE_NOT_COMPLETED,
         MATERIALIZED
@@ -48,6 +51,10 @@ public class ProfilerResult {
         if (dataFetcherType == DataFetcherType.PROPERTY_DATA_FETCHER) {
             totalPropertyDataFetcherInvocations.incrementAndGet();
         }
+    }
+
+    void setDataFetcherResultType(String resultPath, DataFetcherResultType fetchedType) {
+        dataFetcherResultType.put(resultPath, fetchedType);
     }
 
     void incrementDataFetcherInvocationCount(String key) {
@@ -122,6 +129,10 @@ public class ProfilerResult {
         return endTime - startTime;
     }
 
+    public Map<String, DataFetcherResultType> getDataFetcherResultType() {
+        return dataFetcherResultType;
+    }
+
     @Override
     public String toString() {
         return "ProfilerResult{" +
@@ -134,6 +145,7 @@ public class ProfilerResult {
                 ", totalPropertyDataFetcherInvocations=" + totalPropertyDataFetcherInvocations +
                 ", dataFetcherInvocationCount=" + dataFetcherInvocationCount +
                 ", dataFetcherTypeMap=" + dataFetcherTypeMap +
+                ", dataFetcherResultType=" + dataFetcherResultType +
                 '}';
     }
 }

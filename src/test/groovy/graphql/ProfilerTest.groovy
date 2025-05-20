@@ -7,6 +7,9 @@ import spock.lang.Specification
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
+import static graphql.ProfilerResult.DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED
+import static graphql.ProfilerResult.DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED
+
 class ProfilerTest extends Specification {
 
 
@@ -35,7 +38,7 @@ class ProfilerTest extends Specification {
         result.getData() == [hello: "world"]
 
         then:
-        profilerResult.getFieldsFetched() == ["hello"] as Set
+        profilerResult.getFieldsFetched() == ["/hello"] as Set
 
     }
 
@@ -71,7 +74,7 @@ class ProfilerTest extends Specification {
         result.getData() == [foo: [[id: "1", bar: "1"], [id: "2", bar: "2"], [id: "3", bar: "3"]]]
 
         then:
-        profilerResult.getFieldsFetched() == ["foo", "foo/bar", "foo/id"] as Set
+        profilerResult.getFieldsFetched() == ["/foo", "/foo/bar", "/foo/id"] as Set
         profilerResult.getTotalDataFetcherInvocations() == 7
         profilerResult.getTotalCustomDataFetcherInvocations() == 4
         profilerResult.getTotalPropertyDataFetcherInvocations() == 3
@@ -121,6 +124,48 @@ class ProfilerTest extends Specification {
         profilerResult.getTotalExecutionTime() > Duration.ofSeconds(1).toNanos()
         profilerResult.getEngineTotalRunningTime() > Duration.ofMillis(1).toNanos()
         profilerResult.getEngineTotalRunningTime() < Duration.ofMillis(500).toNanos()
+
+
+    }
+
+    def "data fetcher result types"() {
+        given:
+        def sdl = '''
+            type Query {
+                foo: Foo
+            }
+            type Foo {
+                id: String
+                name: String
+            }
+        '''
+        def schema = TestUtil.schema(sdl, [
+                Query: [
+                        foo: { DataFetchingEnvironment dfe ->
+                            return CompletableFuture.supplyAsync {
+                                Thread.sleep(100)
+                                return [id: "1", name: "foo"]
+                            }
+                        } as DataFetcher],
+                Foo  : [
+                        name: { DataFetchingEnvironment dfe ->
+                            return CompletableFuture.completedFuture(dfe.source.name)
+                        } as DataFetcher
+                ]])
+        def graphql = GraphQL.newGraphQL(schema).build();
+
+        ExecutionInput ei = ExecutionInput.newExecutionInput()
+                .query("{ foo { id name } }")
+                .profileExecution(true)
+                .build()
+
+        when:
+        def result = graphql.execute(ei)
+        def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
+
+        then:
+        result.getData() == [foo: [id: "1", name: "foo"]]
+        profilerResult.getDataFetcherResultType() == ["/foo/name": COMPLETABLE_FUTURE_COMPLETED, "/foo": COMPLETABLE_FUTURE_NOT_COMPLETED]
 
 
     }

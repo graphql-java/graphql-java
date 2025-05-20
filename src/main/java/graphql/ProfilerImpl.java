@@ -8,6 +8,7 @@ import graphql.schema.PropertyDataFetcher;
 import graphql.schema.SingletonPropertyDataFetcher;
 import org.jspecify.annotations.NullMarked;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Internal
@@ -33,7 +34,7 @@ public class ProfilerImpl implements Profiler {
 
     @Override
     public void fieldFetched(Object fetchedObject, DataFetcher<?> dataFetcher, ResultPath path) {
-        String key = String.join("/", path.getKeysOnly());
+        String key = "/" + String.join("/", path.getKeysOnly());
         profilerResult.addFieldFetched(key);
         profilerResult.incrementDataFetcherInvocationCount(key);
         ProfilerResult.DataFetcherType dataFetcherType;
@@ -41,7 +42,21 @@ public class ProfilerImpl implements Profiler {
             dataFetcherType = ProfilerResult.DataFetcherType.PROPERTY_DATA_FETCHER;
         } else {
             dataFetcherType = ProfilerResult.DataFetcherType.CUSTOM;
+            // we only record the type of the result if it is not a PropertyDataFetcher
+            ProfilerResult.DataFetcherResultType dataFetcherResultType;
+            if (fetchedObject instanceof CompletableFuture) {
+                CompletableFuture<?> completableFuture = (CompletableFuture<?>) fetchedObject;
+                if (completableFuture.isDone()) {
+                    dataFetcherResultType = ProfilerResult.DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED;
+                } else {
+                    dataFetcherResultType = ProfilerResult.DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED;
+                }
+            } else {
+                dataFetcherResultType = ProfilerResult.DataFetcherResultType.MATERIALIZED;
+            }
+            profilerResult.setDataFetcherResultType(path.toString(), dataFetcherResultType);
         }
+
         profilerResult.setDataFetcherType(key, dataFetcherType);
     }
 
