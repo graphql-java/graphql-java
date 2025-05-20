@@ -537,7 +537,7 @@ public class SchemaDiff {
         for (Map.Entry<String, Type> entry : newImplementsMap.entrySet()) {
             Optional<InterfaceTypeDefinition> newInterface = ctx.getNewTypeDef(entry.getValue(), InterfaceTypeDefinition.class);
             if (!oldImplementsMap.containsKey(entry.getKey())) {
-                ctx.report(DiffEvent.apiDanger()
+                ctx.report(DiffEvent.apiInfo()
                         .category(DiffCategory.ADDITION)
                         .typeName(old.getName())
                         .typeKind(getTypeKind(old))
