@@ -1,96 +1,106 @@
 package graphql.util.querygenerator;
 
-import graphql.schema.*;
+import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 
-import java.util.*;
-
-import static java.util.stream.Collectors.toList;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
+import java.util.Set;
 
 public class QueryGeneratorFieldSelection {
     private final QueryGeneratorOptions options;
     private final GraphQLSchema schema;
+
+    private static GraphQLObjectType emptyObjectType = GraphQLObjectType.newObject()
+            .name("Empty")
+            .build();
 
     public QueryGeneratorFieldSelection(QueryGeneratorOptions options) {
         this.options = options;
         this.schema = options.getSchema();
     }
 
-    public List<FieldSelection> generateFieldSelection(String typeName) {
+    FieldSelection generateFieldSelection(String typeName) {
         GraphQLType type = this.schema.getType(typeName);
 
         if (type == null) {
             throw new IllegalArgumentException("Type " + typeName + " not found in schema");
         }
 
-        if (!(type instanceof GraphQLOutputType)) {
-            throw new IllegalArgumentException("Type " + typeName + " is not an output type");
+        if (!(type instanceof GraphQLFieldsContainer)) {
+            throw new IllegalArgumentException("Type " + typeName + " is not a field container");
         }
 
-        return buildFields((GraphQLOutputType) type, new Stack<>());
+        return buildFields((GraphQLFieldsContainer) type);
     }
 
-    private List<FieldSelection> buildFields(
-            GraphQLOutputType type,
-            Stack<FieldCoordinates> visited
-    ) {
-        GraphQLOutputType unwrappedType = GraphQLTypeUtil.unwrapAllAs(type);
+    private FieldSelection buildFields(GraphQLFieldsContainer fieldsContainer) {
+        Queue<GraphQLFieldsContainer> containersQueue = new LinkedList<>();
+        containersQueue.add(fieldsContainer);
 
-        if (unwrappedType instanceof GraphQLScalarType
-                || unwrappedType instanceof GraphQLEnumType) {
-            return null;
+        Queue<FieldSelection> fieldSelectionQueue = new LinkedList<>();
+        FieldSelection root = new FieldSelection(fieldsContainer.getName(), new ArrayList<>());
+        fieldSelectionQueue.add(root);
+
+        Set<FieldCoordinates> visited = new HashSet<>();
+
+        while(!containersQueue.isEmpty()) {
+            GraphQLFieldsContainer container = containersQueue.poll();
+            FieldSelection fieldSelection = fieldSelectionQueue.poll();
+
+            for(GraphQLFieldDefinition fieldDef : container.getFieldDefinitions()) {
+                if(hasRequiredArgs(fieldDef)) {
+                    continue;
+                }
+
+                FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates(container, fieldDef.getName());
+
+                if(visited.contains(fieldCoordinates)) {
+                    continue;
+                }
+
+                GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(fieldDef.getType());
+                boolean isFieldContainer = unwrappedType instanceof GraphQLFieldsContainer;
+
+                final FieldSelection newFieldSelection = isFieldContainer ?
+                        new FieldSelection(fieldDef.getName(), new ArrayList<>())
+                        : new FieldSelection(fieldDef.getName(), null);
+
+                fieldSelection.fields.add(newFieldSelection);
+
+                fieldSelectionQueue.add(newFieldSelection);
+
+                if(isFieldContainer) {
+                    visited.add(fieldCoordinates);
+                    containersQueue.add((GraphQLFieldsContainer) unwrappedType);
+                } else {
+                    containersQueue.add(emptyObjectType);
+                }
+            }
         }
 
-        if (unwrappedType instanceof GraphQLFieldsContainer) {
-            List<GraphQLFieldDefinition> fields = ((GraphQLFieldsContainer) unwrappedType).getFieldDefinitions();
+        return root;
+    }
 
-            return fields.stream()
-                    .map(fieldDef -> {
-                        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates(
-                                (GraphQLFieldsContainer) unwrappedType,
-                                fieldDef.getName()
-                        );
+    private boolean hasRequiredArgs(GraphQLFieldDefinition fieldDefinition) {
+        // TODO: Maybe provide a hook to allow callers to resolve required arguments
+        return fieldDefinition.getArguments().stream()
+                .anyMatch(arg -> {
+                    GraphQLInputType argType = arg.getType();
+                    boolean isMandatory = GraphQLTypeUtil.isNonNull(argType);
+                    boolean hasDefaultValue = arg.hasSetDefaultValue();
 
-                        if (visited.contains(fieldCoordinates)) {
-                            return null;
-                        }
-
-                        // TODO: Maybe provide a hook to allow callers to resolve required arguments
-                        boolean hasRequiredArgs = fieldDef.getArguments().stream()
-                                .anyMatch(arg -> {
-                                    GraphQLInputType argType = arg.getType();
-                                    boolean isMandatory = GraphQLTypeUtil.isNonNull(argType);
-                                    boolean hasDefaultValue = arg.hasSetDefaultValue();
-
-                                    return isMandatory && !hasDefaultValue;
-                                });
-
-                        if(hasRequiredArgs) {
-                            return null;
-                        }
-
-                        visited.add(fieldCoordinates);
-
-                        List<FieldSelection> fieldsData = buildFields(fieldDef.getType(), visited);
-
-                        FieldCoordinates polled = visited.pop();
-
-                        if (polled != fieldCoordinates) {
-                            System.out.println("Unexpected field coordinates: " + polled);
-                        }
-
-                        // null fieldsData means that the field is a scalar or enum type
-                        // empty fieldsData means that the field is a type, but all its fields were filtered out
-                        if (fieldsData != null && fieldsData.isEmpty()) {
-                            return null;
-                        }
-
-                        return new FieldSelection(fieldDef.getName(), fieldsData);
-                    })
-                    .filter(Objects::nonNull)
-                    .collect(toList());
-        }
-
-        throw new IllegalArgumentException("Unsupported type: " + type.getClass().getName());
+                    return isMandatory && !hasDefaultValue;
+                });
     }
 
     public static class FieldSelection {

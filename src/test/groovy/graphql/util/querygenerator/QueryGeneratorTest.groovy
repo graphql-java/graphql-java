@@ -35,13 +35,14 @@ class QueryGeneratorTest extends Specification {
         def expectedNoOperation = """
 {
   bar {
-    id
-    name
-    type
-    foos
+    ... on Bar {
+      id
+      name
+      type
+      foos
+    }
   }
-}
-"""
+}"""
 
         def passed = executeTest(schema, fieldPath, expectedNoOperation)
 
@@ -52,10 +53,12 @@ class QueryGeneratorTest extends Specification {
         def expectedWithOperation = """
 query barTestOperation {
   bar(filter: "some filter") {
-    id
-    name
-    type
-    foos
+    ... on Bar {
+      id
+      name
+      type
+      foos
+    }
   }
 }
 """
@@ -96,14 +99,16 @@ query barTestOperation {
         def expected = """
 {
   foo {
-    id
-    bar {
+    ... on Foo {
       id
-      name
-    }
-    bars {
-      id
-      name
+      bar {
+        id
+        name
+      }
+      bars {
+        id
+        name
+      }
     }
   }
 }
@@ -147,8 +152,10 @@ query barTestOperation {
   bar {
     foo {
       baz {
-        id
-        name
+        ... on Baz {
+          id
+          name
+        }
       }
     }
   }
@@ -178,11 +185,13 @@ query barTestOperation {
         def expected = """
 {
   fooFoo {
-    id
-    name
-    fooFoo {
+    ... on FooFoo {
       id
       name
+      fooFoo {
+        id
+        name
+      }
     }
   }
 }
@@ -213,20 +222,14 @@ query barTestOperation {
         def expected = """
 {
   fooFoo {
-    id
-    name
-    fooFoo {
-      id
-      name
-      fooFoo2 {
-        id
-        name
-      }
-    }
-    fooFoo2 {
+    ... on FooFoo {
       id
       name
       fooFoo {
+        id
+        name
+      }
+      fooFoo2 {
         id
         name
       }
@@ -272,17 +275,19 @@ query barTestOperation {
         def expected = """
 {
   foo {
-    id
-    name
-    bar {
+    ... on Foo {
       id
       name
-      baz {
+      bar {
         id
         name
-        foo {
+        baz {
           id
           name
+          foo {
+            id
+            name
+          }
         }
       }
     }
@@ -324,8 +329,10 @@ query barTestOperation {
         def expected = """
 mutation {
   bar {
-    id
-    name
+    ... on Bar {
+      id
+      name
+    }
   }
 }
 """
@@ -341,8 +348,10 @@ mutation {
         expected = """
 subscription {
   bar {
-    id
-    name
+    ... on Bar {
+      id
+      name
+    }
   }
 }
 """
@@ -379,9 +388,11 @@ subscription {
         def expected = """
 {
   foo {
-    optionalArg
-    defaultArg
-    multipleOptionalArgs
+    ... on Foo {
+      optionalArg
+      defaultArg
+      multipleOptionalArgs
+    }
   }
 }
 """
@@ -427,7 +438,17 @@ subscription {
         def expected = """
 {
   node(id: "1") {
-    id
+    ... on Bar {
+      id
+      barName
+    }
+    ... on Node {
+      id
+    }
+    ... on Foo {
+      id
+      fooName
+    }
   }
 }
 """
@@ -472,7 +493,7 @@ subscription {
 
         then:
         e = thrown(IllegalArgumentException)
-        e.message == "Type BazDoesntImplementNode not found in type Node"
+        e.message == "BazDoesntImplementNode not found in type Node"
     }
 
     def "generate query for field which returns an union"() {
@@ -506,8 +527,15 @@ subscription {
         def classifierType = null
         def expected = """
 {
-  node(id: "1") {
-    id
+  something {
+    ... on Bar {
+      id
+      barName
+    }
+    ... on Foo {
+      id
+      fooName
+    }
   }
 }
 """
@@ -535,14 +563,14 @@ subscription {
         passed
 
         when: "passing typeClassifier that is not part of the union"
-        fieldPath = "Query.foo"
+        fieldPath = "Query.something"
         classifierType = "BazIsNotPartOfUnion"
 
         executeTest(schema, fieldPath, null, null, classifierType, expected)
 
         then:
-        e = thrown(IllegalArgumentException)
-        e.message == "Type BazDoesntImplementNode not found in type Something"
+        def e = thrown(IllegalArgumentException)
+        e.message == "BazIsNotPartOfUnion not found in type Something"
     }
 
 

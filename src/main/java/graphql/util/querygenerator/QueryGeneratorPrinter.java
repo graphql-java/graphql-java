@@ -14,7 +14,7 @@ public class QueryGeneratorPrinter {
             String operationFieldPath,
             @Nullable String operationName,
             @Nullable String arguments,
-            Map<String, List<QueryGeneratorFieldSelection.FieldSelection>> fieldSelections
+            Map<String, QueryGeneratorFieldSelection.FieldSelection> fieldSelections
     ) {
         String[] fieldPathParts = operationFieldPath.split("\\.");
 
@@ -30,10 +30,10 @@ public class QueryGeneratorPrinter {
         return AstPrinter.printAst(Parser.parse(raw));
     }
 
-    private String printFieldsForTopLevelType(String typeClassifier, List<QueryGeneratorFieldSelection.FieldSelection> fieldSelections) {
+    private String printFieldsForTopLevelType(String typeClassifier, QueryGeneratorFieldSelection.FieldSelection fieldSelections) {
         boolean hasTypeClassifier = typeClassifier != null;
 
-        return fieldSelections.stream()
+        return fieldSelections.fields.stream()
                 .map(this::printField)
                 .collect(Collectors.joining(
                         "",

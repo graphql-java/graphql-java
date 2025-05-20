@@ -4,10 +4,8 @@ import graphql.ExperimentalApi;
 import graphql.schema.*;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -93,17 +91,14 @@ public class QueryGenerator {
         }
 
         if (possibleTypes.isEmpty()) {
-            throw new IllegalArgumentException("No possible types found for " + lastType);
+            throw new IllegalArgumentException(typeClassifier + " not found in type " + ((GraphQLNamedType) lastType).getName());
         }
 
-        Map<String, List<QueryGeneratorFieldSelection.FieldSelection>> fieldSelections = possibleTypes.stream()
+        Map<String, QueryGeneratorFieldSelection.FieldSelection> fieldSelections = possibleTypes.stream()
                 .collect(Collectors.toMap(
                         GraphQLFieldsContainer::getName,
                         type -> fieldSelectionGenerator.generateFieldSelection(type.getName())
                 ));
-
-//        List<QueryGeneratorFieldSelection.FieldSelection> fieldSelectionList =
-//                this.fieldSelectionGenerator.generateFieldSelection(type.getName());
 
         return printer.print(operationFieldPath, operationName, arguments, fieldSelections);
     }
