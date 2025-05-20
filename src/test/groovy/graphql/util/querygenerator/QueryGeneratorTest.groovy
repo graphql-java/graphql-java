@@ -65,6 +65,7 @@ query barTestOperation {
                 fieldPath,
                 "barTestOperation",
                 "(filter: \"some filter\")",
+                null,
                 expectedWithOperation
         )
 
@@ -114,7 +115,6 @@ query barTestOperation {
         then:
         passed
     }
-
 
     def "generate query for deeply nested field"() {
         given:
@@ -357,6 +357,195 @@ subscription {
         passed
     }
 
+    def "generate query containing fields with arguments"() {
+        given:
+        def schema = """
+        type Query {
+          foo: Foo
+        }
+        
+        type Foo {
+          optionalArg(filter: String): String
+          mandatoryArg(id: ID!): String
+          mixed(id: ID!, filter: String): String
+          defaultArg(filter: String! = "default"): String
+          multipleOptionalArgs(filter: String, filter2: String, filter3: String = "default"): String
+        }
+"""
+
+
+        when:
+        def fieldPath = "Query.foo"
+        def expected = """
+{
+  foo {
+    optionalArg
+    defaultArg
+    multipleOptionalArgs
+  }
+}
+"""
+
+        def passed = executeTest(schema, fieldPath, expected)
+
+        then:
+        passed
+    }
+
+    def "generate query for the 'node' field, which returns an interface"() {
+        given:
+        def schema = """
+        type Query {
+          node(id: ID!): Node
+          foo: Foo
+        }
+
+        interface Node {
+          id: ID!
+        }        
+        
+        type Foo implements Node {
+          id: ID!
+          fooName: String
+        }
+        
+        type Bar implements Node {
+          id: ID!
+          barName: String
+        }
+        
+        type BazDoesntImplementNode {
+          id: ID!
+          bazName: String
+        }
+"""
+
+
+        when:
+        def fieldPath = "Query.node"
+        def classifierType = null
+        def expected = """
+{
+  node(id: "1") {
+    id
+  }
+}
+"""
+        def passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected)
+
+        then:
+        passed
+
+        when: "generate query for the 'node' field with a specific type"
+        fieldPath = "Query.node"
+        classifierType = "Foo"
+        expected = """
+{
+  node(id: "1") {
+    ... on Foo {
+      id
+      fooName
+    }
+  }
+}
+"""
+        passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected)
+
+        then:
+        passed
+
+        when: "passing typeClassifier on field that doesn't return an interface"
+        fieldPath = "Query.foo"
+        classifierType = "Foo"
+
+        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected)
+
+        then:
+        def e = thrown(IllegalArgumentException)
+        e.message == "typeClassifier should be used only with interface or union types"
+
+        when: "passing typeClassifier that doesn't implement Node"
+        fieldPath = "Query.node"
+        classifierType = "BazDoesntImplementNode"
+
+        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected)
+
+        then:
+        e = thrown(IllegalArgumentException)
+        e.message == "Type BazDoesntImplementNode not found in type Node"
+    }
+
+    def "generate query for field which returns an union"() {
+        given:
+        def schema = """
+        type Query {
+          something: Something
+        }
+        
+        union Something = Foo | Bar
+
+        type Foo {
+          id: ID!
+          fooName: String
+        }
+        
+        type Bar {
+          id: ID!
+          barName: String
+        }
+        
+        type BazIsNotPartOfUnion {
+          id: ID!
+          bazName: String
+        }
+"""
+
+
+        when:
+        def fieldPath = "Query.something"
+        def classifierType = null
+        def expected = """
+{
+  node(id: "1") {
+    id
+  }
+}
+"""
+        def passed = executeTest(schema, fieldPath, null, null, classifierType, expected)
+
+        then:
+        passed
+
+        when: "generate query for field returning union with a specific type"
+        fieldPath = "Query.something"
+        classifierType = "Foo"
+        expected = """
+{
+  something {
+    ... on Foo {
+      id
+      fooName
+    }
+  }
+}
+"""
+        passed = executeTest(schema, fieldPath, null, null, classifierType, expected)
+
+        then:
+        passed
+
+        when: "passing typeClassifier that is not part of the union"
+        fieldPath = "Query.foo"
+        classifierType = "BazIsNotPartOfUnion"
+
+        executeTest(schema, fieldPath, null, null, classifierType, expected)
+
+        then:
+        e = thrown(IllegalArgumentException)
+        e.message == "Type BazDoesntImplementNode not found in type Something"
+    }
+
+
     private static boolean executeTest(
             String schemaDefinition,
             String fieldPath,
@@ -365,6 +554,7 @@ subscription {
         return executeTest(
                 schemaDefinition,
                 fieldPath,
+                null,
                 null,
                 null,
                 expected
@@ -376,6 +566,7 @@ subscription {
             String fieldPath,
             String operationName,
             String arguments,
+            String typeClassifier,
             String expected
     ) {
         def schema = TestUtil.schema(schemaDefinition)
@@ -385,7 +576,7 @@ subscription {
                         .build()
         )
 
-        def result = queryGenerator.generateQuery(fieldPath, operationName, arguments)
+        def result = queryGenerator.generateQuery(fieldPath, operationName, arguments, typeClassifier)
 
         executeQuery(result, schema)
 
@@ -398,6 +589,8 @@ subscription {
         def document = new Parser().parseDocument(query)
 
         def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
+
+        println query
 
         if(!errors.isEmpty()) {
             Assert.fail("Validation errors: " + errors.collect { it.getMessage() }.join(", "))

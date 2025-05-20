@@ -40,19 +40,31 @@ public class QueryGeneratorFieldSelection {
             return null;
         }
 
-        if (unwrappedType instanceof GraphQLObjectType) {
-            List<GraphQLFieldDefinition> fields = ((GraphQLObjectType) unwrappedType).getFieldDefinitions();
+        if (unwrappedType instanceof GraphQLFieldsContainer) {
+            List<GraphQLFieldDefinition> fields = ((GraphQLFieldsContainer) unwrappedType).getFieldDefinitions();
 
             return fields.stream()
                     .map(fieldDef -> {
                         FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates(
-                                (GraphQLObjectType) unwrappedType,
+                                (GraphQLFieldsContainer) unwrappedType,
                                 fieldDef.getName()
                         );
 
-                        if(visited.contains(fieldCoordinates)) {
-                            // TODO: maybe add 'cyclicDependencyIdentified' to the result
-                            System.out.println("Cycle detected: " + fieldCoordinates);
+                        if (visited.contains(fieldCoordinates)) {
+                            return null;
+                        }
+
+                        // TODO: Maybe provide a hook to allow callers to resolve required arguments
+                        boolean hasRequiredArgs = fieldDef.getArguments().stream()
+                                .anyMatch(arg -> {
+                                    GraphQLInputType argType = arg.getType();
+                                    boolean isMandatory = GraphQLTypeUtil.isNonNull(argType);
+                                    boolean hasDefaultValue = arg.hasSetDefaultValue();
+
+                                    return isMandatory && !hasDefaultValue;
+                                });
+
+                        if(hasRequiredArgs) {
                             return null;
                         }
 
@@ -62,17 +74,17 @@ public class QueryGeneratorFieldSelection {
 
                         FieldCoordinates polled = visited.pop();
 
-                        if(polled != fieldCoordinates) {
+                        if (polled != fieldCoordinates) {
                             System.out.println("Unexpected field coordinates: " + polled);
                         }
 
                         // null fieldsData means that the field is a scalar or enum type
                         // empty fieldsData means that the field is a type, but all its fields were filtered out
-                        if(fieldsData != null && fieldsData.isEmpty())  {
+                        if (fieldsData != null && fieldsData.isEmpty()) {
                             return null;
                         }
 
-                        return  new FieldSelection(fieldDef.getName(), fieldsData);
+                        return new FieldSelection(fieldDef.getName(), fieldsData);
                     })
                     .filter(Objects::nonNull)
                     .collect(toList());

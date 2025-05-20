@@ -6,6 +6,7 @@ import graphql.parser.Parser;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class QueryGeneratorPrinter {
@@ -13,12 +14,13 @@ public class QueryGeneratorPrinter {
             String operationFieldPath,
             @Nullable String operationName,
             @Nullable String arguments,
-            List<QueryGeneratorFieldSelection.FieldSelection> fields
+            Map<String, List<QueryGeneratorFieldSelection.FieldSelection>> fieldSelections
     ) {
         String[] fieldPathParts = operationFieldPath.split("\\.");
 
-        String raw = fields.stream()
-                .map(this::printField)
+
+        String raw = fieldSelections.entrySet().stream()
+                .map(entry -> printFieldsForTopLevelType(entry.getKey(), entry.getValue()))
                 .collect(Collectors.joining(
                         "",
                         printOperationStart(fieldPathParts, operationName, arguments),
@@ -26,6 +28,18 @@ public class QueryGeneratorPrinter {
                 ));
 
         return AstPrinter.printAst(Parser.parse(raw));
+    }
+
+    private String printFieldsForTopLevelType(String typeClassifier, List<QueryGeneratorFieldSelection.FieldSelection> fieldSelections) {
+        boolean hasTypeClassifier = typeClassifier != null;
+
+        return fieldSelections.stream()
+                .map(this::printField)
+                .collect(Collectors.joining(
+                        "",
+                        hasTypeClassifier ? "... on " + typeClassifier + " {\n" : "",
+                        "}\n"
+                ));
     }
 
     private String printOperationStart(
@@ -42,21 +56,29 @@ public class QueryGeneratorPrinter {
         }
 
         sb.append(" {\n");
+
         for (int i = 1; i < fieldPathParts.length; i++) {
             sb.append(fieldPathParts[i]);
+            boolean isLastField = i == fieldPathParts.length - 1;
 
-            if (i == fieldPathParts.length - 1) {
+            if (isLastField) {
                 if (arguments != null) {
                     sb.append(arguments);
                 }
             }
 
             sb.append(" {\n");
+
+//            if(isLastField && typeClassifier != null) {
+//                sb.append("... on ").append(typeClassifier).append(" {\n");
+//            }
+
         }
         return sb.toString();
     }
 
     private String printOperationEnd(String[] fieldPathParts) {
+//        return "}\n".repeat(fieldPathParts.length + (hasTypeClassifier ? 1 : 0));
         return "}\n".repeat(fieldPathParts.length);
     }
 
