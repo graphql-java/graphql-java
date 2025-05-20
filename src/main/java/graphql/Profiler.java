@@ -3,6 +3,7 @@ package graphql;
 import graphql.execution.EngineRunningObserver;
 import graphql.execution.ExecutionId;
 import graphql.execution.ResultPath;
+import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -14,10 +15,6 @@ public interface Profiler {
 
     Profiler NO_OP = new Profiler() {
     };
-
-    default void start() {
-
-    }
 
 
     default void rootFieldCount(int size) {
@@ -38,5 +35,9 @@ public interface Profiler {
 
     default @Nullable EngineRunningObserver wrapEngineRunningObserver(EngineRunningObserver engineRunningObserver) {
         return engineRunningObserver;
+    }
+
+    default void operationDefinition(OperationDefinition operationDefinition) {
+
     }
 }

@@ -3,6 +3,7 @@ package graphql;
 import graphql.execution.EngineRunningObserver;
 import graphql.execution.ExecutionId;
 import graphql.execution.ResultPath;
+import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.SingletonPropertyDataFetcher;
@@ -90,5 +91,10 @@ public class ProfilerImpl implements Profiler {
         } else {
             Assert.assertShouldNeverHappen();
         }
+    }
+
+    @Override
+    public void operationDefinition(OperationDefinition operationDefinition) {
+        profilerResult.setOperation(operationDefinition);
     }
 }

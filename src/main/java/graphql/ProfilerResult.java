@@ -1,6 +1,7 @@
 package graphql;
 
 import graphql.execution.ExecutionId;
+import graphql.language.OperationDefinition;
 
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -17,10 +18,9 @@ public class ProfilerResult {
     private long startTime;
     private long endTime;
     private long engineTotalRunningTime;
-    private final Set<String> fieldsFetched = ConcurrentHashMap.newKeySet();
-
     private final AtomicInteger totalDataFetcherInvocations = new AtomicInteger();
     private final AtomicInteger totalPropertyDataFetcherInvocations = new AtomicInteger();
+    private final Set<String> fieldsFetched = ConcurrentHashMap.newKeySet();
 
 
     private final Map<String, Integer> dataFetcherInvocationCount = new ConcurrentHashMap<>();
@@ -28,6 +28,8 @@ public class ProfilerResult {
 
     // the key is the whole result key, not just the query path
     private final Map<String, DataFetcherResultType> dataFetcherResultType = new ConcurrentHashMap<>();
+    private volatile String operationName;
+    private volatile String operationType;
 
 
     public enum DataFetcherType {
@@ -75,6 +77,19 @@ public class ProfilerResult {
         this.engineTotalRunningTime = engineTotalRunningTime;
     }
 
+    void setOperation(OperationDefinition operationDefinition) {
+        this.operationName = operationDefinition.getName();
+        this.operationType = operationDefinition.getOperation().name();
+    }
+
+
+    public String getOperationName() {
+        return operationName;
+    }
+
+    public String getOperationType() {
+        return operationType;
+    }
 
     public Set<String> getFieldsFetched() {
         return fieldsFetched;
@@ -133,16 +148,19 @@ public class ProfilerResult {
         return dataFetcherResultType;
     }
 
+
     @Override
     public String toString() {
         return "ProfilerResult{" +
                 "executionId=" + executionId +
+                ", operation=" + operationType + ":" + operationName +
                 ", startTime=" + startTime +
                 ", endTime=" + endTime +
-                ", engineTotalRunningTime=" + engineTotalRunningTime +
-                ", fieldsFetched=" + fieldsFetched +
+                ", totalRunTime=" + (endTime - startTime) + "(" + (endTime - startTime) / 1_000_000 + "ms)" +
+                ", engineTotalRunningTime=" + engineTotalRunningTime + "(" + engineTotalRunningTime / 1_000_000 + "ms)" +
                 ", totalDataFetcherInvocations=" + totalDataFetcherInvocations +
                 ", totalPropertyDataFetcherInvocations=" + totalPropertyDataFetcherInvocations +
+                ", fieldsFetched=" + fieldsFetched +
                 ", dataFetcherInvocationCount=" + dataFetcherInvocationCount +
                 ", dataFetcherTypeMap=" + dataFetcherTypeMap +
                 ", dataFetcherResultType=" + dataFetcherResultType +
