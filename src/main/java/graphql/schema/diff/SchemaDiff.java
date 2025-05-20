@@ -533,6 +533,19 @@ public class SchemaDiff {
                 checkInterfaceType(ctx, oldInterface.get(), newInterface.get());
             }
         }
+
+        for (Map.Entry<String, Type> entry : newImplementsMap.entrySet()) {
+            Optional<InterfaceTypeDefinition> newInterface = ctx.getNewTypeDef(entry.getValue(), InterfaceTypeDefinition.class);
+            if (!oldImplementsMap.containsKey(entry.getKey())) {
+                ctx.report(DiffEvent.apiDanger()
+                        .category(DiffCategory.ADDITION)
+                        .typeName(old.getName())
+                        .typeKind(getTypeKind(old))
+                        .components(newInterface.get().getName())
+                        .reasonMsg("The new API has added the interface named '%s'", newInterface.get().getName())
+                        .build());
+            }
+        }
     }
 
 
