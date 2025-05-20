@@ -1,11 +1,9 @@
 package graphql.util.querygenerator;
 
-import graphql.Assert;
 import graphql.language.AstPrinter;
 import graphql.parser.Parser;
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -17,7 +15,6 @@ public class QueryGeneratorPrinter {
             Map<String, QueryGeneratorFieldSelection.FieldSelection> fieldSelections
     ) {
         String[] fieldPathParts = operationFieldPath.split("\\.");
-
 
         String raw = fieldSelections.entrySet().stream()
                 .map(entry -> printFieldsForTopLevelType(entry.getKey(), entry.getValue()))
@@ -85,7 +82,7 @@ public class QueryGeneratorPrinter {
 
         StringBuilder sb = new StringBuilder();
         sb.append(fieldSelection.name);
-        if (fieldSelection.fields != null && !fieldSelection.fields.isEmpty()) {
+        if (fieldSelection.fields != null) {
             sb.append(" {\n");
             for (QueryGeneratorFieldSelection.FieldSelection subField : fieldSelection.fields) {
                 sb.append(printField(subField));

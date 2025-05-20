@@ -1,7 +1,14 @@
 package graphql.util.querygenerator;
 
 import graphql.ExperimentalApi;
-import graphql.schema.*;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLUnionType;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -11,13 +18,11 @@ import java.util.stream.Stream;
 
 @ExperimentalApi
 public class QueryGenerator {
-    private final QueryGeneratorOptions options;
     private final GraphQLSchema schema;
     private final QueryGeneratorFieldSelection fieldSelectionGenerator;
     private final QueryGeneratorPrinter printer;
 
     public QueryGenerator(GraphQLSchema schema, QueryGeneratorOptions options) {
-        this.options = options;
         this.schema = schema;
         this.fieldSelectionGenerator = new QueryGeneratorFieldSelection(schema, options);
         this.printer = new QueryGeneratorPrinter();

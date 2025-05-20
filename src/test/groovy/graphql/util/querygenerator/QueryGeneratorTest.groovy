@@ -69,7 +69,7 @@ query barTestOperation {
                 "(filter: \"some filter\")",
                 null,
                 expectedWithOperation,
-                QueryGeneratorOptions.defaultOptions().build()
+                QueryGeneratorOptions.newBuilder().build()
         )
 
         then:
@@ -452,7 +452,7 @@ subscription {
   }
 }
 """
-        def passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
+        def passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
         passed
@@ -470,7 +470,7 @@ subscription {
   }
 }
 """
-        passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
+        passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
         passed
@@ -479,7 +479,7 @@ subscription {
         fieldPath = "Query.foo"
         classifierType = "Foo"
 
-        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
+        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
         def e = thrown(IllegalArgumentException)
@@ -489,7 +489,7 @@ subscription {
         fieldPath = "Query.node"
         classifierType = "BazDoesntImplementNode"
 
-        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
+        executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
         e = thrown(IllegalArgumentException)
@@ -539,7 +539,7 @@ subscription {
   }
 }
 """
-        def passed = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
+        def passed = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
         passed
@@ -557,7 +557,7 @@ subscription {
   }
 }
 """
-        passed = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
+        passed = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
         passed
@@ -566,7 +566,7 @@ subscription {
         fieldPath = "Query.something"
         classifierType = "BazIsNotPartOfUnion"
 
-        executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.defaultOptions().build())
+        executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
         def e = thrown(IllegalArgumentException)
@@ -605,7 +605,7 @@ subscription {
 """
 
         def options = QueryGeneratorOptions
-                .defaultOptions()
+                .newBuilder()
                 .maxFieldCount(3)
                 .build()
 
@@ -638,7 +638,7 @@ subscription {
 
         when: "A limit would result on a field container (Foo.bar) having empty field selection"
         def options = QueryGeneratorOptions
-                .defaultOptions()
+                .newBuilder()
                 .maxFieldCount(3)
                 .build()
 
@@ -699,6 +699,61 @@ $resultFields
         passed
     }
 
+    def "filter types and field"() {
+        given:
+        def schema = """
+        type Query {
+          foo: Foo
+        }
+        
+        type Foo {
+            id: ID!
+            bar: Bar
+            name: String
+            age: Int
+            baz: Baz
+        }
+        
+        type Bar {
+            id: ID!
+            name: String
+        }
+        
+        type Baz {
+          id: ID!
+          name: String
+        }
+"""
+
+
+        when:
+        def options = QueryGeneratorOptions
+                .newBuilder()
+                .filterFieldContainerPredicate { it.name != "Bar" }
+                .filterFieldDefinitionPredicate { it.name != "name" }
+                .build()
+
+        def fieldPath = "Query.foo"
+        def expected = """
+{
+  foo {
+    ... on Foo {
+      id
+      age
+      baz {
+        id
+      }
+    }
+  }
+}
+"""
+
+        def passed = executeTest(schema, fieldPath, null, null, null, expected, options)
+
+        then:
+        passed
+    }
+
     private static boolean executeTest(
             String schemaDefinition,
             String fieldPath,
@@ -711,7 +766,7 @@ $resultFields
                 null,
                 null,
                 expected,
-                QueryGeneratorOptions.defaultOptions().build()
+                QueryGeneratorOptions.newBuilder().build()
         )
     }
 

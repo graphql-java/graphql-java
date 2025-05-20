@@ -1,6 +1,5 @@
 package graphql.util.querygenerator;
 
-import graphql.normalized.nf.NormalizedDocumentFactory;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -59,7 +58,15 @@ public class QueryGeneratorFieldSelection {
             GraphQLFieldsContainer container = containersQueue.poll();
             FieldSelection fieldSelection = fieldSelectionQueue.poll();
 
+            if(!options.getFilterFieldContainerPredicate().test(container)) {
+                continue;
+            }
+
             for (GraphQLFieldDefinition fieldDef : container.getFieldDefinitions()) {
+                if(!options.getFilterFieldDefinitionPredicate().test(fieldDef)) {
+                    continue;
+                }
+
                 if (totalFieldCount >= options.getMaxFieldCount()) {
                     break;
                 }
@@ -123,10 +130,6 @@ public class QueryGeneratorFieldSelection {
             this.name = name;
             this.fields = fields;
         }
-
-    }
-
-    public static class QueryGeneratorResult {
 
     }
 }
