@@ -1,0 +1,3376 @@
+{
+  node(id: "issue-id-1") {
+    ... on JiraIssue {
+      id
+      issueId
+      key
+      webUrl
+      fields {
+        totalCount
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        edges {
+          node {
+            ... on JiraServiceManagementApprovalField {
+              JiraServiceManagementApprovalField_id: id
+              JiraServiceManagementApprovalField_fieldId: fieldId
+              JiraServiceManagementApprovalField_aliasFieldId: aliasFieldId
+              JiraServiceManagementApprovalField_type: type
+              JiraServiceManagementApprovalField_name: name
+              JiraServiceManagementApprovalField_description: description
+              JiraServiceManagementApprovalField_activeApproval: activeApproval {
+                id
+                name
+                finalDecision
+                approvers {
+                  totalCount
+                  pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
+                  }
+                  edges {
+                    node {
+                      approver {
+                        ... on AtlassianAccountUser {
+                          AtlassianAccountUser_accountId: accountId
+                          AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                          AtlassianAccountUser_accountStatus: accountStatus
+                          AtlassianAccountUser_name: name
+                          AtlassianAccountUser_picture: picture
+                          AtlassianAccountUser_email: email
+                          AtlassianAccountUser_zoneinfo: zoneinfo
+                          AtlassianAccountUser_locale: locale
+                        }
+                      }
+                      approverDecision
+                    }
+                    cursor
+                  }
+                }
+                excludedApprovers {
+                  totalCount
+                }
+                canAnswerApproval
+                decisions {
+                  totalCount
+                  pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
+                  }
+                  edges {
+                    node {
+                      approver {
+                        ... on AtlassianAccountUser {
+                          AtlassianAccountUser_accountId: accountId
+                          AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                          AtlassianAccountUser_accountStatus: accountStatus
+                          AtlassianAccountUser_name: name
+                          AtlassianAccountUser_picture: picture
+                          AtlassianAccountUser_email: email
+                          AtlassianAccountUser_zoneinfo: zoneinfo
+                          AtlassianAccountUser_locale: locale
+                        }
+                      }
+                      approverDecision
+                    }
+                    cursor
+                  }
+                }
+                createdDate
+                configurations {
+                  approversConfigurations {
+                    type
+                    fieldName
+                    fieldId
+                  }
+                  condition {
+                    type
+                    value
+                  }
+                }
+                status {
+                  id
+                  name
+                  categoryId
+                }
+                approverPrincipals {
+                  totalCount
+                  pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
+                  }
+                  edges {
+                    node {
+                      ... on JiraServiceManagementGroupApproverPrincipal {
+                        JiraServiceManagementGroupApproverPrincipal_groupId: groupId
+                        JiraServiceManagementGroupApproverPrincipal_name: name
+                        JiraServiceManagementGroupApproverPrincipal_memberCount: memberCount
+                        JiraServiceManagementGroupApproverPrincipal_approvedCount: approvedCount
+                      }
+                      ... on JiraServiceManagementUserApproverPrincipal {
+                        JiraServiceManagementUserApproverPrincipal_user: user {
+                          ... on AtlassianAccountUser {
+                            AtlassianAccountUser_accountId: accountId
+                            AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                            AtlassianAccountUser_accountStatus: accountStatus
+                            AtlassianAccountUser_name: name
+                            AtlassianAccountUser_picture: picture
+                            AtlassianAccountUser_email: email
+                            AtlassianAccountUser_zoneinfo: zoneinfo
+                            AtlassianAccountUser_locale: locale
+                          }
+                        }
+                        JiraServiceManagementUserApproverPrincipal_jiraRest: jiraRest
+                      }
+                    }
+                    cursor
+                  }
+                }
+                pendingApprovalCount
+                approvalState
+              }
+              JiraServiceManagementApprovalField_completedApprovals: completedApprovals {
+                id
+                name
+                finalDecision
+                approvers {
+                  totalCount
+                }
+                createdDate
+                completedDate
+                status {
+                  id
+                  name
+                  categoryId
+                }
+              }
+              JiraServiceManagementApprovalField_completedApprovalsConnection: completedApprovalsConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    name
+                    finalDecision
+                    createdDate
+                    completedDate
+                  }
+                  cursor
+                }
+              }
+              JiraServiceManagementApprovalField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraServiceManagementApprovalField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraSingleGroupPickerField {
+              JiraSingleGroupPickerField_id: id
+              JiraSingleGroupPickerField_fieldId: fieldId
+              JiraSingleGroupPickerField_aliasFieldId: aliasFieldId
+              JiraSingleGroupPickerField_type: type
+              JiraSingleGroupPickerField_name: name
+              JiraSingleGroupPickerField_description: description
+              JiraSingleGroupPickerField_selectedGroup: selectedGroup {
+                id
+                groupId
+                name
+              }
+              JiraSingleGroupPickerField_groups: groups {
+                totalCount
+              }
+              JiraSingleGroupPickerField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraSingleGroupPickerField_searchUrl: searchUrl
+              JiraSingleGroupPickerField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraVotesField {
+              JiraVotesField_id: id
+              JiraVotesField_fieldId: fieldId
+              JiraVotesField_aliasFieldId: aliasFieldId
+              JiraVotesField_type: type
+              JiraVotesField_name: name
+              JiraVotesField_description: description
+              JiraVotesField_vote: vote {
+                hasVoted
+                count
+              }
+              JiraVotesField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraVotesField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraServiceManagementDateTimeField {
+              JiraServiceManagementDateTimeField_id: id
+              JiraServiceManagementDateTimeField_fieldId: fieldId
+              JiraServiceManagementDateTimeField_aliasFieldId: aliasFieldId
+              JiraServiceManagementDateTimeField_type: type
+              JiraServiceManagementDateTimeField_name: name
+              JiraServiceManagementDateTimeField_description: description
+              JiraServiceManagementDateTimeField_dateTime: dateTime
+              JiraServiceManagementDateTimeField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraServiceManagementDateTimeField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraSingleLineTextField {
+              JiraSingleLineTextField_id: id
+              JiraSingleLineTextField_fieldId: fieldId
+              JiraSingleLineTextField_aliasFieldId: aliasFieldId
+              JiraSingleLineTextField_type: type
+              JiraSingleLineTextField_name: name
+              JiraSingleLineTextField_description: description
+              JiraSingleLineTextField_text: text
+              JiraSingleLineTextField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraSingleLineTextField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraServiceManagementRespondersField {
+              JiraServiceManagementRespondersField_id: id
+              JiraServiceManagementRespondersField_fieldId: fieldId
+              JiraServiceManagementRespondersField_aliasFieldId: aliasFieldId
+              JiraServiceManagementRespondersField_type: type
+              JiraServiceManagementRespondersField_name: name
+              JiraServiceManagementRespondersField_description: description
+              JiraServiceManagementRespondersField_responders: responders {
+                ... on JiraServiceManagementUserResponder {
+                  JiraServiceManagementUserResponder_user: user {
+                    ... on AtlassianAccountUser {
+                      AtlassianAccountUser_accountId: accountId
+                      AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                      AtlassianAccountUser_accountStatus: accountStatus
+                      AtlassianAccountUser_name: name
+                      AtlassianAccountUser_picture: picture
+                      AtlassianAccountUser_email: email
+                      AtlassianAccountUser_zoneinfo: zoneinfo
+                      AtlassianAccountUser_locale: locale
+                    }
+                  }
+                }
+                ... on JiraServiceManagementTeamResponder {
+                  JiraServiceManagementTeamResponder_teamId: teamId
+                  JiraServiceManagementTeamResponder_teamName: teamName
+                }
+              }
+              JiraServiceManagementRespondersField_respondersConnection: respondersConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    ... on JiraServiceManagementUserResponder {
+                      JiraServiceManagementUserResponder_user: user {
+                        ... on AtlassianAccountUser {
+                          AtlassianAccountUser_accountId: accountId
+                          AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                          AtlassianAccountUser_accountStatus: accountStatus
+                          AtlassianAccountUser_name: name
+                          AtlassianAccountUser_picture: picture
+                          AtlassianAccountUser_email: email
+                          AtlassianAccountUser_zoneinfo: zoneinfo
+                          AtlassianAccountUser_locale: locale
+                        }
+                      }
+                    }
+                    ... on JiraServiceManagementTeamResponder {
+                      JiraServiceManagementTeamResponder_teamId: teamId
+                      JiraServiceManagementTeamResponder_teamName: teamName
+                    }
+                  }
+                  cursor
+                }
+              }
+              JiraServiceManagementRespondersField_searchUrl: searchUrl
+              JiraServiceManagementRespondersField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+            }
+            ... on JiraPriorityField {
+              JiraPriorityField_id: id
+              JiraPriorityField_fieldId: fieldId
+              JiraPriorityField_aliasFieldId: aliasFieldId
+              JiraPriorityField_type: type
+              JiraPriorityField_name: name
+              JiraPriorityField_description: description
+              JiraPriorityField_priority: priority {
+                id
+                priorityId
+                name
+                iconUrl
+                color
+              }
+              JiraPriorityField_priorities: priorities {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    priorityId
+                    name
+                    iconUrl
+                    color
+                  }
+                  cursor
+                }
+              }
+              JiraPriorityField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraPriorityField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraStatusField {
+              JiraStatusField_id: id
+              JiraStatusField_fieldId: fieldId
+              JiraStatusField_aliasFieldId: aliasFieldId
+              JiraStatusField_type: type
+              JiraStatusField_name: name
+              JiraStatusField_description: description
+              JiraStatusField_status: status {
+                id
+                statusId
+                name
+                description
+                statusCategory {
+                  id
+                  statusCategoryId
+                  key
+                  name
+                  colorName
+                }
+              }
+              JiraStatusField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraStatusField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraServiceManagementMultipleSelectUserPickerField {
+              JiraServiceManagementMultipleSelectUserPickerField_id: id
+              JiraServiceManagementMultipleSelectUserPickerField_fieldId: fieldId
+              JiraServiceManagementMultipleSelectUserPickerField_aliasFieldId: aliasFieldId
+              JiraServiceManagementMultipleSelectUserPickerField_type: type
+              JiraServiceManagementMultipleSelectUserPickerField_name: name
+              JiraServiceManagementMultipleSelectUserPickerField_description: description
+              JiraServiceManagementMultipleSelectUserPickerField_selectedUsers: selectedUsers {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraServiceManagementMultipleSelectUserPickerField_selectedUsersConnection: selectedUsersConnection {
+                totalCount
+              }
+              JiraServiceManagementMultipleSelectUserPickerField_users: users {
+                totalCount
+              }
+              JiraServiceManagementMultipleSelectUserPickerField_searchUrl: searchUrl
+              JiraServiceManagementMultipleSelectUserPickerField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraServiceManagementMultipleSelectUserPickerField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraOriginalTimeEstimateField {
+              JiraOriginalTimeEstimateField_id: id
+              JiraOriginalTimeEstimateField_fieldId: fieldId
+              JiraOriginalTimeEstimateField_aliasFieldId: aliasFieldId
+              JiraOriginalTimeEstimateField_type: type
+              JiraOriginalTimeEstimateField_name: name
+              JiraOriginalTimeEstimateField_description: description
+              JiraOriginalTimeEstimateField_originalEstimate: originalEstimate {
+                timeInSeconds
+              }
+              JiraOriginalTimeEstimateField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraOriginalTimeEstimateField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraMultipleSelectField {
+              JiraMultipleSelectField_id: id
+              JiraMultipleSelectField_fieldId: fieldId
+              JiraMultipleSelectField_aliasFieldId: aliasFieldId
+              JiraMultipleSelectField_type: type
+              JiraMultipleSelectField_name: name
+              JiraMultipleSelectField_description: description
+              JiraMultipleSelectField_selectedFieldOptions: selectedFieldOptions {
+                id
+                optionId
+                value
+                isDisabled
+              }
+              JiraMultipleSelectField_selectedOptions: selectedOptions {
+                totalCount
+              }
+              JiraMultipleSelectField_fieldOptions: fieldOptions {
+                totalCount
+              }
+              JiraMultipleSelectField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraMultipleSelectField_searchUrl: searchUrl
+              JiraMultipleSelectField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraDatePickerField {
+              JiraDatePickerField_id: id
+              JiraDatePickerField_fieldId: fieldId
+              JiraDatePickerField_aliasFieldId: aliasFieldId
+              JiraDatePickerField_type: type
+              JiraDatePickerField_name: name
+              JiraDatePickerField_description: description
+              JiraDatePickerField_date: date
+              JiraDatePickerField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraDatePickerField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraNumberField {
+              JiraNumberField_id: id
+              JiraNumberField_fieldId: fieldId
+              JiraNumberField_aliasFieldId: aliasFieldId
+              JiraNumberField_type: type
+              JiraNumberField_name: name
+              JiraNumberField_description: description
+              JiraNumberField_number: number
+              JiraNumberField_isStoryPointField: isStoryPointField
+            }
+            ... on JiraTeamField {
+              JiraTeamField_id: id
+              JiraTeamField_fieldId: fieldId
+              JiraTeamField_aliasFieldId: aliasFieldId
+              JiraTeamField_type: type
+              JiraTeamField_name: name
+              JiraTeamField_description: description
+              JiraTeamField_selectedTeam: selectedTeam {
+                id
+                teamId
+                name
+                description
+                avatar {
+                  xsmall
+                  small
+                  medium
+                  large
+                }
+                members {
+                  totalCount
+                }
+                isShared
+              }
+              JiraTeamField_teams: teams {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    teamId
+                    name
+                    description
+                    isShared
+                  }
+                  cursor
+                }
+              }
+              JiraTeamField_searchUrl: searchUrl
+              JiraTeamField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraTeamField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraForgeUsersField {
+              JiraForgeUsersField_id: id
+              JiraForgeUsersField_fieldId: fieldId
+              JiraForgeUsersField_aliasFieldId: aliasFieldId
+              JiraForgeUsersField_type: type
+              JiraForgeUsersField_name: name
+              JiraForgeUsersField_description: description
+              JiraForgeUsersField_selectedUsers: selectedUsers {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraForgeUsersField_selectedUsersConnection: selectedUsersConnection {
+                totalCount
+              }
+              JiraForgeUsersField_users: users {
+                totalCount
+              }
+              JiraForgeUsersField_searchUrl: searchUrl
+              JiraForgeUsersField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraForgeUsersField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraForgeUsersField_renderer: renderer
+            }
+            ... on JiraConnectRichTextField {
+              JiraConnectRichTextField_id: id
+              JiraConnectRichTextField_fieldId: fieldId
+              JiraConnectRichTextField_aliasFieldId: aliasFieldId
+              JiraConnectRichTextField_type: type
+              JiraConnectRichTextField_name: name
+              JiraConnectRichTextField_description: description
+              JiraConnectRichTextField_richText: richText {
+                adfValue {
+                  json
+                }
+                plainText
+                wikiValue
+              }
+              JiraConnectRichTextField_renderer: renderer
+              JiraConnectRichTextField_mediaContext: mediaContext {
+                uploadToken {
+                  ... on JiraMediaUploadToken {
+                    JiraMediaUploadToken_endpointUrl: endpointUrl
+                    JiraMediaUploadToken_clientId: clientId
+                    JiraMediaUploadToken_targetCollection: targetCollection
+                    JiraMediaUploadToken_token: token
+                    JiraMediaUploadToken_tokenDurationInMin: tokenDurationInMin
+                  }
+                  ... on QueryError {
+                    QueryError_identifier: identifier
+                    QueryError_message: message
+                    QueryError_extensions: extensions {
+                      ... on GenericQueryErrorExtension {
+                        GenericQueryErrorExtension_statusCode: statusCode
+                        GenericQueryErrorExtension_errorType: errorType
+                      }
+                    }
+                  }
+                }
+              }
+              JiraConnectRichTextField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraConnectRichTextField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraServiceManagementRequestLanguageField {
+              JiraServiceManagementRequestLanguageField_id: id
+              JiraServiceManagementRequestLanguageField_fieldId: fieldId
+              JiraServiceManagementRequestLanguageField_aliasFieldId: aliasFieldId
+              JiraServiceManagementRequestLanguageField_type: type
+              JiraServiceManagementRequestLanguageField_name: name
+              JiraServiceManagementRequestLanguageField_description: description
+              JiraServiceManagementRequestLanguageField_language: language {
+                languageCode
+                displayName
+              }
+              JiraServiceManagementRequestLanguageField_languages: languages {
+                languageCode
+                displayName
+              }
+              JiraServiceManagementRequestLanguageField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraServiceManagementRequestLanguageField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraConnectTextField {
+              JiraConnectTextField_id: id
+              JiraConnectTextField_fieldId: fieldId
+              JiraConnectTextField_aliasFieldId: aliasFieldId
+              JiraConnectTextField_type: type
+              JiraConnectTextField_name: name
+              JiraConnectTextField_description: description
+              JiraConnectTextField_text: text
+              JiraConnectTextField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraConnectTextField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraTimeTrackingField {
+              JiraTimeTrackingField_id: id
+              JiraTimeTrackingField_fieldId: fieldId
+              JiraTimeTrackingField_aliasFieldId: aliasFieldId
+              JiraTimeTrackingField_type: type
+              JiraTimeTrackingField_name: name
+              JiraTimeTrackingField_description: description
+              JiraTimeTrackingField_originalEstimate: originalEstimate {
+                timeInSeconds
+              }
+              JiraTimeTrackingField_remainingEstimate: remainingEstimate {
+                timeInSeconds
+              }
+              JiraTimeTrackingField_timeSpent: timeSpent {
+                timeInSeconds
+              }
+              JiraTimeTrackingField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraTimeTrackingField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraTimeTrackingField_timeTrackingSettings: timeTrackingSettings {
+                isJiraConfiguredTimeTrackingEnabled
+                workingHoursPerDay
+                workingDaysPerWeek
+                defaultFormat
+                defaultUnit
+              }
+            }
+            ... on JiraCascadingSelectField {
+              JiraCascadingSelectField_id: id
+              JiraCascadingSelectField_fieldId: fieldId
+              JiraCascadingSelectField_aliasFieldId: aliasFieldId
+              JiraCascadingSelectField_type: type
+              JiraCascadingSelectField_name: name
+              JiraCascadingSelectField_description: description
+              JiraCascadingSelectField_cascadingOption: cascadingOption {
+                parentOptionValue {
+                  id
+                  optionId
+                  value
+                  isDisabled
+                }
+                childOptionValue {
+                  id
+                  optionId
+                  value
+                  isDisabled
+                }
+              }
+              JiraCascadingSelectField_cascadingOptions: cascadingOptions {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    parentOptionValue {
+                      id
+                      optionId
+                      value
+                      isDisabled
+                    }
+                    childOptionValues {
+                      id
+                      optionId
+                      value
+                      isDisabled
+                    }
+                  }
+                  cursor
+                }
+              }
+              JiraCascadingSelectField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraCascadingSelectField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraAssetField {
+              JiraAssetField_id: id
+              JiraAssetField_fieldId: fieldId
+              JiraAssetField_aliasFieldId: aliasFieldId
+              JiraAssetField_type: type
+              JiraAssetField_name: name
+              JiraAssetField_description: description
+              JiraAssetField_selectedAssets: selectedAssets {
+                appKey
+                originId
+                serializedOrigin
+                value
+              }
+              JiraAssetField_selectedAssetsConnection: selectedAssetsConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    appKey
+                    originId
+                    serializedOrigin
+                    value
+                  }
+                  cursor
+                }
+              }
+              JiraAssetField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraAssetField_searchUrl: searchUrl
+              JiraAssetField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraConnectMultipleSelectField {
+              JiraConnectMultipleSelectField_id: id
+              JiraConnectMultipleSelectField_fieldId: fieldId
+              JiraConnectMultipleSelectField_aliasFieldId: aliasFieldId
+              JiraConnectMultipleSelectField_type: type
+              JiraConnectMultipleSelectField_name: name
+              JiraConnectMultipleSelectField_description: description
+              JiraConnectMultipleSelectField_selectedFieldOptions: selectedFieldOptions {
+                id
+                optionId
+                value
+                isDisabled
+              }
+              JiraConnectMultipleSelectField_selectedOptions: selectedOptions {
+                totalCount
+              }
+              JiraConnectMultipleSelectField_fieldOptions: fieldOptions {
+                totalCount
+              }
+              JiraConnectMultipleSelectField_searchUrl: searchUrl
+              JiraConnectMultipleSelectField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraConnectMultipleSelectField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraIssueLinkField {
+              JiraIssueLinkField_id: id
+              JiraIssueLinkField_fieldId: fieldId
+              JiraIssueLinkField_aliasFieldId: aliasFieldId
+              JiraIssueLinkField_type: type
+              JiraIssueLinkField_name: name
+              JiraIssueLinkField_description: description
+              JiraIssueLinkField_issueLinks: issueLinks {
+                id
+                issueLinkId
+              }
+              JiraIssueLinkField_issueLinkConnection: issueLinkConnection {
+                totalCount
+              }
+              JiraIssueLinkField_issueLinkTypeRelations: issueLinkTypeRelations {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    relationName
+                    linkTypeId
+                    linkTypeName
+                    direction
+                  }
+                  cursor
+                }
+              }
+              JiraIssueLinkField_issues: issues {
+                totalCount
+                jql
+                issueSearchError {
+                  ... on JiraInvalidJqlError {
+                    JiraInvalidJqlError_messages: messages
+                  }
+                  ... on JiraInvalidSyntaxError {
+                    JiraInvalidSyntaxError_message: message
+                    JiraInvalidSyntaxError_errorType: errorType
+                    JiraInvalidSyntaxError_line: line
+                    JiraInvalidSyntaxError_column: column
+                  }
+                }
+                totalIssueSearchResultCount
+                isCappingIssueSearchResult
+              }
+              JiraIssueLinkField_searchUrl: searchUrl
+              JiraIssueLinkField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraIssueLinkField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraSingleSelectField {
+              JiraSingleSelectField_id: id
+              JiraSingleSelectField_fieldId: fieldId
+              JiraSingleSelectField_aliasFieldId: aliasFieldId
+              JiraSingleSelectField_type: type
+              JiraSingleSelectField_name: name
+              JiraSingleSelectField_description: description
+              JiraSingleSelectField_fieldOption: fieldOption {
+                id
+                optionId
+                value
+                isDisabled
+              }
+              JiraSingleSelectField_fieldOptions: fieldOptions {
+                totalCount
+              }
+              JiraSingleSelectField_searchUrl: searchUrl
+              JiraSingleSelectField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraSingleSelectField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraResolutionField {
+              JiraResolutionField_id: id
+              JiraResolutionField_fieldId: fieldId
+              JiraResolutionField_aliasFieldId: aliasFieldId
+              JiraResolutionField_type: type
+              JiraResolutionField_name: name
+              JiraResolutionField_description: description
+              JiraResolutionField_resolution: resolution {
+                id
+                resolutionId
+                name
+                description
+              }
+              JiraResolutionField_resolutions: resolutions {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    resolutionId
+                    name
+                    description
+                  }
+                  cursor
+                }
+              }
+              JiraResolutionField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraResolutionField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraForgeNumberField {
+              JiraForgeNumberField_id: id
+              JiraForgeNumberField_fieldId: fieldId
+              JiraForgeNumberField_aliasFieldId: aliasFieldId
+              JiraForgeNumberField_type: type
+              JiraForgeNumberField_name: name
+              JiraForgeNumberField_description: description
+              JiraForgeNumberField_number: number
+              JiraForgeNumberField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraForgeNumberField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraForgeNumberField_renderer: renderer
+            }
+            ... on JiraConnectNumberField {
+              JiraConnectNumberField_id: id
+              JiraConnectNumberField_fieldId: fieldId
+              JiraConnectNumberField_aliasFieldId: aliasFieldId
+              JiraConnectNumberField_type: type
+              JiraConnectNumberField_name: name
+              JiraConnectNumberField_description: description
+              JiraConnectNumberField_number: number
+              JiraConnectNumberField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraConnectNumberField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraServiceManagementPeopleField {
+              JiraServiceManagementPeopleField_id: id
+              JiraServiceManagementPeopleField_fieldId: fieldId
+              JiraServiceManagementPeopleField_aliasFieldId: aliasFieldId
+              JiraServiceManagementPeopleField_type: type
+              JiraServiceManagementPeopleField_name: name
+              JiraServiceManagementPeopleField_description: description
+              JiraServiceManagementPeopleField_selectedUsers: selectedUsers {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraServiceManagementPeopleField_selectedUsersConnection: selectedUsersConnection {
+                totalCount
+              }
+              JiraServiceManagementPeopleField_isMulti: isMulti
+              JiraServiceManagementPeopleField_users: users {
+                totalCount
+              }
+              JiraServiceManagementPeopleField_searchUrl: searchUrl
+              JiraServiceManagementPeopleField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraServiceManagementPeopleField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraIssueTypeField {
+              JiraIssueTypeField_id: id
+              JiraIssueTypeField_fieldId: fieldId
+              JiraIssueTypeField_aliasFieldId: aliasFieldId
+              JiraIssueTypeField_type: type
+              JiraIssueTypeField_name: name
+              JiraIssueTypeField_description: description
+              JiraIssueTypeField_issueType: issueType {
+                id
+                issueTypeId
+                name
+                description
+              }
+              JiraIssueTypeField_issueTypes: issueTypes {
+                totalCount
+              }
+              JiraIssueTypeField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+            }
+            ... on JiraIssueRestrictionField {
+              JiraIssueRestrictionField_id: id
+              JiraIssueRestrictionField_fieldId: fieldId
+              JiraIssueRestrictionField_aliasFieldId: aliasFieldId
+              JiraIssueRestrictionField_type: type
+              JiraIssueRestrictionField_name: name
+              JiraIssueRestrictionField_description: description
+              JiraIssueRestrictionField_selectedRoles: selectedRoles {
+                id
+                roleId
+                name
+                description
+              }
+              JiraIssueRestrictionField_selectedRolesConnection: selectedRolesConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    roleId
+                    name
+                    description
+                  }
+                  cursor
+                }
+              }
+              JiraIssueRestrictionField_roles: roles {
+                totalCount
+              }
+              JiraIssueRestrictionField_searchUrl: searchUrl
+              JiraIssueRestrictionField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraIssueRestrictionField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraColorField {
+              JiraColorField_id: id
+              JiraColorField_fieldId: fieldId
+              JiraColorField_aliasFieldId: aliasFieldId
+              JiraColorField_type: type
+              JiraColorField_name: name
+              JiraColorField_description: description
+              JiraColorField_color: color {
+                id
+                colorKey
+              }
+              JiraColorField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraColorField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraTeamViewField {
+              JiraTeamViewField_id: id
+              JiraTeamViewField_fieldId: fieldId
+              JiraTeamViewField_aliasFieldId: aliasFieldId
+              JiraTeamViewField_type: type
+              JiraTeamViewField_name: name
+              JiraTeamViewField_description: description
+              JiraTeamViewField_selectedTeam: selectedTeam {
+                jiraSuppliedId
+                jiraSuppliedTeamId
+                jiraSuppliedVisibility
+                jiraSuppliedName
+                jiraSuppliedAvatar {
+                  xsmall
+                  small
+                  medium
+                  large
+                }
+              }
+              JiraTeamViewField_searchUrl: searchUrl
+              JiraTeamViewField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraTeamViewField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraBooleanField {
+              JiraBooleanField_id: id
+              JiraBooleanField_fieldId: fieldId
+              JiraBooleanField_aliasFieldId: aliasFieldId
+              JiraBooleanField_type: type
+              JiraBooleanField_name: name
+              JiraBooleanField_description: description
+              JiraBooleanField_value: value
+              JiraBooleanField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraBooleanField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraServiceManagementRequestFeedbackField {
+              JiraServiceManagementRequestFeedbackField_id: id
+              JiraServiceManagementRequestFeedbackField_fieldId: fieldId
+              JiraServiceManagementRequestFeedbackField_aliasFieldId: aliasFieldId
+              JiraServiceManagementRequestFeedbackField_type: type
+              JiraServiceManagementRequestFeedbackField_name: name
+              JiraServiceManagementRequestFeedbackField_description: description
+              JiraServiceManagementRequestFeedbackField_feedback: feedback {
+                rating
+              }
+              JiraServiceManagementRequestFeedbackField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraServiceManagementRequestFeedbackField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraLabelsField {
+              JiraLabelsField_id: id
+              JiraLabelsField_fieldId: fieldId
+              JiraLabelsField_aliasFieldId: aliasFieldId
+              JiraLabelsField_type: type
+              JiraLabelsField_name: name
+              JiraLabelsField_description: description
+              JiraLabelsField_selectedLabels: selectedLabels {
+                labelId
+                name
+              }
+              JiraLabelsField_selectedLabelsConnection: selectedLabelsConnection {
+                totalCount
+              }
+              JiraLabelsField_labels: labels {
+                totalCount
+              }
+              JiraLabelsField_searchUrl: searchUrl
+              JiraLabelsField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraLabelsField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraProjectField {
+              JiraProjectField_id: id
+              JiraProjectField_fieldId: fieldId
+              JiraProjectField_aliasFieldId: aliasFieldId
+              JiraProjectField_type: type
+              JiraProjectField_name: name
+              JiraProjectField_description: description
+              JiraProjectField_project: project {
+                id
+                key
+                projectId
+                name
+                cloudId
+                description
+                leadId
+                category {
+                  id
+                  name
+                  description
+                }
+                avatar {
+                  xsmall
+                  small
+                  medium
+                  large
+                }
+                projectUrl
+                projectType
+                projectStyle
+                status
+                similarIssues {
+                  featureEnabled
+                }
+                canSetIssueRestriction
+                navigationMetadata {
+                  ... on JiraSoftwareProjectNavigationMetadata {
+                    JiraSoftwareProjectNavigationMetadata_id: id
+                    JiraSoftwareProjectNavigationMetadata_boardId: boardId
+                    JiraSoftwareProjectNavigationMetadata_boardName: boardName
+                    JiraSoftwareProjectNavigationMetadata_isSimpleBoard: isSimpleBoard
+                  }
+                  ... on JiraWorkManagementProjectNavigationMetadata {
+                    JiraWorkManagementProjectNavigationMetadata_boardName: boardName
+                  }
+                  ... on JiraServiceManagementProjectNavigationMetadata {
+                    JiraServiceManagementProjectNavigationMetadata_queueId: queueId
+                    JiraServiceManagementProjectNavigationMetadata_queueName: queueName
+                  }
+                }
+              }
+              JiraProjectField_projects: projects {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    key
+                    projectId
+                    name
+                    cloudId
+                    description
+                    leadId
+                    projectUrl
+                    projectType
+                    projectStyle
+                    status
+                    canSetIssueRestriction
+                    navigationMetadata {
+                      ... on JiraSoftwareProjectNavigationMetadata {
+                        JiraSoftwareProjectNavigationMetadata_id: id
+                        JiraSoftwareProjectNavigationMetadata_boardId: boardId
+                        JiraSoftwareProjectNavigationMetadata_boardName: boardName
+                        JiraSoftwareProjectNavigationMetadata_isSimpleBoard: isSimpleBoard
+                      }
+                      ... on JiraWorkManagementProjectNavigationMetadata {
+                        JiraWorkManagementProjectNavigationMetadata_boardName: boardName
+                      }
+                      ... on JiraServiceManagementProjectNavigationMetadata {
+                        JiraServiceManagementProjectNavigationMetadata_queueId: queueId
+                        JiraServiceManagementProjectNavigationMetadata_queueName: queueName
+                      }
+                    }
+                  }
+                  cursor
+                }
+              }
+              JiraProjectField_searchUrl: searchUrl
+              JiraProjectField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraProjectField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraMultipleGroupPickerField {
+              JiraMultipleGroupPickerField_id: id
+              JiraMultipleGroupPickerField_fieldId: fieldId
+              JiraMultipleGroupPickerField_aliasFieldId: aliasFieldId
+              JiraMultipleGroupPickerField_type: type
+              JiraMultipleGroupPickerField_name: name
+              JiraMultipleGroupPickerField_description: description
+              JiraMultipleGroupPickerField_selectedGroups: selectedGroups {
+                id
+                groupId
+                name
+              }
+              JiraMultipleGroupPickerField_selectedGroupsConnection: selectedGroupsConnection {
+                totalCount
+              }
+              JiraMultipleGroupPickerField_groups: groups {
+                totalCount
+              }
+              JiraMultipleGroupPickerField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraMultipleGroupPickerField_searchUrl: searchUrl
+              JiraMultipleGroupPickerField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraProformaFormsField {
+              JiraProformaFormsField_id: id
+              JiraProformaFormsField_fieldId: fieldId
+              JiraProformaFormsField_aliasFieldId: aliasFieldId
+              JiraProformaFormsField_type: type
+              JiraProformaFormsField_name: name
+              JiraProformaFormsField_description: description
+              JiraProformaFormsField_proformaForms: proformaForms {
+                hasProjectForms
+                hasIssueForms
+              }
+              JiraProformaFormsField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraProformaFormsField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraCMDBField {
+              JiraCMDBField_id: id
+              JiraCMDBField_fieldId: fieldId
+              JiraCMDBField_aliasFieldId: aliasFieldId
+              JiraCMDBField_type: type
+              JiraCMDBField_name: name
+              JiraCMDBField_description: description
+              JiraCMDBField_isMulti: isMulti
+              JiraCMDBField_searchUrl: searchUrl
+              JiraCMDBField_selectedCmdbObjects: selectedCmdbObjects {
+                id
+                objectGlobalId
+                objectId
+                workspaceId
+                label
+                objectKey
+                avatar {
+                  id
+                  avatarUUID
+                  url16
+                  url48
+                  url72
+                  url144
+                  url288
+                  mediaClientConfig {
+                    clientId
+                    issuer
+                    fileId
+                    mediaBaseUrl
+                    mediaJwtToken
+                  }
+                }
+                objectType {
+                  objectTypeId
+                  name
+                  description
+                  icon {
+                    id
+                    name
+                    url16
+                    url48
+                  }
+                  objectSchemaId
+                }
+                attributes {
+                  totalCount
+                  pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
+                  }
+                  edges {
+                    node {
+                      attributeId
+                      objectTypeAttributeId
+                      objectTypeAttribute {
+                        name
+                        label
+                        type
+                        description
+                        objectType {
+                          objectTypeId
+                          name
+                          description
+                          objectSchemaId
+                        }
+                        defaultType {
+                          id
+                          name
+                        }
+                        referenceType {
+                          id
+                          name
+                          description
+                          color
+                          webUrl
+                          objectSchemaId
+                        }
+                        referenceObjectTypeId
+                        referenceObjectType {
+                          objectTypeId
+                          name
+                          description
+                          objectSchemaId
+                        }
+                        additionalValue
+                        suffix
+                      }
+                      objectAttributeValues {
+                        totalCount
+                        pageInfo {
+                          hasNextPage
+                          hasPreviousPage
+                          startCursor
+                          endCursor
+                        }
+                        edges {
+                          node {
+                            referencedObject {
+                              id
+                              objectGlobalId
+                              objectId
+                              workspaceId
+                              label
+                              objectKey
+                              webUrl
+                            }
+                            user {
+                              ... on AtlassianAccountUser {
+                                AtlassianAccountUser_accountId: accountId
+                                AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                                AtlassianAccountUser_accountStatus: accountStatus
+                                AtlassianAccountUser_name: name
+                                AtlassianAccountUser_picture: picture
+                                AtlassianAccountUser_email: email
+                                AtlassianAccountUser_zoneinfo: zoneinfo
+                                AtlassianAccountUser_locale: locale
+                              }
+                            }
+                            group {
+                              id
+                              groupId
+                              name
+                            }
+                            status {
+                              id
+                              name
+                              description
+                              category
+                              objectSchemaId
+                            }
+                            value
+                            displayValue
+                            searchValue
+                            additionalValue
+                          }
+                          cursor
+                        }
+                      }
+                    }
+                    cursor
+                  }
+                }
+                webUrl
+              }
+              JiraCMDBField_selectedCmdbObjectsConnection: selectedCmdbObjectsConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    objectGlobalId
+                    objectId
+                    workspaceId
+                    label
+                    objectKey
+                    webUrl
+                  }
+                  cursor
+                }
+              }
+              JiraCMDBField_wasInsightRequestSuccessful: wasInsightRequestSuccessful
+              JiraCMDBField_isInsightAvailable: isInsightAvailable
+              JiraCMDBField_cmdbFieldConfig: cmdbFieldConfig {
+                objectSchemaId
+                objectFilterQuery
+                issueScopeFilterQuery
+                multiple
+                attributesDisplayedOnIssue {
+                  totalCount
+                  pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
+                  }
+                  edges {
+                    node
+                    cursor
+                  }
+                }
+                attributesIncludedInAutoCompleteSearch {
+                  totalCount
+                }
+              }
+              JiraCMDBField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraCMDBField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraCMDBField_attributesIncludedInAutoCompleteSearch: attributesIncludedInAutoCompleteSearch
+            }
+            ... on JiraSingleVersionPickerField {
+              JiraSingleVersionPickerField_id: id
+              JiraSingleVersionPickerField_fieldId: fieldId
+              JiraSingleVersionPickerField_aliasFieldId: aliasFieldId
+              JiraSingleVersionPickerField_type: type
+              JiraSingleVersionPickerField_name: name
+              JiraSingleVersionPickerField_description: description
+              JiraSingleVersionPickerField_version: version {
+                id
+                versionId
+                name
+                iconUrl
+                status
+                description
+                startDate
+                releaseDate
+                suggestedRelatedWorkCategories
+                canEdit
+              }
+              JiraSingleVersionPickerField_versions: versions {
+                totalCount
+              }
+              JiraSingleVersionPickerField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraSingleVersionPickerField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraMultipleVersionPickerField {
+              JiraMultipleVersionPickerField_id: id
+              JiraMultipleVersionPickerField_fieldId: fieldId
+              JiraMultipleVersionPickerField_aliasFieldId: aliasFieldId
+              JiraMultipleVersionPickerField_type: type
+              JiraMultipleVersionPickerField_name: name
+              JiraMultipleVersionPickerField_description: description
+              JiraMultipleVersionPickerField_selectedVersions: selectedVersions {
+                id
+                versionId
+                name
+                iconUrl
+                status
+                description
+                startDate
+                releaseDate
+                warningConfig {
+                  openPullRequest
+                  openReview
+                  unreviewedCode
+                  failingBuild
+                  canEdit
+                }
+                connectAddonIframeData {
+                  appKey
+                  moduleKey
+                  appName
+                  location
+                  options
+                }
+                issues {
+                  totalCount
+                  jql
+                  issueSearchError {
+                    ... on JiraInvalidJqlError {
+                      JiraInvalidJqlError_messages: messages
+                    }
+                    ... on JiraInvalidSyntaxError {
+                      JiraInvalidSyntaxError_message: message
+                      JiraInvalidSyntaxError_errorType: errorType
+                      JiraInvalidSyntaxError_line: line
+                      JiraInvalidSyntaxError_column: column
+                    }
+                  }
+                  totalIssueSearchResultCount
+                  isCappingIssueSearchResult
+                }
+                relatedWork {
+                  pageInfo {
+                    hasNextPage
+                    hasPreviousPage
+                    startCursor
+                    endCursor
+                  }
+                  edges {
+                    cursor
+                    node {
+                      relatedWorkId
+                      url
+                      title
+                      category
+                      addedOn
+                      addedById
+                    }
+                  }
+                }
+                suggestedRelatedWorkCategories
+                canEdit
+              }
+              JiraMultipleVersionPickerField_selectedVersionsConnection: selectedVersionsConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    versionId
+                    name
+                    iconUrl
+                    status
+                    description
+                    startDate
+                    releaseDate
+                    suggestedRelatedWorkCategories
+                    canEdit
+                  }
+                  cursor
+                }
+              }
+              JiraMultipleVersionPickerField_versions: versions {
+                totalCount
+              }
+              JiraMultipleVersionPickerField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraMultipleVersionPickerField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraForgeGroupField {
+              JiraForgeGroupField_id: id
+              JiraForgeGroupField_fieldId: fieldId
+              JiraForgeGroupField_aliasFieldId: aliasFieldId
+              JiraForgeGroupField_type: type
+              JiraForgeGroupField_name: name
+              JiraForgeGroupField_description: description
+              JiraForgeGroupField_selectedGroup: selectedGroup {
+                id
+                groupId
+                name
+              }
+              JiraForgeGroupField_groups: groups {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    groupId
+                    name
+                  }
+                  cursor
+                }
+              }
+              JiraForgeGroupField_searchUrl: searchUrl
+              JiraForgeGroupField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraForgeGroupField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraForgeGroupField_renderer: renderer
+            }
+            ... on JiraForgeGroupsField {
+              JiraForgeGroupsField_id: id
+              JiraForgeGroupsField_fieldId: fieldId
+              JiraForgeGroupsField_aliasFieldId: aliasFieldId
+              JiraForgeGroupsField_type: type
+              JiraForgeGroupsField_name: name
+              JiraForgeGroupsField_description: description
+              JiraForgeGroupsField_selectedGroups: selectedGroups {
+                id
+                groupId
+                name
+              }
+              JiraForgeGroupsField_selectedGroupsConnection: selectedGroupsConnection {
+                totalCount
+              }
+              JiraForgeGroupsField_groups: groups {
+                totalCount
+              }
+              JiraForgeGroupsField_searchUrl: searchUrl
+              JiraForgeGroupsField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraForgeGroupsField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraForgeGroupsField_renderer: renderer
+            }
+            ... on JiraWatchesField {
+              JiraWatchesField_id: id
+              JiraWatchesField_fieldId: fieldId
+              JiraWatchesField_aliasFieldId: aliasFieldId
+              JiraWatchesField_type: type
+              JiraWatchesField_name: name
+              JiraWatchesField_description: description
+              JiraWatchesField_watch: watch {
+                isWatching
+                count
+              }
+              JiraWatchesField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraWatchesField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraAtlassianTeamField {
+              JiraAtlassianTeamField_id: id
+              JiraAtlassianTeamField_fieldId: fieldId
+              JiraAtlassianTeamField_aliasFieldId: aliasFieldId
+              JiraAtlassianTeamField_type: type
+              JiraAtlassianTeamField_name: name
+              JiraAtlassianTeamField_description: description
+              JiraAtlassianTeamField_selectedTeam: selectedTeam {
+                teamId
+                name
+                avatar {
+                  xsmall
+                  small
+                  medium
+                  large
+                }
+              }
+              JiraAtlassianTeamField_teams: teams {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    teamId
+                    name
+                  }
+                  cursor
+                }
+              }
+              JiraAtlassianTeamField_searchUrl: searchUrl
+              JiraAtlassianTeamField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraAtlassianTeamField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraSprintField {
+              JiraSprintField_id: id
+              JiraSprintField_fieldId: fieldId
+              JiraSprintField_aliasFieldId: aliasFieldId
+              JiraSprintField_type: type
+              JiraSprintField_name: name
+              JiraSprintField_description: description
+              JiraSprintField_selectedSprints: selectedSprints {
+                id
+                sprintId
+                name
+                state
+                boardName
+                startDate
+                endDate
+                completionDate
+                goal
+              }
+              JiraSprintField_selectedSprintsConnection: selectedSprintsConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    sprintId
+                    name
+                    state
+                    boardName
+                    startDate
+                    endDate
+                    completionDate
+                    goal
+                  }
+                  cursor
+                }
+              }
+              JiraSprintField_sprints: sprints {
+                totalCount
+              }
+              JiraSprintField_searchUrl: searchUrl
+              JiraSprintField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraSprintField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraSecurityLevelField {
+              JiraSecurityLevelField_id: id
+              JiraSecurityLevelField_fieldId: fieldId
+              JiraSecurityLevelField_aliasFieldId: aliasFieldId
+              JiraSecurityLevelField_type: type
+              JiraSecurityLevelField_name: name
+              JiraSecurityLevelField_description: description
+              JiraSecurityLevelField_securityLevel: securityLevel {
+                id
+                securityId
+                name
+                description
+              }
+              JiraSecurityLevelField_securityLevels: securityLevels {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    securityId
+                    name
+                    description
+                  }
+                  cursor
+                }
+              }
+              JiraSecurityLevelField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraSecurityLevelField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraPeopleField {
+              JiraPeopleField_id: id
+              JiraPeopleField_fieldId: fieldId
+              JiraPeopleField_aliasFieldId: aliasFieldId
+              JiraPeopleField_type: type
+              JiraPeopleField_name: name
+              JiraPeopleField_description: description
+              JiraPeopleField_selectedUsers: selectedUsers {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraPeopleField_selectedUsersConnection: selectedUsersConnection {
+                totalCount
+              }
+              JiraPeopleField_isMulti: isMulti
+              JiraPeopleField_users: users {
+                totalCount
+              }
+              JiraPeopleField_searchUrl: searchUrl
+              JiraPeopleField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraPeopleField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraForgeDatetimeField {
+              JiraForgeDatetimeField_id: id
+              JiraForgeDatetimeField_fieldId: fieldId
+              JiraForgeDatetimeField_aliasFieldId: aliasFieldId
+              JiraForgeDatetimeField_type: type
+              JiraForgeDatetimeField_name: name
+              JiraForgeDatetimeField_description: description
+              JiraForgeDatetimeField_dateTime: dateTime
+              JiraForgeDatetimeField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraForgeDatetimeField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraForgeDatetimeField_renderer: renderer
+            }
+            ... on JiraServiceManagementRequestTypeField {
+              JiraServiceManagementRequestTypeField_id: id
+              JiraServiceManagementRequestTypeField_fieldId: fieldId
+              JiraServiceManagementRequestTypeField_aliasFieldId: aliasFieldId
+              JiraServiceManagementRequestTypeField_type: type
+              JiraServiceManagementRequestTypeField_name: name
+              JiraServiceManagementRequestTypeField_description: description
+              JiraServiceManagementRequestTypeField_requestType: requestType {
+                id
+                requestTypeId
+                name
+                key
+                description
+                helpText
+                issueType {
+                  id
+                  issueTypeId
+                  name
+                  description
+                }
+                portalId
+                avatar {
+                  xsmall
+                  small
+                  medium
+                  large
+                }
+                practices {
+                  key
+                }
+              }
+              JiraServiceManagementRequestTypeField_requestTypes: requestTypes {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    requestTypeId
+                    name
+                    key
+                    description
+                    helpText
+                    portalId
+                  }
+                  cursor
+                }
+              }
+              JiraServiceManagementRequestTypeField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+            }
+            ... on JiraEpicLinkField {
+              JiraEpicLinkField_id: id
+              JiraEpicLinkField_fieldId: fieldId
+              JiraEpicLinkField_aliasFieldId: aliasFieldId
+              JiraEpicLinkField_type: type
+              JiraEpicLinkField_name: name
+              JiraEpicLinkField_description: description
+              JiraEpicLinkField_epic: epic {
+                id
+                issueId
+                name
+                key
+                summary
+                color
+                done
+              }
+              JiraEpicLinkField_epics: epics {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    issueId
+                    name
+                    key
+                    summary
+                    color
+                    done
+                  }
+                  cursor
+                }
+              }
+              JiraEpicLinkField_searchUrl: searchUrl
+              JiraEpicLinkField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraEpicLinkField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraRadioSelectField {
+              JiraRadioSelectField_id: id
+              JiraRadioSelectField_fieldId: fieldId
+              JiraRadioSelectField_aliasFieldId: aliasFieldId
+              JiraRadioSelectField_type: type
+              JiraRadioSelectField_name: name
+              JiraRadioSelectField_description: description
+              JiraRadioSelectField_selectedOption: selectedOption {
+                id
+                optionId
+                value
+                isDisabled
+              }
+              JiraRadioSelectField_fieldOptions: fieldOptions {
+                totalCount
+              }
+              JiraRadioSelectField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraRadioSelectField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraAttachmentsField {
+              JiraAttachmentsField_id: id
+              JiraAttachmentsField_fieldId: fieldId
+              JiraAttachmentsField_aliasFieldId: aliasFieldId
+              JiraAttachmentsField_type: type
+              JiraAttachmentsField_name: name
+              JiraAttachmentsField_description: description
+              JiraAttachmentsField_permissions: permissions
+              JiraAttachmentsField_attachments: attachments {
+                indicativeCount
+              }
+              JiraAttachmentsField_maxAllowedTotalAttachmentsSize: maxAllowedTotalAttachmentsSize
+              JiraAttachmentsField_mediaContext: mediaContext {
+                uploadToken {
+                  ... on JiraMediaUploadToken {
+                    JiraMediaUploadToken_endpointUrl: endpointUrl
+                    JiraMediaUploadToken_clientId: clientId
+                    JiraMediaUploadToken_targetCollection: targetCollection
+                    JiraMediaUploadToken_token: token
+                    JiraMediaUploadToken_tokenDurationInMin: tokenDurationInMin
+                  }
+                  ... on QueryError {
+                    QueryError_identifier: identifier
+                    QueryError_message: message
+                    QueryError_extensions: extensions {
+                      ... on GenericQueryErrorExtension {
+                        GenericQueryErrorExtension_statusCode: statusCode
+                        GenericQueryErrorExtension_errorType: errorType
+                      }
+                    }
+                  }
+                }
+              }
+              JiraAttachmentsField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraAttachmentsField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraParentIssueField {
+              JiraParentIssueField_id: id
+              JiraParentIssueField_fieldId: fieldId
+              JiraParentIssueField_aliasFieldId: aliasFieldId
+              JiraParentIssueField_type: type
+              JiraParentIssueField_name: name
+              JiraParentIssueField_description: description
+              JiraParentIssueField_parentIssue: parentIssue {
+                id
+                issueId
+                key
+                webUrl
+                childIssues {
+                  ... on JiraChildIssuesExceedingLimit {
+                    JiraChildIssuesExceedingLimit_search: search
+                  }
+                }
+                errorRetrievingData
+                screenId
+              }
+              JiraParentIssueField_parentVisibility: parentVisibility {
+                hasEpicLinkFieldDependency
+                canUseParentLinkField
+              }
+              JiraParentIssueField_searchUrl: searchUrl
+              JiraParentIssueField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraParentIssueField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraForgeStringsField {
+              JiraForgeStringsField_id: id
+              JiraForgeStringsField_fieldId: fieldId
+              JiraForgeStringsField_aliasFieldId: aliasFieldId
+              JiraForgeStringsField_type: type
+              JiraForgeStringsField_name: name
+              JiraForgeStringsField_description: description
+              JiraForgeStringsField_selectedLabels: selectedLabels {
+                labelId
+                name
+              }
+              JiraForgeStringsField_selectedLabelsConnection: selectedLabelsConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    labelId
+                    name
+                  }
+                  cursor
+                }
+              }
+              JiraForgeStringsField_labels: labels {
+                totalCount
+              }
+              JiraForgeStringsField_searchUrl: searchUrl
+              JiraForgeStringsField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraForgeStringsField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraForgeStringsField_renderer: renderer
+            }
+            ... on JiraConnectSingleSelectField {
+              JiraConnectSingleSelectField_id: id
+              JiraConnectSingleSelectField_fieldId: fieldId
+              JiraConnectSingleSelectField_aliasFieldId: aliasFieldId
+              JiraConnectSingleSelectField_type: type
+              JiraConnectSingleSelectField_name: name
+              JiraConnectSingleSelectField_description: description
+              JiraConnectSingleSelectField_fieldOption: fieldOption {
+                id
+                optionId
+                value
+                isDisabled
+              }
+              JiraConnectSingleSelectField_fieldOptions: fieldOptions {
+                totalCount
+              }
+              JiraConnectSingleSelectField_searchUrl: searchUrl
+              JiraConnectSingleSelectField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraConnectSingleSelectField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraWorkCategoryField {
+              JiraWorkCategoryField_id: id
+              JiraWorkCategoryField_fieldId: fieldId
+              JiraWorkCategoryField_aliasFieldId: aliasFieldId
+              JiraWorkCategoryField_type: type
+              JiraWorkCategoryField_name: name
+              JiraWorkCategoryField_description: description
+              JiraWorkCategoryField_workCategory: workCategory {
+                value
+              }
+              JiraWorkCategoryField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+            }
+            ... on JiraUrlField {
+              JiraUrlField_id: id
+              JiraUrlField_fieldId: fieldId
+              JiraUrlField_aliasFieldId: aliasFieldId
+              JiraUrlField_type: type
+              JiraUrlField_name: name
+              JiraUrlField_description: description
+              JiraUrlField_url: url
+              JiraUrlField_urlValue: urlValue
+              JiraUrlField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraUrlField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraAffectedServicesField {
+              JiraAffectedServicesField_id: id
+              JiraAffectedServicesField_fieldId: fieldId
+              JiraAffectedServicesField_aliasFieldId: aliasFieldId
+              JiraAffectedServicesField_type: type
+              JiraAffectedServicesField_name: name
+              JiraAffectedServicesField_description: description
+              JiraAffectedServicesField_selectedAffectedServices: selectedAffectedServices {
+                serviceId
+                name
+              }
+              JiraAffectedServicesField_selectedAffectedServicesConnection: selectedAffectedServicesConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    serviceId
+                    name
+                  }
+                  cursor
+                }
+              }
+              JiraAffectedServicesField_affectedServices: affectedServices {
+                totalCount
+              }
+              JiraAffectedServicesField_searchUrl: searchUrl
+              JiraAffectedServicesField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraAffectedServicesField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraDateTimePickerField {
+              JiraDateTimePickerField_id: id
+              JiraDateTimePickerField_fieldId: fieldId
+              JiraDateTimePickerField_aliasFieldId: aliasFieldId
+              JiraDateTimePickerField_type: type
+              JiraDateTimePickerField_name: name
+              JiraDateTimePickerField_description: description
+              JiraDateTimePickerField_dateTime: dateTime
+              JiraDateTimePickerField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraDateTimePickerField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraSubtasksField {
+              JiraSubtasksField_id: id
+              JiraSubtasksField_fieldId: fieldId
+              JiraSubtasksField_aliasFieldId: aliasFieldId
+              JiraSubtasksField_type: type
+              JiraSubtasksField_name: name
+              JiraSubtasksField_description: description
+              JiraSubtasksField_subtasks: subtasks {
+                totalCount
+                jql
+                issueSearchError {
+                  ... on JiraInvalidJqlError {
+                    JiraInvalidJqlError_messages: messages
+                  }
+                  ... on JiraInvalidSyntaxError {
+                    JiraInvalidSyntaxError_message: message
+                    JiraInvalidSyntaxError_errorType: errorType
+                    JiraInvalidSyntaxError_line: line
+                    JiraInvalidSyntaxError_column: column
+                  }
+                }
+                totalIssueSearchResultCount
+                isCappingIssueSearchResult
+              }
+              JiraSubtasksField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+            }
+            ... on JiraStatusCategoryField {
+              JiraStatusCategoryField_id: id
+              JiraStatusCategoryField_fieldId: fieldId
+              JiraStatusCategoryField_aliasFieldId: aliasFieldId
+              JiraStatusCategoryField_type: type
+              JiraStatusCategoryField_name: name
+              JiraStatusCategoryField_description: description
+              JiraStatusCategoryField_statusCategory: statusCategory {
+                id
+                statusCategoryId
+                key
+                name
+                colorName
+              }
+              JiraStatusCategoryField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraStatusCategoryField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraServiceManagementMajorIncidentField {
+              JiraServiceManagementMajorIncidentField_id: id
+              JiraServiceManagementMajorIncidentField_fieldId: fieldId
+              JiraServiceManagementMajorIncidentField_aliasFieldId: aliasFieldId
+              JiraServiceManagementMajorIncidentField_type: type
+              JiraServiceManagementMajorIncidentField_name: name
+              JiraServiceManagementMajorIncidentField_description: description
+              JiraServiceManagementMajorIncidentField_majorIncident: majorIncident
+              JiraServiceManagementMajorIncidentField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraServiceManagementMajorIncidentField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraRichTextField {
+              JiraRichTextField_id: id
+              JiraRichTextField_fieldId: fieldId
+              JiraRichTextField_aliasFieldId: aliasFieldId
+              JiraRichTextField_type: type
+              JiraRichTextField_name: name
+              JiraRichTextField_description: description
+              JiraRichTextField_richText: richText {
+                plainText
+                wikiValue
+              }
+              JiraRichTextField_renderer: renderer
+              JiraRichTextField_mediaContext: mediaContext {
+                uploadToken {
+                  ... on JiraMediaUploadToken {
+                    JiraMediaUploadToken_endpointUrl: endpointUrl
+                    JiraMediaUploadToken_clientId: clientId
+                    JiraMediaUploadToken_targetCollection: targetCollection
+                    JiraMediaUploadToken_token: token
+                    JiraMediaUploadToken_tokenDurationInMin: tokenDurationInMin
+                  }
+                  ... on QueryError {
+                    QueryError_identifier: identifier
+                    QueryError_message: message
+                    QueryError_extensions: extensions {
+                      ... on GenericQueryErrorExtension {
+                        GenericQueryErrorExtension_statusCode: statusCode
+                        GenericQueryErrorExtension_errorType: errorType
+                      }
+                    }
+                  }
+                }
+              }
+              JiraRichTextField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraRichTextField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraForgeStringField {
+              JiraForgeStringField_id: id
+              JiraForgeStringField_fieldId: fieldId
+              JiraForgeStringField_aliasFieldId: aliasFieldId
+              JiraForgeStringField_type: type
+              JiraForgeStringField_name: name
+              JiraForgeStringField_description: description
+              JiraForgeStringField_text: text
+              JiraForgeStringField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraForgeStringField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraForgeStringField_renderer: renderer
+            }
+            ... on JiraSingleSelectUserPickerField {
+              JiraSingleSelectUserPickerField_id: id
+              JiraSingleSelectUserPickerField_fieldId: fieldId
+              JiraSingleSelectUserPickerField_aliasFieldId: aliasFieldId
+              JiraSingleSelectUserPickerField_type: type
+              JiraSingleSelectUserPickerField_name: name
+              JiraSingleSelectUserPickerField_description: description
+              JiraSingleSelectUserPickerField_user: user {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraSingleSelectUserPickerField_users: users {
+                totalCount
+              }
+              JiraSingleSelectUserPickerField_searchUrl: searchUrl
+              JiraSingleSelectUserPickerField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraSingleSelectUserPickerField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraMultipleSelectUserPickerField {
+              JiraMultipleSelectUserPickerField_id: id
+              JiraMultipleSelectUserPickerField_fieldId: fieldId
+              JiraMultipleSelectUserPickerField_aliasFieldId: aliasFieldId
+              JiraMultipleSelectUserPickerField_type: type
+              JiraMultipleSelectUserPickerField_name: name
+              JiraMultipleSelectUserPickerField_description: description
+              JiraMultipleSelectUserPickerField_selectedUsers: selectedUsers {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraMultipleSelectUserPickerField_selectedUsersConnection: selectedUsersConnection {
+                totalCount
+              }
+              JiraMultipleSelectUserPickerField_users: users {
+                totalCount
+              }
+              JiraMultipleSelectUserPickerField_searchUrl: searchUrl
+              JiraMultipleSelectUserPickerField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraMultipleSelectUserPickerField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraFlagField {
+              JiraFlagField_id: id
+              JiraFlagField_fieldId: fieldId
+              JiraFlagField_aliasFieldId: aliasFieldId
+              JiraFlagField_type: type
+              JiraFlagField_name: name
+              JiraFlagField_description: description
+              JiraFlagField_flag: flag {
+                isFlagged
+              }
+              JiraFlagField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraFlagField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraDevSummaryField {
+              JiraDevSummaryField_id: id
+              JiraDevSummaryField_fieldId: fieldId
+              JiraDevSummaryField_aliasFieldId: aliasFieldId
+              JiraDevSummaryField_type: type
+              JiraDevSummaryField_name: name
+              JiraDevSummaryField_description: description
+            }
+            ... on JiraServiceManagementIncidentLinkingField {
+              JiraServiceManagementIncidentLinkingField_id: id
+              JiraServiceManagementIncidentLinkingField_fieldId: fieldId
+              JiraServiceManagementIncidentLinkingField_aliasFieldId: aliasFieldId
+              JiraServiceManagementIncidentLinkingField_type: type
+              JiraServiceManagementIncidentLinkingField_name: name
+              JiraServiceManagementIncidentLinkingField_description: description
+              JiraServiceManagementIncidentLinkingField_incident: incident {
+                hasLinkedIncidents
+              }
+              JiraServiceManagementIncidentLinkingField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+            }
+            ... on JiraCheckboxesField {
+              JiraCheckboxesField_id: id
+              JiraCheckboxesField_fieldId: fieldId
+              JiraCheckboxesField_aliasFieldId: aliasFieldId
+              JiraCheckboxesField_type: type
+              JiraCheckboxesField_name: name
+              JiraCheckboxesField_description: description
+              JiraCheckboxesField_selectedFieldOptions: selectedFieldOptions {
+                id
+                optionId
+                value
+                isDisabled
+              }
+              JiraCheckboxesField_selectedOptions: selectedOptions {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    optionId
+                    value
+                    isDisabled
+                  }
+                  cursor
+                }
+              }
+              JiraCheckboxesField_fieldOptions: fieldOptions {
+                totalCount
+              }
+              JiraCheckboxesField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraCheckboxesField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraServiceManagementOrganizationField {
+              JiraServiceManagementOrganizationField_id: id
+              JiraServiceManagementOrganizationField_fieldId: fieldId
+              JiraServiceManagementOrganizationField_aliasFieldId: aliasFieldId
+              JiraServiceManagementOrganizationField_type: type
+              JiraServiceManagementOrganizationField_name: name
+              JiraServiceManagementOrganizationField_description: description
+              JiraServiceManagementOrganizationField_selectedOrganizations: selectedOrganizations {
+                organizationId
+                organizationName
+                domain
+              }
+              JiraServiceManagementOrganizationField_selectedOrganizationsConnection: selectedOrganizationsConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    organizationId
+                    organizationName
+                    domain
+                  }
+                  cursor
+                }
+              }
+              JiraServiceManagementOrganizationField_organizations: organizations {
+                totalCount
+              }
+              JiraServiceManagementOrganizationField_searchUrl: searchUrl
+              JiraServiceManagementOrganizationField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraServiceManagementOrganizationField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraForgeUserField {
+              JiraForgeUserField_id: id
+              JiraForgeUserField_fieldId: fieldId
+              JiraForgeUserField_aliasFieldId: aliasFieldId
+              JiraForgeUserField_type: type
+              JiraForgeUserField_name: name
+              JiraForgeUserField_description: description
+              JiraForgeUserField_user: user {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraForgeUserField_users: users {
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    ... on AtlassianAccountUser {
+                      AtlassianAccountUser_accountId: accountId
+                      AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                      AtlassianAccountUser_accountStatus: accountStatus
+                      AtlassianAccountUser_name: name
+                      AtlassianAccountUser_picture: picture
+                      AtlassianAccountUser_email: email
+                      AtlassianAccountUser_zoneinfo: zoneinfo
+                      AtlassianAccountUser_locale: locale
+                    }
+                  }
+                  cursor
+                }
+                totalCount
+              }
+              JiraForgeUserField_searchUrl: searchUrl
+              JiraForgeUserField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraForgeUserField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraForgeUserField_renderer: renderer
+            }
+            ... on JiraComponentsField {
+              JiraComponentsField_id: id
+              JiraComponentsField_fieldId: fieldId
+              JiraComponentsField_aliasFieldId: aliasFieldId
+              JiraComponentsField_type: type
+              JiraComponentsField_name: name
+              JiraComponentsField_description: description
+              JiraComponentsField_selectedComponents: selectedComponents {
+                id
+                componentId
+                name
+                description
+              }
+              JiraComponentsField_selectedComponentsConnection: selectedComponentsConnection {
+                totalCount
+                pageInfo {
+                  hasNextPage
+                  hasPreviousPage
+                  startCursor
+                  endCursor
+                }
+                edges {
+                  node {
+                    id
+                    componentId
+                    name
+                    description
+                  }
+                  cursor
+                }
+              }
+              JiraComponentsField_components: components {
+                totalCount
+              }
+              JiraComponentsField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraComponentsField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+            }
+            ... on JiraForgeObjectField {
+              JiraForgeObjectField_id: id
+              JiraForgeObjectField_fieldId: fieldId
+              JiraForgeObjectField_aliasFieldId: aliasFieldId
+              JiraForgeObjectField_type: type
+              JiraForgeObjectField_name: name
+              JiraForgeObjectField_description: description
+              JiraForgeObjectField_object: object
+              JiraForgeObjectField_fieldConfig: fieldConfig {
+                isRequired
+                isEditable
+              }
+              JiraForgeObjectField_userFieldConfig: userFieldConfig {
+                isPinned
+                isSelected
+              }
+              JiraForgeObjectField_renderer: renderer
+            }
+          }
+          cursor
+        }
+      }
+      comments {
+        indicativeCount
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        edges {
+          node {
+            ... on JiraPlatformComment {
+              JiraPlatformComment_id: id
+              JiraPlatformComment_commentId: commentId
+              JiraPlatformComment_issue: issue {
+                id
+                issueId
+                key
+                webUrl
+                childIssues {
+                  ... on JiraChildIssuesExceedingLimit {
+                    JiraChildIssuesExceedingLimit_search: search
+                  }
+                }
+                errorRetrievingData
+                screenId
+              }
+              JiraPlatformComment_webUrl: webUrl
+              JiraPlatformComment_author: author {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraPlatformComment_updateAuthor: updateAuthor {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraPlatformComment_richText: richText {
+                plainText
+                wikiValue
+              }
+              JiraPlatformComment_created: created
+              JiraPlatformComment_updated: updated
+              JiraPlatformComment_permissionLevel: permissionLevel {
+                group {
+                  id
+                  groupId
+                  name
+                }
+                role {
+                  id
+                  roleId
+                  name
+                  description
+                }
+              }
+            }
+            ... on JiraServiceManagementComment {
+              JiraServiceManagementComment_id: id
+              JiraServiceManagementComment_commentId: commentId
+              JiraServiceManagementComment_issue: issue {
+                id
+                issueId
+                key
+                webUrl
+                childIssues {
+                  ... on JiraChildIssuesExceedingLimit {
+                    JiraChildIssuesExceedingLimit_search: search
+                  }
+                }
+                errorRetrievingData
+                screenId
+              }
+              JiraServiceManagementComment_webUrl: webUrl
+              JiraServiceManagementComment_author: author {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraServiceManagementComment_updateAuthor: updateAuthor {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraServiceManagementComment_richText: richText {
+                plainText
+                wikiValue
+              }
+              JiraServiceManagementComment_created: created
+              JiraServiceManagementComment_updated: updated
+              JiraServiceManagementComment_visibility: visibility
+              JiraServiceManagementComment_authorCanSeeRequest: authorCanSeeRequest
+            }
+          }
+          cursor
+        }
+      }
+      worklogs {
+        indicativeCount
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        edges {
+          node {
+            id
+            worklogId
+            author {
+              ... on AtlassianAccountUser {
+                AtlassianAccountUser_accountId: accountId
+                AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                AtlassianAccountUser_accountStatus: accountStatus
+                AtlassianAccountUser_name: name
+                AtlassianAccountUser_picture: picture
+                AtlassianAccountUser_email: email
+                AtlassianAccountUser_zoneinfo: zoneinfo
+                AtlassianAccountUser_locale: locale
+              }
+            }
+            updateAuthor {
+              ... on AtlassianAccountUser {
+                AtlassianAccountUser_accountId: accountId
+                AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                AtlassianAccountUser_accountStatus: accountStatus
+                AtlassianAccountUser_name: name
+                AtlassianAccountUser_picture: picture
+                AtlassianAccountUser_email: email
+                AtlassianAccountUser_zoneinfo: zoneinfo
+                AtlassianAccountUser_locale: locale
+              }
+            }
+            timeSpent {
+              timeInSeconds
+            }
+            remainingEstimate {
+              timeInSeconds
+            }
+            created
+            updated
+            startDate
+            workDescription {
+              plainText
+              wikiValue
+            }
+          }
+          cursor
+        }
+      }
+      attachments {
+        indicativeCount
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        edges {
+          node {
+            ... on JiraServiceManagementAttachment {
+              JiraServiceManagementAttachment_id: id
+              JiraServiceManagementAttachment_attachmentId: attachmentId
+              JiraServiceManagementAttachment_author: author {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraServiceManagementAttachment_mediaApiFileId: mediaApiFileId
+              JiraServiceManagementAttachment_created: created
+              JiraServiceManagementAttachment_mimeType: mimeType
+              JiraServiceManagementAttachment_fileName: fileName
+              JiraServiceManagementAttachment_fileSize: fileSize
+              JiraServiceManagementAttachment_parentName: parentName
+              JiraServiceManagementAttachment_parentId: parentId
+              JiraServiceManagementAttachment_parentCommentVisibility: parentCommentVisibility
+            }
+            ... on JiraPlatformAttachment {
+              JiraPlatformAttachment_id: id
+              JiraPlatformAttachment_attachmentId: attachmentId
+              JiraPlatformAttachment_author: author {
+                ... on AtlassianAccountUser {
+                  AtlassianAccountUser_accountId: accountId
+                  AtlassianAccountUser_canonicalAccountId: canonicalAccountId
+                  AtlassianAccountUser_accountStatus: accountStatus
+                  AtlassianAccountUser_name: name
+                  AtlassianAccountUser_picture: picture
+                  AtlassianAccountUser_email: email
+                  AtlassianAccountUser_zoneinfo: zoneinfo
+                  AtlassianAccountUser_locale: locale
+                }
+              }
+              JiraPlatformAttachment_created: created
+              JiraPlatformAttachment_mediaApiFileId: mediaApiFileId
+              JiraPlatformAttachment_mimeType: mimeType
+              JiraPlatformAttachment_fileName: fileName
+              JiraPlatformAttachment_fileSize: fileSize
+              JiraPlatformAttachment_parentName: parentName
+              JiraPlatformAttachment_parentId: parentId
+            }
+          }
+          cursor
+        }
+      }
+      fieldSets {
+        totalCount
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        edges {
+          node {
+            fieldSetId
+            type
+            fields {
+              totalCount
+            }
+          }
+          cursor
+        }
+      }
+      fieldSetsForIssueSearchView {
+        totalCount
+      }
+      issueLinks {
+        totalCount
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        edges {
+          node {
+            id
+            issueLinkId
+            relatedBy {
+              id
+              relationName
+              linkTypeId
+              linkTypeName
+              direction
+            }
+            issue {
+              id
+              issueId
+              key
+              webUrl
+              childIssues {
+                ... on JiraChildIssuesExceedingLimit {
+                  JiraChildIssuesExceedingLimit_search: search
+                }
+              }
+              errorRetrievingData
+              screenId
+            }
+          }
+          cursor
+        }
+      }
+      childIssues {
+        ... on JiraChildIssuesWithinLimit {
+          JiraChildIssuesWithinLimit_issues: issues {
+            totalCount
+            pageInfo {
+              hasNextPage
+              hasPreviousPage
+              startCursor
+              endCursor
+            }
+            jql
+            edges {
+              node {
+                id
+                issueId
+                key
+                webUrl
+                childIssues {
+                  ... on JiraChildIssuesExceedingLimit {
+                    JiraChildIssuesExceedingLimit_search: search
+                  }
+                }
+                errorRetrievingData
+                screenId
+              }
+              cursor
+            }
+            issueSearchError {
+              ... on JiraInvalidJqlError {
+                JiraInvalidJqlError_messages: messages
+              }
+              ... on JiraInvalidSyntaxError {
+                JiraInvalidSyntaxError_message: message
+                JiraInvalidSyntaxError_errorType: errorType
+                JiraInvalidSyntaxError_line: line
+                JiraInvalidSyntaxError_column: column
+              }
+            }
+            totalIssueSearchResultCount
+            isCappingIssueSearchResult
+            issueNavigatorPageInfo {
+              firstIssuePosition
+              lastIssuePosition
+              firstIssueKeyFromNextPage
+              lastIssueKeyFromPreviousPage
+            }
+          }
+        }
+        ... on JiraChildIssuesExceedingLimit {
+          JiraChildIssuesExceedingLimit_search: search
+        }
+      }
+      devSummaryCache {
+        devSummary {
+          branch {
+            overall {
+              count
+              lastUpdated
+            }
+            summaryByProvider {
+              providerId
+              name
+              count
+            }
+          }
+          commit {
+            overall {
+              count
+              lastUpdated
+            }
+            summaryByProvider {
+              providerId
+              name
+              count
+            }
+          }
+          pullrequest {
+            overall {
+              count
+              lastUpdated
+              state
+              stateCount
+              open
+            }
+            summaryByProvider {
+              providerId
+              name
+              count
+            }
+          }
+          build {
+            overall {
+              count
+              lastUpdated
+              failedBuildCount
+              successfulBuildCount
+              unknownBuildCount
+            }
+            summaryByProvider {
+              providerId
+              name
+              count
+            }
+          }
+          review {
+            overall {
+              count
+              lastUpdated
+              state
+              stateCount
+            }
+            summaryByProvider {
+              providerId
+              name
+              count
+            }
+          }
+          deploymentEnvironments {
+            overall {
+              count
+              lastUpdated
+              topEnvironments {
+                title
+                status
+              }
+            }
+            summaryByProvider {
+              providerId
+              name
+              count
+            }
+          }
+        }
+        errors {
+          message
+          instance {
+            name
+            type
+            baseUrl
+          }
+        }
+        configErrors {
+          message
+        }
+      }
+      devInfoDetails {
+        pullRequests {
+          details {
+            providerPullRequestId
+            entityUrl
+            name
+            branchName
+            lastUpdated
+            status
+            author {
+              avatar {
+                xsmall
+                small
+                medium
+                large
+              }
+              name
+            }
+            reviewers {
+              avatar {
+                xsmall
+                small
+                medium
+                large
+              }
+              name
+              hasApproved
+            }
+          }
+          configErrors {
+            errorType
+            dataProviderId
+          }
+        }
+        branches {
+          details {
+            providerBranchId
+            entityUrl
+            name
+            scmRepository {
+              name
+              entityUrl
+            }
+          }
+          configErrors {
+            errorType
+            dataProviderId
+          }
+        }
+        commits {
+          details {
+            providerCommitId
+            displayCommitId
+            entityUrl
+            name
+            created
+            author {
+              name
+            }
+            isMergeCommit
+            scmRepository {
+              name
+              entityUrl
+            }
+          }
+          configErrors {
+            errorType
+            dataProviderId
+          }
+        }
+      }
+      hierarchyLevelBelow {
+        level
+        name
+      }
+      hierarchyLevelAbove {
+        level
+        name
+      }
+      issueTypesForHierarchyBelow {
+        totalCount
+        pageInfo {
+          hasNextPage
+          hasPreviousPage
+          startCursor
+          endCursor
+        }
+        edges {
+          node {
+            id
+            issueTypeId
+            name
+            description
+            avatar {
+              xsmall
+              small
+              medium
+              large
+            }
+            hierarchy {
+              level
+              name
+            }
+          }
+          cursor
+        }
+      }
+      issueTypesForHierarchyAbove {
+        totalCount
+      }
+      issueTypesForHierarchySame {
+        totalCount
+      }
+      errorRetrievingData
+      storyPointsField {
+        id
+        fieldId
+        aliasFieldId
+        type
+        name
+        description
+        number
+        fieldConfig {
+          isRequired
+          isEditable
+          nonEditableReason {
+            message
+          }
+        }
+        userFieldConfig {
+          isPinned
+          isSelected
+        }
+        isStoryPointField
+      }
+      storyPointEstimateField {
+        id
+        fieldId
+        aliasFieldId
+        type
+        name
+        description
+        number
+        isStoryPointField
+      }
+      screenId
+    }
+  }
+}

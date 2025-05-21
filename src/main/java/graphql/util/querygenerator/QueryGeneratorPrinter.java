@@ -30,7 +30,8 @@ public class QueryGeneratorPrinter {
     private String printFieldsForTopLevelType(String typeClassifier, QueryGeneratorFieldSelection.FieldSelection fieldSelections) {
         boolean hasTypeClassifier = typeClassifier != null;
 
-        return fieldSelections.fields.stream()
+        // TODO: this is awful. We should reuse the multiple containers logic somehow
+        return fieldSelections.fieldsByContainer.values().iterator().next().stream()
                 .map(this::printField)
                 .collect(Collectors.joining(
                         "",
@@ -75,18 +76,38 @@ public class QueryGeneratorPrinter {
     }
 
     private String printField(QueryGeneratorFieldSelection.FieldSelection fieldSelection) {
+        return printField(fieldSelection, null);
+    }
+
+    private String printField(QueryGeneratorFieldSelection.FieldSelection fieldSelection, @Nullable String aliasPrefix) {
         // It is possible that some container fields ended up with empty fields (due to filtering etc). We shouldn't print those
-        if(fieldSelection.fields != null && fieldSelection.fields.isEmpty()) {
+        if(fieldSelection.fieldsByContainer != null && fieldSelection.fieldsByContainer.isEmpty()) {
             return "";
         }
 
         StringBuilder sb = new StringBuilder();
+        if(aliasPrefix != null) {
+            sb.append(aliasPrefix).append(fieldSelection.name).append(": ");
+        }
         sb.append(fieldSelection.name);
-        if (fieldSelection.fields != null) {
+        if (fieldSelection.fieldsByContainer != null) {
             sb.append(" {\n");
-            for (QueryGeneratorFieldSelection.FieldSelection subField : fieldSelection.fields) {
-                sb.append(printField(subField));
-            }
+            fieldSelection.fieldsByContainer.forEach((containerName, fieldSelectionList) -> {
+
+                if(fieldSelection.needsTypeClassifier) {
+                    sb.append("... on ").append(containerName).append(" {\n");
+                }
+
+                for (QueryGeneratorFieldSelection.FieldSelection subField : fieldSelectionList) {
+                    sb.append(printField(subField, fieldSelection.needsTypeClassifier ? containerName + "_" : null));
+                }
+
+                if(fieldSelection.needsTypeClassifier) {
+                    sb.append(" }\n");
+                }
+
+            });
+
             sb.append("}\n");
         } else {
             sb.append("\n");

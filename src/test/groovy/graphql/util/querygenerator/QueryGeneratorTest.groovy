@@ -754,6 +754,227 @@ $resultFields
         passed
     }
 
+    def "union fields"() {
+        given:
+        def schema = """
+        type Query {
+          foo: Foo
+        }
+        
+        type Foo {
+          id: ID!
+          barOrBaz: BarOrBaz
+        }
+        
+        union BarOrBaz = Bar | Baz
+        
+        type Bar {
+          id: ID!
+          barName: String
+        }
+        
+        type Baz {
+          id: ID!
+          bazName: String
+        }
+"""
+
+
+        when:
+
+        def fieldPath = "Query.foo"
+        def expected = """
+{
+  foo {
+    ... on Foo {
+      id
+      barOrBaz {
+        ... on Bar {
+          Bar_id: id
+          Bar_barName: barName
+        }
+        ... on Baz {
+          Baz_id: id
+          Baz_bazName: bazName
+        }
+      }
+    }
+  }
+}
+"""
+
+        def passed = executeTest(schema, fieldPath, expected)
+
+        then:
+        passed
+    }
+
+    def "interface fields"() {
+        given:
+        def schema = """
+        type Query {
+          foo: Foo
+        }
+        
+        type Foo {
+          id: ID!
+          barOrBaz: BarOrBaz
+        }
+        
+        interface BarOrBaz {
+          id: ID!
+        }
+        
+        type Bar implements BarOrBaz {
+          id: ID!
+          barName: String
+        }
+        
+        type Baz implements BarOrBaz {
+          id: ID!
+          bazName: String
+        }
+"""
+
+
+        when:
+
+        def fieldPath = "Query.foo"
+        def expected = """
+{
+  foo {
+    ... on Foo {
+      id
+      barOrBaz {
+        ... on Bar {
+          Bar_id: id
+          Bar_barName: barName
+        }
+        ... on Baz {
+          Baz_id: id
+          Baz_bazName: bazName
+        }
+      }
+    }
+  }
+}
+"""
+
+        def passed = executeTest(schema, fieldPath, expected)
+
+        then:
+        passed
+    }
+
+    def "interface fields with a single implementing type"() {
+        given:
+        def schema = """
+        type Query {
+          foo: Foo
+        }
+        
+        type Foo {
+          id: ID!
+          alwaysBar: BarInterface
+        }
+        
+        interface BarInterface {
+          id: ID!
+        }
+        
+        type Bar implements BarInterface {
+          id: ID!
+          barName: String
+        }
+"""
+
+
+        when:
+
+        def fieldPath = "Query.foo"
+        def expected = """
+{
+  foo {
+    ... on Foo {
+      id
+      alwaysBar {
+        ... on Bar {
+          Bar_id: id
+          Bar_barName: barName
+        }
+      }
+    }
+  }
+}
+"""
+
+        def passed = executeTest(schema, fieldPath, expected)
+
+        then:
+        passed
+    }
+
+    def "union fields with a single type in union"() {
+        given:
+        def schema = """
+        type Query {
+          foo: Foo
+        }
+        
+        type Foo {
+          id: ID!
+          alwaysBar: BarUnion
+        }
+        
+        union BarUnion = Bar
+        
+        type Bar {
+          id: ID!
+          barName: String
+        }
+"""
+
+
+        when:
+
+        def fieldPath = "Query.foo"
+        def expected = """
+{
+  foo {
+    ... on Foo {
+      id
+      alwaysBar {
+        ... on Bar {
+          Bar_id: id
+          Bar_barName: barName
+        }
+      }
+    }
+  }
+}
+"""
+
+        def passed = executeTest(schema, fieldPath, expected)
+
+        then:
+        passed
+    }
+
+    def "generates query for large type"() {
+        given:
+        def schema = getClass().getClassLoader().getResourceAsStream("extra-large-schema-1.graphqls").text
+
+        when:
+        def fieldPath = "Query.node"
+
+        def expected = getClass().getClassLoader().getResourceAsStream("querygenerator/generated-query-for-extra-large-schema-1.graphql").text
+
+        def passed = executeTest(schema, fieldPath, null, "(id: \"issue-id-1\")", "JiraIssue", expected, QueryGeneratorOptions.newBuilder().build())
+
+        then:
+        passed
+    }
+
     private static boolean executeTest(
             String schemaDefinition,
             String fieldPath,
