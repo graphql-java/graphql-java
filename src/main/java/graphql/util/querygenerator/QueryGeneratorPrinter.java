@@ -4,7 +4,7 @@ import graphql.language.AstPrinter;
 import graphql.parser.Parser;
 
 import javax.annotation.Nullable;
-import java.util.Map;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class QueryGeneratorPrinter {
@@ -12,30 +12,24 @@ public class QueryGeneratorPrinter {
             String operationFieldPath,
             @Nullable String operationName,
             @Nullable String arguments,
-            Map<String, QueryGeneratorFieldSelection.FieldSelection> fieldSelections
+            QueryGeneratorFieldSelection.FieldSelection rootFieldSelection
     ) {
         String[] fieldPathParts = operationFieldPath.split("\\.");
 
-        String raw = fieldSelections.entrySet().stream()
-                .map(entry -> printFieldsForTopLevelType(entry.getKey(), entry.getValue()))
-                .collect(Collectors.joining(
-                        "",
-                        printOperationStart(fieldPathParts, operationName, arguments),
-                        printOperationEnd(fieldPathParts)
-                ));
+        String fields = printFieldsForTopLevelType(rootFieldSelection);
+        String start = printOperationStart(fieldPathParts, operationName, arguments);
+        String end = printOperationEnd(fieldPathParts);
+        String raw = start + fields + end;
 
         return AstPrinter.printAst(Parser.parse(raw));
     }
 
-    private String printFieldsForTopLevelType(String typeClassifier, QueryGeneratorFieldSelection.FieldSelection fieldSelections) {
-        boolean hasTypeClassifier = typeClassifier != null;
-
-        // TODO: this is awful. We should reuse the multiple containers logic somehow
-        return fieldSelections.fieldsByContainer.values().iterator().next().stream()
-                .map(this::printField)
+    private String printFieldsForTopLevelType(QueryGeneratorFieldSelection.FieldSelection rootFieldSelection) {
+        return rootFieldSelection.fieldsByContainer.values().iterator().next().stream()
+                .map(this::printFieldSelection)
                 .collect(Collectors.joining(
                         "",
-                        hasTypeClassifier ? "... on " + typeClassifier + " {\n" : "",
+                        "... on " + rootFieldSelection.name + " {\n",
                         "}\n"
                 ));
     }
@@ -75,43 +69,61 @@ public class QueryGeneratorPrinter {
         return "}\n".repeat(fieldPathParts.length);
     }
 
-    private String printField(QueryGeneratorFieldSelection.FieldSelection fieldSelection) {
-        return printField(fieldSelection, null);
-    }
+    private String printFieldSelectionForContainer(
+            String containerName,
+            List<QueryGeneratorFieldSelection.FieldSelection> fieldSelections,
+            boolean needsTypeClassifier
+    ) {
+        String fieldStr = fieldSelections.stream()
+                .map(subField ->
+                        printFieldSelection(subField, needsTypeClassifier ? containerName + "_" : null))
+                .collect(Collectors.joining());
 
-    private String printField(QueryGeneratorFieldSelection.FieldSelection fieldSelection, @Nullable String aliasPrefix) {
-        // It is possible that some container fields ended up with empty fields (due to filtering etc). We shouldn't print those
-        if(fieldSelection.fieldsByContainer != null && fieldSelection.fieldsByContainer.isEmpty()) {
+        if (fieldStr.isEmpty()) {
             return "";
         }
 
-        StringBuilder sb = new StringBuilder();
-        if(aliasPrefix != null) {
-            sb.append(aliasPrefix).append(fieldSelection.name).append(": ");
+        StringBuilder fieldSelectionSb = new StringBuilder();
+        if (needsTypeClassifier) {
+            fieldSelectionSb.append("... on ").append(containerName).append(" {\n");
         }
-        sb.append(fieldSelection.name);
+
+        fieldSelectionSb.append(fieldStr);
+
+        if (needsTypeClassifier) {
+            fieldSelectionSb.append(" }\n");
+        }
+
+        return fieldSelectionSb.toString();
+    }
+
+    private String printFieldSelection(QueryGeneratorFieldSelection.FieldSelection fieldSelection, @Nullable String aliasPrefix) {
+        StringBuilder sb = new StringBuilder();
         if (fieldSelection.fieldsByContainer != null) {
-            sb.append(" {\n");
-            fieldSelection.fieldsByContainer.forEach((containerName, fieldSelectionList) -> {
-
-                if(fieldSelection.needsTypeClassifier) {
-                    sb.append("... on ").append(containerName).append(" {\n");
+            String fieldSelectionString = fieldSelection.fieldsByContainer.entrySet().stream()
+                    .map((entry) ->
+                            printFieldSelectionForContainer(entry.getKey(), entry.getValue(), fieldSelection.needsTypeClassifier))
+                    .collect(Collectors.joining());
+            // It is possible that some container fields ended up with empty fields (due to filtering etc). We shouldn't print those
+            if (!fieldSelectionString.isEmpty()) {
+                if (aliasPrefix != null) {
+                    sb.append(aliasPrefix).append(fieldSelection.name).append(": ");
                 }
-
-                for (QueryGeneratorFieldSelection.FieldSelection subField : fieldSelectionList) {
-                    sb.append(printField(subField, fieldSelection.needsTypeClassifier ? containerName + "_" : null));
-                }
-
-                if(fieldSelection.needsTypeClassifier) {
-                    sb.append(" }\n");
-                }
-
-            });
-
-            sb.append("}\n");
+                sb.append(fieldSelection.name)
+                        .append(" {\n")
+                        .append(fieldSelectionString)
+                        .append("}\n");
+            }
         } else {
-            sb.append("\n");
+            if (aliasPrefix != null) {
+                sb.append(aliasPrefix).append(fieldSelection.name).append(": ");
+            }
+            sb.append(fieldSelection.name).append("\n");
         }
         return sb.toString();
+    }
+
+    private String printFieldSelection(QueryGeneratorFieldSelection.FieldSelection fieldSelection) {
+        return printFieldSelection(fieldSelection, null);
     }
 }

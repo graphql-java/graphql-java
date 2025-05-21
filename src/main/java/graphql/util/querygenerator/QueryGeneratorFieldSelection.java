@@ -3,7 +3,6 @@ package graphql.util.querygenerator;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
-import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -37,21 +36,7 @@ public class QueryGeneratorFieldSelection {
         this.schema = schema;
     }
 
-    FieldSelection generateFieldSelection(String typeName) {
-        GraphQLType type = this.schema.getType(typeName);
-
-        if (type == null) {
-            throw new IllegalArgumentException("Type " + typeName + " not found in schema");
-        }
-
-        if (!(type instanceof GraphQLFieldsContainer)) {
-            throw new IllegalArgumentException("Type " + typeName + " is not a field container");
-        }
-
-        return buildFields((GraphQLFieldsContainer) type);
-    }
-
-    private FieldSelection buildFields(GraphQLFieldsContainer fieldsContainer) {
+    FieldSelection buildFields(GraphQLFieldsContainer fieldsContainer) {
         Queue<List<GraphQLFieldsContainer>> containersQueue = new LinkedList<>();
         containersQueue.add(Collections.singletonList(fieldsContainer));
 

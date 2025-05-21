@@ -435,27 +435,13 @@ subscription {
         when:
         def fieldPath = "Query.node"
         def classifierType = null
-        def expected = """
-{
-  node(id: "1") {
-    ... on Bar {
-      id
-      barName
-    }
-    ... on Node {
-      id
-    }
-    ... on Foo {
-      id
-      fooName
-    }
-  }
-}
-"""
+        def expected = null
+
         def passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        passed
+        def e = thrown(IllegalArgumentException)
+        e.message == "typeClassifier is required for interface types"
 
         when: "generate query for the 'node' field with a specific type"
         fieldPath = "Query.node"
@@ -482,7 +468,7 @@ subscription {
         executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        def e = thrown(IllegalArgumentException)
+        e = thrown(IllegalArgumentException)
         e.message == "typeClassifier should be used only with interface or union types"
 
         when: "passing typeClassifier that doesn't implement Node"
@@ -493,7 +479,7 @@ subscription {
 
         then:
         e = thrown(IllegalArgumentException)
-        e.message == "BazDoesntImplementNode not found in type Node"
+        e.message == "Type BazDoesntImplementNode not found in interface Node"
     }
 
     def "generate query for field which returns an union"() {
@@ -525,24 +511,12 @@ subscription {
         when:
         def fieldPath = "Query.something"
         def classifierType = null
-        def expected = """
-{
-  something {
-    ... on Bar {
-      id
-      barName
-    }
-    ... on Foo {
-      id
-      fooName
-    }
-  }
-}
-"""
+        def expected = null
         def passed = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        passed
+        def e = thrown(IllegalArgumentException)
+        e.message == "typeClassifier is required for union types"
 
         when: "generate query for field returning union with a specific type"
         fieldPath = "Query.something"
@@ -569,8 +543,8 @@ subscription {
         executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        def e = thrown(IllegalArgumentException)
-        e.message == "BazIsNotPartOfUnion not found in type Something"
+        e = thrown(IllegalArgumentException)
+        e.message == "Type BazIsNotPartOfUnion not found in union Something"
     }
 
     def "simple field limit"() {

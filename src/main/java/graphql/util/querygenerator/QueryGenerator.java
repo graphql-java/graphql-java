@@ -4,16 +4,12 @@ import graphql.ExperimentalApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @ExperimentalApi
@@ -69,42 +65,42 @@ public class QueryGenerator {
         // last field may be an object, interface or union type
         GraphQLOutputType lastType = lastFieldDefinition.getType();
 
-        final List<GraphQLFieldsContainer> possibleTypes;
+        final GraphQLFieldsContainer lastFieldContainer;
 
         if (lastType instanceof GraphQLObjectType) {
             if (typeClassifier != null) {
                 throw new IllegalArgumentException("typeClassifier should be used only with interface or union types");
             }
-            possibleTypes = List.of((GraphQLFieldsContainer) lastType);
+            lastFieldContainer = (GraphQLObjectType) lastType;
         } else if (lastType instanceof GraphQLUnionType) {
-            possibleTypes = ((GraphQLUnionType) lastType).getTypes().stream()
-                    .filter(GraphQLObjectType.class::isInstance)
-                    .map(GraphQLObjectType.class::cast)
-                    .filter(type -> typeClassifier == null || type.getName().equals(typeClassifier))
-                    .collect(Collectors.toList());
+            if (typeClassifier == null) {
+                throw new IllegalArgumentException("typeClassifier is required for union types");
+            }
+            lastFieldContainer = ((GraphQLUnionType) lastType).getTypes().stream()
+                    .filter(GraphQLFieldsContainer.class::isInstance)
+                    .map(GraphQLFieldsContainer.class::cast)
+                    .filter(type -> type.getName().equals(typeClassifier))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Type " + typeClassifier + " not found in union " + ((GraphQLUnionType) lastType).getName()));
         } else if (lastType instanceof GraphQLInterfaceType) {
+            if (typeClassifier == null) {
+                throw new IllegalArgumentException("typeClassifier is required for interface types");
+            }
             Stream<GraphQLFieldsContainer> fieldsContainerStream = Stream.concat(
                     Stream.of((GraphQLInterfaceType) lastType),
                     schema.getImplementations((GraphQLInterfaceType) lastType).stream()
             );
 
-            possibleTypes = fieldsContainerStream
-                    .filter(type -> typeClassifier == null || type.getName().equals(typeClassifier))
-                    .collect(Collectors.toList());
+            lastFieldContainer = fieldsContainerStream
+                    .filter(type -> type.getName().equals(typeClassifier))
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Type " + typeClassifier + " not found in interface " + ((GraphQLInterfaceType) lastType).getName()));
         } else {
             throw new IllegalArgumentException("Type " + lastType + " is not a field container");
         }
 
-        if (possibleTypes.isEmpty()) {
-            throw new IllegalArgumentException(typeClassifier + " not found in type " + ((GraphQLNamedType) lastType).getName());
-        }
+        QueryGeneratorFieldSelection.FieldSelection rootFieldSelection = fieldSelectionGenerator.buildFields(lastFieldContainer);
 
-        Map<String, QueryGeneratorFieldSelection.FieldSelection> fieldSelections = possibleTypes.stream()
-                .collect(Collectors.toMap(
-                        GraphQLFieldsContainer::getName,
-                        type -> fieldSelectionGenerator.generateFieldSelection(type.getName())
-                ));
-
-        return printer.print(operationFieldPath, operationName, arguments, fieldSelections);
+        return printer.print(operationFieldPath, operationName, arguments, rootFieldSelection);
     }
 }
