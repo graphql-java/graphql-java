@@ -1,7 +1,6 @@
 package graphql;
 
 import graphql.execution.EngineRunningObserver;
-import graphql.execution.ExecutionId;
 import graphql.execution.ResultPath;
 import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
@@ -25,7 +24,7 @@ public interface Profiler {
 
     }
 
-    default void setExecutionId(ExecutionId executionId) {
+    default void executionInput(ExecutionInput executionInput) {
 
     }
 

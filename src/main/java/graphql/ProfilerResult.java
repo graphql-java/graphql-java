@@ -26,10 +26,11 @@ public class ProfilerResult {
     private final Map<String, Integer> dataFetcherInvocationCount = new ConcurrentHashMap<>();
     private final Map<String, DataFetcherType> dataFetcherTypeMap = new ConcurrentHashMap<>();
 
-    // the key is the whole result key, not just the query path
     private final Map<String, DataFetcherResultType> dataFetcherResultType = new ConcurrentHashMap<>();
     private volatile String operationName;
     private volatile String operationType;
+    private volatile boolean dataLoaderChainingEnabled;
+
 
 
     public enum DataFetcherType {
@@ -47,6 +48,11 @@ public class ProfilerResult {
 
     // setters are package private to prevent exposure
 
+    void setDataLoaderChainingEnabled(boolean dataLoaderChainingEnabled) {
+        this.dataLoaderChainingEnabled = dataLoaderChainingEnabled;
+    }
+
+
     void setDataFetcherType(String key, DataFetcherType dataFetcherType) {
         dataFetcherTypeMap.putIfAbsent(key, dataFetcherType);
         totalDataFetcherInvocations.incrementAndGet();
@@ -55,8 +61,8 @@ public class ProfilerResult {
         }
     }
 
-    void setDataFetcherResultType(String resultPath, DataFetcherResultType fetchedType) {
-        dataFetcherResultType.put(resultPath, fetchedType);
+    void setDataFetcherResultType(String key, DataFetcherResultType fetchedType) {
+        dataFetcherResultType.putIfAbsent(key, fetchedType);
     }
 
     void incrementDataFetcherInvocationCount(String key) {
@@ -148,9 +154,7 @@ public class ProfilerResult {
         return dataFetcherResultType;
     }
 
-
-    @Override
-    public String toString() {
+    public String fullSummary() {
         return "ProfilerResult{" +
                 "executionId=" + executionId +
                 ", operation=" + operationType + ":" + operationName +
@@ -164,6 +168,29 @@ public class ProfilerResult {
                 ", dataFetcherInvocationCount=" + dataFetcherInvocationCount +
                 ", dataFetcherTypeMap=" + dataFetcherTypeMap +
                 ", dataFetcherResultType=" + dataFetcherResultType +
+                ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
                 '}';
+    }
+
+    public String shortSummary() {
+        return "ProfilerResult{" +
+                "executionId=" + executionId +
+                ", operation=" + operationType + ":" + operationName +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", totalRunTime=" + (endTime - startTime) + "(" + (endTime - startTime) / 1_000_000 + "ms)" +
+                ", engineTotalRunningTime=" + engineTotalRunningTime + "(" + engineTotalRunningTime / 1_000_000 + "ms)" +
+                ", totalDataFetcherInvocations=" + totalDataFetcherInvocations +
+                ", totalPropertyDataFetcherInvocations=" + totalPropertyDataFetcherInvocations +
+                ", fieldsFetchedCount=" + fieldsFetched.size() +
+                ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
+                '}';
+
+
+    }
+
+    @Override
+    public String toString() {
+        return shortSummary();
     }
 }

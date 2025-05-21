@@ -132,7 +132,7 @@ class ProfilerTest extends Specification {
         given:
         def sdl = '''
             type Query {
-                foo: Foo
+                foo: [Foo]
             }
             type Foo {
                 id: String
@@ -144,7 +144,7 @@ class ProfilerTest extends Specification {
                         foo: { DataFetchingEnvironment dfe ->
                             return CompletableFuture.supplyAsync {
                                 Thread.sleep(100)
-                                return [id: "1", name: "foo"]
+                                return [[id: "1", name: "foo"]]
                             }
                         } as DataFetcher],
                 Foo  : [
@@ -164,7 +164,7 @@ class ProfilerTest extends Specification {
         def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
 
         then:
-        result.getData() == [foo: [id: "1", name: "foo"]]
+        result.getData() == [foo: [[id: "1", name: "foo"]]]
         profilerResult.getDataFetcherResultType() == ["/foo/name": COMPLETABLE_FUTURE_COMPLETED, "/foo": COMPLETABLE_FUTURE_NOT_COMPLETED]
 
 

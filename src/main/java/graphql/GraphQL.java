@@ -424,7 +424,7 @@ public class GraphQL {
         EngineRunningState engineRunningState = new EngineRunningState(executionInput, profiler);
         return engineRunningState.engineRun(() -> {
             ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
-            profiler.setExecutionId(executionInputWithId.getExecutionId());
+            profiler.executionInput(executionInputWithId);
             engineRunningState.updateExecutionId(executionInputWithId.getExecutionId());
 
             CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));

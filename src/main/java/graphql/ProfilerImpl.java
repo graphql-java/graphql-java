@@ -3,6 +3,7 @@ package graphql;
 import graphql.execution.EngineRunningObserver;
 import graphql.execution.ExecutionId;
 import graphql.execution.ResultPath;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
 import graphql.schema.PropertyDataFetcher;
@@ -29,8 +30,10 @@ public class ProfilerImpl implements Profiler {
     }
 
     @Override
-    public void setExecutionId(ExecutionId executionId) {
-        profilerResult.setExecutionId(executionId);
+    public void executionInput(ExecutionInput executionInput) {
+        profilerResult.setExecutionId(executionInput.getExecutionId());
+        boolean dataLoaderChainingEnabled = executionInput.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false);
+        profilerResult.setDataLoaderChainingEnabled(dataLoaderChainingEnabled);
     }
 
     @Override
@@ -55,7 +58,7 @@ public class ProfilerImpl implements Profiler {
             } else {
                 dataFetcherResultType = ProfilerResult.DataFetcherResultType.MATERIALIZED;
             }
-            profilerResult.setDataFetcherResultType(path.toString(), dataFetcherResultType);
+            profilerResult.setDataFetcherResultType(key, dataFetcherResultType);
         }
 
         profilerResult.setDataFetcherType(key, dataFetcherType);
