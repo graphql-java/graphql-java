@@ -28,6 +28,11 @@ public interface Profiler {
 
     }
 
+    default void dataLoaderUsed(String dataLoaderName) {
+
+
+    }
+
     default void fieldFetched(Object fetchedObject, DataFetcher<?> dataFetcher, ResultPath path) {
 
     }
@@ -37,6 +42,14 @@ public interface Profiler {
     }
 
     default void operationDefinition(OperationDefinition operationDefinition) {
+
+    }
+
+    default void oldStrategyDispatchingAll(int level) {
+
+    }
+
+    default void chainedStrategyDispatching(int level) {
 
     }
 }

@@ -24,13 +24,15 @@ public class ProfilerResult {
 
 
     private final Map<String, Integer> dataFetcherInvocationCount = new ConcurrentHashMap<>();
+    private final Map<String, Integer> dataLoaderLoadInvocations = new ConcurrentHashMap<>();
     private final Map<String, DataFetcherType> dataFetcherTypeMap = new ConcurrentHashMap<>();
 
     private final Map<String, DataFetcherResultType> dataFetcherResultType = new ConcurrentHashMap<>();
     private volatile String operationName;
     private volatile String operationType;
     private volatile boolean dataLoaderChainingEnabled;
-
+    private final Set<Integer> oldStrategyDispatchingAll = ConcurrentHashMap.newKeySet();
+    private final Set<Integer> chainedStrategyDispatching = ConcurrentHashMap.newKeySet();
 
 
     public enum DataFetcherType {
@@ -87,6 +89,21 @@ public class ProfilerResult {
         this.operationName = operationDefinition.getName();
         this.operationType = operationDefinition.getOperation().name();
     }
+
+    void addDataLoaderUsed(String dataLoaderName) {
+        dataLoaderLoadInvocations.compute(dataLoaderName, (k, v) -> v == null ? 1 : v + 1);
+    }
+
+    void oldStrategyDispatchingAll(int level) {
+        oldStrategyDispatchingAll.add(level);
+    }
+
+
+    void chainedStrategyDispatching(int level) {
+        chainedStrategyDispatching.add(level);
+    }
+
+
 
 
     public String getOperationName() {
@@ -154,6 +171,18 @@ public class ProfilerResult {
         return dataFetcherResultType;
     }
 
+    public Map<String, Integer> getDataLoaderLoadInvocations() {
+        return dataLoaderLoadInvocations;
+    }
+
+    public Set<Integer> getChainedStrategyDispatching() {
+        return chainedStrategyDispatching;
+    }
+
+    public Set<Integer> getOldStrategyDispatchingAll() {
+        return oldStrategyDispatchingAll;
+    }
+
     public String fullSummary() {
         return "ProfilerResult{" +
                 "executionId=" + executionId +
@@ -169,6 +198,9 @@ public class ProfilerResult {
                 ", dataFetcherTypeMap=" + dataFetcherTypeMap +
                 ", dataFetcherResultType=" + dataFetcherResultType +
                 ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
+                ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
+                ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
+                ", chainedStrategyDispatching" + chainedStrategyDispatching +
                 '}';
     }
 
@@ -184,6 +216,9 @@ public class ProfilerResult {
                 ", totalPropertyDataFetcherInvocations=" + totalPropertyDataFetcherInvocations +
                 ", fieldsFetchedCount=" + fieldsFetched.size() +
                 ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
+                ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
+                ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
+                ", chainedStrategyDispatching" + chainedStrategyDispatching +
                 '}';
 
 

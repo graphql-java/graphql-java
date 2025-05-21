@@ -100,4 +100,19 @@ public class ProfilerImpl implements Profiler {
     public void operationDefinition(OperationDefinition operationDefinition) {
         profilerResult.setOperation(operationDefinition);
     }
+
+    @Override
+    public void dataLoaderUsed(String dataLoaderName) {
+        profilerResult.addDataLoaderUsed(dataLoaderName);
+    }
+
+    @Override
+    public void chainedStrategyDispatching(int level) {
+        profilerResult.chainedStrategyDispatching(level);
+    }
+
+    @Override
+    public void oldStrategyDispatchingAll(int level) {
+        profilerResult.oldStrategyDispatchingAll(level);
+    }
 }

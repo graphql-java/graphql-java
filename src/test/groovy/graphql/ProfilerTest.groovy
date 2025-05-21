@@ -1,14 +1,23 @@
 package graphql
 
+
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import org.awaitility.Awaitility
+import org.dataloader.BatchLoader
+import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
+import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
+import static graphql.ExecutionInput.newExecutionInput
 import static graphql.ProfilerResult.DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED
 import static graphql.ProfilerResult.DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.setEnableDataLoaderChaining
+import static java.util.concurrent.CompletableFuture.supplyAsync
 
 class ProfilerTest extends Specification {
 
@@ -198,6 +207,70 @@ class ProfilerTest extends Specification {
         profilerResult.getOperationName() == "MyQuery"
         profilerResult.getOperationType() == "QUERY"
 
+
+    }
+
+    def "dataloader usage"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          dogName: String
+          catName: String
+        }
+        '''
+        int batchLoadCalls = 0
+        BatchLoader<String, String> batchLoader = { keys ->
+            return supplyAsync {
+                batchLoadCalls++
+                Thread.sleep(250)
+                println "BatchLoader called with keys: $keys"
+                assert keys.size() == 2
+                return ["Luna", "Tiger"]
+            }
+        }
+
+        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        dataLoaderRegistry.register("name", nameDataLoader);
+
+        def df1 = { env ->
+            return env.getDataLoader("name").load("Key1").thenCompose {
+                result ->
+                    {
+                        return env.getDataLoader("name").load(result)
+                    }
+            }
+        } as DataFetcher
+
+        def df2 = { env ->
+            return env.getDataLoader("name").load("Key2").thenCompose {
+                result ->
+                    {
+                        return env.getDataLoader("name").load(result)
+                    }
+            }
+        } as DataFetcher
+
+        def fetchers = ["Query": ["dogName": df1, "catName": df2]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ dogName catName } "
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).profileExecution(true).build()
+        setEnableDataLoaderChaining(ei.graphQLContext, true)
+
+        when:
+        def efCF = graphQL.executeAsync(ei)
+        Awaitility.await().until { efCF.isDone() }
+        def er = efCF.get()
+        def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
+        then:
+        er.data == [dogName: "Luna", catName: "Tiger"]
+        batchLoadCalls == 2
+        profilerResult.getDataLoaderLoadInvocations() == [name: 4]
+        profilerResult.getChainedStrategyDispatching() == [1] as Set
 
     }
 
