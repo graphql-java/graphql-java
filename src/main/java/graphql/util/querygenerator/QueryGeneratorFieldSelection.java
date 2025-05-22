@@ -23,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class QueryGeneratorFieldSelection {
+class QueryGeneratorFieldSelection {
     private final QueryGeneratorOptions options;
     private final GraphQLSchema schema;
 
@@ -31,7 +31,7 @@ public class QueryGeneratorFieldSelection {
             .name("Empty")
             .build();
 
-    public QueryGeneratorFieldSelection(GraphQLSchema schema, QueryGeneratorOptions options) {
+    QueryGeneratorFieldSelection(GraphQLSchema schema, QueryGeneratorOptions options) {
         this.options = options;
         this.schema = schema;
     }
@@ -164,7 +164,7 @@ public class QueryGeneratorFieldSelection {
                 .anyMatch(arg -> GraphQLTypeUtil.isNonNull(arg.getType()) && !arg.hasSetDefaultValue());
     }
 
-    public static class FieldSelection {
+   static class FieldSelection {
         public final String name;
         public final boolean needsTypeClassifier;
         public final Map<String, List<FieldSelection>> fieldsByContainer;

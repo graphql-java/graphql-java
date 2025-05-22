@@ -7,8 +7,8 @@ import javax.annotation.Nullable;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class QueryGeneratorPrinter {
-    public String print(
+class QueryGeneratorPrinter {
+    String print(
             String operationFieldPath,
             @Nullable String operationName,
             @Nullable String arguments,

@@ -12,18 +12,59 @@ import graphql.schema.GraphQLUnionType;
 import javax.annotation.Nullable;
 import java.util.stream.Stream;
 
+/**
+ * Generates a GraphQL query string based on the provided operation field path, operation name, arguments, and type classifier.
+ * <p>
+ * While this class is useful for testing purposes, such as ensuring that all fields from a certain type are being
+ * fetched correctly, it is important to note that generating GraphQL queries with all possible fields defeats one of
+ * the main purposes of a GraphQL API: allowing clients to be selective about the fields they want to fetch.
+ * <p>
+ * Callers can pass options to customize the query generation process, such as filtering fields or
+ * limiting the maximum number of fields.
+ * <p>
+ *
+ */
 @ExperimentalApi
 public class QueryGenerator {
     private final GraphQLSchema schema;
     private final QueryGeneratorFieldSelection fieldSelectionGenerator;
     private final QueryGeneratorPrinter printer;
 
+    /**
+     * Constructor for QueryGenerator.
+     *
+     * @param schema the GraphQL schema
+     * @param options the options for query generation
+     */
     public QueryGenerator(GraphQLSchema schema, QueryGeneratorOptions options) {
         this.schema = schema;
         this.fieldSelectionGenerator = new QueryGeneratorFieldSelection(schema, options);
         this.printer = new QueryGeneratorPrinter();
     }
 
+    /**
+     * Generates a GraphQL query string based on the provided operation field path, operation name, arguments,
+     * and type classifier.
+     *
+     * <p>
+     * operationFieldPath is a string that represents the path to the field in the GraphQL schema. This method
+     * will generate a query that includes all fields from the specified type, including nested fields.
+     * <p>
+     * operationName is optional. When passed, the generated query will contain that value in the operation name.
+     * <p>
+     * arguments are optional. When passed, the generated query will contain that value in the arguments.
+     * <p>
+     * typeClassifier is optional. It should not be passed in when the field in the path is an object type, and it
+     * **should** be passed when the field in the path is an interface or union type. In the latter case, its value
+     * should be an object type that is part of the union or implements the interface.
+     *
+     * @param operationFieldPath the operation field path (e.g., "Query.user", "Mutation.createUser", "Subscription.userCreated")
+     * @param operationName optional: the operation name (e.g., "getUser")
+     * @param arguments optional: the arguments for the operation in a plain text form (e.g., "(id: 1)")
+     * @param typeClassifier optional: the type classifier for union or interface types (e.g., "FirstPartyUser")
+     *
+     * @return the generated GraphQL query string
+     */
     public String generateQuery(
             String operationFieldPath,
             @Nullable String operationName,
