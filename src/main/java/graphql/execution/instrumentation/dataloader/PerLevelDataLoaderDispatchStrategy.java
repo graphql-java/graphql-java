@@ -66,6 +66,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         // this means one sub selection has been fully fetched
         // and the expected execute objects calls for the next level have been calculated
+        // the level here is the level of the sub selection in order to avoid 0 levels, because
+        // the root fields are on level 1
         private final LevelMap happenedOnFieldValueCallsPerLevel = new LevelMap();
 
         private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
@@ -85,9 +87,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
         public CallStack() {
-            // in the first level there is only one sub selection,
-            // so we only expect one execute object call (which is actually an executionStrategy call)
-            expectedExecuteObjectCallsPerLevel.set(1, 1);
+            // the first execute object happens on level 0 and there is only one: the start of the strategy
+            expectedExecuteObjectCallsPerLevel.set(0, 1);
         }
 
         public void addResultPathWithDataLoader(int level, ResultPathWithDataLoader resultPathWithDataLoader) {
@@ -139,8 +140,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             return happenedExecuteObjectCallsPerLevel.get(level) == expectedExecuteObjectCallsPerLevel.get(level);
         }
 
-        boolean allSubSelectionsFetchingHappened(int level) {
-            return happenedOnFieldValueCallsPerLevel.get(level) == expectedExecuteObjectCallsPerLevel.get(level);
+        boolean allSubSelectionsFetchingHappened(int subSelectionLevel) {
+            return happenedOnFieldValueCallsPerLevel.get(subSelectionLevel) == expectedExecuteObjectCallsPerLevel.get(subSelectionLevel - 1);
         }
 
         boolean allFetchesHappened(int level) {
@@ -197,17 +198,19 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(1, parameters);
+        // the execute object on level 0 is beginning of the strategy
+        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(0, parameters);
     }
 
     @Override
     public void executionSerialStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         resetCallStack();
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(1, 1);
+        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(0, 1);
     }
 
     @Override
     public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+        // the root fields are the root sub selection on level 1
         onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, 1);
     }
 
@@ -220,12 +223,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     @Override
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
+        int curLevel = parameters.getPath().getLevel();
         increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(curLevel, parameters);
     }
 
     @Override
     public void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+        // the level of the sub selection that is fully fetched is one level more than parameters level
         int curLevel = parameters.getPath().getLevel() + 1;
         onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel);
     }
@@ -233,6 +237,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     @Override
     public void executeObjectOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
+        // the level of the sub selection that is errored is one level more than parameters level
         int curLevel = parameters.getPath().getLevel() + 1;
         callStack.lock.runLocked(() ->
                 callStack.increaseHappenedOnFieldValueCalls(curLevel)
@@ -246,7 +251,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private void increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(int curLevel, int fieldCount) {
         callStack.lock.runLocked(() -> {
             callStack.increaseHappenedExecuteObjectCalls(curLevel);
-            callStack.increaseExpectedFetchCount(curLevel, fieldCount);
+            // the fetch happens on the next level
+            callStack.increaseExpectedFetchCount(curLevel + 1, fieldCount);
         });
     }
 
@@ -258,7 +264,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             callStack.clearFetchCount();
             callStack.clearHappenedExecuteObjectCalls();
             callStack.clearHappenedOnFieldValueCalls();
-            callStack.expectedExecuteObjectCallsPerLevel.set(1, 1);
+            callStack.expectedExecuteObjectCallsPerLevel.set(0, 1);
             callStack.dispatchingFinishedPerLevel.clear();
             callStack.dispatchingStartedPerLevel.clear();
             callStack.allResultPathWithDataLoader.clear();
@@ -282,11 +288,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     //
 // thread safety: called with callStack.lock
 //
+    // this means a sub selection has been fully fetched
     private Integer handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfos, int curLevel) {
         callStack.increaseHappenedOnFieldValueCalls(curLevel);
         int expectedOnObjectCalls = getObjectCountForList(fieldValueInfos);
-        // on the next level we expect the following on object calls because we found non null objects
-        callStack.increaseExpectedExecuteObjectCalls(curLevel + 1, expectedOnObjectCalls);
+        // we expect on the level of the current sub selection #expectedOnObjectCalls execute object calls
+        callStack.increaseExpectedExecuteObjectCalls(curLevel, expectedOnObjectCalls);
         // maybe the object calls happened already (because the DataFetcher return directly values synchronously)
         // therefore we check the next levels if they are ready
         // this means we could skip some level because the higher level is also already ready,
@@ -339,6 +346,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private boolean dispatchIfNeeded(int level) {
         boolean ready = checkLevelBeingReady(level);
         if (ready) {
+            System.out.println("dispatchIfNeeded level " + level);
             callStack.setDispatchedLevel(level);
             return true;
         }
@@ -379,14 +387,16 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         if (callStack.expectedFetchCountPerLevel.get(level) == 0) {
             return false;
         }
-        // level 1 is special: there is no previous sub selections
-        // and the expected execution object calls is always 1
+
+        // first we make sure that the expected fetch count is correct
+        // by verifying that the parent level all execute object + sub selection were fetched
+        if (!callStack.allExecuteObjectCallsHappened(level - 1)) {
+            return false;
+        }
         if (level > 1 && !callStack.allSubSelectionsFetchingHappened(level - 1)) {
             return false;
         }
-        if (!callStack.allExecuteObjectCallsHappened(level)) {
-            return false;
-        }
+        // the main check: all fetches must have happened
         if (!callStack.allFetchesHappened(level)) {
             return false;
         }
@@ -394,6 +404,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     void dispatch(int level) {
+        System.out.println("dispatch level " + level);
         if (!enableDataLoaderChaining) {
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
             dataLoaderRegistry.dispatchAll();
