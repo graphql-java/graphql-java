@@ -5,7 +5,6 @@ import graphql.DuckTyped;
 import graphql.EngineRunningState;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicSpi;
@@ -50,7 +49,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -300,7 +298,7 @@ public abstract class ExecutionStrategy {
     ) {
         MergedSelectionSet fields = parameters.getFields();
 
-        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls(parameters));
+        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
 
         // Only non-deferred fields should be considered for calculating the expected size of futures.
         Async.CombinedBuilder<FieldValueInfo> futures = Async
@@ -400,7 +398,6 @@ public abstract class ExecutionStrategy {
         }
 
         MergedField field = parameters.getField();
-        String pathString = parameters.getPath().toString();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
@@ -435,6 +432,7 @@ public abstract class ExecutionStrategy {
                     .parentType(parentType)
                     .selectionSet(fieldCollector)
                     .queryDirectives(queryDirectives)
+                    .deferredCallContext(parameters.getDeferredCallContext())
                     .build();
         });
 

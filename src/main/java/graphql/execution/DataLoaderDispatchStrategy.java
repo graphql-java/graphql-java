@@ -22,11 +22,11 @@ public interface DataLoaderDispatchStrategy {
 
     }
 
-    default void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+    default void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
 
     }
 
-    default void executionStrategyOnFieldValuesException(Throwable t) {
+    default void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
 
     }
 
@@ -36,6 +36,10 @@ public interface DataLoaderDispatchStrategy {
     }
 
     default void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+
+    }
+
+    default void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable throwable, ExecutionStrategyParameters parameters) {
 
     }
 
@@ -57,6 +61,10 @@ public interface DataLoaderDispatchStrategy {
     }
 
     default void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
+
+    }
+
+    default void startIncrementalCall() {
 
     }
 }

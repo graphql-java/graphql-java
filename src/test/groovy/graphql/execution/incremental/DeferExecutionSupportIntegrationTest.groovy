@@ -18,6 +18,10 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.TypeResolver
 import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
+import org.dataloader.BatchLoader
+import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
+import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -62,6 +66,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                 typeMismatchError: [String]
                 nonNullableError: String!
                 wordCount: Int
+                fieldWithDataLoader1: String
+                fieldWithDataLoader2: String
             }
             
             type Comment {
@@ -88,6 +94,13 @@ class DeferExecutionSupportIntegrationTest extends Specification {
 
     private static DataFetcher resolve(Object value, Integer sleepMs) {
         return resolve(value, sleepMs, false)
+    }
+
+    private static DataFetcher fieldWithDataLoader(String key) {
+        return (dfe) -> {
+            def dataLoader = dfe.getDataLoader("someDataLoader")
+            return dataLoader.load(dfe.getSource().id + "-" + key)
+        };
     }
 
     private static DataFetcher resolve(Object value, Integer sleepMs, boolean allowMultipleCalls) {
@@ -163,6 +176,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         .dataFetcher("item", resolveItem())
                 )
                 .type(newTypeWiring("Post").dataFetcher("summary", resolve("A summary", 10)))
+                .type(newTypeWiring("Post").dataFetcher("fieldWithDataLoader1", fieldWithDataLoader("fieldWithDataLoader1")))
+                .type(newTypeWiring("Post").dataFetcher("fieldWithDataLoader2", fieldWithDataLoader("fieldWithDataLoader2")))
                 .type(newTypeWiring("Post").dataFetcher("text", resolve("The full text", 100)))
                 .type(newTypeWiring("Post").dataFetcher("wordCount", resolve(45999, 10, true)))
                 .type(newTypeWiring("Post").dataFetcher("latestComment", resolve([title: "Comment title"], 10)))
@@ -1674,6 +1689,41 @@ class DeferExecutionSupportIntegrationTest extends Specification {
 
     }
 
+    def "dataloader used inside defer"() {
+        given:
+        def query = '''
+            query {
+                post {
+                id
+                ...@defer {
+                    fieldWithDataLoader1
+                    fieldWithDataLoader2
+                }
+              }
+            }
+        '''
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        println "initialResult = $initialResult"
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+
+        incrementalResults.size() == 1
+        incrementalResults[0] == [incremental: [[path: ["post"], data: [fieldWithDataLoader1: "1001-fieldWithDataLoader1", fieldWithDataLoader2: "1001-fieldWithDataLoader2"]]],
+                                  hasNext    : false
+        ]
+
+    }
+
 
     private ExecutionResult executeQuery(String query) {
         return this.executeQuery(query, true, [:])
@@ -1684,11 +1734,19 @@ class DeferExecutionSupportIntegrationTest extends Specification {
     }
 
     private ExecutionResult executeQuery(String query, boolean incrementalSupport, Map<String, Object> variables) {
+        BatchLoader batchLoader = { keys ->
+            println "batchlaoder called with keys $keys"
+            return CompletableFuture.completedFuture(keys)
+        }
+        DataLoader dl = DataLoaderFactory.newDataLoader(batchLoader)
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        dataLoaderRegistry.register("someDataLoader", dl)
         return graphQL.execute(
                 ExecutionInput.newExecutionInput()
                         .graphQLContext([(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                         .query(query)
                         .variables(variables)
+                        .dataLoaderRegistry(dataLoaderRegistry)
                         .build()
         )
     }
