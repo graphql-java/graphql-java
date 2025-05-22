@@ -298,20 +298,6 @@
                 }
                 edges {
                   node {
-                    ... on JiraServiceManagementUserResponder {
-                      JiraServiceManagementUserResponder_user: user {
-                        ... on AtlassianAccountUser {
-                          AtlassianAccountUser_accountId: accountId
-                          AtlassianAccountUser_canonicalAccountId: canonicalAccountId
-                          AtlassianAccountUser_accountStatus: accountStatus
-                          AtlassianAccountUser_name: name
-                          AtlassianAccountUser_picture: picture
-                          AtlassianAccountUser_email: email
-                          AtlassianAccountUser_zoneinfo: zoneinfo
-                          AtlassianAccountUser_locale: locale
-                        }
-                      }
-                    }
                     ... on JiraServiceManagementTeamResponder {
                       JiraServiceManagementTeamResponder_teamId: teamId
                       JiraServiceManagementTeamResponder_teamName: teamName
@@ -610,27 +596,6 @@
                 wikiValue
               }
               JiraConnectRichTextField_renderer: renderer
-              JiraConnectRichTextField_mediaContext: mediaContext {
-                uploadToken {
-                  ... on JiraMediaUploadToken {
-                    JiraMediaUploadToken_endpointUrl: endpointUrl
-                    JiraMediaUploadToken_clientId: clientId
-                    JiraMediaUploadToken_targetCollection: targetCollection
-                    JiraMediaUploadToken_token: token
-                    JiraMediaUploadToken_tokenDurationInMin: tokenDurationInMin
-                  }
-                  ... on QueryError {
-                    QueryError_identifier: identifier
-                    QueryError_message: message
-                    QueryError_extensions: extensions {
-                      ... on GenericQueryErrorExtension {
-                        GenericQueryErrorExtension_statusCode: statusCode
-                        GenericQueryErrorExtension_errorType: errorType
-                      }
-                    }
-                  }
-                }
-              }
               JiraConnectRichTextField_fieldConfig: fieldConfig {
                 isRequired
                 isEditable
@@ -875,17 +840,6 @@
               JiraIssueLinkField_issues: issues {
                 totalCount
                 jql
-                issueSearchError {
-                  ... on JiraInvalidJqlError {
-                    JiraInvalidJqlError_messages: messages
-                  }
-                  ... on JiraInvalidSyntaxError {
-                    JiraInvalidSyntaxError_message: message
-                    JiraInvalidSyntaxError_errorType: errorType
-                    JiraInvalidSyntaxError_line: line
-                    JiraInvalidSyntaxError_column: column
-                  }
-                }
                 totalIssueSearchResultCount
                 isCappingIssueSearchResult
               }
@@ -1285,21 +1239,6 @@
                     projectStyle
                     status
                     canSetIssueRestriction
-                    navigationMetadata {
-                      ... on JiraSoftwareProjectNavigationMetadata {
-                        JiraSoftwareProjectNavigationMetadata_id: id
-                        JiraSoftwareProjectNavigationMetadata_boardId: boardId
-                        JiraSoftwareProjectNavigationMetadata_boardName: boardName
-                        JiraSoftwareProjectNavigationMetadata_isSimpleBoard: isSimpleBoard
-                      }
-                      ... on JiraWorkManagementProjectNavigationMetadata {
-                        JiraWorkManagementProjectNavigationMetadata_boardName: boardName
-                      }
-                      ... on JiraServiceManagementProjectNavigationMetadata {
-                        JiraServiceManagementProjectNavigationMetadata_queueId: queueId
-                        JiraServiceManagementProjectNavigationMetadata_queueName: queueName
-                      }
-                    }
                   }
                   cursor
                 }
@@ -1627,17 +1566,6 @@
                 issues {
                   totalCount
                   jql
-                  issueSearchError {
-                    ... on JiraInvalidJqlError {
-                      JiraInvalidJqlError_messages: messages
-                    }
-                    ... on JiraInvalidSyntaxError {
-                      JiraInvalidSyntaxError_message: message
-                      JiraInvalidSyntaxError_errorType: errorType
-                      JiraInvalidSyntaxError_line: line
-                      JiraInvalidSyntaxError_column: column
-                    }
-                  }
                   totalIssueSearchResultCount
                   isCappingIssueSearchResult
                 }
@@ -2162,11 +2090,6 @@
                 issueId
                 key
                 webUrl
-                childIssues {
-                  ... on JiraChildIssuesExceedingLimit {
-                    JiraChildIssuesExceedingLimit_search: search
-                  }
-                }
                 errorRetrievingData
                 screenId
               }
@@ -2351,17 +2274,6 @@
               JiraSubtasksField_subtasks: subtasks {
                 totalCount
                 jql
-                issueSearchError {
-                  ... on JiraInvalidJqlError {
-                    JiraInvalidJqlError_messages: messages
-                  }
-                  ... on JiraInvalidSyntaxError {
-                    JiraInvalidSyntaxError_message: message
-                    JiraInvalidSyntaxError_errorType: errorType
-                    JiraInvalidSyntaxError_line: line
-                    JiraInvalidSyntaxError_column: column
-                  }
-                }
                 totalIssueSearchResultCount
                 isCappingIssueSearchResult
               }
@@ -2422,27 +2334,6 @@
                 wikiValue
               }
               JiraRichTextField_renderer: renderer
-              JiraRichTextField_mediaContext: mediaContext {
-                uploadToken {
-                  ... on JiraMediaUploadToken {
-                    JiraMediaUploadToken_endpointUrl: endpointUrl
-                    JiraMediaUploadToken_clientId: clientId
-                    JiraMediaUploadToken_targetCollection: targetCollection
-                    JiraMediaUploadToken_token: token
-                    JiraMediaUploadToken_tokenDurationInMin: tokenDurationInMin
-                  }
-                  ... on QueryError {
-                    QueryError_identifier: identifier
-                    QueryError_message: message
-                    QueryError_extensions: extensions {
-                      ... on GenericQueryErrorExtension {
-                        GenericQueryErrorExtension_statusCode: statusCode
-                        GenericQueryErrorExtension_errorType: errorType
-                      }
-                    }
-                  }
-                }
-              }
               JiraRichTextField_fieldConfig: fieldConfig {
                 isRequired
                 isEditable
@@ -2801,11 +2692,6 @@
                 issueId
                 key
                 webUrl
-                childIssues {
-                  ... on JiraChildIssuesExceedingLimit {
-                    JiraChildIssuesExceedingLimit_search: search
-                  }
-                }
                 errorRetrievingData
                 screenId
               }
@@ -2862,11 +2748,6 @@
                 issueId
                 key
                 webUrl
-                childIssues {
-                  ... on JiraChildIssuesExceedingLimit {
-                    JiraChildIssuesExceedingLimit_search: search
-                  }
-                }
                 errorRetrievingData
                 screenId
               }
@@ -3068,11 +2949,6 @@
               issueId
               key
               webUrl
-              childIssues {
-                ... on JiraChildIssuesExceedingLimit {
-                  JiraChildIssuesExceedingLimit_search: search
-                }
-              }
               errorRetrievingData
               screenId
             }
@@ -3097,11 +2973,6 @@
                 issueId
                 key
                 webUrl
-                childIssues {
-                  ... on JiraChildIssuesExceedingLimit {
-                    JiraChildIssuesExceedingLimit_search: search
-                  }
-                }
                 errorRetrievingData
                 screenId
               }

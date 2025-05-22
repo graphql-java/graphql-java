@@ -120,11 +120,13 @@ class QueryGeneratorFieldSelection {
         fieldSelectionQueue.add(newFieldSelection);
 
         if (unwrappedType instanceof GraphQLInterfaceType) {
+            visited.add(fieldCoordinates);
             GraphQLInterfaceType interfaceType = (GraphQLInterfaceType) unwrappedType;
             List<GraphQLFieldsContainer> possibleTypes = new ArrayList<>(schema.getImplementations(interfaceType));
 
             containersQueue.add(possibleTypes);
         } else if (unwrappedType instanceof GraphQLUnionType) {
+            visited.add(fieldCoordinates);
             GraphQLUnionType unionType = (GraphQLUnionType) unwrappedType;
             List<GraphQLFieldsContainer> possibleTypes = unionType.getTypes().stream()
                     .filter(possibleType -> possibleType instanceof GraphQLFieldsContainer)

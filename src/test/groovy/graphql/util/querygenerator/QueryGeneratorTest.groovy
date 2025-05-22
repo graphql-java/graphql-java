@@ -888,6 +888,61 @@ $resultFields
         passed
     }
 
+    def "cyclic dependency with union"() {
+        given:
+        def schema = """
+        type Query {
+          foo: Foo
+        }
+        
+        type Foo {
+          id: ID!
+          bar: Bar
+        }
+        
+        type Bar {
+          id: ID!
+          baz: Baz
+        }
+        
+        union Baz = Bar | Qux 
+        
+        type Qux {
+          id: ID!
+          name: String
+        }
+        
+"""
+
+
+        when:
+
+        def fieldPath = "Query.foo"
+        def expected = """
+{
+  foo {
+    ... on Foo {
+      id
+      bar {
+        id
+        baz {
+          ... on Qux {
+            Qux_id: id
+            Qux_name: name
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+        def passed = executeTest(schema, fieldPath, expected)
+
+        then:
+        passed
+    }
+
     def "union fields with a single type in union"() {
         given:
         def schema = """
