@@ -255,11 +255,6 @@ public class Execution {
             return DataLoaderDispatchStrategy.NO_OP;
         }
         if (!executionContext.isSubscriptionOperation()) {
-            boolean deferEnabled = executionContext.hasIncrementalSupport();
-
-            // Dedicated strategy for defer support, for safety purposes.
-//            return deferEnabled ?
-//                    new PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch(executionContext) :
             return new PerLevelDataLoaderDispatchStrategy(executionContext);
         } else {
             return new FallbackDataLoaderDispatchStrategy(executionContext);
