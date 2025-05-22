@@ -131,10 +131,11 @@ public class QueryGeneratorOptions {
         }
     }
 
-    public static QueryGeneratorOptions.QueryGeneratorOptionsBuilder builder() {
-        return new QueryGeneratorOptions.QueryGeneratorOptionsBuilder();
-    }
-
+    /**
+     * Creates a new {@link QueryGeneratorOptionsBuilder} with default values.
+     *
+     * @return a new builder instance
+     */
     public static QueryGeneratorOptions.QueryGeneratorOptionsBuilder newBuilder() {
         return new QueryGeneratorOptions.QueryGeneratorOptionsBuilder();
     }
