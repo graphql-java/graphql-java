@@ -34,6 +34,7 @@ class IncrementalCallStateDeferTest extends Specification {
         results[2].incremental[0].data["a"] == "A"
     }
 
+    // flaky
     def "calls within calls are enqueued correctly"() {
         given:
         def incrementalCallState = new IncrementalCallState()

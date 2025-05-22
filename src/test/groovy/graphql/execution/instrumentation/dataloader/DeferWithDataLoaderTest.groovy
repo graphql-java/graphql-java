@@ -7,8 +7,6 @@ import graphql.incremental.IncrementalExecutionResult
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
-import java.util.stream.Collectors
-
 import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.combineExecutionResults
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedData
@@ -90,7 +88,7 @@ class DeferWithDataLoaderTest extends Specification {
         combined.data == expectedData
 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
-        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 9
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
 
     def "multiple fields on same defer block"() {
@@ -320,10 +318,10 @@ class DeferWithDataLoaderTest extends Specification {
                 [
                         ["expensiveShops", 0], ["expensiveShops", 1], ["expensiveShops", 2],
                         ["shops", 0], ["shops", 1], ["shops", 2],
-                        ["shops", 0, "departments", 0], ["shops", 0, "departments", 1],["shops", 0, "departments", 2], ["shops", 1, "departments", 0],["shops", 1, "departments", 1], ["shops", 1, "departments", 2], ["shops", 2, "departments", 0],["shops", 2, "departments", 1],["shops", 2, "departments", 2],
-                        ["shops", 0, "expensiveDepartments", 0], ["shops", 0, "expensiveDepartments", 1], ["shops", 0, "expensiveDepartments", 2], ["shops", 1, "expensiveDepartments", 0], ["shops", 1, "expensiveDepartments", 1], ["shops", 1, "expensiveDepartments", 2], ["shops", 2, "expensiveDepartments", 0], ["shops", 2, "expensiveDepartments", 1],["shops", 2, "expensiveDepartments", 2],
-                        ["expensiveShops", 0, "expensiveDepartments", 0], ["expensiveShops", 0, "expensiveDepartments", 1], ["expensiveShops", 0, "expensiveDepartments", 2], ["expensiveShops", 1, "expensiveDepartments", 0], ["expensiveShops", 1, "expensiveDepartments", 1], ["expensiveShops", 1, "expensiveDepartments", 2], ["expensiveShops", 2, "expensiveDepartments", 0], ["expensiveShops", 2, "expensiveDepartments", 1],["expensiveShops", 2, "expensiveDepartments", 2],
-                        ["expensiveShops", 0, "departments", 0], ["expensiveShops", 0, "departments", 1], ["expensiveShops", 0, "departments", 2], ["expensiveShops", 1, "departments", 0], ["expensiveShops", 1, "departments", 1], ["expensiveShops", 1, "departments", 2], ["expensiveShops", 2, "departments", 0], ["expensiveShops", 2, "departments", 1],["expensiveShops", 2, "departments", 2]]
+                        ["shops", 0, "departments", 0], ["shops", 0, "departments", 1], ["shops", 0, "departments", 2], ["shops", 1, "departments", 0], ["shops", 1, "departments", 1], ["shops", 1, "departments", 2], ["shops", 2, "departments", 0], ["shops", 2, "departments", 1], ["shops", 2, "departments", 2],
+                        ["shops", 0, "expensiveDepartments", 0], ["shops", 0, "expensiveDepartments", 1], ["shops", 0, "expensiveDepartments", 2], ["shops", 1, "expensiveDepartments", 0], ["shops", 1, "expensiveDepartments", 1], ["shops", 1, "expensiveDepartments", 2], ["shops", 2, "expensiveDepartments", 0], ["shops", 2, "expensiveDepartments", 1], ["shops", 2, "expensiveDepartments", 2],
+                        ["expensiveShops", 0, "expensiveDepartments", 0], ["expensiveShops", 0, "expensiveDepartments", 1], ["expensiveShops", 0, "expensiveDepartments", 2], ["expensiveShops", 1, "expensiveDepartments", 0], ["expensiveShops", 1, "expensiveDepartments", 1], ["expensiveShops", 1, "expensiveDepartments", 2], ["expensiveShops", 2, "expensiveDepartments", 0], ["expensiveShops", 2, "expensiveDepartments", 1], ["expensiveShops", 2, "expensiveDepartments", 2],
+                        ["expensiveShops", 0, "departments", 0], ["expensiveShops", 0, "departments", 1], ["expensiveShops", 0, "departments", 2], ["expensiveShops", 1, "departments", 0], ["expensiveShops", 1, "departments", 1], ["expensiveShops", 1, "departments", 2], ["expensiveShops", 2, "departments", 0], ["expensiveShops", 2, "departments", 1], ["expensiveShops", 2, "departments", 2]]
         )
 
         when:

@@ -14,7 +14,7 @@ public interface DataLoaderDispatchStrategy {
     };
 
 
-    default void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    default void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
 
     }
 
@@ -31,7 +31,7 @@ public interface DataLoaderDispatchStrategy {
     }
 
 
-    default void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters) {
+    default void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, int fieldCount) {
 
     }
 

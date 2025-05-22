@@ -2,6 +2,7 @@ package graphql.execution.incremental;
 
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.VisibleForTesting;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -24,6 +25,12 @@ public class DeferredCallContext {
     public DeferredCallContext(int startLevel, int fields) {
         this.startLevel = startLevel;
         this.fields = fields;
+    }
+
+    @VisibleForTesting
+    public DeferredCallContext() {
+        this.startLevel = 0;
+        this.fields = 0;
     }
 
     public int getStartLevel() {

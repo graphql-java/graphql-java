@@ -117,7 +117,6 @@ public interface DeferredExecutionSupport {
 
         private DeferredFragmentCall createDeferredFragmentCall(DeferredExecution deferredExecution) {
             int level = parameters.getPath().getLevel() + 1;
-            System.out.println("new DeferredFragmentCall for level " + level + " with fields " + deferredFields.size());
             DeferredCallContext deferredCallContext = new DeferredCallContext(level, deferredFields.size());
 
             List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
