@@ -68,14 +68,14 @@ class DataLoaderPerformanceData {
     static String getQuery(boolean deferDepartments, boolean deferProducts) {
         return """
             query { 
-                shops { 
-                    id name 
+                shops {  # 1
+                    id name # 2 
                     ... @defer(if: $deferDepartments) {
-                        departments { 
-                            id name 
+                        departments { # 2
+                            id name # 3 
                             ... @defer(if: $deferProducts) {
-                                products { 
-                                    id name 
+                                products {  # 3
+                                    id name  # 4
                                 } 
                             }
                         } 

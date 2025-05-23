@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.Internal;
+import graphql.execution.incremental.DeferredCallContext;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import org.dataloader.DataLoader;
 import org.dataloader.DelegatingDataLoader;
@@ -32,7 +33,8 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         String path = dfe.getExecutionStepInfo().getPath().toString();
         DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfeImpl.toInternal();
         if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof PerLevelDataLoaderDispatchStrategy) {
-            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderLoadCall(path, level, delegate, dataLoaderName, key);
+            DeferredCallContext deferredCallContext = dfeInternalState.getDeferredCallContext();
+            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderLoadCall(path, level, delegate, dataLoaderName, key, deferredCallContext);
         }
         return result;
     }

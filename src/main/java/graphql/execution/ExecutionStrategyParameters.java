@@ -94,6 +94,7 @@ public class ExecutionStrategyParameters {
      * @return the deferred call context or null if we're not in the scope of a deferred call
      */
     @Nullable
+    @Internal
     public DeferredCallContext getDeferredCallContext() {
         return deferredCallContext;
     }
