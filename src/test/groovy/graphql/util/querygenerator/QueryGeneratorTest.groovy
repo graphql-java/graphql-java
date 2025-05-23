@@ -926,6 +926,9 @@ $resultFields
       bar {
         id
         baz {
+          ... on Bar {
+            Bar_id: id
+          }
           ... on Qux {
             Qux_id: id
             Qux_name: name
