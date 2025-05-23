@@ -56,10 +56,32 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
 
         /**
-         * A level is ready when all fields in this level are fetched
-         * The expected field fetch count is accurate when all execute object calls happened
-         * The expected execute object count is accurate when all sub selections fetched
-         * are done in the previous level
+         * A general overview of teh tracked data:
+         * There are three aspects tracked per level:
+         * - number of execute object calls (executeObject)
+         * - number of fetches
+         * - number of sub selections finished fetching
+         * <p/>
+         * The level for an execute object call is the level of the field in the query: for
+         * { a {b {c}}} the level of a is 1, b is 2 and c is not an object
+         * <p/>
+         * For fetches the level is the level of the field fetched
+         * <p/>
+         * For sub selections finished it is the level of the fields inside the sub selection:
+         * {a1 { b c} a2 } the level of {a1 a2} is 1, the level of {b c} is 2
+         * <p/>
+         * <p/>
+         * A finished subselection means we can predict the number of execute object calls in the same level as the subselection:
+         * { a {x} b {y} }
+         * If a is a list of 3 objects and b is a list of 2 objects we expect 3 + 2 = 5 execute object calls on the level 1 to be happening
+         * <p/>
+         * An execute objects again means we can predict the number of fetches in the next level:
+         * Execute Object a with { a {f1 f2 f3} } means we expect 3 fetches on level 2.
+         * <p/>
+         * This means we know a level is ready to be dispatched if:
+         * - all subselections done in the parent level
+         * - all execute objects calls in the parent level are done
+         * - all expected fetched happened in the current level
          */
 
         private final LevelMap expectedFetchCountPerLevel = new LevelMap();
@@ -244,12 +266,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 int startLevel = deferredCallContext.getStartLevel();
                 int fields = deferredCallContext.getFields();
                 callStack.lock.runLocked(() -> {
+                    // we make sure that startLevel-1 is considered done
                     callStack.expectedExecuteObjectCallsPerLevel.set(0, 0); // set to 1 in the constructor of CallStack
                     callStack.expectedExecuteObjectCallsPerLevel.set(startLevel - 1, 1);
                     callStack.happenedExecuteObjectCallsPerLevel.set(startLevel - 1, 1);
                     callStack.highestReadyLevel = startLevel - 1;
                     callStack.increaseExpectedFetchCount(startLevel, fields);
-                    // we make sure that startLevel-1 is considered done
                 });
                 return callStack;
             });
