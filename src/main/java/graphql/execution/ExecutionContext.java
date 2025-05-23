@@ -9,6 +9,7 @@ import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.execution.incremental.IncrementalCallState;
@@ -29,7 +30,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -67,13 +67,13 @@ public class ExecutionContext {
     private final Supplier<ExecutableNormalizedOperation> queryTree;
     private final boolean propagateErrorsOnNonNullContractFailure;
 
-    private final AtomicInteger isRunning = new AtomicInteger(0);
-
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
     private final EngineRunningState engineRunningState;
+
+    private final Profiler profiler;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -102,6 +102,7 @@ public class ExecutionContext {
         this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
+        this.profiler = builder.profiler;
     }
 
     public ExecutionId getExecutionId() {
@@ -375,5 +376,11 @@ public class ExecutionContext {
     @Internal
     public EngineRunningState getEngineRunningState() {
         return engineRunningState;
+    }
+
+
+    @Internal
+    public Profiler getProfiler() {
+        return profiler;
     }
 }

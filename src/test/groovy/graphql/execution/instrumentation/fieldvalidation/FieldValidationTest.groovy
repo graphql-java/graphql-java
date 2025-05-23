@@ -5,6 +5,7 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.GraphQLError
+import graphql.Profiler
 import graphql.TestUtil
 import graphql.execution.AbortExecutionException
 import graphql.execution.AsyncExecutionStrategy
@@ -310,7 +311,7 @@ class FieldValidationTest extends Specification {
         def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT, ResponseMapFactory.DEFAULT, false)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, null, new EngineRunningState())
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, null, new EngineRunningState(), Profiler.NO_OP)
     }
 
     def "test graphql from end to end with chained instrumentation"() {
