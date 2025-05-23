@@ -8,7 +8,7 @@ import com.tngtech.archunit.lang.EvaluationResult
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition
 import spock.lang.Specification
 
-class AnnotationUsageTest extends Specification {
+class NullabilityAnnotationUsageTest extends Specification {
 
     private static final JavaClasses importedClasses = new ClassFileImporter()
             .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
