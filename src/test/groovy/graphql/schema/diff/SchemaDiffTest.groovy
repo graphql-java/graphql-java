@@ -778,7 +778,7 @@ class SchemaDiffTest extends Specification {
             a: String
         }
         interface Bar {
-            b: String
+            a: String
         }
        ''')
         def newSchema = TestUtil.schema('''
@@ -786,11 +786,10 @@ class SchemaDiffTest extends Specification {
             foo: Foo
         }
         type Foo implements Bar {
-            a: String
-            b: String
+            a: String            
         }
         interface Bar {
-            b: String
+            a: String
         }
        ''')
 
@@ -799,10 +798,13 @@ class SchemaDiffTest extends Specification {
 
         then:
         validateReportersAreEqual()
-        introspectionReporter.dangerCount == 1
         introspectionReporter.breakageCount == 0
-        introspectionReporter.dangers.every {
-            it.getCategory() == DiffCategory.ADDITION
+        introspectionReporter.infos.any {
+            it.category == DiffCategory.ADDITION &&
+                    it.typeKind == TypeKind.Object &&
+                    it.typeName == "Foo" &&
+                    it.level == DiffLevel.INFO
         }
+
     }
 }
