@@ -220,10 +220,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         this.enableDataLoaderChaining = graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false);
     }
 
-    @Override
-    public void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
-        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
-    }
 
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
