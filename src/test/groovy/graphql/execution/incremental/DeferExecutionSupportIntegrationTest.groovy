@@ -27,6 +27,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
@@ -1702,8 +1703,10 @@ class DeferExecutionSupportIntegrationTest extends Specification {
               }
             }
         '''
+
+        def batchLoaderCallCount = new AtomicInteger(0)
         when:
-        def initialResult = executeQuery(query)
+        def initialResult = executeQuery(query, true, [:], batchLoaderCallCount)
 
         then:
         initialResult.toSpecification() == [
@@ -1711,12 +1714,11 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                 hasNext: true
         ]
 
-        println "initialResult = $initialResult"
         when:
         def incrementalResults = getIncrementalResults(initialResult)
 
         then:
-
+        batchLoaderCallCount.get() == 1
         incrementalResults.size() == 1
         incrementalResults[0] == [incremental: [[path: ["post"], data: [fieldWithDataLoader1: "1001-fieldWithDataLoader1", fieldWithDataLoader2: "1001-fieldWithDataLoader2"]]],
                                   hasNext    : false
@@ -1733,9 +1735,11 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         return this.executeQuery(query, true, variables)
     }
 
-    private ExecutionResult executeQuery(String query, boolean incrementalSupport, Map<String, Object> variables) {
+    private ExecutionResult executeQuery(String query, boolean incrementalSupport, Map<String, Object> variables, AtomicInteger batchLoaderCallCount = null) {
         BatchLoader batchLoader = { keys ->
-            println "batchlaoder called with keys $keys"
+            if (batchLoaderCallCount != null) {
+                batchLoaderCallCount.incrementAndGet()
+            }
             return CompletableFuture.completedFuture(keys)
         }
         DataLoader dl = DataLoaderFactory.newDataLoader(batchLoader)
