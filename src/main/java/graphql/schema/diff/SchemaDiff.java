@@ -135,8 +135,8 @@ public class SchemaDiff {
      * This will perform a difference on the two schemas.  The reporter callback
      * interface will be called when differences are encountered.
      *
-     * @param schemaDiffSet  the two schemas to compare for difference
-     * @param reporter the place to report difference events to
+     * @param schemaDiffSet the two schemas to compare for difference
+     * @param reporter      the place to report difference events to
      *
      * @return the number of API breaking changes
      */
