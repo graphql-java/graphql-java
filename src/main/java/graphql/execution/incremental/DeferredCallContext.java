@@ -22,6 +22,8 @@ public class DeferredCallContext {
     private final int startLevel;
     private final int fields;
 
+    private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
+
     public DeferredCallContext(int startLevel, int fields) {
         this.startLevel = startLevel;
         this.fields = fields;
@@ -41,7 +43,6 @@ public class DeferredCallContext {
         return fields;
     }
 
-    private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
 
     public void addErrors(List<GraphQLError> errors) {
         this.errors.addAll(errors);

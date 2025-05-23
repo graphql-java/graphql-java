@@ -106,10 +106,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getCoercedVariables().toMap())
                 .executionId(executionContext.getExecutionId())
-                .dataLoaderDispatchStrategy(executionContext.getDataLoaderDispatcherStrategy())
-                ;
-
-
+                .dataLoaderDispatchStrategy(executionContext.getDataLoaderDispatcherStrategy());
     }
 
     @Override
