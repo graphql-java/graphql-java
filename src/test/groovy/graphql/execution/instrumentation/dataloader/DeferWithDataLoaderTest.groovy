@@ -478,13 +478,6 @@ class DeferWithDataLoaderTest extends Specification {
                 ]
         )
 
-//        when: ] )
-//        incrementalResults == [[hasNext: true, incremental: [[path: ["pets", 0], data: [owner: [name: "Owner 1"]]]]], [hasNext: true, incremental: [[path: ["pets", 1], data: [owner: [name: "Owner 2"]]]]], [hasNext: true, incremental: [[path: ["pets", 2], data: [owner: [name: "Owner 3"]]]]], [hasNext: true, incremental: [[path: ["pets", 0, "owner"], data: [address: "Address 1"]]]], [hasNext: true, incremental: [[path: ["pets", 1, "owner"], data: [address: "Address 2"]]]], [hasNext: false, incremental: [[path: ["pets", 2, "owner"], data: [address: "Address 3"]]]]]
-//
-//        assertIncrementalResults(incrementalResults,
-////                [
-//
-
     }
 
 }
