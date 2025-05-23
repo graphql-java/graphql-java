@@ -5,6 +5,7 @@ import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQLContext
+import graphql.Profiler
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
@@ -112,6 +113,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .locale(Locale.getDefault())
                 .engineRunningState(new EngineRunningState())
+                .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -156,6 +158,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .graphQLContext(graphqlContextMock)
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .engineRunningState(new EngineRunningState())
+                .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -202,6 +205,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .engineRunningState(new EngineRunningState())
                 .locale(Locale.getDefault())
+                .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -247,6 +251,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .graphQLContext(graphqlContextMock)
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .engineRunningState(new EngineRunningState())
+                .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -290,6 +295,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .locale(Locale.getDefault())
                 .engineRunningState(new EngineRunningState())
+                .profiler(Profiler.NO_OP)
                 .instrumentation(new SimplePerformantInstrumentation() {
 
                     @Override

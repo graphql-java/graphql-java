@@ -2,6 +2,7 @@ package graphql;
 
 import graphql.execution.EngineRunningObserver;
 import graphql.execution.ExecutionId;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
@@ -19,6 +20,7 @@ import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
 import static graphql.execution.EngineRunningObserver.RunningState.RUNNING_START;
 
 @Internal
+@NullMarked
 public class EngineRunningState {
 
     @Nullable
@@ -40,10 +42,11 @@ public class EngineRunningState {
         this.executionId = null;
     }
 
-    public EngineRunningState(ExecutionInput executionInput) {
+    public EngineRunningState(ExecutionInput executionInput, Profiler profiler) {
         EngineRunningObserver engineRunningObserver = executionInput.getGraphQLContext().get(EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY);
-        if (engineRunningObserver != null) {
-            this.engineRunningObserver = engineRunningObserver;
+        EngineRunningObserver wrappedObserver = profiler.wrapEngineRunningObserver(engineRunningObserver);
+        if (wrappedObserver != null) {
+            this.engineRunningObserver = wrappedObserver;
             this.graphQLContext = executionInput.getGraphQLContext();
             this.executionId = executionInput.getExecutionId();
         } else {

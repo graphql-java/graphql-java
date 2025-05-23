@@ -3,6 +3,7 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
@@ -47,6 +48,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             = new InterThreadMemoizedSupplier<>(() -> Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors()));
 
     static final long DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000L;
+    private final Profiler profiler;
 
     private final Map<DeferredCallContext, CallStack> callStackMap = new ConcurrentHashMap<>();
 
@@ -218,6 +220,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         });
 
         this.enableDataLoaderChaining = graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false);
+        this.profiler = executionContext.getProfiler();
     }
 
 
@@ -475,13 +478,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     void dispatch(int level, CallStack callStack) {
         if (!enableDataLoaderChaining) {
+            profiler.oldStrategyDispatchingAll(level);
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
             dataLoaderRegistry.dispatchAll();
             return;
         }
-
         Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
         if (resultPathWithDataLoaders != null) {
+            profiler.chainedStrategyDispatching(level);
             Set<String> resultPathToDispatch = callStack.lock.callLocked(() -> {
                 callStack.dispatchingStartedPerLevel.add(level);
                 return resultPathWithDataLoaders

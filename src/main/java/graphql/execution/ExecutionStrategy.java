@@ -496,6 +496,7 @@ public abstract class ExecutionStrategy {
             } else {
                 fetchedValueRaw = dataFetcher.get(dataFetchingEnvironment.get());
             }
+            executionContext.getProfiler().fieldFetched(fetchedValueRaw, dataFetcher, parameters.getPath());
             fetchedValue = Async.toCompletableFutureOrMaterializedObject(fetchedValueRaw);
         } catch (Exception e) {
             fetchedValue = Async.exceptionallyCompletedFuture(e);

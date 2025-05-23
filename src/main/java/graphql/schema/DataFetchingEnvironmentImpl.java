@@ -4,6 +4,7 @@ package graphql.schema;
 import com.google.common.collect.ImmutableMap;
 import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.DataLoaderDispatchStrategy;
@@ -79,7 +80,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.queryDirectives = builder.queryDirectives;
 
         // internal state
-        this.dfeInternalState = new DFEInternalState(builder.dataLoaderDispatchStrategy, builder.deferredCallContext);
+        this.dfeInternalState = new DFEInternalState(builder.dataLoaderDispatchStrategy, builder.deferredCallContext, builder.profiler);
     }
 
     /**
@@ -106,7 +107,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getCoercedVariables().toMap())
                 .executionId(executionContext.getExecutionId())
-                .dataLoaderDispatchStrategy(executionContext.getDataLoaderDispatcherStrategy());
+                .dataLoaderDispatchStrategy(executionContext.getDataLoaderDispatcherStrategy())
+                .profiler(executionContext.getProfiler());
     }
 
     @Override
@@ -282,6 +284,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private ImmutableMapWithNullValues<String, Object> variables;
         private QueryDirectives queryDirectives;
         private DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
+        private Profiler profiler;
         private DeferredCallContext deferredCallContext;
 
         public Builder(DataFetchingEnvironmentImpl env) {
@@ -307,6 +310,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.variables = env.variables;
             this.queryDirectives = env.queryDirectives;
             this.dataLoaderDispatchStrategy = env.dfeInternalState.dataLoaderDispatchStrategy;
+            this.profiler = env.dfeInternalState.profiler;
             this.deferredCallContext = env.dfeInternalState.deferredCallContext;
         }
 
@@ -440,20 +444,31 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.dataLoaderDispatchStrategy = dataLoaderDispatcherStrategy;
             return this;
         }
+
+        public Builder profiler(Profiler profiler) {
+            this.profiler = profiler;
+            return this;
+        }
     }
 
     @Internal
     public static class DFEInternalState {
         final DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
         final DeferredCallContext deferredCallContext;
+        final Profiler profiler;
 
-        public DFEInternalState(DataLoaderDispatchStrategy dataLoaderDispatchStrategy, DeferredCallContext deferredCallContext) {
+        public DFEInternalState(DataLoaderDispatchStrategy dataLoaderDispatchStrategy, DeferredCallContext deferredCallContext, Profiler profiler) {
             this.dataLoaderDispatchStrategy = dataLoaderDispatchStrategy;
             this.deferredCallContext = deferredCallContext;
+            this.profiler = profiler;
         }
 
         public DataLoaderDispatchStrategy getDataLoaderDispatchStrategy() {
             return dataLoaderDispatchStrategy;
+        }
+
+        public Profiler getProfiler() {
+            return profiler;
         }
 
         public DeferredCallContext getDeferredCallContext() {
