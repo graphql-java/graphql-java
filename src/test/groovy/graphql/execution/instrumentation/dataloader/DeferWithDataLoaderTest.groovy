@@ -2,10 +2,19 @@ package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
 import graphql.ExecutionResult
+import graphql.ExperimentalApi
 import graphql.GraphQL
+import graphql.TestUtil
 import graphql.incremental.IncrementalExecutionResult
+import graphql.schema.DataFetcher
+import org.awaitility.Awaitility
+import org.dataloader.BatchLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
+
+import java.time.Duration
+import java.util.concurrent.CompletableFuture
 
 import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.combineExecutionResults
@@ -34,7 +43,7 @@ class DeferWithDataLoaderTest extends Specification {
      * @param results a list of the incremental results from the execution
      * @param expectedPaths a list of the expected paths in the incremental results. The order of the elements in the list is not important.
      */
-    private static void assertIncrementalResults(List<Map<String, Object>> results, List<List<String>> expectedPaths) {
+    private static void assertIncrementalResults(List<Map<String, Object>> results, List<List<String>> expectedPaths, List<Map> expectedData = null) {
         assert results.size() == expectedPaths.size(), "Expected ${expectedPaths.size()} results, got ${results.size()}"
 
         assert results.dropRight(1).every { it.hasNext == true }, "Expected all but the last result to have hasNext=true"
@@ -42,8 +51,12 @@ class DeferWithDataLoaderTest extends Specification {
 
         assert results.every { it.incremental.size() == 1 }, "Expected every result to have exactly one incremental item"
 
-        expectedPaths.each { path ->
-            assert results.any { it.incremental[0].path == path }, "Expected path $path not found in $results"
+        expectedPaths.eachWithIndex { path, index ->
+            def result = results.find { it.incremental[0].path == path }
+            assert result != null, "Expected path $path not found in $results"
+            if (expectedData != null) {
+                assert result.incremental[0].data == expectedData[index], "Expected data $expectedData[index] for path $path, got ${result.incremental[0].data}"
+            }
         }
     }
 
@@ -333,6 +346,145 @@ class DeferWithDataLoaderTest extends Specification {
         // TODO: Why the load counters are only 1?
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+    }
+
+    def "dataloader in initial result and chained dataloader inside nested defer block"() {
+        given:
+        def sdl = '''
+            type Query {
+                pets: [Pet]
+            }
+            
+            type Pet {
+                name: String
+                owner: Owner
+            }
+            type Owner {
+                name: String
+                address: String
+            }
+            
+        '''
+
+        def query = '''
+            query {
+                pets {
+                    name
+                    ... @defer {
+                        owner {
+                            name
+                            ... @defer {
+                                address
+                            }
+                        }
+                    }
+                }
+            }
+        '''
+
+        BatchLoader petNameBatchLoader = { List<String> keys ->
+            println "petNameBatchLoader called with $keys"
+            assert keys.size() == 3
+            return CompletableFuture.completedFuture(["Pet 1", "Pet 2", "Pet 3"])
+        }
+        BatchLoader addressBatchLoader = { List<String> keys ->
+            println "addressBatchLoader called with $keys"
+            assert keys.size() == 3
+            return CompletableFuture.completedFuture(keys.collect { it ->
+                if (it == "owner-1") {
+                    return "Address 1"
+                } else if (it == "owner-2") {
+                    return "Address 2"
+                } else if (it == "owner-3") {
+                    return "Address 3"
+                }
+            })
+        }
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        def petNameDL = DataLoaderFactory.newDataLoader("petName", petNameBatchLoader)
+        def addressDL = DataLoaderFactory.newDataLoader("address", addressBatchLoader)
+        dataLoaderRegistry.register("petName", petNameDL)
+        dataLoaderRegistry.register("address", addressDL)
+
+        DataFetcher petsDF = { env ->
+            return [
+                    [id: "pet-1"],
+                    [id: "pet-2"],
+                    [id: "pet-3"]
+            ]
+        }
+        DataFetcher petNameDF = { env ->
+            env.getDataLoader("petName").load(env.getSource().id)
+        }
+
+        DataFetcher petOwnerDF = { env ->
+            String id = env.getSource().id
+            if (id == "pet-1") {
+                return [id: "owner-1", name: "Owner 1"]
+            } else if (id == "pet-2") {
+                return [id: "owner-2", name: "Owner 2"]
+            } else if (id == "pet-3") {
+                return [id: "owner-3", name: "Owner 3"]
+            }
+        }
+        DataFetcher ownerAddressDF = { env ->
+            return CompletableFuture.supplyAsync {
+                Thread.sleep(500)
+                return "foo"
+            }.thenCompose {
+                return env.getDataLoader("address").load(env.getSource().id)
+            }
+                    .thenCompose {
+                        return env.getDataLoader("address").load(env.getSource().id)
+                    }
+        }
+
+        def schema = TestUtil.schema(sdl, [Query: [pets: petsDF],
+                                           Pet  : [name: petNameDF, owner: petOwnerDF],
+                                           Owner: [address: ownerAddressDF]])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        def ei = ExecutionInput.newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        ei.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
+        ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true)
+        ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, Duration.ofSeconds(1).toNanos())
+
+        when:
+        CompletableFuture<IncrementalExecutionResult> erCF = graphQL.executeAsync(ei)
+        Awaitility.await().until { erCF.isDone() }
+        def er = erCF.get()
+
+        then:
+        er.toSpecification() == [data   : [pets: [[name: "Pet 1"], [name: "Pet 2"], [name: "Pet 3"]]],
+                                 hasNext: true]
+
+        when:
+        def incrementalResults = getIncrementalResults(er)
+        println "incrementalResults: $incrementalResults"
+
+        then:
+        assertIncrementalResults(incrementalResults,
+                [
+                        ["pets", 0], ["pets", 1], ["pets", 2],
+                        ["pets", 0, "owner"], ["pets", 1, "owner"], ["pets", 2, "owner"],
+                ],
+                [
+                        [owner: [name: "Owner 1"]],
+                        [owner: [name: "Owner 2"]],
+                        [owner: [name: "Owner 3"]],
+                        [address: "Address 1"],
+                        [address: "Address 2"],
+                        [address: "Address 3"]
+                ]
+        )
+
+//        when: ] )
+//        incrementalResults == [[hasNext: true, incremental: [[path: ["pets", 0], data: [owner: [name: "Owner 1"]]]]], [hasNext: true, incremental: [[path: ["pets", 1], data: [owner: [name: "Owner 2"]]]]], [hasNext: true, incremental: [[path: ["pets", 2], data: [owner: [name: "Owner 3"]]]]], [hasNext: true, incremental: [[path: ["pets", 0, "owner"], data: [address: "Address 1"]]]], [hasNext: true, incremental: [[path: ["pets", 1, "owner"], data: [address: "Address 2"]]]], [hasNext: false, incremental: [[path: ["pets", 2, "owner"], data: [address: "Address 3"]]]]]
+//
+//        assertIncrementalResults(incrementalResults,
+////                [
+//
+
     }
 
 }
