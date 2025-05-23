@@ -2,6 +2,7 @@ package graphql.execution.incremental;
 
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.VisibleForTesting;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -18,7 +19,30 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @Internal
 public class DeferredCallContext {
 
+    private final int startLevel;
+    private final int fields;
+
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
+
+    public DeferredCallContext(int startLevel, int fields) {
+        this.startLevel = startLevel;
+        this.fields = fields;
+    }
+
+    @VisibleForTesting
+    public DeferredCallContext() {
+        this.startLevel = 0;
+        this.fields = 0;
+    }
+
+    public int getStartLevel() {
+        return startLevel;
+    }
+
+    public int getFields() {
+        return fields;
+    }
+
 
     public void addErrors(List<GraphQLError> errors) {
         this.errors.addAll(errors);
@@ -34,4 +58,6 @@ public class DeferredCallContext {
     public List<GraphQLError> getErrors() {
         return errors;
     }
+
+
 }

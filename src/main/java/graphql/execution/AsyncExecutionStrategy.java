@@ -39,7 +39,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
-        dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
@@ -54,6 +53,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         }
 
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
+
+        dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters, deferredExecutionSupport.getNonDeferredFieldNames(fieldNames).size());
+
         Async.CombinedBuilder<FieldValueInfo> futures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
@@ -72,14 +74,14 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
             }
-            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos);
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             fieldValuesFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
-            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesException(ex);
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesException(ex, parameters);
             executionStrategyCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;

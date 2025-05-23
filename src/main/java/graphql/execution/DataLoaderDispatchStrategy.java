@@ -14,7 +14,7 @@ public interface DataLoaderDispatchStrategy {
     };
 
 
-    default void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    default void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
 
     }
 
@@ -22,20 +22,24 @@ public interface DataLoaderDispatchStrategy {
 
     }
 
-    default void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+    default void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
 
     }
 
-    default void executionStrategyOnFieldValuesException(Throwable t) {
+    default void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
 
     }
 
 
-    default void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters) {
+    default void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, int fieldCount) {
 
     }
 
     default void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+
+    }
+
+    default void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable throwable, ExecutionStrategyParameters parameters) {
 
     }
 
@@ -54,9 +58,5 @@ public interface DataLoaderDispatchStrategy {
 
     default DataFetcher<?> modifyDataFetcher(DataFetcher<?> dataFetcher) {
         return dataFetcher;
-    }
-
-    default void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
-
     }
 }

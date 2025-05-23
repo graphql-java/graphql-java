@@ -6,17 +6,16 @@ import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
-import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
@@ -37,7 +36,6 @@ import org.reactivestreams.Publisher;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -77,7 +75,7 @@ public class Execution {
         this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
     }
 
-    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState, EngineRunningState engineRunningState) {
+    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState, EngineRunningState engineRunningState, Profiler profiler) {
         NodeUtil.GetOperationResult getOperationResult;
         CoercedVariables coercedVariables;
         Supplier<NormalizedVariables> normalizedVariableValues;
@@ -118,6 +116,7 @@ public class Execution {
                 .executionInput(executionInput)
                 .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
                 .engineRunningState(engineRunningState)
+                .profiler(profiler)
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
@@ -159,7 +158,7 @@ public class Execution {
 
         OperationDefinition.Operation operation = operationDefinition.getOperation();
         GraphQLObjectType operationRootType;
-
+        executionContext.getProfiler().operationDefinition(operationDefinition);
         try {
             operationRootType = SchemaUtil.getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
         } catch (RuntimeException rte) {
@@ -258,12 +257,7 @@ public class Execution {
             return DataLoaderDispatchStrategy.NO_OP;
         }
         if (!executionContext.isSubscriptionOperation()) {
-            boolean deferEnabled = executionContext.hasIncrementalSupport();
-
-            // Dedicated strategy for defer support, for safety purposes.
-            return deferEnabled ?
-                    new PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch(executionContext) :
-                    new PerLevelDataLoaderDispatchStrategy(executionContext);
+            return new PerLevelDataLoaderDispatchStrategy(executionContext);
         } else {
             return new FallbackDataLoaderDispatchStrategy(executionContext);
         }
@@ -292,7 +286,7 @@ public class Execution {
 
     private boolean propagateErrorsOnNonNullContractFailure(List<Directive> directives) {
         boolean jvmWideEnabled = Directives.isExperimentalDisableErrorPropagationDirectiveEnabled();
-        if (! jvmWideEnabled) {
+        if (!jvmWideEnabled) {
             return true;
         }
         Directive foundDirective = NodeUtil.findNodeByName(directives, EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
