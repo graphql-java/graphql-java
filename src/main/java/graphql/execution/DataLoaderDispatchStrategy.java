@@ -59,12 +59,4 @@ public interface DataLoaderDispatchStrategy {
     default DataFetcher<?> modifyDataFetcher(DataFetcher<?> dataFetcher) {
         return dataFetcher;
     }
-
-    default void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
-
-    }
-
-    default void startIncrementalCall() {
-
-    }
 }
