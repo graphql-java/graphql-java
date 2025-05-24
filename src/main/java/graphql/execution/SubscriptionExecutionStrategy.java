@@ -4,6 +4,7 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
+import graphql.execution.incremental.DeferredCallContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -106,7 +107,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(executionContext,parameters);
+        ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(executionContext, parameters);
 
         CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
         return fieldFetched.thenApply(fetchedValue -> {
@@ -133,6 +134,8 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object eventPayload) {
+        System.out.println("new event");
+
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         ExecutionContext newExecutionContext = executionContext.transform(builder -> builder
@@ -148,7 +151,13 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         ));
 
         FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
+
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
+        MergedSelectionSet fields = parameters.getFields();
+        MergedField firstField = fields.getSubField(fields.getKeys().get(0));
+        //TODO: make it nicer
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, newParameters, null, null, null);
+        executionContext.getDataLoaderDispatcherStrategy().deferredOnFieldValue(firstField.getResultKey(), fieldValueInfo, null, newParameters);
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
                 .thenApply(val -> new ExecutionResultImpl(val, newExecutionContext.getErrors()))
@@ -185,8 +194,16 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
         ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField.getSingleField()));
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext);
-        return parameters.transform(builder -> builder
-                .field(firstField).path(fieldPath).nonNullFieldValidator(nonNullableFieldValidator));
+
+
+        ExecutionStrategyParameters newParameters = parameters.transform(builder -> builder
+                .field(firstField)
+                .path(fieldPath)
+                .nonNullFieldValidator(nonNullableFieldValidator)
+                .deferredCallContext(new DeferredCallContext(1, 1))
+        );
+        return newParameters;
+
     }
 
     private ExecutionStepInfo createSubscribedFieldStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
