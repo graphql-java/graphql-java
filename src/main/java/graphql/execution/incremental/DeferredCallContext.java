@@ -15,6 +15,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * <p>
  * Some behaviours, like error capturing, need to be scoped to a single {@link DeferredFragmentCall}, because each defer payload
  * contains its own distinct list of errors.
+ *
+ * This class is used also by the Subscription execution strategy to maintain a DataLoader dispatching context per event
  */
 @Internal
 public class DeferredCallContext {

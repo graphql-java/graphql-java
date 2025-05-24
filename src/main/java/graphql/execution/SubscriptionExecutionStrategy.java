@@ -155,9 +155,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
         MergedSelectionSet fields = parameters.getFields();
         MergedField firstField = fields.getSubField(fields.getKeys().get(0));
-        //TODO: make it nicer
-        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, newParameters, null, null, null);
-        executionContext.getDataLoaderDispatcherStrategy().deferredOnFieldValue(firstField.getResultKey(), fieldValueInfo, null, newParameters);
+        executionContext.getDataLoaderDispatcherStrategy().newSubscriptionExecution(fieldValueInfo, newParameters.getDeferredCallContext());
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
                 .thenApply(val -> new ExecutionResultImpl(val, newExecutionContext.getErrors()))
