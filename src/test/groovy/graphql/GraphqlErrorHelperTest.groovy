@@ -3,6 +3,7 @@ package graphql
 import graphql.language.SourceLocation
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
+import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
 
 class GraphqlErrorHelperTest extends Specification {
@@ -120,7 +121,7 @@ class GraphqlErrorHelperTest extends Specification {
 
         when:
         rawError = [message: "m"]
-        graphQLError = GraphQLError.fromSpecification(rawError) // just so we reference the public method
+        graphQLError = GraphQLError.fromSpecification(rawError) // vso we reference the public method
         then:
         graphQLError.getMessage() == "m"
         graphQLError.getErrorType() == ErrorType.DataFetchingException // default from error builder
@@ -153,5 +154,16 @@ class GraphqlErrorHelperTest extends Specification {
             assert gErr.getPath() == null
             assert gErr.getExtensions() == null
         }
+    }
+
+    @RepeatUntilFailure(maxAttempts = 1_000)
+    def "can deterministically serialize SourceLocation"() {
+        when:
+        def specMap = GraphqlErrorHelper.toSpecification(new TestError())
+
+        then:
+        def location = specMap["locations"][0] as Map<String, Object>
+        def keys = location.keySet().toList()
+        keys == ["line", "column"]
     }
 }
