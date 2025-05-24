@@ -121,7 +121,7 @@ class GraphqlErrorHelperTest extends Specification {
 
         when:
         rawError = [message: "m"]
-        graphQLError = GraphQLError.fromSpecification(rawError) // vso we reference the public method
+        graphQLError = GraphQLError.fromSpecification(rawError) // just so we reference the public method
         then:
         graphQLError.getMessage() == "m"
         graphQLError.getErrorType() == ErrorType.DataFetchingException // default from error builder
