@@ -2,8 +2,8 @@ package graphql.util.querygenerator;
 
 import graphql.language.AstPrinter;
 import graphql.parser.Parser;
+import org.jspecify.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.stream.Collectors;
 
