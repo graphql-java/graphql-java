@@ -9,6 +9,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.SingletonPropertyDataFetcher;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
@@ -114,5 +115,15 @@ public class ProfilerImpl implements Profiler {
     @Override
     public void oldStrategyDispatchingAll(int level) {
         profilerResult.oldStrategyDispatchingAll(level);
+    }
+
+    @Override
+    public void batchLoadedOldStrategy(String name, int level, int count) {
+        profilerResult.addDispatchEvent(name, level, count, false);
+    }
+
+    @Override
+    public void batchLoadedNewStrategy(String name, @Nullable Integer level, int count) {
+        profilerResult.addDispatchEvent(name, level, count, true);
     }
 }

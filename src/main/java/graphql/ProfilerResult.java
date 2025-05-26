@@ -2,14 +2,20 @@ package graphql;
 
 import graphql.execution.ExecutionId;
 import graphql.language.OperationDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @ExperimentalApi
+@NullMarked
 public class ProfilerResult {
 
     public static final String PROFILER_CONTEXT_KEY = "__GJ_PROFILER";
@@ -34,6 +40,49 @@ public class ProfilerResult {
     private final Set<Integer> oldStrategyDispatchingAll = ConcurrentHashMap.newKeySet();
     private final Set<Integer> chainedStrategyDispatching = ConcurrentHashMap.newKeySet();
 
+    private final List<DispatchEvent> dispatchEvents = Collections.synchronizedList(new ArrayList<>());
+
+
+    public static class DispatchEvent {
+        final String dataLoaderName;
+        final @Nullable
+        Integer level; // can be null for delayed dispatching
+        final int count;
+        private final boolean dataLoaderChainingEnabled;
+
+        public DispatchEvent(String dataLoaderName, @Nullable Integer level, int count, boolean dataLoaderChainingEnabled) {
+            this.dataLoaderName = dataLoaderName;
+            this.level = level;
+            this.count = count;
+            this.dataLoaderChainingEnabled = dataLoaderChainingEnabled;
+        }
+
+        public String getDataLoaderName() {
+            return dataLoaderName;
+        }
+
+        public @Nullable Integer getLevel() {
+            return level;
+        }
+
+        public int getCount() {
+            return count;
+        }
+
+        public boolean isDataLoaderChainingEnabled() {
+            return dataLoaderChainingEnabled;
+        }
+
+        @Override
+        public String toString() {
+            return "DispatchEvent{" +
+                    "dataLoaderName='" + dataLoaderName + '\'' +
+                    ", level=" + level +
+                    ", count=" + count +
+                    ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
+                    '}';
+        }
+    }
 
     public enum DataFetcherType {
         PROPERTY_DATA_FETCHER,
@@ -103,8 +152,11 @@ public class ProfilerResult {
         chainedStrategyDispatching.add(level);
     }
 
+    void addDispatchEvent(String dataLoaderName, @Nullable Integer level, int count, boolean dataLoaderChainingEnabled) {
+        dispatchEvents.add(new DispatchEvent(dataLoaderName, level, count, dataLoaderChainingEnabled));
+    }
 
-
+    // public getters
 
     public String getOperationName() {
         return operationName;
@@ -183,6 +235,14 @@ public class ProfilerResult {
         return oldStrategyDispatchingAll;
     }
 
+    public boolean isDataLoaderChainingEnabled() {
+        return dataLoaderChainingEnabled;
+    }
+
+    public List<DispatchEvent> getDispatchEvents() {
+        return dispatchEvents;
+    }
+
     public String fullSummary() {
         return "ProfilerResult{" +
                 "executionId=" + executionId +
@@ -201,6 +261,7 @@ public class ProfilerResult {
                 ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
                 ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
                 ", chainedStrategyDispatching" + chainedStrategyDispatching +
+                ", dispatchEvents" + dispatchEvents +
                 '}';
     }
 
@@ -219,6 +280,7 @@ public class ProfilerResult {
                 ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
                 ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
                 ", chainedStrategyDispatching" + chainedStrategyDispatching +
+                ", dispatchEvents" + dispatchEvents +
                 '}';
 
 

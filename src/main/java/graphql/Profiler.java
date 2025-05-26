@@ -16,13 +16,6 @@ public interface Profiler {
     };
 
 
-    default void rootFieldCount(int size) {
-
-    }
-
-    default void subSelectionCount(int size) {
-
-    }
 
     default void executionInput(ExecutionInput executionInput) {
 
@@ -50,6 +43,15 @@ public interface Profiler {
     }
 
     default void chainedStrategyDispatching(int level) {
+
+    }
+
+    default void batchLoadedOldStrategy(String name, int level, int count) {
+
+
+    }
+
+    default void batchLoadedNewStrategy(String name, @Nullable Integer level, int count) {
 
     }
 }

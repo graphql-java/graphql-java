@@ -269,8 +269,16 @@ class ProfilerTest extends Specification {
         then:
         er.data == [dogName: "Luna", catName: "Tiger"]
         batchLoadCalls == 2
+        profilerResult.isDataLoaderChainingEnabled()
         profilerResult.getDataLoaderLoadInvocations() == [name: 4]
         profilerResult.getChainedStrategyDispatching() == [1] as Set
+        profilerResult.getDispatchEvents().size() == 2
+        profilerResult.getDispatchEvents()[0].dataLoaderName == "name"
+        profilerResult.getDispatchEvents()[0].level == 1
+        profilerResult.getDispatchEvents()[0].count == 2
+        profilerResult.getDispatchEvents()[1].dataLoaderName == "name"
+        profilerResult.getDispatchEvents()[1].level == 1
+        profilerResult.getDispatchEvents()[1].count == 2
 
     }
 

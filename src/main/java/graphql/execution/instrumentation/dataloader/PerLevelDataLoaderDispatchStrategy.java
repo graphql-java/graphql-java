@@ -480,7 +480,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         if (!enableDataLoaderChaining) {
             profiler.oldStrategyDispatchingAll(level);
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
-            dataLoaderRegistry.dispatchAll();
+            dispatchAll(dataLoaderRegistry, level);
             return;
         }
         Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
@@ -502,8 +502,18 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
     }
 
+    private void dispatchAll(DataLoaderRegistry dataLoaderRegistry, int level) {
+        for (DataLoader<?, ?> dataLoader : dataLoaderRegistry.getDataLoaders()) {
+            dataLoader.dispatch().whenComplete((objects, throwable) -> {
+                if (objects != null && objects.size() > 0) {
+                    profiler.batchLoadedOldStrategy(dataLoader.getName(), level, objects.size());
+                }
+            });
+        }
+    }
 
-    public void dispatchDLCFImpl(Set<String> resultPathsToDispatch, Integer level, CallStack callStack) {
+
+    public void dispatchDLCFImpl(Set<String> resultPathsToDispatch, @Nullable Integer level, CallStack callStack) {
 
         // filter out all DataLoaderCFS that are matching the fields we want to dispatch
         List<ResultPathWithDataLoader> relevantResultPathWithDataLoader = new ArrayList<>();
@@ -524,7 +534,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
         List<CompletableFuture> allDispatchedCFs = new ArrayList<>();
         for (ResultPathWithDataLoader resultPathWithDataLoader : relevantResultPathWithDataLoader) {
-            allDispatchedCFs.add(resultPathWithDataLoader.dataLoader.dispatch());
+            CompletableFuture<List> dispatch = resultPathWithDataLoader.dataLoader.dispatch();
+            allDispatchedCFs.add(dispatch);
+            dispatch.whenComplete((objects, throwable) -> {
+                if (objects != null && objects.size() > 0) {
+                    profiler.batchLoadedNewStrategy(resultPathWithDataLoader.name, level, objects.size());
+                }
+            });
         }
         CompletableFuture.allOf(allDispatchedCFs.toArray(new CompletableFuture[0]))
                 .whenComplete((unused, throwable) -> {
