@@ -48,7 +48,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     static final long DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000L;
 
-    private final Map<DeferredCallContext, CallStack> callStackMap = new ConcurrentHashMap<>();
+    private final Map<DeferredCallContext, CallStack> deferredCallStackMap = new ConcurrentHashMap<>();
 
 
     private static class CallStack {
@@ -75,7 +75,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
          * { a {x} b {y} }
          * If a is a list of 3 objects and b is a list of 2 objects we expect 3 + 2 = 5 execute object calls on the level 1 to be happening
          * <p/>
-         * An execute objects again means we can predict the number of fetches in the next level:
+         * An executed object call again means we can predict the number of fetches in the next level:
          * Execute Object a with { a {f1 f2 f3} } means we expect 3 fetches on level 2.
          * <p/>
          * This means we know a level is ready to be dispatched if:
@@ -257,7 +257,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         if (deferredCallContext == null) {
             return this.initialCallStack;
         } else {
-            return callStackMap.computeIfAbsent(deferredCallContext, k -> {
+            return deferredCallStackMap.computeIfAbsent(deferredCallContext, k -> {
                 CallStack callStack = new CallStack();
                 int startLevel = deferredCallContext.getStartLevel();
                 int fields = deferredCallContext.getFields();
