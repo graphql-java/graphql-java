@@ -6,7 +6,6 @@ import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -16,7 +15,6 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
-import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
@@ -37,7 +35,6 @@ import org.reactivestreams.Publisher;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -258,12 +255,7 @@ public class Execution {
             return DataLoaderDispatchStrategy.NO_OP;
         }
         if (!executionContext.isSubscriptionOperation()) {
-            boolean deferEnabled = executionContext.hasIncrementalSupport();
-
-            // Dedicated strategy for defer support, for safety purposes.
-            return deferEnabled ?
-                    new PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch(executionContext) :
-                    new PerLevelDataLoaderDispatchStrategy(executionContext);
+            return new PerLevelDataLoaderDispatchStrategy(executionContext);
         } else {
             return new FallbackDataLoaderDispatchStrategy(executionContext);
         }

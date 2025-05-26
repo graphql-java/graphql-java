@@ -7,12 +7,15 @@ import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.incremental.DeferredCallContext;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.util.InterThreadMemoizedSupplier;
 import graphql.util.LockKit;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,9 +33,10 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Internal
+@NullMarked
 public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStrategy {
 
-    private final CallStack callStack;
+    private final CallStack initialCallStack;
     private final ExecutionContext executionContext;
     private final long batchWindowNs;
     private final boolean enableDataLoaderChaining;
@@ -44,16 +48,40 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     static final long DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000L;
 
+    private final Map<DeferredCallContext, CallStack> deferredCallStackMap = new ConcurrentHashMap<>();
+
 
     private static class CallStack {
 
         private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
 
         /**
-         * A level is ready when all fields in this level are fetched
-         * The expected field fetch count is accurate when all execute object calls happened
-         * The expected execute object count is accurate when all sub selections fetched
-         * are done in the previous level
+         * A general overview of teh tracked data:
+         * There are three aspects tracked per level:
+         * - number of execute object calls (executeObject)
+         * - number of fetches
+         * - number of sub selections finished fetching
+         * <p/>
+         * The level for an execute object call is the level of the field in the query: for
+         * { a {b {c}}} the level of a is 1, b is 2 and c is not an object
+         * <p/>
+         * For fetches the level is the level of the field fetched
+         * <p/>
+         * For sub selections finished it is the level of the fields inside the sub selection:
+         * {a1 { b c} a2 } the level of {a1 a2} is 1, the level of {b c} is 2
+         * <p/>
+         * <p/>
+         * A finished subselection means we can predict the number of execute object calls in the same level as the subselection:
+         * { a {x} b {y} }
+         * If a is a list of 3 objects and b is a list of 2 objects we expect 3 + 2 = 5 execute object calls on the level 1 to be happening
+         * <p/>
+         * An executed object call again means we can predict the number of fetches in the next level:
+         * Execute Object a with { a {f1 f2 f3} } means we expect 3 fetches on level 2.
+         * <p/>
+         * This means we know a level is ready to be dispatched if:
+         * - all subselections done in the parent level
+         * - all execute objects calls in the parent level are done
+         * - all expected fetched happened in the current level
          */
 
         private final LevelMap expectedFetchCountPerLevel = new LevelMap();
@@ -84,10 +112,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         private boolean batchWindowOpen;
 
 
+        private final List<FieldValueInfo> deferredFragmentRootFieldsFetched = new ArrayList<>();
+
         public CallStack() {
             // in the first level there is only one sub selection,
             // so we only expect one execute object call (which is actually an executionStrategy call)
-            expectedExecuteObjectCallsPerLevel.set(1, 1);
+            expectedExecuteObjectCallsPerLevel.set(0, 1);
         }
 
         public void addResultPathWithDataLoader(int level, ResultPathWithDataLoader resultPathWithDataLoader) {
@@ -106,6 +136,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         void increaseFetchCount(int level) {
             fetchCountPerLevel.increment(level, 1);
         }
+
 
         void clearFetchCount() {
             fetchCountPerLevel.clear();
@@ -139,8 +170,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             return happenedExecuteObjectCallsPerLevel.get(level) == expectedExecuteObjectCallsPerLevel.get(level);
         }
 
-        boolean allSubSelectionsFetchingHappened(int level) {
-            return happenedOnFieldValueCallsPerLevel.get(level) == expectedExecuteObjectCallsPerLevel.get(level);
+        boolean allSubSelectionsFetchingHappened(int subSelectionLevel) {
+            return happenedOnFieldValueCallsPerLevel.get(subSelectionLevel) == expectedExecuteObjectCallsPerLevel.get(subSelectionLevel - 1);
         }
 
         boolean allFetchesHappened(int level) {
@@ -172,7 +203,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     public PerLevelDataLoaderDispatchStrategy(ExecutionContext executionContext) {
-        this.callStack = new CallStack();
+        this.initialCallStack = new CallStack();
         this.executionContext = executionContext;
 
         GraphQLContext graphQLContext = executionContext.getGraphQLContext();
@@ -189,68 +220,111 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         this.enableDataLoaderChaining = graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false);
     }
 
-    @Override
-    public void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
-        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
-    }
 
     @Override
-    public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(1, parameters);
+        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(0, fieldCount, initialCallStack);
     }
 
     @Override
     public void executionSerialStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        resetCallStack();
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(1, 1);
+        CallStack callStack = getCallStack(parameters);
+        resetCallStack(callStack);
+        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(0, 1, callStack);
     }
 
     @Override
-    public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
-        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, 1);
+    public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+        CallStack callStack = getCallStack(parameters);
+        // the root fields are the root sub selection on level 1
+        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, 1, callStack);
     }
 
-    public void executionStrategyOnFieldValuesException(Throwable t) {
+    @Override
+    public void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
+        CallStack callStack = getCallStack(parameters);
         callStack.lock.runLocked(() ->
                 callStack.increaseHappenedOnFieldValueCalls(1)
         );
     }
 
+    private CallStack getCallStack(ExecutionStrategyParameters parameters) {
+        return getCallStack(parameters.getDeferredCallContext());
+    }
 
-    @Override
-    public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(curLevel, parameters);
+    private CallStack getCallStack(@Nullable DeferredCallContext deferredCallContext) {
+        if (deferredCallContext == null) {
+            return this.initialCallStack;
+        } else {
+            return deferredCallStackMap.computeIfAbsent(deferredCallContext, k -> {
+                CallStack callStack = new CallStack();
+                int startLevel = deferredCallContext.getStartLevel();
+                int fields = deferredCallContext.getFields();
+                callStack.lock.runLocked(() -> {
+                    // we make sure that startLevel-1 is considered done
+                    callStack.expectedExecuteObjectCallsPerLevel.set(0, 0); // set to 1 in the constructor of CallStack
+                    callStack.expectedExecuteObjectCallsPerLevel.set(startLevel - 1, 1);
+                    callStack.happenedExecuteObjectCallsPerLevel.set(startLevel - 1, 1);
+                    callStack.highestReadyLevel = startLevel - 1;
+                    callStack.increaseExpectedFetchCount(startLevel, fields);
+                });
+                return callStack;
+            });
+        }
     }
 
     @Override
-    public void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+    public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
+        CallStack callStack = getCallStack(parameters);
+        int curLevel = parameters.getPath().getLevel();
+        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(curLevel, fieldCount, callStack);
+    }
+
+    @Override
+    public void executeObjectOnFieldValuesInfo
+            (List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+        // the level of the sub selection that is fully fetched is one level more than parameters level
         int curLevel = parameters.getPath().getLevel() + 1;
-        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel);
+        CallStack callStack = getCallStack(parameters);
+        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, callStack);
     }
 
+    @Override
+    public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable
+            throwable, ExecutionStrategyParameters parameters) {
+        CallStack callStack = getCallStack(parameters);
+        boolean ready = callStack.lock.callLocked(() -> {
+            callStack.deferredFragmentRootFieldsFetched.add(fieldValueInfo);
+            return callStack.deferredFragmentRootFieldsFetched.size() == parameters.getDeferredCallContext().getFields();
+        });
+        if (ready) {
+            int curLevel = parameters.getPath().getLevel();
+            onFieldValuesInfoDispatchIfNeeded(callStack.deferredFragmentRootFieldsFetched, curLevel, callStack);
+        }
+    }
 
     @Override
     public void executeObjectOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
+        CallStack callStack = getCallStack(parameters);
+        // the level of the sub selection that is errored is one level more than parameters level
         int curLevel = parameters.getPath().getLevel() + 1;
         callStack.lock.runLocked(() ->
                 callStack.increaseHappenedOnFieldValueCalls(curLevel)
         );
     }
 
-    private void increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(int curLevel, ExecutionStrategyParameters executionStrategyParameters) {
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(curLevel, executionStrategyParameters.getFields().size());
-    }
 
-    private void increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(int curLevel, int fieldCount) {
+    private void increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(int curLevel,
+                                                                            int fieldCount,
+                                                                            CallStack callStack) {
         callStack.lock.runLocked(() -> {
             callStack.increaseHappenedExecuteObjectCalls(curLevel);
-            callStack.increaseExpectedFetchCount(curLevel, fieldCount);
+            callStack.increaseExpectedFetchCount(curLevel + 1, fieldCount);
         });
     }
 
-    private void resetCallStack() {
+    private void resetCallStack(CallStack callStack) {
         callStack.lock.runLocked(() -> {
             callStack.clearDispatchLevels();
             callStack.clearExpectedObjectCalls();
@@ -258,7 +332,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             callStack.clearFetchCount();
             callStack.clearHappenedExecuteObjectCalls();
             callStack.clearHappenedOnFieldValueCalls();
-            callStack.expectedExecuteObjectCallsPerLevel.set(1, 1);
+            callStack.expectedExecuteObjectCallsPerLevel.set(0, 1);
             callStack.dispatchingFinishedPerLevel.clear();
             callStack.dispatchingStartedPerLevel.clear();
             callStack.allResultPathWithDataLoader.clear();
@@ -269,24 +343,27 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         });
     }
 
-    private void onFieldValuesInfoDispatchIfNeeded(List<FieldValueInfo> fieldValueInfoList, int curLevel) {
+    private void onFieldValuesInfoDispatchIfNeeded(List<FieldValueInfo> fieldValueInfoList,
+                                                   int subSelectionLevel,
+                                                   CallStack callStack) {
         Integer dispatchLevel = callStack.lock.callLocked(() ->
-                handleOnFieldValuesInfo(fieldValueInfoList, curLevel)
+                handleSubSelectionFetched(fieldValueInfoList, subSelectionLevel, callStack)
         );
         // the handle on field values check for the next level if it is ready
         if (dispatchLevel != null) {
-            dispatch(dispatchLevel);
+            dispatch(dispatchLevel, callStack);
         }
     }
 
     //
 // thread safety: called with callStack.lock
 //
-    private Integer handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfos, int curLevel) {
-        callStack.increaseHappenedOnFieldValueCalls(curLevel);
+    private Integer handleSubSelectionFetched(List<FieldValueInfo> fieldValueInfos, int subSelectionLevel, CallStack
+            callStack) {
+        callStack.increaseHappenedOnFieldValueCalls(subSelectionLevel);
         int expectedOnObjectCalls = getObjectCountForList(fieldValueInfos);
-        // on the next level we expect the following on object calls because we found non null objects
-        callStack.increaseExpectedExecuteObjectCalls(curLevel + 1, expectedOnObjectCalls);
+        // we expect on the level of the current sub selection #expectedOnObjectCalls execute object calls
+        callStack.increaseExpectedExecuteObjectCalls(subSelectionLevel, expectedOnObjectCalls);
         // maybe the object calls happened already (because the DataFetcher return directly values synchronously)
         // therefore we check the next levels if they are ready
         // this means we could skip some level because the higher level is also already ready,
@@ -296,7 +373,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         // if data loader chaining is disabled (the old algo) the level we dispatch is not really relevant as
         // we dispatch the whole registry anyway
 
-        return getHighestReadyLevel(curLevel + 1);
+        return getHighestReadyLevel(subSelectionLevel + 1, callStack);
     }
 
     /**
@@ -321,13 +398,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                              DataFetcher<?> dataFetcher,
                              Object fetchedValue,
                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
+        CallStack callStack = getCallStack(executionStrategyParameters);
         int level = executionStrategyParameters.getPath().getLevel();
         boolean dispatchNeeded = callStack.lock.callLocked(() -> {
             callStack.increaseFetchCount(level);
-            return dispatchIfNeeded(level);
+            return dispatchIfNeeded(level, callStack);
         });
         if (dispatchNeeded) {
-            dispatch(level);
+            dispatch(level, callStack);
         }
 
     }
@@ -336,8 +414,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     //
 // thread safety : called with callStack.lock
 //
-    private boolean dispatchIfNeeded(int level) {
-        boolean ready = checkLevelBeingReady(level);
+    private boolean dispatchIfNeeded(int level, CallStack callStack) {
+        boolean ready = checkLevelBeingReady(level, callStack);
         if (ready) {
             callStack.setDispatchedLevel(level);
             return true;
@@ -348,10 +426,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     //
 // thread safety: called with callStack.lock
 //
-    private Integer getHighestReadyLevel(int startFrom) {
+    private Integer getHighestReadyLevel(int startFrom, CallStack callStack) {
         int curLevel = callStack.highestReadyLevel;
         while (true) {
-            if (!checkLevelImpl(curLevel + 1)) {
+            if (!checkLevelImpl(curLevel + 1, callStack)) {
                 callStack.highestReadyLevel = curLevel;
                 return curLevel >= startFrom ? curLevel : null;
             }
@@ -359,14 +437,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
     }
 
-    private boolean checkLevelBeingReady(int level) {
+    private boolean checkLevelBeingReady(int level, CallStack callStack) {
         Assert.assertTrue(level > 0);
         if (level <= callStack.highestReadyLevel) {
             return true;
         }
 
         for (int i = callStack.highestReadyLevel + 1; i <= level; i++) {
-            if (!checkLevelImpl(i)) {
+            if (!checkLevelImpl(i, callStack)) {
                 return false;
             }
         }
@@ -374,26 +452,28 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         return true;
     }
 
-    private boolean checkLevelImpl(int level) {
+    private boolean checkLevelImpl(int level, CallStack callStack) {
         // a level with zero expectations can't be ready
         if (callStack.expectedFetchCountPerLevel.get(level) == 0) {
             return false;
         }
-        // level 1 is special: there is no previous sub selections
-        // and the expected execution object calls is always 1
+
+        // first we make sure that the expected fetch count is correct
+        // by verifying that the parent level all execute object + sub selection were fetched
+        if (!callStack.allExecuteObjectCallsHappened(level - 1)) {
+            return false;
+        }
         if (level > 1 && !callStack.allSubSelectionsFetchingHappened(level - 1)) {
             return false;
         }
-        if (!callStack.allExecuteObjectCallsHappened(level)) {
-            return false;
-        }
+        // the main check: all fetches must have happened
         if (!callStack.allFetchesHappened(level)) {
             return false;
         }
         return true;
     }
 
-    void dispatch(int level) {
+    void dispatch(int level, CallStack callStack) {
         if (!enableDataLoaderChaining) {
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
             dataLoaderRegistry.dispatchAll();
@@ -409,7 +489,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                         .map(resultPathWithDataLoader -> resultPathWithDataLoader.resultPath)
                         .collect(Collectors.toSet());
             });
-            dispatchDLCFImpl(resultPathToDispatch, level);
+            dispatchDLCFImpl(resultPathToDispatch, level, callStack);
         } else {
             callStack.lock.runLocked(() -> {
                 callStack.dispatchingStartedPerLevel.add(level);
@@ -419,7 +499,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
 
-    public void dispatchDLCFImpl(Set<String> resultPathsToDispatch, Integer level) {
+    public void dispatchDLCFImpl(Set<String> resultPathsToDispatch, Integer level, CallStack callStack) {
 
         // filter out all DataLoaderCFS that are matching the fields we want to dispatch
         List<ResultPathWithDataLoader> relevantResultPathWithDataLoader = new ArrayList<>();
@@ -444,18 +524,20 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
         CompletableFuture.allOf(allDispatchedCFs.toArray(new CompletableFuture[0]))
                 .whenComplete((unused, throwable) -> {
-                    dispatchDLCFImpl(resultPathsToDispatch, level);
+                    dispatchDLCFImpl(resultPathsToDispatch, level, callStack);
                         }
                 );
 
     }
 
 
-    public void newDataLoaderLoadCall(String resultPath, int level, DataLoader dataLoader, String dataLoaderName, Object key) {
+    public void newDataLoaderLoadCall(String resultPath, int level, DataLoader dataLoader, String
+            dataLoaderName, Object key, @Nullable DeferredCallContext deferredCallContext) {
         if (!enableDataLoaderChaining) {
             return;
         }
         ResultPathWithDataLoader resultPathWithDataLoader = new ResultPathWithDataLoader(resultPath, level, dataLoader, dataLoaderName, key);
+        CallStack callStack = getCallStack(deferredCallContext);
         boolean levelFinished = callStack.lock.callLocked(() -> {
             boolean finished = callStack.dispatchingFinishedPerLevel.contains(level);
             callStack.allResultPathWithDataLoader.add(resultPathWithDataLoader);
@@ -466,13 +548,19 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             return finished;
         });
         if (levelFinished) {
-            newDelayedDataLoader(resultPathWithDataLoader);
+            newDelayedDataLoader(resultPathWithDataLoader, callStack);
         }
 
 
     }
 
     class DispatchDelayedDataloader implements Runnable {
+
+        private final CallStack callStack;
+
+        public DispatchDelayedDataloader(CallStack callStack) {
+            this.callStack = callStack;
+        }
 
         @Override
         public void run() {
@@ -482,16 +570,16 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
                 callStack.batchWindowOpen = false;
             });
-            dispatchDLCFImpl(resultPathToDispatch.get(), null);
+            dispatchDLCFImpl(resultPathToDispatch.get(), null, callStack);
         }
     }
 
-    private void newDelayedDataLoader(ResultPathWithDataLoader resultPathWithDataLoader) {
+    private void newDelayedDataLoader(ResultPathWithDataLoader resultPathWithDataLoader, CallStack callStack) {
         callStack.lock.runLocked(() -> {
             callStack.batchWindowOfDelayedDataLoaderToDispatch.add(resultPathWithDataLoader.resultPath);
             if (!callStack.batchWindowOpen) {
                 callStack.batchWindowOpen = true;
-                delayedDataLoaderDispatchExecutor.get().schedule(new DispatchDelayedDataloader(), this.batchWindowNs, TimeUnit.NANOSECONDS);
+                delayedDataLoaderDispatchExecutor.get().schedule(new DispatchDelayedDataloader(callStack), this.batchWindowNs, TimeUnit.NANOSECONDS);
             }
 
         });
