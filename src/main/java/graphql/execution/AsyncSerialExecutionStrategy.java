@@ -74,13 +74,13 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         if (fieldWithInfo instanceof CompletableFuture) {
             //noinspection unchecked
             return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
-                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi), newParameters);
                 CompletableFuture<Object> fieldValueFuture = fvi.getFieldValueFuture();
                 return fieldValueFuture;
             });
         } else {
             FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;
-            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi), newParameters);
             return fvi.getFieldValueObject();
         }
     }

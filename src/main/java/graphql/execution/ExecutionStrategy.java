@@ -195,7 +195,6 @@ public abstract class ExecutionStrategy {
     @DuckTyped(shape = "CompletableFuture<Map<String, Object>> | Map<String, Object>")
     protected Object executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
-        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
@@ -210,6 +209,7 @@ public abstract class ExecutionStrategy {
 
         CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
         List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
         BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
 
         resolveObjectCtx.onDispatched();
@@ -298,7 +298,7 @@ public abstract class ExecutionStrategy {
     ) {
         MergedSelectionSet fields = parameters.getFields();
 
-        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls(parameters));
+        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
 
         // Only non-deferred fields should be considered for calculating the expected size of futures.
         Async.CombinedBuilder<FieldValueInfo> futures = Async
@@ -432,6 +432,7 @@ public abstract class ExecutionStrategy {
                     .parentType(parentType)
                     .selectionSet(fieldCollector)
                     .queryDirectives(queryDirectives)
+                    .deferredCallContext(parameters.getDeferredCallContext())
                     .build();
         });
 

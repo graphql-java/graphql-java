@@ -73,7 +73,10 @@ public class GraphqlErrorHelper {
         if (line < 1 || column < 1) {
             return null;
         }
-        return Map.of("line", line, "column", column);
+        LinkedHashMap<String, Object> map = new LinkedHashMap<>(2);
+        map.put("line", line);
+        map.put("column", column);
+        return map;
     }
 
     static List<GraphQLError> fromSpecification(List<Map<String, Object>> specificationMaps) {

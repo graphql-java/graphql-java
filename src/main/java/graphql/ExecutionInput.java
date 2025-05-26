@@ -230,6 +230,14 @@ public class ExecutionInput {
         private AtomicBoolean cancelled = new AtomicBoolean(false);
         private boolean profileExecution;
 
+        /**
+         * Package level access to the graphql context
+         * @return shhh but it's the graphql context
+         */
+        GraphQLContext graphQLContext() {
+            return graphQLContext;
+        }
+
         public Builder query(String query) {
             this.query = assertNotNull(query, () -> "query can't be null");
             return this;
