@@ -290,6 +290,15 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, callStack);
     }
 
+
+    @Override
+    public void newSubscriptionExecution(FieldValueInfo fieldValueInfo, DeferredCallContext deferredCallContext) {
+        CallStack callStack = getCallStack(deferredCallContext);
+        callStack.increaseFetchCount(1);
+        callStack.deferredFragmentRootFieldsFetched.add(fieldValueInfo);
+        onFieldValuesInfoDispatchIfNeeded(callStack.deferredFragmentRootFieldsFetched, 1, callStack);
+    }
+
     @Override
     public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable
             throwable, ExecutionStrategyParameters parameters) {
