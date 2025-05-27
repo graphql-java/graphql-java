@@ -13,7 +13,7 @@ import java.util.concurrent.Callable;
 public class BenchmarkUtils {
 
     @SuppressWarnings("UnstableApiUsage")
-    static String loadResource(String name) {
+    public static String loadResource(String name) {
         return asRTE(() -> {
             URL resource = BenchmarkUtils.class.getClassLoader().getResource(name);
             if (resource == null) {
