@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - bisect-d6dbf6156
 jobs:
   buildAndPublish:
     runs-on: ubuntu-latest
