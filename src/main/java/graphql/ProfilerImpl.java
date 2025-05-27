@@ -119,11 +119,11 @@ public class ProfilerImpl implements Profiler {
 
     @Override
     public void batchLoadedOldStrategy(String name, int level, int count) {
-        profilerResult.addDispatchEvent(name, level, count, false);
+        profilerResult.addDispatchEvent(name, level, count);
     }
 
     @Override
     public void batchLoadedNewStrategy(String name, @Nullable Integer level, int count) {
-        profilerResult.addDispatchEvent(name, level, count, true);
+        profilerResult.addDispatchEvent(name, level, count);
     }
 }

@@ -48,13 +48,11 @@ public class ProfilerResult {
         final @Nullable
         Integer level; // can be null for delayed dispatching
         final int count;
-        private final boolean dataLoaderChainingEnabled;
 
-        public DispatchEvent(String dataLoaderName, @Nullable Integer level, int count, boolean dataLoaderChainingEnabled) {
+        public DispatchEvent(String dataLoaderName, @Nullable Integer level, int count) {
             this.dataLoaderName = dataLoaderName;
             this.level = level;
             this.count = count;
-            this.dataLoaderChainingEnabled = dataLoaderChainingEnabled;
         }
 
         public String getDataLoaderName() {
@@ -69,17 +67,12 @@ public class ProfilerResult {
             return count;
         }
 
-        public boolean isDataLoaderChainingEnabled() {
-            return dataLoaderChainingEnabled;
-        }
-
         @Override
         public String toString() {
             return "DispatchEvent{" +
                     "dataLoaderName='" + dataLoaderName + '\'' +
                     ", level=" + level +
                     ", count=" + count +
-                    ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
                     '}';
         }
     }
@@ -152,8 +145,8 @@ public class ProfilerResult {
         chainedStrategyDispatching.add(level);
     }
 
-    void addDispatchEvent(String dataLoaderName, @Nullable Integer level, int count, boolean dataLoaderChainingEnabled) {
-        dispatchEvents.add(new DispatchEvent(dataLoaderName, level, count, dataLoaderChainingEnabled));
+    void addDispatchEvent(String dataLoaderName, @Nullable Integer level, int count) {
+        dispatchEvents.add(new DispatchEvent(dataLoaderName, level, count));
     }
 
     // public getters
@@ -260,8 +253,8 @@ public class ProfilerResult {
                 ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
                 ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
                 ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
-                ", chainedStrategyDispatching" + chainedStrategyDispatching +
-                ", dispatchEvents" + dispatchEvents +
+                ", chainedStrategyDispatching=" + chainedStrategyDispatching +
+                ", dispatchEvents=" + printDispatchEvents() +
                 '}';
     }
 
@@ -279,11 +272,32 @@ public class ProfilerResult {
                 ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
                 ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
                 ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
-                ", chainedStrategyDispatching" + chainedStrategyDispatching +
-                ", dispatchEvents" + dispatchEvents +
+                ", chainedStrategyDispatching=" + chainedStrategyDispatching +
+                ", dispatchEvents=" + printDispatchEvents() +
                 '}';
 
 
+    }
+
+    private String printDispatchEvents() {
+        if (dispatchEvents.isEmpty()) {
+            return "[]";
+        }
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        int i = 0;
+        for (DispatchEvent event : dispatchEvents) {
+            sb.append("dataLoader=")
+                    .append(event.getDataLoaderName())
+                    .append(", level=")
+                    .append(event.getLevel())
+                    .append(", count=").append(event.getCount());
+            if (i++ < dispatchEvents.size() - 1) {
+                sb.append("; ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
     @Override
