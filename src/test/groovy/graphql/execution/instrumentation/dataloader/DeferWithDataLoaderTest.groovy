@@ -11,6 +11,7 @@ import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
 
 import java.time.Duration
@@ -348,6 +349,7 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
+    @RepeatUntilFailure(maxAttempts = 50)
     def "dataloader in initial result and chained dataloader inside nested defer block"() {
         given:
         def sdl = '''

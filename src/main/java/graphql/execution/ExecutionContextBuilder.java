@@ -8,6 +8,7 @@ import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -53,6 +54,7 @@ public class ExecutionContextBuilder {
     boolean propagateErrorsOnNonNullContractFailure = true;
     EngineRunningState engineRunningState;
     ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
+    Profiler profiler;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -102,6 +104,7 @@ public class ExecutionContextBuilder {
         propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
         engineRunningState = other.getEngineRunningState();
         responseMapFactory = other.getResponseMapFactory();
+        profiler = other.getProfiler();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -251,6 +254,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder engineRunningState(EngineRunningState engineRunningState) {
         this.engineRunningState = engineRunningState;
+        return this;
+    }
+
+    public ExecutionContextBuilder profiler(Profiler profiler) {
+        this.profiler = profiler;
         return this;
     }
 }

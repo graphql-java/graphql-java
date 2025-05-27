@@ -7,6 +7,7 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQLContext
 import graphql.GraphqlErrorBuilder
+import graphql.Profiler
 import graphql.Scalars
 import graphql.SerializationError
 import graphql.StarWarsSchema
@@ -86,6 +87,7 @@ class ExecutionStrategyTest extends Specification {
                 .locale(Locale.getDefault())
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .engineRunningState(new EngineRunningState())
+                .profiler(Profiler.NO_OP)
 
         new ExecutionContext(builder)
     }
