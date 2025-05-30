@@ -141,16 +141,17 @@ class MutationTest extends Specification {
         ]])
 
         def graphQL = GraphQL.newGraphQL(schema).build()
-
-        when:
-        def er = graphQL.execute("""
+        def ei = ExecutionInput.newExecutionInput("""
             mutation m {
                 plus1(arg:10)
                 plus2(arg:10)
                 plus3(arg:10)
              }
-        """)
+        """).build()
+        ei.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, defeEnabled)
 
+        when:
+        def er = graphQL.execute(ei)
         then:
         er.errors.isEmpty()
         er.data == [
@@ -158,6 +159,8 @@ class MutationTest extends Specification {
                 plus2: 12,
                 plus3: 13,
         ]
+        where:
+        defeEnabled << [true, false]
     }
 
     def "simple async mutation with DataLoader"() {
@@ -213,6 +216,7 @@ class MutationTest extends Specification {
                 plus3(arg:10)
              }
         """).dataLoaderRegistry(dlReg).build()
+        ei.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, defeEnabled)
         when:
         def er = graphQL.execute(ei)
 
@@ -223,12 +227,16 @@ class MutationTest extends Specification {
                 plus2: 12,
                 plus3: 13,
         ]
+
+        where:
+        defeEnabled << [true, false]
     }
 
     /*
      This test shows a dataloader being called at the mutation field level, in serial via AsyncSerialExecutionStrategy, and then
      again at the sub field level, in parallel, via AsyncExecutionStrategy.
      */
+
     def "more complex async mutation with DataLoader"() {
         def sdl = """
             type Query {
@@ -436,6 +444,7 @@ class MutationTest extends Specification {
                 }
              }
         """).dataLoaderRegistry(dlReg).build()
+        ei.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, defeEnabled)
         when:
         def cf = graphQL.executeAsync(ei)
 
@@ -459,5 +468,8 @@ class MutationTest extends Specification {
                 topLevelF3: expectedMap,
                 topLevelF4: expectedMap,
         ]
+
+        where:
+        defeEnabled << [true, false]
     }
 }
