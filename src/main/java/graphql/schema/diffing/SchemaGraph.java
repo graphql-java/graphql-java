@@ -106,6 +106,10 @@ public class SchemaGraph {
         return getAdjacentVertices(from, x -> true);
     }
 
+    public List<Vertex> getAdjacentVerticesOfType(Vertex from, String type) {
+        return getAdjacentVertices(from, x -> x.getType().equals(type));
+    }
+
     public List<Vertex> getAdjacentVertices(Vertex from, Predicate<Vertex> predicate) {
         List<Vertex> result = new ArrayList<>();
         for (Edge edge : edgesByDirection.row(from).values()) {
@@ -135,6 +139,7 @@ public class SchemaGraph {
     public List<Edge> getAdjacentEdges(Vertex from) {
         return getAdjacentEdges(from, x -> true);
     }
+
     public List<Edge> getAdjacentEdges(Vertex from, Predicate<Vertex> predicate) {
         List<Edge> result = new ArrayList<>();
         for (Edge edge : edgesByDirection.row(from).values()) {
@@ -263,7 +268,8 @@ public class SchemaGraph {
     /**
      * Gets the one inverse adjacent edge to the input and gets the other vertex.
      *
-     * @param input  the vertex input
+     * @param input the vertex input
+     *
      * @return a vertex
      */
     public Vertex getSingleAdjacentInverseVertex(Vertex input) {
@@ -282,6 +288,22 @@ public class SchemaGraph {
         List<Vertex> adjacentVertices = this.getAdjacentVerticesInverse(enumValue);
         assertTrue(adjacentVertices.size() == 1, "No enum found for %s", enumValue);
         return adjacentVertices.get(0);
+    }
+
+    public List<Vertex> getEnumValues(Vertex enumVertex) {
+        return getAdjacentVerticesOfType(enumVertex, ENUM_VALUE);
+    }
+
+    public List<Vertex> getFields(Vertex objectOrInterface) {
+        return getAdjacentVerticesOfType(objectOrInterface, FIELD);
+    }
+
+    public List<Vertex> getInputFields(Vertex inputObject) {
+        return getAdjacentVerticesOfType(inputObject, INPUT_FIELD);
+    }
+
+    public List<Vertex> getArgumentsForField(Vertex field) {
+        return getAdjacentVerticesOfType(field, ARGUMENT);
     }
 
 
