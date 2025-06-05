@@ -108,6 +108,32 @@ public class GraphQL {
      *
      * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
      */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(ExecutionInput executionInput) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(executionInput.getGraphQLContext());
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(ExecutionInput.Builder executionInputBuilder) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(executionInputBuilder.graphQLContext());
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
     public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(GraphQLContext graphQLContext) {
         return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(graphQLContext);
     }

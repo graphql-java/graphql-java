@@ -10,7 +10,6 @@ import org.dataloader.DataLoaderFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -102,7 +101,7 @@ public class BatchCompareDataFetchers {
 
     public DataFetcher<CompletableFuture<List<Department>>> departmentsForShopDataLoaderDataFetcher = environment -> {
         Shop shop = environment.getSource();
-        return departmentsForShopDataLoader.load(shop.getId());
+        return (CompletableFuture) environment.getDataLoader("departments").load(shop.getId());
     };
 
     // Products
@@ -138,7 +137,7 @@ public class BatchCompareDataFetchers {
 
     public DataFetcher<CompletableFuture<List<Product>>> productsForDepartmentDataLoaderDataFetcher = environment -> {
         Department department = environment.getSource();
-        return productsForDepartmentDataLoader.load(department.getId());
+        return (CompletableFuture) environment.getDataLoader("products").load(department.getId());
     };
 
     private <T> CompletableFuture<T> maybeAsyncWithSleep(Supplier<CompletableFuture<T>> supplier) {

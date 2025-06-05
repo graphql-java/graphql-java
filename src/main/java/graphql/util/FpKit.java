@@ -5,10 +5,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import graphql.Internal;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,18 +19,13 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.Collections.singletonList;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.mapping;
 
 @Internal
 public class FpKit {
@@ -36,51 +33,76 @@ public class FpKit {
     //
     // From a list of named things, get a map of them by name, merging them according to the merge function
     public static <T> Map<String, T> getByName(List<T> namedObjects, Function<T, String> nameFn, BinaryOperator<T> mergeFunc) {
-        return namedObjects.stream().collect(Collectors.toMap(
-                nameFn,
-                identity(),
-                mergeFunc,
-                LinkedHashMap::new)
-        );
+        return toMap(namedObjects, nameFn, mergeFunc);
+    }
+
+    //
+    // From a collection of keyed things, get a map of them by key, merging them according to the merge function
+    public static <T, NewKey> Map<NewKey, T> toMap(Collection<T> collection, Function<T, NewKey> keyFunction, BinaryOperator<T> mergeFunc) {
+        Map<NewKey, T> resultMap = new LinkedHashMap<>();
+        for (T obj : collection) {
+            NewKey key = keyFunction.apply(obj);
+            if (resultMap.containsKey(key)) {
+                T existingValue = resultMap.get(key);
+                T mergedValue = mergeFunc.apply(existingValue, obj);
+                resultMap.put(key, mergedValue);
+            } else {
+                resultMap.put(key, obj);
+            }
+        }
+        return resultMap;
     }
 
     // normal groupingBy but with LinkedHashMap
     public static <T, NewKey> Map<NewKey, ImmutableList<T>> groupingBy(Collection<T> list, Function<T, NewKey> function) {
-        return list.stream().collect(Collectors.groupingBy(function, LinkedHashMap::new, mapping(Function.identity(), ImmutableList.toImmutableList())));
+        return filterAndGroupingBy(list, ALWAYS_TRUE, function);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T, NewKey> Map<NewKey, ImmutableList<T>> filterAndGroupingBy(Collection<T> list,
                                                                                 Predicate<? super T> predicate,
                                                                                 Function<T, NewKey> function) {
-        return list.stream().filter(predicate).collect(Collectors.groupingBy(function, LinkedHashMap::new, mapping(Function.identity(), ImmutableList.toImmutableList())));
+        //
+        // The cleanest version of this code would have two maps, one of immutable list builders and one
+        // of the built immutable lists.  BUt we are trying to be performant and memory efficient so
+        // we treat it as a map of objects and cast like its Java 4x
+        //
+        Map<NewKey, Object> resutMap = new LinkedHashMap<>();
+        for (T item : list) {
+            if (predicate.test(item)) {
+                NewKey key = function.apply(item);
+                // we have to use an immutable list builder as we built it out
+                ((ImmutableList.Builder<Object>) resutMap.computeIfAbsent(key, k -> ImmutableList.builder()))
+                        .add(item);
+            }
+        }
+        if (resutMap.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        // Convert builders to ImmutableLists in place to avoid an extra allocation
+        // yes the code is yuck -  but its more performant yuck!
+        resutMap.replaceAll((key, builder) ->
+                ((ImmutableList.Builder<Object>) builder).build());
+
+        // make it the right shape - like as if generics were never invented
+        return (Map<NewKey, ImmutableList<T>>) (Map<?, ?>) resutMap;
     }
 
-    public static <T, NewKey> Map<NewKey, ImmutableList<T>> groupingBy(Stream<T> stream, Function<T, NewKey> function) {
-        return stream.collect(Collectors.groupingBy(function, LinkedHashMap::new, mapping(Function.identity(), ImmutableList.toImmutableList())));
+    public static <T, NewKey> Map<NewKey, T> toMapByUniqueKey(Collection<T> list, Function<T, NewKey> keyFunction) {
+        return toMap(list, keyFunction, throwingMerger());
     }
 
-    public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Collection<T> list, Function<T, NewKey> keyFunction) {
-        return list.stream().collect(Collectors.toMap(
-                keyFunction,
-                identity(),
-                throwingMerger(),
-                LinkedHashMap::new)
-        );
-    }
 
-    public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Stream<T> stream, Function<T, NewKey> keyFunction) {
-        return stream.collect(Collectors.toMap(
-                keyFunction,
-                identity(),
-                throwingMerger(),
-                LinkedHashMap::new)
-        );
-    }
+    private static final Predicate<Object> ALWAYS_TRUE = o -> true;
+
+    private static final BinaryOperator<Object> THROWING_MERGER_SINGLETON = (u, v) -> {
+        throw new IllegalStateException(String.format("Duplicate key %s", u));
+    };
+
 
     private static <T> BinaryOperator<T> throwingMerger() {
-        return (u, v) -> {
-            throw new IllegalStateException(String.format("Duplicate key %s", u));
-        };
+        //noinspection unchecked
+        return (BinaryOperator<T>) THROWING_MERGER_SINGLETON;
     }
 
 
@@ -118,6 +140,19 @@ public class FpKit {
         }
         return list;
     }
+
+    /**
+     * Creates an {@link ArrayList} sized appropriately to the collection, typically for copying
+     *
+     * @param collection the collection of a certain size
+     * @param <T>        to two
+     *
+     * @return a new {@link ArrayList} initially sized to the same as the collection
+     */
+    public static <T> @NonNull List<T> arrayListSizedTo(@NonNull Collection<?> collection) {
+        return new ArrayList<>(collection.size());
+    }
+
 
     /**
      * Converts a value into a list if it's really a collection or array of things
@@ -240,11 +275,6 @@ public class FpKit {
         return new ArrayList<>(map.values());
     }
 
-    public static <K, V, U> List<U> mapEntries(Map<K, V> map, BiFunction<K, V, U> function) {
-        return map.entrySet().stream().map(entry -> function.apply(entry.getKey(), entry.getValue())).collect(Collectors.toList());
-    }
-
-
     public static <T> List<List<T>> transposeMatrix(List<? extends List<T>> matrix) {
         int rowCount = matrix.size();
         int colCount = matrix.get(0).size();
@@ -261,21 +291,13 @@ public class FpKit {
         return result;
     }
 
-    public static <T> CompletableFuture<List<T>> flatList(CompletableFuture<List<List<T>>> cf) {
-        return cf.thenApply(FpKit::flatList);
-    }
-
-    public static <T> List<T> flatList(Collection<List<T>> listLists) {
-        return listLists.stream()
-                .flatMap(List::stream)
-                .collect(ImmutableList.toImmutableList());
-    }
-
     public static <T> Optional<T> findOne(Collection<T> list, Predicate<T> filter) {
-        return list
-                .stream()
-                .filter(filter)
-                .findFirst();
+        for (T t : list) {
+            if (filter.test(t)) {
+                return Optional.of(t);
+            }
+        }
+        return Optional.empty();
     }
 
     public static <T> T findOneOrNull(List<T> list, Predicate<T> filter) {
@@ -292,10 +314,13 @@ public class FpKit {
     }
 
     public static <T> List<T> filterList(Collection<T> list, Predicate<T> filter) {
-        return list
-                .stream()
-                .filter(filter)
-                .collect(Collectors.toList());
+        List<T> result = arrayListSizedTo(list);
+        for (T t : list) {
+            if (filter.test(t)) {
+                result.add(t);
+            }
+        }
+        return result;
     }
 
     public static <T> Set<T> filterSet(Collection<T> input, Predicate<T> filter) {
@@ -352,9 +377,10 @@ public class FpKit {
     /**
      * Faster set intersection.
      *
-     * @param <T> for two
+     * @param <T>  for two
      * @param set1 first set
      * @param set2 second set
+     *
      * @return intersection set
      */
     public static <T> Set<T> intersection(Set<T> set1, Set<T> set2) {

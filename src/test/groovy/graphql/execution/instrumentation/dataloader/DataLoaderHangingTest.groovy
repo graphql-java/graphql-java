@@ -22,6 +22,7 @@ import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderOptions
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -38,6 +39,7 @@ class DataLoaderHangingTest extends Specification {
 
     public static final int NUM_OF_REPS = 50
 
+    @Unroll
     def "deadlock attempt"() {
         setup:
         def sdl = """
@@ -97,8 +99,12 @@ class DataLoaderHangingTest extends Specification {
                 TimeUnit.MILLISECONDS, new SynchronousQueue<>(), threadFactory,
                 new ThreadPoolExecutor.CallerRunsPolicy())
 
-        DataFetcher albumsDf = { env -> env.getDataLoader("artist.albums").load(env) }
-        DataFetcher songsDf = { env -> env.getDataLoader("album.songs").load(env) }
+        DataFetcher albumsDf = { env ->
+            env.getDataLoader("artist.albums").load(env)
+        }
+        DataFetcher songsDf = { env ->
+            env.getDataLoader("album.songs").load(env)
+        }
 
         def dataFetcherArtists = new DataFetcher() {
             @Override
@@ -134,6 +140,7 @@ class DataLoaderHangingTest extends Specification {
 
             def result = graphql.executeAsync(newExecutionInput()
                     .dataLoaderRegistry(dataLoaderRegistry)
+                    .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining] as Map)
                     .query("""
                     query getArtistsWithData {
                       listArtists(limit: 1) {
@@ -174,6 +181,10 @@ class DataLoaderHangingTest extends Specification {
                     results.each { assert it.errors.empty }
                 })
                 .join()
+
+        where:
+        enableDataLoaderChaining << [true, false]
+
     }
 
     private DataLoaderRegistry mkNewDataLoaderRegistry(executor) {
@@ -192,7 +203,7 @@ class DataLoaderHangingTest extends Specification {
                     })
                 }, executor)
             }
-        }, DataLoaderOptions.newOptions().setMaxBatchSize(5))
+        }, DataLoaderOptions.newOptions().setMaxBatchSize(5).build())
 
         def dataLoaderSongs = DataLoaderFactory.newDataLoader(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
             @Override
@@ -209,7 +220,7 @@ class DataLoaderHangingTest extends Specification {
                     })
                 }, executor)
             }
-        }, DataLoaderOptions.newOptions().setMaxBatchSize(5))
+        }, DataLoaderOptions.newOptions().setMaxBatchSize(5).build())
 
         def dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("artist.albums", dataLoaderAlbums)
@@ -359,6 +370,7 @@ class DataLoaderHangingTest extends Specification {
         ExecutionInput executionInput = newExecutionInput()
                 .query(query)
                 .graphQLContext(["registry": registry])
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): false])
                 .dataLoaderRegistry(registry)
                 .build()
 

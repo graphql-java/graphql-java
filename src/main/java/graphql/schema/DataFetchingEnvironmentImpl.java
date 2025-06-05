@@ -6,11 +6,13 @@ import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
+import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.directives.QueryDirectives;
+import graphql.execution.incremental.DeferredCallContext;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -50,6 +52,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final QueryDirectives queryDirectives;
 
+    // used for internal() method
+    private final DFEInternalState dfeInternalState;
+
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
         this.arguments = builder.arguments == null ? ImmutableKit::emptyMap : builder.arguments;
@@ -72,6 +77,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.document = builder.document;
         this.variables = builder.variables == null ? ImmutableMapWithNullValues.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
+
+        // internal state
+        this.dfeInternalState = new DFEInternalState(builder.dataLoaderDispatchStrategy, builder.deferredCallContext);
     }
 
     /**
@@ -97,7 +105,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getCoercedVariables().toMap())
-                .executionId(executionContext.getExecutionId());
+                .executionId(executionContext.getExecutionId())
+                .dataLoaderDispatchStrategy(executionContext.getDataLoaderDispatcherStrategy());
     }
 
     @Override
@@ -205,9 +214,10 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         return executionStepInfo.get();
     }
 
+
     @Override
     public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
-        return dataLoaderRegistry.getDataLoader(dataLoaderName);
+        return new DataLoaderWithContext<>(this, dataLoaderName, dataLoaderRegistry.getDataLoader(dataLoaderName));
     }
 
     @Override
@@ -233,6 +243,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public Map<String, Object> getVariables() {
         return variables;
+    }
+
+
+    @Override
+    public Object toInternal() {
+        return this.dfeInternalState;
     }
 
     @Override
@@ -265,6 +281,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private ImmutableMap<String, FragmentDefinition> fragmentsByName;
         private ImmutableMapWithNullValues<String, Object> variables;
         private QueryDirectives queryDirectives;
+        private DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
+        private DeferredCallContext deferredCallContext;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -288,6 +306,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.document = env.document;
             this.variables = env.variables;
             this.queryDirectives = env.queryDirectives;
+            this.dataLoaderDispatchStrategy = env.dfeInternalState.dataLoaderDispatchStrategy;
+            this.deferredCallContext = env.dfeInternalState.deferredCallContext;
         }
 
         public Builder() {
@@ -407,8 +427,37 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
+        public Builder deferredCallContext(DeferredCallContext deferredCallContext) {
+            this.deferredCallContext = deferredCallContext;
+            return this;
+        }
+
         public DataFetchingEnvironment build() {
             return new DataFetchingEnvironmentImpl(this);
+        }
+
+        public Builder dataLoaderDispatchStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
+            this.dataLoaderDispatchStrategy = dataLoaderDispatcherStrategy;
+            return this;
+        }
+    }
+
+    @Internal
+    public static class DFEInternalState {
+        final DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
+        final DeferredCallContext deferredCallContext;
+
+        public DFEInternalState(DataLoaderDispatchStrategy dataLoaderDispatchStrategy, DeferredCallContext deferredCallContext) {
+            this.dataLoaderDispatchStrategy = dataLoaderDispatchStrategy;
+            this.deferredCallContext = deferredCallContext;
+        }
+
+        public DataLoaderDispatchStrategy getDataLoaderDispatchStrategy() {
+            return dataLoaderDispatchStrategy;
+        }
+
+        public DeferredCallContext getDeferredCallContext() {
+            return deferredCallContext;
         }
     }
 }
