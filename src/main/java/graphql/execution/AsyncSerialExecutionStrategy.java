@@ -52,11 +52,9 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
             MergedField currentField = fields.getSubField(fieldName);
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath));
+            ExecutionStrategyParameters newParameters = parameters.transform(currentField, fieldPath);
 
-            Object resolveSerialField = resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
-            return resolveSerialField;
+            return resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
         });
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
@@ -76,13 +74,13 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         if (fieldWithInfo instanceof CompletableFuture) {
             //noinspection unchecked
             return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
-                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi), newParameters);
                 CompletableFuture<Object> fieldValueFuture = fvi.getFieldValueFuture();
                 return fieldValueFuture;
             });
         } else {
             FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;
-            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi), newParameters);
             return fvi.getFieldValueObject();
         }
     }

@@ -6,7 +6,7 @@ import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.ExperimentalApi;
+import graphql.GraphQL;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -16,7 +16,6 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
-import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
@@ -37,7 +36,6 @@ import org.reactivestreams.Publisher;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
@@ -57,22 +55,20 @@ public class Execution {
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
-    private final ResponseMapFactory responseMapFactory;
     private final boolean doNotAutomaticallyDispatchDataLoader;
+
 
     public Execution(ExecutionStrategy queryStrategy,
                      ExecutionStrategy mutationStrategy,
                      ExecutionStrategy subscriptionStrategy,
                      Instrumentation instrumentation,
                      ValueUnboxer valueUnboxer,
-                     ResponseMapFactory responseMapFactory,
                      boolean doNotAutomaticallyDispatchDataLoader) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
         this.valueUnboxer = valueUnboxer;
-        this.responseMapFactory = responseMapFactory;
         this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
     }
 
@@ -98,6 +94,9 @@ public class Execution {
         }
 
         boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
+
+        ResponseMapFactory responseMapFactory = GraphQL.unusualConfiguration(executionInput.getGraphQLContext())
+                .responseMapFactory().getOr(ResponseMapFactory.DEFAULT);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -190,14 +189,12 @@ public class Execution {
         MergedSelectionSet fields = fieldCollector.collectFields(
                 collectorParameters,
                 operationDefinition.getSelectionSet(),
-                Optional.ofNullable(executionContext.getGraphQLContext())
-                        .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
-                        .orElse(false)
+                executionContext.hasIncrementalSupport()
         );
 
         ResultPath path = ResultPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext);
 
         ExecutionStrategyParameters parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
@@ -265,14 +262,7 @@ public class Execution {
             return DataLoaderDispatchStrategy.NO_OP;
         }
         if (!executionContext.isSubscriptionOperation()) {
-            boolean deferEnabled = Optional.ofNullable(executionContext.getGraphQLContext())
-                    .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
-                    .orElse(false);
-
-            // Dedicated strategy for defer support, for safety purposes.
-            return deferEnabled ?
-                    new PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch(executionContext) :
-                    new PerLevelDataLoaderDispatchStrategy(executionContext);
+            return new PerLevelDataLoaderDispatchStrategy(executionContext);
         } else {
             return new FallbackDataLoaderDispatchStrategy(executionContext);
         }
@@ -301,7 +291,7 @@ public class Execution {
 
     private boolean propagateErrorsOnNonNullContractFailure(List<Directive> directives) {
         boolean jvmWideEnabled = Directives.isExperimentalDisableErrorPropagationDirectiveEnabled();
-        if (! jvmWideEnabled) {
+        if (!jvmWideEnabled) {
             return true;
         }
         Directive foundDirective = NodeUtil.findNodeByName(directives, EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());

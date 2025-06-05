@@ -2,8 +2,10 @@ package graphql.execution;
 
 import graphql.Internal;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 @Internal
 public interface DataLoaderDispatchStrategy {
@@ -12,7 +14,7 @@ public interface DataLoaderDispatchStrategy {
     };
 
 
-    default void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    default void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
 
     }
 
@@ -20,20 +22,24 @@ public interface DataLoaderDispatchStrategy {
 
     }
 
-    default void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+    default void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
 
     }
 
-    default void executionStrategyOnFieldValuesException(Throwable t) {
+    default void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
 
     }
 
 
-    default void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters) {
+    default void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, int fieldCount) {
 
     }
 
     default void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+
+    }
+
+    default void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable throwable, ExecutionStrategyParameters parameters) {
 
     }
 
@@ -44,16 +50,13 @@ public interface DataLoaderDispatchStrategy {
     default void fieldFetched(ExecutionContext executionContext,
                               ExecutionStrategyParameters executionStrategyParameters,
                               DataFetcher<?> dataFetcher,
-                              Object fetchedValue) {
+                              Object fetchedValue,
+                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
 
     }
 
 
     default DataFetcher<?> modifyDataFetcher(DataFetcher<?> dataFetcher) {
         return dataFetcher;
-    }
-
-    default void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
-
     }
 }

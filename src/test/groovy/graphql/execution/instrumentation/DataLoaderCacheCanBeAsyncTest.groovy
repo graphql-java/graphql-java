@@ -87,7 +87,7 @@ class DataLoaderCacheCanBeAsyncTest extends Specification {
         def valueCache = new CustomValueCache()
         valueCache.store.put("a", [id: "cachedA", name: "cachedAName"])
 
-        DataLoaderOptions options = DataLoaderOptions.newOptions().setValueCache(valueCache).setCachingEnabled(true)
+        DataLoaderOptions options = DataLoaderOptions.newOptions().setValueCache(valueCache).setCachingEnabled(true).build()
         DataLoader userDataLoader = DataLoaderFactory.newDataLoader(userBatchLoader, options)
 
         registry = DataLoaderRegistry.newRegistry()

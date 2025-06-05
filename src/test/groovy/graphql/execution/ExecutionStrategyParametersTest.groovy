@@ -12,10 +12,12 @@ class ExecutionStrategyParametersTest extends Specification {
 
     def "ExecutionParameters can be transformed"() {
         given:
+        def executionContext = Mock(ExecutionContext)
         def parameters = newParameters()
                 .executionStepInfo(newExecutionStepInfo().type(GraphQLString))
                 .source(new Object())
                 .localContext("localContext")
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .fields(mergedSelectionSet("a": []))
                 .build()
 
