@@ -13,6 +13,7 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.incremental.DeferredCallContext;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -217,6 +218,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
+        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+            return dataLoaderRegistry.getDataLoader(dataLoaderName);
+        }
         return new DataLoaderWithContext<>(this, dataLoaderName, dataLoaderRegistry.getDataLoader(dataLoaderName));
     }
 
