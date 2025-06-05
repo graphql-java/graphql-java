@@ -1,7 +1,9 @@
 package graphql;
 
+import graphql.execution.AbortExecutionException;
 import graphql.execution.EngineRunningObserver;
 import graphql.execution.ExecutionId;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
@@ -13,19 +15,20 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.Assert.assertTrue;
+import static graphql.execution.EngineRunningObserver.RunningState.CANCELLED;
 import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING;
 import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING_FINISH;
 import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
 import static graphql.execution.EngineRunningObserver.RunningState.RUNNING_START;
 
 @Internal
+@NullMarked
 public class EngineRunningState {
 
     @Nullable
     private final EngineRunningObserver engineRunningObserver;
-    @Nullable
+    private volatile ExecutionInput executionInput;
     private final GraphQLContext graphQLContext;
-    @Nullable
     private volatile ExecutionId executionId;
 
     // if true the last decrementRunning() call will be ignored
@@ -33,24 +36,11 @@ public class EngineRunningState {
 
     private final AtomicInteger isRunning = new AtomicInteger(0);
 
-    @VisibleForTesting
-    public EngineRunningState() {
-        this.engineRunningObserver = null;
-        this.graphQLContext = null;
-        this.executionId = null;
-    }
-
     public EngineRunningState(ExecutionInput executionInput) {
-        EngineRunningObserver engineRunningObserver = executionInput.getGraphQLContext().get(EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY);
-        if (engineRunningObserver != null) {
-            this.engineRunningObserver = engineRunningObserver;
-            this.graphQLContext = executionInput.getGraphQLContext();
-            this.executionId = executionInput.getExecutionId();
-        } else {
-            this.engineRunningObserver = null;
-            this.graphQLContext = null;
-            this.executionId = null;
-        }
+        this.executionInput = executionInput;
+        this.graphQLContext = executionInput.getGraphQLContext();
+        this.executionId = executionInput.getExecutionId();
+        this.engineRunningObserver = executionInput.getGraphQLContext().get(EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY);
     }
 
     public <U, T> CompletableFuture<U> handle(CompletableFuture<T> src, BiFunction<? super T, Throwable, ? extends U> fn) {
@@ -64,6 +54,7 @@ public class EngineRunningState {
             if (throwable != null) {
                 throwable = throwable.getCause();
             }
+            //noinspection DataFlowIssue
             return fn.apply(t, throwable);
         });
         observerCompletableFutureEnd(src);
@@ -171,15 +162,15 @@ public class EngineRunningState {
     }
 
 
-    public void updateExecutionId(ExecutionId executionId) {
-        if (engineRunningObserver == null) {
-            return;
-        }
-        this.executionId = executionId;
+    public void updateExecutionInput(ExecutionInput executionInput) {
+        this.executionInput = executionInput;
+        this.executionId = executionInput.getExecutionId();
     }
 
     private void changeOfState(EngineRunningObserver.RunningState runningState) {
-        engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
+        if (engineRunningObserver != null) {
+            engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
+        }
     }
 
     private void run(Runnable runnable) {
@@ -214,5 +205,47 @@ public class EngineRunningState {
         return erCF;
     }
 
+
+    /**
+     * This will abort the execution via throwing {@link AbortExecutionException} if the {@link ExecutionInput} has been cancelled
+     */
+    public void throwIfCancelled() throws AbortExecutionException {
+        AbortExecutionException abortExecutionException = ifCancelledMakeException();
+        if (abortExecutionException != null) {
+            throw abortExecutionException;
+        }
+    }
+
+    /**
+     * if the passed in {@link Throwable}is non-null then it is returned as id and if there is no exception then
+     * the cancellation state is checked in {@link ExecutionInput#isCancelled()} and a {@link AbortExecutionException}
+     * is made as the returned {@link Throwable}
+     *
+     * @param currentThrowable the current exception state
+     *
+     * @return a current throwable or a cancellation exception or null if none are in error
+     */
+    @Internal
+    @Nullable
+    public Throwable possibleCancellation(@Nullable Throwable currentThrowable) {
+        // no need to check we are cancelled if we already have an exception in play
+        // since it can lead to an exception being thrown when an exception has already been
+        // thrown
+        if (currentThrowable == null) {
+            return ifCancelledMakeException();
+        }
+        return currentThrowable;
+    }
+
+    /**
+     * @return a AbortExecutionException if the current operation has been cancelled via {@link ExecutionInput#cancel()}
+     */
+    public @Nullable AbortExecutionException ifCancelledMakeException() {
+        if (executionInput.isCancelled()) {
+            changeOfState(CANCELLED);
+            return new AbortExecutionException("Execution has been asked to be cancelled");
+        }
+        return null;
+    }
 
 }
