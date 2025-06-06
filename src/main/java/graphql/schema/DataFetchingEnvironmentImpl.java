@@ -21,7 +21,7 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -31,6 +31,7 @@ import java.util.function.Supplier;
 
 @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
 @Internal
+@NullMarked
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Object source;
     private final Supplier<Map<String, Object>> arguments;
@@ -112,6 +113,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    @Nullable
     public <T> T getSource() {
         return (T) source;
     }
@@ -127,7 +129,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T getArgument(String name) {
+    public @Nullable <T> T getArgument(String name) {
         return (T) arguments.get().get(name);
     }
 
@@ -137,12 +139,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T getContext() {
+    public @Nullable <T> T getContext() {
         return (T) context;
     }
 
     @Override
-    public @NonNull GraphQLContext getGraphQlContext() {
+    public GraphQLContext getGraphQlContext() {
         return graphQLContext;
     }
 
@@ -152,7 +154,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T getRoot() {
+    public @Nullable <T> T getRoot() {
         return (T) root;
     }
 
@@ -333,13 +335,13 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         @Deprecated(since = "2021-07-05")
-        public Builder context(Object context) {
+        public Builder context(@Nullable Object context) {
             this.context = context;
             return this;
         }
 
         public Builder graphQLContext(GraphQLContext context) {
-            this.graphQLContext = context;
+            this.graphQLContext = Assert.assertNotNull(context, "GraphQLContext cannot be null");
             return this;
         }
 
