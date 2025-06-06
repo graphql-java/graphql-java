@@ -6,6 +6,8 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,12 +21,13 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
 @PublicApi
+@NullMarked
 public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarValue<BooleanValue> {
 
     private final boolean value;
 
     @Internal
-    protected BooleanValue(boolean value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected BooleanValue(boolean value, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.value = value;
     }
@@ -59,7 +62,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -110,7 +113,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
     }
 
     public static final class Builder implements NodeBuilder {
-        private SourceLocation sourceLocation;
+        private @Nullable SourceLocation sourceLocation;
         private boolean value;
         private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -128,7 +131,7 @@ public class BooleanValue extends AbstractNode<BooleanValue> implements ScalarVa
         }
 
 
-        public Builder sourceLocation(SourceLocation sourceLocation) {
+        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
