@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
@@ -60,7 +61,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.source = builder.source;
         this.arguments = builder.arguments == null ? ImmutableKit::emptyMap : builder.arguments;
         this.context = builder.context;
-        this.graphQLContext = builder.graphQLContext;
+        this.graphQLContext = Assert.assertNotNull(builder.graphQLContext);
         this.localContext = builder.localContext;
         this.root = builder.root;
         this.fieldDefinition = builder.fieldDefinition;
@@ -266,7 +267,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         private Object source;
         private Object context;
-        private GraphQLContext graphQLContext;
+        private GraphQLContext graphQLContext = GraphQLContext.newContext().build();
         private Object localContext;
         private Object root;
         private GraphQLFieldDefinition fieldDefinition;
