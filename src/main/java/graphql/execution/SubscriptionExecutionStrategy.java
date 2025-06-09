@@ -134,7 +134,6 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object eventPayload) {
-        System.out.println("new event");
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
@@ -151,10 +150,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         ));
 
         FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
-
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
-        MergedSelectionSet fields = parameters.getFields();
-        MergedField firstField = fields.getSubField(fields.getKeys().get(0));
         executionContext.getDataLoaderDispatcherStrategy().newSubscriptionExecution(fieldValueInfo, newParameters.getDeferredCallContext());
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
@@ -194,13 +190,12 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext);
 
 
-        ExecutionStrategyParameters newParameters = parameters.transform(builder -> builder
+        return parameters.transform(builder -> builder
                 .field(firstField)
                 .path(fieldPath)
                 .nonNullFieldValidator(nonNullableFieldValidator)
                 .deferredCallContext(new DeferredCallContext(1, 1))
         );
-        return newParameters;
 
     }
 
