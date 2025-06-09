@@ -83,7 +83,6 @@ public class BatchCompareDataFetchers {
 
 
     private BatchLoader<String, List<Department>> departmentsForShopsBatchLoader = ids -> maybeAsyncWithSleep(() -> {
-        System.out.println("departments for shops batch loader called with ids: " + ids);
         departmentsForShopsBatchLoaderCounter.incrementAndGet();
         List<Shop> shopList = new ArrayList<>();
         for (String id : ids) {
@@ -129,7 +128,6 @@ public class BatchCompareDataFetchers {
     }
 
     private BatchLoader<String, List<Product>> productsForDepartmentsBatchLoader = ids -> maybeAsyncWithSleep(() -> {
-        System.out.println("products for deparments batch loader called with ids: " + ids);
         productsForDepartmentsBatchLoaderCounter.incrementAndGet();
         List<Department> d = ids.stream().map(departments::get).collect(Collectors.toList());
         return completedFuture(getProductsForDepartments(d));

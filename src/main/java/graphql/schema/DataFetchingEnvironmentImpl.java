@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
@@ -13,6 +14,7 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.incremental.DeferredCallContext;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -59,7 +61,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.source = builder.source;
         this.arguments = builder.arguments == null ? ImmutableKit::emptyMap : builder.arguments;
         this.context = builder.context;
-        this.graphQLContext = builder.graphQLContext;
+        this.graphQLContext = Assert.assertNotNull(builder.graphQLContext);
         this.localContext = builder.localContext;
         this.root = builder.root;
         this.fieldDefinition = builder.fieldDefinition;
@@ -217,6 +219,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
+        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+            return dataLoaderRegistry.getDataLoader(dataLoaderName);
+        }
         return new DataLoaderWithContext<>(this, dataLoaderName, dataLoaderRegistry.getDataLoader(dataLoaderName));
     }
 
@@ -262,7 +267,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         private Object source;
         private Object context;
-        private GraphQLContext graphQLContext;
+        private GraphQLContext graphQLContext = GraphQLContext.newContext().build();
         private Object localContext;
         private Object root;
         private GraphQLFieldDefinition fieldDefinition;

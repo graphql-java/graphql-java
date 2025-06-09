@@ -6,6 +6,7 @@ import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQL;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -53,7 +54,6 @@ public class Execution {
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
-    private final ResponseMapFactory responseMapFactory;
     private final boolean doNotAutomaticallyDispatchDataLoader;
 
 
@@ -62,14 +62,12 @@ public class Execution {
                      ExecutionStrategy subscriptionStrategy,
                      Instrumentation instrumentation,
                      ValueUnboxer valueUnboxer,
-                     ResponseMapFactory responseMapFactory,
                      boolean doNotAutomaticallyDispatchDataLoader) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
         this.valueUnboxer = valueUnboxer;
-        this.responseMapFactory = responseMapFactory;
         this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
     }
 
@@ -89,6 +87,9 @@ public class Execution {
         }
 
         boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
+
+        ResponseMapFactory responseMapFactory = GraphQL.unusualConfiguration(executionInput.getGraphQLContext())
+                .responseMapFactory().getOr(ResponseMapFactory.DEFAULT);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
