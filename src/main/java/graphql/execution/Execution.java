@@ -87,6 +87,12 @@ public class Execution {
             throw rte;
         }
 
+        // before we get started - did they ask us to cancel?
+        AbortExecutionException abortExecutionException = engineRunningState.ifCancelledMakeException();
+        if (abortExecutionException != null) {
+            return completedFuture(abortExecutionException.toExecutionResult());
+        }
+
         boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
 
         ResponseMapFactory responseMapFactory = GraphQL.unusualConfiguration(executionInput.getGraphQLContext())
