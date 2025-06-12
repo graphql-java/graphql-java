@@ -7,7 +7,7 @@ import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.incremental.DeferredCallContext;
+import graphql.execution.incremental.AlternativeCallContext;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.util.InterThreadMemoizedSupplier;
@@ -48,7 +48,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     static final long DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000L;
 
-    private final Map<DeferredCallContext, CallStack> deferredCallStackMap = new ConcurrentHashMap<>();
+    private final Map<AlternativeCallContext, CallStack> deferredCallStackMap = new ConcurrentHashMap<>();
 
 
     private static class CallStack {
@@ -253,14 +253,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         return getCallStack(parameters.getDeferredCallContext());
     }
 
-    private CallStack getCallStack(@Nullable DeferredCallContext deferredCallContext) {
-        if (deferredCallContext == null) {
+    private CallStack getCallStack(@Nullable AlternativeCallContext alternativeCallContext) {
+        if (alternativeCallContext == null) {
             return this.initialCallStack;
         } else {
-            return deferredCallStackMap.computeIfAbsent(deferredCallContext, k -> {
+            return deferredCallStackMap.computeIfAbsent(alternativeCallContext, k -> {
                 CallStack callStack = new CallStack();
-                int startLevel = deferredCallContext.getStartLevel();
-                int fields = deferredCallContext.getFields();
+                int startLevel = alternativeCallContext.getStartLevel();
+                int fields = alternativeCallContext.getFields();
                 callStack.lock.runLocked(() -> {
                     // we make sure that startLevel-1 is considered done
                     callStack.expectedExecuteObjectCallsPerLevel.set(0, 0); // set to 1 in the constructor of CallStack
@@ -288,6 +288,15 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         int curLevel = parameters.getPath().getLevel() + 1;
         CallStack callStack = getCallStack(parameters);
         onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, callStack);
+    }
+
+
+    @Override
+    public void newSubscriptionExecution(FieldValueInfo fieldValueInfo, AlternativeCallContext alternativeCallContext) {
+        CallStack callStack = getCallStack(alternativeCallContext);
+        callStack.increaseFetchCount(1);
+        callStack.deferredFragmentRootFieldsFetched.add(fieldValueInfo);
+        onFieldValuesInfoDispatchIfNeeded(callStack.deferredFragmentRootFieldsFetched, 1, callStack);
     }
 
     @Override
@@ -533,12 +542,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     public void newDataLoaderLoadCall(String resultPath, int level, DataLoader dataLoader, String
-            dataLoaderName, Object key, @Nullable DeferredCallContext deferredCallContext) {
+            dataLoaderName, Object key, @Nullable AlternativeCallContext alternativeCallContext) {
         if (!enableDataLoaderChaining) {
             return;
         }
         ResultPathWithDataLoader resultPathWithDataLoader = new ResultPathWithDataLoader(resultPath, level, dataLoader, dataLoaderName, key);
-        CallStack callStack = getCallStack(deferredCallContext);
+        CallStack callStack = getCallStack(alternativeCallContext);
         boolean levelFinished = callStack.lock.callLocked(() -> {
             boolean finished = callStack.dispatchingFinishedPerLevel.contains(level);
             callStack.allResultPathWithDataLoader.add(resultPathWithDataLoader);

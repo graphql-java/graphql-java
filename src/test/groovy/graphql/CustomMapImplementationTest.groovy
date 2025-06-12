@@ -38,7 +38,6 @@ class CustomMapImplementationTest extends Specification {
                     it.dataFetcher("people", { List.of(new Person("Mario", 18), new Person("Luigi", 21))})
                 })
                 .build())
-            .responseMapFactory(new CustomResponseMapFactory())
             .build()
 
     def "customMapImplementation"() {
@@ -52,6 +51,7 @@ class CustomMapImplementationTest extends Specification {
                             }
                         }
                         ''')
+                .graphQLContext { it -> GraphQL.unusualConfiguration(it).responseMapFactory().setFactory(new CustomResponseMapFactory())}
                 .build()
 
         def executionResult = graphql.execute(input)
