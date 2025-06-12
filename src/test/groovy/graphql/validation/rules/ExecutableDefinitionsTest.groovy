@@ -68,10 +68,10 @@ class ExecutableDefinitionsTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 2
         validationErrors[0].validationErrorType == ValidationErrorType.NonExecutableDefinition
-        validationErrors[0].locations == [new SourceLocation(8, 1)]
+        validationErrors[0].locations == [new SourceLocation(8, 3)]
         validationErrors[0].message == "Validation error (NonExecutableDefinition) : Type 'Cow' definition is not executable"
         validationErrors[1].validationErrorType == ValidationErrorType.NonExecutableDefinition
-        validationErrors[1].locations == [new SourceLocation(12, 1)]
+        validationErrors[1].locations == [new SourceLocation(12, 3)]
         validationErrors[1].message == "Validation error (NonExecutableDefinition) : Type 'Dog' definition is not executable"
     }
 
@@ -92,10 +92,10 @@ class ExecutableDefinitionsTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 2
         validationErrors[0].validationErrorType == ValidationErrorType.NonExecutableDefinition
-        validationErrors[0].locations == [new SourceLocation(2, 1)]
+        validationErrors[0].locations == [new SourceLocation(2, 3)]
         validationErrors[0].message == "Validation error (NonExecutableDefinition) : Schema definition is not executable"
         validationErrors[1].validationErrorType == ValidationErrorType.NonExecutableDefinition
-        validationErrors[1].locations == [new SourceLocation(6, 1)]
+        validationErrors[1].locations == [new SourceLocation(6, 3)]
         validationErrors[1].message == "Validation error (NonExecutableDefinition) : Type 'QueryRoot' definition is not executable"
     }
 
@@ -128,7 +128,7 @@ class ExecutableDefinitionsTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors[0].validationErrorType == ValidationErrorType.NonExecutableDefinition
-        validationErrors[0].locations == [new SourceLocation(2, 1)]
+        validationErrors[0].locations == [new SourceLocation(2, 3)]
         validationErrors[0].message == "Validation error (NonExecutableDefinition) : Directive 'nope' definition is not executable"
     }
 
