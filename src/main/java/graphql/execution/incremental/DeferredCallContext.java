@@ -4,8 +4,9 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.VisibleForTesting;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Contains data relevant to the execution of a {@link DeferredFragmentCall}.
@@ -24,7 +25,7 @@ public class DeferredCallContext {
     private final int startLevel;
     private final int fields;
 
-    private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
+    private final List<GraphQLError> errors = Collections.synchronizedList(new ArrayList<>());
 
     public DeferredCallContext(int startLevel, int fields) {
         this.startLevel = startLevel;
