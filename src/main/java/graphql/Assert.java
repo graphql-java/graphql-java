@@ -1,7 +1,5 @@
 package graphql;
 
-import org.jspecify.annotations.NullMarked;
-
 import java.util.Collection;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -10,7 +8,6 @@ import static java.lang.String.format;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @Internal
-@NullMarked
 public class Assert {
 
     public static <T> T assertNotNullWithNPE(T object, Supplier<String> msg) {
