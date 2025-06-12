@@ -2,7 +2,7 @@ package graphql.execution;
 
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.execution.incremental.DeferredCallContext;
+import graphql.execution.incremental.AlternativeCallContext;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Consumer;
@@ -22,7 +22,7 @@ public class ExecutionStrategyParameters {
     private final ResultPath path;
     private final MergedField currentField;
     private final ExecutionStrategyParameters parent;
-    private final DeferredCallContext deferredCallContext;
+    private final AlternativeCallContext alternativeCallContext;
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
                                         Object source,
@@ -32,7 +32,7 @@ public class ExecutionStrategyParameters {
                                         ResultPath path,
                                         MergedField currentField,
                                         ExecutionStrategyParameters parent,
-                                        DeferredCallContext deferredCallContext) {
+                                        AlternativeCallContext alternativeCallContext) {
 
         this.executionStepInfo = assertNotNull(executionStepInfo, () -> "executionStepInfo is null");
         this.localContext = localContext;
@@ -42,7 +42,7 @@ public class ExecutionStrategyParameters {
         this.path = path;
         this.currentField = currentField;
         this.parent = parent;
-        this.deferredCallContext = deferredCallContext;
+        this.alternativeCallContext = alternativeCallContext;
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
@@ -95,8 +95,8 @@ public class ExecutionStrategyParameters {
      */
     @Nullable
     @Internal
-    public DeferredCallContext getDeferredCallContext() {
-        return deferredCallContext;
+    public AlternativeCallContext getDeferredCallContext() {
+        return alternativeCallContext;
     }
 
     /**
@@ -105,7 +105,7 @@ public class ExecutionStrategyParameters {
      * @return true if we're in the scope of a deferred call
      */
     public boolean isInDeferredContext() {
-        return deferredCallContext != null;
+        return alternativeCallContext != null;
     }
 
     /**
@@ -128,7 +128,7 @@ public class ExecutionStrategyParameters {
                 path,
                 currentField,
                 parent,
-                deferredCallContext);
+                alternativeCallContext);
     }
 
     @Internal
@@ -143,7 +143,7 @@ public class ExecutionStrategyParameters {
                 path,
                 currentField,
                 parent,
-                deferredCallContext);
+                alternativeCallContext);
     }
 
     @Internal
@@ -159,7 +159,7 @@ public class ExecutionStrategyParameters {
                 path,
                 currentField,
                 parent,
-                deferredCallContext);
+                alternativeCallContext);
     }
 
     @Internal
@@ -174,7 +174,7 @@ public class ExecutionStrategyParameters {
                 path,
                 currentField,
                 parent,
-                deferredCallContext);
+                alternativeCallContext);
     }
 
     @Internal
@@ -189,7 +189,7 @@ public class ExecutionStrategyParameters {
                 path,
                 currentField,
                 parent,
-                deferredCallContext);
+                alternativeCallContext);
     }
 
     public ExecutionStrategyParameters transform(Consumer<Builder> builderConsumer) {
@@ -221,7 +221,7 @@ public class ExecutionStrategyParameters {
         ResultPath path = ResultPath.rootPath();
         MergedField currentField;
         ExecutionStrategyParameters parent;
-        DeferredCallContext deferredCallContext;
+        AlternativeCallContext alternativeCallContext;
 
         /**
          * @see ExecutionStrategyParameters#newParameters()
@@ -239,7 +239,7 @@ public class ExecutionStrategyParameters {
             this.fields = oldParameters.fields;
             this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
             this.currentField = oldParameters.currentField;
-            this.deferredCallContext = oldParameters.deferredCallContext;
+            this.alternativeCallContext = oldParameters.alternativeCallContext;
             this.path = oldParameters.path;
             this.parent = oldParameters.parent;
         }
@@ -289,13 +289,13 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder deferredCallContext(DeferredCallContext deferredCallContext) {
-            this.deferredCallContext = deferredCallContext;
+        public Builder deferredCallContext(AlternativeCallContext alternativeCallContext) {
+            this.alternativeCallContext = alternativeCallContext;
             return this;
         }
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, deferredCallContext);
+            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, alternativeCallContext);
         }
     }
 }

@@ -4,7 +4,7 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
-import graphql.execution.incremental.DeferredCallContext;
+import graphql.execution.incremental.AlternativeCallContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -198,7 +198,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                     .path(fieldPath)
                     .nonNullFieldValidator(nonNullableFieldValidator);
             if (newCallContext) {
-                builder.deferredCallContext(new DeferredCallContext(1, 1));
+                builder.deferredCallContext(new AlternativeCallContext(1, 1));
             }
         });
 

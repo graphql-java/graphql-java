@@ -9,31 +9,29 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Contains data relevant to the execution of a {@link DeferredFragmentCall}.
+ * Contains data relevant to the execution of a {@link DeferredFragmentCall} and Subscription events.
  * <p>
  * The responsibilities of this class are similar to {@link graphql.execution.ExecutionContext}, but restricted to the
  * execution of a deferred call (instead of the whole GraphQL execution like {@link graphql.execution.ExecutionContext}).
  * <p>
- * Some behaviours, like error capturing, need to be scoped to a single {@link DeferredFragmentCall}, because each defer payload
+ * Some behaviours, like error capturing, need to be scoped to a single {@link DeferredFragmentCall} for deferred, because each defer payload
  * contains its own distinct list of errors.
- *
- * This class is used also by the Subscription execution strategy to maintain a DataLoader dispatching context per event
  */
 @Internal
-public class DeferredCallContext {
+public class AlternativeCallContext {
 
     private final int startLevel;
     private final int fields;
 
     private final List<GraphQLError> errors = Collections.synchronizedList(new ArrayList<>());
 
-    public DeferredCallContext(int startLevel, int fields) {
+    public AlternativeCallContext(int startLevel, int fields) {
         this.startLevel = startLevel;
         this.fields = fields;
     }
 
     @VisibleForTesting
-    public DeferredCallContext() {
+    public AlternativeCallContext() {
         this.startLevel = 0;
         this.fields = 0;
     }

@@ -13,7 +13,7 @@ import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.directives.QueryDirectives;
-import graphql.execution.incremental.DeferredCallContext;
+import graphql.execution.incremental.AlternativeCallContext;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -81,7 +81,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.queryDirectives = builder.queryDirectives;
 
         // internal state
-        this.dfeInternalState = new DFEInternalState(builder.dataLoaderDispatchStrategy, builder.deferredCallContext);
+        this.dfeInternalState = new DFEInternalState(builder.dataLoaderDispatchStrategy, builder.alternativeCallContext);
     }
 
     /**
@@ -287,7 +287,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private ImmutableMapWithNullValues<String, Object> variables;
         private QueryDirectives queryDirectives;
         private DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
-        private DeferredCallContext deferredCallContext;
+        private AlternativeCallContext alternativeCallContext;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -312,7 +312,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.variables = env.variables;
             this.queryDirectives = env.queryDirectives;
             this.dataLoaderDispatchStrategy = env.dfeInternalState.dataLoaderDispatchStrategy;
-            this.deferredCallContext = env.dfeInternalState.deferredCallContext;
+            this.alternativeCallContext = env.dfeInternalState.alternativeCallContext;
         }
 
         public Builder() {
@@ -432,8 +432,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
-        public Builder deferredCallContext(DeferredCallContext deferredCallContext) {
-            this.deferredCallContext = deferredCallContext;
+        public Builder deferredCallContext(AlternativeCallContext alternativeCallContext) {
+            this.alternativeCallContext = alternativeCallContext;
             return this;
         }
 
@@ -450,19 +450,19 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Internal
     public static class DFEInternalState {
         final DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
-        final DeferredCallContext deferredCallContext;
+        final AlternativeCallContext alternativeCallContext;
 
-        public DFEInternalState(DataLoaderDispatchStrategy dataLoaderDispatchStrategy, DeferredCallContext deferredCallContext) {
+        public DFEInternalState(DataLoaderDispatchStrategy dataLoaderDispatchStrategy, AlternativeCallContext alternativeCallContext) {
             this.dataLoaderDispatchStrategy = dataLoaderDispatchStrategy;
-            this.deferredCallContext = deferredCallContext;
+            this.alternativeCallContext = alternativeCallContext;
         }
 
         public DataLoaderDispatchStrategy getDataLoaderDispatchStrategy() {
             return dataLoaderDispatchStrategy;
         }
 
-        public DeferredCallContext getDeferredCallContext() {
-            return deferredCallContext;
+        public AlternativeCallContext getDeferredCallContext() {
+            return alternativeCallContext;
         }
     }
 }

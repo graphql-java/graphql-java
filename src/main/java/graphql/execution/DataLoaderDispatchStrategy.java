@@ -1,7 +1,7 @@
 package graphql.execution;
 
 import graphql.Internal;
-import graphql.execution.incremental.DeferredCallContext;
+import graphql.execution.incremental.AlternativeCallContext;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
@@ -61,7 +61,7 @@ public interface DataLoaderDispatchStrategy {
         return dataFetcher;
     }
 
-    default void newSubscriptionExecution(FieldValueInfo fieldValueInfo, DeferredCallContext deferredCallContext) {
+    default void newSubscriptionExecution(FieldValueInfo fieldValueInfo, AlternativeCallContext alternativeCallContext) {
 
     }
 }
