@@ -135,8 +135,8 @@ public class SchemaDiff {
      * This will perform a difference on the two schemas.  The reporter callback
      * interface will be called when differences are encountered.
      *
-     * @param schemaDiffSet  the two schemas to compare for difference
-     * @param reporter the place to report difference events to
+     * @param schemaDiffSet the two schemas to compare for difference
+     * @param reporter      the place to report difference events to
      *
      * @return the number of API breaking changes
      */
@@ -531,6 +531,19 @@ public class SchemaDiff {
                         .build());
             } else {
                 checkInterfaceType(ctx, oldInterface.get(), newInterface.get());
+            }
+        }
+
+        for (Map.Entry<String, Type> entry : newImplementsMap.entrySet()) {
+            Optional<InterfaceTypeDefinition> newInterface = ctx.getNewTypeDef(entry.getValue(), InterfaceTypeDefinition.class);
+            if (!oldImplementsMap.containsKey(entry.getKey())) {
+                ctx.report(DiffEvent.apiInfo()
+                        .category(DiffCategory.ADDITION)
+                        .typeName(old.getName())
+                        .typeKind(getTypeKind(old))
+                        .components(newInterface.get().getName())
+                        .reasonMsg("The new API has added the interface named '%s'", newInterface.get().getName())
+                        .build());
             }
         }
     }
