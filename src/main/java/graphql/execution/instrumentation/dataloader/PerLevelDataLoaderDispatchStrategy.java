@@ -305,8 +305,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         CallStack callStack = getCallStack(parameters);
         boolean ready = callStack.lock.callLocked(() -> {
             callStack.deferredFragmentRootFieldsFetched.add(fieldValueInfo);
-            AlternativeCallContext alternativeCallContext = Assert.assertNotNull(parameters.getDeferredCallContext());
-            return callStack.deferredFragmentRootFieldsFetched.size() == alternativeCallContext.getFields();
+            Assert.assertNotNull(parameters.getDeferredCallContext());
+            return callStack.deferredFragmentRootFieldsFetched.size() == parameters.getDeferredCallContext().getFields();
         });
         if (ready) {
             int curLevel = parameters.getPath().getLevel();

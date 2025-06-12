@@ -1,7 +1,8 @@
-import java.text.SimpleDateFormat
+import net.ltgt.gradle.errorprone.CheckSeverity
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
-import net.ltgt.gradle.errorprone.CheckSeverity
+
+import java.text.SimpleDateFormat
 
 plugins {
     id 'java'
@@ -257,6 +258,7 @@ tasks.withType(JavaCompile) {
         // end state has us with this config turned on - eg all classes
         //
         //option("NullAway:AnnotatedPackages", "graphql")
+        option("NullAway:CustomContractAnnotations", "graphql.Contract")
         option("NullAway:OnlyNullMarked", "true")
         option("NullAway:JSpecifyMode", "true")
     }
