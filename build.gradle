@@ -246,6 +246,8 @@ tasks.withType(GroovyCompile) {
     // Options when compiling Java using the Groovy plugin.
     // (Groovy itself defaults to UTF-8 for Groovy code)
     options.encoding = 'UTF-8'
+    sourceCompatibility = '11'
+    targetCompatibility = '11'
     groovyOptions.forkOptions.memoryMaximumSize = "4g"
 }
 
@@ -429,3 +431,4 @@ tasks.withType(GenerateModuleMetadata) {
 test {
     useJUnitPlatform()
 }
+
