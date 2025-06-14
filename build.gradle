@@ -432,3 +432,20 @@ test {
     useJUnitPlatform()
 }
 
+tasks.register('testWithJava17', Test) {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    useJUnitPlatform()
+}
+tasks.register('testWithJava11', Test) {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+    useJUnitPlatform()
+}
+test.dependsOn testWithJava17
+test.dependsOn testWithJava11
+
+
+
