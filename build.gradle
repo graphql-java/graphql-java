@@ -350,8 +350,8 @@ publishing {
 nexusPublishing {
     repositories {
         sonatype {
-            username = System.env.MAVEN_CENTRAL_USER
-            password = System.env.MAVEN_CENTRAL_PASSWORD
+            username = System.env.MAVEN_CENTRAL_USER_NEW
+            password = System.env.MAVEN_CENTRAL_PASSWORD_NEW
             // https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#configuration
             nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
             // GraphQL Java does not publish snapshots, but adding this URL for completeness
