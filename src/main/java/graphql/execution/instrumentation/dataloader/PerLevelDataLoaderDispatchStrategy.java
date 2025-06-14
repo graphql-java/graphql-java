@@ -513,7 +513,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         // filter out all DataLoaderCFS that are matching the fields we want to dispatch
         List<ResultPathWithDataLoader> relevantResultPathWithDataLoader = new ArrayList<>();
-        for (ResultPathWithDataLoader resultPathWithDataLoader : callStack.allResultPathWithDataLoader) {
+        // we need to copy the list because the callStack.allResultPathWithDataLoader can be modified concurrently
+        // while iterating over it
+        ArrayList<ResultPathWithDataLoader> resultPathWithDataLoaders = new ArrayList<>(callStack.allResultPathWithDataLoader);
+        for (ResultPathWithDataLoader resultPathWithDataLoader : resultPathWithDataLoaders) {
             if (resultPathsToDispatch.contains(resultPathWithDataLoader.resultPath)) {
                 relevantResultPathWithDataLoader.add(resultPathWithDataLoader);
             }

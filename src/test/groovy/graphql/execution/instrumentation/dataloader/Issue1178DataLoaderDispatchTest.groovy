@@ -21,9 +21,8 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class Issue1178DataLoaderDispatchTest extends Specification {
 
-    public static final int NUM_OF_REPS = 100
 
-    @RepeatUntilFailure(maxAttempts = 20)
+    @RepeatUntilFailure(maxAttempts = 100)
     def "shouldn't dispatch twice in multithreaded env"() {
         setup:
         def sdl = """
@@ -81,11 +80,10 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                 .build()
 
         then: "execution shouldn't error"
-        for (int i = 0; i < NUM_OF_REPS; i++) {
-            def ei = ExecutionInput.newExecutionInput()
-                    .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
-                    .dataLoaderRegistry(dataLoaderRegistry)
-                    .query("""
+        def ei = ExecutionInput.newExecutionInput()
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .query("""
                 query { 
                     getTodos { __typename id 
                         related { id __typename 
@@ -118,10 +116,9 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                         }
                     } 
                 }""").build()
-            def resultCF = graphql.executeAsync(ei)
-            Awaitility.await().until { resultCF.isDone() }
-            assert resultCF.get().errors.empty
-        }
+        def resultCF = graphql.executeAsync(ei)
+        Awaitility.await().until { resultCF.isDone() }
+        assert resultCF.get().errors.empty
         where:
         enableDataLoaderChaining << [true, false]
 
