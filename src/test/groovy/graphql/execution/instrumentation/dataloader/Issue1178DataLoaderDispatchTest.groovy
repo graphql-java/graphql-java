@@ -6,10 +6,11 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.StaticDataFetcher
 import graphql.schema.idl.RuntimeWiring
+import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
-import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -20,8 +21,8 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class Issue1178DataLoaderDispatchTest extends Specification {
 
-    public static final int NUM_OF_REPS = 100
 
+    @RepeatUntilFailure(maxAttempts = 100)
     def "shouldn't dispatch twice in multithreaded env"() {
         setup:
         def sdl = """
@@ -67,10 +68,10 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
-                .dataFetcher("getTodos", new StaticDataFetcher([[id: '1'], [id: '2'], [id: '3'], [id: '4'], [id: '5']])))
+                        .dataFetcher("getTodos", new StaticDataFetcher([[id: '1'], [id: '2'], [id: '3'], [id: '4'], [id: '5']])))
                 .type(newTypeWiring("Todo")
-                .dataFetcher("related", relatedDf)
-                .dataFetcher("related2", relatedDf2))
+                        .dataFetcher("related", relatedDf)
+                        .dataFetcher("related2", relatedDf2))
                 .build()
 
 
@@ -79,11 +80,10 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                 .build()
 
         then: "execution shouldn't error"
-        for (int i = 0; i < NUM_OF_REPS; i++) {
-            def result = graphql.execute(ExecutionInput.newExecutionInput()
-                    .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
-                    .dataLoaderRegistry(dataLoaderRegistry)
-                    .query("""
+        def ei = ExecutionInput.newExecutionInput()
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .query("""
                 query { 
                     getTodos { __typename id 
                         related { id __typename 
@@ -115,9 +115,10 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                             } 
                         }
                     } 
-                }""").build())
-            assert result.errors.empty
-        }
+                }""").build()
+        def resultCF = graphql.executeAsync(ei)
+        Awaitility.await().until { resultCF.isDone() }
+        assert resultCF.get().errors.empty
         where:
         enableDataLoaderChaining << [true, false]
 

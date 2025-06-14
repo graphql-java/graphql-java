@@ -22,6 +22,7 @@ import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -33,11 +34,15 @@ import java.util.function.Supplier;
 @Internal
 @NullMarked
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
+    @Nullable
     private final Object source;
     private final Supplier<Map<String, Object>> arguments;
+    @Nullable
     private final Object context;
     private final GraphQLContext graphQLContext;
+    @Nullable
     private final Object localContext;
+    @Nullable
     private final Object root;
     private final GraphQLFieldDefinition fieldDefinition;
     private final MergedField mergedField;
@@ -265,6 +270,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 '}';
     }
 
+    @NullUnmarked
     public static class Builder {
 
         private Object source;

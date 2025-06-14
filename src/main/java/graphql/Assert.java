@@ -1,6 +1,7 @@
 package graphql;
 
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.function.Supplier;
@@ -20,42 +21,48 @@ public class Assert {
         throw new NullPointerException(msg.get());
     }
 
-    public static <T> T assertNotNull(T object) {
+    @Contract("null -> fail")
+    public static <T> T assertNotNull(@Nullable T object) {
         if (object != null) {
             return object;
         }
         return throwAssert("Object required to be not null");
     }
 
-    public static <T> T assertNotNull(T object, Supplier<String> msg) {
+    @Contract("null,_ -> fail")
+    public static <T> T assertNotNull(@Nullable T object, Supplier<String> msg) {
         if (object != null) {
             return object;
         }
         return throwAssert(msg.get());
     }
 
-    public static <T> T assertNotNull(T object, String constantMsg) {
+    @Contract("null,_ -> fail")
+    public static <T> T assertNotNull(@Nullable T object, String constantMsg) {
         if (object != null) {
             return object;
         }
         return throwAssert(constantMsg);
     }
 
-    public static <T> T assertNotNull(T object, String msgFmt, Object arg1) {
+    @Contract("null,_,_ -> fail")
+    public static <T> T assertNotNull(@Nullable T object, String msgFmt, Object arg1) {
         if (object != null) {
             return object;
         }
         return throwAssert(msgFmt, arg1);
     }
 
-    public static <T> T assertNotNull(T object, String msgFmt, Object arg1, Object arg2) {
+    @Contract("null,_,_,_ -> fail")
+    public static <T> T assertNotNull(@Nullable T object, String msgFmt, Object arg1, Object arg2) {
         if (object != null) {
             return object;
         }
         return throwAssert(msgFmt, arg1, arg2);
     }
 
-    public static <T> T assertNotNull(T object, String msgFmt, Object arg1, Object arg2, Object arg3) {
+    @Contract("null,_,_,_,_ -> fail")
+    public static <T> T assertNotNull(@Nullable T object, String msgFmt, Object arg1, Object arg2, Object arg3) {
         if (object != null) {
             return object;
         }
@@ -63,28 +70,33 @@ public class Assert {
     }
 
 
-    public static <T> void assertNull(T object, Supplier<String> msg) {
+    @Contract("!null,_ -> fail")
+    public static <T> void assertNull(@Nullable T object, Supplier<String> msg) {
         if (object == null) {
             return;
         }
         throwAssert(msg.get());
     }
 
-    public static <T> void assertNull(T object) {
+    @Contract("!null -> fail")
+    public static <T> void assertNull(@Nullable Object object) {
         if (object == null) {
             return;
         }
         throwAssert("Object required to be null");
     }
 
+    @Contract("-> fail")
     public static <T> T assertNeverCalled() {
         return throwAssert("Should never been called");
     }
 
+    @Contract("_,_-> fail")
     public static <T> T assertShouldNeverHappen(String format, Object... args) {
         return throwAssert("Internal error: should never happen: %s", format(format, args));
     }
 
+    @Contract("-> fail")
     public static <T> T assertShouldNeverHappen() {
         return throwAssert("Internal error: should never happen");
     }
@@ -96,6 +108,7 @@ public class Assert {
         return collection;
     }
 
+    //    @Contract("null,_-> fail")
     public static <T> Collection<T> assertNotEmpty(Collection<T> collection, Supplier<String> msg) {
         if (collection == null || collection.isEmpty()) {
             throwAssert(msg.get());
