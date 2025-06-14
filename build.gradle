@@ -307,6 +307,7 @@ artifacts {
 List<TestDescriptor> failedTests = []
 
 test {
+    useJUnitPlatform()
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
@@ -318,6 +319,43 @@ test {
         }
     }
 }
+
+tasks.register('testWithJava17', Test) {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    useJUnitPlatform()
+    testLogging {
+        events "FAILED", "SKIPPED"
+        exceptionFormat = "FULL"
+    }
+
+    afterTest { TestDescriptor descriptor, TestResult result ->
+        if (result.getFailedTestCount() > 0) {
+            failedTests.add(descriptor)
+        }
+    }
+
+}
+tasks.register('testWithJava11', Test) {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+    useJUnitPlatform()
+    testLogging {
+        events "FAILED", "SKIPPED"
+        exceptionFormat = "FULL"
+    }
+
+    afterTest { TestDescriptor descriptor, TestResult result ->
+        if (result.getFailedTestCount() > 0) {
+            failedTests.add(descriptor)
+        }
+    }
+}
+test.dependsOn testWithJava17
+test.dependsOn testWithJava11
+
 
 /*
  * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7
@@ -427,25 +465,6 @@ tasks.withType(PublishToMavenRepository) {
 tasks.withType(GenerateModuleMetadata) {
     enabled = false
 }
-
-test {
-    useJUnitPlatform()
-}
-
-tasks.register('testWithJava17', Test) {
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
-    useJUnitPlatform()
-}
-tasks.register('testWithJava11', Test) {
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-    useJUnitPlatform()
-}
-test.dependsOn testWithJava17
-test.dependsOn testWithJava11
 
 
 
