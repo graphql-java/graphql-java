@@ -14,6 +14,8 @@ jobs:
       MAVEN_CENTRAL_PGP_KEY: ${{ secrets.MAVEN_CENTRAL_PGP_KEY }}
       MAVEN_CENTRAL_USER: ${{ secrets.MAVEN_CENTRAL_USER }}
       MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      MAVEN_CENTRAL_USER_NEW: ${{ secrets.MAVEN_CENTRAL_USER_NEW }}
+      MAVEN_CENTRAL_PASSWORD_NEW: ${{ secrets.MAVEN_CENTRAL_PASSWORD_NEW }}
       RELEASE_VERSION: ${{ github.event.inputs.version }}
 
     steps:
