@@ -14,7 +14,7 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -28,6 +28,7 @@ import java.util.Map;
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
+@NullMarked
 public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnvironment {
 
     /**
@@ -92,6 +93,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @deprecated - use {@link #getGraphQlContext()} instead
      */
     @Deprecated(since = "2021-07-05")
+    @Nullable
     <T> T getContext();
 
     /**
@@ -102,7 +104,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @return can NOT be null
      */
-    @NonNull
     GraphQLContext getGraphQlContext();
 
     /**
@@ -130,6 +131,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @return can be null
      */
+    @Nullable
     <T> T getRoot();
 
     /**

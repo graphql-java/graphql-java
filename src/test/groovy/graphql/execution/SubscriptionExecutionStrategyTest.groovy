@@ -22,11 +22,15 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
+import org.dataloader.BatchLoader
+import org.dataloader.DataLoaderFactory
+import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CopyOnWriteArrayList
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
@@ -765,4 +769,78 @@ class SubscriptionExecutionStrategyTest extends Specification {
         }
     }
 
+
+    def "DataLoader works on each subscription event"() {
+        given:
+        def sdl = """
+            type Query {
+                hello: String
+            }
+            
+            type Subscription {
+                newDogs: [Dog]
+            }
+            
+            type Dog {
+                name: String
+            }
+        """
+
+        AtomicInteger batchLoaderCalled = new AtomicInteger(0)
+        BatchLoader batchLoader = { keys ->
+            println "batchLoader called with keys: $keys"
+            batchLoaderCalled.incrementAndGet()
+            assert keys.size() == 2
+            CompletableFuture.completedFuture(["Luna", "Skipper"])
+        }
+        def dataLoader = DataLoaderFactory.newDataLoader("dogsNameLoader", batchLoader)
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("dogsNameLoader", dataLoader)
+
+        DataFetcher dogsNameDF = { env ->
+            println "dogsNameDF called"
+            env.getDataLoader("dogsNameLoader").load(env.getSource())
+        }
+        DataFetcher newDogsDF = { env ->
+            println "newDogsDF called"
+            def dogNames = ["Luna", "Skipper"]
+            return new ReactiveStreamsObjectPublisher(3, { int index ->
+                return dogNames.collect { it -> it + "$index" }
+            })
+        }
+
+        def query = '''subscription {
+            newDogs {
+                name
+            }
+        }'''
+        def schema = TestUtil.schema(sdl, [
+                Subscription: [newDogs: newDogsDF],
+                Dog         : [name: dogsNameDF]
+        ])
+        ExecutionInput ei = ExecutionInput.newExecutionInput()
+                .query(query)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .build()
+        def graphQL = GraphQL.newGraphQL(schema)
+                .build()
+
+
+        when:
+        def executionResult = graphQL.execute(ei)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>(3)
+        msgStream.subscribe(capturingSubscriber)
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        then:
+        def events = capturingSubscriber.events
+        events.size() == 3
+        batchLoaderCalled.get() == 3 // batchLoader should be called once for each event
+
+        events[0].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
+        events[1].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
+        events[2].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
+
+    }
 }
