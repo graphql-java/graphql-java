@@ -8,6 +8,11 @@ import graphql.validation.Validator
 import org.junit.Assert
 import spock.lang.Specification
 
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertFalse
+import static org.junit.Assert.assertNotNull
+import static org.junit.Assert.assertTrue
+
 class QueryGeneratorTest extends Specification {
     def "generate query for simple type"() {
         given:
@@ -43,10 +48,13 @@ class QueryGeneratorTest extends Specification {
   }
 }"""
 
-        def passed = executeTest(schema, fieldPath, expectedNoOperation)
+        def result = executeTest(schema, fieldPath, expectedNoOperation)
 
         then:
-        passed
+        assertNotNull(result)
+        assertEquals("Bar", result.usedType)
+        assertEquals(4, result.totalFieldCount)
+        assertFalse(result.reachedMaxFieldCount)
 
         when: "operation and arguments are passed"
         def expectedWithOperation = """
@@ -62,7 +70,7 @@ query barTestOperation {
 }
 """
 
-        passed = executeTest(
+        result = executeTest(
                 schema,
                 fieldPath,
                 "barTestOperation",
@@ -73,7 +81,7 @@ query barTestOperation {
         )
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "generate query for type with nested type"() {
@@ -115,10 +123,10 @@ query barTestOperation {
 """
 
         when:
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "generate query for deeply nested field"() {
@@ -162,10 +170,10 @@ query barTestOperation {
 }
 """
 
-        def passed = executeTest(schema, fieldPath, expectedNoOperation)
+        def result = executeTest(schema, fieldPath, expectedNoOperation)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "straight forward cyclic dependency"() {
@@ -198,10 +206,10 @@ query barTestOperation {
 """
 
         when:
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "cyclic dependency with 2 fields of the same type"() {
@@ -239,10 +247,10 @@ query barTestOperation {
 """
 
         when:
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "transitive cyclic dependency"() {
@@ -296,10 +304,10 @@ query barTestOperation {
 """
 
         when:
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "generate mutation and subscription for simple type"() {
@@ -337,10 +345,10 @@ mutation {
 }
 """
 
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
 
         when: "operation and arguments are passed"
 
@@ -356,14 +364,14 @@ subscription {
 }
 """
 
-        passed = executeTest(
+        result = executeTest(
                 schema,
                 fieldPath,
                 expected
         )
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "generate query containing fields with arguments"() {
@@ -397,10 +405,10 @@ subscription {
 }
 """
 
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "generate query for the 'node' field, which returns an interface"() {
@@ -437,11 +445,11 @@ subscription {
         def classifierType = null
         def expected = null
 
-        def passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
+        def result = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
         def e = thrown(IllegalArgumentException)
-        e.message == "typeClassifier is required for interface types"
+        e.message == "typeName is required for interface types"
 
         when: "generate query for the 'node' field with a specific type"
         fieldPath = "Query.node"
@@ -456,12 +464,12 @@ subscription {
   }
 }
 """
-        passed = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
+        result = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        passed
+        assertNotNull(result)
 
-        when: "passing typeClassifier on field that doesn't return an interface"
+        when: "passing typeName on field that doesn't return an interface"
         fieldPath = "Query.foo"
         classifierType = "Foo"
 
@@ -469,9 +477,9 @@ subscription {
 
         then:
         e = thrown(IllegalArgumentException)
-        e.message == "typeClassifier should be used only with interface or union types"
+        e.message == "typeName should be used only with interface or union types"
 
-        when: "passing typeClassifier that doesn't implement Node"
+        when: "passing typeName that doesn't implement Node"
         fieldPath = "Query.node"
         classifierType = "BazDoesntImplementNode"
 
@@ -512,11 +520,11 @@ subscription {
         def fieldPath = "Query.something"
         def classifierType = null
         def expected = null
-        def passed = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
+        def result = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
         def e = thrown(IllegalArgumentException)
-        e.message == "typeClassifier is required for union types"
+        e.message == "typeName is required for union types"
 
         when: "generate query for field returning union with a specific type"
         fieldPath = "Query.something"
@@ -531,12 +539,12 @@ subscription {
   }
 }
 """
-        passed = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
+        result = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        passed
+        assertNotNull(result)
 
-        when: "passing typeClassifier that is not part of the union"
+        when: "passing typeName that is not part of the union"
         fieldPath = "Query.something"
         classifierType = "BazIsNotPartOfUnion"
 
@@ -583,10 +591,12 @@ subscription {
                 .maxFieldCount(3)
                 .build()
 
-        def passed = executeTest(schema, fieldPath, null, null, null, expected, options)
+        def result = executeTest(schema, fieldPath, null, null, null, expected, options)
 
         then:
-        passed
+        assertNotNull(result)
+        assertEquals(3, result.totalFieldCount)
+        assertTrue(result.reachedMaxFieldCount)
     }
 
     def "field limit enforcement may result in less fields than the MAX"() {
@@ -628,10 +638,10 @@ subscription {
 }
 """
 
-        def passed = executeTest(schema, fieldPath, null, null, null, expected, options)
+        def result = executeTest(schema, fieldPath, null, null, null, expected, options)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "max field limit is enforced"() {
@@ -667,10 +677,12 @@ $resultFields
 }
 """
 
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
+        assertEquals(10_000, result.totalFieldCount)
+        assertTrue(result.reachedMaxFieldCount)
     }
 
     def "filter types and field"() {
@@ -722,10 +734,10 @@ $resultFields
 }
 """
 
-        def passed = executeTest(schema, fieldPath, null, null, null, expected, options)
+        def result = executeTest(schema, fieldPath, null, null, null, expected, options)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "union fields"() {
@@ -777,10 +789,10 @@ $resultFields
 }
 """
 
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "interface fields"() {
@@ -834,10 +846,10 @@ $resultFields
 }
 """
 
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "interface fields with a single implementing type"() {
@@ -882,10 +894,10 @@ $resultFields
 }
 """
 
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "cyclic dependency with union"() {
@@ -940,10 +952,10 @@ $resultFields
 }
 """
 
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "union fields with a single type in union"() {
@@ -986,10 +998,10 @@ $resultFields
 }
 """
 
-        def passed = executeTest(schema, fieldPath, expected)
+        def result = executeTest(schema, fieldPath, expected)
 
         then:
-        passed
+        assertNotNull(result)
     }
 
     def "generates query for large type"() {
@@ -1001,13 +1013,13 @@ $resultFields
 
         def expected = getClass().getClassLoader().getResourceAsStream("querygenerator/generated-query-for-extra-large-schema-1.graphql").text
 
-        def passed = executeTest(schema, fieldPath, null, "(id: \"issue-id-1\")", "JiraIssue", expected, QueryGeneratorOptions.newBuilder().build())
+        def result = executeTest(schema, fieldPath, null, "(id: \"issue-id-1\")", "JiraIssue", expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        passed
+        assertNotNull(result)
     }
 
-    private static boolean executeTest(
+    private static QueryGeneratorResult executeTest(
             String schemaDefinition,
             String fieldPath,
             String expected
@@ -1023,25 +1035,26 @@ $resultFields
         )
     }
 
-    private static boolean executeTest(
+    private static QueryGeneratorResult executeTest(
             String schemaDefinition,
             String fieldPath,
             String operationName,
             String arguments,
-            String typeClassifier,
+            String typeName,
             String expected,
             QueryGeneratorOptions options
     ) {
         def schema = TestUtil.schema(schemaDefinition)
         def queryGenerator = new QueryGenerator(schema, options)
 
-        def result = queryGenerator.generateQuery(fieldPath, operationName, arguments, typeClassifier)
+        def result = queryGenerator.generateQuery(fieldPath, operationName, arguments, typeName)
+        def query = result.query
 
-        executeQuery(result, schema)
+        executeQuery(query, schema)
 
-        Assert.assertEquals(expected.trim(), result.trim())
+        assertEquals(expected.trim(), query.trim())
 
-        return true
+        return result
     }
 
     private static void executeQuery(String query, GraphQLSchema schema) {
