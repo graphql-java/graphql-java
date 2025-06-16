@@ -84,6 +84,69 @@ query barTestOperation {
         assertNotNull(result)
     }
 
+
+    def "generate query field of list type"() {
+        given:
+        def schema = """
+        type Query {
+            allBars: [Bar]
+        }
+        
+        type Bar {
+           id: ID!
+           name: String
+        }
+"""
+
+        def fieldPath = "Query.allBars"
+        when:
+        def expectedNoOperation = """
+{
+  allBars {
+    ... on Bar {
+      id
+      name
+    }
+  }
+}"""
+
+        def result = executeTest(schema, fieldPath, expectedNoOperation)
+
+        then:
+        assertNotNull(result)
+    }
+
+    def "generate query field of non-nullable type"() {
+        given:
+        def schema = """
+        type Query {
+            bar: Bar 
+        }
+        
+        type Bar {
+           id: ID!
+           name: String
+        }
+"""
+
+        def fieldPath = "Query.bar"
+        when:
+        def expectedNoOperation = """
+{
+  bar {
+    ... on Bar {
+      id
+      name
+    }
+  }
+}"""
+
+        def result = executeTest(schema, fieldPath, expectedNoOperation)
+
+        then:
+        assertNotNull(result)
+    }
+
     def "generate query for type with nested type"() {
         given:
         def schema = """

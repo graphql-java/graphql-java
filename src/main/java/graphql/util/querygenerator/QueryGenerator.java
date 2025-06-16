@@ -7,6 +7,7 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.querygenerator.QueryGeneratorFieldSelection.FieldSelection;
 import graphql.util.querygenerator.QueryGeneratorFieldSelection.FieldSelectionResult;
@@ -118,7 +119,7 @@ public class QueryGenerator {
         }
 
         // last field may be an object, interface or union type
-        GraphQLOutputType lastType = lastFieldDefinition.getType();
+        GraphQLOutputType lastType = GraphQLTypeUtil.unwrapAllAs(lastFieldDefinition.getType());
 
         final GraphQLFieldsContainer lastFieldContainer;
 
