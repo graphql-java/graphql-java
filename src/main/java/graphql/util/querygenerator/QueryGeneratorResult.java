@@ -42,10 +42,20 @@ public class QueryGeneratorResult {
         return usedType;
     }
 
+    /**
+     * Returns the total number of fields that were considered during query generation.
+     *
+     * @return the total field count
+     */
     public int getTotalFieldCount() {
         return totalFieldCount;
     }
 
+    /**
+     * Indicates whether the maximum field count was reached during query generation.
+     *
+     * @return true if the maximum field count was reached, false otherwise
+     */
     public boolean isReachedMaxFieldCount() {
         return reachedMaxFieldCount;
     }
