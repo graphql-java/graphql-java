@@ -16,6 +16,7 @@ import java.lang.annotation.Target;
  */
 @Documented
 @Target(ElementType.METHOD)
+@Internal
 public @interface Contract {
 
     /**
