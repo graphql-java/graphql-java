@@ -305,6 +305,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         CallStack callStack = getCallStack(parameters);
         boolean ready = callStack.lock.callLocked(() -> {
             callStack.deferredFragmentRootFieldsFetched.add(fieldValueInfo);
+            Assert.assertNotNull(parameters.getDeferredCallContext());
             return callStack.deferredFragmentRootFieldsFetched.size() == parameters.getDeferredCallContext().getFields();
         });
         if (ready) {
@@ -367,7 +368,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     //
 // thread safety: called with callStack.lock
 //
-    private Integer handleSubSelectionFetched(List<FieldValueInfo> fieldValueInfos, int subSelectionLevel, CallStack
+    private @Nullable Integer handleSubSelectionFetched(List<FieldValueInfo> fieldValueInfos, int subSelectionLevel, CallStack
             callStack) {
         callStack.increaseHappenedOnFieldValueCalls(subSelectionLevel);
         int expectedOnObjectCalls = getObjectCountForList(fieldValueInfos);
@@ -435,7 +436,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     //
 // thread safety: called with callStack.lock
 //
-    private Integer getHighestReadyLevel(int startFrom, CallStack callStack) {
+    private @Nullable Integer getHighestReadyLevel(int startFrom, CallStack callStack) {
         int curLevel = callStack.highestReadyLevel;
         while (true) {
             if (!checkLevelImpl(curLevel + 1, callStack)) {
@@ -508,11 +509,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
 
-    public void dispatchDLCFImpl(Set<String> resultPathsToDispatch, Integer level, CallStack callStack) {
+    private void dispatchDLCFImpl(Set<String> resultPathsToDispatch, @Nullable Integer level, CallStack callStack) {
 
         // filter out all DataLoaderCFS that are matching the fields we want to dispatch
         List<ResultPathWithDataLoader> relevantResultPathWithDataLoader = new ArrayList<>();
-        for (ResultPathWithDataLoader resultPathWithDataLoader : callStack.allResultPathWithDataLoader) {
+        // we need to copy the list because the callStack.allResultPathWithDataLoader can be modified concurrently
+        // while iterating over it
+        ArrayList<ResultPathWithDataLoader> resultPathWithDataLoaders = new ArrayList<>(callStack.allResultPathWithDataLoader);
+        for (ResultPathWithDataLoader resultPathWithDataLoader : resultPathWithDataLoaders) {
             if (resultPathsToDispatch.contains(resultPathWithDataLoader.resultPath)) {
                 relevantResultPathWithDataLoader.add(resultPathWithDataLoader);
             }
@@ -579,7 +583,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
                 callStack.batchWindowOpen = false;
             });
-            dispatchDLCFImpl(resultPathToDispatch.get(), null, callStack);
+            dispatchDLCFImpl(Assert.assertNotNull(resultPathToDispatch.get()), null, callStack);
         }
     }
 

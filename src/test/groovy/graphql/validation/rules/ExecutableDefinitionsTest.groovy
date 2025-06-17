@@ -6,6 +6,7 @@ import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
+import org.codehaus.groovy.runtime.StringGroovyMethods
 import spock.lang.Specification
 
 class ExecutableDefinitionsTest extends Specification {
@@ -46,7 +47,7 @@ class ExecutableDefinitionsTest extends Specification {
     }
 
     def 'Executable Definitions with type definition'() {
-        def query = """
+        def query = StringGroovyMethods.stripIndent("""
               query Foo {
                 dog {
                   name
@@ -60,7 +61,7 @@ class ExecutableDefinitionsTest extends Specification {
               extend type Dog {
                 color: String
               }
-            """.stripIndent()
+            """)
         when:
         def validationErrors = validate(query)
 
@@ -76,7 +77,7 @@ class ExecutableDefinitionsTest extends Specification {
     }
 
     def 'Executable Definitions with schema definition'() {
-        def query = """
+        def query = StringGroovyMethods.stripIndent("""
               schema {
                 query: QueryRoot
               }
@@ -84,7 +85,7 @@ class ExecutableDefinitionsTest extends Specification {
               type QueryRoot {
                 test: String
               }
-            """.stripIndent()
+            """)
         when:
         def validationErrors = validate(query)
 
@@ -117,9 +118,9 @@ class ExecutableDefinitionsTest extends Specification {
     }
 
     def 'Executable Definitions with no directive definition'() {
-        def query = """
+        def query = StringGroovyMethods.stripIndent("""
               directive @nope on INPUT_OBJECT
-            """.stripIndent()
+            """)
         when:
         def document = new Parser().parseDocument(query)
         def validationErrors = new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
