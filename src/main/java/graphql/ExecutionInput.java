@@ -29,7 +29,6 @@ public class ExecutionInput {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final ExecutionId executionId;
     private final Locale locale;
-    // this is currently not used but we want it back soon after the v23 release
     private final AtomicBoolean cancelled;
 
 
@@ -140,6 +139,28 @@ public class ExecutionInput {
      */
     public Map<String, Object> getExtensions() {
         return extensions;
+    }
+
+
+    /**
+     * The graphql engine will check this frequently and if that is true, it will
+     * throw a {@link graphql.execution.AbortExecutionException} to cancel the execution.
+     * <p>
+     * This is a cooperative cancellation.  Some asynchronous data fetching code may still continue to
+     * run but there will be no more efforts run future field fetches say.
+     *
+     * @return true if the execution should be cancelled
+     */
+    public boolean isCancelled() {
+        return cancelled.get();
+    }
+
+    /**
+     * This can be called to cancel the graphql execution.  Remember this is a cooperative cancellation
+     * and the graphql engine needs to be running on a thread to allow is to respect this flag.
+     */
+    public void cancel() {
+        cancelled.set(true);
     }
 
     /**
