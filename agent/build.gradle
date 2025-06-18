@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies {
-    implementation("net.bytebuddy:byte-buddy:1.17.5")
+    implementation("net.bytebuddy:byte-buddy:1.17.6")
     // graphql-java itself
     implementation(rootProject)
 }
