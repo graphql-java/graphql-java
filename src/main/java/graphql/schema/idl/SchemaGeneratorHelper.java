@@ -112,6 +112,7 @@ public class SchemaGeneratorHelper {
      */
     static class BuildContext {
         private final TypeDefinitionRegistry typeRegistry;
+        private final Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions;
         private final RuntimeWiring wiring;
         private final Deque<String> typeStack = new ArrayDeque<>();
 
@@ -125,6 +126,7 @@ public class SchemaGeneratorHelper {
 
         BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring, Map<String, OperationTypeDefinition> operationTypeDefinitions, SchemaGenerator.Options options) {
             this.typeRegistry = typeRegistry;
+            this.objectTypeExtensions = typeRegistry.objectTypeExtensions();
             this.wiring = wiring;
             this.codeRegistry = GraphQLCodeRegistry.newCodeRegistry(wiring.getCodeRegistry());
             this.operationTypeDefs = operationTypeDefinitions;
@@ -981,7 +983,7 @@ public class SchemaGeneratorHelper {
     }
 
     List<ObjectTypeExtensionDefinition> objectTypeExtensions(ObjectTypeDefinition typeDefinition, BuildContext buildCtx) {
-        return buildCtx.getTypeRegistry().objectTypeExtensions().getOrDefault(typeDefinition.getName(), emptyList());
+        return buildCtx.objectTypeExtensions.getOrDefault(typeDefinition.getName(), emptyList());
     }
 
     List<UnionTypeExtensionDefinition> unionTypeExtensions(UnionTypeDefinition typeDefinition, BuildContext buildCtx) {
