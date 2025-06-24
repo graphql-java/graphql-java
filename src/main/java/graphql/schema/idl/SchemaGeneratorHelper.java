@@ -111,7 +111,7 @@ public class SchemaGeneratorHelper {
      * it gives us helper functions
      */
     static class BuildContext {
-        private final TypeDefinitionRegistry typeRegistry;
+        private final ImmutableTypeDefinitionRegistry typeRegistry;
         private final RuntimeWiring wiring;
         private final Deque<String> typeStack = new ArrayDeque<>();
 
@@ -123,7 +123,7 @@ public class SchemaGeneratorHelper {
         public final SchemaGenerator.Options options;
         public boolean directiveWiringRequired;
 
-        BuildContext(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring, Map<String, OperationTypeDefinition> operationTypeDefinitions, SchemaGenerator.Options options) {
+        BuildContext(ImmutableTypeDefinitionRegistry typeRegistry, RuntimeWiring wiring, Map<String, OperationTypeDefinition> operationTypeDefinitions, SchemaGenerator.Options options) {
             this.typeRegistry = typeRegistry;
             this.wiring = wiring;
             this.codeRegistry = GraphQLCodeRegistry.newCodeRegistry(wiring.getCodeRegistry());

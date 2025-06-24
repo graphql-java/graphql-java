@@ -52,7 +52,7 @@ import static java.util.stream.Collectors.toList;
 @Internal
 public class SchemaTypeChecker {
 
-    public List<GraphQLError> checkTypeRegistry(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
+    public List<GraphQLError> checkTypeRegistry(ImmutableTypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
         List<GraphQLError> errors = new ArrayList<>();
         checkForMissingTypes(errors, typeRegistry);
 
