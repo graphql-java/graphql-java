@@ -54,20 +54,70 @@ import static java.util.Optional.ofNullable;
 @NullMarked
 public class TypeDefinitionRegistry implements Serializable {
 
-    private final Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions = new LinkedHashMap<>();
+    protected final Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions;
+    protected final Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions;
+    protected final Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions;
+    protected final Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions;
+    protected final Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions;
+    protected final Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions;
 
-    private final Map<String, TypeDefinition> types = new LinkedHashMap<>();
-    private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
-    private final Map<String, DirectiveDefinition> directiveDefinitions = new LinkedHashMap<>();
-    private @Nullable SchemaDefinition schema;
-    private final List<SchemaExtensionDefinition> schemaExtensionDefinitions = new ArrayList<>();
-    private final SchemaParseOrder schemaParseOrder = new SchemaParseOrder();
+    protected final Map<String, TypeDefinition> types;
+    protected final Map<String, ScalarTypeDefinition> scalarTypes;
+    protected final Map<String, DirectiveDefinition> directiveDefinitions;
+    protected @Nullable SchemaDefinition schema;
+    protected final List<SchemaExtensionDefinition> schemaExtensionDefinitions;
+    protected final SchemaParseOrder schemaParseOrder;
 
+    public TypeDefinitionRegistry() {
+        objectTypeExtensions = new LinkedHashMap<>();
+        interfaceTypeExtensions = new LinkedHashMap<>();
+        unionTypeExtensions = new LinkedHashMap<>();
+        enumTypeExtensions = new LinkedHashMap<>();
+        scalarTypeExtensions = new LinkedHashMap<>();
+        inputObjectTypeExtensions = new LinkedHashMap<>();
+        types = new LinkedHashMap<>();
+        scalarTypes = new LinkedHashMap<>();
+        directiveDefinitions = new LinkedHashMap<>();
+        schemaExtensionDefinitions = new ArrayList<>();
+        schemaParseOrder = new SchemaParseOrder();
+    }
+
+    protected TypeDefinitionRegistry(Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions,
+                                  Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions,
+                                  Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions,
+                                  Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions,
+                                  Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions,
+                                  Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions,
+                                  Map<String, TypeDefinition> types,
+                                  Map<String, ScalarTypeDefinition> scalarTypes,
+                                  Map<String, DirectiveDefinition> directiveDefinitions,
+                                  List<SchemaExtensionDefinition> schemaExtensionDefinitions,
+                                  @Nullable SchemaDefinition schema,
+                                  SchemaParseOrder schemaParseOrder) {
+        this.objectTypeExtensions = objectTypeExtensions;
+        this.interfaceTypeExtensions = interfaceTypeExtensions;
+        this.unionTypeExtensions = unionTypeExtensions;
+        this.enumTypeExtensions = enumTypeExtensions;
+        this.scalarTypeExtensions = scalarTypeExtensions;
+        this.inputObjectTypeExtensions = inputObjectTypeExtensions;
+        this.types = types;
+        this.scalarTypes = scalarTypes;
+        this.directiveDefinitions = directiveDefinitions;
+        this.schemaExtensionDefinitions = schemaExtensionDefinitions;
+        this.schema = schema;
+        this.schemaParseOrder = schemaParseOrder;
+    }
+
+    /**
+     * @return an immutable view of this {@link TypeDefinitionRegistry} that is more performant
+     * when in read only mode.
+     */
+    public ImmutableTypeDefinitionRegistry readOnly() {
+        if (this instanceof ImmutableTypeDefinitionRegistry) {
+            return (ImmutableTypeDefinitionRegistry) this;
+        }
+        return new ImmutableTypeDefinitionRegistry(this);
+    }
 
     /**
      * @return the order in which {@link SDLDefinition}s were parsed
