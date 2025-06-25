@@ -768,4 +768,43 @@ class SchemaDiffTest extends Specification {
         then:
         thrown(AssertException)
     }
+
+    def "checkImplements emits ADDITION events for new interfaces"() {
+        def oldSchema = TestUtil.schema('''
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            a: String
+        }
+        interface Bar {
+            a: String
+        }
+       ''')
+        def newSchema = TestUtil.schema('''
+        type Query {
+            foo: Foo
+        }
+        type Foo implements Bar {
+            a: String            
+        }
+        interface Bar {
+            a: String
+        }
+       ''')
+
+        when:
+        compareDiff(oldSchema, newSchema)
+
+        then:
+        validateReportersAreEqual()
+        introspectionReporter.breakageCount == 0
+        introspectionReporter.infos.any {
+            it.category == DiffCategory.ADDITION &&
+                    it.typeKind == TypeKind.Object &&
+                    it.typeName == "Foo" &&
+                    it.level == DiffLevel.INFO
+        }
+
+    }
 }
