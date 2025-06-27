@@ -57,6 +57,11 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Node
      * @return true if the AST node contains one or more directives by the specified name
      */
     default boolean hasDirective(String directiveName) {
-        return !getDirectives(directiveName).isEmpty();
+        for (Directive d : getDirectives()) {
+            if (d.getName().equals(directiveName)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
