@@ -21,6 +21,21 @@ import static graphql.util.EscapeUtil.escapeJsonStringTo;
 @SuppressWarnings("UnnecessaryLocalVariable")
 @PublicApi
 public class AstPrinter {
+
+    /**
+     * @return an {@link AstPrinter} that is in full print mode
+     */
+    static AstPrinter full() {
+        return new AstPrinter(false);
+    }
+
+    /**
+     * @return an {@link AstPrinter} that is in compact print mode
+     */
+    static AstPrinter compact() {
+        return new AstPrinter(true);
+    }
+
     private final Map<Class<? extends Node>, NodePrinter<? extends Node>> printers = new LinkedHashMap<>();
 
     private final boolean compactMode;
@@ -803,7 +818,7 @@ public class AstPrinter {
     }
 
     private static void printImpl(StringBuilder writer, Node<?> node, boolean compactMode) {
-        AstPrinter astPrinter = new AstPrinter(compactMode);
+        AstPrinter astPrinter = compactMode ? compact() : full();
         NodePrinter<Node> printer = astPrinter._findPrinter(node);
         printer.print(writer, node);
     }
