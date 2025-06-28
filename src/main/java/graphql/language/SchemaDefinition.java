@@ -21,7 +21,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 @PublicApi
 public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition>, DirectivesContainer<SchemaDefinition> {
 
-    private final ImmutableList<Directive> directives;
+    private final NodeUtil.DirectivesHolder directives;
     private final ImmutableList<OperationTypeDefinition> operationTypeDefinitions;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -37,12 +37,28 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
                                Map<String, String> additionalData,
                                Description description) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
         this.operationTypeDefinitions = ImmutableList.copyOf(operationTypeDefinitions);
     }
 
+    @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     public List<OperationTypeDefinition> getOperationTypeDefinitions() {
@@ -56,7 +72,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         result.addAll(operationTypeDefinitions);
         return result;
     }
@@ -64,7 +80,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
     @Override
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_OPERATION_TYPE_DEFINITIONS, operationTypeDefinitions)
                 .build();
     }
@@ -90,7 +106,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
 
     @Override
     public SchemaDefinition deepCopy() {
-        return new SchemaDefinition(deepCopy(directives), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments(),
+        return new SchemaDefinition(deepCopy(directives.getDirectives()), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments(),
                 getIgnoredChars(), getAdditionalData(), description);
     }
 

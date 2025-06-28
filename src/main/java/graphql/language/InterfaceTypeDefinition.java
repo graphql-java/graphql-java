@@ -26,7 +26,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
     private final String name;
     private final ImmutableList<Type> implementz;
     private final ImmutableList<FieldDefinition> definitions;
-    private final ImmutableList<Directive> directives;
+    private final NodeUtil.DirectivesHolder directives;
 
     public static final String CHILD_IMPLEMENTZ = "implementz";
     public static final String CHILD_DEFINITIONS = "definitions";
@@ -46,7 +46,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
         this.name = name;
         this.implementz = ImmutableList.copyOf(implementz);
         this.definitions = ImmutableList.copyOf(definitions);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
     }
 
     /**
@@ -70,7 +70,22 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     @Override
@@ -83,7 +98,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
         List<Node> result = new ArrayList<>();
         result.addAll(implementz);
         result.addAll(definitions);
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         return result;
     }
 
@@ -92,7 +107,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
         return newNodeChildrenContainer()
                 .children(CHILD_IMPLEMENTZ, implementz)
                 .children(CHILD_DEFINITIONS, definitions)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -124,7 +139,7 @@ public class InterfaceTypeDefinition extends AbstractDescribedNode<InterfaceType
         return new InterfaceTypeDefinition(name,
                 deepCopy(implementz),
                 deepCopy(definitions),
-                deepCopy(directives),
+                deepCopy(directives.getDirectives()),
                 description,
                 getSourceLocation(),
                 getComments(),

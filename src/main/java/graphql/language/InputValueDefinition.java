@@ -25,7 +25,7 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
     private final String name;
     private final Type type;
     private final Value defaultValue;
-    private final ImmutableList<Directive> directives;
+    private final NodeUtil.DirectivesHolder directives;
 
     public static final String CHILD_TYPE = "type";
     public static final String CHILD_DEFAULT_VALUE = "defaultValue";
@@ -45,7 +45,7 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
     }
 
     /**
@@ -88,8 +88,24 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
         return defaultValue;
     }
 
+    @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     @Override
@@ -99,7 +115,7 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
         if (defaultValue != null) {
             result.add(defaultValue);
         }
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         return result;
     }
 
@@ -108,7 +124,7 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
         return newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .child(CHILD_DEFAULT_VALUE, defaultValue)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -141,7 +157,7 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
         return new InputValueDefinition(name,
                 deepCopy(type),
                 deepCopy(defaultValue),
-                deepCopy(directives),
+                deepCopy(directives.getDirectives()),
                 description,
                 getSourceLocation(),
                 getComments(),

@@ -27,7 +27,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     private final String name;
     private final TypeName typeCondition;
-    private final ImmutableList<Directive> directives;
+    private final NodeUtil.DirectivesHolder directives;
     private final SelectionSet selectionSet;
 
     public static final String CHILD_TYPE_CONDITION = "typeCondition";
@@ -46,7 +46,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.typeCondition = typeCondition;
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
         this.selectionSet = selectionSet;
     }
 
@@ -62,9 +62,23 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
     }
 
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
+    }
 
     @Override
     public SelectionSet getSelectionSet() {
@@ -75,7 +89,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.add(typeCondition);
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         result.add(selectionSet);
         return result;
     }
@@ -84,7 +98,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
                 .child(CHILD_TYPE_CONDITION, typeCondition)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .child(CHILD_SELECTION_SET, selectionSet)
                 .build();
     }
@@ -116,7 +130,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     public FragmentDefinition deepCopy() {
         return new FragmentDefinition(name,
                 deepCopy(typeCondition),
-                deepCopy(directives),
+                deepCopy(directives.getDirectives()),
                 deepCopy(selectionSet),
                 getSourceLocation(),
                 getComments(),

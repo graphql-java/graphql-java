@@ -23,7 +23,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition>, NamedNode<ScalarTypeDefinition> {
 
     private final String name;
-    private final ImmutableList<Directive> directives;
+    private final NodeUtil.DirectivesHolder directives;
 
     public static final String CHILD_DIRECTIVES = "directives";
 
@@ -37,7 +37,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
                                    Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
     }
 
     /**
@@ -51,7 +51,22 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     @Override
@@ -61,13 +76,13 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
 
     @Override
     public List<Node> getChildren() {
-        return ImmutableList.copyOf(directives);
+        return ImmutableList.copyOf(directives.getDirectives());
     }
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -94,7 +109,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
 
     @Override
     public ScalarTypeDefinition deepCopy() {
-        return new ScalarTypeDefinition(name, deepCopy(directives), description, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new ScalarTypeDefinition(name, deepCopy(directives.getDirectives()), description, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
