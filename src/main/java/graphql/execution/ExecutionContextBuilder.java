@@ -229,6 +229,7 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    @Internal
     public ExecutionContextBuilder responseMapFactory(ResponseMapFactory responseMapFactory) {
         this.responseMapFactory = responseMapFactory;
         return this;

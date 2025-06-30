@@ -6,6 +6,7 @@ import graphql.GraphQL
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
 import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory
+import graphql.execution.ResponseMapFactory
 import graphql.introspection.GoodFaithIntrospection
 import graphql.parser.ParserOptions
 import graphql.schema.PropertyDataFetcherHelper
@@ -207,4 +208,47 @@ class GraphQLUnusualConfigurationTest extends Specification {
         then:
         ei.getGraphQLContext().get(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING) == true
   }
+
+    def "can set response map factory"() {
+        def rfm1 = new ResponseMapFactory() {
+            @Override
+            Map<String, Object> createInsertionOrdered(List<String> keys, List<Object> values) {
+                return null
+            }
+        }
+
+        def rfm2 = new ResponseMapFactory() {
+            @Override
+            Map<String, Object> createInsertionOrdered(List<String> keys, List<Object> values) {
+                return null
+            }
+        }
+
+        when:
+        def graphqlContextBuilder = GraphQLContext.newContext()
+        GraphQL.unusualConfiguration(graphqlContextBuilder).responseMapFactory().setFactory(rfm1)
+
+        then:
+        GraphQL.unusualConfiguration(graphqlContextBuilder).responseMapFactory().getOr(rfm2) == rfm1
+
+        when:
+        graphqlContextBuilder = GraphQLContext.newContext()
+
+        then: "can default"
+        GraphQL.unusualConfiguration(graphqlContextBuilder).responseMapFactory().getOr(rfm2) == rfm2
+
+        when:
+        def graphqlContext = GraphQLContext.newContext().build()
+        GraphQL.unusualConfiguration(graphqlContext).responseMapFactory().setFactory(rfm1)
+
+        then:
+        GraphQL.unusualConfiguration(graphqlContext).responseMapFactory().getOr(rfm2) == rfm1
+
+        when:
+        graphqlContext = GraphQLContext.newContext().build()
+
+        then: "can default"
+        GraphQL.unusualConfiguration(graphqlContext).responseMapFactory().getOr(rfm2) == rfm2
+
+    }
 }

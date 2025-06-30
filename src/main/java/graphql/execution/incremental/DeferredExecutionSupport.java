@@ -117,26 +117,26 @@ public interface DeferredExecutionSupport {
 
         private DeferredFragmentCall createDeferredFragmentCall(DeferredExecution deferredExecution) {
             int level = parameters.getPath().getLevel() + 1;
-            DeferredCallContext deferredCallContext = new DeferredCallContext(level, deferredFields.size());
+            AlternativeCallContext alternativeCallContext = new AlternativeCallContext(level, deferredFields.size());
 
             List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
 
             List<Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> calls = FpKit.arrayListSizedTo(mergedFields);
             for (MergedField currentField : mergedFields) {
-                calls.add(this.createResultSupplier(currentField, deferredCallContext));
+                calls.add(this.createResultSupplier(currentField, alternativeCallContext));
             }
 
             return new DeferredFragmentCall(
                     deferredExecution.getLabel(),
                     this.parameters.getPath(),
                     calls,
-                    deferredCallContext
+                    alternativeCallContext
             );
         }
 
         private Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createResultSupplier(
                 MergedField currentField,
-                DeferredCallContext deferredCallContext
+                AlternativeCallContext alternativeCallContext
         ) {
             Map<String, MergedField> fields = new LinkedHashMap<>();
             fields.put(currentField.getResultKey(), currentField);
@@ -145,7 +145,7 @@ public interface DeferredExecutionSupport {
                     {
                         MergedSelectionSet mergedSelectionSet = MergedSelectionSet.newMergedSelectionSet().subFields(fields).build();
                         ResultPath path = parameters.getPath().segment(currentField.getResultKey());
-                        builder.deferredCallContext(deferredCallContext)
+                        builder.deferredCallContext(alternativeCallContext)
                                 .field(currentField)
                                 .fields(mergedSelectionSet)
                                 .path(path)

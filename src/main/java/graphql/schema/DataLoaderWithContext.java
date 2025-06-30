@@ -1,7 +1,7 @@
 package graphql.schema;
 
 import graphql.Internal;
-import graphql.execution.incremental.DeferredCallContext;
+import graphql.execution.incremental.AlternativeCallContext;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import org.dataloader.DataLoader;
 import org.dataloader.DelegatingDataLoader;
@@ -29,13 +29,13 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         // later than the dispatch, which results in a hanging DL
         CompletableFuture<V> result = super.load(key, keyContext);
         DataFetchingEnvironmentImpl dfeImpl = (DataFetchingEnvironmentImpl) dfe;
-        int level = dfe.getExecutionStepInfo().getPath().getLevel();
-        String path = dfe.getExecutionStepInfo().getPath().toString();
         DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfeImpl.toInternal();
         dfeInternalState.getProfiler().dataLoaderUsed(dataLoaderName);
         if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof PerLevelDataLoaderDispatchStrategy) {
-            DeferredCallContext deferredCallContext = dfeInternalState.getDeferredCallContext();
-            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderLoadCall(path, level, delegate, dataLoaderName, key, deferredCallContext);
+            AlternativeCallContext alternativeCallContext = dfeInternalState.getDeferredCallContext();
+            int level = dfe.getExecutionStepInfo().getPath().getLevel();
+            String path = dfe.getExecutionStepInfo().getPath().toString();
+            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderLoadCall(path, level, delegate, dataLoaderName, key, alternativeCallContext);
         }
         return result;
     }

@@ -298,6 +298,7 @@ public class ExecutionContext {
         });
     }
 
+    @Internal
     public ResponseMapFactory getResponseMapFactory() {
         return responseMapFactory;
     }

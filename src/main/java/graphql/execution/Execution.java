@@ -6,6 +6,7 @@ import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQL;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -14,7 +15,6 @@ import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -55,7 +55,6 @@ public class Execution {
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
-    private final ResponseMapFactory responseMapFactory;
     private final boolean doNotAutomaticallyDispatchDataLoader;
 
 
@@ -64,14 +63,12 @@ public class Execution {
                      ExecutionStrategy subscriptionStrategy,
                      Instrumentation instrumentation,
                      ValueUnboxer valueUnboxer,
-                     ResponseMapFactory responseMapFactory,
                      boolean doNotAutomaticallyDispatchDataLoader) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
         this.valueUnboxer = valueUnboxer;
-        this.responseMapFactory = responseMapFactory;
         this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
     }
 
@@ -91,6 +88,9 @@ public class Execution {
         }
 
         boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
+
+        ResponseMapFactory responseMapFactory = GraphQL.unusualConfiguration(executionInput.getGraphQLContext())
+                .responseMapFactory().getOr(ResponseMapFactory.DEFAULT);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -256,11 +256,7 @@ public class Execution {
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }
-        if (!executionContext.isSubscriptionOperation()) {
-            return new PerLevelDataLoaderDispatchStrategy(executionContext);
-        } else {
-            return new FallbackDataLoaderDispatchStrategy(executionContext);
-        }
+        return new PerLevelDataLoaderDispatchStrategy(executionContext);
     }
 
 
