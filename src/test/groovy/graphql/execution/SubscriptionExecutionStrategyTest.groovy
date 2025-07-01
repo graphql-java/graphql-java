@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.AssertException
 import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.ExecutionResult
@@ -12,6 +13,7 @@ import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.LegacyTestingInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.pubsub.CapturingSubscriber
+import graphql.execution.pubsub.FlowMessagePublisher
 import graphql.execution.pubsub.Message
 import graphql.execution.pubsub.ReactiveStreamsMessagePublisher
 import graphql.execution.pubsub.ReactiveStreamsObjectPublisher
@@ -142,7 +144,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
     def "subscription query sends out a stream of events using the '#why' implementation"() {
 
         given:
-        Publisher<Object> publisher = eventStreamPublisher
+        Object publisher = eventStreamPublisher
 
         DataFetcher newMessageDF = new DataFetcher() {
             @Override
@@ -185,6 +187,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         why                       | eventStreamPublisher
         'reactive streams stream' | new ReactiveStreamsMessagePublisher(10)
         'rxjava stream'           | new RxJavaMessagePublisher(10)
+        'flow stream'             | new FlowMessagePublisher(10)
 
     }
 
@@ -192,7 +195,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
     def "subscription alias is correctly used in response messages using '#why' implementation"() {
 
         given:
-        Publisher<Object> publisher = eventStreamPublisher
+        Object publisher = eventStreamPublisher
 
         DataFetcher newMessageDF = new DataFetcher() {
             @Override
@@ -231,6 +234,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         why                       | eventStreamPublisher
         'reactive streams stream' | new ReactiveStreamsMessagePublisher(1)
         'rxjava stream'           | new RxJavaMessagePublisher(1)
+        'flow stream'             | new FlowMessagePublisher(1)
     }
 
 
@@ -242,7 +246,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         // capability and it costs us little to support it, lets have a test for it.
         //
         given:
-        Publisher<Object> publisher = eventStreamPublisher
+        Object publisher = eventStreamPublisher
 
         DataFetcher newMessageDF = new DataFetcher() {
             @Override
@@ -283,7 +287,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         why                       | eventStreamPublisher
         'reactive streams stream' | new ReactiveStreamsMessagePublisher(10)
         'rxjava stream'           | new RxJavaMessagePublisher(10)
-
+        'flow stream'             | new FlowMessagePublisher(10)
     }
 
 
@@ -314,6 +318,33 @@ class SubscriptionExecutionStrategyTest extends Specification {
         executionResult != null
         executionResult.data == null
         executionResult.errors.size() == 1
+    }
+
+    def "if you dont return a Publisher we will assert"() {
+
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return "Not a Publisher"
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        when:
+        graphQL.execute(executionInput)
+
+        then:
+        thrown(AssertException)
     }
 
     def "subscription query will surface event stream exceptions"() {
