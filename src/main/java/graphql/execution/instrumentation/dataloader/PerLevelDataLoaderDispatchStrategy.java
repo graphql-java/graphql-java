@@ -516,6 +516,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         for (DataLoader<?, ?> dataLoader : dataLoaderRegistry.getDataLoaders()) {
             dataLoader.dispatch().whenComplete((objects, throwable) -> {
                 if (objects != null && objects.size() > 0) {
+                    Assert.assertNotNull(dataLoader.getName());
                     profiler.batchLoadedOldStrategy(dataLoader.getName(), level, objects.size());
                 }
             });

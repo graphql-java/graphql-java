@@ -182,6 +182,9 @@ public class EngineRunningState {
     }
 
     private void changeOfState(EngineRunningObserver.RunningState runningState) {
+        Assert.assertNotNull(engineRunningObserver);
+        Assert.assertNotNull(executionId);
+        Assert.assertNotNull(graphQLContext);
         engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
     }
 

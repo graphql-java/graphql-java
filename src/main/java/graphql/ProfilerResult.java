@@ -20,6 +20,7 @@ public class ProfilerResult {
 
     public static final String PROFILER_CONTEXT_KEY = "__GJ_PROFILER";
 
+    @Nullable
     private volatile ExecutionId executionId;
     private long startTime;
     private long endTime;
@@ -34,7 +35,9 @@ public class ProfilerResult {
     private final Map<String, DataFetcherType> dataFetcherTypeMap = new ConcurrentHashMap<>();
 
     private final Map<String, DataFetcherResultType> dataFetcherResultType = new ConcurrentHashMap<>();
+    @Nullable
     private volatile String operationName;
+    @Nullable
     private volatile String operationType;
     private volatile boolean dataLoaderChainingEnabled;
     private final Set<Integer> oldStrategyDispatchingAll = ConcurrentHashMap.newKeySet();
@@ -152,10 +155,12 @@ public class ProfilerResult {
     // public getters
 
     public String getOperationName() {
+        Assert.assertNotNull(operationName);
         return operationName;
     }
 
     public String getOperationType() {
+        Assert.assertNotNull(operationType);
         return operationType;
     }
 

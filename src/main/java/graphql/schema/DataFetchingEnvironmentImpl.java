@@ -471,7 +471,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         final Profiler profiler;
         final AlternativeCallContext alternativeCallContext;
 
-        public DFEInternalState(DataLoaderDispatchStrategy dataLoaderDispatchStrategy, AlternativeCallContext deferredCallContext, Profiler profiler) {
+        public DFEInternalState(DataLoaderDispatchStrategy dataLoaderDispatchStrategy, AlternativeCallContext alternativeCallContext, Profiler profiler) {
             this.dataLoaderDispatchStrategy = dataLoaderDispatchStrategy;
             this.alternativeCallContext = alternativeCallContext;
             this.profiler = profiler;
