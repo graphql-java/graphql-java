@@ -623,9 +623,17 @@ public class TypeDefinitionRegistry implements Serializable {
             return false;
         } else {
             InterfaceTypeDefinition iFace = (InterfaceTypeDefinition) abstractTypeDef;
-            List<ImplementingTypeDefinition> implementingTypeDefinitions = getAllImplementationsOf(iFace);
-            return implementingTypeDefinitions.stream()
-                    .anyMatch(od -> od.getName().equals(targetObjectTypeDef.getName()));
+
+            return types.values().stream()
+                    .filter(ImplementingTypeDefinition.class::isInstance)
+                    .filter(t -> t.getName().equals(targetObjectTypeDef.getName()))
+                    .map(td -> (ImplementingTypeDefinition<?>) td)
+                    .anyMatch(itd -> itd.getImplements()
+                            .stream()
+                            .map(TypeInfo::getTypeName)
+                            .map(tn -> types.get(tn.getName()))
+                            .anyMatch(td -> td.getName().equals(iFace.getName()))
+                    );
         }
     }
 

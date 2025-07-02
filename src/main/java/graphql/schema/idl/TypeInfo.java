@@ -26,6 +26,18 @@ public class TypeInfo {
         return new TypeInfo(type);
     }
 
+    public static TypeName getTypeName(Type type) {
+        while (!(type instanceof TypeName)) {
+            if (type instanceof NonNullType) {
+                type = ((NonNullType) type).getType();
+            }
+            if (type instanceof ListType) {
+                type = ((ListType) type).getType();
+            }
+        }
+        return (TypeName) type;
+    }
+
     private final Type rawType;
     private final TypeName typeName;
     private final Deque<Class<?>> decoration = new ArrayDeque<>();
