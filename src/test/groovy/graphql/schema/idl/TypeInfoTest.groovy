@@ -136,4 +136,21 @@ class TypeInfoTest extends Specification {
         "[named!]!"   | "[newName!]!"
         "[[named!]!]" | "[[newName!]!]"
     }
+
+    def "test getTypeName gets to the inner type"() {
+
+        expect:
+        Type actualType = TestUtil.parseType(actual)
+        def typeName = TypeInfo.getTypeName(actualType)
+        typeName.getName() == expected
+
+        where:
+        actual        | expected
+        "named"       | "named"
+        "named!"      | "named"
+        "[named]"     | "named"
+        "[named!]"    | "named"
+        "[named!]!"   | "named"
+        "[[named!]!]" | "named"
+    }
 }
