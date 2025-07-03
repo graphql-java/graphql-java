@@ -624,16 +624,24 @@ public class TypeDefinitionRegistry implements Serializable {
         } else {
             InterfaceTypeDefinition iFace = (InterfaceTypeDefinition) abstractTypeDef;
 
-            return types.values().stream()
-                    .filter(ImplementingTypeDefinition.class::isInstance)
-                    .filter(t -> t.getName().equals(targetObjectTypeDef.getName()))
-                    .map(td -> (ImplementingTypeDefinition<?>) td)
-                    .anyMatch(itd -> itd.getImplements()
-                            .stream()
-                            .map(TypeInfo::getTypeName)
-                            .map(tn -> types.get(tn.getName()))
-                            .anyMatch(td -> td.getName().equals(iFace.getName()))
-                    );
+            for (TypeDefinition<?> t : types.values()) {
+                if (t instanceof ImplementingTypeDefinition) {
+                    if (t.getName().equals(targetObjectTypeDef.getName())) {
+                        ImplementingTypeDefinition<?> itd = (ImplementingTypeDefinition<?>) t;
+
+                        for (Type impl : itd.getImplements()) {
+                            TypeName typeName = TypeInfo.getTypeName(impl);
+                            TypeDefinition<?> matchingInterface = types.get(typeName.getName());
+
+                            if (matchingInterface != null && matchingInterface.getName().equals(iFace.getName())) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
     }
 
