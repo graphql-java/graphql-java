@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.PublicApi;
@@ -677,14 +676,10 @@ public class TypeDefinitionRegistry implements Serializable {
      * @return a list of types of the target class
      */
     public <T extends TypeDefinition> List<T> getTypes(Class<T> targetClass) {
-        ImmutableList.Builder<T> builder = ImmutableList.builder();
-        for (TypeDefinition<?> type : types.values()) {
-            if (targetClass.isInstance(type)) {
-                T typeCast = targetClass.cast(type);
-                builder.add(typeCast);
-            }
-        }
-        return builder.build();
+        return ImmutableKit.filterAndMap(types.values(),
+                targetClass::isInstance,
+                targetClass::cast
+        );
     }
 
     /**
