@@ -45,6 +45,7 @@ import java.util.function.Function;
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.idl.SchemaExtensionsChecker.defineOperationDefs;
 import static graphql.schema.idl.SchemaExtensionsChecker.gatherOperationDefs;
+import static graphql.schema.idl.TypeInfo.typeName;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -492,19 +493,33 @@ public class TypeDefinitionRegistry implements Serializable {
         return new LinkedHashMap<>(directiveDefinitions);
     }
 
+    /**
+     * Returns true if the registry has a type of the specified {@link TypeName}
+     *
+     * @param typeName the type name to check
+     *
+     * @return true if the registry has a type by that type name
+     */
     public boolean hasType(TypeName typeName) {
         String name = typeName.getName();
-        return types.containsKey(name) || ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
+        return hasType(name);
     }
 
-    private static String typeName(Type type) {
-        return TypeInfo.getTypeName(type).getName();
+    /**
+     * Returns true if the registry has a type of the specified name
+     *
+     * @param name the name to check
+     *
+     * @return true if the registry has a type by that name
+     */
+    public boolean hasType(String name) {
+        return types.containsKey(name) || ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
     }
 
     /**
      * Returns am optional {@link TypeDefinition} of the specified type or {@link Optional#empty()}
      *
-     * @param type   the type to check
+     * @param type the type to check
      *
      * @return an optional {@link TypeDefinition} or empty if it's not found
      */

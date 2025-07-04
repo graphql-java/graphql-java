@@ -140,11 +140,11 @@ public class TypeInfo {
     }
 
     /**
-     * Gets the type name of a [Type], unwrapping any lists or non-null decorations
+     * Gets the {@link TypeName} type name of a [Type], unwrapping any lists or non-null decorations
      *
      * @param type the Type
      *
-     * @return the inner TypeName for this type
+     * @return the inner {@link TypeName} for this type
      */
     public static TypeName getTypeName(Type<?> type) {
         while (!(type instanceof TypeName)) {
@@ -156,6 +156,17 @@ public class TypeInfo {
             }
         }
         return (TypeName) type;
+    }
+
+    /**
+     * Gets the string type name of a [Type], unwrapping any lists or non-null decorations
+     *
+     * @param type the Type
+     *
+     * @return the inner string name for this type
+     */
+    public static String typeName(Type<?> type) {
+        return getTypeName(type).getName();
     }
 
     @Override
