@@ -24,7 +24,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefinition> implements TypeDefinition<UnionTypeDefinition>, DirectivesContainer<UnionTypeDefinition>, NamedNode<UnionTypeDefinition> {
 
     private final String name;
-    private final ImmutableList<Directive> directives;
+    private final NodeUtil.DirectivesHolder directives;
     private final ImmutableList<Type> memberTypes;
 
     public static final String CHILD_DIRECTIVES = "directives";
@@ -40,7 +40,7 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
                                   IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
         this.memberTypes = ImmutableList.copyOf(memberTypes);
     }
 
@@ -66,7 +66,22 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     public List<Type> getMemberTypes() {
@@ -81,7 +96,7 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
     @Override
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         result.addAll(memberTypes);
         return result;
     }
@@ -89,7 +104,7 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
     @Override
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_MEMBER_TYPES, memberTypes)
                 .build();
     }
@@ -119,7 +134,7 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
     @Override
     public UnionTypeDefinition deepCopy() {
         return new UnionTypeDefinition(name,
-                deepCopy(directives),
+                deepCopy(directives.getDirectives()),
                 deepCopy(memberTypes),
                 description,
                 getSourceLocation(),
