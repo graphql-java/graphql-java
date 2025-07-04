@@ -103,17 +103,19 @@ public class SchemaGenerator {
 
         schemaGeneratorHelper.addDirectivesIncludedByDefault(typeRegistryCopy);
 
-        List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring);
+        // by making it read only all the traversal and checks run faster
+        ImmutableTypeDefinitionRegistry fasterImmutableRegistry = typeRegistryCopy.readOnly();
+        List<GraphQLError> errors = typeChecker.checkTypeRegistry(fasterImmutableRegistry, wiring);
         if (!errors.isEmpty()) {
             throw new SchemaProblem(errors);
         }
 
-        Map<String, OperationTypeDefinition> operationTypeDefinitions = SchemaExtensionsChecker.gatherOperationDefs(typeRegistry);
+        Map<String, OperationTypeDefinition> operationTypeDefinitions = SchemaExtensionsChecker.gatherOperationDefs(fasterImmutableRegistry);
 
-        return makeExecutableSchemaImpl(typeRegistryCopy, wiring, operationTypeDefinitions, options);
+        return makeExecutableSchemaImpl(fasterImmutableRegistry, wiring, operationTypeDefinitions, options);
     }
 
-    private GraphQLSchema makeExecutableSchemaImpl(TypeDefinitionRegistry typeRegistry,
+    private GraphQLSchema makeExecutableSchemaImpl(ImmutableTypeDefinitionRegistry typeRegistry,
                                                    RuntimeWiring wiring,
                                                    Map<String, OperationTypeDefinition> operationTypeDefinitions,
                                                    Options options) {

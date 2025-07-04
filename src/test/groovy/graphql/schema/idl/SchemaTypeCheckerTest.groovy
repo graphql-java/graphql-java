@@ -139,7 +139,7 @@ class SchemaTypeCheckerTest extends Specification {
         for (String name : resolvingNames) {
             runtimeBuilder.type(TypeRuntimeWiring.newTypeWiring(name).typeResolver(resolver))
         }
-        return new SchemaTypeChecker().checkTypeRegistry(types, runtimeBuilder.build())
+        return new SchemaTypeChecker().checkTypeRegistry(types.readOnly(), runtimeBuilder.build())
     }
 
     def "test missing type in object"() {
