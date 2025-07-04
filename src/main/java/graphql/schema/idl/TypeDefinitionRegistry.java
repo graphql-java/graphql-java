@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.ImplementingTypeDefinition;
@@ -40,7 +41,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.idl.SchemaExtensionsChecker.defineOperationDefs;
@@ -497,22 +497,52 @@ public class TypeDefinitionRegistry implements Serializable {
         return types.containsKey(name) || ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
     }
 
-    protected static String typeName(Type type) {
+    private static String typeName(Type type) {
         return TypeInfo.getTypeName(type).getName();
     }
 
+    /**
+     * Returns am optional {@link TypeDefinition} of the specified type or {@link Optional#empty()}
+     *
+     * @param type   the type to check
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     */
     public Optional<TypeDefinition> getType(Type type) {
         return getType(typeName(type));
     }
 
+    /**
+     * Returns am optional {@link TypeDefinition} of the specified type with the specified class or {@link Optional#empty()}
+     *
+     * @param type   the type to check
+     * @param ofType the class of {@link TypeDefinition}
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     */
     public <T extends TypeDefinition> Optional<T> getType(Type type, Class<T> ofType) {
         return getType(typeName(type), ofType);
     }
 
+    /**
+     * Returns am optional {@link TypeDefinition} of the specified type name or {@link Optional#empty()}
+     *
+     * @param typeName the type to check
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     */
     public Optional<TypeDefinition> getType(String typeName) {
         return Optional.ofNullable(getTypeOrNull(typeName));
     }
 
+    /**
+     * Returns am optional {@link TypeDefinition} of the specified type name with the specified class or {@link Optional#empty()}
+     *
+     * @param typeName the type to check
+     * @param ofType   the class of {@link TypeDefinition}
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     */
     public <T extends TypeDefinition> Optional<T> getType(String typeName, Class<T> ofType) {
         return Optional.ofNullable(getTypeOrNull(typeName, ofType));
     }
@@ -665,21 +695,20 @@ public class TypeDefinitionRegistry implements Serializable {
      * @see TypeDefinitionRegistry#getImplementationsOf(InterfaceTypeDefinition)
      */
     public List<ImplementingTypeDefinition> getAllImplementationsOf(InterfaceTypeDefinition targetInterface) {
-        ImmutableList.Builder<ImplementingTypeDefinition> list = ImmutableList.builder();
-        List<ImplementingTypeDefinition> typeDefinitions = getTypes(ImplementingTypeDefinition.class);
-        for (ImplementingTypeDefinition implementingTypeDefinition : typeDefinitions) {
-            List<Type> implementsList = implementingTypeDefinition.getImplements();
-            for (Type iFace : implementsList) {
-                InterfaceTypeDefinition interfaceTypeDef = getTypeOrNull(iFace, InterfaceTypeDefinition.class);
-                if (interfaceTypeDef != null) {
-                    boolean equals = interfaceTypeDef.getName().equals(targetInterface.getName());
-                    if (equals) {
-                        list.add(implementingTypeDefinition);
+        return ImmutableKit.filter(
+                getTypes(ImplementingTypeDefinition.class),
+                implementingTypeDefinition -> {
+                    List<Type<?>> implementsList = implementingTypeDefinition.getImplements();
+                    for (Type iFace : implementsList) {
+                        InterfaceTypeDefinition interfaceTypeDef = getTypeOrNull(iFace, InterfaceTypeDefinition.class);
+                        if (interfaceTypeDef != null) {
+                            if (interfaceTypeDef.getName().equals(targetInterface.getName())) {
+                                return true;
+                            }
+                        }
                     }
-                }
-            }
-        }
-        return list.build();
+                    return false;
+                });
     }
 
     /**
@@ -692,11 +721,11 @@ public class TypeDefinitionRegistry implements Serializable {
      * @see TypeDefinitionRegistry#getAllImplementationsOf(InterfaceTypeDefinition)
      */
     public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
-        return this.getAllImplementationsOf(targetInterface)
-                .stream()
-                .filter(typeDefinition -> typeDefinition instanceof ObjectTypeDefinition)
-                .map(typeDefinition -> (ObjectTypeDefinition) typeDefinition)
-                .collect(Collectors.toList());
+        return ImmutableKit.filterAndMap(
+                getAllImplementationsOf(targetInterface),
+                typeDefinition -> typeDefinition instanceof ObjectTypeDefinition,
+                typeDefinition -> (ObjectTypeDefinition) typeDefinition
+        );
     }
 
     /**
