@@ -33,6 +33,7 @@ import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.CopyOnWriteArrayList
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
@@ -743,6 +744,49 @@ class SubscriptionExecutionStrategyTest extends Specification {
             def message = messages[i].data
             assert message == ["newMessage": [sender: "sender" + i, text: "text" + i]]
         }
+    }
+
+    def "we can cancel the operation and the upstream publisher is told"() {
+        List<Runnable> promises = new CopyOnWriteArrayList<>()
+        RxJavaMessagePublisher publisher = new RxJavaMessagePublisher(10)
+
+        DataFetcher newMessageDF = { env -> return publisher }
+        DataFetcher senderDF = dfThatDoesNotComplete("sender", promises)
+        DataFetcher textDF = PropertyDataFetcher.fetching("text")
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF, textDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).graphQLContext([(SubscriptionExecutionStrategy.KEEP_SUBSCRIPTION_EVENTS_ORDERED): true]).build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        when:
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>(1)
+        msgStream.subscribe(capturingSubscriber)
+
+        // now cancel the operation
+        executionInput.cancel()
+
+        // make things over the subscription
+        promises.forEach {it.run()}
+
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 1
+        def error = messages[0].errors[0]
+        assert error.message.contains("Execution has been asked to be cancelled")
+        publisher.counter == 2
     }
 
     private static DataFetcher<?> dfThatDoesNotComplete(String propertyName, List<Runnable> promises) {
