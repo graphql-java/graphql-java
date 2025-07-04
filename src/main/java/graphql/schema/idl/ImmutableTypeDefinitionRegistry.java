@@ -6,13 +6,17 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
+import graphql.language.ImplementingTypeDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
+import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
+import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.SDLDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaExtensionDefinition;
+import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.SchemaProblem;
@@ -34,6 +38,10 @@ import static com.google.common.collect.ImmutableMap.copyOf;
 @PublicApi
 @NullMarked
 public class ImmutableTypeDefinitionRegistry extends TypeDefinitionRegistry {
+
+    private final Map<InterfaceTypeDefinition, List<ImplementingTypeDefinition>> allImplementationsOf;
+    private final Map<InterfaceTypeDefinition, List<ObjectTypeDefinition>> implementationsOf;
+
     ImmutableTypeDefinitionRegistry(TypeDefinitionRegistry registry) {
         super(
                 copyOf(registry.objectTypeExtensions),
@@ -49,6 +57,48 @@ public class ImmutableTypeDefinitionRegistry extends TypeDefinitionRegistry {
                 registry.schema,
                 registry.schemaParseOrder
         );
+        allImplementationsOf = calculateAllImplementsOf();
+        implementationsOf = calculateImplementationsOf(allImplementationsOf);
+    }
+
+    private Map<InterfaceTypeDefinition, List<ImplementingTypeDefinition>> calculateAllImplementsOf() {
+        ImmutableMap.Builder<InterfaceTypeDefinition, List<ImplementingTypeDefinition>> mapBuilder = ImmutableMap.builder();
+        List<ImplementingTypeDefinition> implementingTypeDefinitions = getTypes(ImplementingTypeDefinition.class);
+        for (TypeDefinition typeDef : types.values()) {
+            if (typeDef instanceof InterfaceTypeDefinition) {
+                InterfaceTypeDefinition interfaceTypeDef = (InterfaceTypeDefinition) typeDef;
+                ImmutableList.Builder<ImplementingTypeDefinition> listBuilder = ImmutableList.builder();
+                for (ImplementingTypeDefinition<?> implementingTypeDefinition : implementingTypeDefinitions) {
+                    List<Type> implementsList = implementingTypeDefinition.getImplements();
+                    for (Type iFace : implementsList) {
+                        Optional<InterfaceTypeDefinition> implementsAnInterface = getType(iFace, InterfaceTypeDefinition.class);
+                        if (implementsAnInterface.isPresent()) {
+                            boolean equals = implementsAnInterface.get().getName().equals(interfaceTypeDef.getName());
+                            if (equals) {
+                                listBuilder.add(implementingTypeDefinition);
+                                break;
+                            }
+                        }
+                    }
+                }
+                mapBuilder.put(interfaceTypeDef, listBuilder.build());
+            }
+        }
+        return mapBuilder.build();
+    }
+
+    private Map<InterfaceTypeDefinition, List<ObjectTypeDefinition>> calculateImplementationsOf(Map<InterfaceTypeDefinition, List<ImplementingTypeDefinition>> allImplementationsOf1) {
+        ImmutableMap.Builder<InterfaceTypeDefinition, List<ObjectTypeDefinition>> mapBuilder = ImmutableMap.builder();
+        for (Map.Entry<InterfaceTypeDefinition, List<ImplementingTypeDefinition>> entry : allImplementationsOf1.entrySet()) {
+            ImmutableList.Builder<ObjectTypeDefinition> listBuilder = ImmutableList.builder();
+            for (ImplementingTypeDefinition implementingTypeDefinition : entry.getValue()) {
+                if (implementingTypeDefinition instanceof ObjectTypeDefinition) {
+                    listBuilder.add((ObjectTypeDefinition) implementingTypeDefinition);
+                }
+            }
+            mapBuilder.put(entry.getKey(), listBuilder.build());
+        }
+        return mapBuilder.build();
     }
 
     private UnsupportedOperationException unsupportedOperationException() {
@@ -128,5 +178,15 @@ public class ImmutableTypeDefinitionRegistry extends TypeDefinitionRegistry {
     @Override
     public Map<String, DirectiveDefinition> getDirectiveDefinitions() {
         return directiveDefinitions;
+    }
+
+    @Override
+    public List<ImplementingTypeDefinition> getAllImplementationsOf(InterfaceTypeDefinition targetInterface) {
+        return allImplementationsOf.getOrDefault(targetInterface, ImmutableList.of());
+    }
+
+    @Override
+    public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
+        return implementationsOf.getOrDefault(targetInterface, ImmutableList.of());
     }
 }

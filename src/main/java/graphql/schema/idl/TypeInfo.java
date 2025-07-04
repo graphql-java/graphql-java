@@ -139,6 +139,25 @@ public class TypeInfo {
         return unwrapOne().getRawType();
     }
 
+    /**
+     * Gets the type name of a [Type], unwrapping any lists or non-null decorations
+     *
+     * @param type the Type
+     *
+     * @return the inner TypeName for this type
+     */
+    public static TypeName getTypeName(Type<?> type) {
+        while (!(type instanceof TypeName)) {
+            if (type instanceof NonNullType) {
+                type = ((NonNullType) type).getType();
+            }
+            if (type instanceof ListType) {
+                type = ((ListType) type).getType();
+            }
+        }
+        return (TypeName) type;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
