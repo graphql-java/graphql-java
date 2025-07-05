@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.ImplementingTypeDefinition;
@@ -36,13 +37,14 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.idl.SchemaExtensionsChecker.defineOperationDefs;
 import static graphql.schema.idl.SchemaExtensionsChecker.gatherOperationDefs;
+import static graphql.schema.idl.TypeInfo.typeName;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -83,17 +85,17 @@ public class TypeDefinitionRegistry implements Serializable {
     }
 
     protected TypeDefinitionRegistry(Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions,
-                                  Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions,
-                                  Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions,
-                                  Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions,
-                                  Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions,
-                                  Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions,
-                                  Map<String, TypeDefinition> types,
-                                  Map<String, ScalarTypeDefinition> scalarTypes,
-                                  Map<String, DirectiveDefinition> directiveDefinitions,
-                                  List<SchemaExtensionDefinition> schemaExtensionDefinitions,
-                                  @Nullable SchemaDefinition schema,
-                                  SchemaParseOrder schemaParseOrder) {
+                                     Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions,
+                                     Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions,
+                                     Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions,
+                                     Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions,
+                                     Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions,
+                                     Map<String, TypeDefinition> types,
+                                     Map<String, ScalarTypeDefinition> scalarTypes,
+                                     Map<String, DirectiveDefinition> directiveDefinitions,
+                                     List<SchemaExtensionDefinition> schemaExtensionDefinitions,
+                                     @Nullable SchemaDefinition schema,
+                                     SchemaParseOrder schemaParseOrder) {
         this.objectTypeExtensions = objectTypeExtensions;
         this.interfaceTypeExtensions = interfaceTypeExtensions;
         this.unionTypeExtensions = unionTypeExtensions;
@@ -490,43 +492,138 @@ public class TypeDefinitionRegistry implements Serializable {
         return new LinkedHashMap<>(directiveDefinitions);
     }
 
+    /**
+     * Returns true if the registry has a type of the specified {@link TypeName}
+     *
+     * @param typeName the type name to check
+     *
+     * @return true if the registry has a type by that type name
+     */
     public boolean hasType(TypeName typeName) {
         String name = typeName.getName();
+        return hasType(name);
+    }
+
+    /**
+     * Returns true if the registry has a type of the specified name
+     *
+     * @param name the name to check
+     *
+     * @return true if the registry has a type by that name
+     */
+    public boolean hasType(String name) {
         return types.containsKey(name) || ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
     }
 
+    /**
+     * Returns am optional {@link TypeDefinition} of the specified type or {@link Optional#empty()}
+     *
+     * @param type the type to check
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     */
     public Optional<TypeDefinition> getType(Type type) {
-        String typeName = TypeInfo.typeInfo(type).getName();
-        return getType(typeName);
+        return getType(typeName(type));
     }
 
+    /**
+     * Returns am optional {@link TypeDefinition} of the specified type with the specified class or {@link Optional#empty()}
+     *
+     * @param type   the type to check
+     * @param ofType the class of {@link TypeDefinition}
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     */
     public <T extends TypeDefinition> Optional<T> getType(Type type, Class<T> ofType) {
-        String typeName = TypeInfo.typeInfo(type).getName();
-        return getType(typeName, ofType);
+        return getType(typeName(type), ofType);
     }
 
+    /**
+     * Returns am optional {@link TypeDefinition} of the specified type name or {@link Optional#empty()}
+     *
+     * @param typeName the type to check
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     */
     public Optional<TypeDefinition> getType(String typeName) {
+        return Optional.ofNullable(getTypeOrNull(typeName));
+    }
+
+    /**
+     * Returns am optional {@link TypeDefinition} of the specified type name with the specified class or {@link Optional#empty()}
+     *
+     * @param typeName the type to check
+     * @param ofType   the class of {@link TypeDefinition}
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     */
+    public <T extends TypeDefinition> Optional<T> getType(String typeName, Class<T> ofType) {
+        return Optional.ofNullable(getTypeOrNull(typeName, ofType));
+    }
+
+    /**
+     * Returns a {@link TypeDefinition} of the specified type or null
+     *
+     * @param type the type to check
+     *
+     * @return a {@link TypeDefinition} or null if it's not found
+     */
+    @Nullable
+    public TypeDefinition getTypeOrNull(Type type) {
+        return getTypeOrNull(typeName(type));
+    }
+
+    /**
+     * Returns a {@link TypeDefinition} of the specified type with the specified class or null
+     *
+     * @param type   the type to check
+     * @param ofType the class of {@link TypeDefinition}
+     *
+     * @return a {@link TypeDefinition} or null if it's not found
+     */
+    @Nullable
+    public <T extends TypeDefinition> T getTypeOrNull(Type type, Class<T> ofType) {
+        return getTypeOrNull(typeName(type), ofType);
+    }
+
+    /**
+     * Returns a {@link TypeDefinition} of the specified name or null
+     *
+     * @param typeName the type name to check
+     *
+     * @return a {@link TypeDefinition} or null if it's not found
+     */
+    @Nullable
+    public TypeDefinition getTypeOrNull(String typeName) {
         TypeDefinition<?> typeDefinition = types.get(typeName);
         if (typeDefinition != null) {
-            return Optional.of(typeDefinition);
+            return typeDefinition;
         }
         typeDefinition = scalars().get(typeName);
         if (typeDefinition != null) {
-            return Optional.of(typeDefinition);
+            return typeDefinition;
         }
-        return Optional.empty();
+        return null;
     }
 
-    public <T extends TypeDefinition> Optional<T> getType(String typeName, Class<T> ofType) {
-        Optional<TypeDefinition> type = getType(typeName);
-        if (type.isPresent()) {
-            TypeDefinition typeDefinition = type.get();
-            if (typeDefinition.getClass().equals(ofType)) {
+    /**
+     * Returns a {@link TypeDefinition} of the specified name and class or null
+     *
+     * @param typeName the type name to check
+     * @param ofType   the class of {@link TypeDefinition}
+     *
+     * @return a {@link TypeDefinition} or null if it's not found
+     */
+    @Nullable
+    public <T extends TypeDefinition> T getTypeOrNull(String typeName, Class<T> ofType) {
+        TypeDefinition type = getTypeOrNull(typeName);
+        if (type != null) {
+            if (type.getClass().equals(ofType)) {
                 //noinspection unchecked
-                return Optional.of((T) typeDefinition);
+                return (T) type;
             }
         }
-        return Optional.empty();
+        return null;
     }
 
     /**
@@ -537,10 +634,9 @@ public class TypeDefinitionRegistry implements Serializable {
      * @return true if its abstract
      */
     public boolean isInterfaceOrUnion(Type type) {
-        Optional<TypeDefinition> typeDefinition = getType(type);
-        if (typeDefinition.isPresent()) {
-            TypeDefinition definition = typeDefinition.get();
-            return definition instanceof UnionTypeDefinition || definition instanceof InterfaceTypeDefinition;
+        TypeDefinition typeDefinition = getTypeOrNull(type);
+        if (typeDefinition != null) {
+            return typeDefinition instanceof UnionTypeDefinition || typeDefinition instanceof InterfaceTypeDefinition;
         }
         return false;
     }
@@ -553,10 +649,9 @@ public class TypeDefinitionRegistry implements Serializable {
      * @return true if its an object type or interface
      */
     public boolean isObjectTypeOrInterface(Type type) {
-        Optional<TypeDefinition> typeDefinition = getType(type);
-        if (typeDefinition.isPresent()) {
-            TypeDefinition definition = typeDefinition.get();
-            return definition instanceof ObjectTypeDefinition || definition instanceof InterfaceTypeDefinition;
+        TypeDefinition typeDefinition = getTypeOrNull(type);
+        if (typeDefinition != null) {
+            return typeDefinition instanceof ObjectTypeDefinition || typeDefinition instanceof InterfaceTypeDefinition;
         }
         return false;
     }
@@ -569,7 +664,7 @@ public class TypeDefinitionRegistry implements Serializable {
      * @return true if its an object type
      */
     public boolean isObjectType(Type type) {
-        return getType(type, ObjectTypeDefinition.class).isPresent();
+        return getTypeOrNull(type, ObjectTypeDefinition.class) != null;
     }
 
     /**
@@ -581,10 +676,10 @@ public class TypeDefinitionRegistry implements Serializable {
      * @return a list of types of the target class
      */
     public <T extends TypeDefinition> List<T> getTypes(Class<T> targetClass) {
-        return types.values().stream()
-                .filter(targetClass::isInstance)
-                .map(targetClass::cast)
-                .collect(Collectors.toList());
+        return ImmutableKit.filterAndMap(types.values(),
+                targetClass::isInstance,
+                targetClass::cast
+        );
     }
 
     /**
@@ -610,20 +705,20 @@ public class TypeDefinitionRegistry implements Serializable {
      * @see TypeDefinitionRegistry#getImplementationsOf(InterfaceTypeDefinition)
      */
     public List<ImplementingTypeDefinition> getAllImplementationsOf(InterfaceTypeDefinition targetInterface) {
-        List<ImplementingTypeDefinition> typeDefinitions = getTypes(ImplementingTypeDefinition.class);
-        return typeDefinitions.stream().filter(typeDefinition -> {
-            List<Type> implementsList = typeDefinition.getImplements();
-            for (Type iFace : implementsList) {
-                Optional<InterfaceTypeDefinition> interfaceTypeDef = getType(iFace, InterfaceTypeDefinition.class);
-                if (interfaceTypeDef.isPresent()) {
-                    boolean equals = interfaceTypeDef.get().getName().equals(targetInterface.getName());
-                    if (equals) {
-                        return true;
+        return ImmutableKit.filter(
+                getTypes(ImplementingTypeDefinition.class),
+                implementingTypeDefinition -> {
+                    List<Type<?>> implementsList = implementingTypeDefinition.getImplements();
+                    for (Type iFace : implementsList) {
+                        InterfaceTypeDefinition interfaceTypeDef = getTypeOrNull(iFace, InterfaceTypeDefinition.class);
+                        if (interfaceTypeDef != null) {
+                            if (interfaceTypeDef.getName().equals(targetInterface.getName())) {
+                                return true;
+                            }
+                        }
                     }
-                }
-            }
-            return false;
-        }).collect(Collectors.toList());
+                    return false;
+                });
     }
 
     /**
@@ -636,11 +731,11 @@ public class TypeDefinitionRegistry implements Serializable {
      * @see TypeDefinitionRegistry#getAllImplementationsOf(InterfaceTypeDefinition)
      */
     public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
-        return this.getAllImplementationsOf(targetInterface)
-                .stream()
-                .filter(typeDefinition -> typeDefinition instanceof ObjectTypeDefinition)
-                .map(typeDefinition -> (ObjectTypeDefinition) typeDefinition)
-                .collect(Collectors.toList());
+        return ImmutableKit.filterAndMap(
+                getAllImplementationsOf(targetInterface),
+                typeDefinition -> typeDefinition instanceof ObjectTypeDefinition,
+                typeDefinition -> (ObjectTypeDefinition) typeDefinition
+        );
     }
 
     /**
@@ -658,14 +753,14 @@ public class TypeDefinitionRegistry implements Serializable {
         if (!isObjectTypeOrInterface(possibleType)) {
             return false;
         }
-        TypeDefinition targetObjectTypeDef = getType(possibleType).get();
-        TypeDefinition abstractTypeDef = getType(abstractType).get();
+        TypeDefinition targetObjectTypeDef = Objects.requireNonNull(getTypeOrNull(possibleType));
+        TypeDefinition abstractTypeDef = Objects.requireNonNull(getTypeOrNull(abstractType));
         if (abstractTypeDef instanceof UnionTypeDefinition) {
             List<Type> memberTypes = ((UnionTypeDefinition) abstractTypeDef).getMemberTypes();
             for (Type memberType : memberTypes) {
-                Optional<ObjectTypeDefinition> checkType = getType(memberType, ObjectTypeDefinition.class);
-                if (checkType.isPresent()) {
-                    if (checkType.get().getName().equals(targetObjectTypeDef.getName())) {
+                ObjectTypeDefinition checkType = getTypeOrNull(memberType, ObjectTypeDefinition.class);
+                if (checkType != null) {
+                    if (checkType.getName().equals(targetObjectTypeDef.getName())) {
                         return true;
                     }
                 }
@@ -674,8 +769,12 @@ public class TypeDefinitionRegistry implements Serializable {
         } else {
             InterfaceTypeDefinition iFace = (InterfaceTypeDefinition) abstractTypeDef;
             List<ImplementingTypeDefinition> implementingTypeDefinitions = getAllImplementationsOf(iFace);
-            return implementingTypeDefinitions.stream()
-                    .anyMatch(od -> od.getName().equals(targetObjectTypeDef.getName()));
+            for (ImplementingTypeDefinition implementingTypeDefinition : implementingTypeDefinitions) {
+                if (implementingTypeDefinition.getName().equals(targetObjectTypeDef.getName())) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 

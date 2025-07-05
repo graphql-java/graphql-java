@@ -333,8 +333,9 @@ public class SchemaTypeChecker {
 
     private Consumer<Type> checkTypeExists(String typeOfType, TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, TypeDefinition typeDefinition) {
         return t -> {
-            TypeName unwrapped = TypeInfo.typeInfo(t).getTypeName();
-            if (!typeRegistry.hasType(unwrapped)) {
+            String name = TypeInfo.typeName(t);
+            if (!typeRegistry.hasType(name)) {
+                TypeName unwrapped = TypeInfo.typeInfo(t).getTypeName();
                 errors.add(new MissingTypeError(typeOfType, typeDefinition, unwrapped));
             }
         };
@@ -342,8 +343,9 @@ public class SchemaTypeChecker {
 
     private Consumer<Type> checkTypeExists(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, String typeOfType, Node element, String elementName) {
         return ivType -> {
-            TypeName unwrapped = TypeInfo.typeInfo(ivType).getTypeName();
-            if (!typeRegistry.hasType(unwrapped)) {
+            String name = TypeInfo.typeName(ivType);
+            if (!typeRegistry.hasType(name)) {
+                TypeName unwrapped = TypeInfo.typeInfo(ivType).getTypeName();
                 errors.add(new MissingTypeError(typeOfType, element, elementName, unwrapped));
             }
         };

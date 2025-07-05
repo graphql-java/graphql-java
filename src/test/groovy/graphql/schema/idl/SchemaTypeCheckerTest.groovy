@@ -32,7 +32,7 @@ import static java.lang.String.format
 class SchemaTypeCheckerTest extends Specification {
 
     static TypeDefinitionRegistry parseSDL(String spec) {
-        new SchemaParser().parse(spec)
+        new SchemaParser().parse(spec).readOnly()
     }
 
     def resolver = new TypeResolver() {

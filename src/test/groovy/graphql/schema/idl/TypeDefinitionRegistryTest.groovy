@@ -375,7 +375,7 @@ class TypeDefinitionRegistryTest extends Specification {
     }
 
 
-    def "test can get implements of interface"() {
+    def "test can get implements of interface #typeOfReg"() {
         def spec = '''
             interface Interface {
                 name : String
@@ -407,11 +407,19 @@ class TypeDefinitionRegistryTest extends Specification {
         '''
         when:
         def registry = parse(spec)
+        if (typeOfReg == "immutable") {
+            registry = registry.readOnly()
+        }
         def interfaceDef = registry.getType("Interface", InterfaceTypeDefinition.class).get()
         def implementingTypeDefinitions = registry.getAllImplementationsOf(interfaceDef)
         def names = implementingTypeDefinitions.collect { it.getName() }
         then:
         names == ["Type1", "Type2", "Type3", "Type5"]
+
+        where:
+        typeOfReg   | _
+        "mutable"   | _
+        "immutable" | _
     }
 
     def animalia = '''
@@ -461,9 +469,16 @@ class TypeDefinitionRegistryTest extends Specification {
 
         '''
 
-    def "test possible type detection"() {
+    def "test possible type detection #typeOfReg"() {
+        given:
+        TypeDefinitionRegistry mutableReg = parse(animalia)
+        ImmutableTypeDefinitionRegistry immutableReg = mutableReg.readOnly()
+
         when:
-        def registry = parse(animalia)
+        def registry = mutableReg
+        if (typeOfReg == "immutable") {
+            registry = immutableReg
+        }
 
         then:
         registry.isPossibleType(type("Mammal"), type("Canine"))
@@ -485,12 +500,19 @@ class TypeDefinitionRegistryTest extends Specification {
         !registry.isPossibleType(type("Platypus"), type("Dog"))
         !registry.isPossibleType(type("Platypus"), type("Cat"))
 
+        where:
+        typeOfReg   | _
+        "mutable"   | _
+        "immutable" | _
     }
 
 
-    def "isSubTypeOf detection"() {
+    def "isSubTypeOf detection #typeOfReg"() {
         when:
         def registry = parse(animalia)
+        if (typeOfReg == "immutable") {
+            registry = registry.readOnly()
+        }
 
         then:
         registry.isSubTypeOf(type("Mammal"), type("Mammal"))
@@ -517,6 +539,11 @@ class TypeDefinitionRegistryTest extends Specification {
         registry.isSubTypeOf(listType(nonNullType(listType(type("Canine")))), listType(nonNullType(listType(type("Mammal")))))
         !registry.isSubTypeOf(listType(nonNullType(listType(type("Turtle")))), listType(nonNullType(listType(type("Mammal")))))
 
+
+        where:
+        typeOfReg   | _
+        "mutable"   | _
+        "immutable" | _
     }
 
     @Unroll
