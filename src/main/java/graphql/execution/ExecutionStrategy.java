@@ -630,18 +630,13 @@ public abstract class ExecutionStrategy {
                 instrumentationParams, executionContext.getInstrumentationState()
         ));
 
-
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
-
         Object rawFetchedValue = FetchedValue.getFetchedValue(fetchedValue);
         Object localContext = FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext());
 
-        ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                builder.executionStepInfo(executionStepInfo)
-                        .source(rawFetchedValue)
-                        .localContext(localContext)
-                        .nonNullFieldValidator(nonNullableFieldValidator)
-        );
+        ExecutionStrategyParameters newParameters = parameters.transform(executionStepInfo,
+                rawFetchedValue,
+                localContext);
+
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
         ctxCompleteField.onDispatched();
         if (fieldValueInfo.isFutureValue()) {
@@ -799,26 +794,13 @@ public abstract class ExecutionStrategy {
 
             Object fetchedValue = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
-            ExecutionStrategyParameters newParameters = parameters.transform(stepInfoForListElement,
-                    indexedPath,
-                    value.getLocalContext(),
-                    value.getFetchedValue());
-
             Object rawFetchedValue = FetchedValue.getFetchedValue(fetchedValue);
             Object localContext = FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext());
 
-            //fix me
             ExecutionStrategyParameters newParameters = parameters.transform(stepInfoForListElement,
                     indexedPath,
-                    value.getLocalContext(),
-                    value.getFetchedValue());
-
-            ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                    builder.executionStepInfo(stepInfoForListElement)
-                            .localContext(localContext)
-                            .path(indexedPath)
-                            .source(rawFetchedValue)
-            );
+                    localContext,
+                    rawFetchedValue);
 
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
