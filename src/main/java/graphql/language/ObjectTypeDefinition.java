@@ -24,7 +24,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefinition> implements ImplementingTypeDefinition<ObjectTypeDefinition>, DirectivesContainer<ObjectTypeDefinition>, NamedNode<ObjectTypeDefinition> {
     private final String name;
     private final ImmutableList<Type> implementz;
-    private final ImmutableList<Directive> directives;
+    private final NodeUtil.DirectivesHolder directives;
     private final ImmutableList<FieldDefinition> fieldDefinitions;
 
     public static final String CHILD_IMPLEMENTZ = "implementz";
@@ -44,7 +44,7 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.implementz = ImmutableList.copyOf(implementz);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
         this.fieldDefinitions = ImmutableList.copyOf(fieldDefinitions);
     }
 
@@ -62,9 +62,23 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
         return implementz;
     }
 
-    @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     @Override
@@ -81,7 +95,7 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(implementz);
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         result.addAll(fieldDefinitions);
         return result;
     }
@@ -90,7 +104,7 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
                 .children(CHILD_IMPLEMENTZ, implementz)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_FIELD_DEFINITIONS, fieldDefinitions)
                 .build();
     }
@@ -120,7 +134,7 @@ public class ObjectTypeDefinition extends AbstractDescribedNode<ObjectTypeDefini
     public ObjectTypeDefinition deepCopy() {
         return new ObjectTypeDefinition(name,
                 deepCopy(implementz),
-                deepCopy(directives),
+                deepCopy(directives.getDirectives()),
                 deepCopy(fieldDefinitions),
                 description,
                 getSourceLocation(),

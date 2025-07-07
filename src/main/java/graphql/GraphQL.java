@@ -85,6 +85,72 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
 @PublicApi
 public class GraphQL {
 
+    /**
+     * This allows you to control "unusual" aspects of the GraphQL system
+     * including some JVM wide settings
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration unusualConfiguration() {
+        return new GraphQLUnusualConfiguration();
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(ExecutionInput executionInput) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(executionInput.getGraphQLContext());
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(ExecutionInput.Builder executionInputBuilder) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(executionInputBuilder.graphQLContext());
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(GraphQLContext graphQLContext) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(graphQLContext);
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(GraphQLContext.Builder graphQLContextBuilder) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(graphQLContextBuilder);
+    }
+
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
@@ -93,7 +159,6 @@ public class GraphQL {
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
     private final ValueUnboxer valueUnboxer;
-    private final ResponseMapFactory responseMapFactory;
     private final boolean doNotAutomaticallyDispatchDataLoader;
 
 
@@ -106,7 +171,6 @@ public class GraphQL {
         this.instrumentation = assertNotNull(builder.instrumentation, () -> "instrumentation must not be null");
         this.preparsedDocumentProvider = assertNotNull(builder.preparsedDocumentProvider, () -> "preparsedDocumentProvider must be non null");
         this.valueUnboxer = assertNotNull(builder.valueUnboxer, () -> "valueUnboxer must not be null");
-        this.responseMapFactory = assertNotNull(builder.responseMapFactory, () -> "responseMapFactory must be not null");
         this.doNotAutomaticallyDispatchDataLoader = builder.doNotAutomaticallyDispatchDataLoader;
     }
 
@@ -216,7 +280,6 @@ public class GraphQL {
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
         private boolean doNotAutomaticallyDispatchDataLoader = false;
         private ValueUnboxer valueUnboxer = ValueUnboxer.DEFAULT;
-        private ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
 
         public Builder(GraphQLSchema graphQLSchema) {
             this.graphQLSchema = graphQLSchema;
@@ -284,11 +347,6 @@ public class GraphQL {
 
         public Builder valueUnboxer(ValueUnboxer valueUnboxer) {
             this.valueUnboxer = valueUnboxer;
-            return this;
-        }
-
-        public Builder responseMapFactory(ResponseMapFactory responseMapFactory) {
-            this.responseMapFactory = responseMapFactory;
             return this;
         }
 
@@ -423,7 +481,7 @@ public class GraphQL {
         EngineRunningState engineRunningState = new EngineRunningState(executionInput);
         return engineRunningState.engineRun(() -> {
             ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
-            engineRunningState.updateExecutionId(executionInputWithId.getExecutionId());
+            engineRunningState.updateExecutionInput(executionInputWithId);
 
             CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
             instrumentationStateCF = Async.orNullCompletedFuture(instrumentationStateCF);
@@ -551,7 +609,7 @@ public class GraphQL {
                                                        EngineRunningState engineRunningState
     ) {
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, responseMapFactory, doNotAutomaticallyDispatchDataLoader);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader);
         ExecutionId executionId = executionInput.getExecutionId();
 
         return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState, engineRunningState);

@@ -2,22 +2,27 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
+import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.directives.QueryDirectives;
+import graphql.execution.incremental.AlternativeCallContext;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -27,12 +32,17 @@ import java.util.function.Supplier;
 
 @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
 @Internal
+@NullMarked
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
+    @Nullable
     private final Object source;
     private final Supplier<Map<String, Object>> arguments;
+    @Nullable
     private final Object context;
     private final GraphQLContext graphQLContext;
+    @Nullable
     private final Object localContext;
+    @Nullable
     private final Object root;
     private final GraphQLFieldDefinition fieldDefinition;
     private final MergedField mergedField;
@@ -50,11 +60,14 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final QueryDirectives queryDirectives;
 
+    // used for internal() method
+    private final DFEInternalState dfeInternalState;
+
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
         this.arguments = builder.arguments == null ? ImmutableKit::emptyMap : builder.arguments;
         this.context = builder.context;
-        this.graphQLContext = builder.graphQLContext;
+        this.graphQLContext = Assert.assertNotNull(builder.graphQLContext);
         this.localContext = builder.localContext;
         this.root = builder.root;
         this.fieldDefinition = builder.fieldDefinition;
@@ -72,6 +85,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.document = builder.document;
         this.variables = builder.variables == null ? ImmutableMapWithNullValues.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
+
+        // internal state
+        this.dfeInternalState = new DFEInternalState(builder.dataLoaderDispatchStrategy, builder.alternativeCallContext);
     }
 
     /**
@@ -97,10 +113,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getCoercedVariables().toMap())
-                .executionId(executionContext.getExecutionId());
+                .executionId(executionContext.getExecutionId())
+                .dataLoaderDispatchStrategy(executionContext.getDataLoaderDispatcherStrategy());
     }
 
     @Override
+    @Nullable
     public <T> T getSource() {
         return (T) source;
     }
@@ -116,7 +134,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T getArgument(String name) {
+    public @Nullable <T> T getArgument(String name) {
         return (T) arguments.get().get(name);
     }
 
@@ -126,12 +144,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T getContext() {
+    public @Nullable <T> T getContext() {
         return (T) context;
     }
 
     @Override
-    public @NonNull GraphQLContext getGraphQlContext() {
+    public GraphQLContext getGraphQlContext() {
         return graphQLContext;
     }
 
@@ -141,7 +159,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T getRoot() {
+    public @Nullable <T> T getRoot() {
         return (T) root;
     }
 
@@ -205,9 +223,13 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         return executionStepInfo.get();
     }
 
+
     @Override
     public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
-        return dataLoaderRegistry.getDataLoader(dataLoaderName);
+        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+            return dataLoaderRegistry.getDataLoader(dataLoaderName);
+        }
+        return new DataLoaderWithContext<>(this, dataLoaderName, dataLoaderRegistry.getDataLoader(dataLoaderName));
     }
 
     @Override
@@ -235,6 +257,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         return variables;
     }
 
+
+    @Override
+    public Object toInternal() {
+        return this.dfeInternalState;
+    }
+
     @Override
     public String toString() {
         return "DataFetchingEnvironmentImpl{" +
@@ -242,11 +270,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 '}';
     }
 
+    @NullUnmarked
     public static class Builder {
 
         private Object source;
         private Object context;
-        private GraphQLContext graphQLContext;
+        private GraphQLContext graphQLContext = GraphQLContext.newContext().build();
         private Object localContext;
         private Object root;
         private GraphQLFieldDefinition fieldDefinition;
@@ -265,6 +294,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private ImmutableMap<String, FragmentDefinition> fragmentsByName;
         private ImmutableMapWithNullValues<String, Object> variables;
         private QueryDirectives queryDirectives;
+        private DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
+        private AlternativeCallContext alternativeCallContext;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -288,6 +319,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.document = env.document;
             this.variables = env.variables;
             this.queryDirectives = env.queryDirectives;
+            this.dataLoaderDispatchStrategy = env.dfeInternalState.dataLoaderDispatchStrategy;
+            this.alternativeCallContext = env.dfeInternalState.alternativeCallContext;
         }
 
         public Builder() {
@@ -308,13 +341,13 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         @Deprecated(since = "2021-07-05")
-        public Builder context(Object context) {
+        public Builder context(@Nullable Object context) {
             this.context = context;
             return this;
         }
 
         public Builder graphQLContext(GraphQLContext context) {
-            this.graphQLContext = context;
+            this.graphQLContext = Assert.assertNotNull(context, "GraphQLContext cannot be null");
             return this;
         }
 
@@ -407,8 +440,37 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
+        public Builder deferredCallContext(AlternativeCallContext alternativeCallContext) {
+            this.alternativeCallContext = alternativeCallContext;
+            return this;
+        }
+
         public DataFetchingEnvironment build() {
             return new DataFetchingEnvironmentImpl(this);
+        }
+
+        public Builder dataLoaderDispatchStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
+            this.dataLoaderDispatchStrategy = dataLoaderDispatcherStrategy;
+            return this;
+        }
+    }
+
+    @Internal
+    public static class DFEInternalState {
+        final DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
+        final AlternativeCallContext alternativeCallContext;
+
+        public DFEInternalState(DataLoaderDispatchStrategy dataLoaderDispatchStrategy, AlternativeCallContext alternativeCallContext) {
+            this.dataLoaderDispatchStrategy = dataLoaderDispatchStrategy;
+            this.alternativeCallContext = alternativeCallContext;
+        }
+
+        public DataLoaderDispatchStrategy getDataLoaderDispatchStrategy() {
+            return dataLoaderDispatchStrategy;
+        }
+
+        public AlternativeCallContext getDeferredCallContext() {
+            return alternativeCallContext;
         }
     }
 }

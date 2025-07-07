@@ -34,20 +34,16 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Node
      *
      * @return a map of all directives by directive name
      */
-    default Map<String, List<Directive>> getDirectivesByName() {
-        return ImmutableMap.copyOf(allDirectivesByName(getDirectives()));
-    }
+    Map<String, List<Directive>> getDirectivesByName();
 
     /**
-     * Returns all of the directives with the provided name, including repeatable and non repeatable directives.
+     * Returns all the directives with the provided name, including repeatable and non repeatable directives.
      *
      * @param directiveName the name of the directives to retrieve
      *
      * @return the directives or empty list if there is not one with that name
      */
-    default List<Directive> getDirectives(String directiveName) {
-        return getDirectivesByName().getOrDefault(directiveName, emptyList());
-    }
+    List<Directive> getDirectives(String directiveName);
 
     /**
      * This returns true if the AST node contains one or more directives by the specified name
@@ -56,7 +52,5 @@ public interface DirectivesContainer<T extends DirectivesContainer> extends Node
      *
      * @return true if the AST node contains one or more directives by the specified name
      */
-    default boolean hasDirective(String directiveName) {
-        return !getDirectives(directiveName).isEmpty();
-    }
+    boolean hasDirective(String directiveName);
 }

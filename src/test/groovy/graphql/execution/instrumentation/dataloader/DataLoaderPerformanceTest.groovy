@@ -29,7 +29,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getQuery())
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -42,6 +42,7 @@ class DataLoaderPerformanceTest extends Specification {
 
         where:
         incrementalSupport << [true, false]
+        enableDataLoaderChaining << [true, false]
     }
 
     def "970 ensure data loader is performant for multiple field with lists"() {
@@ -51,7 +52,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -63,6 +64,7 @@ class DataLoaderPerformanceTest extends Specification {
 
         where:
         incrementalSupport << [true, false]
+        enableDataLoaderChaining << [true, false]
     }
 
     def "ensure data loader is performant for lists using async batch loading"() {
@@ -74,7 +76,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getQuery())
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .build()
 
         def result = graphQL.execute(executionInput)
@@ -88,6 +90,7 @@ class DataLoaderPerformanceTest extends Specification {
 
         where:
         incrementalSupport << [true, false]
+        enableDataLoaderChaining << [true, false]
     }
 
     def "970 ensure data loader is performant for multiple field with lists using async batch loading"() {
@@ -99,7 +102,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .build()
 
         def result = graphQL.execute(executionInput)
@@ -112,5 +115,7 @@ class DataLoaderPerformanceTest extends Specification {
 
         where:
         incrementalSupport << [true, false]
+        enableDataLoaderChaining << [true, false]
+
     }
 }

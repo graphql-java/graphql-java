@@ -23,7 +23,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition>, NamedNode<EnumTypeDefinition> {
     private final String name;
     private final ImmutableList<EnumValueDefinition> enumValueDefinitions;
-    private final ImmutableList<Directive> directives;
+    private final NodeUtil.DirectivesHolder directives;
 
     public static final String CHILD_ENUM_VALUE_DEFINITIONS = "enumValueDefinitions";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -38,7 +38,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
                                  IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.directives = ImmutableKit.nonNullCopyOf(directives);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
         this.enumValueDefinitions = ImmutableKit.nonNullCopyOf(enumValueDefinitions);
     }
 
@@ -57,7 +57,22 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     @Override
@@ -69,7 +84,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(enumValueDefinitions);
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         return result;
     }
 
@@ -77,7 +92,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
                 .children(CHILD_ENUM_VALUE_DEFINITIONS, enumValueDefinitions)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -107,7 +122,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     public EnumTypeDefinition deepCopy() {
         return new EnumTypeDefinition(name,
                 deepCopy(enumValueDefinitions),
-                deepCopy(directives),
+                deepCopy(directives.getDirectives()),
                 description,
                 getSourceLocation(),
                 getComments(),

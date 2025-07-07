@@ -1,5 +1,8 @@
-import java.text.SimpleDateFormat
+import net.ltgt.gradle.errorprone.CheckSeverity
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
+import java.text.SimpleDateFormat
 
 plugins {
     id 'java'
@@ -7,16 +10,33 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "8.3.6"
+    id "com.gradleup.shadow" version "8.3.7"
     id "biz.aQute.bnd.builder" version "6.4.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
+    id "net.ltgt.errorprone" version '4.3.0'
+    //
+    // Kotlin just for tests - not production code
+    id 'org.jetbrains.kotlin.jvm' version '2.2.0'
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(21) // build on 21 - release on 11
+    }
+}
+
+kotlin {
+    compilerOptions {
+        apiVersion = KotlinVersion.KOTLIN_2_0
+        languageVersion = KotlinVersion.KOTLIN_2_0
+        jvmTarget = JvmTarget.JVM_11
+        javaParameters = true
+        freeCompilerArgs = [
+                '-Xemit-jvm-type-annotations',
+                '-Xjspecify-annotations=strict',
+        ]
     }
 }
 
@@ -64,7 +84,7 @@ def getDevelopmentVersion() {
 
 def reactiveStreamsVersion = '1.0.3'
 def releaseVersion = System.env.RELEASE_VERSION
-def antlrVersion = '4.11.1' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
+def antlrVersion = '4.13.2' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
 def guavaVersion = '32.1.2-jre'
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
@@ -97,41 +117,45 @@ jar {
         attributes('Automatic-Module-Name': 'com.graphqljava')
     }
 }
-tasks.withType(GroovyCompile) {
-    // Options when compiling Java using the Groovy plugin.
-    // (Groovy itself defaults to UTF-8 for Groovy code)
-    options.encoding = 'UTF-8'
-    groovyOptions.forkOptions.memoryMaximumSize = "4g"
-}
+
 dependencies {
-    implementation 'org.antlr:antlr4-runtime:' + antlrVersion
-    api 'com.graphql-java:java-dataloader:4.0.0'
+    api 'com.graphql-java:java-dataloader:5.0.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     api "org.jspecify:jspecify:1.0.0"
-    antlr 'org.antlr:antlr4:' + antlrVersion
+
+    implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
+
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
-    testImplementation 'net.bytebuddy:byte-buddy:1.17.5'
+    testImplementation 'net.bytebuddy:byte-buddy:1.17.6'
     testImplementation 'org.objenesis:objenesis:3.4'
-    testImplementation 'org.apache.groovy:groovy:4.0.26"'
-    testImplementation 'org.apache.groovy:groovy-json:4.0.26'
+    testImplementation 'org.apache.groovy:groovy:4.0.27"'
+    testImplementation 'org.apache.groovy:groovy-json:4.0.27'
     testImplementation 'com.google.code.gson:gson:2.13.1'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.25'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.19.0'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.19.1'
     testImplementation 'org.awaitility:awaitility-groovy:4.3.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.7.5"
+    testImplementation "io.projectreactor:reactor-core:3.7.7"
 
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
-    testImplementation "com.tngtech.archunit:archunit-junit5:1.4.0"
+    testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
+
+    antlr 'org.antlr:antlr4:' + antlrVersion
 
     // this is needed for the idea jmh plugin to work correctly
     jmh 'org.openjdk.jmh:jmh-core:1.37'
     jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+
+    errorprone 'com.uber.nullaway:nullaway:0.12.7'
+    errorprone 'com.google.errorprone:error_prone_core:2.39.0'
+
+    // just tests - no Kotlin otherwise
+    testCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 }
 
 shadowJar {
@@ -176,7 +200,7 @@ shadowJar {
     bnd('''
 -exportcontents: graphql.*
 -removeheaders: Private-Package
-Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.*;resolution:=optional,*
+Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.annotations;resolution:=optional,*
 ''')
 }
 
@@ -218,6 +242,36 @@ compileJava {
     source file("build/generated-src"), sourceSets.main.java
 }
 
+tasks.withType(GroovyCompile) {
+    // Options when compiling Java using the Groovy plugin.
+    // (Groovy itself defaults to UTF-8 for Groovy code)
+    options.encoding = 'UTF-8'
+    sourceCompatibility = '11'
+    targetCompatibility = '11'
+    groovyOptions.forkOptions.memoryMaximumSize = "4g"
+}
+
+tasks.withType(JavaCompile) {
+    options.release = 11
+    options.errorprone {
+        disableAllChecks = true
+        check("NullAway", CheckSeverity.ERROR)
+        //
+        // end state has us with this config turned on - eg all classes
+        //
+        //option("NullAway:AnnotatedPackages", "graphql")
+        option("NullAway:CustomContractAnnotations", "graphql.Contract")
+        option("NullAway:OnlyNullMarked", "true")
+        option("NullAway:JSpecifyMode", "true")
+    }
+    // Include to disable NullAway on test code
+    if (name.toLowerCase().contains("test")) {
+        options.errorprone {
+            disable("NullAway")
+        }
+    }
+}
+
 generateGrammarSource {
     includes = ['Graphql.g4']
     maxHeapSize = "64m"
@@ -253,6 +307,7 @@ artifacts {
 List<TestDescriptor> failedTests = []
 
 test {
+    useJUnitPlatform()
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
@@ -264,6 +319,43 @@ test {
         }
     }
 }
+
+tasks.register('testWithJava17', Test) {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    useJUnitPlatform()
+    testLogging {
+        events "FAILED", "SKIPPED"
+        exceptionFormat = "FULL"
+    }
+
+    afterTest { TestDescriptor descriptor, TestResult result ->
+        if (result.getFailedTestCount() > 0) {
+            failedTests.add(descriptor)
+        }
+    }
+
+}
+tasks.register('testWithJava11', Test) {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+    useJUnitPlatform()
+    testLogging {
+        events "FAILED", "SKIPPED"
+        exceptionFormat = "FULL"
+    }
+
+    afterTest { TestDescriptor descriptor, TestResult result ->
+        if (result.getFailedTestCount() > 0) {
+            failedTests.add(descriptor)
+        }
+    }
+}
+test.dependsOn testWithJava17
+test.dependsOn testWithJava11
+
 
 /*
  * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7
@@ -350,8 +442,12 @@ publishing {
 nexusPublishing {
     repositories {
         sonatype {
-            username = System.env.MAVEN_CENTRAL_USER
-            password = System.env.MAVEN_CENTRAL_PASSWORD
+            username = System.env.MAVEN_CENTRAL_USER_NEW
+            password = System.env.MAVEN_CENTRAL_PASSWORD_NEW
+            // https://central.sonatype.org/publish/publish-portal-ossrh-staging-api/#configuration
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            // GraphQL Java does not publish snapshots, but adding this URL for completeness
+            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
         }
     }
 }
@@ -374,6 +470,5 @@ tasks.withType(GenerateModuleMetadata) {
     enabled = false
 }
 
-test {
-    useJUnitPlatform()
-}
+
+

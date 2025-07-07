@@ -54,10 +54,9 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
      * @return a list of selections of that class or empty list
      */
     public <T extends Selection> List<T> getSelectionsOfType(Class<T> selectionClass) {
-        return selections.stream()
-                .filter(d -> selectionClass.isAssignableFrom(d.getClass()))
-                .map(selectionClass::cast)
-                .collect(ImmutableList.toImmutableList());
+        return ImmutableKit.filterAndMap(selections,
+                d -> selectionClass.isAssignableFrom(d.getClass()),
+                selectionClass::cast);
     }
 
     @Override

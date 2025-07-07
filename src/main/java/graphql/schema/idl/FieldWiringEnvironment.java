@@ -6,10 +6,12 @@ import graphql.language.TypeDefinition;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLOutputType;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 
 @PublicApi
+@NullMarked
 public class FieldWiringEnvironment extends WiringEnvironment {
 
     private final FieldDefinition fieldDefinition;
