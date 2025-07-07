@@ -52,7 +52,7 @@ public class InstrumentationFieldCompleteParameters {
      * This returns the object that was fetched, ready to be completed as a value.  This can sometimes be a {@link graphql.execution.FetchedValue} object
      * but most often it's a simple POJO.
      *
-     * @return the object was fetched read
+     * @return the object was fetched, ready to be completed as a value.
      */
     public Object getFetchedObject() {
         return fetchedValue;
