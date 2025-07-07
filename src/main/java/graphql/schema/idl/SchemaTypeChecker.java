@@ -34,7 +34,6 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -355,10 +354,10 @@ public class SchemaTypeChecker {
         return t -> {
             TypeInfo typeInfo = TypeInfo.typeInfo(t);
             TypeName unwrapped = typeInfo.getTypeName();
-            Optional<TypeDefinition> type = typeRegistry.getType(unwrapped);
-            if (!type.isPresent()) {
+            TypeDefinition<?> type = typeRegistry.getTypeOrNull(unwrapped);
+            if (type == null) {
                 errors.add(new MissingInterfaceTypeError("interface", typeDefinition, unwrapped));
-            } else if (!(type.get() instanceof InterfaceTypeDefinition)) {
+            } else if (!(type instanceof InterfaceTypeDefinition)) {
                 errors.add(new MissingInterfaceTypeError("interface", typeDefinition, unwrapped));
             }
         };

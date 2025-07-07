@@ -346,6 +346,7 @@ public class TypeDefinitionRegistry implements Serializable {
     }
 
     private void removeFromList(Map source, TypeDefinition value) {
+        //noinspection unchecked
         List<TypeDefinition> list = (List<TypeDefinition>) source.get(value.getName());
         if (list == null) {
             return;
@@ -516,47 +517,61 @@ public class TypeDefinitionRegistry implements Serializable {
     }
 
     /**
-     * Returns am optional {@link TypeDefinition} of the specified type or {@link Optional#empty()}
+     * Returns an optional {@link TypeDefinition} of the specified type or {@link Optional#empty()}
      *
      * @param type the type to check
      *
      * @return an optional {@link TypeDefinition} or empty if it's not found
+     *
+     * @deprecated use the {@link #getTypeOrNull(Type)} variants instead since they avoid the allocation of an
+     * optional object
      */
+    @Deprecated(since = "2025-07-7")
     public Optional<TypeDefinition> getType(Type type) {
-        return getType(typeName(type));
+        return Optional.ofNullable(getTypeOrNull(type));
     }
 
     /**
-     * Returns am optional {@link TypeDefinition} of the specified type with the specified class or {@link Optional#empty()}
+     * Returns an optional {@link TypeDefinition} of the specified type with the specified class or {@link Optional#empty()}
      *
      * @param type   the type to check
      * @param ofType the class of {@link TypeDefinition}
      *
      * @return an optional {@link TypeDefinition} or empty if it's not found
+     *
+     * @deprecated use the {@link #getTypeOrNull(Type)} variants instead since they avoid the allocation of an
+     * optional object
      */
+    @Deprecated(since = "2025-07-7")
     public <T extends TypeDefinition> Optional<T> getType(Type type, Class<T> ofType) {
-        return getType(typeName(type), ofType);
+        return Optional.ofNullable(getTypeOrNull(typeName(type), ofType));
     }
 
     /**
-     * Returns am optional {@link TypeDefinition} of the specified type name or {@link Optional#empty()}
+     * Returns an optional {@link TypeDefinition} of the specified type name or {@link Optional#empty()}
      *
      * @param typeName the type to check
      *
      * @return an optional {@link TypeDefinition} or empty if it's not found
+     *
+     * @deprecated use the {@link #getTypeOrNull(Type)} variants instead since they avoid the allocation of an
+     * optional object
      */
+    @Deprecated(since = "2025-07-7")
     public Optional<TypeDefinition> getType(String typeName) {
         return Optional.ofNullable(getTypeOrNull(typeName));
     }
 
     /**
-     * Returns am optional {@link TypeDefinition} of the specified type name with the specified class or {@link Optional#empty()}
+     * Returns an optional {@link TypeDefinition} of the specified type name with the specified class or {@link Optional#empty()}
      *
      * @param typeName the type to check
      * @param ofType   the class of {@link TypeDefinition}
      *
-     * @return an optional {@link TypeDefinition} or empty if it's not found
+     * @deprecated use the {@link #getTypeOrNull(Type)} variants instead since they avoid the allocation of an
+     * optional object
      */
+    @Deprecated(since = "2025-07-7")
     public <T extends TypeDefinition> Optional<T> getType(String typeName, Class<T> ofType) {
         return Optional.ofNullable(getTypeOrNull(typeName, ofType));
     }
@@ -600,10 +615,7 @@ public class TypeDefinitionRegistry implements Serializable {
             return typeDefinition;
         }
         typeDefinition = scalars().get(typeName);
-        if (typeDefinition != null) {
-            return typeDefinition;
-        }
-        return null;
+        return typeDefinition;
     }
 
     /**

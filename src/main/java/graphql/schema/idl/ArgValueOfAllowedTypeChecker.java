@@ -122,8 +122,10 @@ class ArgValueOfAllowedTypeChecker {
         }
 
         String allowedTypeName = ((TypeName) allowedArgType).getName();
-        TypeDefinition<?> allowedTypeDefinition = typeRegistry.getType(allowedTypeName)
-                .orElseThrow(() -> new AssertException(format("Directive unknown argument type '%s'. This should have been validated before.", allowedTypeName)));
+        TypeDefinition<?> allowedTypeDefinition = typeRegistry.getTypeOrNull(allowedTypeName);
+        if (allowedTypeDefinition == null) {
+            throw new AssertException(format("Directive unknown argument type '%s'. This should have been validated before.", allowedTypeName));
+        }
 
         if (allowedTypeDefinition instanceof ScalarTypeDefinition) {
             checkArgValueMatchesAllowedScalar(errors, instanceValue, (ScalarTypeDefinition) allowedTypeDefinition);

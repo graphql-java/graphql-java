@@ -51,8 +51,8 @@ class ImmutableTypeDefinitionRegistryTest extends Specification {
 
         then:
 
-        TypeDefinition typeIn = registryIn.getType(typeName).get()
-        TypeDefinition typeOut = registryOut.getType(typeName).get()
+        TypeDefinition typeIn = registryIn.getTypeOrNull(typeName)
+        TypeDefinition typeOut = registryOut.getTypeOrNull(typeName)
         typeIn.isEqualTo(typeOut)
 
         where:
@@ -74,8 +74,8 @@ class ImmutableTypeDefinitionRegistryTest extends Specification {
 
         containsSameObjects(mutableRegistry.types(), immutableRegistry.types())
 
-        TypeDefinition typeIn = mutableRegistry.getType(typeName).get()
-        TypeDefinition typeOut = immutableRegistry.getType(typeName).get()
+        TypeDefinition typeIn = mutableRegistry.getTypeOrNull(typeName)
+        TypeDefinition typeOut = immutableRegistry.getTypeOrNull(typeName)
         typeIn.isEqualTo(typeOut)
 
         where:

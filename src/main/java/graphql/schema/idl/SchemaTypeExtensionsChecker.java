@@ -88,9 +88,10 @@ class SchemaTypeExtensionsChecker {
 
                                 //
                                 // then check for field re-defs from the base type
-                                Optional<ObjectTypeDefinition> baseTypeOpt = typeRegistry.getType(extension.getName(), ObjectTypeDefinition.class);
-                                baseTypeOpt.ifPresent(baseTypeDef -> checkForFieldRedefinition(errors, extension, fieldDefinitions, baseTypeDef.getFieldDefinitions()));
-
+                                ObjectTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), ObjectTypeDefinition.class);
+                                if (baseTypeDef != null) {
+                                    checkForFieldRedefinition(errors, extension, fieldDefinitions, baseTypeDef.getFieldDefinitions());
+                                }
                             });
                         }
                 );
@@ -132,8 +133,10 @@ class SchemaTypeExtensionsChecker {
 
                         //
                         // then check for field re-defs from the base type
-                        Optional<InterfaceTypeDefinition> baseTypeOpt = typeRegistry.getType(extension.getName(), InterfaceTypeDefinition.class);
-                        baseTypeOpt.ifPresent(baseTypeDef -> checkForFieldRedefinition(errors, extension, fieldDefinitions, baseTypeDef.getFieldDefinitions()));
+                        InterfaceTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), InterfaceTypeDefinition.class);
+                        if (baseTypeDef != null) {
+                            checkForFieldRedefinition(errors, extension, fieldDefinitions, baseTypeDef.getFieldDefinitions());
+                        }
                     });
                 });
     }
@@ -161,8 +164,8 @@ class SchemaTypeExtensionsChecker {
 
                         memberTypes.forEach(
                                 memberType -> {
-                                    Optional<ObjectTypeDefinition> unionTypeDefinition = typeRegistry.getType(memberType, ObjectTypeDefinition.class);
-                                    if (!unionTypeDefinition.isPresent()) {
+                                    ObjectTypeDefinition unionTypeDefinition = typeRegistry.getTypeOrNull(memberType, ObjectTypeDefinition.class);
+                                    if (unionTypeDefinition == null) {
                                         errors.add(new MissingTypeError("union member", extension, memberType));
                                     }
                                 }
@@ -197,8 +200,10 @@ class SchemaTypeExtensionsChecker {
 
                         //
                         // then check for field re-defs from the base type
-                        Optional<EnumTypeDefinition> baseTypeOpt = typeRegistry.getType(extension.getName(), EnumTypeDefinition.class);
-                        baseTypeOpt.ifPresent(baseTypeDef -> checkForEnumValueRedefinition(errors, extension, enumValueDefinitions, baseTypeDef.getEnumValueDefinitions()));
+                        EnumTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), EnumTypeDefinition.class);
+                        if (baseTypeDef != null) {
+                            checkForEnumValueRedefinition(errors, extension, enumValueDefinitions, baseTypeDef.getEnumValueDefinitions());
+                        }
 
                     });
 
@@ -251,8 +256,10 @@ class SchemaTypeExtensionsChecker {
 
                         //
                         // then check for field re-defs from the base type
-                        Optional<InputObjectTypeDefinition> baseTypeOpt = typeRegistry.getType(extension.getName(), InputObjectTypeDefinition.class);
-                        baseTypeOpt.ifPresent(baseTypeDef -> checkForInputValueRedefinition(errors, extension, inputValueDefinitions, baseTypeDef.getInputValueDefinitions()));
+                        InputObjectTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), InputObjectTypeDefinition.class);
+                        if (baseTypeDef != null) {
+                            checkForInputValueRedefinition(errors, extension, inputValueDefinitions, baseTypeDef.getInputValueDefinitions());
+                        }
                     });
 
                 });
@@ -260,16 +267,16 @@ class SchemaTypeExtensionsChecker {
 
 
     private void checkTypeExtensionHasCorrespondingType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, String name, List<? extends TypeDefinition> extTypeList, Class<? extends TypeDefinition> targetClass) {
-        TypeDefinition extensionDefinition = extTypeList.get(0);
-        Optional<? extends TypeDefinition> typeDefinition = typeRegistry.getType(TypeName.newTypeName().name(name).build(), targetClass);
-        if (!typeDefinition.isPresent()) {
+        TypeDefinition<?> extensionDefinition = extTypeList.get(0);
+        TypeDefinition<?> typeDefinition = typeRegistry.getTypeOrNull(TypeName.newTypeName().name(name).build(), targetClass);
+        if (typeDefinition == null) {
             errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
         }
     }
 
     @SuppressWarnings("unchecked")
 
-    private void checkForFieldRedefinition(List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fieldDefinitions, List<FieldDefinition> referenceFieldDefinitions) {
+    private void checkForFieldRedefinition(List<GraphQLError> errors, TypeDefinition<?> typeDefinition, List<FieldDefinition> fieldDefinitions, List<FieldDefinition> referenceFieldDefinitions) {
 
         Map<String, FieldDefinition> referenceMap = FpKit.getByName(referenceFieldDefinitions, FieldDefinition::getName, mergeFirst());
 
@@ -290,7 +297,7 @@ class SchemaTypeExtensionsChecker {
         });
     }
 
-    private void checkForEnumValueRedefinition(List<GraphQLError> errors, TypeDefinition typeDefinition, List<EnumValueDefinition> enumValueDefinitions, List<EnumValueDefinition> referenceEnumValueDefinitions) {
+    private void checkForEnumValueRedefinition(List<GraphQLError> errors, TypeDefinition<?> typeDefinition, List<EnumValueDefinition> enumValueDefinitions, List<EnumValueDefinition> referenceEnumValueDefinitions) {
 
         Map<String, EnumValueDefinition> referenceMap = FpKit.getByName(referenceEnumValueDefinitions, EnumValueDefinition::getName, mergeFirst());
 

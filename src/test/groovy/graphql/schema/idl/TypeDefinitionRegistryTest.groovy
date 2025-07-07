@@ -410,7 +410,7 @@ class TypeDefinitionRegistryTest extends Specification {
         if (typeOfReg == "immutable") {
             registry = registry.readOnly()
         }
-        def interfaceDef = registry.getType("Interface", InterfaceTypeDefinition.class).get()
+        def interfaceDef = registry.getTypeOrNull("Interface", InterfaceTypeDefinition.class)
         def implementingTypeDefinitions = registry.getAllImplementationsOf(interfaceDef)
         def names = implementingTypeDefinitions.collect { it.getName() }
         then:
@@ -554,7 +554,7 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(definition)
         then:
-        !registry.getType(definition.getName()).isPresent()
+        registry.getTypeOrNull(definition.getName()) == null
 
         where:
         definition                                                               | _
@@ -947,8 +947,8 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.addAll(Arrays.asList(obj1, obj2))
         then:
-        registry.getType("foo").isPresent()
-        registry.getType("bar").isPresent()
+        registry.getTypeOrNull("foo") != null
+        registry.getTypeOrNull("bar") != null
     }
 
     def "addAll will return an error on the first abd thing"() {
@@ -1001,8 +1001,8 @@ class TypeDefinitionRegistryTest extends Specification {
         TypeDefinitionRegistry registryIn = serialise(registryOut)
 
         then:
-        TypeDefinition typeIn = registryIn.getType(typeName).get()
-        TypeDefinition typeOut = registryOut.getType(typeName).get()
+        TypeDefinition typeIn = registryIn.getTypeOrNull(typeName)
+        TypeDefinition typeOut = registryOut.getTypeOrNull(typeName)
         typeIn.isEqualTo(typeOut)
 
         where:
