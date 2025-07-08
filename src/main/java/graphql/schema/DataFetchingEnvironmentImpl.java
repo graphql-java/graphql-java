@@ -226,10 +226,14 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
-        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
-            return dataLoaderRegistry.getDataLoader(dataLoaderName);
+        DataLoader<K, V> dataLoader = dataLoaderRegistry.getDataLoader(dataLoaderName);
+        if (dataLoader == null) {
+            return null;
         }
-        return new DataLoaderWithContext<>(this, dataLoaderName, dataLoaderRegistry.getDataLoader(dataLoaderName));
+        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+            return dataLoader;
+        }
+        return new DataLoaderWithContext<>(this, dataLoaderName, dataLoader);
     }
 
     @Override
