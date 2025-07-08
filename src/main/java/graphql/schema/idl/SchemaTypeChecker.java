@@ -130,12 +130,8 @@ public class SchemaTypeChecker {
         List<InputObjectTypeDefinition> inputTypes = filterTo(typesMap, InputObjectTypeDefinition.class);
         inputTypes.forEach(inputType -> {
             List<InputValueDefinition> inputValueDefinitions = inputType.getInputValueDefinitions();
-            List<Type> inputValueTypes = inputValueDefinitions.stream()
-                    .map(InputValueDefinition::getType)
-                    .collect(toList());
-
+            List<Type> inputValueTypes = ImmutableKit.map(inputValueDefinitions, InputValueDefinition::getType);
             inputValueTypes.forEach(checkTypeExists("input value", typeRegistry, errors, inputType));
-
         });
     }
 
@@ -149,10 +145,7 @@ public class SchemaTypeChecker {
             checkNamedUniqueness(errors, arguments, InputValueDefinition::getName,
                     (name, arg) -> new NonUniqueNameError(directiveDefinition, arg));
 
-            List<Type> inputValueTypes = arguments.stream()
-                    .map(InputValueDefinition::getType)
-                    .collect(toList());
-
+            List<Type> inputValueTypes = ImmutableKit.map(arguments, InputValueDefinition::getType);
             inputValueTypes.forEach(
                     checkTypeExists(typeRegistry, errors, "directive definition", directiveDefinition, directiveDefinition.getName())
             );
@@ -316,7 +309,7 @@ public class SchemaTypeChecker {
     }
 
     private void checkFieldTypesPresent(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fields) {
-        List<Type> fieldTypes = fields.stream().map(FieldDefinition::getType).collect(toList());
+        List<Type> fieldTypes = ImmutableKit.map(fields, FieldDefinition::getType);
         fieldTypes.forEach(checkTypeExists("field", typeRegistry, errors, typeDefinition));
 
         List<Type> fieldInputValues = fields.stream()
@@ -363,9 +356,7 @@ public class SchemaTypeChecker {
     }
 
     private <T extends TypeDefinition> List<T> filterTo(Map<String, TypeDefinition> types, Class<? extends T> clazz) {
-        return types.values().stream()
-                .filter(t -> clazz.equals(t.getClass()))
-                .map(clazz::cast)
-                .collect(toList());
+        return ImmutableKit.filterAndMap(types.values(), t -> clazz.equals(t.getClass()),
+                clazz::cast);
     }
 }
