@@ -36,7 +36,7 @@ class QueryGeneratorFieldSelection {
         this.schema = schema;
     }
 
-    FieldSelection buildFields(GraphQLFieldsContainer fieldsContainer) {
+    FieldSelectionResult buildFields(GraphQLFieldsContainer fieldsContainer) {
         Queue<List<GraphQLFieldsContainer>> containersQueue = new LinkedList<>();
         containersQueue.add(Collections.singletonList(fieldsContainer));
 
@@ -46,16 +46,21 @@ class QueryGeneratorFieldSelection {
 
         Set<FieldCoordinates> visited = new HashSet<>();
         AtomicInteger totalFieldCount = new AtomicInteger(0);
+        boolean reachedMaxFieldCount = false;
 
-        while (!containersQueue.isEmpty()) {
+        while (!reachedMaxFieldCount &&!containersQueue.isEmpty()) {
             processContainers(containersQueue, fieldSelectionQueue, visited, totalFieldCount);
 
             if (totalFieldCount.get() >= options.getMaxFieldCount()) {
-                break;
+                reachedMaxFieldCount = true;
             }
         }
 
-        return root;
+        return new FieldSelectionResult(
+                root,
+                totalFieldCount.get(),
+                reachedMaxFieldCount
+        );
     }
 
     private void processContainers(Queue<List<GraphQLFieldsContainer>> containersQueue,
@@ -166,16 +171,27 @@ class QueryGeneratorFieldSelection {
                 .anyMatch(arg -> GraphQLTypeUtil.isNonNull(arg.getType()) && !arg.hasSetDefaultValue());
     }
 
-   static class FieldSelection {
-        public final String name;
-        public final boolean needsTypeClassifier;
-        public final Map<String, List<FieldSelection>> fieldsByContainer;
+    static class FieldSelection {
+        final String name;
+        final boolean needsTypeClassifier;
+        final Map<String, List<FieldSelection>> fieldsByContainer;
 
         public FieldSelection(String name, Map<String, List<FieldSelection>> fieldsByContainer, boolean needsTypeClassifier) {
             this.name = name;
             this.needsTypeClassifier = needsTypeClassifier;
             this.fieldsByContainer = fieldsByContainer;
         }
+    }
 
+    static class FieldSelectionResult {
+        final FieldSelection rootFieldSelection;
+        final Integer totalFieldCount;
+        final Boolean reachedMaxFieldCount;
+
+        FieldSelectionResult(FieldSelection rootFieldSelection, Integer totalFieldCount, Boolean reachedMaxFieldCount) {
+            this.rootFieldSelection = rootFieldSelection;
+            this.totalFieldCount = totalFieldCount;
+            this.reachedMaxFieldCount = reachedMaxFieldCount;
+        }
     }
 }

@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.language.NodeUtil.DirectivesHolder;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -31,7 +32,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     private final Operation operation;
     private final ImmutableList<VariableDefinition> variableDefinitions;
-    private final ImmutableList<Directive> directives;
+    private final DirectivesHolder directives;
     private final SelectionSet selectionSet;
 
     public static final String CHILD_VARIABLE_DEFINITIONS = "variableDefinitions";
@@ -52,7 +53,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         this.name = name;
         this.operation = operation;
         this.variableDefinitions = ImmutableList.copyOf(variableDefinitions);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = DirectivesHolder.of(directives);
         this.selectionSet = selectionSet;
     }
 
@@ -69,7 +70,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(variableDefinitions);
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         result.add(selectionSet);
         return result;
     }
@@ -78,7 +79,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
                 .children(CHILD_VARIABLE_DEFINITIONS, variableDefinitions)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .child(CHILD_SELECTION_SET, selectionSet)
                 .build();
     }
@@ -105,7 +106,22 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     }
 
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     @Override
@@ -133,7 +149,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         return new OperationDefinition(name,
                 operation,
                 deepCopy(variableDefinitions),
-                deepCopy(directives),
+                deepCopy(directives.getDirectives()),
                 deepCopy(selectionSet),
                 getSourceLocation(),
                 getComments(),
@@ -234,6 +250,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
             this.directives = ImmutableKit.addToList(directives, directive);
             return this;
         }
+
         public Builder selectionSet(SelectionSet selectionSet) {
             this.selectionSet = selectionSet;
             return this;

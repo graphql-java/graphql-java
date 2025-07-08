@@ -24,6 +24,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;
@@ -379,9 +380,21 @@ public class ExecutionContext {
         return engineRunningState;
     }
 
+    @Internal
+    @Nullable
+    Throwable possibleCancellation(@Nullable Throwable currentThrowable) {
+        return engineRunningState.possibleCancellation(currentThrowable);
+    }
+
 
     @Internal
     public Profiler getProfiler() {
         return profiler;
+    }
+}
+
+    @Internal
+    void throwIfCancelled() throws AbortExecutionException {
+        engineRunningState.throwIfCancelled();
     }
 }

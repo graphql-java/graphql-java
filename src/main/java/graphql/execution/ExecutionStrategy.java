@@ -194,6 +194,8 @@ public abstract class ExecutionStrategy {
     @SuppressWarnings("unchecked")
     @DuckTyped(shape = "CompletableFuture<Map<String, Object>> | Map<String, Object>")
     protected Object executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        executionContext.throwIfCancelled();
+
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
@@ -218,6 +220,8 @@ public abstract class ExecutionStrategy {
         if (fieldValueInfosResult instanceof CompletableFuture) {
             CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
             fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
+                throwable = executionContext.possibleCancellation(throwable);
+
                 if (throwable != null) {
                     handleResultsConsumer.accept(null, throwable);
                     return;
@@ -269,6 +273,8 @@ public abstract class ExecutionStrategy {
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
         return (List<Object> results, Throwable exception) -> {
+            exception = executionContext.possibleCancellation(exception);
+
             if (exception != null) {
                 handleValueException(overallResult, exception, executionContext);
                 return;
@@ -296,6 +302,8 @@ public abstract class ExecutionStrategy {
             ExecutionStrategyParameters parameters,
             DeferredExecutionSupport deferredExecutionSupport
     ) {
+        executionContext.throwIfCancelled();
+
         MergedSelectionSet fields = parameters.getFields();
 
         executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
@@ -305,6 +313,8 @@ public abstract class ExecutionStrategy {
                 .ofExpectedSize(fields.size() - deferredExecutionSupport.deferredFieldsCount());
 
         for (String fieldName : fields.getKeys()) {
+            executionContext.throwIfCancelled();
+
             MergedField currentField = fields.getSubField(fieldName);
 
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
@@ -392,6 +402,7 @@ public abstract class ExecutionStrategy {
 
     @DuckTyped(shape = "CompletableFuture<FetchedValue> | FetchedValue")
     private Object fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        executionContext.throwIfCancelled();
 
         if (incrementAndCheckMaxNodesExceeded(executionContext)) {
             return new FetchedValue(null, Collections.emptyList(), null);
@@ -465,9 +476,10 @@ public abstract class ExecutionStrategy {
             CompletableFuture<CompletableFuture<Object>> handleCF = engineRunningState.handle(fetchedValue, (result, exception) -> {
                 // because we added an artificial CF, we need to unwrap the exception
                 fetchCtx.onCompleted(result, exception);
+                exception = engineRunningState.possibleCancellation(exception);
+
                 if (exception != null) {
-                    CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
-                    return handleFetchingExceptionResult;
+                    return handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
                 } else {
                     // we can simply return the fetched value CF and avoid a allocation
                     return fetchedValue;
@@ -589,6 +601,8 @@ public abstract class ExecutionStrategy {
      *                                          if a nonnull field resolves to a null value
      */
     protected FieldValueInfo completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
+        executionContext.throwIfCancelled();
+
         Field field = parameters.getField().getSingleField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
@@ -785,6 +799,8 @@ public abstract class ExecutionStrategy {
             overallResult.whenComplete(completeListCtx::onCompleted);
 
             resultsFuture.whenComplete((results, exception) -> {
+                exception = executionContext.possibleCancellation(exception);
+
                 if (exception != null) {
                     handleValueException(overallResult, exception, executionContext);
                     return;

@@ -103,6 +103,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -110,10 +111,10 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .executionInput(ei)
                 .locale(Locale.getDefault())
-                .engineRunningState(new EngineRunningState())
                 .profiler(Profiler.NO_OP)
+                .engineRunningState(new EngineRunningState(ei))
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -148,6 +149,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -156,8 +158,8 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .locale(Locale.getDefault())
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
-                .engineRunningState(new EngineRunningState())
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei))
                 .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
@@ -195,6 +197,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -202,8 +205,8 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
-                .engineRunningState(new EngineRunningState())
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei))
                 .locale(Locale.getDefault())
                 .profiler(Profiler.NO_OP)
                 .build()
@@ -241,6 +244,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -249,8 +253,8 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .locale(Locale.getDefault())
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
-                .engineRunningState(new EngineRunningState())
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei))
                 .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
@@ -286,15 +290,16 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .executionInput(ei)
                 .locale(Locale.getDefault())
-                .engineRunningState(new EngineRunningState())
+                .engineRunningState(new EngineRunningState(ei))
                 .profiler(Profiler.NO_OP)
                 .instrumentation(new SimplePerformantInstrumentation() {
 

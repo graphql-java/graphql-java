@@ -22,6 +22,8 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
 
     protected BiConsumer<List<Object>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
         return (List<Object> results, Throwable exception) -> {
+            exception = executionContext.possibleCancellation(exception);
+
             if (exception != null) {
                 handleNonNullException(executionContext, overallResult, exception);
                 return;

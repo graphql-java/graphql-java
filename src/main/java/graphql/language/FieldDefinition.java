@@ -25,7 +25,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     private final String name;
     private final Type type;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;
-    private final ImmutableList<Directive> directives;
+    private final NodeUtil.DirectivesHolder directives;
 
     public static final String CHILD_TYPE = "type";
     public static final String CHILD_INPUT_VALUE_DEFINITION = "inputValueDefinition";
@@ -45,7 +45,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         this.name = name;
         this.type = type;
         this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
-        this.directives = ImmutableList.copyOf(directives);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
     }
 
     public FieldDefinition(String name,
@@ -68,7 +68,22 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
 
     @Override
     public List<Directive> getDirectives() {
-        return directives;
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     @Override
@@ -76,7 +91,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         List<Node> result = new ArrayList<>();
         result.add(type);
         result.addAll(inputValueDefinitions);
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         return result;
     }
 
@@ -85,7 +100,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         return newNodeChildrenContainer()
                 .child(CHILD_TYPE, type)
                 .children(CHILD_INPUT_VALUE_DEFINITION, inputValueDefinitions)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .build();
     }
 
@@ -117,7 +132,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         return new FieldDefinition(name,
                 deepCopy(type),
                 deepCopy(inputValueDefinitions),
-                deepCopy(directives),
+                deepCopy(directives.getDirectives()),
                 description,
                 getSourceLocation(),
                 getComments(),

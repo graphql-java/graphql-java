@@ -483,7 +483,7 @@ public class GraphQL {
         return engineRunningState.engineRun(() -> {
             ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
             profiler.executionInput(executionInputWithId);
-            engineRunningState.updateExecutionId(executionInputWithId.getExecutionId());
+            engineRunningState.updateExecutionInput(executionInputWithId);
 
             CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
             instrumentationStateCF = Async.orNullCompletedFuture(instrumentationStateCF);
