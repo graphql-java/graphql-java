@@ -630,12 +630,10 @@ public abstract class ExecutionStrategy {
                 instrumentationParams, executionContext.getInstrumentationState()
         ));
 
-        Object rawFetchedValue = FetchedValue.getFetchedValue(fetchedValue);
-        Object localContext = FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext());
-
-        ExecutionStrategyParameters newParameters = parameters.transform(executionStepInfo,
-                rawFetchedValue,
-                localContext);
+        ExecutionStrategyParameters newParameters = parameters.transform(
+                executionStepInfo,
+                FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext()),
+                FetchedValue.getFetchedValue(fetchedValue));
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
         ctxCompleteField.onDispatched();
@@ -794,13 +792,11 @@ public abstract class ExecutionStrategy {
 
             Object fetchedValue = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
-            Object rawFetchedValue = FetchedValue.getFetchedValue(fetchedValue);
-            Object localContext = FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext());
-
-            ExecutionStrategyParameters newParameters = parameters.transform(stepInfoForListElement,
+            ExecutionStrategyParameters newParameters = parameters.transform(
+                    stepInfoForListElement,
                     indexedPath,
-                    localContext,
-                    rawFetchedValue);
+                    FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext()),
+                    FetchedValue.getFetchedValue(fetchedValue));
 
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
