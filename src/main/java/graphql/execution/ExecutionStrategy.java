@@ -633,7 +633,8 @@ public abstract class ExecutionStrategy {
         ExecutionStrategyParameters newParameters = parameters.transform(
                 executionStepInfo,
                 FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext()),
-                FetchedValue.getFetchedValue(fetchedValue));
+                FetchedValue.getFetchedValue(fetchedValue)
+        );
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
         ctxCompleteField.onDispatched();
@@ -796,7 +797,8 @@ public abstract class ExecutionStrategy {
                     stepInfoForListElement,
                     indexedPath,
                     FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext()),
-                    FetchedValue.getFetchedValue(fetchedValue));
+                    FetchedValue.getFetchedValue(fetchedValue)
+            );
 
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
