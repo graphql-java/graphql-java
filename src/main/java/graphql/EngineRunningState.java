@@ -30,7 +30,8 @@ public class EngineRunningState {
     private volatile ExecutionInput executionInput;
     private final GraphQLContext graphQLContext;
 
-    @SuppressWarnings("NullAway")
+    // will be null after updateExecutionInput is called
+    @Nullable
     private volatile ExecutionId executionId;
 
     // if true the last decrementRunning() call will be ignored
@@ -171,7 +172,7 @@ public class EngineRunningState {
 
     private void changeOfState(EngineRunningObserver.RunningState runningState) {
         if (engineRunningObserver != null) {
-            engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
+            engineRunningObserver.runningStateChanged(Assert.assertNotNull(executionId), graphQLContext, runningState);
         }
     }
 
