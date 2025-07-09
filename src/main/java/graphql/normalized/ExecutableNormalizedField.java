@@ -50,7 +50,7 @@ import static java.util.stream.Collectors.toSet;
  */
 @PublicApi
 @Mutable
-public class ExecutableNormalizedField {
+public class ExecutableNormalizedField implements GraphQlNormalizedField {
     private final String alias;
     private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
     private final LinkedHashMap<String, Object> resolvedArguments;
@@ -80,62 +80,7 @@ public class ExecutableNormalizedField {
         this.deferredExecutions = builder.deferredExecutions;
     }
 
-    /**
-     * Determines whether this {@link ExecutableNormalizedField} needs a fragment to select the field. However, it considers the parent
-     * output type when determining whether it needs a fragment.
-     * <p>
-     * Consider the following schema
-     *
-     * <pre>
-     * interface Animal {
-     *     name: String
-     *     parent: Animal
-     * }
-     * type Cat implements Animal {
-     *     name: String
-     *     parent: Cat
-     * }
-     * type Dog implements Animal {
-     *     name: String
-     *     parent: Dog
-     *     isGoodBoy: Boolean
-     * }
-     * type Query {
-     *     animal: Animal
-     * }
-     * </pre>
-     * <p>
-     * and the following query
-     *
-     * <pre>
-     * {
-     *     animal {
-     *         parent {
-     *             name
-     *         }
-     *     }
-     * }
-     * </pre>
-     * <p>
-     * Then we would get the following {@link ExecutableNormalizedOperation}
-     *
-     * <pre>
-     * -Query.animal: Animal
-     * --[Cat, Dog].parent: Cat, Dog
-     * ---[Cat, Dog].name: String
-     * </pre>
-     * <p>
-     * If we simply checked the {@link #parent}'s {@link #getFieldDefinitions(GraphQLSchema)} that would
-     * point us to {@code Cat.parent} and {@code Dog.parent} whose output types would incorrectly answer
-     * our question whether this is conditional?
-     * <p>
-     * We MUST consider that the output type of the {@code parent} field is {@code Animal} and
-     * NOT {@code Cat} or {@code Dog} as their respective implementations would say.
-     *
-     * @param schema - the graphql schema in play
-     *
-     * @return true if the field is conditional
-     */
+    @Override
     public boolean isConditional(@NonNull GraphQLSchema schema) {
         if (parent == null) {
             return false;
@@ -176,10 +121,12 @@ public class ExecutableNormalizedField {
         return unwrapAll(parentFieldDef.getType()) != oneObjectType;
     }
 
+    @Override
     public boolean hasChildren() {
         return children.size() > 0;
     }
 
+    @Override
     public GraphQLOutputType getType(GraphQLSchema schema) {
         List<GraphQLFieldDefinition> fieldDefinitions = getFieldDefinitions(schema);
         Set<String> fieldTypes = fieldDefinitions.stream().map(fd -> simplePrint(fd.getType())).collect(toSet());
@@ -204,6 +151,7 @@ public class ExecutableNormalizedField {
         }
     }
 
+    @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLSchema schema) {
         ImmutableList.Builder<GraphQLFieldDefinition> builder = ImmutableList.builder();
         forEachFieldDefinition(schema, builder::add);
@@ -270,16 +218,7 @@ public class ExecutableNormalizedField {
         this.deferredExecutions.addAll(deferredExecutions);
     }
 
-    /**
-     * All merged fields have the same name so this is the name of the {@link ExecutableNormalizedField}.
-     * <p>
-     * WARNING: This is not always the key in the execution result, because of possible field aliases.
-     *
-     * @return the name of this {@link ExecutableNormalizedField}
-     *
-     * @see #getResultKey()
-     * @see #getAlias()
-     */
+    @Override
     public String getName() {
         return getFieldName();
     }
@@ -294,14 +233,7 @@ public class ExecutableNormalizedField {
         return fieldName;
     }
 
-    /**
-     * Returns the result key of this {@link ExecutableNormalizedField} within the overall result.
-     * This is either a field alias or the value of {@link #getName()}
-     *
-     * @return the result key for this {@link ExecutableNormalizedField}.
-     *
-     * @see #getName()
-     */
+    @Override
     public String getResultKey() {
         if (alias != null) {
             return alias;
@@ -309,12 +241,7 @@ public class ExecutableNormalizedField {
         return getName();
     }
 
-    /**
-     * @return the field alias used or null if there is none
-     *
-     * @see #getResultKey()
-     * @see #getName()
-     */
+    @Override
     public String getAlias() {
         return alias;
     }
@@ -344,30 +271,15 @@ public class ExecutableNormalizedField {
         return normalizedArguments;
     }
 
-    /**
-     * @return a map of the resolved argument values
-     */
+    @Override
     public LinkedHashMap<String, Object> getResolvedArguments() {
         return resolvedArguments;
     }
 
-
-    /**
-     * A {@link ExecutableNormalizedField} can sometimes (for non-concrete types like interfaces and unions)
-     * have more than one object type it could be when executed.  There is no way to know what it will be until
-     * the field is executed over data and the type is resolved via a {@link graphql.schema.TypeResolver}.
-     * <p>
-     * This method returns all the possible types a field can be which is one or more {@link GraphQLObjectType}
-     * names.
-     * <p>
-     * Warning: This returns a Mutable Set. No defensive copy is made for performance reasons.
-     *
-     * @return a set of the possible type names this field could be.
-     */
+    @Override
     public Set<String> getObjectTypeNames() {
         return objectTypeNames;
     }
-
 
     /**
      * This returns the first entry in {@link #getObjectTypeNames()}.  Sometimes you know a field cant be more than one
@@ -390,9 +302,7 @@ public class ExecutableNormalizedField {
         return result + objectTypeNamesToString() + "." + fieldName;
     }
 
-    /**
-     * @return a helper method to show the object types names as a string
-     */
+    @Override
     public String objectTypeNamesToString() {
         if (objectTypeNames.size() == 1) {
             return objectTypeNames.iterator().next();
@@ -458,12 +368,7 @@ public class ExecutableNormalizedField {
                 .collect(toList());
     }
 
-    /**
-     * the level of the {@link ExecutableNormalizedField} in the operation hierarchy with top level fields
-     * starting at 1
-     *
-     * @return the level of the {@link ExecutableNormalizedField} in the operation hierarchy
-     */
+    @Override
     public int getLevel() {
         return level;
     }
@@ -473,6 +378,11 @@ public class ExecutableNormalizedField {
      */
     public ExecutableNormalizedField getParent() {
         return parent;
+    }
+
+    @Override
+    public GraphQlNormalizedField getGraphQlNormalizedParent() {
+        return getParent();
     }
 
     /**
@@ -511,6 +421,11 @@ public class ExecutableNormalizedField {
         this.getChildren().forEach(child -> {
             traverseImpl(child, consumer, 1, Integer.MAX_VALUE);
         });
+    }
+
+    @Override
+    public List<GraphQlNormalizedField> getGraphQlNormalizedChildren() {
+        return ImmutableKit.map(getChildren(), child -> child);
     }
 
     private void traverseImpl(ExecutableNormalizedField root,

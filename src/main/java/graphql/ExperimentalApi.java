@@ -24,4 +24,9 @@ public @interface ExperimentalApi {
      * The key that should be associated with a boolean value which indicates whether @defer and @stream behaviour is enabled for this execution.
      */
     String ENABLE_INCREMENTAL_SUPPORT  = "ENABLE_INCREMENTAL_SUPPORT";
+
+    /**
+     * The key that should be associated with a boolean value which indicates whether normalized document behaviour is enabled for this execution.
+     */
+    String ENABLE_NORMALIZED_DOCUMENT_SUPPORT  = "ENABLE_NORMALIZED_DOCUMENT_SUPPORT";
 }

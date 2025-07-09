@@ -19,6 +19,10 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.normalized.ExecutableNormalizedOperationFactory;
+import graphql.normalized.GraphQlNormalizedOperation;
+import graphql.normalized.nf.NormalizedDocument;
+import graphql.normalized.nf.NormalizedDocumentFactory;
+import graphql.normalized.nf.NormalizedOperation;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
@@ -65,7 +69,7 @@ public class ExecutionContext {
     private final ResponseMapFactory responseMapFactory;
 
     private final ExecutionInput executionInput;
-    private final Supplier<ExecutableNormalizedOperation> queryTree;
+    private final Supplier<GraphQlNormalizedOperation> queryTree;
     private final boolean propagateErrorsOnNonNullContractFailure;
 
     private final AtomicInteger isRunning = new AtomicInteger(0);
@@ -100,7 +104,7 @@ public class ExecutionContext {
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
-        this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
+        this.queryTree = FpKit.interThreadMemoize(this::createGraphQLNormalizedOperation);
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
     }
@@ -336,7 +340,7 @@ public class ExecutionContext {
         }
     }
 
-    public Supplier<ExecutableNormalizedOperation> getNormalizedQueryTree() {
+    public Supplier<GraphQlNormalizedOperation> getNormalizedQueryTree() {
         return queryTree;
     }
 
@@ -368,10 +372,58 @@ public class ExecutionContext {
         return resultNodesInfo;
     }
 
+    private GraphQlNormalizedOperation createGraphQLNormalizedOperation() {
+        // Check for experimental support for normalized documents
+        if (hasNormalizedDocumentSupport()) {
+            return createNormalizedOperation();
+        }
+
+        return createExecutableNormalizedOperation();
+    }
+
+    @ExperimentalApi
+    private NormalizedOperation createNormalizedOperation() {
+        var normalizedDocument = NormalizedDocumentFactory.createNormalizedDocument(graphQLSchema, document);
+
+        // Search the document for the operation that matches the operationDefinition name,
+        // if no match then it could be anonymous query, then fallback to the first operation.
+        var normalizedOperations = normalizedDocument.getNormalizedOperations();
+        var normalizedOperation = normalizedOperations.stream()
+                .filter(this::isExecutingOperation)
+                .findAny()
+                .map(NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables::getNormalizedOperation)
+                .orElseGet(normalizedDocument::getSingleNormalizedOperation);
+
+        return normalizedOperation;
+    }
+
+    private ExecutableNormalizedOperation createExecutableNormalizedOperation() {
+        var executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables);
+
+        return executableNormalizedOperation;
+    }
+
+    private boolean isExecutingOperation(NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables op) {
+        var operation = op.getNormalizedOperation();
+        var operationName = operation.getOperationName();
+        var operationDefinitionName = operationDefinition.getName();
+        if (operationName == null || operationDefinitionName == null) {
+            return false;
+        }
+
+        return operationName.equals(operationDefinitionName);
+    }
+
     @Internal
     public boolean hasIncrementalSupport() {
         GraphQLContext graphqlContext = getGraphQLContext();
         return graphqlContext != null && graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
+    }
+
+    @Internal
+    private boolean hasNormalizedDocumentSupport() {
+        GraphQLContext graphqlContext = getGraphQLContext();
+        return graphqlContext != null && graphqlContext.getBoolean(ExperimentalApi.ENABLE_NORMALIZED_DOCUMENT_SUPPORT);
     }
 
     @Internal

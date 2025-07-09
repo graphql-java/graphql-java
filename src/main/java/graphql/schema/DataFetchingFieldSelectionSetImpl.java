@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
-import graphql.normalized.ExecutableNormalizedField;
+import graphql.normalized.GraphQlNormalizedField;
 import graphql.util.LockKit;
 
 import java.io.File;
@@ -79,7 +79,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
     };
 
-    public static DataFetchingFieldSelectionSet newCollector(GraphQLSchema schema, GraphQLOutputType fieldType, Supplier<ExecutableNormalizedField> normalizedFieldSupplier) {
+    public static DataFetchingFieldSelectionSet newCollector(GraphQLSchema schema, GraphQLOutputType fieldType, Supplier<GraphQlNormalizedField> normalizedFieldSupplier) {
         if (!GraphQLTypeUtil.isLeaf(fieldType)) {
             return new DataFetchingFieldSelectionSetImpl(normalizedFieldSupplier, schema);
         } else {
@@ -88,7 +88,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
     }
 
-    private final Supplier<ExecutableNormalizedField> normalizedFieldSupplier;
+    private final Supplier<GraphQlNormalizedField> normalizedFieldSupplier;
 
     private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
     private volatile boolean computedValues;
@@ -102,7 +102,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     private Set<String> flattenedFieldsForGlobSearching;
     private final GraphQLSchema schema;
 
-    private DataFetchingFieldSelectionSetImpl(Supplier<ExecutableNormalizedField> normalizedFieldSupplier, GraphQLSchema schema) {
+    private DataFetchingFieldSelectionSetImpl(Supplier<GraphQlNormalizedField> normalizedFieldSupplier, GraphQLSchema schema) {
         this.schema = schema;
         this.normalizedFieldSupplier = normalizedFieldSupplier;
     }
@@ -219,7 +219,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         // this supplier is a once only thread synced call - so do it outside this lock
         // if only to have only 1 lock in action at a time
-        ExecutableNormalizedField currentNormalisedField = normalizedFieldSupplier.get();
+        GraphQlNormalizedField currentNormalisedField = normalizedFieldSupplier.get();
 
         lock.runLocked(() -> {
             if (computedValues) {
@@ -240,9 +240,9 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         });
     }
 
-    private void traverseSubSelectedFields(ExecutableNormalizedField currentNormalisedField, ImmutableList.Builder<SelectedField> immediateFieldsBuilder, String qualifiedFieldPrefix, String simpleFieldPrefix, boolean firstLevel, boolean immediate) {
-        List<ExecutableNormalizedField> children = currentNormalisedField.getChildren();
-        for (ExecutableNormalizedField normalizedSubSelectedField : children) {
+    private void traverseSubSelectedFields(GraphQlNormalizedField currentNormalisedField, ImmutableList.Builder<SelectedField> immediateFieldsBuilder, String qualifiedFieldPrefix, String simpleFieldPrefix, boolean firstLevel, boolean immediate) {
+        List<GraphQlNormalizedField> children = currentNormalisedField.getGraphQlNormalizedChildren();
+        for (GraphQlNormalizedField normalizedSubSelectedField : children) {
             String typeQualifiedName = mkTypeQualifiedName(normalizedSubSelectedField);
             String simpleName = normalizedSubSelectedField.getName();
 
@@ -274,7 +274,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         return fieldGlobPattern;
     }
 
-    private static String mkTypeQualifiedName(ExecutableNormalizedField executableNormalizedField) {
+    private static String mkTypeQualifiedName(GraphQlNormalizedField executableNormalizedField) {
         return executableNormalizedField.objectTypeNamesToString() + "." + executableNormalizedField.getName();
     }
 
@@ -306,10 +306,10 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         private final String qualifiedName;
         private final String fullyQualifiedName;
         private final DataFetchingFieldSelectionSet selectionSet;
-        private final ExecutableNormalizedField executableNormalizedField;
+        private final GraphQlNormalizedField executableNormalizedField;
         private final GraphQLSchema schema;
 
-        private SelectedFieldImpl(String simpleQualifiedName, String fullyQualifiedName, ExecutableNormalizedField executableNormalizedField, GraphQLSchema schema) {
+        private SelectedFieldImpl(String simpleQualifiedName, String fullyQualifiedName, GraphQlNormalizedField executableNormalizedField, GraphQLSchema schema) {
             this.schema = schema;
             this.qualifiedName = simpleQualifiedName;
             this.fullyQualifiedName = fullyQualifiedName;
@@ -317,11 +317,11 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             this.selectionSet = new DataFetchingFieldSelectionSetImpl(() -> executableNormalizedField, schema);
         }
 
-        private SelectedField mkParent(ExecutableNormalizedField executableNormalizedField) {
+        private SelectedField mkParent(GraphQlNormalizedField executableNormalizedField) {
             String parentSimpleQualifiedName = beforeLastSlash(qualifiedName);
             String parentFullyQualifiedName = beforeLastSlash(fullyQualifiedName);
-            return executableNormalizedField.getParent() == null ? null :
-                    new SelectedFieldImpl(parentSimpleQualifiedName, parentFullyQualifiedName, executableNormalizedField.getParent(), schema);
+            return executableNormalizedField.getGraphQlNormalizedParent() == null ? null :
+                    new SelectedFieldImpl(parentSimpleQualifiedName, parentFullyQualifiedName, executableNormalizedField.getGraphQlNormalizedParent(), schema);
         }
 
         private String beforeLastSlash(String name) {

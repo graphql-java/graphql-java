@@ -8,6 +8,7 @@ import graphql.collect.ImmutableKit;
 import graphql.language.NodeUtil.DirectivesHolder;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -93,7 +94,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         );
     }
 
-    public String getName() {
+    public @Nullable String getName() {
         return name;
     }
 

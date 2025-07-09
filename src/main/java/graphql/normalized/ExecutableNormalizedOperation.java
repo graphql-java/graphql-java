@@ -8,6 +8,7 @@ import graphql.execution.ResultPath;
 import graphql.execution.directives.QueryDirectives;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
+import graphql.normalized.nf.NormalizedOperation;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldsContainer;
 
@@ -23,7 +24,7 @@ import java.util.Map;
  * An operation consists of a list of {@link ExecutableNormalizedField}s in a parent child hierarchy
  */
 @PublicApi
-public class ExecutableNormalizedOperation {
+public class ExecutableNormalizedOperation implements GraphQlNormalizedOperation {
     private final OperationDefinition.Operation operation;
     private final String operationName;
     private final List<ExecutableNormalizedField> topLevelFields;
@@ -176,5 +177,10 @@ public class ExecutableNormalizedOperation {
             }
         }
         return Assert.assertShouldNeverHappen("normalized field not found");
+    }
+
+    @Override
+    public GraphQlNormalizedField getGraphQlNormalizedField(MergedField mergedField, GraphQLFieldsContainer fieldsContainer, ResultPath resultPath) {
+        return getNormalizedField(mergedField, fieldsContainer, resultPath);
     }
 }
