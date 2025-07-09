@@ -29,6 +29,8 @@ public class EngineRunningState {
     private final EngineRunningObserver engineRunningObserver;
     private volatile ExecutionInput executionInput;
     private final GraphQLContext graphQLContext;
+
+    @SuppressWarnings("NullAway")
     private volatile ExecutionId executionId;
 
     // if true the last decrementRunning() call will be ignored
@@ -164,7 +166,7 @@ public class EngineRunningState {
 
     public void updateExecutionInput(ExecutionInput executionInput) {
         this.executionInput = executionInput;
-        this.executionId = executionInput.getExecutionId();
+        this.executionId = executionInput.getExecutionIdNonNull();
     }
 
     private void changeOfState(EngineRunningObserver.RunningState runningState) {
