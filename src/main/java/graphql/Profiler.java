@@ -30,7 +30,7 @@ public interface Profiler {
 
     }
 
-    default @Nullable EngineRunningObserver wrapEngineRunningObserver(EngineRunningObserver engineRunningObserver) {
+    default @Nullable EngineRunningObserver wrapEngineRunningObserver(@Nullable EngineRunningObserver engineRunningObserver) {
         return engineRunningObserver;
     }
 

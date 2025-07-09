@@ -66,7 +66,7 @@ public class ProfilerImpl implements Profiler {
     }
 
     @Override
-    public EngineRunningObserver wrapEngineRunningObserver(EngineRunningObserver engineRunningObserver) {
+    public EngineRunningObserver wrapEngineRunningObserver(@Nullable EngineRunningObserver engineRunningObserver) {
         // nothing to wrap here
         return new EngineRunningObserver() {
             @Override

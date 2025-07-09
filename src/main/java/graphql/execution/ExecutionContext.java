@@ -391,7 +391,6 @@ public class ExecutionContext {
     public Profiler getProfiler() {
         return profiler;
     }
-}
 
     @Internal
     void throwIfCancelled() throws AbortExecutionException {

@@ -36,32 +36,14 @@ public class EngineRunningState {
 
     private final AtomicInteger isRunning = new AtomicInteger(0);
 
-    @VisibleForTesting
-    public EngineRunningState() {
-        this.engineRunningObserver = null;
-        this.graphQLContext = null;
-        this.executionId = null;
-    }
-
-    public EngineRunningState(ExecutionInput executionInput) {
-        this.executionInput = executionInput;
-        this.graphQLContext = executionInput.getGraphQLContext();
-        this.executionId = executionInput.getExecutionId();
-        this.engineRunningObserver = executionInput.getGraphQLContext().get(EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY);
-    }
 
     public EngineRunningState(ExecutionInput executionInput, Profiler profiler) {
         EngineRunningObserver engineRunningObserver = executionInput.getGraphQLContext().get(EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY);
         EngineRunningObserver wrappedObserver = profiler.wrapEngineRunningObserver(engineRunningObserver);
-        if (wrappedObserver != null) {
-            this.engineRunningObserver = wrappedObserver;
-            this.graphQLContext = executionInput.getGraphQLContext();
-            this.executionId = executionInput.getExecutionId();
-        } else {
-            this.engineRunningObserver = null;
-            this.graphQLContext = null;
-            this.executionId = null;
-        }
+        this.engineRunningObserver = wrappedObserver;
+        this.executionInput = executionInput;
+        this.graphQLContext = executionInput.getGraphQLContext();
+        this.executionId = executionInput.getExecutionId();
     }
 
 

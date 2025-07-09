@@ -113,7 +113,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .profiler(Profiler.NO_OP)
                 .executionInput(ei)
-                .engineRunningState(new EngineRunningState(ei))
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -163,7 +163,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
                 .executionInput(ei)
-                .engineRunningState(new EngineRunningState(ei))
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .profiler(Profiler.NO_OP)
                 .build()

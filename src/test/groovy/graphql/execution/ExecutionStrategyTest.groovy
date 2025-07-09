@@ -88,7 +88,7 @@ class ExecutionStrategyTest extends Specification {
                 .locale(Locale.getDefault())
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .profiler(Profiler.NO_OP)
-                .engineRunningState(new EngineRunningState(ei))
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
 
         new ExecutionContext(builder)
     }
