@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.execution.instrumentation.parameters.*;
 import graphql.language.Document;
 import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.normalized.ParsedNormalizedOperation;
 import graphql.validation.ValidationError;
 import org.jspecify.annotations.Nullable;
 
@@ -79,8 +80,8 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
     }
 
     @Override
-    public @Nullable InstrumentationContext<ExecutableNormalizedOperation> beginParseExecutableNormalizedOperation(InstrumentationParseExecutableNormalizedOperation parameters, InstrumentationState state) {
-        return runAll(state, (instrumentation, specificState) -> instrumentation.beginParseExecutableNormalizedOperation(parameters, specificState));
+    public @Nullable InstrumentationContext<ParsedNormalizedOperation> beginParsedNormalizedOperation(InstrumentationParsedNormalizedOperation parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginParsedNormalizedOperation(parameters, specificState));
     }
 
     @Override

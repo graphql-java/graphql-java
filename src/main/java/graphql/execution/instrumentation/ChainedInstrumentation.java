@@ -10,7 +10,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.instrumentation.parameters.*;
 import graphql.language.Document;
-import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.normalized.ParsedNormalizedOperation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -121,9 +121,9 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutableNormalizedOperation> beginParseExecutableNormalizedOperation(InstrumentationParseExecutableNormalizedOperation parameters, InstrumentationState state) {
+    public InstrumentationContext<ParsedNormalizedOperation> beginParsedNormalizedOperation(InstrumentationParsedNormalizedOperation parameters, InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) ->
-            instrumentation.beginParseExecutableNormalizedOperation(parameters, specificState));
+            instrumentation.beginParsedNormalizedOperation(parameters, specificState));
     }
 
 
