@@ -13,7 +13,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldParamete
 import graphql.execution.instrumentation.parameters.InstrumentationCreateNormalizedOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
 import graphql.language.Document
-import graphql.normalized.ParsedNormalizedOperation
+import graphql.normalized.GraphQlNormalizedOperation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLSchema
@@ -76,7 +76,7 @@ class ModernTestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    InstrumentationContext<ParsedNormalizedOperation> beginCreateNormalizedOperation(InstrumentationCreateNormalizedOperationParameters parameters, InstrumentationState state) {
+    InstrumentationContext<GraphQlNormalizedOperation> beginCreateNormalizedOperation(InstrumentationCreateNormalizedOperationParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         return new TestingInstrumentContext("create-normalized-operation", executionList, throwableList, useOnDispatch)
     }
