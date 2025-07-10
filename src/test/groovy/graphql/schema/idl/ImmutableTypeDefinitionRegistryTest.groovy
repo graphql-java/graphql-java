@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.language.InterfaceTypeDefinition
 import graphql.language.TypeDefinition
 import spock.lang.Specification
 
@@ -50,8 +51,8 @@ class ImmutableTypeDefinitionRegistryTest extends Specification {
 
         then:
 
-        TypeDefinition typeIn = registryIn.getType(typeName).get()
-        TypeDefinition typeOut = registryOut.getType(typeName).get()
+        TypeDefinition typeIn = registryIn.getTypeOrNull(typeName)
+        TypeDefinition typeOut = registryOut.getTypeOrNull(typeName)
         typeIn.isEqualTo(typeOut)
 
         where:
@@ -73,8 +74,8 @@ class ImmutableTypeDefinitionRegistryTest extends Specification {
 
         containsSameObjects(mutableRegistry.types(), immutableRegistry.types())
 
-        TypeDefinition typeIn = mutableRegistry.getType(typeName).get()
-        TypeDefinition typeOut = immutableRegistry.getType(typeName).get()
+        TypeDefinition typeIn = mutableRegistry.getTypeOrNull(typeName)
+        TypeDefinition typeOut = immutableRegistry.getTypeOrNull(typeName)
         typeIn.isEqualTo(typeOut)
 
         where:
@@ -169,6 +170,64 @@ class ImmutableTypeDefinitionRegistryTest extends Specification {
         immutableRegistry.remove("key", someDef)
         then:
         thrown(UnsupportedOperationException)
+    }
+
+    def "get implementations of"() {
+        def sdl = serializableSchema + """
+            interface IType {
+                i : String
+            }
+            
+            interface DerivedIType implements IType {
+                i : String
+                d : String                
+            } 
+            
+        """
+        for (int i = 0; i < 10; i++) {
+            sdl += """
+                type OT$i implements IType {
+                    i : String
+                }
+                """
+
+        }
+        for (int i = 0; i < 5; i++) {
+            sdl += """
+            type DT$i implements DerivedIType {
+                i : String
+                d : String                
+            } 
+                """
+
+        }
+        def immutableRegistry = new SchemaParser().parse(sdl).readOnly()
+
+        Map<String, InterfaceTypeDefinition> interfaces = immutableRegistry.getTypesMap(InterfaceTypeDefinition.class)
+
+        when:
+        def iFieldType = interfaces.get("IType")
+        def allImplementationsOf = immutableRegistry.getAllImplementationsOf(iFieldType)
+        def implementationsOf = immutableRegistry.getImplementationsOf(iFieldType)
+
+        then:
+        allImplementationsOf.size() == 11
+        allImplementationsOf.collect({ it.getName() }).every { it.startsWith("OT") || it == "DerivedIType" }
+
+        implementationsOf.size() == 10
+        implementationsOf.collect({ it.getName() }).every { it.startsWith("OT") }
+
+        when:
+        def iDerivedType = interfaces.get("DerivedIType")
+        allImplementationsOf = immutableRegistry.getAllImplementationsOf(iDerivedType)
+        implementationsOf = immutableRegistry.getImplementationsOf(iDerivedType)
+
+        then:
+        allImplementationsOf.size() == 5
+        allImplementationsOf.collect({ it.getName() }).every { it.startsWith("DT") }
+
+        implementationsOf.size() == 5
+        implementationsOf.collect({ it.getName() }).every { it.startsWith("DT") }
 
     }
 

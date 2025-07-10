@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
@@ -73,7 +73,7 @@ class ImplementingTypesChecker {
     private void checkImplementingType(
             List<GraphQLError> errors,
             TypeDefinitionRegistry typeRegistry,
-            ImplementingTypeDefinition type) {
+            ImplementingTypeDefinition<?> type) {
 
         Map<InterfaceTypeDefinition, ImplementingTypeDefinition> implementedInterfaces =
                 checkInterfacesNotImplementedMoreThanOnce(errors, type, typeRegistry);
@@ -172,7 +172,7 @@ class ImplementingTypesChecker {
 
     private void checkArgumentConsistency(
             String typeOfType,
-            ImplementingTypeDefinition objectTypeDef,
+            ImplementingTypeDefinition<?> objectTypeDef,
             InterfaceTypeDefinition interfaceTypeDef,
             FieldDefinition objectFieldDef,
             FieldDefinition interfaceFieldDef,
@@ -211,7 +211,7 @@ class ImplementingTypesChecker {
     }
 
     private Map<InterfaceTypeDefinition, List<ImplementingTypeDefinition>> getLogicallyImplementedInterfaces(
-            ImplementingTypeDefinition type,
+            ImplementingTypeDefinition<?> type,
             TypeDefinitionRegistry typeRegistry
     ) {
 
@@ -255,18 +255,17 @@ class ImplementingTypesChecker {
         return (v1, v2) -> v1;
     }
 
-    private Optional<InterfaceTypeDefinition> toInterfaceTypeDefinition(Type type, TypeDefinitionRegistry typeRegistry) {
+    private InterfaceTypeDefinition toInterfaceTypeDefinition(Type<?> type, TypeDefinitionRegistry typeRegistry) {
         TypeInfo typeInfo = TypeInfo.typeInfo(type);
         TypeName unwrapped = typeInfo.getTypeName();
 
-        return typeRegistry.getType(unwrapped, InterfaceTypeDefinition.class);
+        return typeRegistry.getTypeOrNull(unwrapped, InterfaceTypeDefinition.class);
     }
 
     private Set<InterfaceTypeDefinition> toInterfaceTypeDefinitions(TypeDefinitionRegistry typeRegistry, Collection<Type> implementsTypes) {
         return implementsTypes.stream()
                 .map(t -> toInterfaceTypeDefinition(t, typeRegistry))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .filter(Objects::nonNull)
                 .collect(toSet());
     }
 }

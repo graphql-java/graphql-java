@@ -141,11 +141,12 @@ public class SchemaGeneratorHelper {
         }
 
         TypeDefinition<?> getTypeDefinition(Type<?> type) {
-            Optional<TypeDefinition> optionalTypeDefinition = typeRegistry.getType(type);
-
-            return optionalTypeDefinition.orElseThrow(
-                    () -> new AssertException(format(" type definition for type '%s' not found", type))
-            );
+            TypeDefinition<?> typeDefinition = typeRegistry.getTypeOrNull(type);
+            if (typeDefinition != null) {
+                return typeDefinition;
+            } else {
+                throw new AssertException(format(" type definition for type '%s' not found", type));
+            }
         }
 
         boolean stackContains(TypeInfo typeInfo) {
@@ -905,9 +906,8 @@ public class SchemaGeneratorHelper {
         GraphQLObjectType subscription;
 
         Optional<OperationTypeDefinition> queryOperation = getOperationNamed("query", operationTypeDefs);
-        if (!queryOperation.isPresent()) {
-            @SuppressWarnings({"OptionalGetWithoutIsPresent"})
-            TypeDefinition<?> queryTypeDef = typeRegistry.getType("Query").get();
+        if (queryOperation.isEmpty()) {
+            TypeDefinition<?> queryTypeDef = Objects.requireNonNull(typeRegistry.getTypeOrNull("Query"));
             query = buildOutputType(buildCtx, TypeName.newTypeName().name(queryTypeDef.getName()).build());
         } else {
             query = buildOperation(buildCtx, queryOperation.get());
@@ -915,12 +915,12 @@ public class SchemaGeneratorHelper {
         schemaBuilder.query(query);
 
         Optional<OperationTypeDefinition> mutationOperation = getOperationNamed("mutation", operationTypeDefs);
-        if (!mutationOperation.isPresent()) {
-            if (!typeRegistry.schemaDefinition().isPresent()) {
+        if (mutationOperation.isEmpty()) {
+            if (typeRegistry.schemaDefinition().isEmpty()) {
                 // If no schema definition, then there is no schema keyword. Default to using type called Mutation
-                Optional<TypeDefinition> mutationTypeDef = typeRegistry.getType("Mutation");
-                if (mutationTypeDef.isPresent()) {
-                    mutation = buildOutputType(buildCtx, TypeName.newTypeName().name(mutationTypeDef.get().getName()).build());
+                TypeDefinition<?> mutationTypeDef = typeRegistry.getTypeOrNull("Mutation");
+                if (mutationTypeDef != null) {
+                    mutation = buildOutputType(buildCtx, TypeName.newTypeName().name(mutationTypeDef.getName()).build());
                     schemaBuilder.mutation(mutation);
                 }
             }
@@ -930,12 +930,12 @@ public class SchemaGeneratorHelper {
         }
 
         Optional<OperationTypeDefinition> subscriptionOperation = getOperationNamed("subscription", operationTypeDefs);
-        if (!subscriptionOperation.isPresent()) {
-            if (!typeRegistry.schemaDefinition().isPresent()) {
+        if (subscriptionOperation.isEmpty()) {
+            if (typeRegistry.schemaDefinition().isEmpty()) {
                 // If no schema definition, then there is no schema keyword. Default to using type called Subscription
-                Optional<TypeDefinition> subscriptionTypeDef = typeRegistry.getType("Subscription");
-                if (subscriptionTypeDef.isPresent()) {
-                    subscription = buildOutputType(buildCtx, TypeName.newTypeName().name(subscriptionTypeDef.get().getName()).build());
+                TypeDefinition<?> subscriptionTypeDef = typeRegistry.getTypeOrNull("Subscription");
+                if (subscriptionTypeDef != null) {
+                    subscription = buildOutputType(buildCtx, TypeName.newTypeName().name(subscriptionTypeDef.getName()).build());
                     schemaBuilder.subscription(subscription);
                 }
             }
