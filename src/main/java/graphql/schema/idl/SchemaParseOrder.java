@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import com.google.common.collect.ImmutableMap;
+import graphql.collect.ImmutableKit;
 import graphql.language.SDLDefinition;
 import graphql.language.SDLNamedDefinition;
 import graphql.language.SourceLocation;
@@ -21,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
 import static java.util.Optional.ofNullable;
 
@@ -53,10 +53,9 @@ public class SchemaParseOrder implements Serializable {
     public Map<String, List<SDLNamedDefinition<?>>> getInNameOrder() {
         Map<String, List<SDLNamedDefinition<?>>> named = new LinkedHashMap<>();
         definitionOrder.forEach((location, def) -> {
-            List<SDLNamedDefinition<?>> namedDefs = def.stream()
-                    .filter(d -> d instanceof SDLNamedDefinition)
-                    .map(d -> (SDLNamedDefinition<?>) d)
-                    .collect(Collectors.toList());
+            List<SDLNamedDefinition<?>> namedDefs = ImmutableKit.filterAndMap(def,
+                    d -> d instanceof SDLNamedDefinition,
+                    d -> (SDLNamedDefinition<?>) d);
             named.put(location, namedDefs);
         });
         return named;

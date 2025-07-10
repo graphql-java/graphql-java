@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -34,7 +35,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
@@ -149,11 +149,8 @@ class SchemaTypeDirectivesChecker {
     }
 
     private boolean inRightLocation(DirectiveLocation expectedLocation, DirectiveDefinition directiveDefinition) {
-        List<String> names = directiveDefinition.getDirectiveLocations()
-                .stream().map(graphql.language.DirectiveLocation::getName)
-                .map(String::toUpperCase)
-                .collect(Collectors.toList());
-
+        List<String> names = ImmutableKit.map(directiveDefinition.getDirectiveLocations(),
+                it -> it.getName().toUpperCase());
         return names.contains(expectedLocation.name().toUpperCase());
     }
 
