@@ -78,7 +78,7 @@ class ModernTestingInstrumentation implements Instrumentation {
     @Override
     InstrumentationContext<ParsedNormalizedOperation> beginCreateNormalizedOperation(InstrumentationCreateNormalizedOperationParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
-        return new TestingInstrumentContext("parsed-normalized-operation", executionList, throwableList, useOnDispatch)
+        return new TestingInstrumentContext("create-normalized-operation", executionList, throwableList, useOnDispatch)
     }
 
     @Override
