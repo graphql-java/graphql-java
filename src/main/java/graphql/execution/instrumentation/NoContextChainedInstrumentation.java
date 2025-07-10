@@ -8,7 +8,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationParsedNormalizedOperationParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateNormalizedOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.normalized.ParsedNormalizedOperation;
@@ -86,8 +86,8 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
     }
 
     @Override
-    public @Nullable InstrumentationContext<ParsedNormalizedOperation> beginParsedNormalizedOperation(InstrumentationParsedNormalizedOperationParameters parameters, InstrumentationState state) {
-        return runAll(state, (instrumentation, specificState) -> instrumentation.beginParsedNormalizedOperation(parameters, specificState));
+    public @Nullable InstrumentationContext<ParsedNormalizedOperation> beginCreateNormalizedOperation(InstrumentationCreateNormalizedOperationParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginCreateNormalizedOperation(parameters, specificState));
     }
 
     @Override
