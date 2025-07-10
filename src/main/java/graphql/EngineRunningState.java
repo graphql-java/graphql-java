@@ -172,7 +172,7 @@ public class EngineRunningState {
 
     private void changeOfState(EngineRunningObserver.RunningState runningState) {
         if (engineRunningObserver != null) {
-            engineRunningObserver.runningStateChanged(Assert.assertNotNull(executionId), graphQLContext, runningState);
+            engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
         }
     }
 
