@@ -10,8 +10,8 @@ import graphql.schema.GraphQLSchema;
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
-public class InstrumentationParsedNormalizedOperation extends InstrumentationExecutionParameters {
-    public InstrumentationParsedNormalizedOperation(ExecutionInput executionInput, GraphQLSchema schema) {
+public class InstrumentationParsedNormalizedOperationParameters extends InstrumentationExecutionParameters {
+    public InstrumentationParsedNormalizedOperationParameters(ExecutionInput executionInput, GraphQLSchema schema) {
         super(executionInput, schema);
     }
 }

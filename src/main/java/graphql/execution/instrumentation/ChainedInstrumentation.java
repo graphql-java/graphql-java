@@ -121,7 +121,7 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ParsedNormalizedOperation> beginParsedNormalizedOperation(InstrumentationParsedNormalizedOperation parameters, InstrumentationState state) {
+    public InstrumentationContext<ParsedNormalizedOperation> beginParsedNormalizedOperation(InstrumentationParsedNormalizedOperationParameters parameters, InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) ->
             instrumentation.beginParsedNormalizedOperation(parameters, specificState));
     }

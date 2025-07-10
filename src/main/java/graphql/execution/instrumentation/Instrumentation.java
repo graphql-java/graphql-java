@@ -12,7 +12,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationParsedNormalizedOperation;
+import graphql.execution.instrumentation.parameters.InstrumentationParsedNormalizedOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.normalized.ParsedNormalizedOperation;
@@ -130,7 +130,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<ParsedNormalizedOperation> beginParsedNormalizedOperation(InstrumentationParsedNormalizedOperation parameters, InstrumentationState state) {
+    default InstrumentationContext<ParsedNormalizedOperation> beginParsedNormalizedOperation(InstrumentationParsedNormalizedOperationParameters parameters, InstrumentationState state) {
         return noOp();
     }
 
