@@ -30,6 +30,7 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         CompletableFuture<V> result = super.load(key, keyContext);
         DataFetchingEnvironmentImpl dfeImpl = (DataFetchingEnvironmentImpl) dfe;
         DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfeImpl.toInternal();
+        dfeInternalState.getProfiler().dataLoaderUsed(dataLoaderName);
         if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof PerLevelDataLoaderDispatchStrategy) {
             AlternativeCallContext alternativeCallContext = dfeInternalState.getDeferredCallContext();
             int level = dfe.getExecutionStepInfo().getPath().getLevel();

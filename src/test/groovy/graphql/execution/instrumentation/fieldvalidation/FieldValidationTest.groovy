@@ -5,12 +5,12 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.GraphQLError
+import graphql.Profiler
 import graphql.TestUtil
 import graphql.execution.AbortExecutionException
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.Execution
 import graphql.execution.ExecutionId
-import graphql.execution.ResponseMapFactory
 import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
@@ -310,7 +310,7 @@ class FieldValidationTest extends Specification {
         def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT, false)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, null, new EngineRunningState(executionInput))
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, null, new EngineRunningState(executionInput, Profiler.NO_OP), Profiler.NO_OP)
     }
 
     def "test graphql from end to end with chained instrumentation"() {

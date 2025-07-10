@@ -3,6 +3,7 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
@@ -47,6 +48,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             = new InterThreadMemoizedSupplier<>(() -> Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors()));
 
     static final long DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000L;
+    private final Profiler profiler;
 
     private final Map<AlternativeCallContext, CallStack> deferredCallStackMap = new ConcurrentHashMap<>();
 
@@ -218,6 +220,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         });
 
         this.enableDataLoaderChaining = graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false);
+        this.profiler = executionContext.getProfiler();
     }
 
 
@@ -485,13 +488,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     void dispatch(int level, CallStack callStack) {
         if (!enableDataLoaderChaining) {
+            profiler.oldStrategyDispatchingAll(level);
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
-            dataLoaderRegistry.dispatchAll();
+            dispatchAll(dataLoaderRegistry, level);
             return;
         }
-
         Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
         if (resultPathWithDataLoaders != null) {
+            profiler.chainedStrategyDispatching(level);
             Set<String> resultPathToDispatch = callStack.lock.callLocked(() -> {
                 callStack.dispatchingStartedPerLevel.add(level);
                 return resultPathWithDataLoaders
@@ -508,6 +512,16 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
     }
 
+    private void dispatchAll(DataLoaderRegistry dataLoaderRegistry, int level) {
+        for (DataLoader<?, ?> dataLoader : dataLoaderRegistry.getDataLoaders()) {
+            dataLoader.dispatch().whenComplete((objects, throwable) -> {
+                if (objects != null && objects.size() > 0) {
+                    Assert.assertNotNull(dataLoader.getName());
+                    profiler.batchLoadedOldStrategy(dataLoader.getName(), level, objects.size());
+                }
+            });
+        }
+    }
 
     private void dispatchDLCFImpl(Set<String> resultPathsToDispatch, @Nullable Integer level, CallStack callStack) {
 
@@ -533,7 +547,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
         List<CompletableFuture> allDispatchedCFs = new ArrayList<>();
         for (ResultPathWithDataLoader resultPathWithDataLoader : relevantResultPathWithDataLoader) {
-            allDispatchedCFs.add(resultPathWithDataLoader.dataLoader.dispatch());
+            CompletableFuture<List> dispatch = resultPathWithDataLoader.dataLoader.dispatch();
+            allDispatchedCFs.add(dispatch);
+            dispatch.whenComplete((objects, throwable) -> {
+                if (objects != null && objects.size() > 0) {
+                    profiler.batchLoadedNewStrategy(resultPathWithDataLoader.name, level, objects.size());
+                }
+            });
         }
         CompletableFuture.allOf(allDispatchedCFs.toArray(new CompletableFuture[0]))
                 .whenComplete((unused, throwable) -> {
