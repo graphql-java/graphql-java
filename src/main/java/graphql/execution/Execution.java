@@ -25,6 +25,7 @@ import graphql.language.Document;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
+import graphql.normalized.nf.provider.NormalizedDocumentProvider;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
@@ -55,20 +56,22 @@ public class Execution {
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
     private final boolean doNotAutomaticallyDispatchDataLoader;
-
+    private final NormalizedDocumentProvider normalizedDocumentProvider;
 
     public Execution(ExecutionStrategy queryStrategy,
                      ExecutionStrategy mutationStrategy,
                      ExecutionStrategy subscriptionStrategy,
                      Instrumentation instrumentation,
                      ValueUnboxer valueUnboxer,
-                     boolean doNotAutomaticallyDispatchDataLoader) {
+                     boolean doNotAutomaticallyDispatchDataLoader,
+                     NormalizedDocumentProvider normalizedDocumentProvider) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
         this.valueUnboxer = valueUnboxer;
         this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
+        this.normalizedDocumentProvider = normalizedDocumentProvider;
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState, EngineRunningState engineRunningState) {
@@ -118,6 +121,7 @@ public class Execution {
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
                 .responseMapFactory(responseMapFactory)
+                .normalizedDocumentProvider(normalizedDocumentProvider)
                 .executionInput(executionInput)
                 .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
                 .engineRunningState(engineRunningState)
