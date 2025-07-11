@@ -23,6 +23,7 @@ import graphql.normalized.GraphQlNormalizedOperation;
 import graphql.normalized.nf.NormalizedDocument;
 import graphql.normalized.nf.NormalizedDocumentFactory;
 import graphql.normalized.nf.NormalizedOperation;
+import graphql.normalized.nf.provider.NormalizedDocumentProvider;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
@@ -34,9 +35,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
@@ -67,6 +70,7 @@ public class ExecutionContext {
     private final IncrementalCallState incrementalCallState = new IncrementalCallState();
     private final ValueUnboxer valueUnboxer;
     private final ResponseMapFactory responseMapFactory;
+    private final NormalizedDocumentProvider normalizedDocumentProvider;
 
     private final ExecutionInput executionInput;
     private final Supplier<GraphQlNormalizedOperation> queryTree;
@@ -100,11 +104,12 @@ public class ExecutionContext {
         this.locale = builder.locale;
         this.valueUnboxer = builder.valueUnboxer;
         this.responseMapFactory = builder.responseMapFactory;
+        this.normalizedDocumentProvider = builder.normalizedDocumentProvider;
         this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
-        this.queryTree = FpKit.interThreadMemoize(this::createGraphQLNormalizedOperation);
+        this.queryTree = FpKit.interThreadMemoize(() -> this. createGraphQLNormalizedOperation().join());
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
     }
@@ -307,6 +312,11 @@ public class ExecutionContext {
         return responseMapFactory;
     }
 
+    @Internal
+    public NormalizedDocumentProvider getNormalizedDocumentProvider() {
+        return normalizedDocumentProvider;
+    }
+
     /**
      * @return the total list of errors for this execution context
      */
@@ -372,29 +382,36 @@ public class ExecutionContext {
         return resultNodesInfo;
     }
 
-    private GraphQlNormalizedOperation createGraphQLNormalizedOperation() {
+    private NormalizedDocument createNormalizedDocument() {
+        return NormalizedDocumentFactory.createNormalizedDocument(graphQLSchema, document);
+    }
+
+    private CompletableFuture<GraphQlNormalizedOperation> createGraphQLNormalizedOperation() {
         // Check for experimental support for normalized documents
         if (hasNormalizedDocumentSupport()) {
-            return createNormalizedOperation();
+            return createNormalizedOperation()
+                    .thenApply(Function.identity()); // Cast to interface.
         }
 
-        return createExecutableNormalizedOperation();
+        return CompletableFuture.completedFuture(createExecutableNormalizedOperation());
     }
 
     @ExperimentalApi
-    private NormalizedOperation createNormalizedOperation() {
-        var normalizedDocument = NormalizedDocumentFactory.createNormalizedDocument(graphQLSchema, document);
+    private CompletableFuture<NormalizedOperation> createNormalizedOperation() {
+        return normalizedDocumentProvider.getNormalizedDocument(executionInput, this::createNormalizedDocument).thenApply(normalizedDocumentEntry -> {
+            var normalizedDocument = normalizedDocumentEntry.getDocument();
 
-        // Search the document for the operation that matches the operationDefinition name,
-        // if no match then it could be anonymous query, then fallback to the first operation.
-        var normalizedOperations = normalizedDocument.getNormalizedOperations();
-        var normalizedOperation = normalizedOperations.stream()
-                .filter(this::isExecutingOperation)
-                .findAny()
-                .map(NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables::getNormalizedOperation)
-                .orElseGet(normalizedDocument::getSingleNormalizedOperation);
+            // Search the document for the operation that matches the operationDefinition name,
+            // if no match then it could be anonymous query, then fallback to the first operation.
+            var normalizedOperations = normalizedDocument.getNormalizedOperations();
+            var normalizedOperation = normalizedOperations.stream()
+                    .filter(this::isExecutingOperation)
+                    .findAny()
+                    .map(NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables::getNormalizedOperation)
+                    .orElseGet(normalizedDocument::getSingleNormalizedOperation);
 
-        return normalizedOperation;
+            return normalizedOperation;
+        });
     }
 
     private ExecutableNormalizedOperation createExecutableNormalizedOperation() {

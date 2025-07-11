@@ -14,6 +14,8 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
+import graphql.normalized.nf.NormalizedDocumentFactory;
+import graphql.normalized.nf.provider.NormalizedDocumentProvider;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.Nullable;
@@ -53,6 +55,7 @@ public class ExecutionContextBuilder {
     boolean propagateErrorsOnNonNullContractFailure = true;
     EngineRunningState engineRunningState;
     ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
+    NormalizedDocumentProvider normalizedDocumentProvider;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -102,6 +105,7 @@ public class ExecutionContextBuilder {
         propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
         engineRunningState = other.getEngineRunningState();
         responseMapFactory = other.getResponseMapFactory();
+        normalizedDocumentProvider = other.getNormalizedDocumentProvider();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -229,6 +233,12 @@ public class ExecutionContextBuilder {
     @Internal
     public ExecutionContextBuilder responseMapFactory(ResponseMapFactory responseMapFactory) {
         this.responseMapFactory = responseMapFactory;
+        return this;
+    }
+
+    @Internal
+    public ExecutionContextBuilder normalizedDocumentProvider(NormalizedDocumentProvider normalizedDocumentProvider) {
+        this.normalizedDocumentProvider = normalizedDocumentProvider;
         return this;
     }
 
