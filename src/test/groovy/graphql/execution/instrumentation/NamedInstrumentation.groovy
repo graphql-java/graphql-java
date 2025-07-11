@@ -7,8 +7,10 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
+import graphql.execution.instrumentation.parameters.InstrumentationCreateNormalizedOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
 import graphql.language.Document
+import graphql.normalized.GraphQlNormalizedOperation
 import graphql.schema.DataFetcher
 import graphql.validation.ValidationError
 
@@ -70,6 +72,12 @@ class NamedInstrumentation extends ModernTestingInstrumentation {
     InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
         assertState(state)
         return super.beginFieldExecution(parameters, state)
+    }
+
+    @Override
+    InstrumentationContext<GraphQlNormalizedOperation> beginCreateNormalizedOperation(InstrumentationCreateNormalizedOperationParameters parameters, InstrumentationState state) {
+        assertState(state)
+        return super.beginCreateNormalizedOperation(parameters, state)
     }
 
     @Override

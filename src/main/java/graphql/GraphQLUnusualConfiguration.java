@@ -266,6 +266,13 @@ public class GraphQLUnusualConfiguration {
         }
 
         /**
+         * @return an element that allows you to control normalized document behavior
+         */
+        public NormalizedDocumentSupportConfig normalizedDocumentSupport() {
+            return new NormalizedDocumentSupportConfig(this);
+        }
+
+        /**
          * @return an element that allows you to precisely control {@link org.dataloader.DataLoader} behavior
          * in graphql-java.
          */
@@ -318,6 +325,28 @@ public class GraphQLUnusualConfiguration {
          */
         public GraphQLContextConfiguration then() {
             return contextConfig;
+        }
+    }
+
+    public static class NormalizedDocumentSupportConfig extends BaseContextConfig {
+        private NormalizedDocumentSupportConfig(GraphQLContextConfiguration contextConfig) {
+            super(contextConfig);
+        }
+
+        /**
+         * @return true if normalized document behaviour is enabled for this execution.
+         */
+        public boolean isNormalizedDocumentSupportEnabled() {
+            return contextConfig.getBoolean(ExperimentalApi.ENABLE_NORMALIZED_DOCUMENT_SUPPORT);
+        }
+
+        /**
+         * This controls whether normalized document behaviour is enabled for this execution.
+         */
+        @ExperimentalApi
+        public NormalizedDocumentSupportConfig enableNormalizedDocumentSupport(boolean enable) {
+            contextConfig.put(ExperimentalApi.ENABLE_NORMALIZED_DOCUMENT_SUPPORT, enable);
+            return this;
         }
     }
 
