@@ -23,7 +23,7 @@ import java.util.Map;
  * An operation consists of a list of {@link ExecutableNormalizedField}s in a parent child hierarchy
  */
 @PublicApi
-public class ExecutableNormalizedOperation {
+public class ExecutableNormalizedOperation implements GraphQlNormalizedOperation {
     private final OperationDefinition.Operation operation;
     private final String operationName;
     private final List<ExecutableNormalizedField> topLevelFields;
@@ -176,5 +176,10 @@ public class ExecutableNormalizedOperation {
             }
         }
         return Assert.assertShouldNeverHappen("normalized field not found");
+    }
+
+    @Override
+    public GraphQlNormalizedField getGraphQlNormalizedField(MergedField mergedField, GraphQLFieldsContainer fieldsContainer, ResultPath resultPath) {
+        return getNormalizedField(mergedField, fieldsContainer, resultPath);
     }
 }

@@ -8,6 +8,7 @@ import graphql.MutationSchema
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.normalized.nf.provider.NoOpNormalizedDocumentProvider
 import graphql.parser.Parser
 import spock.lang.Specification
 
@@ -36,7 +37,8 @@ class ExecutionTest extends Specification {
     def subscriptionStrategy = new CountingExecutionStrategy()
     def mutationStrategy = new CountingExecutionStrategy()
     def queryStrategy = new CountingExecutionStrategy()
-    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimplePerformantInstrumentation.INSTANCE, ValueUnboxer.DEFAULT, false)
+    def normalizedDocumentProvider = NoOpNormalizedDocumentProvider.INSTANCE;
+    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimplePerformantInstrumentation.INSTANCE, ValueUnboxer.DEFAULT, false, normalizedDocumentProvider)
     def emptyExecutionInput = ExecutionInput.newExecutionInput().query("query").build()
     def instrumentationState = new InstrumentationState() {}
 
@@ -125,7 +127,7 @@ class ExecutionTest extends Specification {
             }
         }
 
-        def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, ValueUnboxer.DEFAULT, false)
+        def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, ValueUnboxer.DEFAULT, false, NoOpNormalizedDocumentProvider.INSTANCE)
 
 
         when:

@@ -9,7 +9,6 @@ import graphql.execution.Execution;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
-import graphql.execution.ResponseMapFactory;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.ValueUnboxer;
@@ -25,6 +24,8 @@ import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
+import graphql.normalized.nf.provider.NoOpNormalizedDocumentProvider;
+import graphql.normalized.nf.provider.NormalizedDocumentProvider;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
@@ -158,6 +159,7 @@ public class GraphQL {
     private final ExecutionIdProvider idProvider;
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
+    private final NormalizedDocumentProvider normalizedDocumentProvider;
     private final ValueUnboxer valueUnboxer;
     private final boolean doNotAutomaticallyDispatchDataLoader;
 
@@ -170,6 +172,7 @@ public class GraphQL {
         this.idProvider = assertNotNull(builder.idProvider, () -> "idProvider must be non null");
         this.instrumentation = assertNotNull(builder.instrumentation, () -> "instrumentation must not be null");
         this.preparsedDocumentProvider = assertNotNull(builder.preparsedDocumentProvider, () -> "preparsedDocumentProvider must be non null");
+        this.normalizedDocumentProvider = assertNotNull(builder.normalizedDocumentProvider, () -> "normalizedDocumentProvider must be non null");
         this.valueUnboxer = assertNotNull(builder.valueUnboxer, () -> "valueUnboxer must not be null");
         this.doNotAutomaticallyDispatchDataLoader = builder.doNotAutomaticallyDispatchDataLoader;
     }
@@ -228,6 +231,13 @@ public class GraphQL {
     }
 
     /**
+     * @return the NormalizedDocumentProvider for this {@link GraphQL} instance
+     */
+    public NormalizedDocumentProvider getNormalizedDocumentProvider() {
+        return normalizedDocumentProvider;
+    }
+
+    /**
      * @return the ValueUnboxer for this {@link GraphQL} instance
      */
     public ValueUnboxer getValueUnboxer() {
@@ -261,7 +271,8 @@ public class GraphQL {
                 .subscriptionExecutionStrategy(this.subscriptionStrategy)
                 .executionIdProvider(Optional.ofNullable(this.idProvider).orElse(builder.idProvider))
                 .instrumentation(Optional.ofNullable(this.instrumentation).orElse(builder.instrumentation))
-                .preparsedDocumentProvider(Optional.ofNullable(this.preparsedDocumentProvider).orElse(builder.preparsedDocumentProvider));
+                .preparsedDocumentProvider(Optional.ofNullable(this.preparsedDocumentProvider).orElse(builder.preparsedDocumentProvider))
+                .normalizedDocumentProvider(Optional.ofNullable(this.normalizedDocumentProvider).orElse(builder.normalizedDocumentProvider));
 
         builderConsumer.accept(builder);
 
@@ -278,6 +289,7 @@ public class GraphQL {
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = null; // deliberate default here
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
+        private NormalizedDocumentProvider normalizedDocumentProvider = NoOpNormalizedDocumentProvider.INSTANCE;
         private boolean doNotAutomaticallyDispatchDataLoader = false;
         private ValueUnboxer valueUnboxer = ValueUnboxer.DEFAULT;
 
@@ -325,6 +337,18 @@ public class GraphQL {
 
         public Builder preparsedDocumentProvider(PreparsedDocumentProvider preparsedDocumentProvider) {
             this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, () -> "PreparsedDocumentProvider must be non null");
+            return this;
+        }
+
+        /**
+         * This allows you to set a {@link NormalizedDocumentProvider} that will be used to provide normalized documents
+         *
+         * @param normalizedDocumentProvider the provider of normalized documents
+         *
+         * @return this builder
+         */
+        public Builder normalizedDocumentProvider(NormalizedDocumentProvider normalizedDocumentProvider) {
+            this.normalizedDocumentProvider = normalizedDocumentProvider;
             return this;
         }
 
@@ -497,7 +521,7 @@ public class GraphQL {
 
                     GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
 
-                    CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState, engineRunningState);
+                    CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState, engineRunningState, normalizedDocumentProvider);
                     //
                     // finish up instrumentation
                     executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation));
@@ -529,7 +553,7 @@ public class GraphQL {
     }
 
 
-    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, EngineRunningState engineRunningState) {
+    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, EngineRunningState engineRunningState, NormalizedDocumentProvider normalizedDocumentProvider) {
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
         Function<ExecutionInput, PreparsedDocumentEntry> computeFunction = transformedInput -> {
             // if they change the original query in the pre-parser, then we want to see it downstream from then on
@@ -542,7 +566,7 @@ public class GraphQL {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
             try {
-                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState, engineRunningState);
+                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState, engineRunningState, normalizedDocumentProvider);
             } catch (AbortExecutionException e) {
                 return CompletableFuture.completedFuture(e.toExecutionResult());
             }
@@ -606,10 +630,11 @@ public class GraphQL {
                                                        Document document,
                                                        GraphQLSchema graphQLSchema,
                                                        InstrumentationState instrumentationState,
-                                                       EngineRunningState engineRunningState
+                                                       EngineRunningState engineRunningState,
+                                                       NormalizedDocumentProvider normalizedDocumentProvider
     ) {
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader, normalizedDocumentProvider);
         ExecutionId executionId = executionInput.getExecutionId();
 
         return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState, engineRunningState);
