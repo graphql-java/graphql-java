@@ -1,7 +1,7 @@
 package graphql.execution.instrumentation.parameters;
 
 import graphql.ExecutionInput;
-import graphql.PublicApi;
+import graphql.ExperimentalApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.schema.GraphQLSchema;
 
@@ -9,9 +9,9 @@ import graphql.schema.GraphQLSchema;
  * Parameters sent to {@link Instrumentation} methods
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
-@PublicApi
-public class InstrumentationCreateNormalizedOperationParameters extends InstrumentationExecutionParameters {
-    public InstrumentationCreateNormalizedOperationParameters(ExecutionInput executionInput, GraphQLSchema schema) {
+@ExperimentalApi
+public class InstrumentationCreateExecutableNormalizedOperationParameters extends InstrumentationExecutionParameters {
+    public InstrumentationCreateExecutableNormalizedOperationParameters(ExecutionInput executionInput, GraphQLSchema schema) {
         super(executionInput, schema);
     }
 }

@@ -12,10 +12,10 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationCreateNormalizedOperationParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateExecutableNormalizedOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
-import graphql.normalized.GraphQlNormalizedOperation;
+import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -123,14 +123,15 @@ public interface Instrumentation {
     }
 
     /**
-     * This is called just before the creation of the normalized operation is started.
+     * This is called just before the creation of the executable normalized operation is started.
      *
      * @param parameters the parameters to this step
      * @param state the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
+    @ExperimentalApi
     @Nullable
-    default InstrumentationContext<GraphQlNormalizedOperation> beginCreateNormalizedOperation(InstrumentationCreateNormalizedOperationParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<ExecutableNormalizedOperation> beginCreateExecutableNormalizedOperation(InstrumentationCreateExecutableNormalizedOperationParameters parameters, InstrumentationState state) {
         return noOp();
     }
 

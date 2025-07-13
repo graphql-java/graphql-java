@@ -8,7 +8,6 @@ import graphql.execution.ResultPath;
 import graphql.execution.directives.QueryDirectives;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
-import graphql.normalized.GraphQlNormalizedOperation;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldsContainer;
 
@@ -24,7 +23,7 @@ import java.util.Map;
  * An operation consists of a list of {@link NormalizedField}s in a parent child hierarchy
  */
 @ExperimentalApi
-public class NormalizedOperation implements GraphQlNormalizedOperation {
+public class NormalizedOperation {
     private final OperationDefinition.Operation operation;
     private final String operationName;
     private final List<NormalizedField> rootFields;

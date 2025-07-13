@@ -8,7 +8,7 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.instrumentation.parameters.InstrumentationCreateNormalizedOperationParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateExecutableNormalizedOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -18,7 +18,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
-import graphql.normalized.GraphQlNormalizedOperation;
+import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -129,9 +129,9 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<GraphQlNormalizedOperation> beginCreateNormalizedOperation(InstrumentationCreateNormalizedOperationParameters parameters, InstrumentationState state) {
+    public InstrumentationContext<ExecutableNormalizedOperation> beginCreateExecutableNormalizedOperation(InstrumentationCreateExecutableNormalizedOperationParameters parameters, InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) ->
-            instrumentation.beginCreateNormalizedOperation(parameters, specificState));
+            instrumentation.beginCreateExecutableNormalizedOperation(parameters, specificState));
     }
 
 

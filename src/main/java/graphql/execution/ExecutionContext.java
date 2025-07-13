@@ -14,7 +14,7 @@ import graphql.collect.ImmutableKit;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.parameters.InstrumentationCreateNormalizedOperationParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateExecutableNormalizedOperationParameters;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
@@ -370,8 +370,8 @@ public class ExecutionContext {
     }
 
     private ExecutableNormalizedOperation createExecutableNormalizedOperation() {
-        var parameters = new InstrumentationCreateNormalizedOperationParameters(executionInput, graphQLSchema);
-        var instrument = instrumentation.beginCreateNormalizedOperation(parameters, instrumentationState);
+        var parameters = new InstrumentationCreateExecutableNormalizedOperationParameters(executionInput, graphQLSchema);
+        var instrument = instrumentation.beginCreateExecutableNormalizedOperation(parameters, instrumentationState);
         var result = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables);
         if (instrument != null) {
             instrument.onCompleted(result, null);

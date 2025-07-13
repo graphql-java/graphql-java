@@ -23,7 +23,7 @@ import java.util.Map;
  * An operation consists of a list of {@link ExecutableNormalizedField}s in a parent child hierarchy
  */
 @PublicApi
-public class ExecutableNormalizedOperation implements GraphQlNormalizedOperation {
+public class ExecutableNormalizedOperation {
     private final OperationDefinition.Operation operation;
     private final String operationName;
     private final List<ExecutableNormalizedField> topLevelFields;
