@@ -3,6 +3,7 @@ package graphql;
 import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
 import graphql.execution.RawVariables;
+import graphql.execution.preparsed.persisted.PersistedQuerySupport;
 import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
@@ -38,7 +39,7 @@ public class ExecutionInput {
 
     @Internal
     private ExecutionInput(Builder builder) {
-        this.query = assertNotNull(builder.query, () -> "query can't be null");
+        this.query = assertQuery(builder);
         this.operationName = builder.operationName;
         this.context = builder.context;
         this.graphQLContext = assertNotNull(builder.graphQLContext);
@@ -50,6 +51,14 @@ public class ExecutionInput {
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
         this.cancelled = builder.cancelled;
+    }
+
+    private static String assertQuery(Builder builder) {
+        if ((builder.query == null || builder.query.isEmpty()) && builder.extensions.containsKey("persistedQuery")) {
+            return PersistedQuerySupport.PERSISTED_QUERY_MARKER;
+        }
+
+        return assertNotNull(builder.query, () -> "query can't be null");
     }
 
     /**
@@ -277,7 +286,7 @@ public class ExecutionInput {
         }
 
         public Builder query(String query) {
-            this.query = assertNotNull(query, () -> "query can't be null");
+            this.query = query;
             return this;
         }
 
