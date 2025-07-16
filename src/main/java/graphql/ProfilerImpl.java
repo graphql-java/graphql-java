@@ -70,7 +70,7 @@ public class ProfilerImpl implements Profiler {
         // nothing to wrap here
         return new EngineRunningObserver() {
             @Override
-            public void runningStateChanged(ExecutionId executionId, GraphQLContext graphQLContext, RunningState runningState) {
+            public void runningStateChanged(@Nullable ExecutionId executionId, GraphQLContext graphQLContext, RunningState runningState) {
                 runningStateChangedImpl(executionId, graphQLContext, runningState);
                 if (engineRunningObserver != null) {
                     engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
@@ -79,7 +79,7 @@ public class ProfilerImpl implements Profiler {
         };
     }
 
-    private void runningStateChangedImpl(ExecutionId executionId, GraphQLContext graphQLContext, EngineRunningObserver.RunningState runningState) {
+    private void runningStateChangedImpl(@Nullable ExecutionId executionId, GraphQLContext graphQLContext, EngineRunningObserver.RunningState runningState) {
         long now = System.nanoTime();
         if (runningState == EngineRunningObserver.RunningState.RUNNING_START) {
             startTime = now;
