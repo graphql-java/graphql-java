@@ -2,6 +2,7 @@ package graphql;
 
 import graphql.execution.ExecutionId;
 import graphql.language.OperationDefinition;
+import graphql.language.OperationDefinition.Operation;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -38,7 +39,7 @@ public class ProfilerResult {
     @Nullable
     private volatile String operationName;
     @Nullable
-    private volatile String operationType;
+    private volatile Operation operationType;
     private volatile boolean dataLoaderChainingEnabled;
     private final Set<Integer> oldStrategyDispatchingAll = ConcurrentHashMap.newKeySet();
     private final Set<Integer> chainedStrategyDispatching = ConcurrentHashMap.newKeySet();
@@ -48,9 +49,8 @@ public class ProfilerResult {
 
     public static class DispatchEvent {
         final String dataLoaderName;
-        final @Nullable
-        Integer level; // can be null for delayed dispatching
-        final int count;
+        final @Nullable Integer level; // is null for delayed dispatching
+        final int count; // how many
 
         public DispatchEvent(String dataLoaderName, @Nullable Integer level, int count) {
             this.dataLoaderName = dataLoaderName;
@@ -132,7 +132,7 @@ public class ProfilerResult {
 
     void setOperation(OperationDefinition operationDefinition) {
         this.operationName = operationDefinition.getName();
-        this.operationType = operationDefinition.getOperation().name();
+        this.operationType = operationDefinition.getOperation();
     }
 
     void addDataLoaderUsed(String dataLoaderName) {
@@ -154,14 +154,12 @@ public class ProfilerResult {
 
     // public getters
 
-    public String getOperationName() {
-        Assert.assertNotNull(operationName);
+    public @Nullable String getOperationName() {
         return operationName;
     }
 
-    public String getOperationType() {
-        Assert.assertNotNull(operationType);
-        return operationType;
+    public Operation getOperationType() {
+        return Assert.assertNotNull(operationType);
     }
 
     public Set<String> getFieldsFetched() {

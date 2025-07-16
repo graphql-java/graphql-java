@@ -1,6 +1,6 @@
 package graphql
 
-
+import graphql.language.OperationDefinition
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import org.awaitility.Awaitility
@@ -205,7 +205,7 @@ class ProfilerTest extends Specification {
 
         then:
         profilerResult.getOperationName() == "MyQuery"
-        profilerResult.getOperationType() == "QUERY"
+        profilerResult.getOperationType() == OperationDefinition.Operation.QUERY
 
 
     }
