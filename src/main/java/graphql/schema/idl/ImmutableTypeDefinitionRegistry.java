@@ -6,13 +6,17 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
+import graphql.language.ImplementingTypeDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
+import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
+import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.SDLDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaExtensionDefinition;
+import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.SchemaProblem;
@@ -34,6 +38,7 @@ import static com.google.common.collect.ImmutableMap.copyOf;
 @PublicApi
 @NullMarked
 public class ImmutableTypeDefinitionRegistry extends TypeDefinitionRegistry {
+
     ImmutableTypeDefinitionRegistry(TypeDefinitionRegistry registry) {
         super(
                 copyOf(registry.objectTypeExtensions),
@@ -50,6 +55,7 @@ public class ImmutableTypeDefinitionRegistry extends TypeDefinitionRegistry {
                 registry.schemaParseOrder
         );
     }
+
 
     private UnsupportedOperationException unsupportedOperationException() {
         return new UnsupportedOperationException("The TypeDefinitionRegistry is in read only mode");

@@ -3,6 +3,8 @@ package graphql.execution;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -10,6 +12,7 @@ import java.util.Map;
  * Holds raw variables, which have not been coerced yet into {@link CoercedVariables}
  */
 @PublicApi
+@NullMarked
 public class RawVariables {
     private static final RawVariables EMPTY = RawVariables.of(ImmutableKit.emptyMap());
     private final ImmutableMapWithNullValues<String, Object> rawVariables;
@@ -26,7 +29,7 @@ public class RawVariables {
         return rawVariables.containsKey(key);
     }
 
-    public Object get(String key) {
+    public @Nullable Object get(String key) {
         return rawVariables.get(key);
     }
 

@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This class lets you observe the running state of the graphql-java engine.  As it processes and dispatches graphql fields,
@@ -46,8 +47,9 @@ public interface EngineRunningObserver {
     /**
      * This will be called when the running state of the graphql-java engine changes.
      *
-     * @param executionId    the id of the current execution
+     * @param executionId    the id of the current execution. This could be null when the engine starts,
+     *                       if there is no execution id provided in the execution input
      * @param graphQLContext the graphql context
      */
-    void runningStateChanged(ExecutionId executionId, GraphQLContext graphQLContext, RunningState runningState);
+    void runningStateChanged(@Nullable ExecutionId executionId, GraphQLContext graphQLContext, RunningState runningState);
 }

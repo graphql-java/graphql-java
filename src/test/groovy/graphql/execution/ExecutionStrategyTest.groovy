@@ -29,6 +29,7 @@ import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.LightDataFetcher
@@ -669,8 +670,8 @@ class ExecutionStrategyTest extends Specification {
             @Override
             @Override
             InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-                if (parameters.fetchedValue instanceof FetchedValue) {
-                    FetchedValue value = (FetchedValue) parameters.fetchedValue
+                if (parameters.getFetchedObject() instanceof FetchedValue) {
+                    FetchedValue value = (FetchedValue) parameters.getFetchedObject()
                     fetchedValues.put(parameters.field.name, value)
                 }
                 return super.beginFieldCompletion(parameters, state)
@@ -689,7 +690,7 @@ class ExecutionStrategyTest extends Specification {
         overridingStrategy.resolveFieldWithInfo(instrumentedExecutionContext, params)
 
         then:
-        FetchedValue fetchedValue = instrumentation.fetchedValues.get("someField")
+        Object fetchedValue = instrumentation.fetchedValues.get("someField")
         fetchedValue != null
         fetchedValue.errors.size() == 1
         def exceptionWhileDataFetching = fetchedValue.errors[0] as ExceptionWhileDataFetching
@@ -862,26 +863,41 @@ class ExecutionStrategyTest extends Specification {
 
     def "#1558 forward localContext on nonBoxed return from DataFetcher"() {
         given:
+        def capturedLocalContext = "startingValue"
+        executionStrategy = new ExecutionStrategy(dataFetcherExceptionHandler) {
+            @Override
+            CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+                return null
+            }
+
+            @Override
+            protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+                // shows we set the local context if the value is non boxed
+                capturedLocalContext = parameters.getLocalContext()
+                return super.completeValue(executionContext, parameters)
+            }
+        }
+
         ExecutionContext executionContext = buildContext()
-        def fieldType = list(Scalars.GraphQLInt)
-        def fldDef = newFieldDefinition().name("test").type(fieldType).build()
+        def fieldType = StarWarsSchema.droidType
+        def fldDef = StarWarsSchema.droidType.getFieldDefinition("name")
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        def field = Field.newField("parent").sourceLocation(new SourceLocation(5, 10)).build()
+        def field = Field.newField("name").sourceLocation(new SourceLocation(5, 10)).build()
         def localContext = "localContext"
         def parameters = newParameters()
-                .path(ResultPath.fromList(["parent"]))
+                .path(ResultPath.fromList(["name"]))
                 .localContext(localContext)
                 .field(mergedField(field))
-                .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
+                .fields(mergedSelectionSet(["name": [mergedField(field)]]))
                 .executionStepInfo(executionStepInfo)
                 .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         when:
-        def fetchedValue = executionStrategy.unboxPossibleDataFetcherResult(executionContext, parameters, new Object())
+        executionStrategy.completeField(executionContext, parameters, new Object())
 
         then:
-        fetchedValue.localContext == localContext
+        capturedLocalContext == localContext
     }
 
     def "#820 processes DataFetcherResult just message"() {

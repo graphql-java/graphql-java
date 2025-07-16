@@ -74,4 +74,21 @@ class ImmutableKitTest extends Specification {
         then:
         flatList == ["A", "B", "C", "D", "E",]
     }
+
+    def "can filter variable args"() {
+        when:
+        def list = ImmutableKit.filterVarArgs({ String s -> s.endsWith("x") }, "a", "b", "ax", "bx", "c")
+        then:
+        list == ["ax", "bx"]
+
+        when:
+        list = ImmutableKit.filterVarArgs({ String s -> s.startsWith("Z") }, "a", "b", "ax", "bx", "c")
+        then:
+        list == []
+
+        when:
+        list = ImmutableKit.filterVarArgs({ String s -> s.startsWith("x") })
+        then:
+        list == []
+    }
 }

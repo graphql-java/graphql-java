@@ -109,9 +109,9 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(executionContext, parameters, false);
 
-        CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
+        CompletableFuture<Object> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
         return fieldFetched.thenApply(fetchedValue -> {
-            Object publisher = fetchedValue.getFetchedValue();
+            Object publisher = FetchedValue.getFetchedValue(fetchedValue);
             return mkReactivePublisher(publisher);
         });
     }
@@ -168,7 +168,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 i13nFieldParameters, executionContext.getInstrumentationState()
         ));
 
-        FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, newParameters, eventPayload);
+        Object fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, newParameters, eventPayload);
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
         executionContext.getDataLoaderDispatcherStrategy().newSubscriptionExecution(fieldValueInfo, newParameters.getDeferredCallContext());
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo

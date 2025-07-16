@@ -185,4 +185,27 @@ public final class ImmutableKit {
         return newSet.build();
     }
 
+
+    /**
+     * Filters a variable args array to a list
+     *
+     * @param filter the predicate the filter with
+     * @param args   the variable args
+     * @param <T>    fot two
+     *
+     * @return a filtered list
+     */
+    @SafeVarargs
+    public static <T> List<T> filterVarArgs(Predicate<? super T> filter, T... args) {
+        if (args.length == 0) {
+            return ImmutableList.of();
+        }
+        ImmutableList.Builder<T> builder = ImmutableList.builderWithExpectedSize(args.length);
+        for (T arg : args) {
+            if (filter.test(arg)) {
+                builder.add(arg);
+            }
+        }
+        return builder.build();
+    }
 }

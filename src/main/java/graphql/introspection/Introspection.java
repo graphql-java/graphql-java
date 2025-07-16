@@ -7,6 +7,7 @@ import graphql.ExecutionResult;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionContext;
 import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
@@ -48,7 +49,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
 import static graphql.Scalars.GraphQLBoolean;
@@ -356,9 +356,8 @@ public class Introspection {
             Object type = environment.getSource();
             GraphQLFieldDefinition fieldDef = (GraphQLFieldDefinition) type;
             Boolean includeDeprecated = environment.getArgument("includeDeprecated");
-            return fieldDef.getArguments().stream()
-                    .filter(arg -> includeDeprecated || !arg.isDeprecated())
-                    .collect(Collectors.toList());
+            return ImmutableKit.filter(fieldDef.getArguments(),
+                    arg -> includeDeprecated || !arg.isDeprecated());
         };
         register(__Field, "name", nameDataFetcher);
         register(__Field, "description", descriptionDataFetcher);
@@ -406,9 +405,8 @@ public class Introspection {
             if (includeDeprecated) {
                 return fieldDefinitions;
             }
-            return fieldDefinitions.stream()
-                    .filter(field -> !field.isDeprecated())
-                    .collect(Collectors.toList());
+            return ImmutableKit.filter(fieldDefinitions,
+                    field -> !field.isDeprecated());
         }
         return null;
     };
@@ -444,9 +442,8 @@ public class Introspection {
             if (includeDeprecated) {
                 return values;
             }
-            return values.stream()
-                    .filter(enumValue -> !enumValue.isDeprecated())
-                    .collect(Collectors.toList());
+            return ImmutableKit.filter(values,
+                    enumValue -> !enumValue.isDeprecated());
         }
         return null;
     };
@@ -463,9 +460,8 @@ public class Introspection {
             if (includeDeprecated) {
                 return inputFields;
             }
-            return inputFields
-                    .stream().filter(inputField -> !inputField.isDeprecated())
-                    .collect(Collectors.toList());
+            return ImmutableKit.filter(inputFields,
+                    inputField -> !inputField.isDeprecated());
         }
         return null;
     };
@@ -650,9 +646,8 @@ public class Introspection {
         IntrospectionDataFetcher<?> argsDataFetcher = environment -> {
             GraphQLDirective directive = environment.getSource();
             Boolean includeDeprecated = environment.getArgument("includeDeprecated");
-            return directive.getArguments().stream()
-                    .filter(arg -> includeDeprecated || !arg.isDeprecated())
-                    .collect(Collectors.toList());
+            return ImmutableKit.filter(directive.getArguments(),
+                    arg -> includeDeprecated || !arg.isDeprecated());
         };
         register(__Directive, "name", nameDataFetcher);
         register(__Directive, "description", descriptionDataFetcher);
