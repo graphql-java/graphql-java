@@ -17,7 +17,7 @@ public interface Profiler {
 
 
 
-    default void executionInput(ExecutionInput executionInput) {
+    default void setExecutionInput(ExecutionInput executionInput) {
 
     }
 

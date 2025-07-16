@@ -31,8 +31,8 @@ public class ProfilerImpl implements Profiler {
     }
 
     @Override
-    public void executionInput(ExecutionInput executionInput) {
-        profilerResult.setExecutionId(executionInput.getExecutionId());
+    public void setExecutionInput(ExecutionInput executionInput) {
+        profilerResult.setExecutionId(executionInput.getExecutionIdNonNull());
         boolean dataLoaderChainingEnabled = executionInput.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false);
         profilerResult.setDataLoaderChainingEnabled(dataLoaderChainingEnabled);
     }
