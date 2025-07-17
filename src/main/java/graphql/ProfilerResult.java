@@ -8,6 +8,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -282,6 +283,26 @@ public class ProfilerResult {
 
     }
 
+    public Map<String, Object> shortSummaryMap() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("executionId", Assert.assertNotNull(executionId));
+        result.put("operation", operationType + ":" + operationName);
+        result.put("startTime", startTime);
+        result.put("endTime", endTime);
+        result.put("totalRunTime", (endTime - startTime) + "(" + (endTime - startTime) / 1_000_000 + "ms)");
+        result.put("engineTotalRunningTime", engineTotalRunningTime + "(" + engineTotalRunningTime / 1_000_000 + "ms)");
+        result.put("totalDataFetcherInvocations", totalDataFetcherInvocations);
+        result.put("totalPropertyDataFetcherInvocations", totalPropertyDataFetcherInvocations);
+        result.put("fieldsFetchedCount", fieldsFetched.size());
+        result.put("dataLoaderChainingEnabled", dataLoaderChainingEnabled);
+        result.put("dataLoaderLoadInvocations", dataLoaderLoadInvocations);
+        result.put("oldStrategyDispatchingAll", oldStrategyDispatchingAll);
+        result.put("chainedStrategyDispatching", chainedStrategyDispatching);
+        result.put("dispatchEvents", getDispatchEventsAsMap());
+        return result;
+    }
+
+
     private String printDispatchEvents() {
         if (dispatchEvents.isEmpty()) {
             return "[]";
@@ -301,6 +322,18 @@ public class ProfilerResult {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    public List<Map<String, Object>> getDispatchEventsAsMap() {
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (DispatchEvent event : dispatchEvents) {
+            Map<String, Object> eventMap = new LinkedHashMap<>();
+            eventMap.put("dataLoader", event.getDataLoaderName());
+            eventMap.put("level", event.getLevel() != null ? event.getLevel() : "delayed");
+            eventMap.put("count", event.getCount());
+            result.add(eventMap);
+        }
+        return result;
     }
 
     @Override
