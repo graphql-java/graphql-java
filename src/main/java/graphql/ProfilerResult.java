@@ -29,14 +29,10 @@ public class ProfilerResult {
     private long engineTotalRunningTime;
     private final AtomicInteger totalDataFetcherInvocations = new AtomicInteger();
     private final AtomicInteger totalPropertyDataFetcherInvocations = new AtomicInteger();
-    private final Set<String> fieldsFetched = ConcurrentHashMap.newKeySet();
 
-
-    private final Map<String, Integer> dataFetcherInvocationCount = new ConcurrentHashMap<>();
+    // this is the count of how many times a data loader was invoked per data loader name
     private final Map<String, Integer> dataLoaderLoadInvocations = new ConcurrentHashMap<>();
-    private final Map<String, DataFetcherType> dataFetcherTypeMap = new ConcurrentHashMap<>();
 
-    private final Map<String, DataFetcherResultType> dataFetcherResultType = new ConcurrentHashMap<>();
     @Nullable
     private volatile String operationName;
     @Nullable
@@ -45,7 +41,26 @@ public class ProfilerResult {
     private final Set<Integer> oldStrategyDispatchingAll = ConcurrentHashMap.newKeySet();
     private final Set<Integer> chainedStrategyDispatching = ConcurrentHashMap.newKeySet();
 
+    private final List<String> instrumentationClasses = Collections.synchronizedList(new ArrayList<>());
+
     private final List<DispatchEvent> dispatchEvents = Collections.synchronizedList(new ArrayList<>());
+
+    /**
+     * the following fields can contain a lot of data for large requests
+     */
+    // all fields fetched during the execution, key is the field path
+    private final Set<String> fieldsFetched = ConcurrentHashMap.newKeySet();
+    // this is the count of how many times a data fetcher was invoked per field
+    private final Map<String, Integer> dataFetcherInvocationCount = new ConcurrentHashMap<>();
+    // the type of the data fetcher per field, key is the field path
+    private final Map<String, DataFetcherType> dataFetcherTypeMap = new ConcurrentHashMap<>();
+    // the type of the data fetcher result field, key is the field path
+    // in theory different DataFetcher invocations can return different types, but we only record the first one
+    private final Map<String, DataFetcherResultType> dataFetcherResultType = new ConcurrentHashMap<>();
+
+    public void setInstrumentationClasses(List<String> instrumentationClasses) {
+        this.instrumentationClasses.addAll(instrumentationClasses);
+    }
 
 
     public static class DispatchEvent {
@@ -240,6 +255,10 @@ public class ProfilerResult {
         return dispatchEvents;
     }
 
+    public List<String> getInstrumentationClasses() {
+        return instrumentationClasses;
+    }
+
     public String fullSummary() {
         return "ProfilerResult{" +
                 "executionId=" + executionId +
@@ -299,6 +318,7 @@ public class ProfilerResult {
         result.put("oldStrategyDispatchingAll", oldStrategyDispatchingAll);
         result.put("chainedStrategyDispatching", chainedStrategyDispatching);
         result.put("dispatchEvents", getDispatchEventsAsMap());
+        result.put("instrumentationClasses", instrumentationClasses);
         return result;
     }
 

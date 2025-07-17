@@ -3,6 +3,8 @@ package graphql;
 import graphql.execution.EngineRunningObserver;
 import graphql.execution.ExecutionId;
 import graphql.execution.ResultPath;
+import graphql.execution.instrumentation.ChainedInstrumentation;
+import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
@@ -11,6 +13,8 @@ import graphql.schema.SingletonPropertyDataFetcher;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -23,18 +27,33 @@ public class ProfilerImpl implements Profiler {
     private volatile long lastStartTime;
     private final AtomicLong engineTotalRunningTime = new AtomicLong();
 
-
     final ProfilerResult profilerResult = new ProfilerResult();
 
     public ProfilerImpl(GraphQLContext graphQLContext) {
+        // No real work can happen here, since the engine didn't "officially" start yet.
         graphQLContext.put(ProfilerResult.PROFILER_CONTEXT_KEY, profilerResult);
     }
 
     @Override
-    public void setExecutionInput(ExecutionInput executionInput) {
+    public void setExecutionInputAndInstrumentation(ExecutionInput executionInput, Instrumentation instrumentation) {
         profilerResult.setExecutionId(executionInput.getExecutionIdNonNull());
         boolean dataLoaderChainingEnabled = executionInput.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false);
         profilerResult.setDataLoaderChainingEnabled(dataLoaderChainingEnabled);
+
+        List<String> instrumentationClasses = new ArrayList<>();
+        collectInstrumentationClasses(instrumentationClasses, instrumentation);
+        profilerResult.setInstrumentationClasses(instrumentationClasses);
+    }
+
+    private void collectInstrumentationClasses(List<String> result, Instrumentation instrumentation) {
+        if (instrumentation instanceof ChainedInstrumentation) {
+            ChainedInstrumentation chainedInstrumentation = (ChainedInstrumentation) instrumentation;
+            for (Instrumentation child : chainedInstrumentation.getInstrumentations()) {
+                collectInstrumentationClasses(result, child);
+            }
+        } else {
+            result.add(instrumentation.getClass().getName());
+        }
     }
 
     @Override

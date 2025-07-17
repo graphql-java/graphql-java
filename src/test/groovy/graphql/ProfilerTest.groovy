@@ -1,5 +1,8 @@
 package graphql
 
+import graphql.execution.instrumentation.ChainedInstrumentation
+import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.language.OperationDefinition
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -50,6 +53,47 @@ class ProfilerTest extends Specification {
         profilerResult.getFieldsFetched() == ["/hello"] as Set
 
     }
+
+    def "collects instrumentation list"() {
+        given:
+        def sdl = '''
+            type Query {
+                hello: String
+            }
+        '''
+        def schema = TestUtil.schema(sdl, [Query: [
+                hello: { DataFetchingEnvironment dfe -> return "world" } as DataFetcher
+        ]])
+        Instrumentation fooInstrumentation = new Instrumentation() {};
+        Instrumentation barInstrumentation = new Instrumentation() {};
+        ChainedInstrumentation chainedInstrumentation = new ChainedInstrumentation(
+                new ChainedInstrumentation(new SimplePerformantInstrumentation()),
+                new ChainedInstrumentation(fooInstrumentation, barInstrumentation),
+                new SimplePerformantInstrumentation())
+
+
+        def graphql = GraphQL.newGraphQL(schema).instrumentation(chainedInstrumentation).build();
+
+        ExecutionInput ei = ExecutionInput.newExecutionInput()
+                .query("{ hello }")
+                .profileExecution(true)
+                .build()
+
+        when:
+        def result = graphql.execute(ei)
+        def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
+
+        then:
+        result.getData() == [hello: "world"]
+
+        then:
+        profilerResult.getInstrumentationClasses() == ["graphql.execution.instrumentation.SimplePerformantInstrumentation",
+                                                       "graphql.ProfilerTest\$1",
+                                                       "graphql.ProfilerTest\$2",
+                                                       "graphql.execution.instrumentation.SimplePerformantInstrumentation"]
+
+    }
+
 
     def "two DF with list"() {
         given:

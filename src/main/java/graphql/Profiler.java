@@ -2,6 +2,7 @@ package graphql;
 
 import graphql.execution.EngineRunningObserver;
 import graphql.execution.ResultPath;
+import graphql.execution.instrumentation.Instrumentation;
 import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
 import org.jspecify.annotations.NullMarked;
@@ -16,8 +17,7 @@ public interface Profiler {
     };
 
 
-
-    default void setExecutionInput(ExecutionInput executionInput) {
+    default void setExecutionInputAndInstrumentation(ExecutionInput executionInput, Instrumentation instrumentation) {
 
     }
 

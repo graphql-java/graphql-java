@@ -26,10 +26,11 @@ import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -82,6 +83,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
  */
 @SuppressWarnings("Duplicates")
 @PublicApi
+@NullMarked
 public class GraphQL {
 
     /**
@@ -258,9 +260,9 @@ public class GraphQL {
                 .queryExecutionStrategy(this.queryStrategy)
                 .mutationExecutionStrategy(this.mutationStrategy)
                 .subscriptionExecutionStrategy(this.subscriptionStrategy)
-                .executionIdProvider(Optional.ofNullable(this.idProvider).orElse(builder.idProvider))
-                .instrumentation(Optional.ofNullable(this.instrumentation).orElse(builder.instrumentation))
-                .preparsedDocumentProvider(Optional.ofNullable(this.preparsedDocumentProvider).orElse(builder.preparsedDocumentProvider));
+                .executionIdProvider(this.idProvider)
+                .instrumentation(this.instrumentation)
+                .preparsedDocumentProvider(this.preparsedDocumentProvider);
 
         builderConsumer.accept(builder);
 
@@ -268,6 +270,7 @@ public class GraphQL {
     }
 
     @PublicApi
+    @NullUnmarked
     public static class Builder {
         private GraphQLSchema graphQLSchema;
         private ExecutionStrategy queryExecutionStrategy;
@@ -481,7 +484,7 @@ public class GraphQL {
         EngineRunningState engineRunningState = new EngineRunningState(executionInput, profiler);
         return engineRunningState.engineRun(() -> {
             ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
-            profiler.setExecutionInput(executionInputWithId);
+            profiler.setExecutionInputAndInstrumentation(executionInputWithId, instrumentation);
             engineRunningState.updateExecutionInput(executionInputWithId);
 
             CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
@@ -543,7 +546,7 @@ public class GraphQL {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
             try {
-                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState, engineRunningState, profiler);
+                return execute(Assert.assertNotNull(executionInputRef.get()), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState, engineRunningState, profiler);
             } catch (AbortExecutionException e) {
                 return CompletableFuture.completedFuture(e.toExecutionResult());
             }
@@ -552,7 +555,7 @@ public class GraphQL {
 
     private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
 
-        ExecutionInput executionInput = executionInputRef.get();
+        ExecutionInput executionInput = assertNotNull(executionInputRef.get());
 
         ParseAndValidateResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
