@@ -437,7 +437,6 @@ class ProfilerTest extends Specification {
         batchLoadCalls == 2
         profilerResult.isDataLoaderChainingEnabled()
         profilerResult.getDataLoaderLoadInvocations() == [name: 4]
-        profilerResult.getChainedStrategyDispatching() == [1] as Set
         profilerResult.getDispatchEvents().size() == 2
         profilerResult.getDispatchEvents()[0].dataLoaderName == "name"
         profilerResult.getDispatchEvents()[0].level == 1

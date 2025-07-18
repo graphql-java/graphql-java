@@ -127,11 +127,6 @@ public class ProfilerImpl implements Profiler {
     }
 
     @Override
-    public void chainedStrategyDispatching(int level) {
-        profilerResult.chainedStrategyDispatching(level);
-    }
-
-    @Override
     public void oldStrategyDispatchingAll(int level) {
         profilerResult.oldStrategyDispatchingAll(level);
     }

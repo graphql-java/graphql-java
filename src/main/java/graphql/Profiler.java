@@ -42,10 +42,6 @@ public interface Profiler {
 
     }
 
-    default void chainedStrategyDispatching(int level) {
-
-    }
-
     default void batchLoadedOldStrategy(String name, int level, int count) {
 
 

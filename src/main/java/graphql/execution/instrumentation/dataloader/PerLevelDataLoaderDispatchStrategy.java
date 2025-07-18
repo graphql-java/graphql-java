@@ -495,7 +495,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
         Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
         if (resultPathWithDataLoaders != null) {
-            profiler.chainedStrategyDispatching(level);
             Set<String> resultPathToDispatch = callStack.lock.callLocked(() -> {
                 callStack.dispatchingStartedPerLevel.add(level);
                 return resultPathWithDataLoaders

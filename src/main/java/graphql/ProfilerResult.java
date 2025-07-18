@@ -39,7 +39,6 @@ public class ProfilerResult {
     private volatile Operation operationType;
     private volatile boolean dataLoaderChainingEnabled;
     private final Set<Integer> oldStrategyDispatchingAll = ConcurrentHashMap.newKeySet();
-    private final Set<Integer> chainedStrategyDispatching = ConcurrentHashMap.newKeySet();
 
     private final List<String> instrumentationClasses = Collections.synchronizedList(new ArrayList<>());
 
@@ -172,9 +171,6 @@ public class ProfilerResult {
     }
 
 
-    void chainedStrategyDispatching(int level) {
-        chainedStrategyDispatching.add(level);
-    }
 
     void addDispatchEvent(String dataLoaderName, @Nullable Integer level, int count, DispatchEventType type) {
         dispatchEvents.add(new DispatchEvent(dataLoaderName, level, count, type));
@@ -251,9 +247,6 @@ public class ProfilerResult {
         return dataLoaderLoadInvocations;
     }
 
-    public Set<Integer> getChainedStrategyDispatching() {
-        return chainedStrategyDispatching;
-    }
 
     public Set<Integer> getOldStrategyDispatchingAll() {
         return oldStrategyDispatchingAll;
@@ -288,7 +281,6 @@ public class ProfilerResult {
                 ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
                 ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
                 ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
-                ", chainedStrategyDispatching=" + chainedStrategyDispatching +
                 ", dispatchEvents=" + printDispatchEvents() +
                 '}';
     }
@@ -307,7 +299,6 @@ public class ProfilerResult {
                 ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
                 ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
                 ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
-                ", chainedStrategyDispatching=" + chainedStrategyDispatching +
                 ", dispatchEvents=" + printDispatchEvents() +
                 '}';
 
@@ -328,7 +319,6 @@ public class ProfilerResult {
         result.put("dataLoaderChainingEnabled", dataLoaderChainingEnabled);
         result.put("dataLoaderLoadInvocations", dataLoaderLoadInvocations);
         result.put("oldStrategyDispatchingAll", oldStrategyDispatchingAll);
-        result.put("chainedStrategyDispatching", chainedStrategyDispatching);
         result.put("dispatchEvents", getDispatchEventsAsMap());
         result.put("instrumentationClasses", instrumentationClasses);
         return result;
