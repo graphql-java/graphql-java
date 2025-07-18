@@ -45,7 +45,7 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
     public CompletableFuture<List<V>> dispatch() {
         CompletableFuture<List<V>> dispatchResult = delegate.dispatch();
         dispatchResult.whenComplete((result, error) -> {
-            if (result != null) {
+            if (result != null && result.size() > 0) {
                 DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfe.toInternal();
                 dfeInternalState.getProfiler().manualDispatch(dataLoaderName, dfe.getExecutionStepInfo().getPath().getLevel(), result.size());
             }

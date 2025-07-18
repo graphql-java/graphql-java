@@ -360,6 +360,7 @@ public class ProfilerResult {
         List<Map<String, Object>> result = new ArrayList<>();
         for (DispatchEvent event : dispatchEvents) {
             Map<String, Object> eventMap = new LinkedHashMap<>();
+            eventMap.put("type", event.getType().name());
             eventMap.put("dataLoader", event.getDataLoaderName());
             eventMap.put("level", event.getLevel() != null ? event.getLevel() : "delayed");
             eventMap.put("count", event.getCount());
