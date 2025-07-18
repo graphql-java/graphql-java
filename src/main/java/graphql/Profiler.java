@@ -51,7 +51,11 @@ public interface Profiler {
 
     }
 
-    default void batchLoadedNewStrategy(String name, @Nullable Integer level, int count) {
+    default void batchLoadedNewStrategy(String dataLoaderName, @Nullable Integer level, int count) {
+
+    }
+
+    default <V> void manualDispatch(String dataLoaderName, int level, int count) {
 
     }
 }

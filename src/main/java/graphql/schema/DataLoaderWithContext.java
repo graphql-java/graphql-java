@@ -9,6 +9,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Internal
@@ -40,4 +41,15 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         return result;
     }
 
+    @Override
+    public CompletableFuture<List<V>> dispatch() {
+        CompletableFuture<List<V>> dispatchResult = delegate.dispatch();
+        dispatchResult.whenComplete((result, error) -> {
+            if (result != null) {
+                DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfe.toInternal();
+                dfeInternalState.getProfiler().manualDispatch(dataLoaderName, dfe.getExecutionStepInfo().getPath().getLevel(), result.size());
+            }
+        });
+        return dispatchResult;
+    }
 }

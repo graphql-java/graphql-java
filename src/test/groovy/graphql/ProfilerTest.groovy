@@ -15,6 +15,7 @@ import spock.lang.Specification
 
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.ProfilerResult.DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED
@@ -53,6 +54,61 @@ class ProfilerTest extends Specification {
         profilerResult.getFieldsFetched() == ["/hello"] as Set
 
     }
+
+    def "manual dataloader dispatch"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          dog: String
+        }
+        '''
+        AtomicInteger batchLoadCalls = new AtomicInteger()
+        BatchLoader<String, String> batchLoader = { keys ->
+            return supplyAsync {
+                batchLoadCalls.incrementAndGet()
+                Thread.sleep(250)
+                println "BatchLoader called with keys: $keys"
+                return ["Luna"]
+            }
+        }
+
+        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        dataLoaderRegistry.register("name", nameDataLoader);
+
+        def df1 = { env ->
+            def loader = env.getDataLoader("name")
+            def result = loader.load("Key1")
+            loader.dispatch()
+            return result
+        } as DataFetcher
+
+        def fetchers = ["Query": ["dog": df1]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ dog } "
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).profileExecution(true).build()
+        setEnableDataLoaderChaining(ei.graphQLContext, true)
+
+        when:
+        def efCF = graphQL.executeAsync(ei)
+        Awaitility.await().until { efCF.isDone() }
+        def er = efCF.get()
+        def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
+        then:
+        er.data == [dog: "Luna"]
+        batchLoadCalls.get() == 1
+        then:
+        profilerResult.getDispatchEvents()[0].type == ProfilerResult.DispatchEventType.MANUAL_DISPATCH
+        profilerResult.getDispatchEvents()[0].dataLoaderName == "name"
+        profilerResult.getDispatchEvents()[0].count == 1
+        profilerResult.getDispatchEvents()[0].level == 1
+
+    }
+
 
     def "collects instrumentation list"() {
         given:

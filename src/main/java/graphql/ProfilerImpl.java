@@ -138,11 +138,16 @@ public class ProfilerImpl implements Profiler {
 
     @Override
     public void batchLoadedOldStrategy(String name, int level, int count) {
-        profilerResult.addDispatchEvent(name, level, count);
+        profilerResult.addDispatchEvent(name, level, count, ProfilerResult.DispatchEventType.STRATEGY_DISPATCH);
     }
 
     @Override
-    public void batchLoadedNewStrategy(String name, @Nullable Integer level, int count) {
-        profilerResult.addDispatchEvent(name, level, count);
+    public void batchLoadedNewStrategy(String dataLoaderName, @Nullable Integer level, int count) {
+        profilerResult.addDispatchEvent(dataLoaderName, level, count, ProfilerResult.DispatchEventType.STRATEGY_DISPATCH);
+    }
+
+    @Override
+    public <V> void manualDispatch(String dataLoaderName, int level, int count) {
+        profilerResult.addDispatchEvent(dataLoaderName, level, count, ProfilerResult.DispatchEventType.MANUAL_DISPATCH);
     }
 }

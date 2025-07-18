@@ -63,15 +63,22 @@ public class ProfilerResult {
     }
 
 
+    public enum DispatchEventType {
+        STRATEGY_DISPATCH,
+        MANUAL_DISPATCH,
+    }
+
     public static class DispatchEvent {
         final String dataLoaderName;
         final @Nullable Integer level; // is null for delayed dispatching
         final int count; // how many
+        final DispatchEventType type;
 
-        public DispatchEvent(String dataLoaderName, @Nullable Integer level, int count) {
+        public DispatchEvent(String dataLoaderName, @Nullable Integer level, int count, DispatchEventType type) {
             this.dataLoaderName = dataLoaderName;
             this.level = level;
             this.count = count;
+            this.type = type;
         }
 
         public String getDataLoaderName() {
@@ -86,10 +93,15 @@ public class ProfilerResult {
             return count;
         }
 
+        public DispatchEventType getType() {
+            return type;
+        }
+
         @Override
         public String toString() {
             return "DispatchEvent{" +
-                    "dataLoaderName='" + dataLoaderName + '\'' +
+                    "type=" + type +
+                    ", dataLoaderName='" + dataLoaderName + '\'' +
                     ", level=" + level +
                     ", count=" + count +
                     '}';
@@ -164,8 +176,8 @@ public class ProfilerResult {
         chainedStrategyDispatching.add(level);
     }
 
-    void addDispatchEvent(String dataLoaderName, @Nullable Integer level, int count) {
-        dispatchEvents.add(new DispatchEvent(dataLoaderName, level, count));
+    void addDispatchEvent(String dataLoaderName, @Nullable Integer level, int count, DispatchEventType type) {
+        dispatchEvents.add(new DispatchEvent(dataLoaderName, level, count, type));
     }
 
     // public getters
@@ -358,6 +370,7 @@ public class ProfilerResult {
 
     @Override
     public String toString() {
-        return shortSummary();
+        return "ProfilerResult" + shortSummaryMap();
     }
+
 }
