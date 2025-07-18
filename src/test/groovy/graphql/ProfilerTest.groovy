@@ -268,6 +268,9 @@ class ProfilerTest extends Specification {
         def schema = TestUtil.schema(sdl, [
                 Query: [
                         foo: { DataFetchingEnvironment dfe ->
+                            // blocking the engine for 1ms
+                            // so that engineTotalRunningTime time is more than 1ms
+                            Thread.sleep(1)
                             return CompletableFuture.supplyAsync {
                                 Thread.sleep(500)
                                 "1"
