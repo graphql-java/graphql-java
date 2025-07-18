@@ -447,18 +447,17 @@ public abstract class ExecutionStrategy {
         });
 
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        DataFetcher<?> dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
+        DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, dataFetcher instanceof TrivialDataFetcher);
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, originalDataFetcher instanceof TrivialDataFetcher);
         FieldFetchingInstrumentationContext fetchCtx = FieldFetchingInstrumentationContext.nonNullCtx(instrumentation.beginFieldFetching(instrumentationFieldFetchParams,
                 executionContext.getInstrumentationState())
         );
 
-        dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
-        dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
-        Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
+        DataFetcher<?> dataFetcher = instrumentation.instrumentDataFetcher(originalDataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
+        Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, originalDataFetcher, dataFetcher);
         executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject, dataFetchingEnvironment);
         fetchCtx.onDispatched();
         fetchCtx.onFetchedValue(fetchedObject);
@@ -497,7 +496,7 @@ public abstract class ExecutionStrategy {
      * ExecutionContext is not used in the method, but the java agent uses it, so it needs to be present
      */
     @SuppressWarnings("unused")
-    private Object invokeDataFetcher(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> dataFetcher) {
+    private Object invokeDataFetcher(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher) {
         Object fetchedValue;
         try {
             Object fetchedValueRaw;
@@ -506,7 +505,7 @@ public abstract class ExecutionStrategy {
             } else {
                 fetchedValueRaw = dataFetcher.get(dataFetchingEnvironment.get());
             }
-            executionContext.getProfiler().fieldFetched(fetchedValueRaw, dataFetcher, parameters.getPath());
+            executionContext.getProfiler().fieldFetched(fetchedValueRaw, originalDataFetcher, dataFetcher, parameters.getPath());
             fetchedValue = Async.toCompletableFutureOrMaterializedObject(fetchedValueRaw);
         } catch (Exception e) {
             fetchedValue = Async.exceptionallyCompletedFuture(e);

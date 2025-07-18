@@ -56,14 +56,17 @@ public class ProfilerImpl implements Profiler {
         }
     }
 
+
     @Override
-    public void fieldFetched(Object fetchedObject, DataFetcher<?> dataFetcher, ResultPath path) {
+    public void fieldFetched(Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path) {
         String key = "/" + String.join("/", path.getKeysOnly());
         profilerResult.addFieldFetched(key);
         profilerResult.incrementDataFetcherInvocationCount(key);
         ProfilerResult.DataFetcherType dataFetcherType;
         if (dataFetcher instanceof PropertyDataFetcher || dataFetcher instanceof SingletonPropertyDataFetcher) {
-            dataFetcherType = ProfilerResult.DataFetcherType.PROPERTY_DATA_FETCHER;
+            dataFetcherType = ProfilerResult.DataFetcherType.TRIVIAL_DATA_FETCHER;
+        } else if (originalDataFetcher instanceof PropertyDataFetcher || originalDataFetcher instanceof SingletonPropertyDataFetcher) {
+            dataFetcherType = ProfilerResult.DataFetcherType.WRAPPED_TRIVIAL_DATA_FETCHER;
         } else {
             dataFetcherType = ProfilerResult.DataFetcherType.CUSTOM;
             // we only record the type of the result if it is not a PropertyDataFetcher

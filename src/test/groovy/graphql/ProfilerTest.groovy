@@ -106,8 +106,9 @@ class ProfilerTest extends Specification {
 
         then:
         profilerResult.getTotalDataFetcherInvocations() == 3
-        profilerResult.getTotalPropertyDataFetcherInvocations() == 1
-        profilerResult.getTotalCustomDataFetcherInvocations() == 2
+        profilerResult.getTotalTrivialDataFetcherInvocations() == 1
+        profilerResult.getTotalTrivialDataFetcherInvocations() == 1
+        profilerResult.getTotalCustomDataFetcherInvocations() == 1
     }
 
 
@@ -308,7 +309,7 @@ class ProfilerTest extends Specification {
         profilerResult.getFieldsFetched() == ["/foo", "/foo/bar", "/foo/id"] as Set
         profilerResult.getTotalDataFetcherInvocations() == 7
         profilerResult.getTotalCustomDataFetcherInvocations() == 4
-        profilerResult.getTotalPropertyDataFetcherInvocations() == 3
+        profilerResult.getTotalTrivialDataFetcherInvocations() == 3
     }
 
     def "records timing"() {

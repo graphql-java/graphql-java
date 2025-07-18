@@ -57,9 +57,6 @@ public interface DataLoaderDispatchStrategy {
     }
 
 
-    default DataFetcher<?> modifyDataFetcher(DataFetcher<?> dataFetcher) {
-        return dataFetcher;
-    }
 
     default void newSubscriptionExecution(FieldValueInfo fieldValueInfo, AlternativeCallContext alternativeCallContext) {
 

@@ -28,7 +28,8 @@ public class ProfilerResult {
     private long endTime;
     private long engineTotalRunningTime;
     private final AtomicInteger totalDataFetcherInvocations = new AtomicInteger();
-    private final AtomicInteger totalPropertyDataFetcherInvocations = new AtomicInteger();
+    private final AtomicInteger totalTrivialDataFetcherInvocations = new AtomicInteger();
+    private final AtomicInteger totalWrappedTrivialDataFetcherInvocations = new AtomicInteger();
 
     // this is the count of how many times a data loader was invoked per data loader name
     private final Map<String, Integer> dataLoaderLoadInvocations = new ConcurrentHashMap<>();
@@ -108,7 +109,8 @@ public class ProfilerResult {
     }
 
     public enum DataFetcherType {
-        PROPERTY_DATA_FETCHER,
+        WRAPPED_TRIVIAL_DATA_FETCHER,
+        TRIVIAL_DATA_FETCHER,
         CUSTOM
     }
 
@@ -130,8 +132,10 @@ public class ProfilerResult {
     void setDataFetcherType(String key, DataFetcherType dataFetcherType) {
         dataFetcherTypeMap.putIfAbsent(key, dataFetcherType);
         totalDataFetcherInvocations.incrementAndGet();
-        if (dataFetcherType == DataFetcherType.PROPERTY_DATA_FETCHER) {
-            totalPropertyDataFetcherInvocations.incrementAndGet();
+        if (dataFetcherType == DataFetcherType.TRIVIAL_DATA_FETCHER) {
+            totalTrivialDataFetcherInvocations.incrementAndGet();
+        } else if (dataFetcherType == DataFetcherType.WRAPPED_TRIVIAL_DATA_FETCHER) {
+            totalWrappedTrivialDataFetcherInvocations.incrementAndGet();
         }
     }
 
@@ -199,10 +203,10 @@ public class ProfilerResult {
         return result;
     }
 
-    public Set<String> getPropertyDataFetcherFields() {
+    public Set<String> getTrivialDataFetcherFields() {
         Set<String> result = new LinkedHashSet<>(fieldsFetched);
         for (String field : fieldsFetched) {
-            if (dataFetcherTypeMap.get(field) == DataFetcherType.PROPERTY_DATA_FETCHER) {
+            if (dataFetcherTypeMap.get(field) == DataFetcherType.TRIVIAL_DATA_FETCHER) {
                 result.add(field);
             }
         }
@@ -214,12 +218,12 @@ public class ProfilerResult {
         return totalDataFetcherInvocations.get();
     }
 
-    public int getTotalPropertyDataFetcherInvocations() {
-        return totalPropertyDataFetcherInvocations.get();
+    public int getTotalTrivialDataFetcherInvocations() {
+        return totalTrivialDataFetcherInvocations.get();
     }
 
     public int getTotalCustomDataFetcherInvocations() {
-        return totalDataFetcherInvocations.get() - totalPropertyDataFetcherInvocations.get();
+        return totalDataFetcherInvocations.get() - totalTrivialDataFetcherInvocations.get() - totalWrappedTrivialDataFetcherInvocations.get();
     }
 
     public long getStartTime() {
@@ -272,7 +276,8 @@ public class ProfilerResult {
         result.put("totalRunTime", (endTime - startTime) + "(" + (endTime - startTime) / 1_000_000 + "ms)");
         result.put("engineTotalRunningTime", engineTotalRunningTime + "(" + engineTotalRunningTime / 1_000_000 + "ms)");
         result.put("totalDataFetcherInvocations", totalDataFetcherInvocations);
-        result.put("totalPropertyDataFetcherInvocations", totalPropertyDataFetcherInvocations);
+        result.put("totalTrivialDataFetcherInvocations", totalTrivialDataFetcherInvocations);
+        result.put("totalWrappedTrivialDataFetcherInvocations", totalWrappedTrivialDataFetcherInvocations);
         result.put("fieldsFetchedCount", fieldsFetched.size());
         result.put("dataLoaderChainingEnabled", dataLoaderChainingEnabled);
         result.put("dataLoaderLoadInvocations", dataLoaderLoadInvocations);

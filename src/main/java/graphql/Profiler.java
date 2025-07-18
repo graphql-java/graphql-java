@@ -26,7 +26,7 @@ public interface Profiler {
 
     }
 
-    default void fieldFetched(Object fetchedObject, DataFetcher<?> dataFetcher, ResultPath path) {
+    default void fieldFetched(Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path) {
 
     }
 
