@@ -171,7 +171,6 @@ public class ProfilerResult {
     }
 
 
-
     void addDispatchEvent(String dataLoaderName, @Nullable Integer level, int count, DispatchEventType type) {
         dispatchEvents.add(new DispatchEvent(dataLoaderName, level, count, type));
     }
@@ -262,47 +261,6 @@ public class ProfilerResult {
 
     public List<String> getInstrumentationClasses() {
         return instrumentationClasses;
-    }
-
-    public String fullSummary() {
-        return "ProfilerResult{" +
-                "executionId=" + executionId +
-                ", operation=" + operationType + ":" + operationName +
-                ", startTime=" + startTime +
-                ", endTime=" + endTime +
-                ", totalRunTime=" + (endTime - startTime) + "(" + (endTime - startTime) / 1_000_000 + "ms)" +
-                ", engineTotalRunningTime=" + engineTotalRunningTime + "(" + engineTotalRunningTime / 1_000_000 + "ms)" +
-                ", totalDataFetcherInvocations=" + totalDataFetcherInvocations +
-                ", totalPropertyDataFetcherInvocations=" + totalPropertyDataFetcherInvocations +
-                ", fieldsFetched=" + fieldsFetched +
-                ", dataFetcherInvocationCount=" + dataFetcherInvocationCount +
-                ", dataFetcherTypeMap=" + dataFetcherTypeMap +
-                ", dataFetcherResultType=" + dataFetcherResultType +
-                ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
-                ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
-                ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
-                ", dispatchEvents=" + printDispatchEvents() +
-                '}';
-    }
-
-    public String shortSummary() {
-        return "ProfilerResult{" +
-                "executionId=" + executionId +
-                ", operation=" + operationType + ":" + operationName +
-                ", startTime=" + startTime +
-                ", endTime=" + endTime +
-                ", totalRunTime=" + (endTime - startTime) + "(" + (endTime - startTime) / 1_000_000 + "ms)" +
-                ", engineTotalRunningTime=" + engineTotalRunningTime + "(" + engineTotalRunningTime / 1_000_000 + "ms)" +
-                ", totalDataFetcherInvocations=" + totalDataFetcherInvocations +
-                ", totalPropertyDataFetcherInvocations=" + totalPropertyDataFetcherInvocations +
-                ", fieldsFetchedCount=" + fieldsFetched.size() +
-                ", dataLoaderChainingEnabled=" + dataLoaderChainingEnabled +
-                ", dataLoaderLoadInvocations=" + dataLoaderLoadInvocations +
-                ", oldStrategyDispatchingAll=" + oldStrategyDispatchingAll +
-                ", dispatchEvents=" + printDispatchEvents() +
-                '}';
-
-
     }
 
     public Map<String, Object> shortSummaryMap() {

@@ -2,7 +2,9 @@ package graphql
 
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.language.OperationDefinition
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -54,6 +56,60 @@ class ProfilerTest extends Specification {
         profilerResult.getFieldsFetched() == ["/hello"] as Set
 
     }
+
+    def "instrumented data fetcher"() {
+        given:
+        def sdl = '''
+            type Query {
+                dog: Dog 
+            }
+            type Dog {
+                name: String
+                age: Int
+            }
+        '''
+
+
+        def dogDf = { DataFetchingEnvironment dfe -> return [name: "Luna", age: 5] } as DataFetcher
+
+        Instrumentation instrumentation = new Instrumentation() {
+            @Override
+            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+                if (parameters.getField().getName() == "name") {
+                    // wrapping a PropertyDataFetcher
+                    return { DataFetchingEnvironment dfe ->
+                        def result = dataFetcher.get(dfe)
+                        return result
+                    } as DataFetcher
+                }
+                return dataFetcher
+            }
+
+        }
+        def dfs = [Query: [
+                dog: dogDf
+        ]]
+        def schema = TestUtil.schema(sdl, dfs)
+        def graphql = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build();
+
+        ExecutionInput ei = ExecutionInput.newExecutionInput()
+                .query("{ dog {name age} }")
+                .profileExecution(true)
+                .build()
+
+        when:
+        def result = graphql.execute(ei)
+        def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
+
+        then:
+        result.getData() == [dog: [name: "Luna", age: 5]]
+
+        then:
+        profilerResult.getTotalDataFetcherInvocations() == 3
+        profilerResult.getTotalPropertyDataFetcherInvocations() == 1
+        profilerResult.getTotalCustomDataFetcherInvocations() == 2
+    }
+
 
     def "manual dataloader dispatch"() {
         given:
@@ -210,8 +266,8 @@ class ProfilerTest extends Specification {
 
         then:
         profilerResult.getInstrumentationClasses() == ["graphql.execution.instrumentation.SimplePerformantInstrumentation",
-                                                       "graphql.ProfilerTest\$1",
                                                        "graphql.ProfilerTest\$2",
+                                                       "graphql.ProfilerTest\$3",
                                                        "graphql.execution.instrumentation.SimplePerformantInstrumentation"]
 
     }
