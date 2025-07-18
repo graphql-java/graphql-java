@@ -104,7 +104,7 @@ class ProfilerTest extends Specification {
         then:
         profilerResult.getDispatchEvents()[0].type == ProfilerResult.DispatchEventType.MANUAL_DISPATCH
         profilerResult.getDispatchEvents()[0].dataLoaderName == "name"
-        profilerResult.getDispatchEvents()[0].count == 1
+        profilerResult.getDispatchEvents()[0].keyCount == 1
         profilerResult.getDispatchEvents()[0].level == 1
 
     }
@@ -170,7 +170,7 @@ class ProfilerTest extends Specification {
         profilerResult.getDataLoaderLoadInvocations().get("name") == 4
         profilerResult.getDispatchEvents()[0].type == ProfilerResult.DispatchEventType.STRATEGY_DISPATCH
         profilerResult.getDispatchEvents()[0].dataLoaderName == "name"
-        profilerResult.getDispatchEvents()[0].count == 1
+        profilerResult.getDispatchEvents()[0].keyCount == 1
         profilerResult.getDispatchEvents()[0].level == 1
 
     }
@@ -440,10 +440,10 @@ class ProfilerTest extends Specification {
         profilerResult.getDispatchEvents().size() == 2
         profilerResult.getDispatchEvents()[0].dataLoaderName == "name"
         profilerResult.getDispatchEvents()[0].level == 1
-        profilerResult.getDispatchEvents()[0].count == 2
+        profilerResult.getDispatchEvents()[0].keyCount == 2
         profilerResult.getDispatchEvents()[1].dataLoaderName == "name"
         profilerResult.getDispatchEvents()[1].level == 1
-        profilerResult.getDispatchEvents()[1].count == 2
+        profilerResult.getDispatchEvents()[1].keyCount == 2
 
     }
 

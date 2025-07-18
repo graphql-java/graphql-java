@@ -70,13 +70,13 @@ public class ProfilerResult {
     public static class DispatchEvent {
         final String dataLoaderName;
         final @Nullable Integer level; // is null for delayed dispatching
-        final int count; // how many
+        final int keyCount; // how many
         final DispatchEventType type;
 
-        public DispatchEvent(String dataLoaderName, @Nullable Integer level, int count, DispatchEventType type) {
+        public DispatchEvent(String dataLoaderName, @Nullable Integer level, int keyCount, DispatchEventType type) {
             this.dataLoaderName = dataLoaderName;
             this.level = level;
-            this.count = count;
+            this.keyCount = keyCount;
             this.type = type;
         }
 
@@ -88,8 +88,8 @@ public class ProfilerResult {
             return level;
         }
 
-        public int getCount() {
-            return count;
+        public int getKeyCount() {
+            return keyCount;
         }
 
         public DispatchEventType getType() {
@@ -102,7 +102,7 @@ public class ProfilerResult {
                     "type=" + type +
                     ", dataLoaderName='" + dataLoaderName + '\'' +
                     ", level=" + level +
-                    ", count=" + count +
+                    ", keyCount=" + keyCount +
                     '}';
         }
     }
@@ -337,7 +337,7 @@ public class ProfilerResult {
                     .append(event.getDataLoaderName())
                     .append(", level=")
                     .append(event.getLevel())
-                    .append(", count=").append(event.getCount());
+                    .append(", count=").append(event.getKeyCount());
             if (i++ < dispatchEvents.size() - 1) {
                 sb.append("; ");
             }
@@ -353,7 +353,7 @@ public class ProfilerResult {
             eventMap.put("type", event.getType().name());
             eventMap.put("dataLoader", event.getDataLoaderName());
             eventMap.put("level", event.getLevel() != null ? event.getLevel() : "delayed");
-            eventMap.put("count", event.getCount());
+            eventMap.put("keyCount", event.getKeyCount());
             result.add(eventMap);
         }
         return result;
