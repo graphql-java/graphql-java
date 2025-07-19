@@ -6,8 +6,12 @@ import graphql.execution.ResultPath;
 import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
+import graphql.introspection.Introspection;
 import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.SingletonPropertyDataFetcher;
 import org.jspecify.annotations.NullMarked;
@@ -58,8 +62,15 @@ public class ProfilerImpl implements Profiler {
 
 
     @Override
-    public void fieldFetched(Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path) {
+    public void fieldFetched(Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path, GraphQLFieldDefinition fieldDef, GraphQLOutputType parentType) {
         String key = "/" + String.join("/", path.getKeysOnly());
+        if (Introspection.isIntrospectionTypes(GraphQLTypeUtil.unwrapAll(fieldDef.getType()))
+                || Introspection.isIntrospectionTypes(GraphQLTypeUtil.unwrapAll(parentType))
+                || fieldDef.getName().equals(Introspection.SchemaMetaFieldDef.getName())
+                || fieldDef.getName().equals(Introspection.TypeMetaFieldDef.getName())
+                || fieldDef.getName().equals(Introspection.TypeNameMetaFieldDef.getName())) {
+            return;
+        }
         profilerResult.addFieldFetched(key);
         profilerResult.incrementDataFetcherInvocationCount(key);
         ProfilerResult.DataFetcherType dataFetcherType;

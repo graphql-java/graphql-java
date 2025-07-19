@@ -5,6 +5,8 @@ import graphql.execution.ResultPath;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLOutputType;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -26,7 +28,7 @@ public interface Profiler {
 
     }
 
-    default void fieldFetched(Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path) {
+    default void fieldFetched(Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path, GraphQLFieldDefinition fieldDef, GraphQLOutputType parentType) {
 
     }
 

@@ -267,6 +267,7 @@ public class ProfilerResult {
         return instrumentationClasses;
     }
 
+
     public Map<String, Object> shortSummaryMap() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("executionId", Assert.assertNotNull(executionId));
@@ -276,6 +277,7 @@ public class ProfilerResult {
         result.put("totalRunTime", (endTime - startTime) + "(" + (endTime - startTime) / 1_000_000 + "ms)");
         result.put("engineTotalRunningTime", engineTotalRunningTime + "(" + engineTotalRunningTime / 1_000_000 + "ms)");
         result.put("totalDataFetcherInvocations", totalDataFetcherInvocations);
+        result.put("totalCustomDataFetcherInvocations", getTotalCustomDataFetcherInvocations());
         result.put("totalTrivialDataFetcherInvocations", totalTrivialDataFetcherInvocations);
         result.put("totalWrappedTrivialDataFetcherInvocations", totalWrappedTrivialDataFetcherInvocations);
         result.put("fieldsFetchedCount", fieldsFetched.size());
@@ -284,6 +286,34 @@ public class ProfilerResult {
         result.put("oldStrategyDispatchingAll", oldStrategyDispatchingAll);
         result.put("dispatchEvents", getDispatchEventsAsMap());
         result.put("instrumentationClasses", instrumentationClasses);
+        int completedCount = 0;
+        int notCompletedCount = 0;
+        int materializedCount = 0;
+        // we want to minimize the overall size because it is intended to be logged
+        // and logging can be expensive and is limited in size very often
+        Map<String, String> resultTypes = new LinkedHashMap<>();
+        for (String field : dataFetcherResultType.keySet()) {
+            DataFetcherResultType dataFetcherResultType1 = dataFetcherResultType.get(field);
+            String shortType = null;
+            if (dataFetcherResultType1 == DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED) {
+                completedCount++;
+                shortType = "C";
+            } else if (dataFetcherResultType1 == DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED) {
+                notCompletedCount++;
+                shortType = "N";
+            } else if (dataFetcherResultType1 == DataFetcherResultType.MATERIALIZED) {
+                materializedCount++;
+                shortType = "M";
+            } else {
+                Assert.assertShouldNeverHappen();
+            }
+            resultTypes.put(field, Assert.assertNotNull(shortType));
+        }
+        result.put("dataFetcherResultTypesCount", Map.of(
+                DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED, completedCount,
+                DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED, notCompletedCount,
+                DataFetcherResultType.MATERIALIZED, materializedCount));
+        result.put("dataFetcherResultType", resultTypes);
         return result;
     }
 

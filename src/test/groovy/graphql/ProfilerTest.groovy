@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.ProfilerResult.DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED
 import static graphql.ProfilerResult.DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED
+import static graphql.ProfilerResult.DataFetcherResultType.MATERIALIZED
 import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.setEnableDataLoaderChaining
 import static java.util.concurrent.CompletableFuture.supplyAsync
 
@@ -56,6 +57,67 @@ class ProfilerTest extends Specification {
         profilerResult.getFieldsFetched() == ["/hello"] as Set
 
     }
+
+    def "introspection fields are ignored"() {
+        given:
+        def sdl = '''
+            type Query {
+                hello: String
+            }
+        '''
+        def schema = TestUtil.schema(sdl, [Query: [
+                hello: { DataFetchingEnvironment dfe -> return "world" } as DataFetcher
+        ]])
+        def graphql = GraphQL.newGraphQL(schema).build();
+
+        ExecutionInput ei = ExecutionInput.newExecutionInput()
+                .query("{ hello __typename alias:__typename __schema {types{name}} __type(name: \"Query\") {name} }")
+                .profileExecution(true)
+                .build()
+
+        when:
+        def result = graphql.execute(ei)
+        def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
+
+        then:
+        result.getData()["hello"] == "world"
+
+        then:
+        profilerResult.getFieldsFetched() == ["/hello",] as Set
+        profilerResult.getTotalDataFetcherInvocations() == 1
+
+    }
+
+    def "pure introspection "() {
+        given:
+        def sdl = '''
+            type Query {
+                hello: String
+            }
+        '''
+        def schema = TestUtil.schema(sdl, [Query: [
+                hello: { DataFetchingEnvironment dfe -> return "world" } as DataFetcher
+        ]])
+        def graphql = GraphQL.newGraphQL(schema).build();
+
+        ExecutionInput ei = ExecutionInput.newExecutionInput()
+                .query("{ __schema {types{name}} __type(name: \"Query\") {name} }")
+                .profileExecution(true)
+                .build()
+
+        when:
+        def result = graphql.execute(ei)
+        def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
+
+        then:
+        result.getData()["__schema"] != null
+
+        then:
+        profilerResult.getFieldsFetched() == [] as Set
+        profilerResult.getTotalDataFetcherInvocations() == 0
+
+    }
+
 
     def "instrumented data fetcher"() {
         given:
@@ -109,6 +171,7 @@ class ProfilerTest extends Specification {
         profilerResult.getTotalTrivialDataFetcherInvocations() == 1
         profilerResult.getTotalTrivialDataFetcherInvocations() == 1
         profilerResult.getTotalCustomDataFetcherInvocations() == 1
+        profilerResult.getDataFetcherResultType() == ["/dog": MATERIALIZED]
     }
 
 
