@@ -435,6 +435,7 @@ class ProfilerTest extends Specification {
             type Foo {
                 id: String
                 name: String
+                text: String
             }
         '''
         def schema = TestUtil.schema(sdl, [
@@ -442,18 +443,22 @@ class ProfilerTest extends Specification {
                         foo: { DataFetchingEnvironment dfe ->
                             return CompletableFuture.supplyAsync {
                                 Thread.sleep(100)
-                                return [[id: "1", name: "foo"]]
+                                return [[id: "1", name: "foo1"], [id: "2", name: "foo2"]]
                             }
                         } as DataFetcher],
                 Foo  : [
                         name: { DataFetchingEnvironment dfe ->
                             return CompletableFuture.completedFuture(dfe.source.name)
+                        } as DataFetcher,
+                        text: { DataFetchingEnvironment dfe ->
+                            return "text"
                         } as DataFetcher
+
                 ]])
         def graphql = GraphQL.newGraphQL(schema).build();
 
         ExecutionInput ei = ExecutionInput.newExecutionInput()
-                .query("{ foo { id name } }")
+                .query("{ foo { id name text } foo2: foo { id name text} }")
                 .profileExecution(true)
                 .build()
 
@@ -462,8 +467,19 @@ class ProfilerTest extends Specification {
         def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
 
         then:
-        result.getData() == [foo: [[id: "1", name: "foo"]]]
-        profilerResult.getDataFetcherResultType() == ["/foo/name": COMPLETABLE_FUTURE_COMPLETED, "/foo": COMPLETABLE_FUTURE_NOT_COMPLETED]
+        result.getData() == [foo: [[id: "1", name: "foo1", text: "text"], [id: "2", name: "foo2", text: "text"]], foo2: [[id: "1", name: "foo1", text: "text"], [id: "2", name: "foo2", text: "text"]]]
+        then:
+        profilerResult.getTotalDataFetcherInvocations() == 14
+        profilerResult.getTotalCustomDataFetcherInvocations() == 10
+        profilerResult.getDataFetcherResultType() == ["/foo/name" : COMPLETABLE_FUTURE_COMPLETED,
+                                                      "/foo/text" : MATERIALIZED,
+                                                      "/foo2/name": COMPLETABLE_FUTURE_COMPLETED,
+                                                      "/foo2/text": MATERIALIZED,
+                                                      "/foo2"     : COMPLETABLE_FUTURE_NOT_COMPLETED,
+                                                      "/foo"      : COMPLETABLE_FUTURE_NOT_COMPLETED]
+        profilerResult.shortSummaryMap().get("dataFetcherResultTypes") == ["COMPLETABLE_FUTURE_COMPLETED"    : "(count:2, invocations:4)",
+                                                                           "COMPLETABLE_FUTURE_NOT_COMPLETED": "(count:2, invocations:2)",
+                                                                           "MATERIALIZED"                    : "(count:2, invocations:4)"]
 
 
     }
