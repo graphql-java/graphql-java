@@ -1,6 +1,8 @@
 package graphql.execution.instrumentation;
 
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * When a {@link Instrumentation}.'beginXXX()' method is called then it must return a non null InstrumentationContext
@@ -11,6 +13,7 @@ import graphql.PublicSpi;
  * just happened or "loggers" to be called to record what has happened.
  */
 @PublicSpi
+@NullMarked
 public interface InstrumentationContext<T> {
 
     /**
@@ -24,6 +27,6 @@ public interface InstrumentationContext<T> {
      * @param result the result of the step (which may be null)
      * @param t      this exception will be non null if an exception was thrown during the step
      */
-    void onCompleted(T result, Throwable t);
+    void onCompleted(@Nullable T result, @Nullable Throwable t);
 
 }

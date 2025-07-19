@@ -34,6 +34,7 @@ public class ExecutionInput {
     private final ExecutionId executionId;
     private final Locale locale;
     private final AtomicBoolean cancelled;
+    private final boolean profileExecution;
 
 
     @Internal
@@ -50,6 +51,7 @@ public class ExecutionInput {
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
         this.cancelled = builder.cancelled;
+        this.profileExecution = builder.profileExecution;
     }
 
     /**
@@ -186,6 +188,11 @@ public class ExecutionInput {
         cancelled.set(true);
     }
 
+
+    public boolean isProfileExecution() {
+        return profileExecution;
+    }
+
     /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -266,6 +273,7 @@ public class ExecutionInput {
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
         private AtomicBoolean cancelled = new AtomicBoolean(false);
+        private boolean profileExecution;
 
         /**
          * Package level access to the graphql context
@@ -411,6 +419,11 @@ public class ExecutionInput {
          */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
             this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
+            return this;
+        }
+
+        public Builder profileExecution(boolean profileExecution) {
+            this.profileExecution = profileExecution;
             return this;
         }
 

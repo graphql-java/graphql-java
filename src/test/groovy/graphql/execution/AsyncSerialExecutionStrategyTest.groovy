@@ -3,6 +3,7 @@ package graphql.execution
 import graphql.EngineRunningState
 import graphql.ExecutionInput
 import graphql.GraphQLContext
+import graphql.Profiler
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.language.Field
 import graphql.language.OperationDefinition
@@ -109,8 +110,10 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
+                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .profiler(Profiler.NO_OP)
                 .executionInput(ei)
-                .engineRunningState(new EngineRunningState(ei))
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -160,7 +163,9 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
                 .executionInput(ei)
-                .engineRunningState(new EngineRunningState(ei))
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
+                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
