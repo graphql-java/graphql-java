@@ -14,6 +14,7 @@ import graphql.execution.ResponseMapFactory
 import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
+import graphql.normalized.nf.provider.NoOpNormalizedDocumentProvider
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -307,7 +308,7 @@ class FieldValidationTest extends Specification {
         def document = TestUtil.parseQuery(query)
         def strategy = new AsyncExecutionStrategy()
         def instrumentation = new FieldValidationInstrumentation(validation)
-        def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT, false)
+        def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT, false, NoOpNormalizedDocumentProvider.INSTANCE)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
         execution.execute(document, schema, ExecutionId.generate(), executionInput, null, new EngineRunningState(executionInput))

@@ -105,6 +105,7 @@ class StarWarsData {
     static TypeResolver characterTypeResolver = new TypeResolver() {
         @Override
         GraphQLObjectType getType(TypeResolutionEnvironment env) {
+            env.getSelectionSet().getFields() // Used to validate selection sets for various tests
             def id = env.getObject().id
             if (humanData[id] != null)
                 return StarWarsSchema.humanType

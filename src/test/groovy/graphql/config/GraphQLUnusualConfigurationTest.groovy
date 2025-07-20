@@ -127,6 +127,24 @@ class GraphQLUnusualConfigurationTest extends Specification {
         !GraphQL.unusualConfiguration(graphqlContext).incrementalSupport().isIncrementalSupportEnabled()
     }
 
+    def "can set normalized document support on graphql context objects"() {
+        when:
+        def graphqlContextBuilder = GraphQLContext.newContext()
+        GraphQL.unusualConfiguration(graphqlContextBuilder).normalizedDocumentSupport().enableNormalizedDocumentSupport(true)
+
+        then:
+        graphqlContextBuilder.build().get(ExperimentalApi.ENABLE_NORMALIZED_DOCUMENT_SUPPORT) == true
+        GraphQL.unusualConfiguration(graphqlContextBuilder).normalizedDocumentSupport().isNormalizedDocumentSupportEnabled()
+
+        when:
+        graphqlContextBuilder = GraphQLContext.newContext()
+        GraphQL.unusualConfiguration(graphqlContextBuilder).normalizedDocumentSupport().enableNormalizedDocumentSupport(false)
+
+        then:
+        graphqlContextBuilder.build().get(ExperimentalApi.ENABLE_NORMALIZED_DOCUMENT_SUPPORT) == false
+        !GraphQL.unusualConfiguration(graphqlContextBuilder).normalizedDocumentSupport().isNormalizedDocumentSupportEnabled()
+    }
+
     def "can set data loader chaining config for enablement"() {
         when:
         def graphqlContextBuilder = GraphQLContext.newContext()

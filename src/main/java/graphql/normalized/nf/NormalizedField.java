@@ -11,6 +11,7 @@ import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.normalized.NormalizedInputValue;
+import graphql.normalized.GraphQlNormalizedField;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
@@ -51,7 +52,7 @@ import static java.util.stream.Collectors.toSet;
  */
 @ExperimentalApi
 @Mutable
-public class NormalizedField {
+public class NormalizedField implements GraphQlNormalizedField {
     private final String alias;
     private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
     private final LinkedHashMap<String, Object> resolvedArguments;
@@ -294,6 +295,11 @@ public class NormalizedField {
             return alias;
         }
         return getName();
+    }
+
+    @Override
+    public GraphQlNormalizedField getGraphQlNormalizedParent() {
+        return getParent();
     }
 
     /**
@@ -583,6 +589,10 @@ public class NormalizedField {
         return builder.build();
     }
 
+    @Override
+    public List<GraphQlNormalizedField> getGraphQlNormalizedChildren() {
+        return ImmutableKit.map(getChildren(), child -> child);
+    }
 
     public static class Builder {
         private LinkedHashSet<String> objectTypeNames = new LinkedHashSet<>();
