@@ -24,10 +24,13 @@ import graphql.schema.idl.errors.TypeExtensionFieldRedefinitionError;
 import graphql.schema.idl.errors.TypeExtensionMissingBaseTypeError;
 import graphql.util.FpKit;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static graphql.schema.idl.SchemaTypeChecker.checkNamedUniqueness;
@@ -81,12 +84,13 @@ class SchemaTypeExtensionsChecker {
                                         checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                                                 (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
 
-                                //
                                 // fields must be unique within a type extension
-                                forEachBut(extension, extensions,
-                                        otherTypeExt -> checkForFieldRedefinition(errors, otherTypeExt, otherTypeExt.getFieldDefinitions(), fieldDefinitions));
+                                checkForTypeExtensionFieldUniqueness(
+                                        errors,
+                                        extensions,
+                                        ObjectTypeDefinition::getFieldDefinitions
+                                );
 
-                                //
                                 // then check for field re-defs from the base type
                                 ObjectTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), ObjectTypeDefinition.class);
                                 if (baseTypeDef != null) {
@@ -126,10 +130,12 @@ class SchemaTypeExtensionsChecker {
                                 checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                                         (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
 
-                        //
                         // fields must be unique within a type extension
-                        forEachBut(extension, extensions,
-                                otherTypeExt -> checkForFieldRedefinition(errors, otherTypeExt, otherTypeExt.getFieldDefinitions(), fieldDefinitions));
+                        checkForTypeExtensionFieldUniqueness(
+                                errors,
+                                extensions,
+                                InterfaceTypeDefinition::getFieldDefinitions
+                        );
 
                         //
                         // then check for field re-defs from the base type
@@ -139,6 +145,24 @@ class SchemaTypeExtensionsChecker {
                         }
                     });
                 });
+    }
+
+    private <T extends TypeDefinition<?>> void checkForTypeExtensionFieldUniqueness(
+            List<GraphQLError> errors,
+            List<T> extensions,
+            Function<T, List<FieldDefinition>> getFieldDefinitions
+    ) {
+        Set<String> seenFields = new HashSet<>();
+
+        for (T extension : extensions) {
+            for (FieldDefinition field : getFieldDefinitions.apply(extension)) {
+                if (seenFields.contains(field.getName())) {
+                    errors.add(new TypeExtensionFieldRedefinitionError(extension, field));
+                } else {
+                    seenFields.add(field.getName());
+                }
+            }
+        }
     }
 
     /*
