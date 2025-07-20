@@ -16,7 +16,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.ErrorClassification",
             "graphql.ErrorType",
             "graphql.ExceptionWhileDataFetching",
-            "graphql.ExecutionInput",
             "graphql.ExecutionResult",
             "graphql.GraphQL",
             "graphql.GraphQL\$Builder",
