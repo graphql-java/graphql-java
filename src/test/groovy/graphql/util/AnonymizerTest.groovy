@@ -722,46 +722,45 @@ type Object1 {
                 .print(result)
 
         then:
-        newSchema == """\
-            schema @Directive1(argument1 : "stringValue1"){
-              query: Object1
-            }
-            
-            directive @Directive1(argument1: String! = "stringValue4") repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
-            
-            "Marks the field, argument, input field or enum value as deprecated"
-            directive @deprecated(
-                "The reason for the deprecation"
-                reason: String! = "No longer supported"
-              ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
- 
-            interface Interface1 @Directive1(argument1 : "stringValue12") {
-              field2: String
-              field3: Enum1
-            }
-            
-            union Union1 @Directive1(argument1 : "stringValue21") = Object2
-            
-            type Object1 @Directive1(argument1 : "stringValue8") {
-              field1: Interface1 @Directive1(argument1 : "stringValue9")
-              field4: Union1 @deprecated
-            }
-            
-            type Object2 implements Interface1 {
-              field2: String
-              field3: Enum1
-              field5(argument2: InputObject1): String
-            }
-            
-            enum Enum1 @Directive1(argument1 : "stringValue15") {
-              EnumValue1 @Directive1(argument1 : "stringValue18")
-              EnumValue2
-            }
-            
-            input InputObject1 @Directive1(argument1 : "stringValue24") {
-              inputField1: Int @Directive1(argument1 : "stringValue27")
-            }
-        """.stripIndent()
+        newSchema == """schema @Directive1(argument1 : "stringValue1"){
+  query: Object1
+}
+
+directive @Directive1(argument1: String! = "stringValue4") repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String! = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+interface Interface1 @Directive1(argument1 : "stringValue12") {
+  field2: String
+  field3: Enum1
+}
+
+union Union1 @Directive1(argument1 : "stringValue21") = Object2
+
+type Object1 @Directive1(argument1 : "stringValue8") {
+  field1: Interface1 @Directive1(argument1 : "stringValue9")
+  field4: Union1 @deprecated
+}
+
+type Object2 implements Interface1 {
+  field2: String
+  field3: Enum1
+  field5(argument2: InputObject1): String
+}
+
+enum Enum1 @Directive1(argument1 : "stringValue15") {
+  EnumValue1 @Directive1(argument1 : "stringValue18")
+  EnumValue2
+}
+
+input InputObject1 @Directive1(argument1 : "stringValue24") {
+  inputField1: Int @Directive1(argument1 : "stringValue27")
+}
+"""
     }
 
     def "query with directives"() {

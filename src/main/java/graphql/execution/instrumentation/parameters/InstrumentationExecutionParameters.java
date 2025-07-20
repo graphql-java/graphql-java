@@ -5,7 +5,6 @@ import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.GraphQLSchema;
 
 import java.util.Map;

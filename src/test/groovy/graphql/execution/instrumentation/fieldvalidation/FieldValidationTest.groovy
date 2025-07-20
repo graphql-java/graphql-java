@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.fieldvalidation
 
+import graphql.EngineRunningState
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
@@ -9,11 +10,10 @@ import graphql.execution.AbortExecutionException
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.Execution
 import graphql.execution.ExecutionId
+import graphql.execution.ResponseMapFactory
 import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
-import graphql.execution.instrumentation.SimplePerformantInstrumentation
-import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -310,7 +310,7 @@ class FieldValidationTest extends Specification {
         def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT, false)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, null)
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, null, new EngineRunningState(executionInput))
     }
 
     def "test graphql from end to end with chained instrumentation"() {

@@ -2,6 +2,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
@@ -50,7 +51,8 @@ public class ExecutionContextBuilder {
     ExecutionInput executionInput;
     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
     boolean propagateErrorsOnNonNullContractFailure = true;
-    EngineRunningObserver engineRunningObserver;
+    EngineRunningState engineRunningState;
+    ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -98,7 +100,8 @@ public class ExecutionContextBuilder {
         executionInput = other.getExecutionInput();
         dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
         propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
-        engineRunningObserver = other.getEngineRunningObserver();
+        engineRunningState = other.getEngineRunningState();
+        responseMapFactory = other.getResponseMapFactory();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -223,6 +226,12 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    @Internal
+    public ExecutionContextBuilder responseMapFactory(ResponseMapFactory responseMapFactory) {
+        this.responseMapFactory = responseMapFactory;
+        return this;
+    }
+
     public ExecutionContextBuilder resetErrors() {
         this.errors = emptyList();
         return this;
@@ -241,8 +250,8 @@ public class ExecutionContextBuilder {
         return new ExecutionContext(this);
     }
 
-    public ExecutionContextBuilder engineRunningObserver(EngineRunningObserver engineRunningObserver) {
-        this.engineRunningObserver = engineRunningObserver;
+    public ExecutionContextBuilder engineRunningState(EngineRunningState engineRunningState) {
+        this.engineRunningState = engineRunningState;
         return this;
     }
 }

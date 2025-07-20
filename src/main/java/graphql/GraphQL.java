@@ -9,6 +9,7 @@ import graphql.execution.Execution;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.ResponseMapFactory;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.ValueUnboxer;
@@ -64,7 +65,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
  * </li>
  *
  * <li>{@link graphql.execution.UnresolvedTypeException} - is thrown if a {@link graphql.schema.TypeResolver} fails to provide a concrete
- * object type given a interface or union type.
+ * object type given an interface or union type.
  * </li>
  *
  * <li>{@link graphql.schema.validation.InvalidSchemaException} - is thrown if the schema is not valid when built via
@@ -83,6 +84,72 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
 @SuppressWarnings("Duplicates")
 @PublicApi
 public class GraphQL {
+
+    /**
+     * This allows you to control "unusual" aspects of the GraphQL system
+     * including some JVM wide settings
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration unusualConfiguration() {
+        return new GraphQLUnusualConfiguration();
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(ExecutionInput executionInput) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(executionInput.getGraphQLContext());
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(ExecutionInput.Builder executionInputBuilder) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(executionInputBuilder.graphQLContext());
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(GraphQLContext graphQLContext) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(graphQLContext);
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(GraphQLContext.Builder graphQLContextBuilder) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(graphQLContextBuilder);
+    }
 
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
@@ -213,7 +280,6 @@ public class GraphQL {
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
         private boolean doNotAutomaticallyDispatchDataLoader = false;
         private ValueUnboxer valueUnboxer = ValueUnboxer.DEFAULT;
-
 
         public Builder(GraphQLSchema graphQLSchema) {
             this.graphQLSchema = graphQLSchema;
@@ -412,41 +478,44 @@ public class GraphQL {
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
-        ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
+        EngineRunningState engineRunningState = new EngineRunningState(executionInput);
+        return engineRunningState.engineRun(() -> {
+            ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
+            engineRunningState.updateExecutionInput(executionInputWithId);
 
-        CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
-        return Async.orNullCompletedFuture(instrumentationStateCF).thenCompose(instrumentationState -> {
-            try {
-                InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema);
-                ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
+            CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
+            instrumentationStateCF = Async.orNullCompletedFuture(instrumentationStateCF);
 
-                InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(instrumentedExecutionInput, this.graphQLSchema);
-                InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
-                executionInstrumentation.onDispatched();
+            return engineRunningState.compose(instrumentationStateCF, (instrumentationState -> {
+                try {
+                    InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema);
+                    ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
 
-                GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
+                    InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(instrumentedExecutionInput, this.graphQLSchema);
+                    InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
+                    executionInstrumentation.onDispatched();
 
-                CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState);
-                //
-                // finish up instrumentation
-                executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation));
-                //
-                // allow instrumentation to tweak the result
-                executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
-                return executionResult;
-            } catch (AbortExecutionException abortException) {
-                return handleAbortException(executionInput, instrumentationState, abortException);
-            }
+                    GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
+
+                    CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState, engineRunningState);
+                    //
+                    // finish up instrumentation
+                    executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation));
+                    //
+                    // allow instrumentation to tweak the result
+                    executionResult = engineRunningState.compose(executionResult, (result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState)));
+                    return executionResult;
+                } catch (AbortExecutionException abortException) {
+                    return handleAbortException(executionInput, instrumentationState, abortException);
+                }
+            }));
         });
     }
 
+
     private CompletableFuture<ExecutionResult> handleAbortException(ExecutionInput executionInput, InstrumentationState instrumentationState, AbortExecutionException abortException) {
-        CompletableFuture<ExecutionResult> executionResult = CompletableFuture.completedFuture(abortException.toExecutionResult());
         InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema);
-        //
-        // allow instrumentation to tweak the result
-        executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
-        return executionResult;
+        return instrumentation.instrumentExecutionResult(abortException.toExecutionResult(), instrumentationParameters, instrumentationState);
     }
 
     private ExecutionInput ensureInputHasId(ExecutionInput executionInput) {
@@ -460,7 +529,7 @@ public class GraphQL {
     }
 
 
-    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, EngineRunningState engineRunningState) {
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
         Function<ExecutionInput, PreparsedDocumentEntry> computeFunction = transformedInput -> {
             // if they change the original query in the pre-parser, then we want to see it downstream from then on
@@ -468,16 +537,16 @@ public class GraphQL {
             return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
         };
         CompletableFuture<PreparsedDocumentEntry> preparsedDoc = preparsedDocumentProvider.getDocumentAsync(executionInput, computeFunction);
-        return preparsedDoc.thenCompose(preparsedDocumentEntry -> {
+        return engineRunningState.compose(preparsedDoc, (preparsedDocumentEntry -> {
             if (preparsedDocumentEntry.hasErrors()) {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
             try {
-                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
+                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState, engineRunningState);
             } catch (AbortExecutionException e) {
                 return CompletableFuture.completedFuture(e.toExecutionResult());
             }
-        });
+        }));
     }
 
     private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
@@ -536,13 +605,14 @@ public class GraphQL {
     private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput,
                                                        Document document,
                                                        GraphQLSchema graphQLSchema,
-                                                       InstrumentationState instrumentationState
+                                                       InstrumentationState instrumentationState,
+                                                       EngineRunningState engineRunningState
     ) {
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader);
         ExecutionId executionId = executionInput.getExecutionId();
 
-        return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
+        return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState, engineRunningState);
     }
 
 }

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.Document;
+import graphql.language.FieldDefinition;
 import graphql.language.Node;
 import graphql.language.SourceLocation;
 import graphql.language.Type;
@@ -98,6 +99,19 @@ public class Parser {
      */
     public static Value<?> parseValue(String input) throws InvalidSyntaxException {
         return new Parser().parseValueImpl(input);
+    }
+
+    /**
+     * Parses a string input into a graphql AST {@link FieldDefinition}
+     *
+     * @param input the input to parse
+     *
+     * @return an AST {@link FieldDefinition}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
+    public static FieldDefinition parseFieldDefinition(String input) throws InvalidSyntaxException {
+        return new Parser().parseFieldDefinitionImpl(input);
     }
 
     /**
@@ -199,6 +213,21 @@ public class Parser {
 
         ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment().document(multiSourceReader).build();
         return (Type<?>) parseImpl(parserEnvironment, nodeFunction);
+    }
+
+    private FieldDefinition parseFieldDefinitionImpl(String input) throws InvalidSyntaxException {
+        BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
+            final GraphqlParser.FieldDefinitionContext documentContext = parser.fieldDefinition();
+            FieldDefinition value = toLanguage.createFieldDefinition(documentContext);
+            return new Object[]{documentContext, value};
+        };
+        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(input, null)
+                .trackData(true)
+                .build();
+
+        ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment().document(multiSourceReader).build();
+        return (FieldDefinition) parseImpl(parserEnvironment, nodeFunction);
     }
 
     private Node<?> parseImpl(ParserEnvironment environment, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction) throws InvalidSyntaxException {

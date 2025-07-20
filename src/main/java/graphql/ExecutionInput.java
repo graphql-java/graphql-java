@@ -4,6 +4,9 @@ import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
 import graphql.execution.RawVariables;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Map;
@@ -17,6 +20,7 @@ import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegist
  * This represents the series of values that can be input on a graphql query execution
  */
 @PublicApi
+@NullMarked
 public class ExecutionInput {
     private final String query;
     private final String operationName;
@@ -29,7 +33,6 @@ public class ExecutionInput {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final ExecutionId executionId;
     private final Locale locale;
-    // this is currently not used but we want it back soon after the v23 release
     private final AtomicBoolean cancelled;
 
 
@@ -59,6 +62,7 @@ public class ExecutionInput {
     /**
      * @return the name of the query operation
      */
+    @Nullable
     public String getOperationName() {
         return operationName;
     }
@@ -72,6 +76,7 @@ public class ExecutionInput {
      * @deprecated - use {@link #getGraphQLContext()}
      */
     @Deprecated(since = "2021-07-05")
+    @Nullable
     public Object getContext() {
         return context;
     }
@@ -86,6 +91,7 @@ public class ExecutionInput {
     /**
      * @return the local context object to pass to all top level (i.e. query, mutation, subscription) data fetchers
      */
+    @Nullable
     public Object getLocalContext() {
         return localContext;
     }
@@ -93,6 +99,7 @@ public class ExecutionInput {
     /**
      * @return the root object to start the query execution on
      */
+    @Nullable
     public Object getRoot() {
         return root;
     }
@@ -120,10 +127,25 @@ public class ExecutionInput {
 
 
     /**
+     * This value can be null before the execution starts, but once the execution starts, it will be set to a non-null value.
+     * See #getExecutionIdNonNull() for a non-null version of this.
+     *
      * @return Id that will be/was used to execute this operation.
      */
+    @Nullable
     public ExecutionId getExecutionId() {
         return executionId;
+    }
+
+
+    /**
+     * Once the execution starts, GraphQL Java will make sure that this execution id is non-null.
+     * Therefore use this method if you are sue that the execution has started to get a guaranteed non-null execution id.
+     *
+     * @return the non null execution id of this operation.
+     */
+    public ExecutionId getExecutionIdNonNull() {
+        return Assert.assertNotNull(this.executionId);
     }
 
     /**
@@ -140,6 +162,28 @@ public class ExecutionInput {
      */
     public Map<String, Object> getExtensions() {
         return extensions;
+    }
+
+
+    /**
+     * The graphql engine will check this frequently and if that is true, it will
+     * throw a {@link graphql.execution.AbortExecutionException} to cancel the execution.
+     * <p>
+     * This is a cooperative cancellation.  Some asynchronous data fetching code may still continue to
+     * run but there will be no more efforts run future field fetches say.
+     *
+     * @return true if the execution should be cancelled
+     */
+    public boolean isCancelled() {
+        return cancelled.get();
+    }
+
+    /**
+     * This can be called to cancel the graphql execution.  Remember this is a cooperative cancellation
+     * and the graphql engine needs to be running on a thread to allow is to respect this flag.
+     */
+    public void cancel() {
+        cancelled.set(true);
     }
 
     /**
@@ -203,6 +247,7 @@ public class ExecutionInput {
         return new Builder().query(query);
     }
 
+    @NullUnmarked
     public static class Builder {
 
         private String query;
@@ -221,6 +266,15 @@ public class ExecutionInput {
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
         private AtomicBoolean cancelled = new AtomicBoolean(false);
+
+        /**
+         * Package level access to the graphql context
+         *
+         * @return shhh but it's the graphql context
+         */
+        GraphQLContext graphQLContext() {
+            return graphQLContext;
+        }
 
         public Builder query(String query) {
             this.query = assertNotNull(query, () -> "query can't be null");
@@ -283,7 +337,7 @@ public class ExecutionInput {
             return this;
         }
 
-         /**
+        /**
          * This will give you a builder of {@link GraphQLContext} and any values you set will be copied
          * into the underlying {@link GraphQLContext} of this execution input
          *

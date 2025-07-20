@@ -6,7 +6,6 @@ import graphql.execution.DataFetcherResult
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLTypeUtil
-import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
 import static graphql.ExecutionInput.newExecutionInput
@@ -106,8 +105,7 @@ class ExtensionsBuilderTest extends Specification {
     def "can use a custom merger"() {
         ExtensionsMerger merger = new ExtensionsMerger() {
             @Override
-            @NotNull
-            Map<Object, Object> merge(@NotNull Map<Object, Object> leftMap, @NotNull Map<Object, Object> rightMap) {
+            Map<Object, Object> merge(Map<Object, Object> leftMap, Map<Object, Object> rightMap) {
                 return rightMap
             }
         }

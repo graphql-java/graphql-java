@@ -34,7 +34,6 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
@@ -52,7 +51,7 @@ import static java.util.stream.Collectors.toList;
 @Internal
 public class SchemaTypeChecker {
 
-    public List<GraphQLError> checkTypeRegistry(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
+    public List<GraphQLError> checkTypeRegistry(ImmutableTypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
         List<GraphQLError> errors = new ArrayList<>();
         checkForMissingTypes(errors, typeRegistry);
 
@@ -130,12 +129,8 @@ public class SchemaTypeChecker {
         List<InputObjectTypeDefinition> inputTypes = filterTo(typesMap, InputObjectTypeDefinition.class);
         inputTypes.forEach(inputType -> {
             List<InputValueDefinition> inputValueDefinitions = inputType.getInputValueDefinitions();
-            List<Type> inputValueTypes = inputValueDefinitions.stream()
-                    .map(InputValueDefinition::getType)
-                    .collect(toList());
-
+            List<Type> inputValueTypes = ImmutableKit.map(inputValueDefinitions, InputValueDefinition::getType);
             inputValueTypes.forEach(checkTypeExists("input value", typeRegistry, errors, inputType));
-
         });
     }
 
@@ -149,10 +144,7 @@ public class SchemaTypeChecker {
             checkNamedUniqueness(errors, arguments, InputValueDefinition::getName,
                     (name, arg) -> new NonUniqueNameError(directiveDefinition, arg));
 
-            List<Type> inputValueTypes = arguments.stream()
-                    .map(InputValueDefinition::getType)
-                    .collect(toList());
-
+            List<Type> inputValueTypes = ImmutableKit.map(arguments, InputValueDefinition::getType);
             inputValueTypes.forEach(
                     checkTypeExists(typeRegistry, errors, "directive definition", directiveDefinition, directiveDefinition.getName())
             );
@@ -316,7 +308,7 @@ public class SchemaTypeChecker {
     }
 
     private void checkFieldTypesPresent(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fields) {
-        List<Type> fieldTypes = fields.stream().map(FieldDefinition::getType).collect(toList());
+        List<Type> fieldTypes = ImmutableKit.map(fields, FieldDefinition::getType);
         fieldTypes.forEach(checkTypeExists("field", typeRegistry, errors, typeDefinition));
 
         List<Type> fieldInputValues = fields.stream()
@@ -333,8 +325,9 @@ public class SchemaTypeChecker {
 
     private Consumer<Type> checkTypeExists(String typeOfType, TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, TypeDefinition typeDefinition) {
         return t -> {
-            TypeName unwrapped = TypeInfo.typeInfo(t).getTypeName();
-            if (!typeRegistry.hasType(unwrapped)) {
+            String name = TypeInfo.typeName(t);
+            if (!typeRegistry.hasType(name)) {
+                TypeName unwrapped = TypeInfo.typeInfo(t).getTypeName();
                 errors.add(new MissingTypeError(typeOfType, typeDefinition, unwrapped));
             }
         };
@@ -342,8 +335,9 @@ public class SchemaTypeChecker {
 
     private Consumer<Type> checkTypeExists(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, String typeOfType, Node element, String elementName) {
         return ivType -> {
-            TypeName unwrapped = TypeInfo.typeInfo(ivType).getTypeName();
-            if (!typeRegistry.hasType(unwrapped)) {
+            String name = TypeInfo.typeName(ivType);
+            if (!typeRegistry.hasType(name)) {
+                TypeName unwrapped = TypeInfo.typeInfo(ivType).getTypeName();
                 errors.add(new MissingTypeError(typeOfType, element, elementName, unwrapped));
             }
         };
@@ -353,19 +347,17 @@ public class SchemaTypeChecker {
         return t -> {
             TypeInfo typeInfo = TypeInfo.typeInfo(t);
             TypeName unwrapped = typeInfo.getTypeName();
-            Optional<TypeDefinition> type = typeRegistry.getType(unwrapped);
-            if (!type.isPresent()) {
+            TypeDefinition<?> type = typeRegistry.getTypeOrNull(unwrapped);
+            if (type == null) {
                 errors.add(new MissingInterfaceTypeError("interface", typeDefinition, unwrapped));
-            } else if (!(type.get() instanceof InterfaceTypeDefinition)) {
+            } else if (!(type instanceof InterfaceTypeDefinition)) {
                 errors.add(new MissingInterfaceTypeError("interface", typeDefinition, unwrapped));
             }
         };
     }
 
     private <T extends TypeDefinition> List<T> filterTo(Map<String, TypeDefinition> types, Class<? extends T> clazz) {
-        return types.values().stream()
-                .filter(t -> clazz.equals(t.getClass()))
-                .map(clazz::cast)
-                .collect(toList());
+        return ImmutableKit.filterAndMap(types.values(), t -> clazz.equals(t.getClass()),
+                clazz::cast);
     }
 }

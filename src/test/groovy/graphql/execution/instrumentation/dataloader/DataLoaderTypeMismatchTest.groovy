@@ -9,6 +9,7 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -36,7 +37,7 @@ class DataLoaderTypeMismatchTest extends Specification {
 
         def typeDefinitionRegistry = new SchemaParser().parse(sdl)
 
-        def dataLoader = new DataLoader<Object, Object>(new BatchLoader<Object, Object>() {
+        def dataLoader = DataLoaderFactory.newDataLoader(new BatchLoader<Object, Object>() {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.completedFuture([
@@ -50,13 +51,13 @@ class DataLoaderTypeMismatchTest extends Specification {
         def todosDef = new DataFetcher<CompletableFuture<Object>>() {
             @Override
             CompletableFuture<Object> get(DataFetchingEnvironment environment) {
-                return dataLoader.load(environment)
+                return environment.getDataLoader("getTodos").load(environment)
             }
         }
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
-                    .dataFetcher("getTodos", todosDef))
+                        .dataFetcher("getTodos", todosDef))
                 .build()
 
         def schema = new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, wiring)
@@ -65,10 +66,16 @@ class DataLoaderTypeMismatchTest extends Specification {
                 .build()
 
         when:
-        def result = graphql.execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query("query { getTodos { id } }").build())
+        def result = graphql.execute(ExecutionInput.newExecutionInput()
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .dataLoaderRegistry(dataLoaderRegistry).query("query { getTodos { id } }").build())
 
         then: "execution shouldn't hang"
         !result.errors.empty
         result.errors[0].message == "Can't resolve value (/getTodos) : type mismatch error, expected type LIST"
+
+        where:
+        enableDataLoaderChaining << [true, false]
+
     }
 }

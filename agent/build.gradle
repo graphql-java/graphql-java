@@ -2,11 +2,11 @@ plugins {
     id 'java'
     id 'java-library'
     id 'maven-publish'
-    id "com.gradleup.shadow" version "8.3.6"
+    id "com.gradleup.shadow" version "8.3.8"
 }
 
 dependencies {
-    implementation("net.bytebuddy:byte-buddy:1.17.5")
+    implementation("net.bytebuddy:byte-buddy:1.17.6")
     // graphql-java itself
     implementation(rootProject)
 }

@@ -2,13 +2,13 @@ package graphql.introspection;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.language.AstPrinter;
 import graphql.language.BooleanValue;
 import graphql.language.Document;
 import graphql.language.OperationDefinition;
 import graphql.language.SelectionSet;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -20,7 +20,6 @@ import static graphql.language.FragmentSpread.newFragmentSpread;
 import static graphql.language.OperationDefinition.newOperationDefinition;
 import static graphql.language.SelectionSet.newSelectionSet;
 import static graphql.language.TypeName.newTypeName;
-import static java.util.stream.Collectors.toList;
 
 /**
  * {@link IntrospectionQueryBuilder} allows you to build introspection queries controlled
@@ -152,6 +151,7 @@ public class IntrospectionQueryBuilder {
                     this.inputValueDeprecation,
                     this.typeRefFragmentDepth);
         }
+
         /**
          * This will allow you to include the `isRepeatable` field for directives in the introspection query.
          *
@@ -223,7 +223,7 @@ public class IntrospectionQueryBuilder {
 
     @SafeVarargs
     private static <T> List<T> filter(T... args) {
-        return Arrays.stream(args).filter(Objects::nonNull).collect(toList());
+        return ImmutableKit.filterVarArgs(Objects::nonNull, args);
     }
 
     /**

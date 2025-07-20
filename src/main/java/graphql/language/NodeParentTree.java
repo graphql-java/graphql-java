@@ -3,6 +3,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -42,10 +43,9 @@ public class NodeParentTree<T extends Node> {
     }
 
     private ImmutableList<String> mkPath(Deque<T> copy) {
-        return copy.stream()
-                .filter(node1 -> node1 instanceof NamedNode)
-                .map(node1 -> ((NamedNode) node1).getName())
-                .collect(ImmutableList.toImmutableList());
+        return ImmutableKit.filterAndMap(copy,
+                node1 -> node1 instanceof NamedNode,
+                node1 -> ((NamedNode) node1).getName());
     }
 
 
