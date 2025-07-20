@@ -356,7 +356,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.util.NodeLocation",
             "graphql.util.NodeMultiZipper",
             "graphql.util.NodeZipper",
-            "graphql.util.querygenerator.QueryGenerator",
+//            "graphql.util.querygenerator.QueryGenerator",
             "graphql.util.querygenerator.QueryGeneratorOptions",
             "graphql.util.querygenerator.QueryGeneratorOptions\$QueryGeneratorOptionsBuilder",
             "graphql.util.querygenerator.QueryGeneratorResult",
@@ -391,11 +391,10 @@ class JSpecifyAnnotationsCheck extends Specification {
 
         then:
         if (!classesMissingAnnotation.isEmpty()) {
-            println """The following public API and experimental API classes are missing @NullMarked annotation:
-            ${classesMissingAnnotation.sort().join("\n")}
-            
-Add @NullMarked to these public API classes and add @Nullable annotations where appropriate. See documentation at https://jspecify.dev/docs/user-guide/#nullmarked"""
-            assert false, "Found ${classesMissingAnnotation.size()} public API and experimental API classes missing @NullMarked annotation"
+            throw new AssertionError("""The following public API and experimental API classes are missing @NullMarked annotation:
+${classesMissingAnnotation.sort().join("\n")}
+
+Add @NullMarked to these public API classes and add @Nullable annotations where appropriate. See documentation at https://jspecify.dev/docs/user-guide/#nullmarked""")
         }
     }
 } 
