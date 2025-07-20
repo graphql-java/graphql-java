@@ -356,7 +356,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.util.NodeLocation",
             "graphql.util.NodeMultiZipper",
             "graphql.util.NodeZipper",
-//            "graphql.util.querygenerator.QueryGenerator",
+            "graphql.util.querygenerator.QueryGenerator",
             "graphql.util.querygenerator.QueryGeneratorOptions",
             "graphql.util.querygenerator.QueryGeneratorOptions\$QueryGeneratorOptionsBuilder",
             "graphql.util.querygenerator.QueryGeneratorResult",
