@@ -3,6 +3,7 @@ package graphql;
 import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
 import graphql.execution.RawVariables;
+import graphql.execution.preparsed.persisted.PersistedQuerySupport;
 import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
@@ -36,10 +37,19 @@ public class ExecutionInput {
     private final AtomicBoolean cancelled;
     private final boolean profileExecution;
 
+    /**
+     * In order for {@link #getQuery()} to never be null, use this to mark
+     * them so that invariant can be satisfied while assuming that the persisted query
+     * id is elsewhere.
+     */
+    public final static String PERSISTED_QUERY_MARKER = PersistedQuerySupport.PERSISTED_QUERY_MARKER;
+
+    private final static String APOLLO_AUTOMATIC_PERSISTED_QUERY_EXTENSION = "persistedQuery";
+
 
     @Internal
     private ExecutionInput(Builder builder) {
-        this.query = assertNotNull(builder.query, () -> "query can't be null");
+        this.query = assertQuery(builder);
         this.operationName = builder.operationName;
         this.context = builder.context;
         this.graphQLContext = assertNotNull(builder.graphQLContext);
@@ -52,6 +62,30 @@ public class ExecutionInput {
         this.extensions = builder.extensions;
         this.cancelled = builder.cancelled;
         this.profileExecution = builder.profileExecution;
+    }
+
+    private static String assertQuery(Builder builder) {
+        if ((builder.query == null || builder.query.isEmpty()) && isPersistedQuery(builder)) {
+            return PERSISTED_QUERY_MARKER;
+        }
+
+        return assertNotNull(builder.query, () -> "query can't be null");
+    }
+
+    /**
+     * This is used to determine if this execution input is a persisted query or not.
+     *
+     * @implNote The current implementation supports Apollo Persisted Queries (APQ) by checking for
+     * the extensions property for the persisted query extension.
+     * See <a href="https://www.apollographql.com/docs/apollo-server/performance/apq/">Apollo Persisted Queries</a> for more details.
+     *
+     * @param builder the builder to check
+     *
+     * @return true if this is a persisted query
+     */
+    private static boolean isPersistedQuery(Builder builder) {
+        return builder.extensions != null &&
+                builder.extensions.containsKey(APOLLO_AUTOMATIC_PERSISTED_QUERY_EXTENSION);
     }
 
     /**
@@ -285,7 +319,7 @@ public class ExecutionInput {
         }
 
         public Builder query(String query) {
-            this.query = assertNotNull(query, () -> "query can't be null");
+            this.query = query;
             return this;
         }
 
