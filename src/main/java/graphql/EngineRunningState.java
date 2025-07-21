@@ -39,12 +39,17 @@ public class EngineRunningState {
 
     private final AtomicInteger isRunning = new AtomicInteger(0);
 
-    public EngineRunningState(ExecutionInput executionInput) {
+
+    public EngineRunningState(ExecutionInput executionInput, Profiler profiler) {
+        EngineRunningObserver engineRunningObserver = executionInput.getGraphQLContext().get(EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY);
+        EngineRunningObserver wrappedObserver = profiler.wrapEngineRunningObserver(engineRunningObserver);
+        this.engineRunningObserver = wrappedObserver;
         this.executionInput = executionInput;
         this.graphQLContext = executionInput.getGraphQLContext();
         this.executionId = executionInput.getExecutionId();
-        this.engineRunningObserver = executionInput.getGraphQLContext().get(EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY);
     }
+
+
 
     public <U, T> CompletableFuture<U> handle(CompletableFuture<T> src, BiFunction<? super T, Throwable, ? extends U> fn) {
         if (engineRunningObserver == null) {
