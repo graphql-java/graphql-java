@@ -66,22 +66,10 @@ import static graphql.Assert.assertNotNull;
 @NullMarked
 public class MergedField {
 
-    private @Nullable ImmutableList<Field> fields;
     private final Field singleField;
     private final ImmutableList<DeferredExecution> deferredExecutions;
 
-    private MergedField(ImmutableList<Field> fields, ImmutableList<DeferredExecution> deferredExecutions) {
-        assertNotEmpty(fields);
-        this.fields = fields;
-        this.singleField = fields.get(0);
-        this.deferredExecutions = deferredExecutions;
-    }
-
     private MergedField(Field field, ImmutableList<DeferredExecution> deferredExecutions) {
-        // we make "this.fields" lazy because mostly we have single fields, and we avoid a
-        // list allocation if we can.  This is a micro memory optimisation but for large
-        // operations this can add up.
-        this.fields = null;
         this.singleField = field;
         this.deferredExecutions = deferredExecutions;
     }
@@ -135,51 +123,28 @@ public class MergedField {
      * @return all merged fields
      */
     public List<Field> getFields() {
-        List<Field> fields = this.fields;
-        if (fields == null) {
-            synchronized (this) {
-                if (this.fields == null) {
-                    this.fields = ImmutableList.of(singleField);
-                }
-                fields = this.fields;
-            }
-        }
-        return fields;
+        return ImmutableList.of(singleField);
     }
 
     /**
      * @return how many fields are in this merged field
      */
     public int getFieldsCount() {
-        if (this.fields == null) {
-            return 1;
-        }
-        return this.fields.size();
+        return 1;
     }
 
     /**
      * @return true if the field has a sub selection
      */
     public boolean hasSubSelection() {
-        if (this.fields == null) {
-            return singleField.getSelectionSet() != null;
-        }
-        for (Field field : this.fields) {
-            if (field.getSelectionSet() != null) {
-                return true;
-            }
-        }
-        return false;
+        return singleField.getSelectionSet() != null;
     }
 
     /**
      * @return true if this {@link MergedField} represents a single {@link Field} in the operation
      */
     public boolean isSingleField() {
-        if (this.fields == null) {
-            return true;
-        }
-        return this.fields.size() == 1;
+        return true;
     }
 
     /**
@@ -211,23 +176,94 @@ public class MergedField {
             return false;
         }
         MergedField that = (MergedField) o;
-        if (fields != null) {
-            return fields.equals(that.fields);
-        } else {
-            return this.singleField.equals(that.singleField);
-        }
+        return this.singleField.equals(that.singleField);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(Objects.requireNonNullElse(fields, singleField));
+        return Objects.hashCode(singleField);
     }
 
     @Override
     public String toString() {
         return "MergedField{" +
-                "field(s)=" + (fields != null ? fields : singleField) +
+                "field(s)=" + singleField +
                 '}';
+    }
+
+    /**
+     * Most of the time we have a single field inside a MergedField but when we need more than one field
+     * represented then this {@link MultiMergedField} is used
+     */
+    static final class MultiMergedField extends MergedField {
+        private final ImmutableList<Field> fields;
+
+        MultiMergedField(ImmutableList<Field> fields, ImmutableList<DeferredExecution> deferredExecutions) {
+            super(fields.get(0), deferredExecutions);
+            this.fields = fields;
+        }
+
+        @Override
+        public List<Field> getFields() {
+            return fields;
+        }
+
+        @Override
+        public boolean hasSubSelection() {
+            for (Field field : this.fields) {
+                if (field.getSelectionSet() != null) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public int getFieldsCount() {
+            return fields.size();
+        }
+
+        @Override
+        public boolean isSingleField() {
+            return fields.size() == 1;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            MultiMergedField that = (MultiMergedField) o;
+            return fields.equals(that.fields);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(fields);
+        }
+
+        @Override
+        public String toString() {
+            return "MultiMergedField{" +
+                    "field(s)=" + fields +
+                    '}';
+        }
+
+
+        @Override
+        public void forEach(Consumer<Field> fieldConsumer) {
+            fields.forEach(fieldConsumer);
+        }
+
+        @Override
+        MergedField newMergedFieldWith(Field field, @Nullable DeferredExecution deferredExecution) {
+            ImmutableList<DeferredExecution> deferredExecutions = mkDeferredExecutions(deferredExecution);
+            ImmutableList<Field> fields = ImmutableKit.addToList(this.fields, field);
+            return new MultiMergedField(fields, deferredExecutions);
+        }
     }
 
 
@@ -253,17 +289,17 @@ public class MergedField {
      * @return a new {@link MergedField} instance
      */
     MergedField newMergedFieldWith(Field field, @Nullable DeferredExecution deferredExecution) {
+        ImmutableList<DeferredExecution> deferredExecutions = mkDeferredExecutions(deferredExecution);
+        ImmutableList<Field> fields = ImmutableList.of(singleField, field);
+        return new MultiMergedField(fields, deferredExecutions);
+    }
+
+    ImmutableList<DeferredExecution> mkDeferredExecutions(@Nullable DeferredExecution deferredExecution) {
         ImmutableList<DeferredExecution> deferredExecutions = this.deferredExecutions;
         if (deferredExecution != null) {
             deferredExecutions = ImmutableKit.addToList(deferredExecutions, deferredExecution);
         }
-        ImmutableList<Field> fields = this.fields;
-        if (fields == null) {
-            fields = ImmutableList.of(singleField, field);
-        } else {
-            fields = ImmutableKit.addToList(fields, field);
-        }
-        return new MergedField(fields, deferredExecutions);
+        return deferredExecutions;
     }
 
     /**
@@ -291,18 +327,14 @@ public class MergedField {
      * @param fieldConsumer the consumer to run
      */
     public void forEach(Consumer<Field> fieldConsumer) {
-        if (fields == null) {
-            fieldConsumer.accept(singleField);
-        } else {
-            fields.forEach(fieldConsumer);
-        }
+        fieldConsumer.accept(singleField);
     }
 
     public static class Builder {
 
         /*
             The builder logic is complicated by these dual singleton / list duality code,
-            but it prevents memory allocation curing field collection and every bit counts
+            but it prevents memory allocation and every bit counts
             when the CPU is running hot and an operation has lots of fields!
          */
         private ImmutableList.@Nullable Builder<Field> fields;
@@ -313,7 +345,7 @@ public class MergedField {
         }
 
         private Builder(MergedField existing) {
-            if (existing.fields != null) {
+            if (existing instanceof MultiMergedField) {
                 this.singleField = null;
                 this.fields = new ImmutableList.Builder<>();
                 this.fields.addAll(existing.getFields());
@@ -370,7 +402,8 @@ public class MergedField {
                 return new MergedField(singleField, deferredExecutions);
             }
             ImmutableList<Field> fields = assertNotNull(this.fields, () -> "You MUST add at least one field via the builder").build();
-            return new MergedField(fields, deferredExecutions);
+            assertNotEmpty(fields);
+            return new MultiMergedField(fields, deferredExecutions);
         }
     }
 }
