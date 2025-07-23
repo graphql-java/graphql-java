@@ -22,7 +22,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 class Issue1178DataLoaderDispatchTest extends Specification {
 
 
-    @RepeatUntilFailure(maxAttempts = 100)
+    @RepeatUntilFailure(maxAttempts = 100, ignoreRest = false)
     def "shouldn't dispatch twice in multithreaded env"() {
         setup:
         def sdl = """

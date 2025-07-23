@@ -349,7 +349,8 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
-    @RepeatUntilFailure(maxAttempts = 50)
+    @RepeatUntilFailure(maxAttempts = 50, ignoreRest = false)
+    // skip until
     def "dataloader in initial result and chained dataloader inside nested defer block"() {
         given:
         def sdl = '''

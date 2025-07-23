@@ -9,8 +9,8 @@ import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
-import spock.lang.Unroll
 
 import java.time.Duration
 import java.util.concurrent.Executors
@@ -86,7 +86,7 @@ class ChainedDataLoaderTest extends Specification {
         batchLoadCalls == 2
     }
 
-    @Unroll
+    @RepeatUntilFailure(maxAttempts = 20, ignoreRest = false)
     def "parallel different data loaders"() {
         given:
         def sdl = '''
@@ -177,8 +177,6 @@ class ChainedDataLoaderTest extends Specification {
         er.data == [hello: "friendsLunakey1Skipperkey2", helloDelayed: "friendsLunakey1-delayedSkipperkey2-delayed"]
         batchLoadCalls.get() == 6
 
-        where:
-        i << (0..20)
     }
 
 
@@ -339,7 +337,7 @@ class ChainedDataLoaderTest extends Specification {
         batchLoadCalls == 3
     }
 
-    def "chained data loaders with two isolated data loaders"() {
+    def "chained data loaders with two delayed data loaders"() {
         given:
         def sdl = '''
 

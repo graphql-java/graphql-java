@@ -156,7 +156,7 @@ class GraphqlErrorHelperTest extends Specification {
         }
     }
 
-    @RepeatUntilFailure(maxAttempts = 1_000)
+    @RepeatUntilFailure(maxAttempts = 1_000, ignoreRest = false)
     def "can deterministically serialize SourceLocation"() {
         when:
         def specMap = GraphqlErrorHelper.toSpecification(new TestError())
