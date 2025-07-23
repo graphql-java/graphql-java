@@ -402,7 +402,6 @@ class ChainedDataLoaderTest extends Specification {
         batchLoadCalls.get() == 1
     }
 
-    @spock.lang.Ignore
     def "executor for delayed dispatching can be configured"() {
         given:
         def sdl = '''
