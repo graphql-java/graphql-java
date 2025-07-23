@@ -41,12 +41,11 @@ public class FieldCollector {
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedField mergedField, boolean incrementalSupport) {
         Map<String, MergedField> subFields = new LinkedHashMap<>();
         Set<String> visitedFragments = new LinkedHashSet<>();
-        for (Field field : mergedField.getFields()) {
-            if (field.getSelectionSet() == null) {
-                continue;
+        mergedField.forEach(field -> {
+            if (field.getSelectionSet() != null) {
+                this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields, null, incrementalSupport);
             }
-            this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields, null, incrementalSupport);
-        }
+        });
         return newMergedSelectionSet().subFields(subFields).build();
     }
 
@@ -142,11 +141,8 @@ public class FieldCollector {
         }
         String name = field.getResultKey();
         if (fields.containsKey(name)) {
-            MergedField curFields = fields.get(name);
-            fields.put(name, curFields.transform(builder -> builder
-                    .addField(field)
-                    .addDeferredExecution(deferredExecution))
-            );
+            MergedField currentMergedField = fields.get(name);
+            fields.put(name, currentMergedField.newMergedFieldWith(field,deferredExecution));
         } else {
             fields.put(name, MergedField.newSingletonMergedField(field, deferredExecution));
         }
