@@ -168,7 +168,7 @@ public class MergedField {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }
@@ -189,6 +189,29 @@ public class MergedField {
         return "MergedField{" +
                 "field(s)=" + singleField +
                 '}';
+    }
+
+    /**
+     * This is an important method because it creates a new MergedField from the existing one without using a builder
+     * to save memory.
+     *
+     * @param field             the new field to add to the current merged field
+     * @param deferredExecution the deferred execution
+     *
+     * @return a new {@link MergedField} instance
+     */
+    MergedField newMergedFieldWith(Field field, @Nullable DeferredExecution deferredExecution) {
+        ImmutableList<DeferredExecution> deferredExecutions = mkDeferredExecutions(deferredExecution);
+        ImmutableList<Field> fields = ImmutableList.of(singleField, field);
+        return new MultiMergedField(fields, deferredExecutions);
+    }
+
+    ImmutableList<DeferredExecution> mkDeferredExecutions(@Nullable DeferredExecution deferredExecution) {
+        ImmutableList<DeferredExecution> deferredExecutions = this.deferredExecutions;
+        if (deferredExecution != null) {
+            deferredExecutions = ImmutableKit.addToList(deferredExecutions, deferredExecution);
+        }
+        return deferredExecutions;
     }
 
     /**
@@ -279,28 +302,6 @@ public class MergedField {
         return new Builder().fields(fields);
     }
 
-    /**
-     * This is an important method because it creates a new MergedField from the existing one without using a builder
-     * to save memory.
-     *
-     * @param field             the new field to add to the current merged field
-     * @param deferredExecution the deferred execution
-     *
-     * @return a new {@link MergedField} instance
-     */
-    MergedField newMergedFieldWith(Field field, @Nullable DeferredExecution deferredExecution) {
-        ImmutableList<DeferredExecution> deferredExecutions = mkDeferredExecutions(deferredExecution);
-        ImmutableList<Field> fields = ImmutableList.of(singleField, field);
-        return new MultiMergedField(fields, deferredExecutions);
-    }
-
-    ImmutableList<DeferredExecution> mkDeferredExecutions(@Nullable DeferredExecution deferredExecution) {
-        ImmutableList<DeferredExecution> deferredExecutions = this.deferredExecutions;
-        if (deferredExecution != null) {
-            deferredExecutions = ImmutableKit.addToList(deferredExecutions, deferredExecution);
-        }
-        return deferredExecutions;
-    }
 
     /**
      * This is an important method in that it creates a MergedField direct without the list and without a builder and hence
