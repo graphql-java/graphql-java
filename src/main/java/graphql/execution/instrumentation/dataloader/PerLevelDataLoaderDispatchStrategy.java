@@ -11,7 +11,6 @@ import graphql.execution.FieldValueInfo;
 import graphql.execution.incremental.AlternativeCallContext;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.util.InterThreadMemoizedSupplier;
 import graphql.util.LockKit;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
@@ -26,9 +25,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -39,13 +35,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     private final CallStack initialCallStack;
     private final ExecutionContext executionContext;
-    private final long batchWindowNs;
     private final boolean enableDataLoaderChaining;
 
-    private final InterThreadMemoizedSupplier<ScheduledExecutorService> delayedDataLoaderDispatchExecutor;
-
-    static final InterThreadMemoizedSupplier<ScheduledExecutorService> defaultDelayedDLCFBatchWindowScheduler
-            = new InterThreadMemoizedSupplier<>(() -> Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors()));
 
     static final long DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000L;
     private final Profiler profiler;
@@ -209,15 +200,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         this.executionContext = executionContext;
 
         GraphQLContext graphQLContext = executionContext.getGraphQLContext();
-        this.batchWindowNs = graphQLContext.getOrDefault(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT);
-
-        this.delayedDataLoaderDispatchExecutor = new InterThreadMemoizedSupplier<>(() -> {
-            DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderDispatcherExecutorFactory = graphQLContext.get(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY);
-            if (delayedDataLoaderDispatcherExecutorFactory != null) {
-                return delayedDataLoaderDispatcherExecutorFactory.createExecutor(executionContext.getExecutionId(), graphQLContext);
-            }
-            return defaultDelayedDLCFBatchWindowScheduler.get();
-        });
 
         this.enableDataLoaderChaining = graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false);
         this.profiler = executionContext.getProfiler();
@@ -607,14 +589,15 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     private void newDelayedDataLoader(ResultPathWithDataLoader resultPathWithDataLoader, CallStack callStack) {
-        callStack.lock.runLocked(() -> {
-            callStack.batchWindowOfDelayedDataLoaderToDispatch.add(resultPathWithDataLoader.resultPath);
-            if (!callStack.batchWindowOpen) {
-                callStack.batchWindowOpen = true;
-                delayedDataLoaderDispatchExecutor.get().schedule(new DispatchDelayedDataloader(callStack), this.batchWindowNs, TimeUnit.NANOSECONDS);
-            }
-
-        });
+        dispatchDLCFImpl(Set.of(resultPathWithDataLoader.resultPath), null, callStack);
+//        callStack.lock.runLocked(() -> {
+//            callStack.batchWindowOfDelayedDataLoaderToDispatch.add(resultPathWithDataLoader.resultPath);
+//            if (!callStack.batchWindowOpen) {
+//                callStack.batchWindowOpen = true;
+//                delayedDataLoaderDispatchExecutor.get().schedule(new DispatchDelayedDataloader(callStack), this.batchWindowNs, TimeUnit.NANOSECONDS);
+//            }
+//
+//        });
     }
 
     private static class ResultPathWithDataLoader {

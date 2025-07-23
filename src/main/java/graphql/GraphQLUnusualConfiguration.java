@@ -1,16 +1,11 @@
 package graphql;
 
 import graphql.execution.ResponseMapFactory;
-import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory;
 import graphql.introspection.GoodFaithIntrospection;
 import graphql.parser.ParserOptions;
 import graphql.schema.PropertyDataFetcherHelper;
 
-import java.time.Duration;
-
 import static graphql.Assert.assertNotNull;
-import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS;
-import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY;
 import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING;
 
 /**
@@ -364,42 +359,6 @@ public class GraphQLUnusualConfiguration {
             return this;
         }
 
-        /**
-         * @return the batch window duration size for delayed DataLoaders.
-         */
-        public Duration delayedDataLoaderBatchWindowSize() {
-            Long d = contextConfig.get(DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS);
-            return d != null ? Duration.ofNanos(d) : null;
-        }
-
-        /**
-         * Sets the batch window duration size for delayed DataLoaders.
-         * That is for DataLoaders, that are not batched as part of the normal per level
-         * dispatching, because they were created after the level was already dispatched.
-         */
-        @ExperimentalApi
-        public DataloaderConfig delayedDataLoaderBatchWindowSize(Duration batchWindowSize) {
-            contextConfig.put(DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, batchWindowSize.toNanos());
-            return this;
-        }
-
-        /**
-         * @return the instance of {@link DelayedDataLoaderDispatcherExecutorFactory} that is used to create the
-         * {@link java.util.concurrent.ScheduledExecutorService} for the delayed DataLoader dispatching.
-         */
-        public DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderExecutorFactory() {
-            return contextConfig.get(DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY);
-        }
-
-        /**
-         * Sets the instance of {@link DelayedDataLoaderDispatcherExecutorFactory} that is used to create the
-         * {@link java.util.concurrent.ScheduledExecutorService} for the delayed DataLoader dispatching.
-         */
-        @ExperimentalApi
-        public DataloaderConfig delayedDataLoaderExecutorFactory(DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderDispatcherExecutorFactory) {
-            contextConfig.put(DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY, delayedDataLoaderDispatcherExecutorFactory);
-            return this;
-        }
     }
 
     public static class ResponseMapFactoryConfig extends BaseContextConfig {
