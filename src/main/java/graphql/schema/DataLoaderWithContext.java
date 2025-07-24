@@ -36,7 +36,7 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
             AlternativeCallContext alternativeCallContext = dfeInternalState.getDeferredCallContext();
             int level = dfe.getExecutionStepInfo().getPath().getLevel();
             String path = dfe.getExecutionStepInfo().getPath().toString();
-            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderLoadCall(path, level, delegate, dataLoaderName, key, alternativeCallContext);
+            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderInvocation(path, level, delegate, dataLoaderName, key, alternativeCallContext);
         }
         return result;
     }
