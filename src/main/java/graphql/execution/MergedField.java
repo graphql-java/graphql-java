@@ -340,7 +340,7 @@ public class MergedField {
          */
         private ImmutableList.@Nullable Builder<Field> fields;
         private @Nullable Field singleField;
-        private final ImmutableList.Builder<DeferredExecution> deferredExecutions = new ImmutableList.Builder<>();
+        private ImmutableList.@Nullable Builder<DeferredExecution> deferredExecutions;
 
         private Builder() {
         }
@@ -353,7 +353,17 @@ public class MergedField {
             } else {
                 this.singleField = existing.singleField;
             }
-            deferredExecutions.addAll(existing.deferredExecutions);
+            if (!existing.deferredExecutions.isEmpty()) {
+                this.deferredExecutions = ensureDeferredExecutionsListBuilder();
+                this.deferredExecutions.addAll(existing.deferredExecutions);
+            }
+        }
+
+        private ImmutableList.Builder<DeferredExecution> ensureDeferredExecutionsListBuilder() {
+            if (this.deferredExecutions == null) {
+                this.deferredExecutions = new ImmutableList.Builder<>();
+            }
+            return this.deferredExecutions;
         }
 
         private ImmutableList.Builder<Field> ensureFieldsListBuilder() {
@@ -368,8 +378,14 @@ public class MergedField {
         }
 
         public Builder fields(List<Field> fields) {
-            this.fields = ensureFieldsListBuilder();
-            this.fields.addAll(fields);
+            if (singleField == null && this.fields == null && fields.size() == 1) {
+                // even if you present a list - if its a list of one, we dont allocate a list
+                singleField = fields.get(0);
+                return this;
+            } else {
+                this.fields = ensureFieldsListBuilder();
+                this.fields.addAll(fields);
+            }
             return this;
         }
 
@@ -385,20 +401,29 @@ public class MergedField {
         }
 
         public Builder addDeferredExecutions(List<DeferredExecution> deferredExecutions) {
-            this.deferredExecutions.addAll(deferredExecutions);
+            if (!deferredExecutions.isEmpty()) {
+                this.deferredExecutions = ensureDeferredExecutionsListBuilder();
+                this.deferredExecutions.addAll(deferredExecutions);
+            }
             return this;
         }
 
         @SuppressWarnings("UnusedReturnValue")
         public Builder addDeferredExecution(@Nullable DeferredExecution deferredExecution) {
             if (deferredExecution != null) {
+                this.deferredExecutions = ensureDeferredExecutionsListBuilder();
                 this.deferredExecutions.add(deferredExecution);
             }
             return this;
         }
 
         public MergedField build() {
-            ImmutableList<DeferredExecution> deferredExecutions = this.deferredExecutions.build();
+            ImmutableList<DeferredExecution> deferredExecutions;
+            if (this.deferredExecutions == null) {
+                deferredExecutions = ImmutableList.of();
+            } else {
+                deferredExecutions = this.deferredExecutions.build();
+            }
             if (this.singleField != null && this.fields == null) {
                 return new MergedField(singleField, deferredExecutions);
             }

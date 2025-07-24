@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.execution.incremental.DeferredExecution
 import graphql.language.Field
 import graphql.language.SelectionSet
 import spock.lang.Specification
@@ -12,6 +13,8 @@ class MergedFieldTest extends Specification {
     def alias1 = Field.newField("a1").alias("alias1").build()
     def ss = SelectionSet.newSelectionSet([fa_1, fa_2]).build()
     def sub1 = Field.newField("s1").selectionSet(ss).build()
+    def deferred1 = new DeferredExecution("defer1")
+    def deferred2 = new DeferredExecution("defer2")
 
     def "can construct from a single field"() {
         when:
@@ -133,4 +136,44 @@ class MergedFieldTest extends Specification {
         !(mergedField2 === mergedField)
     }
 
+    def "builder can handle no deferred executions"() {
+        when:
+        def mergedField = MergedField.newMergedField().addField(fa_1)
+                .addDeferredExecutions([]).build()
+        then:
+        mergedField.getName() == "fa"
+        mergedField.getSingleField() == fa_1
+        mergedField.getDeferredExecutions().isEmpty()
+    }
+
+    def "builder can handle list of deferred executions"() {
+        when:
+        def mergedField = MergedField.newMergedField().addField(fa_1)
+                .addDeferredExecutions([deferred1, deferred2]).build()
+        then:
+        mergedField.getName() == "fa"
+        mergedField.getSingleField() == fa_1
+        mergedField.getDeferredExecutions() == [deferred1, deferred2]
+
+    }
+
+    def "builder can handle a single deferred executions"() {
+        when:
+        def mergedField = MergedField.newMergedField().addField(fa_1)
+                .addDeferredExecution(deferred1).build()
+        then:
+        mergedField.getName() == "fa"
+        mergedField.getSingleField() == fa_1
+        mergedField.getDeferredExecutions() == [deferred1]
+    }
+
+    def "builder can handle a single deferred execution at a time"() {
+        when:
+        def mergedField = MergedField.newMergedField().addField(fa_1)
+                .addDeferredExecution(deferred1).addDeferredExecution(deferred2).build()
+        then:
+        mergedField.getName() == "fa"
+        mergedField.getSingleField() == fa_1
+        mergedField.getDeferredExecutions() == [deferred1,deferred2]
+    }
 }
