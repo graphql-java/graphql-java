@@ -147,12 +147,22 @@ public class ProfilerImpl implements Profiler {
 
     @Override
     public void batchLoadedOldStrategy(String name, int level, int count) {
-        profilerResult.addDispatchEvent(name, level, count, ProfilerResult.DispatchEventType.STRATEGY_DISPATCH);
+        profilerResult.addDispatchEvent(name, level, count, ProfilerResult.DispatchEventType.LEVEL_STRATEGY_DISPATCH);
     }
 
     @Override
-    public void batchLoadedNewStrategy(String dataLoaderName, @Nullable Integer level, int count) {
-        profilerResult.addDispatchEvent(dataLoaderName, level, count, ProfilerResult.DispatchEventType.STRATEGY_DISPATCH);
+    public void batchLoadedNewStrategy(String dataLoaderName, Integer level, int count, boolean delayed, boolean chained) {
+        ProfilerResult.DispatchEventType dispatchEventType = null;
+        if (delayed && !chained) {
+            dispatchEventType = ProfilerResult.DispatchEventType.DELAYED_DISPATCH;
+        } else if (delayed) {
+            dispatchEventType = ProfilerResult.DispatchEventType.CHAINED_DELAYED_DISPATCH;
+        } else if (!chained) {
+            dispatchEventType = ProfilerResult.DispatchEventType.LEVEL_STRATEGY_DISPATCH;
+        } else {
+            dispatchEventType = ProfilerResult.DispatchEventType.CHAINED_STRATEGY_DISPATCH;
+        }
+        profilerResult.addDispatchEvent(dataLoaderName, level, count, dispatchEventType);
     }
 
     @Override

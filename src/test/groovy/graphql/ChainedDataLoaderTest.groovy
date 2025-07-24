@@ -264,7 +264,7 @@ class ChainedDataLoaderTest extends Specification {
     }
 
 
-    def "chained data loaders with an isolated data loader"() {
+    def "chained data loaders with an delayed data loader"() {
         given:
         def sdl = '''
 

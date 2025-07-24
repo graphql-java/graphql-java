@@ -25,9 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 @Internal
 @NullMarked
@@ -38,7 +36,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private final boolean enableDataLoaderChaining;
 
 
-    static final long DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000L;
     private final Profiler profiler;
 
     private final Map<AlternativeCallContext, CallStack> deferredCallStackMap = new ConcurrentHashMap<>();
@@ -94,15 +91,15 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         // all levels that are ready to be dispatched
         private int highestReadyLevel;
 
-        private final List<ResultPathWithDataLoader> allResultPathWithDataLoader = Collections.synchronizedList(new ArrayList<>());
-        private final Map<Integer, Set<ResultPathWithDataLoader>> levelToResultPathWithDataLoader = new ConcurrentHashMap<>();
-
+        /**
+         * Data for chained dispatching.
+         * A result path is used to identify a DataFetcher.
+         */
+        private final List<DataLoaderInvocation> allDataLoaderInvocations = Collections.synchronizedList(new ArrayList<>());
+        private final Map<Integer, Set<DataLoaderInvocation>> levelToDataLoaderInvocation = new ConcurrentHashMap<>();
         private final Set<Integer> dispatchingStartedPerLevel = ConcurrentHashMap.newKeySet();
         private final Set<Integer> dispatchingFinishedPerLevel = ConcurrentHashMap.newKeySet();
-        // Set of ResultPath
-        private final Set<String> batchWindowOfDelayedDataLoaderToDispatch = ConcurrentHashMap.newKeySet();
-
-        private boolean batchWindowOpen;
+        private final Set<Integer> currentlyDelayedDispatchingLevels = ConcurrentHashMap.newKeySet();
 
 
         private final List<FieldValueInfo> deferredFragmentRootFieldsFetched = new ArrayList<>();
@@ -113,8 +110,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             expectedExecuteObjectCallsPerLevel.set(0, 1);
         }
 
-        public void addResultPathWithDataLoader(int level, ResultPathWithDataLoader resultPathWithDataLoader) {
-            levelToResultPathWithDataLoader.computeIfAbsent(level, k -> new LinkedHashSet<>()).add(resultPathWithDataLoader);
+        public void addDataLoaderInvocationForLevel(int level, DataLoaderInvocation dataLoaderInvocation) {
+            levelToDataLoaderInvocation.computeIfAbsent(level, k -> new LinkedHashSet<>()).add(dataLoaderInvocation);
         }
 
 
@@ -328,12 +325,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             callStack.clearHappenedExecuteObjectCalls();
             callStack.clearHappenedOnFieldValueCalls();
             callStack.expectedExecuteObjectCallsPerLevel.set(0, 1);
-            callStack.dispatchingFinishedPerLevel.clear();
-            callStack.dispatchingStartedPerLevel.clear();
-            callStack.allResultPathWithDataLoader.clear();
-            callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
-            callStack.batchWindowOpen = false;
-            callStack.levelToResultPathWithDataLoader.clear();
+            callStack.currentlyDelayedDispatchingLevels.clear();
+            callStack.allDataLoaderInvocations.clear();
+            callStack.levelToDataLoaderInvocation.clear();
             callStack.highestReadyLevel = 0;
         });
     }
@@ -475,16 +469,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             dispatchAll(dataLoaderRegistry, level);
             return;
         }
-        Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
-        if (resultPathWithDataLoaders != null) {
-            Set<String> resultPathToDispatch = callStack.lock.callLocked(() -> {
+        Set<DataLoaderInvocation> dataLoaderInvocations = callStack.levelToDataLoaderInvocation.get(level);
+        if (dataLoaderInvocations != null) {
+            callStack.lock.runLocked(() -> {
                 callStack.dispatchingStartedPerLevel.add(level);
-                return resultPathWithDataLoaders
-                        .stream()
-                        .map(resultPathWithDataLoader -> resultPathWithDataLoader.resultPath)
-                        .collect(Collectors.toSet());
             });
-            dispatchDLCFImpl(resultPathToDispatch, level, callStack);
+            dispatchDLCFImpl(level, callStack, false, false);
         } else {
             callStack.lock.runLocked(() -> {
                 callStack.dispatchingStartedPerLevel.add(level);
@@ -504,110 +494,93 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
     }
 
-    private void dispatchDLCFImpl(Set<String> resultPathsToDispatch, @Nullable Integer level, CallStack callStack) {
+    private void dispatchDLCFImpl(Integer level, CallStack callStack, boolean delayed, boolean chained) {
 
-        // filter out all DataLoaderCFS that are matching the fields we want to dispatch
-        List<ResultPathWithDataLoader> relevantResultPathWithDataLoader = new ArrayList<>();
-        // we need to copy the list because the callStack.allResultPathWithDataLoader can be modified concurrently
-        // while iterating over it
-        ArrayList<ResultPathWithDataLoader> resultPathWithDataLoaders = new ArrayList<>(callStack.allResultPathWithDataLoader);
-        for (ResultPathWithDataLoader resultPathWithDataLoader : resultPathWithDataLoaders) {
-            if (resultPathsToDispatch.contains(resultPathWithDataLoader.resultPath)) {
-                relevantResultPathWithDataLoader.add(resultPathWithDataLoader);
+        List<DataLoaderInvocation> relevantDataLoaderInvocations = callStack.lock.callLocked(() -> {
+            List<DataLoaderInvocation> result = new ArrayList<>();
+            for (DataLoaderInvocation dataLoaderInvocation : callStack.allDataLoaderInvocations) {
+                if (dataLoaderInvocation.level == level) {
+                    result.add(dataLoaderInvocation);
+                }
             }
-        }
-        // we are cleaning up the list of all DataLoadersCFs
-        callStack.allResultPathWithDataLoader.removeAll(relevantResultPathWithDataLoader);
-
-        // means we are all done dispatching the fields
-        if (relevantResultPathWithDataLoader.size() == 0) {
-            if (level != null) {
+            callStack.allDataLoaderInvocations.removeAll(result);
+            if (result.size() > 0) {
+                return result;
+            }
+            if (delayed) {
+                callStack.currentlyDelayedDispatchingLevels.remove(level);
+            } else {
                 callStack.dispatchingFinishedPerLevel.add(level);
             }
+            return result;
+        });
+        if (relevantDataLoaderInvocations.size() == 0) {
             return;
         }
         List<CompletableFuture> allDispatchedCFs = new ArrayList<>();
-        for (ResultPathWithDataLoader resultPathWithDataLoader : relevantResultPathWithDataLoader) {
-            CompletableFuture<List> dispatch = resultPathWithDataLoader.dataLoader.dispatch();
+        for (DataLoaderInvocation dataLoaderInvocation : relevantDataLoaderInvocations) {
+            CompletableFuture<List> dispatch = dataLoaderInvocation.dataLoader.dispatch();
             allDispatchedCFs.add(dispatch);
             dispatch.whenComplete((objects, throwable) -> {
                 if (objects != null && objects.size() > 0) {
-                    profiler.batchLoadedNewStrategy(resultPathWithDataLoader.name, level, objects.size());
+                    profiler.batchLoadedNewStrategy(dataLoaderInvocation.name, level, objects.size(), delayed, chained);
                 }
             });
         }
         CompletableFuture.allOf(allDispatchedCFs.toArray(new CompletableFuture[0]))
                 .whenComplete((unused, throwable) -> {
-                    dispatchDLCFImpl(resultPathsToDispatch, level, callStack);
+                    dispatchDLCFImpl(level, callStack, delayed, true);
                         }
                 );
 
     }
 
 
-    public void newDataLoaderLoadCall(String resultPath, int level, DataLoader dataLoader, String
-            dataLoaderName, Object key, @Nullable AlternativeCallContext alternativeCallContext) {
+    public void newDataLoaderInvocation(String resultPath,
+                                        int level,
+                                        DataLoader dataLoader,
+                                        String dataLoaderName,
+                                        Object key,
+                                        @Nullable AlternativeCallContext alternativeCallContext) {
         if (!enableDataLoaderChaining) {
             return;
         }
-        ResultPathWithDataLoader resultPathWithDataLoader = new ResultPathWithDataLoader(resultPath, level, dataLoader, dataLoaderName, key);
+        DataLoaderInvocation dataLoaderInvocation = new DataLoaderInvocation(resultPath, level, dataLoader, dataLoaderName, key);
         CallStack callStack = getCallStack(alternativeCallContext);
-        boolean levelFinished = callStack.lock.callLocked(() -> {
-            boolean finished = callStack.dispatchingFinishedPerLevel.contains(level);
-            callStack.allResultPathWithDataLoader.add(resultPathWithDataLoader);
-            // only add to the list of DataLoader for this level if we are not already dispatching
-            if (!callStack.dispatchingStartedPerLevel.contains(level)) {
-                callStack.addResultPathWithDataLoader(level, resultPathWithDataLoader);
+        boolean startNewDelayedDispatching = callStack.lock.callLocked(() -> {
+            callStack.allDataLoaderInvocations.add(dataLoaderInvocation);
+
+            boolean started = callStack.dispatchingStartedPerLevel.contains(level);
+            if (!started) {
+                callStack.addDataLoaderInvocationForLevel(level, dataLoaderInvocation);
             }
-            return finished;
+            boolean finished = callStack.dispatchingFinishedPerLevel.contains(level);
+            // we need to start a new delayed dispatching if
+            // the normal dispatching is finished and there is no currently delayed dispatching for this level
+            boolean newDelayedInvocation = finished && !callStack.currentlyDelayedDispatchingLevels.contains(level);
+            if (newDelayedInvocation) {
+                callStack.currentlyDelayedDispatchingLevels.add(level);
+            }
+            return newDelayedInvocation;
         });
-        if (levelFinished) {
-            newDelayedDataLoader(resultPathWithDataLoader, callStack);
+        if (startNewDelayedDispatching) {
+            dispatchDLCFImpl(level, callStack, true, false);
         }
 
 
     }
 
-    class DispatchDelayedDataloader implements Runnable {
-
-        private final CallStack callStack;
-
-        public DispatchDelayedDataloader(CallStack callStack) {
-            this.callStack = callStack;
-        }
-
-        @Override
-        public void run() {
-            AtomicReference<Set<String>> resultPathToDispatch = new AtomicReference<>();
-            callStack.lock.runLocked(() -> {
-                resultPathToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfDelayedDataLoaderToDispatch));
-                callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
-                callStack.batchWindowOpen = false;
-            });
-            dispatchDLCFImpl(Assert.assertNotNull(resultPathToDispatch.get()), null, callStack);
-        }
-    }
-
-    private void newDelayedDataLoader(ResultPathWithDataLoader resultPathWithDataLoader, CallStack callStack) {
-        dispatchDLCFImpl(Set.of(resultPathWithDataLoader.resultPath), null, callStack);
-//        callStack.lock.runLocked(() -> {
-//            callStack.batchWindowOfDelayedDataLoaderToDispatch.add(resultPathWithDataLoader.resultPath);
-//            if (!callStack.batchWindowOpen) {
-//                callStack.batchWindowOpen = true;
-//                delayedDataLoaderDispatchExecutor.get().schedule(new DispatchDelayedDataloader(callStack), this.batchWindowNs, TimeUnit.NANOSECONDS);
-//            }
-//
-//        });
-    }
-
-    private static class ResultPathWithDataLoader {
+    /**
+     * A single data loader invocation.
+     */
+    private static class DataLoaderInvocation {
         final String resultPath;
         final int level;
         final DataLoader dataLoader;
         final String name;
         final Object key;
 
-        public ResultPathWithDataLoader(String resultPath, int level, DataLoader dataLoader, String name, Object key) {
+        public DataLoaderInvocation(String resultPath, int level, DataLoader dataLoader, String name, Object key) {
             this.resultPath = resultPath;
             this.level = level;
             this.dataLoader = dataLoader;

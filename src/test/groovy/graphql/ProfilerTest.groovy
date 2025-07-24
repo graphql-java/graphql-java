@@ -288,7 +288,7 @@ class ProfilerTest extends Specification {
         batchLoadCalls.get() == 1
         then:
         profilerResult.getDataLoaderLoadInvocations().get("name") == 4
-        profilerResult.getDispatchEvents()[0].type == ProfilerResult.DispatchEventType.STRATEGY_DISPATCH
+        profilerResult.getDispatchEvents()[0].type == ProfilerResult.DispatchEventType.LEVEL_STRATEGY_DISPATCH
         profilerResult.getDispatchEvents()[0].dataLoaderName == "name"
         profilerResult.getDispatchEvents()[0].keyCount == 1
         profilerResult.getDispatchEvents()[0].level == 1
@@ -529,9 +529,16 @@ class ProfilerTest extends Specification {
             return supplyAsync {
                 batchLoadCalls++
                 Thread.sleep(250)
-                println "BatchLoader called with keys: $keys"
-                assert keys.size() == 2
-                return ["Luna", "Tiger"]
+                println "BatchLoader called with keys: $keys thread: ${Thread.currentThread().name}"
+                return keys.collect { key ->
+                    if (key == "Key1") {
+                        return "Luna"
+                    } else if (key == "Key2") {
+                        return "Tiger"
+                    } else {
+                        return key
+                    }
+                }
             }
         }
 
@@ -540,7 +547,7 @@ class ProfilerTest extends Specification {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
         dataLoaderRegistry.register("name", nameDataLoader);
 
-        def df1 = { env ->
+        def dogDF = { env ->
             return env.getDataLoader("name").load("Key1").thenCompose {
                 result ->
                     {
@@ -549,16 +556,21 @@ class ProfilerTest extends Specification {
             }
         } as DataFetcher
 
-        def df2 = { env ->
-            return env.getDataLoader("name").load("Key2").thenCompose {
-                result ->
-                    {
-                        return env.getDataLoader("name").load(result)
-                    }
+        def catDF = { env ->
+            return supplyAsync {
+                Thread.sleep(1500)
+                return "foo"
+            }.thenCompose {
+                return env.getDataLoader("name").load("Key2").thenCompose {
+                    result ->
+                        {
+                            return env.getDataLoader("name").load(result)
+                        }
+                }
             }
         } as DataFetcher
 
-        def fetchers = ["Query": ["dogName": df1, "catName": df2]]
+        def fetchers = ["Query": ["dogName": dogDF, "catName": catDF]]
         def schema = TestUtil.schema(sdl, fetchers)
         def graphQL = GraphQL.newGraphQL(schema).build()
 
@@ -573,16 +585,26 @@ class ProfilerTest extends Specification {
         def profilerResult = ei.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY) as ProfilerResult
         then:
         er.data == [dogName: "Luna", catName: "Tiger"]
-        batchLoadCalls == 2
+        batchLoadCalls == 4
         profilerResult.isDataLoaderChainingEnabled()
         profilerResult.getDataLoaderLoadInvocations() == [name: 4]
-        profilerResult.getDispatchEvents().size() == 2
+        profilerResult.getDispatchEvents().size() == 4
+
+        profilerResult.getDispatchEvents()[0].type == ProfilerResult.DispatchEventType.LEVEL_STRATEGY_DISPATCH
         profilerResult.getDispatchEvents()[0].dataLoaderName == "name"
         profilerResult.getDispatchEvents()[0].level == 1
-        profilerResult.getDispatchEvents()[0].keyCount == 2
-        profilerResult.getDispatchEvents()[1].dataLoaderName == "name"
-        profilerResult.getDispatchEvents()[1].level == 1
-        profilerResult.getDispatchEvents()[1].keyCount == 2
+        profilerResult.getDispatchEvents()[0].keyCount == 1
+
+        profilerResult.getDispatchEvents()[2].type == ProfilerResult.DispatchEventType.DELAYED_DISPATCH
+        profilerResult.getDispatchEvents()[2].dataLoaderName == "name"
+        profilerResult.getDispatchEvents()[2].level == 1
+        profilerResult.getDispatchEvents()[2].keyCount == 1
+
+        profilerResult.getDispatchEvents()[3].type == ProfilerResult.DispatchEventType.CHAINED_DELAYED_DISPATCH
+        profilerResult.getDispatchEvents()[3].dataLoaderName == "name"
+        profilerResult.getDispatchEvents()[3].level == 1
+        profilerResult.getDispatchEvents()[3].keyCount == 1
+
 
     }
 
