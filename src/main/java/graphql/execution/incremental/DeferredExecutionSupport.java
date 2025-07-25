@@ -74,7 +74,7 @@ public interface DeferredExecutionSupport {
             ImmutableList.Builder<String> nonDeferredFieldNamesBuilder = ImmutableList.builder();
 
             mergedSelectionSet.getSubFields().values().forEach(mergedField -> {
-                if (mergedField.getFields().size() > mergedField.getDeferredExecutions().size()) {
+                if (mergedField.getFieldsCount() > mergedField.getDeferredExecutions().size()) {
                     nonDeferredFieldNamesBuilder.add(mergedField.getSingleField().getResultKey());
                     return;
                 }

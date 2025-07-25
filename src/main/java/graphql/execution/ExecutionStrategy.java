@@ -160,7 +160,7 @@ public abstract class ExecutionStrategy {
 
     @Internal
     public static String mkNameForPath(MergedField mergedField) {
-        return mkNameForPath(mergedField.getFields());
+        return mergedField.getResultKey();
     }
 
     @Internal
