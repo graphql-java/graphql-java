@@ -6,7 +6,7 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
-import static graphql.schema.GraphQLTypeReference.*
+import static graphql.schema.GraphQLTypeReference.typeRef
 
 class GraphQLTypeUtilTest extends Specification {
 
@@ -204,5 +204,33 @@ class GraphQLTypeUtilTest extends Specification {
 
         then:
         !GraphQLTypeUtil.isInput(type)
+    }
+
+    def "can unwrap non null-ness"() {
+
+        when:
+        def type = GraphQLTypeUtil.unwrapNonNull(nonNull(GraphQLString))
+
+        then:
+        (type as GraphQLNamedType).getName() == "String"
+
+        when:
+        type = GraphQLTypeUtil.unwrapNonNull(nonNull(list(GraphQLString)))
+
+        then:
+        type instanceof GraphQLList
+
+        when:
+        type = GraphQLTypeUtil.unwrapNonNull(list(GraphQLString))
+
+        then:
+        type instanceof GraphQLList
+
+        when:
+        type = GraphQLTypeUtil.unwrapNonNull(GraphQLString)
+
+        then:
+        (type as GraphQLNamedType).getName() == "String"
+
     }
 }

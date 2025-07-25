@@ -127,6 +127,18 @@ public class ExecutionStepInfo {
     }
 
     /**
+     * This returns the type which is unwrapped if it was {@link GraphQLNonNull} wrapped
+     * and then cast to the target type.
+     *
+     * @param <T> for two
+     *
+     * @return the graphql type in question
+     */
+    public <T extends GraphQLOutputType> T getUnwrappedNonNullTypeAs() {
+        return GraphQLTypeUtil.unwrapNonNullAs(this.type);
+    }
+
+    /**
      * This returns the field definition that is in play when this type info was created or null
      * if the type is a root query type
      *

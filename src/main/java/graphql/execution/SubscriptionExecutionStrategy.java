@@ -226,7 +226,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     private ExecutionStepInfo createSubscribedFieldStepInfo(ExecutionContext
                                                                     executionContext, ExecutionStrategyParameters parameters) {
         Field field = parameters.getField().getSingleField();
-        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
+        GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
         return createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
     }
