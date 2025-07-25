@@ -215,19 +215,19 @@ class GraphQLTypeUtilTest extends Specification {
         (type as GraphQLNamedType).getName() == "String"
 
         when:
-        type =  GraphQLTypeUtil.unwrapNonNull(nonNull(list(GraphQLString)))
+        type = GraphQLTypeUtil.unwrapNonNull(nonNull(list(GraphQLString)))
 
         then:
         type instanceof GraphQLList
 
         when:
-        type =  GraphQLTypeUtil.unwrapNonNull(list(GraphQLString))
+        type = GraphQLTypeUtil.unwrapNonNull(list(GraphQLString))
 
         then:
         type instanceof GraphQLList
 
         when:
-        type =  GraphQLTypeUtil.unwrapNonNull(GraphQLString)
+        type = GraphQLTypeUtil.unwrapNonNull(GraphQLString)
 
         then:
         (type as GraphQLNamedType).getName() == "String"

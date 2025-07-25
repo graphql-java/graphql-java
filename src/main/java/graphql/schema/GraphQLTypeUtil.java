@@ -219,17 +219,17 @@ public class GraphQLTypeUtil {
 
 
     /**
-     * Unwraps all non-nullable layers of the type until it reaches a type that is not {@link GraphQLNonNull}
+     * Unwraps a single non-nullable layer of the type if its present.  Note there can
+     * only ever be one non-nullable wrapping of a type and this is enforced by {@link GraphQLNonNull}
      *
      * @param type the type to unwrap
      *
      * @return the underlying type that is not {@link GraphQLNonNull}
      */
     public static GraphQLType unwrapNonNull(GraphQLType type) {
-        // nominally its illegal to have a type that is a non null wrapping a non-null
-        // but the code is like this just in case and anyway it has to do 1 non-null check
-        // so this works even if it wont really loop
-        while (isNonNull(type)) {
+        // its illegal to have a type that is a non-null wrapping a non-null type
+        // and GraphQLNonNull has code that prevents it so we can just check once during the unwrapping
+        if (isNonNull(type)) {
             // is cheaper doing this direct rather than calling #unwrapOne
             type = ((GraphQLNonNull) type).getWrappedType();
         }
@@ -237,8 +237,8 @@ public class GraphQLTypeUtil {
     }
 
     /**
-     * Unwraps all non nullable layers of the type until it reaches a type that is not {@link GraphQLNonNull}
-     * and then cast to the target type.
+     * Unwraps a single non-nullable layer of the type if its present and then cast to the target type.  Note there can
+     * only ever be one non-nullable wrapping of a type and this is enforced by {@link GraphQLNonNull}
      *
      * @param type the type to unwrap
      * @param <T>  for two
