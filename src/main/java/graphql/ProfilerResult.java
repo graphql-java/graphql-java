@@ -273,7 +273,7 @@ public class ProfilerResult {
 
     public Map<String, Object> shortSummaryMap() {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("executionId", Assert.assertNotNull(executionId));
+        result.put("executionId", Assert.assertNotNull(executionId).toString());
         result.put("operation", operationType + ":" + operationName);
         result.put("startTime", startTime);
         result.put("endTime", endTime);
