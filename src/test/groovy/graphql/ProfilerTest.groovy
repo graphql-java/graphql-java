@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.ExecutionId
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationState
@@ -457,9 +458,11 @@ class ProfilerTest extends Specification {
                 ]])
         def graphql = GraphQL.newGraphQL(schema).build();
 
+        ExecutionId id = ExecutionId.from("myExecutionId")
         ExecutionInput ei = ExecutionInput.newExecutionInput()
                 .query("{ foo { id name text } foo2: foo { id name text} }")
                 .profileExecution(true)
+                .executionId(id)
                 .build()
 
         when:
@@ -480,8 +483,7 @@ class ProfilerTest extends Specification {
         profilerResult.shortSummaryMap().get("dataFetcherResultTypes") == ["COMPLETABLE_FUTURE_COMPLETED"    : "(count:2, invocations:4)",
                                                                            "COMPLETABLE_FUTURE_NOT_COMPLETED": "(count:2, invocations:2)",
                                                                            "MATERIALIZED"                    : "(count:2, invocations:4)"]
-
-
+        profilerResult.shortSummaryMap().get("executionId") == "myExecutionId"
     }
 
     def "operation details"() {
