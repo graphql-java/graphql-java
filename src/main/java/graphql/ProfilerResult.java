@@ -277,8 +277,8 @@ public class ProfilerResult {
         result.put("operation", operationType + ":" + operationName);
         result.put("startTime", startTime);
         result.put("endTime", endTime);
-        result.put("totalRunTime", (endTime - startTime) + "(" + (endTime - startTime) / 1_000_000 + "ms)");
-        result.put("engineTotalRunningTime", engineTotalRunningTime + "(" + engineTotalRunningTime / 1_000_000 + "ms)");
+        result.put("totalRunTimeNs", endTime - startTime);
+        result.put("engineTotalRunningTimeNs", engineTotalRunningTime);
         result.put("totalDataFetcherInvocations", totalDataFetcherInvocations);
         result.put("totalCustomDataFetcherInvocations", getTotalCustomDataFetcherInvocations());
         result.put("totalTrivialDataFetcherInvocations", totalTrivialDataFetcherInvocations);
@@ -310,11 +310,21 @@ public class ProfilerResult {
                 Assert.assertShouldNeverHappen();
             }
         }
-        result.put("dataFetcherResultTypes", Map.of(
-                DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED.name(), "(count:" + completedCount + ", invocations:" + completedInvokeCount + ")",
-                DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED.name(), "(count:" + notCompletedCount + ", invocations:" + notCompletedInvokeCount + ")",
-                DataFetcherResultType.MATERIALIZED.name(), "(count:" + materializedCount + ", invocations:" + materializedInvokeCount + ")"
-        ));
+        LinkedHashMap<String, Object> dFRTinfo = new LinkedHashMap<>(3);
+        LinkedHashMap<String, Integer> completableFutureCompleted = new LinkedHashMap<>(2);
+        completableFutureCompleted.put("count", completedCount);
+        completableFutureCompleted.put("invocations", completedInvokeCount);
+        LinkedHashMap<String, Integer> completableFutureNotCompleted = new LinkedHashMap<>(2);
+        completableFutureNotCompleted.put("count", notCompletedCount);
+        completableFutureNotCompleted.put("invocations", notCompletedInvokeCount);
+        LinkedHashMap<String, Integer> materialized = new LinkedHashMap<>(2);
+        materialized.put("count", materializedCount);
+        materialized.put("invocations", materializedInvokeCount);
+
+        dFRTinfo.put(DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED.name(), completableFutureCompleted);
+        dFRTinfo.put(DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED.name(), completableFutureNotCompleted);
+        dFRTinfo.put(DataFetcherResultType.MATERIALIZED.name(), materialized);
+        result.put("dataFetcherResultTypes", dFRTinfo);
         return result;
     }
 
