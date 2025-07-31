@@ -275,7 +275,7 @@ public class ProfilerResult {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("executionId", Assert.assertNotNull(executionId).toString());
         result.put("operationName", operationName);
-        result.put("operationType", operationType.toString());
+        result.put("operationType", Assert.assertNotNull(operationType).toString());
         result.put("startTimeNs", startTime);
         result.put("endTimeNs", endTime);
         result.put("totalRunTimeNs", endTime - startTime);
