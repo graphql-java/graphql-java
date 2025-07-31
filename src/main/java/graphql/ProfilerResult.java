@@ -274,9 +274,10 @@ public class ProfilerResult {
     public Map<String, Object> shortSummaryMap() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("executionId", Assert.assertNotNull(executionId).toString());
-        result.put("operation", operationType + ":" + operationName);
-        result.put("startTime", startTime);
-        result.put("endTime", endTime);
+        result.put("operationName", operationName);
+        result.put("operationType", operationType.toString());
+        result.put("startTimeNs", startTime);
+        result.put("endTimeNs", endTime);
         result.put("totalRunTimeNs", endTime - startTime);
         result.put("engineTotalRunningTimeNs", engineTotalRunningTime);
         result.put("totalDataFetcherInvocations", totalDataFetcherInvocations);
