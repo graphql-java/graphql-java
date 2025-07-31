@@ -273,12 +273,13 @@ public class ProfilerResult {
 
     public Map<String, Object> shortSummaryMap() {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("executionId", Assert.assertNotNull(executionId));
-        result.put("operation", operationType + ":" + operationName);
-        result.put("startTime", startTime);
-        result.put("endTime", endTime);
-        result.put("totalRunTime", (endTime - startTime) + "(" + (endTime - startTime) / 1_000_000 + "ms)");
-        result.put("engineTotalRunningTime", engineTotalRunningTime + "(" + engineTotalRunningTime / 1_000_000 + "ms)");
+        result.put("executionId", Assert.assertNotNull(executionId).toString());
+        result.put("operationName", operationName);
+        result.put("operationType", Assert.assertNotNull(operationType).toString());
+        result.put("startTimeNs", startTime);
+        result.put("endTimeNs", endTime);
+        result.put("totalRunTimeNs", endTime - startTime);
+        result.put("engineTotalRunningTimeNs", engineTotalRunningTime);
         result.put("totalDataFetcherInvocations", totalDataFetcherInvocations);
         result.put("totalCustomDataFetcherInvocations", getTotalCustomDataFetcherInvocations());
         result.put("totalTrivialDataFetcherInvocations", totalTrivialDataFetcherInvocations);
@@ -310,14 +311,20 @@ public class ProfilerResult {
                 Assert.assertShouldNeverHappen();
             }
         }
-        result.put("dataFetcherResultTypes", Map.of(
-                DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED.name(), "(count:" + completedCount + ", invocations:" + completedInvokeCount + ")",
-                DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED.name(), "(count:" + notCompletedCount + ", invocations:" + notCompletedInvokeCount + ")",
-                DataFetcherResultType.MATERIALIZED.name(), "(count:" + materializedCount + ", invocations:" + materializedInvokeCount + ")"
-        ));
+        LinkedHashMap<String, Object> dFRTinfo = new LinkedHashMap<>(3);
+        dFRTinfo.put(DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED.name(), createCountMap(completedCount, completedInvokeCount));
+        dFRTinfo.put(DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED.name(), createCountMap(notCompletedCount, notCompletedInvokeCount));
+        dFRTinfo.put(DataFetcherResultType.MATERIALIZED.name(), createCountMap(materializedCount, materializedInvokeCount));
+        result.put("dataFetcherResultTypes", dFRTinfo);
         return result;
     }
 
+    private LinkedHashMap<String, Integer> createCountMap(int count, int invocations) {
+        LinkedHashMap<String, Integer> map = new LinkedHashMap<>(2);
+        map.put("count", count);
+        map.put("invocations", invocations);
+        return map;
+    }
 
     public List<Map<String, Object>> getDispatchEventsAsMap() {
         List<Map<String, Object>> result = new ArrayList<>();

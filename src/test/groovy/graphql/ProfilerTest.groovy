@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.ExecutionId
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationState
@@ -39,9 +40,9 @@ class ProfilerTest extends Specification {
         def schema = TestUtil.schema(sdl, [Query: [
                 hello: { DataFetchingEnvironment dfe -> return "world" } as DataFetcher
         ]])
-        def graphql = GraphQL.newGraphQL(schema).build();
+        def graphql = GraphQL.newGraphQL(schema).build()
 
-        ExecutionInput ei = ExecutionInput.newExecutionInput()
+        ExecutionInput ei = newExecutionInput()
                 .query("{ hello }")
                 .profileExecution(true)
                 .build()
@@ -68,9 +69,9 @@ class ProfilerTest extends Specification {
         def schema = TestUtil.schema(sdl, [Query: [
                 hello: { DataFetchingEnvironment dfe -> return "world" } as DataFetcher
         ]])
-        def graphql = GraphQL.newGraphQL(schema).build();
+        def graphql = GraphQL.newGraphQL(schema).build()
 
-        ExecutionInput ei = ExecutionInput.newExecutionInput()
+        ExecutionInput ei = newExecutionInput()
                 .query("{ hello __typename alias:__typename __schema {types{name}} __type(name: \"Query\") {name} }")
                 .profileExecution(true)
                 .build()
@@ -98,9 +99,9 @@ class ProfilerTest extends Specification {
         def schema = TestUtil.schema(sdl, [Query: [
                 hello: { DataFetchingEnvironment dfe -> return "world" } as DataFetcher
         ]])
-        def graphql = GraphQL.newGraphQL(schema).build();
+        def graphql = GraphQL.newGraphQL(schema).build()
 
-        ExecutionInput ei = ExecutionInput.newExecutionInput()
+        ExecutionInput ei = newExecutionInput()
                 .query("{ __schema {types{name}} __type(name: \"Query\") {name} }")
                 .profileExecution(true)
                 .build()
@@ -152,9 +153,9 @@ class ProfilerTest extends Specification {
                 dog: dogDf
         ]]
         def schema = TestUtil.schema(sdl, dfs)
-        def graphql = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build();
+        def graphql = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
 
-        ExecutionInput ei = ExecutionInput.newExecutionInput()
+        ExecutionInput ei = newExecutionInput()
                 .query("{ dog {name age} }")
                 .profileExecution(true)
                 .build()
@@ -193,10 +194,10 @@ class ProfilerTest extends Specification {
             }
         }
 
-        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader)
 
-        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
-        dataLoaderRegistry.register("name", nameDataLoader);
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("name", nameDataLoader)
 
         def df1 = { env ->
             def loader = env.getDataLoader("name")
@@ -250,10 +251,10 @@ class ProfilerTest extends Specification {
             }
         }
 
-        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader)
 
-        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
-        dataLoaderRegistry.register("name", nameDataLoader);
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("name", nameDataLoader)
 
         def dogDF = { env ->
             def loader = env.getDataLoader("name")
@@ -306,17 +307,17 @@ class ProfilerTest extends Specification {
         def schema = TestUtil.schema(sdl, [Query: [
                 hello: { DataFetchingEnvironment dfe -> return "world" } as DataFetcher
         ]])
-        Instrumentation fooInstrumentation = new Instrumentation() {};
-        Instrumentation barInstrumentation = new Instrumentation() {};
+        Instrumentation fooInstrumentation = new Instrumentation() {}
+        Instrumentation barInstrumentation = new Instrumentation() {}
         ChainedInstrumentation chainedInstrumentation = new ChainedInstrumentation(
                 new ChainedInstrumentation(new SimplePerformantInstrumentation()),
                 new ChainedInstrumentation(fooInstrumentation, barInstrumentation),
                 new SimplePerformantInstrumentation())
 
 
-        def graphql = GraphQL.newGraphQL(schema).instrumentation(chainedInstrumentation).build();
+        def graphql = GraphQL.newGraphQL(schema).instrumentation(chainedInstrumentation).build()
 
-        ExecutionInput ei = ExecutionInput.newExecutionInput()
+        ExecutionInput ei = newExecutionInput()
                 .query("{ hello }")
                 .profileExecution(true)
                 .build()
@@ -354,9 +355,9 @@ class ProfilerTest extends Specification {
                 Foo  : [
                         bar: { DataFetchingEnvironment dfe -> dfe.source.id } as DataFetcher
                 ]])
-        def graphql = GraphQL.newGraphQL(schema).build();
+        def graphql = GraphQL.newGraphQL(schema).build()
 
-        ExecutionInput ei = ExecutionInput.newExecutionInput()
+        ExecutionInput ei = newExecutionInput()
                 .query("{ foo { id bar } }")
                 .profileExecution(true)
                 .build()
@@ -391,22 +392,22 @@ class ProfilerTest extends Specification {
                             // blocking the engine for 1ms
                             // so that engineTotalRunningTime time is more than 1ms
                             Thread.sleep(1)
-                            return CompletableFuture.supplyAsync {
+                            return supplyAsync {
                                 Thread.sleep(500)
                                 "1"
                             }
                         } as DataFetcher],
                 Foo  : [
                         id: { DataFetchingEnvironment dfe ->
-                            return CompletableFuture.supplyAsync {
+                            return supplyAsync {
                                 Thread.sleep(500)
                                 dfe.source
                             }
                         } as DataFetcher
                 ]])
-        def graphql = GraphQL.newGraphQL(schema).build();
+        def graphql = GraphQL.newGraphQL(schema).build()
 
-        ExecutionInput ei = ExecutionInput.newExecutionInput()
+        ExecutionInput ei = newExecutionInput()
                 .query("{ foo { id  } }")
                 .profileExecution(true)
                 .build()
@@ -455,11 +456,13 @@ class ProfilerTest extends Specification {
                         } as DataFetcher
 
                 ]])
-        def graphql = GraphQL.newGraphQL(schema).build();
+        def graphql = GraphQL.newGraphQL(schema).build()
 
-        ExecutionInput ei = ExecutionInput.newExecutionInput()
+        ExecutionId id = ExecutionId.from("myExecutionId")
+        ExecutionInput ei = newExecutionInput()
                 .query("{ foo { id name text } foo2: foo { id name text} }")
                 .profileExecution(true)
+                .executionId(id)
                 .build()
 
         when:
@@ -477,11 +480,10 @@ class ProfilerTest extends Specification {
                                                       "/foo2/text": MATERIALIZED,
                                                       "/foo2"     : COMPLETABLE_FUTURE_NOT_COMPLETED,
                                                       "/foo"      : COMPLETABLE_FUTURE_NOT_COMPLETED]
-        profilerResult.shortSummaryMap().get("dataFetcherResultTypes") == ["COMPLETABLE_FUTURE_COMPLETED"    : "(count:2, invocations:4)",
-                                                                           "COMPLETABLE_FUTURE_NOT_COMPLETED": "(count:2, invocations:2)",
-                                                                           "MATERIALIZED"                    : "(count:2, invocations:4)"]
-
-
+        profilerResult.shortSummaryMap().get("dataFetcherResultTypes") == ["COMPLETABLE_FUTURE_COMPLETED"    : ["count":2, "invocations":4],
+                                                                           "COMPLETABLE_FUTURE_NOT_COMPLETED": ["count":2, "invocations":2],
+                                                                           "MATERIALIZED"                    : ["count":2, "invocations":4]]
+        profilerResult.shortSummaryMap().get("executionId") == "myExecutionId"
     }
 
     def "operation details"() {
@@ -494,9 +496,9 @@ class ProfilerTest extends Specification {
         def schema = TestUtil.schema(sdl, [Query: [
                 hello: { DataFetchingEnvironment dfe -> return "world" } as DataFetcher
         ]])
-        def graphql = GraphQL.newGraphQL(schema).build();
+        def graphql = GraphQL.newGraphQL(schema).build()
 
-        ExecutionInput ei = ExecutionInput.newExecutionInput()
+        ExecutionInput ei = newExecutionInput()
                 .query("query MyQuery { hello }")
                 .profileExecution(true)
                 .build()
@@ -542,10 +544,10 @@ class ProfilerTest extends Specification {
             }
         }
 
-        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader)
 
-        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
-        dataLoaderRegistry.register("name", nameDataLoader);
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("name", nameDataLoader)
 
         def dogDF = { env ->
             return env.getDataLoader("name").load("Key1").thenCompose {
