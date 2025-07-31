@@ -46,10 +46,10 @@ public interface Profiler {
 
     default void batchLoadedOldStrategy(String name, int level, int count) {
 
-
     }
 
-    default void batchLoadedNewStrategy(String dataLoaderName, @Nullable Integer level, int count) {
+
+    default void batchLoadedNewStrategy(String dataLoaderName, Integer level, int count, boolean delayed, boolean chained) {
 
     }
 

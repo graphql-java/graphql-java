@@ -64,17 +64,20 @@ public class ProfilerResult {
 
 
     public enum DispatchEventType {
-        STRATEGY_DISPATCH,
+        LEVEL_STRATEGY_DISPATCH,
+        CHAINED_STRATEGY_DISPATCH,
+        DELAYED_DISPATCH,
+        CHAINED_DELAYED_DISPATCH,
         MANUAL_DISPATCH,
     }
 
     public static class DispatchEvent {
         final String dataLoaderName;
-        final @Nullable Integer level; // is null for delayed dispatching
+        final Integer level; // is null for delayed dispatching
         final int keyCount; // how many
         final DispatchEventType type;
 
-        public DispatchEvent(String dataLoaderName, @Nullable Integer level, int keyCount, DispatchEventType type) {
+        public DispatchEvent(String dataLoaderName, Integer level, int keyCount, DispatchEventType type) {
             this.dataLoaderName = dataLoaderName;
             this.level = level;
             this.keyCount = keyCount;
@@ -85,7 +88,7 @@ public class ProfilerResult {
             return dataLoaderName;
         }
 
-        public @Nullable Integer getLevel() {
+        public Integer getLevel() {
             return level;
         }
 
@@ -175,7 +178,7 @@ public class ProfilerResult {
     }
 
 
-    void addDispatchEvent(String dataLoaderName, @Nullable Integer level, int count, DispatchEventType type) {
+    void addDispatchEvent(String dataLoaderName, Integer level, int count, DispatchEventType type) {
         dispatchEvents.add(new DispatchEvent(dataLoaderName, level, count, type));
     }
 
@@ -316,34 +319,13 @@ public class ProfilerResult {
     }
 
 
-    private String printDispatchEvents() {
-        if (dispatchEvents.isEmpty()) {
-            return "[]";
-        }
-        StringBuilder sb = new StringBuilder();
-        sb.append("[");
-        int i = 0;
-        for (DispatchEvent event : dispatchEvents) {
-            sb.append("dataLoader=")
-                    .append(event.getDataLoaderName())
-                    .append(", level=")
-                    .append(event.getLevel())
-                    .append(", count=").append(event.getKeyCount());
-            if (i++ < dispatchEvents.size() - 1) {
-                sb.append("; ");
-            }
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
     public List<Map<String, Object>> getDispatchEventsAsMap() {
         List<Map<String, Object>> result = new ArrayList<>();
         for (DispatchEvent event : dispatchEvents) {
             Map<String, Object> eventMap = new LinkedHashMap<>();
             eventMap.put("type", event.getType().name());
             eventMap.put("dataLoader", event.getDataLoaderName());
-            eventMap.put("level", event.getLevel() != null ? event.getLevel() : "delayed");
+            eventMap.put("level", event.getLevel());
             eventMap.put("keyCount", event.getKeyCount());
             result.add(eventMap);
         }

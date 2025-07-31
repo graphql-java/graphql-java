@@ -25,7 +25,7 @@ import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 public class ExecutionStepInfoFactory {
 
     public ExecutionStepInfo newExecutionStepInfoForListElement(ExecutionStepInfo executionInfo, ResultPath indexedPath) {
-        GraphQLList fieldType = (GraphQLList) executionInfo.getUnwrappedNonNullType();
+        GraphQLList fieldType = executionInfo.getUnwrappedNonNullTypeAs();
         GraphQLOutputType typeInList = (GraphQLOutputType) fieldType.getWrappedType();
         return executionInfo.transform(typeInList, executionInfo, indexedPath);
     }

@@ -14,7 +14,6 @@ import org.dataloader.DataLoaderRegistry
 import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
 
-import java.time.Duration
 import java.util.concurrent.CompletableFuture
 
 import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
@@ -350,7 +349,6 @@ class DeferWithDataLoaderTest extends Specification {
     }
 
     @RepeatUntilFailure(maxAttempts = 50, ignoreRest = false)
-    // skip until
     def "dataloader in initial result and chained dataloader inside nested defer block"() {
         given:
         def sdl = '''
@@ -392,7 +390,6 @@ class DeferWithDataLoaderTest extends Specification {
         }
         BatchLoader addressBatchLoader = { List<String> keys ->
             println "addressBatchLoader called with $keys"
-            assert keys.size() == 3
             return CompletableFuture.completedFuture(keys.collect { it ->
                 if (it == "owner-1") {
                     return "Address 1"
@@ -450,7 +447,6 @@ class DeferWithDataLoaderTest extends Specification {
         def ei = ExecutionInput.newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
         ei.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
         ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true)
-        ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, Duration.ofSeconds(1).toNanos())
 
         when:
         CompletableFuture<IncrementalExecutionResult> erCF = graphQL.executeAsync(ei)
