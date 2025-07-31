@@ -311,23 +311,19 @@ public class ProfilerResult {
             }
         }
         LinkedHashMap<String, Object> dFRTinfo = new LinkedHashMap<>(3);
-        LinkedHashMap<String, Integer> completableFutureCompleted = new LinkedHashMap<>(2);
-        completableFutureCompleted.put("count", completedCount);
-        completableFutureCompleted.put("invocations", completedInvokeCount);
-        LinkedHashMap<String, Integer> completableFutureNotCompleted = new LinkedHashMap<>(2);
-        completableFutureNotCompleted.put("count", notCompletedCount);
-        completableFutureNotCompleted.put("invocations", notCompletedInvokeCount);
-        LinkedHashMap<String, Integer> materialized = new LinkedHashMap<>(2);
-        materialized.put("count", materializedCount);
-        materialized.put("invocations", materializedInvokeCount);
-
-        dFRTinfo.put(DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED.name(), completableFutureCompleted);
-        dFRTinfo.put(DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED.name(), completableFutureNotCompleted);
-        dFRTinfo.put(DataFetcherResultType.MATERIALIZED.name(), materialized);
+        dFRTinfo.put(DataFetcherResultType.COMPLETABLE_FUTURE_COMPLETED.name(), createCountMap(completedCount, completedInvokeCount));
+        dFRTinfo.put(DataFetcherResultType.COMPLETABLE_FUTURE_NOT_COMPLETED.name(), createCountMap(notCompletedCount, notCompletedInvokeCount));
+        dFRTinfo.put(DataFetcherResultType.MATERIALIZED.name(), createCountMap(materializedCount, materializedInvokeCount));
         result.put("dataFetcherResultTypes", dFRTinfo);
         return result;
     }
 
+    private LinkedHashMap<String, Integer> createCountMap(int count, int invocations) {
+        LinkedHashMap<String, Integer> map = new LinkedHashMap<>(2);
+        map.put("count", count);
+        map.put("invocations", invocations);
+        return map;
+    }
 
     public List<Map<String, Object>> getDispatchEventsAsMap() {
         List<Map<String, Object>> result = new ArrayList<>();
