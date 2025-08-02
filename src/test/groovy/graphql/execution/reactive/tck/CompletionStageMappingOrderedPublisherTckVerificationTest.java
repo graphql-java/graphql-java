@@ -10,6 +10,7 @@ import org.testng.annotations.Test;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 /**
@@ -31,14 +32,14 @@ public class CompletionStageMappingOrderedPublisherTckVerificationTest extends P
     @Override
     public Publisher<String> createPublisher(long elements) {
         Publisher<Integer> publisher = Flowable.range(0, (int) elements);
-        Function<Integer, CompletionStage<String>> mapper = i -> CompletableFuture.supplyAsync(() -> i + "!");
+        Function<Integer, CompletionStage<String>> mapper = i -> CompletableFuture.supplyAsync(() -> i + "!", Executors.newSingleThreadExecutor());
         return new CompletionStageMappingOrderedPublisher<>(publisher, mapper);
     }
 
     @Override
     public Publisher<String> createFailedPublisher() {
         Publisher<Integer> publisher = Flowable.error(() -> new RuntimeException("Bang"));
-        Function<Integer, CompletionStage<String>> mapper = i -> CompletableFuture.supplyAsync(() -> i + "!");
+        Function<Integer, CompletionStage<String>> mapper = i -> CompletableFuture.supplyAsync(() -> i + "!", Executors.newSingleThreadExecutor());
         return new CompletionStageMappingOrderedPublisher<>(publisher, mapper);
     }
 

@@ -9,6 +9,7 @@ import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Internal
@@ -30,13 +31,25 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         CompletableFuture<V> result = super.load(key, keyContext);
         DataFetchingEnvironmentImpl dfeImpl = (DataFetchingEnvironmentImpl) dfe;
         DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfeImpl.toInternal();
+        dfeInternalState.getProfiler().dataLoaderUsed(dataLoaderName);
         if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof PerLevelDataLoaderDispatchStrategy) {
             AlternativeCallContext alternativeCallContext = dfeInternalState.getDeferredCallContext();
             int level = dfe.getExecutionStepInfo().getPath().getLevel();
             String path = dfe.getExecutionStepInfo().getPath().toString();
-            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderLoadCall(path, level, delegate, dataLoaderName, key, alternativeCallContext);
+            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderInvocation(path, level, delegate, dataLoaderName, key, alternativeCallContext);
         }
         return result;
     }
 
+    @Override
+    public CompletableFuture<List<V>> dispatch() {
+        CompletableFuture<List<V>> dispatchResult = delegate.dispatch();
+        dispatchResult.whenComplete((result, error) -> {
+            if (result != null && result.size() > 0) {
+                DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfe.toInternal();
+                dfeInternalState.getProfiler().manualDispatch(dataLoaderName, dfe.getExecutionStepInfo().getPath().getLevel(), result.size());
+            }
+        });
+        return dispatchResult;
+    }
 }

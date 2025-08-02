@@ -22,4 +22,18 @@ public class DeferredExecution {
     public String getLabel() {
         return label;
     }
+
+    // this class uses object identity - do not put .equals() / .hashCode() implementations on it
+    // otherwise it will break defer handling.  I have put the code just to be explicit that object identity
+    // is needed
+
+    @Override
+    public int hashCode() {
+        return super.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return super.equals(obj);
+    }
 }

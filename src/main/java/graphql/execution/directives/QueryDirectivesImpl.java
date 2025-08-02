@@ -69,7 +69,7 @@ public class QueryDirectivesImpl implements QueryDirectives {
             BiMap<GraphQLDirective, Directive> directiveCounterParts = HashBiMap.create();
             BiMap<GraphQLDirective, QueryAppliedDirective> gqlDirectiveCounterParts = HashBiMap.create();
             BiMap<QueryAppliedDirective, GraphQLDirective> gqlDirectiveCounterPartsInverse = gqlDirectiveCounterParts.inverse();
-            mergedField.getFields().forEach(field -> {
+            mergedField.forEach(field -> {
                 List<Directive> directives = field.getDirectives();
                 BiMap<GraphQLDirective, Directive> directivesMap = directivesResolver
                         .resolveDirectives(directives, schema, coercedVariables, graphQLContext, locale);

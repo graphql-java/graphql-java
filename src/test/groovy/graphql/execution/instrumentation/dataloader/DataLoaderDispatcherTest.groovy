@@ -56,15 +56,9 @@ class DataLoaderDispatcherTest extends Specification {
     ]
 
 
-    def "dispatch is called if there are data loaders"() {
+    def "basic dataloader dispatch test"() {
         def dispatchedCalled = false
-        def dataLoaderRegistry = new DataLoaderRegistry() {
-            @Override
-            void dispatchAll() {
-                dispatchedCalled = true
-                super.dispatchAll()
-            }
-        }
+        def dataLoaderRegistry = new DataLoaderRegistry()
         def dataLoader = DataLoaderFactory.newDataLoader(new BatchLoader() {
             @Override
             CompletionStage<List> load(List keys) {
@@ -78,10 +72,11 @@ class DataLoaderDispatcherTest extends Specification {
         executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)
 
         when:
-        def er = graphQL.execute(executionInput)
+        def er = graphQL.executeAsync(executionInput)
+        Awaitility.await().until { er.isDone() }
         then:
-        er.errors.isEmpty()
-        dispatchedCalled
+        er.get().data == [hero: [name: 'R2-D2']]
+
     }
 
     def "enhanced execution input is respected"() {

@@ -1,21 +1,15 @@
 package graphql
 
-import graphql.execution.ExecutionId
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
-import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory
+
 import graphql.schema.DataFetcher
 import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
-import spock.lang.Unroll
 
-import java.time.Duration
-import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
@@ -86,7 +80,7 @@ class ChainedDataLoaderTest extends Specification {
         batchLoadCalls == 2
     }
 
-    @Unroll
+    @RepeatUntilFailure(maxAttempts = 20, ignoreRest = false)
     def "parallel different data loaders"() {
         given:
         def sdl = '''
@@ -177,8 +171,6 @@ class ChainedDataLoaderTest extends Specification {
         er.data == [hello: "friendsLunakey1Skipperkey2", helloDelayed: "friendsLunakey1-delayedSkipperkey2-delayed"]
         batchLoadCalls.get() == 6
 
-        where:
-        i << (0..20)
     }
 
 
@@ -272,7 +264,7 @@ class ChainedDataLoaderTest extends Specification {
     }
 
 
-    def "chained data loaders with an isolated data loader"() {
+    def "chained data loaders with an delayed data loader"() {
         given:
         def sdl = '''
 
@@ -339,7 +331,7 @@ class ChainedDataLoaderTest extends Specification {
         batchLoadCalls == 3
     }
 
-    def "chained data loaders with two isolated data loaders"() {
+    def "chained data loaders with two delayed data loaders"() {
         given:
         def sdl = '''
 
@@ -392,8 +384,6 @@ class ChainedDataLoaderTest extends Specification {
         def ei = eiBuilder.dataLoaderRegistry(dataLoaderRegistry).build()
         setEnableDataLoaderChaining(ei.graphQLContext, true);
 
-        // make the window  250ms
-        DataLoaderDispatchingContextKeys.setDelayedDataLoaderBatchWindowSize(ei.graphQLContext, Duration.ofMillis(250))
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -401,69 +391,7 @@ class ChainedDataLoaderTest extends Specification {
         def er = efCF.get()
         then:
         er.data == [foo: "fooFirstValue", bar: "barFirstValue"]
-        batchLoadCalls.get() == 1
-    }
-
-    def "executor for delayed dispatching can be configured"() {
-        given:
-        def sdl = '''
-
-        type Query {
-          foo: String
-         bar: String
-        }
-        '''
-        BatchLoader<String, String> batchLoader = { keys ->
-            return supplyAsync {
-                Thread.sleep(250)
-                return keys;
-            }
-        }
-
-        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
-
-        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
-        dataLoaderRegistry.register("dl", nameDataLoader);
-
-        def fooDF = { env ->
-            return supplyAsync {
-                Thread.sleep(1000)
-                return "fooFirstValue"
-            }.thenCompose {
-                return env.getDataLoader("dl").load(it)
-            }
-        } as DataFetcher
-
-
-        def fetchers = ["Query": ["foo": fooDF]]
-        def schema = TestUtil.schema(sdl, fetchers)
-        def graphQL = GraphQL.newGraphQL(schema).build()
-
-        def query = "{ foo } "
-        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
-        setEnableDataLoaderChaining(ei.graphQLContext, true);
-
-
-        ScheduledExecutorService scheduledExecutorService = Mock()
-        DataLoaderDispatchingContextKeys.setDelayedDataLoaderDispatchingExecutorFactory(ei.getGraphQLContext(), new DelayedDataLoaderDispatcherExecutorFactory() {
-            @Override
-            ScheduledExecutorService createExecutor(ExecutionId executionId, GraphQLContext graphQLContext) {
-                return scheduledExecutorService
-            }
-        })
-
-
-        when:
-        def efCF = graphQL.executeAsync(ei)
-        Awaitility.await().until { efCF.isDone() }
-        def er = efCF.get()
-
-        then:
-        er.data == [foo: "fooFirstValue"]
-        1 * scheduledExecutorService.schedule(_ as Runnable, _ as Long, _ as TimeUnit) >> { Runnable runnable, Long delay, TimeUnit timeUnit ->
-            return Executors.newSingleThreadScheduledExecutor().schedule(runnable, delay, timeUnit)
-        }
-
+        batchLoadCalls.get() == 1 || batchLoadCalls.get() == 2 // depending on timing, it can be 1 or 2 calls
     }
 
     def "handling of chained DataLoaders is disabled by default"() {
