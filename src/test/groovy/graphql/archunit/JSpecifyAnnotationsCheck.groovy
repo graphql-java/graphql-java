@@ -397,4 +397,26 @@ ${classesMissingAnnotation.sort().join("\n")}
 Add @NullMarked to these public API classes and add @Nullable annotations where appropriate. See documentation at https://jspecify.dev/docs/user-guide/#nullmarked""")
         }
     }
+
+    def "exempted classes should not be annotated with @NullMarked"() {
+        given:
+        def classes = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .importPackages("graphql")
+
+        when:
+        def annotatedButExempted = classes.stream()
+                .filter { JSPECIFY_EXEMPTION_LIST.contains(it.name) }
+                .filter { it.isAnnotatedWith("org.jspecify.annotations.NullMarked") }
+                .map { it.name }
+                .collect()
+
+        then:
+        if (!annotatedButExempted.isEmpty()) {
+            throw new AssertionError("""The following classes are in the JSpecify exemption list but are annotated with @NullMarked:
+${annotatedButExempted.sort().join("\n")}
+
+Please remove them from the exemption list in ${JSpecifyAnnotationsCheck.class.simpleName}.groovy.""")
+        }
+    }
 } 
