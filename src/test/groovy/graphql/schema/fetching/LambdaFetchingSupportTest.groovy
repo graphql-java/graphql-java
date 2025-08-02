@@ -4,6 +4,7 @@ import graphql.Scalars
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.PropertyDataFetcher
 import graphql.util.javac.DynamicJavacSupport
+import spock.lang.IgnoreIf
 import spock.lang.Specification
 
 class LambdaFetchingSupportTest extends Specification {
@@ -150,6 +151,7 @@ class LambdaFetchingSupportTest extends Specification {
         return GraphQLFieldDefinition.newFieldDefinition().name(fldName).type(Scalars.GraphQLString).build()
     }
 
+    @IgnoreIf({ System.getProperty("java.version").split('\\.')[0] as Integer > 11 })
     def "different class loaders induce certain behaviours"() {
         String sourceCode = '''
         package com.dynamic;

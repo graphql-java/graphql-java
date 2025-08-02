@@ -4,8 +4,6 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategyParameters;
-import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.function.Supplier;
@@ -50,7 +48,13 @@ public class InstrumentationFieldCompleteParameters {
         return executionStepInfo.get();
     }
 
-    public Object getFetchedValue() {
+    /**
+     * This returns the object that was fetched, ready to be completed as a value.  This can sometimes be a {@link graphql.execution.FetchedValue} object
+     * but most often it's a simple POJO.
+     *
+     * @return the object was fetched, ready to be completed as a value.
+     */
+    public Object getFetchedObject() {
         return fetchedValue;
     }
 

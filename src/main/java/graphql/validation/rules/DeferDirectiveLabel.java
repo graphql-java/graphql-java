@@ -16,9 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import static graphql.validation.ValidationErrorType.DuplicateArgumentNames;
 import static graphql.validation.ValidationErrorType.DuplicateIncrementalLabel;
-import static graphql.validation.ValidationErrorType.VariableNotAllowed;
 import static graphql.validation.ValidationErrorType.WrongType;
 
 /**

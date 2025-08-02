@@ -7,8 +7,6 @@ import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 
-import java.util.Locale;
-
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.validation.ValidationErrorType.BadValueForDefaultArg;
 

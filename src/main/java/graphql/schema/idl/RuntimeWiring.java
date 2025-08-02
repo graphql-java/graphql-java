@@ -42,7 +42,8 @@ public class RuntimeWiring {
 
     /**
      * This is a Runtime wiring which provides mocked types resolver
-     * and scalars. Useful for testing only.
+     * and scalars. It is useful for testing only, for example for creating schemas
+     * that can be inspected but not executed on.
      */
     public static final RuntimeWiring MOCKED_WIRING = RuntimeWiring
             .newRuntimeWiring()

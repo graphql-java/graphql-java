@@ -2,11 +2,13 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -50,7 +52,9 @@ public class ExecutionContextBuilder {
     ExecutionInput executionInput;
     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
     boolean propagateErrorsOnNonNullContractFailure = true;
-    EngineRunningObserver engineRunningObserver;
+    EngineRunningState engineRunningState;
+    ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
+    Profiler profiler;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -98,7 +102,9 @@ public class ExecutionContextBuilder {
         executionInput = other.getExecutionInput();
         dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
         propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
-        engineRunningObserver = other.getEngineRunningObserver();
+        engineRunningState = other.getEngineRunningState();
+        responseMapFactory = other.getResponseMapFactory();
+        profiler = other.getProfiler();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -223,6 +229,12 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    @Internal
+    public ExecutionContextBuilder responseMapFactory(ResponseMapFactory responseMapFactory) {
+        this.responseMapFactory = responseMapFactory;
+        return this;
+    }
+
     public ExecutionContextBuilder resetErrors() {
         this.errors = emptyList();
         return this;
@@ -241,8 +253,13 @@ public class ExecutionContextBuilder {
         return new ExecutionContext(this);
     }
 
-    public ExecutionContextBuilder engineRunningObserver(EngineRunningObserver engineRunningObserver) {
-        this.engineRunningObserver = engineRunningObserver;
+    public ExecutionContextBuilder engineRunningState(EngineRunningState engineRunningState) {
+        this.engineRunningState = engineRunningState;
+        return this;
+    }
+
+    public ExecutionContextBuilder profiler(Profiler profiler) {
+        this.profiler = profiler;
         return this;
     }
 }

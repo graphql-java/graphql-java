@@ -3,13 +3,15 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.GraphQLError;
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.DataFetcher;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -24,22 +26,32 @@ import static graphql.Assert.assertNotNull;
  * This also allows you to pass down new local context objects between parent and child fields.  If you return a
  * {@link #getLocalContext()} value then it will be passed down into any child fields via
  * {@link graphql.schema.DataFetchingEnvironment#getLocalContext()}
- *
+ * <p>
  * You can also have {@link DataFetcher}s contribute to the {@link ExecutionResult#getExtensions()} by returning
  * extensions maps that will be merged together via the {@link graphql.extensions.ExtensionsBuilder} and its {@link graphql.extensions.ExtensionsMerger}
  * in place.
+ * <p>
+ * This provides {@link #hashCode()} and {@link #equals(Object)} methods that afford comparison with other {@link DataFetcherResult} object.s
+ * However, to function correctly, this relies on the values provided in the following fields in turn also implementing {@link #hashCode()}} and {@link #equals(Object)} as appropriate:
+ * <ul>
+ *   <li>The data returned in {@link #getData()}.
+ *   <li>The individual errors returned in {@link #getErrors()}.
+ *   <li>The context returned in {@link #getLocalContext()}.
+ *   <li>The keys/values in the {@link #getExtensions()} {@link Map}.
+ * </ul>
  *
  * @param <T> The type of the data fetched
  */
 @PublicApi
+@NullMarked
 public class DataFetcherResult<T> {
 
-    private final T data;
+    private final @Nullable T data;
     private final List<GraphQLError> errors;
-    private final Object localContext;
-    private final Map<Object, Object> extensions;
+    private final @Nullable Object localContext;
+    private final @Nullable Map<Object, Object> extensions;
 
-    private DataFetcherResult(T data, List<GraphQLError> errors, Object localContext, Map<Object, Object> extensions) {
+    private DataFetcherResult(@Nullable T data, List<GraphQLError> errors, @Nullable Object localContext, @Nullable Map<Object, Object> extensions) {
         this.data = data;
         this.errors = ImmutableList.copyOf(assertNotNull(errors));
         this.localContext = localContext;
@@ -49,7 +61,7 @@ public class DataFetcherResult<T> {
     /**
      * @return The data fetched. May be null.
      */
-    public T getData() {
+    public @Nullable T getData() {
         return data;
     }
 
@@ -72,7 +84,7 @@ public class DataFetcherResult<T> {
      *
      * @return a local context object
      */
-    public Object getLocalContext() {
+    public @Nullable Object getLocalContext() {
         return localContext;
     }
 
@@ -88,7 +100,7 @@ public class DataFetcherResult<T> {
      * @see graphql.extensions.ExtensionsBuilder
      * @see graphql.extensions.ExtensionsMerger
      */
-    public Map<Object, Object> getExtensions() {
+    public @Nullable Map<Object, Object> getExtensions() {
         return extensions;
     }
 
@@ -115,12 +127,41 @@ public class DataFetcherResult<T> {
      *
      * @return a new instance with where the data value has been transformed
      */
-    public <R> DataFetcherResult<R> map(Function<T, R> transformation) {
+    public <R> DataFetcherResult<R> map(Function<@Nullable T, @Nullable R> transformation) {
         return new Builder<>(transformation.apply(this.data))
                 .errors(this.errors)
                 .extensions(this.extensions)
                 .localContext(this.localContext)
                 .build();
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DataFetcherResult<?> that = (DataFetcherResult<?>) o;
+        return Objects.equals(data, that.data)
+                && errors.equals(that.errors)
+                && Objects.equals(localContext, that.localContext)
+                && Objects.equals(extensions, that.extensions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(data, errors, localContext, extensions);
+    }
+
+    @Override
+    public String toString() {
+        return "DataFetcherResult{" +
+                "data=" + data +
+                ", errors=" + errors +
+                ", localContext=" + localContext +
+                ", extensions=" + extensions +
+                '}';
     }
 
     /**
@@ -135,10 +176,10 @@ public class DataFetcherResult<T> {
     }
 
     public static class Builder<T> {
-        private T data;
-        private Object localContext;
+        private @Nullable T data;
+        private @Nullable Object localContext;
         private final List<GraphQLError> errors = new ArrayList<>();
-        private Map<Object, Object> extensions;
+        private @Nullable Map<Object, Object> extensions;
 
         public Builder(DataFetcherResult<T> existing) {
             data = existing.getData();
@@ -147,14 +188,14 @@ public class DataFetcherResult<T> {
             extensions = existing.extensions;
         }
 
-        public Builder(T data) {
+        public Builder(@Nullable T data) {
             this.data = data;
         }
 
         public Builder() {
         }
 
-        public Builder<T> data(T data) {
+        public Builder<T> data(@Nullable T data) {
             this.data = data;
             return this;
         }
@@ -181,12 +222,12 @@ public class DataFetcherResult<T> {
             return !errors.isEmpty();
         }
 
-        public Builder<T> localContext(Object localContext) {
+        public Builder<T> localContext(@Nullable Object localContext) {
             this.localContext = localContext;
             return this;
         }
 
-        public Builder<T> extensions(Map<Object, Object> extensions) {
+        public Builder<T> extensions(@Nullable Map<Object, Object> extensions) {
             this.extensions = extensions;
             return this;
         }

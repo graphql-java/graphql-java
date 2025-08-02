@@ -4,7 +4,6 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.DataFetchingEnvironment;
 
 import java.util.function.Supplier;

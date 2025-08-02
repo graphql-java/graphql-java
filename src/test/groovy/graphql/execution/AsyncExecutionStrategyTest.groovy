@@ -1,9 +1,11 @@
 package graphql.execution
 
+import graphql.EngineRunningState
 import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQLContext
+import graphql.Profiler
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
@@ -101,6 +103,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -108,13 +111,16 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .executionInput(ei)
                 .locale(Locale.getDefault())
+                .profiler(Profiler.NO_OP)
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -143,6 +149,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -151,12 +158,15 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .locale(Locale.getDefault())
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
+                .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -187,6 +197,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -194,13 +205,16 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
                 .locale(Locale.getDefault())
+                .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -230,6 +244,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -238,12 +253,15 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .locale(Locale.getDefault())
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
+                .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -272,14 +290,17 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .graphQLContext(graphqlContextMock)
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .executionInput(ei)
                 .locale(Locale.getDefault())
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
+                .profiler(Profiler.NO_OP)
                 .instrumentation(new SimplePerformantInstrumentation() {
 
                     @Override
@@ -306,6 +327,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([new Field('hello')]), 'hello2': mergedField([new Field('hello2')])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()

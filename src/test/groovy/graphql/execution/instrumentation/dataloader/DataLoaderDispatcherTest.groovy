@@ -16,7 +16,6 @@ import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
-import org.jetbrains.annotations.NotNull
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Mono
 import spock.lang.Specification
@@ -57,17 +56,9 @@ class DataLoaderDispatcherTest extends Specification {
     ]
 
 
-
-
-    def "dispatch is called if there are data loaders"() {
+    def "basic dataloader dispatch test"() {
         def dispatchedCalled = false
-        def dataLoaderRegistry = new DataLoaderRegistry() {
-            @Override
-            void dispatchAll() {
-                dispatchedCalled = true
-                super.dispatchAll()
-            }
-        }
+        def dataLoaderRegistry = new DataLoaderRegistry()
         def dataLoader = DataLoaderFactory.newDataLoader(new BatchLoader() {
             @Override
             CompletionStage<List> load(List keys) {
@@ -78,12 +69,14 @@ class DataLoaderDispatcherTest extends Specification {
 
         def graphQL = GraphQL.newGraphQL(starWarsSchema).build()
         def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ hero { name } }').build()
+        executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)
 
         when:
-        def er = graphQL.execute(executionInput)
+        def er = graphQL.executeAsync(executionInput)
+        Awaitility.await().until { er.isDone() }
         then:
-        er.errors.isEmpty()
-        dispatchedCalled
+        er.get().data == [hero: [name: 'R2-D2']]
+
     }
 
     def "enhanced execution input is respected"() {
@@ -96,7 +89,6 @@ class DataLoaderDispatcherTest extends Specification {
 
         def enhancingInstrumentation = new SimplePerformantInstrumentation() {
 
-            @NotNull
             @Override
             ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
                 assert executionInput.getDataLoaderRegistry() == startingDataLoaderRegistry
@@ -248,6 +240,7 @@ class DataLoaderDispatcherTest extends Specification {
 
         when:
         def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ field }').build()
+        executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)
         def er = graphql.execute(executionInput)
 
         then:

@@ -4,6 +4,7 @@ import graphql.GraphQLContext
 import graphql.execution.CoercedVariables
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionStepInfo
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
 import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.FragmentDefinition
@@ -37,7 +38,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
 
     def executionContext = newExecutionContextBuilder()
             .root("root")
-            .graphQLContext(GraphQLContext.of(["key":"context"]))
+            .graphQLContext(GraphQLContext.of(["key": "context"]))
             .executionId(executionId)
             .operationDefinition(operationDefinition)
             .document(document)
@@ -65,6 +66,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
         when:
         def dfe = newDataFetchingEnvironment(executionContext)
                 .build()
+        dfe.getGraphQlContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, chainedDataLoaderEnabled)
         then:
         dfe.getRoot() == "root"
         dfe.getGraphQlContext().get("key") == "context"
@@ -73,13 +75,17 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getVariables() == variables
         dfe.getOperationDefinition() == operationDefinition
         dfe.getExecutionId() == executionId
-        dfe.getDataLoader("dataLoader") == dataLoader
+        dfe.getDataLoaderRegistry() == executionContext.getDataLoaderRegistry()
+        dfe.getDataLoader("dataLoader") == executionContext.getDataLoaderRegistry().getDataLoader("dataLoader") ||
+                dfe.getDataLoader("dataLoader").delegate == executionContext.getDataLoaderRegistry().getDataLoader("dataLoader")
+        where:
+        chainedDataLoaderEnabled << [true, false]
     }
 
     def "create environment from existing one will copy everything to new instance"() {
         def dfe = newDataFetchingEnvironment()
                 .context("Test Context") // Retain deprecated builder for coverage
-                .graphQLContext(GraphQLContext.of(["key": "context"]))
+                .graphQLContext(GraphQLContext.of(["key": "context", (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): chainedDataLoaderEnabled]))
                 .source("Test Source")
                 .root("Test Root")
                 .fieldDefinition(Mock(GraphQLFieldDefinition))
@@ -118,9 +124,13 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getDocument() == dfeCopy.getDocument()
         dfe.getOperationDefinition() == dfeCopy.getOperationDefinition()
         dfe.getVariables() == dfeCopy.getVariables()
-        dfe.getDataLoader("dataLoader") == dataLoader
+        dfe.getDataLoader("dataLoader") == executionContext.getDataLoaderRegistry().getDataLoader("dataLoader") ||
+                dfe.getDataLoader("dataLoader").delegate == dfeCopy.getDataLoader("dataLoader").delegate
         dfe.getLocale() == dfeCopy.getLocale()
         dfe.getLocalContext() == dfeCopy.getLocalContext()
+        where:
+        chainedDataLoaderEnabled << [true, false]
+
     }
 
     def "get or default support"() {

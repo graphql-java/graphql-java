@@ -259,7 +259,7 @@ class WiringFactoryTest extends Specification {
             boolean providesDataFetcher(FieldWiringEnvironment environment) {
                 assert ["id", "name", "homePlanet"].contains(environment.fieldDefinition.name)
                 assert environment.parentType.name == "Human"
-                assert environment.registry.getType("Human").isPresent()
+                assert environment.registry.getTypeOrNull("Human") != null
                 return true
             }
 
@@ -267,7 +267,7 @@ class WiringFactoryTest extends Specification {
             DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
                 assert ["id", "name", "homePlanet"].contains(environment.fieldDefinition.name)
                 assert environment.parentType.name == "Human"
-                assert environment.registry.getType("Human").isPresent()
+                assert environment.registry.getTypeOrNull("Human") != null
                 new PropertyDataFetcher(environment.fieldDefinition.name)
             }
         }

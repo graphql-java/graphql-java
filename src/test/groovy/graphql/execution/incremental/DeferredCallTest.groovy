@@ -17,7 +17,7 @@ class DeferredCallTest extends Specification {
     def "test call capture gives a CF"() {
         given:
         DeferredFragmentCall call = new DeferredFragmentCall("my-label", parse("/path"),
-                [createResolvedFieldCall("field", "some data")], new DeferredCallContext())
+                [createResolvedFieldCall("field", "some data")], new AlternativeCallContext())
 
         when:
         def future = call.invoke()
@@ -37,7 +37,7 @@ class DeferredCallTest extends Specification {
                         createResolvedFieldCall("field2", "some data 2"),
                         createResolvedFieldCall("field3", "some data 3")
                 ],
-                new DeferredCallContext()
+                new AlternativeCallContext()
         )
 
         when:
@@ -52,7 +52,7 @@ class DeferredCallTest extends Specification {
 
     def "can handle non-nullable field error"() {
         given:
-        def deferredCallContext = new DeferredCallContext()
+        def deferredCallContext = new AlternativeCallContext()
         def mockedException = Mock(NonNullableFieldWasNullException) {
             getMessage() >> "Field value can't be null"
             getPath() >> ResultPath.parse("/path")

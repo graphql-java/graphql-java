@@ -46,18 +46,18 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
 
     private final ResultPath path;
     private final List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls;
-    private final DeferredCallContext deferredCallContext;
+    private final AlternativeCallContext alternativeCallContext;
 
     public DeferredFragmentCall(
             String label,
             ResultPath path,
             List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls,
-            DeferredCallContext deferredCallContext
+            AlternativeCallContext alternativeCallContext
     ) {
         this.label = label;
         this.path = path;
         this.calls = calls;
-        this.deferredCallContext = deferredCallContext;
+        this.alternativeCallContext = alternativeCallContext;
     }
 
     @Override
@@ -100,7 +100,7 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
     }
 
     private DeferPayload transformToDeferredPayload(List<FieldWithExecutionResult> fieldWithExecutionResults) {
-        List<GraphQLError> errorsEncountered = deferredCallContext.getErrors();
+        List<GraphQLError> errorsEncountered = alternativeCallContext.getErrors();
 
         Map<String, Object> dataMap = new HashMap<>();
 

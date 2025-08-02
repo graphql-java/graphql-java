@@ -4,23 +4,26 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import graphql.Internal;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static graphql.Assert.assertNotNull;
 
 @Internal
-@SuppressWarnings({"UnstableApiUsage"})
+@NullMarked
 public final class ImmutableKit {
 
     public static <T> ImmutableList<T> emptyList() {
         return ImmutableList.of();
     }
 
-    public static <T> ImmutableList<T> nonNullCopyOf(Collection<T> collection) {
+    public static <T> ImmutableList<T> nonNullCopyOf(@Nullable Collection<T> collection) {
         return collection == null ? emptyList() : ImmutableList.copyOf(collection);
     }
 
@@ -41,9 +44,9 @@ public final class ImmutableKit {
      * for the flexible style.  Benchmarking has shown this to outperform `stream()`.
      *
      * @param collection the collection to map
-     * @param mapper   the mapper function
-     * @param <T>      for two
-     * @param <R>      for result
+     * @param mapper     the mapper function
+     * @param <T>        for two
+     * @param <R>        for result
      *
      * @return a map immutable list of results
      */
@@ -59,14 +62,65 @@ public final class ImmutableKit {
     }
 
     /**
+     * This is more efficient than `c.stream().filter().collect()` because it does not create the intermediate objects needed
+     * for the flexible style.  Benchmarking has shown this to outperform `stream()`.
+     *
+     * @param collection the collection to map
+     * @param filter     the filter predicate
+     * @param <T>        for two
+     *
+     * @return a map immutable list of results
+     */
+    public static <T> ImmutableList<T> filter(Collection<? extends T> collection, Predicate<? super T> filter) {
+        assertNotNull(collection);
+        assertNotNull(filter);
+        return filterAndMap(collection, filter, Function.identity());
+    }
+
+    /**
+     * This is more efficient than `c.stream().filter().map().collect()` because it does not create the intermediate objects needed
+     * for the flexible style.  Benchmarking has shown this to outperform `stream()`.
+     *
+     * @param collection the collection to map
+     * @param filter     the filter predicate
+     * @param mapper     the mapper function
+     * @param <T>        for two
+     * @param <R>        for result
+     *
+     * @return a map immutable list of results
+     */
+    public static <T, R> ImmutableList<R> filterAndMap(Collection<? extends T> collection, Predicate<? super T> filter, Function<? super T, ? extends R> mapper) {
+        assertNotNull(collection);
+        assertNotNull(mapper);
+        assertNotNull(filter);
+        ImmutableList.Builder<R> builder = ImmutableList.builderWithExpectedSize(collection.size());
+        for (T t : collection) {
+            if (filter.test(t)) {
+                R r = mapper.apply(t);
+                builder.add(r);
+            }
+        }
+        return builder.build();
+    }
+
+    public static <T> ImmutableList<T> flatMapList(Collection<List<T>> listLists) {
+        ImmutableList.Builder<T> builder = ImmutableList.builder();
+        for (List<T> t : listLists) {
+            builder.addAll(t);
+        }
+        return builder.build();
+    }
+
+
+    /**
      * This will map a collection of items but drop any that are null from the input.
      * This is more efficient than `c.stream().map().collect()` because it does not create the intermediate objects needed
      * for the flexible style.  Benchmarking has shown this to outperform `stream()`.
      *
      * @param collection the collection to map
-     * @param mapper   the mapper function
-     * @param <T>      for two
-     * @param <R>      for result
+     * @param mapper     the mapper function
+     * @param <T>        for two
+     * @param <R>        for result
      *
      * @return a map immutable list of results
      */
@@ -131,4 +185,27 @@ public final class ImmutableKit {
         return newSet.build();
     }
 
+
+    /**
+     * Filters a variable args array to a list
+     *
+     * @param filter the predicate the filter with
+     * @param args   the variable args
+     * @param <T>    fot two
+     *
+     * @return a filtered list
+     */
+    @SafeVarargs
+    public static <T> List<T> filterVarArgs(Predicate<? super T> filter, T... args) {
+        if (args.length == 0) {
+            return ImmutableList.of();
+        }
+        ImmutableList.Builder<T> builder = ImmutableList.builderWithExpectedSize(args.length);
+        for (T arg : args) {
+            if (filter.test(arg)) {
+                builder.add(arg);
+            }
+        }
+        return builder.build();
+    }
 }

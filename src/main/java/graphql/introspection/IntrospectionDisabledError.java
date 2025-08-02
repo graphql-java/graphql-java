@@ -1,7 +1,6 @@
 package graphql.introspection;
 
 import graphql.ErrorClassification;
-import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.language.SourceLocation;

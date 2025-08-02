@@ -3,14 +3,15 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
-import graphql.execution.EngineRunningObserver.RunningState;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -30,15 +31,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-
-import static graphql.Assert.assertTrue;
-import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING;
-import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
@@ -67,17 +62,19 @@ public class ExecutionContext {
     private final Locale locale;
     private final IncrementalCallState incrementalCallState = new IncrementalCallState();
     private final ValueUnboxer valueUnboxer;
+    private final ResponseMapFactory responseMapFactory;
+
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
     private final boolean propagateErrorsOnNonNullContractFailure;
-
-    private final AtomicInteger isRunning = new AtomicInteger(0);
 
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
-    private final EngineRunningObserver engineRunningObserver;
+    private final EngineRunningState engineRunningState;
+
+    private final Profiler profiler;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -98,15 +95,16 @@ public class ExecutionContext {
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.locale = builder.locale;
         this.valueUnboxer = builder.valueUnboxer;
+        this.responseMapFactory = builder.responseMapFactory;
         this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
         this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
-        this.engineRunningObserver = builder.engineRunningObserver;
+        this.engineRunningState = builder.engineRunningState;
+        this.profiler = builder.profiler;
     }
-
 
     public ExecutionId getExecutionId() {
         return executionId;
@@ -301,6 +299,11 @@ public class ExecutionContext {
         });
     }
 
+    @Internal
+    public ResponseMapFactory getResponseMapFactory() {
+        return responseMapFactory;
+    }
+
     /**
      * @return the total list of errors for this execution context
      */
@@ -366,78 +369,31 @@ public class ExecutionContext {
         return resultNodesInfo;
     }
 
+    @Internal
+    public boolean hasIncrementalSupport() {
+        GraphQLContext graphqlContext = getGraphQLContext();
+        return graphqlContext != null && graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
+    }
+
+    @Internal
+    public EngineRunningState getEngineRunningState() {
+        return engineRunningState;
+    }
+
+    @Internal
     @Nullable
-    EngineRunningObserver getEngineRunningObserver() {
-        return engineRunningObserver;
+    Throwable possibleCancellation(@Nullable Throwable currentThrowable) {
+        return engineRunningState.possibleCancellation(currentThrowable);
+    }
+
+
+    @Internal
+    public Profiler getProfiler() {
+        return profiler;
     }
 
     @Internal
-    public boolean isRunning() {
-        return isRunning.get() > 0;
-    }
-
-    private void incrementRunning(Throwable throwable) {
-        assertTrue(isRunning.get() >= 0);
-        if (isRunning.incrementAndGet() == 1) {
-            changeOfState(RUNNING);
-        }
-    }
-
-    private void decrementRunning(Throwable throwable) {
-        assertTrue(isRunning.get() > 0);
-        if (isRunning.decrementAndGet() == 0) {
-            changeOfState(NOT_RUNNING);
-        }
-    }
-
-    @Internal
-    public void incrementRunning(CompletableFuture<?> cf) {
-        cf.whenComplete((result, throwable) -> {
-            incrementRunning(throwable);
-        });
-    }
-
-    @Internal
-    public void decrementRunning(CompletableFuture<?> cf) {
-        cf.whenComplete((result, throwable) -> {
-            decrementRunning(throwable);
-        });
-
-    }
-
-    @Internal
-    public <T> T call(Supplier<T> callable) {
-        return call(null, callable);
-    }
-
-    @Internal
-    public <T> T call(Throwable throwable, Supplier<T> callable) {
-        incrementRunning(throwable);
-        try {
-            return callable.get();
-        } finally {
-            decrementRunning(throwable);
-        }
-    }
-
-    @Internal
-    public void run(Runnable runnable) {
-        run(null, runnable);
-    }
-
-    @Internal
-    public void run(Throwable throwable, Runnable runnable) {
-        incrementRunning(throwable);
-        try {
-            runnable.run();
-        } finally {
-            decrementRunning(throwable);
-        }
-    }
-
-    private void changeOfState(RunningState runningState) {
-        if (engineRunningObserver != null) {
-            engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
-        }
+    void throwIfCancelled() throws AbortExecutionException {
+        engineRunningState.throwIfCancelled();
     }
 }

@@ -6,7 +6,6 @@ import graphql.execution.ResultPath
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.incremental.DelayedIncrementalPartialResult
 import org.awaitility.Awaitility
-import org.jetbrains.annotations.NotNull
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 
@@ -168,7 +167,7 @@ class IncrementalCallStateDeferTest extends Specification {
             }
         }
 
-        def deferredCall = new DeferredFragmentCall(null, ResultPath.parse("/field/path"), [call1, call2], new DeferredCallContext())
+        def deferredCall = new DeferredFragmentCall(null, ResultPath.parse("/field/path"), [call1, call2], new AlternativeCallContext())
 
         when:
         def incrementalCallState = new IncrementalCallState()
@@ -242,7 +241,7 @@ class IncrementalCallStateDeferTest extends Specification {
 
         def threadFactory = new ThreadFactory() {
             @Override
-            Thread newThread(@NotNull Runnable r) {
+            Thread newThread(Runnable r) {
                 return new Thread(r, "SubscriberThread")
             }
         }
@@ -292,7 +291,7 @@ class IncrementalCallStateDeferTest extends Specification {
             }
         }
 
-        return new DeferredFragmentCall(null, ResultPath.parse(path), [callSupplier], new DeferredCallContext())
+        return new DeferredFragmentCall(null, ResultPath.parse(path), [callSupplier], new AlternativeCallContext())
     }
 
     private static DeferredFragmentCall offThreadCallWithinCall(IncrementalCallState incrementalCallState, String dataParent, String dataChild, int sleepTime, String path) {
@@ -306,7 +305,7 @@ class IncrementalCallStateDeferTest extends Specification {
                 })
             }
         }
-        return new DeferredFragmentCall(null, ResultPath.parse("/field/path"), [callSupplier], new DeferredCallContext())
+        return new DeferredFragmentCall(null, ResultPath.parse("/field/path"), [callSupplier], new AlternativeCallContext())
     }
 
     private static void assertResultsSizeAndHasNextRule(int expectedSize, List<DelayedIncrementalPartialResult> results) {

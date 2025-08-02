@@ -1,9 +1,11 @@
 package graphql.execution
 
+import graphql.EngineRunningState
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
 import graphql.MutationSchema
+import graphql.Profiler
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
@@ -51,7 +53,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput, Profiler.NO_OP), Profiler.NO_OP)
 
         then:
         queryStrategy.execute == 1
@@ -71,7 +73,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput, Profiler.NO_OP), Profiler.NO_OP)
 
         then:
         queryStrategy.execute == 0
@@ -91,7 +93,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput, Profiler.NO_OP), Profiler.NO_OP)
 
         then:
         queryStrategy.execute == 0
@@ -128,7 +130,7 @@ class ExecutionTest extends Specification {
 
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput, Profiler.NO_OP), Profiler.NO_OP)
 
         then:
         queryStrategy.execute == 0

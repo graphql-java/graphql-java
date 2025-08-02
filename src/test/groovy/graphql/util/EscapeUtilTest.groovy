@@ -28,4 +28,24 @@ class EscapeUtilTest extends Specification {
         '''"{"operator":"eq", "operands": []}"''' | '''\\"{\\"operator\\":\\"eq\\", \\"operands\\": []}\\"'''
     }
 
+    def "escapeJsonStringTo produces correct escaped output"() {
+        given:
+        def strValue = new StringBuilder()
+
+        when:
+        EscapeUtil.escapeJsonStringTo(strValue, input)
+
+        then:
+        strValue.toString() == expected
+
+        where:
+        input                                       | expected
+        ''                                          | ''
+        'plain'                                     | 'plain'
+        'quote-"and\\'                              | 'quote-\\"and\\\\'
+        'tab\tnewline\n'                            | 'tab\\tnewline\\n'
+        'combo-"\\\b\f\n\r\t'                       | 'combo-\\"\\\\\\b\\f\\n\\r\\t'
+    }
+
+
 }

@@ -1,7 +1,9 @@
 package graphql.execution
 
+import graphql.EngineRunningState
 import graphql.ExecutionInput
 import graphql.GraphQLContext
+import graphql.Profiler
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.language.Field
 import graphql.language.OperationDefinition
@@ -99,6 +101,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -108,11 +111,15 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .profiler(Profiler.NO_OP)
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField(new Field('hello')), 'hello2': mergedField(new Field('hello2')), 'hello3': mergedField(new Field('hello3'))]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()
@@ -146,6 +153,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -154,12 +162,16 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .profiler(Profiler.NO_OP)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField(new Field('hello')), 'hello2': mergedField(new Field('hello2')), 'hello3': mergedField(new Field('hello3'))]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()
@@ -169,35 +181,35 @@ class AsyncSerialExecutionStrategyTest extends Specification {
 
         then:
         !result.isDone()
-        1 * df1.get(_,_,_) >> cf1
-        0 * df2.get(_,_,_) >> cf2
-        0 * df3.get(_,_,_) >> cf3
+        1 * df1.get(_, _, _) >> cf1
+        0 * df2.get(_, _, _) >> cf2
+        0 * df3.get(_, _, _) >> cf3
 
         when:
         cf1.complete("world1")
 
         then:
         !result.isDone()
-        0 * df1.get(_,_,_) >> cf1
-        1 * df2.get(_,_,_) >> cf2
-        0 * df3.get(_,_,_) >> cf3
+        0 * df1.get(_, _, _) >> cf1
+        1 * df2.get(_, _, _) >> cf2
+        0 * df3.get(_, _, _) >> cf3
 
         when:
         cf2.complete("world2")
 
         then:
         !result.isDone()
-        0 * df1.get(_,_,_) >> cf1
-        0 * df2.get(_,_,_) >> cf2
-        1 * df3.get(_,_,_) >> cf3
+        0 * df1.get(_, _, _) >> cf1
+        0 * df2.get(_, _, _) >> cf2
+        1 * df3.get(_, _, _) >> cf3
 
         when:
         cf3.complete("world3")
 
         then:
-        0 * df1.get(_,_,_) >> cf1
-        0 * df2.get(_,_,_) >> cf2
-        0 * df3.get(_,_,_) >> cf3
+        0 * df1.get(_, _, _) >> cf1
+        0 * df2.get(_, _, _) >> cf2
+        0 * df3.get(_, _, _) >> cf3
         result.isDone()
         result.get().data == ['hello': 'world1', 'hello2': 'world2', 'hello3': 'world3']
     }
