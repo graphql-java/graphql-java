@@ -27,7 +27,7 @@ import static benchmark.BenchmarkUtils.runInToolingForSomeTimeThenExit;
  */
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
-@Fork(3)
+@Fork(2)
 public class CreateExtendedSchemaBenchmark {
 
     private static final String SDL = mkSDL();

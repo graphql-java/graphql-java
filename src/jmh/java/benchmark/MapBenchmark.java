@@ -25,7 +25,7 @@ import java.util.Random;
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 1)
 @Measurement(iterations = 3, time = 1, batchSize = 1000)
-@Fork(3)
+@Fork(2)
 public class MapBenchmark {
 
     @Param({"10", "50", "300"})
