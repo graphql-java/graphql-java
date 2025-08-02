@@ -144,7 +144,7 @@ dependencies {
 
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
-    testImplementation 'org.openjdk.jmh:jmh-core:1.37' // for ArchUnit tests that check JMH annotations
+    testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
 
     antlr 'org.antlr:antlr4:' + antlrVersion
 
