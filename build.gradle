@@ -144,6 +144,7 @@ dependencies {
 
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
+    testImplementation 'org.openjdk.jmh:jmh-core:1.37' // for ArchUnit tests that check JMH annotations
 
     antlr 'org.antlr:antlr4:' + antlrVersion
 
@@ -310,12 +311,15 @@ artifacts {
 List<TestDescriptor> failedTests = []
 
 tasks.withType(Test) {
-
     useJUnitPlatform()
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
     }
+
+    // Required for JMH ArchUnit tests
+    classpath += sourceSets.jmh.output
+    dependsOn "jmhClasses"
 
     afterTest { TestDescriptor descriptor, TestResult result ->
         if (result.getFailedTestCount() > 0) {
