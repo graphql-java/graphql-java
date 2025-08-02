@@ -309,7 +309,8 @@ artifacts {
 
 List<TestDescriptor> failedTests = []
 
-test {
+tasks.withType(Test) {
+
     useJUnitPlatform()
     testLogging {
         events "FAILED", "SKIPPED"
@@ -327,33 +328,10 @@ tasks.register('testWithJava17', Test) {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(17)
     }
-    useJUnitPlatform()
-    testLogging {
-        events "FAILED", "SKIPPED"
-        exceptionFormat = "FULL"
-    }
-
-    afterTest { TestDescriptor descriptor, TestResult result ->
-        if (result.getFailedTestCount() > 0) {
-            failedTests.add(descriptor)
-        }
-    }
-
 }
 tasks.register('testWithJava11', Test) {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(11)
-    }
-    useJUnitPlatform()
-    testLogging {
-        events "FAILED", "SKIPPED"
-        exceptionFormat = "FULL"
-    }
-
-    afterTest { TestDescriptor descriptor, TestResult result ->
-        if (result.getFailedTestCount() > 0) {
-            failedTests.add(descriptor)
-        }
     }
 }
 test.dependsOn testWithJava17
