@@ -55,6 +55,8 @@ class ChainedInstrumentationStateTest extends Specification {
                 "start:fetch-hero",
                 "end:fetch-hero",
                 "start:complete-hero",
+                "start:create-executable-normalized-operation",
+                "end:create-executable-normalized-operation",
 
                 "start:execute-object",
 
@@ -143,6 +145,8 @@ class ChainedInstrumentationStateTest extends Specification {
                 "start:fetch-hero",
                 "end:fetch-hero",
                 "start:complete-hero",
+                "start:create-executable-normalized-operation",
+                "end:create-executable-normalized-operation",
 
                 "start:execute-object",
 
@@ -183,6 +187,8 @@ class ChainedInstrumentationStateTest extends Specification {
                 "start:fetch-hero",
                 "end:fetch-hero",
                 "start:complete-hero",
+                "start:create-executable-normalized-operation",
+                "end:create-executable-normalized-operation",
 
                 "start:execute-object",
 
