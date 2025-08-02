@@ -52,9 +52,13 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
         return new Builder().from(executionResult);
     }
 
+    public static Builder fromIncrementalExecutionResult(IncrementalExecutionResult executionResult) {
+        return new Builder().from(executionResult);
+    }
+
     @Override
     public IncrementalExecutionResult transform(Consumer<ExecutionResult.Builder<?>> builderConsumer) {
-        var builder = fromExecutionResult(this);
+        var builder = fromIncrementalExecutionResult(this);
         builderConsumer.accept(builder);
         return builder.build();
     }

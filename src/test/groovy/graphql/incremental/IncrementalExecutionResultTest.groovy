@@ -121,7 +121,15 @@ class IncrementalExecutionResultTest extends Specification {
 
     def "transform returns IncrementalExecutionResult"() {
         when:
-        def initial = newIncrementalExecutionResult().hasNext(true).build()
+        def defer = newDeferredItem()
+                .label("homeWorldDefer")
+                .path(ResultPath.parse("/person"))
+                .data([homeWorld: "Tatooine"])
+                .build()
+        def initial = newIncrementalExecutionResult()
+                .hasNext(true)
+                .incremental([defer])
+                .build()
 
         then:
         def transformed = initial.transform { b ->
@@ -130,6 +138,7 @@ class IncrementalExecutionResultTest extends Specification {
         }
         transformed instanceof IncrementalExecutionResult
         transformed.extensions == ["ext-key": "ext-value"]
+        transformed.incremental == initial.incremental
         transformed.hasNext == false
     }
 }
