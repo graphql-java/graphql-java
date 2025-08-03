@@ -8,6 +8,7 @@ import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -80,7 +81,8 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     @Override
     public ObjectValue deepCopy() {
-        return new ObjectValue(deepCopy(objectFields), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        List<ObjectField> copiedFields = deepCopy(objectFields);
+        return new ObjectValue(copiedFields != null ? copiedFields : emptyList(), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
 
@@ -107,8 +109,9 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
-        private @Nullable SourceLocation sourceLocation;
+        private SourceLocation sourceLocation;
         private ImmutableList<ObjectField> objectFields = emptyList();
         private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -124,7 +127,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
