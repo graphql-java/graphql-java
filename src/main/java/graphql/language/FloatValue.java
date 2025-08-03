@@ -7,6 +7,7 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
@@ -113,9 +114,10 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
         return new Builder().value(value);
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
-        private @Nullable SourceLocation sourceLocation;
-        private @Nullable BigDecimal value;
+        private SourceLocation sourceLocation;
+        private BigDecimal value;
         private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -131,7 +133,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
         }
 
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }

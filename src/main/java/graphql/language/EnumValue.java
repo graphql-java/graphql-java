@@ -7,6 +7,7 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -114,9 +115,10 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
-        private @Nullable SourceLocation sourceLocation;
-        private @Nullable String name;
+        private SourceLocation sourceLocation;
+        private String name;
         private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -132,7 +134,7 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
         }
 
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }

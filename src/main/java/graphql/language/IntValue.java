@@ -7,6 +7,7 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.math.BigInteger;
@@ -112,9 +113,10 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
-        private @Nullable SourceLocation sourceLocation;
-        private @Nullable BigInteger value;
+        private SourceLocation sourceLocation;
+        private BigInteger value;
         private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -129,7 +131,7 @@ public class IntValue extends AbstractNode<IntValue> implements ScalarValue<IntV
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
