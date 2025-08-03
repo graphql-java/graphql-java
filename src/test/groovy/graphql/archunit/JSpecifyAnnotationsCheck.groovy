@@ -17,7 +17,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.ErrorType",
             "graphql.ExceptionWhileDataFetching",
             "graphql.ExecutionResult",
-            "graphql.GraphQL\$Builder",
             "graphql.GraphQLContext",
             "graphql.GraphQLError",
             "graphql.GraphqlErrorBuilder",
@@ -370,21 +369,21 @@ class JSpecifyAnnotationsCheck extends Specification {
         when:
         def classesMissingAnnotation = classes
                 .stream()
-                .filter { !it.isAnnotatedWith("org.jspecify.annotations.NullMarked") }
+                .filter { !it.isAnnotatedWith("org.jspecify.annotations.NullMarked") && !it.isAnnotatedWith("org.jspecify.annotations.NullUnmarked") }
                 .map { it.name }
                 .filter { it -> !JSPECIFY_EXEMPTION_LIST.contains(it) }
                 .collect()
 
         then:
         if (!classesMissingAnnotation.isEmpty()) {
-            throw new AssertionError("""The following public API and experimental API classes are missing @NullMarked annotation:
+            throw new AssertionError("""The following public API and experimental API classes are missing a JSpecify annotation:
 ${classesMissingAnnotation.sort().join("\n")}
 
-Add @NullMarked to these public API classes and add @Nullable annotations where appropriate. See documentation at https://jspecify.dev/docs/user-guide/#nullmarked""")
+Add @NullMarked or @NullUnmarked to these public API classes. See documentation at https://jspecify.dev/docs/user-guide/#nullmarked""")
         }
     }
 
-    def "exempted classes should not be annotated with @NullMarked"() {
+    def "exempted classes should not be annotated with @NullMarked or @NullUnmarked"() {
         given:
         def classes = new ClassFileImporter()
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
@@ -393,13 +392,13 @@ Add @NullMarked to these public API classes and add @Nullable annotations where 
         when:
         def annotatedButExempted = classes.stream()
                 .filter { JSPECIFY_EXEMPTION_LIST.contains(it.name) }
-                .filter { it.isAnnotatedWith("org.jspecify.annotations.NullMarked") }
+                .filter { it.isAnnotatedWith("org.jspecify.annotations.NullMarked") || it.isAnnotatedWith("org.jspecify.annotations.NullUnmarked") }
                 .map { it.name }
                 .collect()
 
         then:
         if (!annotatedButExempted.isEmpty()) {
-            throw new AssertionError("""The following classes are in the JSpecify exemption list but are annotated with @NullMarked:
+            throw new AssertionError("""The following classes are in the JSpecify exemption list but are annotated with @NullMarked or @NullUnmarked:
 ${annotatedButExempted.sort().join("\n")}
 
 Please remove them from the exemption list in ${JSpecifyAnnotationsCheck.class.simpleName}.groovy.""")
