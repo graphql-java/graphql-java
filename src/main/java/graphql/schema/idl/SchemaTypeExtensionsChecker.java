@@ -27,7 +27,6 @@ import graphql.util.FpKit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -84,19 +83,20 @@ class SchemaTypeExtensionsChecker {
                                         checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                                                 (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
 
-                                // fields must be unique within a type extension
-                                checkForTypeExtensionFieldUniqueness(
-                                        errors,
-                                        extensions,
-                                        ObjectTypeDefinition::getFieldDefinitions
-                                );
-
                                 // then check for field re-defs from the base type
                                 ObjectTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), ObjectTypeDefinition.class);
                                 if (baseTypeDef != null) {
                                     checkForFieldRedefinition(errors, extension, fieldDefinitions, baseTypeDef.getFieldDefinitions());
                                 }
                             });
+
+                            // fields must be unique within a type extension
+                            checkForTypeExtensionFieldUniqueness(
+                                    errors,
+                                    extensions,
+                                    ObjectTypeDefinition::getFieldDefinitions
+                            );
+
                         }
                 );
     }
@@ -130,13 +130,6 @@ class SchemaTypeExtensionsChecker {
                                 checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                                         (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
 
-                        // fields must be unique within a type extension
-                        checkForTypeExtensionFieldUniqueness(
-                                errors,
-                                extensions,
-                                InterfaceTypeDefinition::getFieldDefinitions
-                        );
-
                         //
                         // then check for field re-defs from the base type
                         InterfaceTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), InterfaceTypeDefinition.class);
@@ -144,18 +137,42 @@ class SchemaTypeExtensionsChecker {
                             checkForFieldRedefinition(errors, extension, fieldDefinitions, baseTypeDef.getFieldDefinitions());
                         }
                     });
+                    // fields must be unique within a type extension
+                    checkForTypeExtensionFieldUniqueness(
+                            errors,
+                            extensions,
+                            InterfaceTypeDefinition::getFieldDefinitions
+                    );
                 });
     }
 
     private <T extends TypeDefinition<?>> void checkForTypeExtensionFieldUniqueness(
             List<GraphQLError> errors,
             List<T> extensions,
-            Function<T, List<FieldDefinition>> getFieldDefinitions
+            Function<T, List<FieldDefinition>> getFieldDefinitionsFunc
     ) {
         Set<String> seenFields = new HashSet<>();
 
         for (T extension : extensions) {
-            for (FieldDefinition field : getFieldDefinitions.apply(extension)) {
+            for (FieldDefinition field : getFieldDefinitionsFunc.apply(extension)) {
+                if (seenFields.contains(field.getName())) {
+                    errors.add(new TypeExtensionFieldRedefinitionError(extension, field));
+                } else {
+                    seenFields.add(field.getName());
+                }
+            }
+        }
+    }
+
+    private <T extends TypeDefinition<?>> void checkForTypeExtensionInputFieldUniqueness(
+            List<GraphQLError> errors,
+            List<T> extensions,
+            Function<T, List<InputValueDefinition>> getFieldDefinitionsFunc
+    ) {
+        Set<String> seenFields = new HashSet<>();
+
+        for (T extension : extensions) {
+            for (InputValueDefinition field : getFieldDefinitionsFunc.apply(extension)) {
                 if (seenFields.contains(field.getName())) {
                     errors.add(new TypeExtensionFieldRedefinitionError(extension, field));
                 } else {
@@ -274,17 +291,19 @@ class SchemaTypeExtensionsChecker {
                                 checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                                         (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
                         //
-                        // fields must be unique within a type extension
-                        forEachBut(extension, extensions,
-                                otherTypeExt -> checkForInputValueRedefinition(errors, otherTypeExt, otherTypeExt.getInputValueDefinitions(), inputValueDefinitions));
-
-                        //
                         // then check for field re-defs from the base type
                         InputObjectTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), InputObjectTypeDefinition.class);
                         if (baseTypeDef != null) {
                             checkForInputValueRedefinition(errors, extension, inputValueDefinitions, baseTypeDef.getInputValueDefinitions());
                         }
                     });
+                    //
+                    // fields must be unique within a type extension
+                    checkForTypeExtensionInputFieldUniqueness(
+                            errors,
+                            extensions,
+                            InputObjectTypeDefinition::getInputValueDefinitions
+                    );
 
                 });
     }

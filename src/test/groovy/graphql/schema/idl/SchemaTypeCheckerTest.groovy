@@ -943,7 +943,7 @@ class SchemaTypeCheckerTest extends Specification {
         expect:
 
         !result.isEmpty()
-        result.size() == 4
+        result.size() == 5
     }
 
     def "test that field args are unique"() {
@@ -1823,5 +1823,96 @@ class SchemaTypeCheckerTest extends Specification {
 
         then:
         errorContaining(result, "member type 'Bar' in Union 'DuplicateBar' is not unique. The member types of a Union type must be unique.")
+    }
+
+    def "how many errors do we get on type extension field redefinition"() {
+        def sdl = """
+
+        type Query {
+            foo : Foo
+        }
+        
+        type Foo {
+            foo : String
+        }
+        
+        extend type Foo {
+           redefinedField : String
+        }
+        
+        extend type Foo {
+           otherField1 : String
+        }
+        
+        extend type Foo {
+           otherField2 : String
+        }
+        
+        extend type Foo {
+           redefinedField : String
+        }
+        
+        extend type Foo {
+           redefinedField : String
+        }
+
+        interface InterfaceType {
+            foo : String
+        }
+        
+        extend interface InterfaceType {
+           redefinedInterfaceField : String
+        }
+        
+        extend interface InterfaceType {
+           otherField1 : String
+        }
+        
+        extend interface InterfaceType {
+           otherField2 : String
+        }
+        
+        extend interface InterfaceType {
+           redefinedInterfaceField : String
+        }
+        
+        extend interface InterfaceType {
+           redefinedInterfaceField : String
+        }
+        
+        input Bar {
+            bar : String
+        }
+        
+        extend input Bar {
+           redefinedInputField : String
+        }
+        
+        extend input Bar {
+           otherField1 : String
+        }
+        
+        extend input Bar {
+           otherField2 : String
+        }
+        
+        extend input Bar {
+           redefinedInputField : String
+        }
+        
+        extend input Bar {
+           redefinedInputField : String
+        }
+            
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        result.size() == 6
+        errorContaining(result, "'Foo' extension type [@n:n] tried to redefine field 'redefinedField' [@n:n]")
+        errorContaining(result, "'InterfaceType' extension type [@n:n] tried to redefine field 'redefinedInterfaceField' [@n:n]")
+        errorContaining(result, "'Bar' extension type [@n:n] tried to redefine field 'redefinedInputField' [@n:n]")
     }
 }
