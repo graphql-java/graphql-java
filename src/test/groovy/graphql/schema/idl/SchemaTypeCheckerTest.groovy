@@ -1903,6 +1903,30 @@ class SchemaTypeCheckerTest extends Specification {
         extend input Bar {
            redefinedInputField : String
         }
+
+        enum Baz {
+            baz
+        }
+        
+        extend enum Baz {
+           redefinedEnumValue
+        }
+        
+        extend enum Baz {
+           otherField1
+        }
+        
+        extend enum Baz {
+           otherField2
+        }
+        
+        extend enum Baz {
+           redefinedEnumValue
+        }
+        
+        extend enum Baz {
+           redefinedEnumValue
+        }
             
         """
 
@@ -1910,9 +1934,10 @@ class SchemaTypeCheckerTest extends Specification {
         def result = check(sdl)
 
         then:
-        result.size() == 6
+        result.size() == 8
         errorContaining(result, "'Foo' extension type [@n:n] tried to redefine field 'redefinedField' [@n:n]")
         errorContaining(result, "'InterfaceType' extension type [@n:n] tried to redefine field 'redefinedInterfaceField' [@n:n]")
         errorContaining(result, "'Bar' extension type [@n:n] tried to redefine field 'redefinedInputField' [@n:n]")
+        errorContaining(result, "'Baz' extension type [@n:n] tried to redefine enum value 'redefinedEnumValue' [@n:n]")
     }
 }
