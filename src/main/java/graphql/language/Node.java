@@ -4,6 +4,7 @@ package graphql.language;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.List;
@@ -47,6 +48,7 @@ public interface Node<T extends Node> extends Serializable {
     /**
      * @return the source location where this node occurs
      */
+    @Nullable
     SourceLocation getSourceLocation();
 
     /**
@@ -82,7 +84,7 @@ public interface Node<T extends Node> extends Serializable {
      *
      * @return isEqualTo
      */
-    boolean isEqualTo(Node node);
+    boolean isEqualTo(@Nullable Node node);
 
     /**
      * @return a deep copy of this node
