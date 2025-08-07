@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 2, time = 5, batchSize = 50)
 @Measurement(iterations = 3, batchSize = 50)
-@Fork(3)
+@Fork(2)
 public class AssertBenchmark {
 
     private static final int LOOPS = 100;
