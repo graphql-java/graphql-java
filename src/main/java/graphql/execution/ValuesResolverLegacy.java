@@ -35,7 +35,6 @@ import static graphql.Assert.assertTrue;
 import static graphql.language.ObjectField.newObjectField;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
-import static java.util.stream.Collectors.toList;
 
 /*
  * ======================LEGACY=======+TO BE REMOVED IN THE FUTURE ===============
