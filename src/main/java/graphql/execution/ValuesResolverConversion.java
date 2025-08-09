@@ -49,7 +49,6 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOneAs;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
-import static java.util.stream.Collectors.toList;
 
 /**
  * This class, originally broken out from {@link  ValuesResolver} contains code for the conversion of values

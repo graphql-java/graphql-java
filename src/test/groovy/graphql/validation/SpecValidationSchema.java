@@ -33,7 +33,6 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField;
 import static graphql.schema.GraphQLInputObjectType.newInputObject;
 import static graphql.schema.GraphQLNonNull.nonNull;
-import static graphql.schema.GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY;
 import static java.util.Collections.singletonList;
 
 /**
