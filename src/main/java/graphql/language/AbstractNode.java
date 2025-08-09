@@ -59,7 +59,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
     }
 
     @SuppressWarnings("unchecked")
-    protected <V extends @Nullable Node> @Nullable V deepCopy(@Nullable V nullableObj) {
+    protected <V extends Node> @Nullable V deepCopy(@Nullable V nullableObj) {
         if (nullableObj == null) {
             return null;
         }
@@ -67,7 +67,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
     }
 
     @SuppressWarnings("unchecked")
-    protected <V extends @Nullable Node> @Nullable List<V> deepCopy(@Nullable List<? extends Node> list) {
+    protected <V extends Node> @Nullable List<V> deepCopy(@Nullable List<? extends Node> list) {
         if (list == null) {
             return null;
         }
