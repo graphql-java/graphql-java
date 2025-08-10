@@ -14,6 +14,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -91,8 +92,8 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
     @Override
     public ArrayValue deepCopy() {
-        List<Value> copiedValues = deepCopy(values);
-        return new ArrayValue(copiedValues != null ? copiedValues : emptyList(), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        List<Value> copiedValues = Objects.requireNonNull(deepCopy(values));
+        return new ArrayValue(copiedValues, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
