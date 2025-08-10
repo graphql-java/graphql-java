@@ -6,6 +6,8 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,12 +22,13 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
 @PublicApi
+@NullMarked
 public class StringValue extends AbstractNode<StringValue> implements ScalarValue<StringValue> {
 
-    private final String value;
+    private final @Nullable String value;
 
     @Internal
-    protected StringValue(String value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected StringValue(@Nullable String value, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.value = value;
     }
@@ -39,7 +42,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
         this(value, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
-    public String getValue() {
+    public @Nullable String getValue() {
         return value;
     }
 
@@ -67,7 +70,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -110,8 +113,8 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
     }
 
     public static final class Builder implements NodeBuilder {
-        private SourceLocation sourceLocation;
-        private String value;
+        private @Nullable SourceLocation sourceLocation;
+        private @Nullable String value;
         private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -128,12 +131,12 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
         }
 
 
-        public Builder sourceLocation(SourceLocation sourceLocation) {
+        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
 
-        public Builder value(String value) {
+        public Builder value(@Nullable String value) {
             this.value = value;
             return this;
         }

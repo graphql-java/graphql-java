@@ -7,6 +7,9 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,6 +21,7 @@ import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class ObjectValue extends AbstractNode<ObjectValue> implements Value<ObjectValue> {
 
     private final ImmutableList<ObjectField> objectFields;
@@ -25,7 +29,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
     public static final String CHILD_OBJECT_FIELDS = "objectFields";
 
     @Internal
-    protected ObjectValue(List<ObjectField> objectFields, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected ObjectValue(List<ObjectField> objectFields, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.objectFields = ImmutableList.copyOf(objectFields);
     }
@@ -63,7 +67,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -77,7 +81,8 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     @Override
     public ObjectValue deepCopy() {
-        return new ObjectValue(deepCopy(objectFields), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        List<ObjectField> copiedFields = assertNotNull(deepCopy(objectFields));
+        return new ObjectValue(copiedFields, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
 
@@ -104,6 +109,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<ObjectField> objectFields = emptyList();
