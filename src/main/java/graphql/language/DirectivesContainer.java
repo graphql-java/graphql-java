@@ -1,14 +1,10 @@
 package graphql.language;
 
 
-import com.google.common.collect.ImmutableMap;
 import graphql.PublicApi;
 
 import java.util.List;
 import java.util.Map;
-
-import static graphql.collect.ImmutableKit.emptyList;
-import static graphql.language.NodeUtil.allDirectivesByName;
 
 /**
  * Represents a language node that can contain Directives.  Directives can be repeatable and (by default) non repeatable.

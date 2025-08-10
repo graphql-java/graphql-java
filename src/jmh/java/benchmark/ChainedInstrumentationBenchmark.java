@@ -35,7 +35,7 @@ import static graphql.schema.GraphQLObjectType.newObject;
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
-@Fork(3)
+@Fork(2)
 public class ChainedInstrumentationBenchmark {
 
     @Param({"0", "1", "10"})

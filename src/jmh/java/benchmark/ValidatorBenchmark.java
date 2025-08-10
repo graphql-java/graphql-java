@@ -28,7 +28,7 @@ import static graphql.Assert.assertTrue;
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
-@Fork(3)
+@Fork(2)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class ValidatorBenchmark {
 

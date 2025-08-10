@@ -35,7 +35,7 @@ import static graphql.Scalars.GraphQLString;
 
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
-@Fork(3)
+@Fork(2)
 public class TwitterBenchmark {
     private static final int BREADTH = 150;
     private static final int DEPTH = 150;

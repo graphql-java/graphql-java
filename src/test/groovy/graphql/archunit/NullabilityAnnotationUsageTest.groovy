@@ -1,4 +1,4 @@
-package graphql
+package graphql.archunit
 
 import com.tngtech.archunit.core.domain.JavaClasses
 import com.tngtech.archunit.core.importer.ClassFileImporter

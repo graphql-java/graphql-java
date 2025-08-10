@@ -6,6 +6,9 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
@@ -21,12 +24,13 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
 @PublicApi
+@NullMarked
 public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<FloatValue> {
 
     private final BigDecimal value;
 
     @Internal
-    protected FloatValue(BigDecimal value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected FloatValue(BigDecimal value, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.value = value;
     }
@@ -68,7 +72,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -110,6 +114,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
         return new Builder().value(value);
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private BigDecimal value;
