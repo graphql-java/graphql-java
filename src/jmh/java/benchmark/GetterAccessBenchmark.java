@@ -13,7 +13,7 @@ import java.util.function.Function;
 
 @Warmup(iterations = 2, time = 5, batchSize = 500)
 @Measurement(iterations = 3, batchSize = 500)
-@Fork(3)
+@Fork(2)
 public class GetterAccessBenchmark {
 
     public static class Pojo {

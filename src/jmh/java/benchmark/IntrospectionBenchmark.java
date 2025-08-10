@@ -21,7 +21,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
-@Fork(3)
+@Fork(2)
 public class IntrospectionBenchmark {
 
     @Benchmark

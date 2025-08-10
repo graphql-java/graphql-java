@@ -23,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 1)
 @Measurement(iterations = 3, time = 10, batchSize = 10)
-@Fork(3)
+@Fork(2)
 public class CompletableFuturesBenchmark {
 
 

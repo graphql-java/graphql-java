@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3, time = 10)
-@Fork(3)
+@Fork(2)
 public class AstPrinterBenchmark {
     /**
      * Note: this query is a redacted version of a real query

@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 @BenchmarkMode(Mode.AverageTime)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3, time = 10)
-@Fork(3)
+@Fork(2)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class SchemaTransformerBenchmark {
 

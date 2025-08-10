@@ -15,7 +15,7 @@ import java.util.Map;
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
-@Fork(3)
+@Fork(2)
 public class IntMapBenchmark {
 
     @Benchmark
