@@ -4,11 +4,13 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
+import graphql.TestUtil
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.incremental.IncrementalExecutionResult
 import graphql.language.AstPrinter
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
@@ -495,5 +497,84 @@ class InstrumentationTest extends Specification {
 
         then:
         er.extensions == [i1: "I1"]
+    }
+
+    def "can instrumented deferred fields"() {
+
+        given:
+
+        def query = """
+        {
+            hero {
+                ... @defer(label: "id") {
+                    id
+                }
+                ... @defer(label: "name") {
+                    name
+                }
+            }
+        }
+        """
+
+
+        when:
+
+        def instrumentation = new ModernTestingInstrumentation()
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(new AsyncExecutionStrategy())
+                .instrumentation(instrumentation)
+                .build()
+
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext { it ->
+            GraphQL.unusualConfiguration(it).incrementalSupport().enableIncrementalSupport(true)
+        }.build()
+
+        IncrementalExecutionResult incrementalER = graphQL.execute(ei) as IncrementalExecutionResult
+        //
+        // cause the defer Publish to be finished
+        def results = TestUtil.getIncrementalResults(incrementalER)
+
+
+        then:
+
+        instrumentation.executionList == ["start:execution",
+                                          "start:parse",
+                                          "end:parse",
+                                          "start:validation",
+                                          "end:validation",
+                                          "start:execute-operation",
+                                          "start:execution-strategy",
+                                          "start:field-hero",
+                                          "start:fetch-hero",
+                                          "end:fetch-hero",
+                                          "start:complete-hero",
+                                          "start:execute-object",
+                                          "end:execute-object",
+                                          "end:complete-hero",
+                                          "end:field-hero",
+                                          "end:execution-strategy",
+                                          "end:execute-operation",
+                                          "end:execution",
+                                          //
+                                          // the deferred field resolving now happens after the operation has come back
+                                          "start:deferred-field-id",
+                                          "start:field-id",
+                                          "start:fetch-id",
+                                          "end:fetch-id",
+                                          "start:complete-id",
+                                          "end:complete-id",
+                                          "end:field-id",
+                                          "end:deferred-field-id",
+                                          "start:deferred-field-name",
+                                          "start:field-name",
+                                          "start:fetch-name",
+                                          "end:fetch-name",
+                                          "start:complete-name",
+                                          "end:complete-name",
+                                          "end:field-name",
+                                          "end:deferred-field-name",
+        ]
     }
 }
