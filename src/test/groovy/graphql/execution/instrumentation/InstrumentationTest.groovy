@@ -312,6 +312,8 @@ class InstrumentationTest extends Specification {
                 "onDispatched:fetch-hero",
                 "end:fetch-hero",
                 "start:complete-hero",
+                "start:create-executable-normalized-operation",
+                "end:create-executable-normalized-operation",
                 "start:execute-object",
                 "start:field-id",
                 "start:fetch-id",

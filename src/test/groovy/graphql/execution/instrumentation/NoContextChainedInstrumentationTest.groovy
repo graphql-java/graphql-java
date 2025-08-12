@@ -41,6 +41,7 @@ class NoContextChainedInstrumentationTest extends Specification {
                 "start:field-hero",
                 "start:fetch-hero",
                 "start:complete-hero",
+                "start:create-executable-normalized-operation",
 
                 "start:execute-object",
 
