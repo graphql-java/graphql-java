@@ -24,9 +24,11 @@ import graphql.schema.idl.errors.TypeExtensionFieldRedefinitionError;
 import graphql.schema.idl.errors.TypeExtensionMissingBaseTypeError;
 import graphql.util.FpKit;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static graphql.schema.idl.SchemaTypeChecker.checkNamedUniqueness;
@@ -80,18 +82,20 @@ class SchemaTypeExtensionsChecker {
                                         checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                                                 (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
 
-                                //
-                                // fields must be unique within a type extension
-                                forEachBut(extension, extensions,
-                                        otherTypeExt -> checkForFieldRedefinition(errors, otherTypeExt, otherTypeExt.getFieldDefinitions(), fieldDefinitions));
-
-                                //
                                 // then check for field re-defs from the base type
                                 ObjectTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), ObjectTypeDefinition.class);
                                 if (baseTypeDef != null) {
                                     checkForFieldRedefinition(errors, extension, fieldDefinitions, baseTypeDef.getFieldDefinitions());
                                 }
                             });
+
+                            // fields must be unique within a type extension
+                            checkForTypeExtensionFieldUniqueness(
+                                    errors,
+                                    extensions,
+                                    ObjectTypeDefinition::getFieldDefinitions
+                            );
+
                         }
                 );
     }
@@ -126,17 +130,18 @@ class SchemaTypeExtensionsChecker {
                                         (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
 
                         //
-                        // fields must be unique within a type extension
-                        forEachBut(extension, extensions,
-                                otherTypeExt -> checkForFieldRedefinition(errors, otherTypeExt, otherTypeExt.getFieldDefinitions(), fieldDefinitions));
-
-                        //
                         // then check for field re-defs from the base type
                         InterfaceTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), InterfaceTypeDefinition.class);
                         if (baseTypeDef != null) {
                             checkForFieldRedefinition(errors, extension, fieldDefinitions, baseTypeDef.getFieldDefinitions());
                         }
                     });
+                    // fields must be unique within a type extension
+                    checkForTypeExtensionFieldUniqueness(
+                            errors,
+                            extensions,
+                            InterfaceTypeDefinition::getFieldDefinitions
+                    );
                 });
     }
 
@@ -193,11 +198,6 @@ class SchemaTypeExtensionsChecker {
                                 (namedField, enumValue) -> new NonUniqueNameError(extension, enumValue));
 
                         //
-                        // enum values must be unique within a type extension
-                        forEachBut(extension, extensions,
-                                otherTypeExt -> checkForEnumValueRedefinition(errors, otherTypeExt, otherTypeExt.getEnumValueDefinitions(), enumValueDefinitions));
-
-                        //
                         // then check for field re-defs from the base type
                         EnumTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), EnumTypeDefinition.class);
                         if (baseTypeDef != null) {
@@ -206,7 +206,7 @@ class SchemaTypeExtensionsChecker {
 
                     });
 
-
+                    checkForTypeExtensionEnumFieldUniqueness(errors, extensions, EnumTypeDefinition::getEnumValueDefinitions);
                 });
     }
 
@@ -249,31 +249,31 @@ class SchemaTypeExtensionsChecker {
                                 checkNamedUniqueness(errors, directive.getArguments(), Argument::getName,
                                         (argumentName, argument) -> new NonUniqueArgumentError(extension, fld, argumentName))));
                         //
-                        // fields must be unique within a type extension
-                        forEachBut(extension, extensions,
-                                otherTypeExt -> checkForInputValueRedefinition(errors, otherTypeExt, otherTypeExt.getInputValueDefinitions(), inputValueDefinitions));
-
-                        //
                         // then check for field re-defs from the base type
                         InputObjectTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(extension.getName(), InputObjectTypeDefinition.class);
                         if (baseTypeDef != null) {
                             checkForInputValueRedefinition(errors, extension, inputValueDefinitions, baseTypeDef.getInputValueDefinitions());
                         }
                     });
+                    //
+                    // fields must be unique within a type extension
+                    checkForTypeExtensionInputFieldUniqueness(
+                            errors,
+                            extensions,
+                            InputObjectTypeDefinition::getInputValueDefinitions
+                    );
 
                 });
     }
 
 
-    private void checkTypeExtensionHasCorrespondingType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, String name, List<? extends TypeDefinition> extTypeList, Class<? extends TypeDefinition> targetClass) {
+    private void checkTypeExtensionHasCorrespondingType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, String name, List<? extends TypeDefinition<?>> extTypeList, Class<? extends TypeDefinition<?>> targetClass) {
         TypeDefinition<?> extensionDefinition = extTypeList.get(0);
         TypeDefinition<?> typeDefinition = typeRegistry.getTypeOrNull(TypeName.newTypeName().name(name).build(), targetClass);
         if (typeDefinition == null) {
             errors.add(new TypeExtensionMissingBaseTypeError(extensionDefinition));
         }
     }
-
-    @SuppressWarnings("unchecked")
 
     private void checkForFieldRedefinition(List<GraphQLError> errors, TypeDefinition<?> typeDefinition, List<FieldDefinition> fieldDefinitions, List<FieldDefinition> referenceFieldDefinitions) {
 
@@ -307,12 +307,57 @@ class SchemaTypeExtensionsChecker {
         });
     }
 
-    private <T> void forEachBut(T butThisOne, List<T> list, Consumer<T> consumer) {
-        for (T t : list) {
-            if (t == butThisOne) {
-                continue;
+    private <T extends TypeDefinition<?>> void checkForTypeExtensionFieldUniqueness(
+            List<GraphQLError> errors,
+            List<T> extensions,
+            Function<T, List<FieldDefinition>> getFieldDefinitionsFunc
+    ) {
+        Set<String> seenFields = new HashSet<>();
+
+        for (T extension : extensions) {
+            for (FieldDefinition field : getFieldDefinitionsFunc.apply(extension)) {
+                if (seenFields.contains(field.getName())) {
+                    errors.add(new TypeExtensionFieldRedefinitionError(extension, field));
+                } else {
+                    seenFields.add(field.getName());
+                }
             }
-            consumer.accept(t);
+        }
+    }
+
+    private <T extends TypeDefinition<?>> void checkForTypeExtensionInputFieldUniqueness(
+            List<GraphQLError> errors,
+            List<T> extensions,
+            Function<T, List<InputValueDefinition>> getFieldDefinitionsFunc
+    ) {
+        Set<String> seenFields = new HashSet<>();
+
+        for (T extension : extensions) {
+            for (InputValueDefinition field : getFieldDefinitionsFunc.apply(extension)) {
+                if (seenFields.contains(field.getName())) {
+                    errors.add(new TypeExtensionFieldRedefinitionError(extension, field));
+                } else {
+                    seenFields.add(field.getName());
+                }
+            }
+        }
+    }
+
+    private <T extends TypeDefinition<?>> void checkForTypeExtensionEnumFieldUniqueness(
+            List<GraphQLError> errors,
+            List<T> extensions,
+            Function<T, List<EnumValueDefinition>> getFieldDefinitionsFunc
+    ) {
+        Set<String> seenFields = new HashSet<>();
+
+        for (T extension : extensions) {
+            for (EnumValueDefinition field : getFieldDefinitionsFunc.apply(extension)) {
+                if (seenFields.contains(field.getName())) {
+                    errors.add(new TypeExtensionEnumValueRedefinitionError(extension, field));
+                } else {
+                    seenFields.add(field.getName());
+                }
+            }
         }
     }
 }
