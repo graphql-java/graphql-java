@@ -506,9 +506,7 @@ class InstrumentationTest extends Specification {
         def query = """
         {
             hero {
-                ... @defer(label: "id") {
-                    id
-                }
+                id
                 ... @defer(label: "name") {
                     name
                 }
@@ -551,6 +549,13 @@ class InstrumentationTest extends Specification {
                                           "end:fetch-hero",
                                           "start:complete-hero",
                                           "start:execute-object",
+                                          "start:field-id",
+                                          "start:fetch-id",
+                                          "end:fetch-id",
+                                          "start:complete-id",
+                                          "end:complete-id",
+                                          "end:field-id",
+
                                           "end:execute-object",
                                           "end:complete-hero",
                                           "end:field-hero",
@@ -559,14 +564,6 @@ class InstrumentationTest extends Specification {
                                           "end:execution",
                                           //
                                           // the deferred field resolving now happens after the operation has come back
-                                          "start:deferred-field-id",
-                                          "start:field-id",
-                                          "start:fetch-id",
-                                          "end:fetch-id",
-                                          "start:complete-id",
-                                          "end:complete-id",
-                                          "end:field-id",
-                                          "end:deferred-field-id",
                                           "start:deferred-field-name",
                                           "start:field-name",
                                           "start:fetch-name",

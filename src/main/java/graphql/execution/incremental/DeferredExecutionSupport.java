@@ -18,7 +18,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.incremental.IncrementalPayload;
 import graphql.util.FpKit;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -162,8 +162,6 @@ public interface DeferredExecutionSupport {
                     }
             );
 
-
-
             // todo: handle cached computations
             return dfCache.computeIfAbsent(
                     currentField.getResultKey(),
@@ -174,7 +172,7 @@ public interface DeferredExecutionSupport {
             );
         }
 
-        @NotNull
+        @NonNull
         private Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> resolveDeferredFieldValue(MergedField currentField, ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters) {
             return () -> {
 
