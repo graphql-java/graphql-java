@@ -10,7 +10,7 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "8.3.8"
+    id "com.gradleup.shadow" version "9.0.1"
     id "biz.aQute.bnd.builder" version "6.4.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
@@ -155,7 +155,7 @@ dependencies {
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
-    errorprone 'com.uber.nullaway:nullaway:0.12.7'
+    errorprone 'com.uber.nullaway:nullaway:0.12.8'
     errorprone 'com.google.errorprone:error_prone_core:2.41.0'
 
     // just tests - no Kotlin otherwise

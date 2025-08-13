@@ -1,11 +1,13 @@
 package graphql.language;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.List;
 import java.util.Map;
 
 @PublicApi
+@NullUnmarked
 public interface NodeBuilder {
 
     NodeBuilder sourceLocation(SourceLocation sourceLocation);
