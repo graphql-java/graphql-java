@@ -79,7 +79,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
             Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
             boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
 
-            InstrumentationReactiveResultsParameters instrumentationReactiveResultsParameters = new InstrumentationReactiveResultsParameters(executionContext, InstrumentationReactiveResultsParameters.ResultType.DEFER);
+            InstrumentationReactiveResultsParameters instrumentationReactiveResultsParameters = new InstrumentationReactiveResultsParameters(executionContext, InstrumentationReactiveResultsParameters.ResultType.SUBSCRIPTION);
             InstrumentationContext<Void> reactiveCtx = nonNullCtx(executionContext.getInstrumentation().beginReactiveResults(instrumentationReactiveResultsParameters, executionContext.getInstrumentationState()));
             reactiveCtx.onDispatched();
 
