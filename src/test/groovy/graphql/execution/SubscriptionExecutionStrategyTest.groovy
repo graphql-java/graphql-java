@@ -942,6 +942,6 @@ class SubscriptionExecutionStrategyTest extends Specification {
         ])
 
         // last of all it finishes
-        instrumentation.executionList.last == "end:reactive-results-subscription"
+        TestUtil.last(instrumentation.executionList) == "end:reactive-results-subscription"
     }
 }

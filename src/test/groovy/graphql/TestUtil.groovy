@@ -388,7 +388,7 @@ class TestUtil {
         return -1
     }
 
-    static <T> boolean eq(T t1, T t2) {
+    private static <T> boolean eq(T t1, T t2) {
         if (t1 == null && t2 == null) {
             return true
         }
@@ -396,6 +396,11 @@ class TestUtil {
             return t1 == t2
         }
         return false
+    }
+
+
+    static <T> T last(List<T> list) {
+        return list.get(list.size()-1)
     }
 
     static List<Map<String, Object>> getIncrementalResults(IncrementalExecutionResult initialResult) {

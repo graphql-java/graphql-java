@@ -553,7 +553,7 @@ class InstrumentationTest extends Specification {
         ])
 
         // last of all it finishes
-        instrumentation.executionList.last == "end:reactive-results-defer"
+        TestUtil.last(instrumentation.executionList) == "end:reactive-results-defer"
     }
 
 }
