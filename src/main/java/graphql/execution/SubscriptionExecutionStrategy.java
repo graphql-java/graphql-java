@@ -12,6 +12,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationReactiveResultsParameters;
 import graphql.execution.reactive.SubscriptionPublisher;
 import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
@@ -77,7 +78,13 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
             }
             Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
             boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
-            SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered);
+
+            InstrumentationReactiveResultsParameters instrumentationReactiveResultsParameters = new InstrumentationReactiveResultsParameters(executionContext, InstrumentationReactiveResultsParameters.ResultType.SUBSCRIPTION);
+            InstrumentationContext<Void> reactiveCtx = nonNullCtx(executionContext.getInstrumentation().beginReactiveResults(instrumentationReactiveResultsParameters, executionContext.getInstrumentationState()));
+            reactiveCtx.onDispatched();
+
+            SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered,
+                    throwable -> reactiveCtx.onCompleted(null, throwable));
             return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
         });
 

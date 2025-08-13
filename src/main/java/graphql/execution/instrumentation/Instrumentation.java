@@ -12,6 +12,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationReactiveResultsParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.schema.DataFetcher;
@@ -117,6 +118,21 @@ public interface Instrumentation {
      */
     @Nullable
     default InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+        return noOp();
+    }
+
+    /**
+     * This is called just before the execution of any reactive results, namely incremental deferred results or subscriptions.  When the {@link org.reactivestreams.Publisher}
+     * finally ends (with either a {@link Throwable} or none) then the {@link InstrumentationContext} wil be called back to say the reactive results
+     * have finished.
+     *
+     * @param parameters the parameters to this step
+     * @param state      the state created during the call to {@link #createStateAsync(InstrumentationCreateStateParameters)}
+     *
+     * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     */
+    @Nullable
+    default InstrumentationContext<Void> beginReactiveResults(InstrumentationReactiveResultsParameters parameters, InstrumentationState state) {
         return noOp();
     }
 

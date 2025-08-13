@@ -5,6 +5,7 @@ import graphql.TestUtil
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.CountingFlux
 import graphql.schema.DataFetcher
+import org.awaitility.Awaitility
 import reactor.adapter.JdkFlowAdapter
 import reactor.core.publisher.Mono
 import spock.lang.Specification
@@ -218,5 +219,62 @@ class ReactiveSupportTest extends Specification {
                 cfField          : "cf",
                 materialisedField: "materialised"
         ]
+    }
+
+    def "can be called back when there is a Publisher ends successfully or otherwise"() {
+        when:
+        def called = false
+        def throwable = null
+
+        SingleSubscriberPublisher<String> publisher = new SingleSubscriberPublisher<>()
+        def publisherFinishes = ReactiveSupport.whenPublisherFinishes(publisher, { t ->
+            throwable = t
+            called = true
+        })
+
+
+        def capturingSubscriber = new CapturingSubscriber<String>()
+        publisherFinishes.subscribe(capturingSubscriber)
+
+        publisher.offer("a")
+        publisher.offer("b")
+        publisher.offer("c")
+        publisher.noMoreData()
+
+        then:
+
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        capturingSubscriber.events["a", "b", "c"]
+
+        called
+        throwable == null
+
+        when: "it has an error thrown"
+
+        called = false
+        throwable = null
+
+        publisher = new SingleSubscriberPublisher<>()
+        publisherFinishes = ReactiveSupport.whenPublisherFinishes(publisher, { t ->
+            throwable = t
+            called = true
+        })
+
+
+        capturingSubscriber = new CapturingSubscriber<String>()
+        publisherFinishes.subscribe(capturingSubscriber)
+
+        publisher.offer("a")
+        publisher.offerError(new RuntimeException("BANG"))
+
+        then:
+
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        capturingSubscriber.events == ["a"]
+
+        called
+        throwable.message == "BANG"
     }
 }

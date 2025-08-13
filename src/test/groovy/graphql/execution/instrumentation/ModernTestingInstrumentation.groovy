@@ -10,6 +10,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
+import graphql.execution.instrumentation.parameters.InstrumentationReactiveResultsParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
 import graphql.language.Document
 import graphql.schema.DataFetcher
@@ -59,6 +60,13 @@ class ModernTestingInstrumentation implements Instrumentation {
     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         return new TestingExecutionStrategyInstrumentationContext("execution-strategy", executionList, throwableList, useOnDispatch)
+    }
+
+    @Override
+    InstrumentationContext<Void> beginReactiveResults(InstrumentationReactiveResultsParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
+        def resultType = parameters.resultType.toString().toLowerCase()
+        return new TestingInstrumentContext("reactive-results-$resultType", executionList, throwableList, useOnDispatch)
     }
 
     @Override
