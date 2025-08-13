@@ -3,12 +3,14 @@ package graphql.execution.instrumentation.parameters;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.Instrumentation;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
+@NullMarked
 public class InstrumentationReactiveResultsParameters {
 
     /**
