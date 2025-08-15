@@ -19,14 +19,14 @@ class MapOfUsageTest extends Specification {
         ArchRule mapOfRule = ArchRuleDefinition.noClasses()
                 .should()
                 .callMethod(Map.class, "of")
-                .because("Map.of() does not guarantee insertion order. Use LinkedHashMap instead for consistent serialization order.")
+                .because("Map.of() does not guarantee insertion order. Use LinkedHashMapFactory.of() instead for consistent serialization order.")
 
         when:
         EvaluationResult result = mapOfRule.evaluate(importedClasses)
 
         then:
         if (result.hasViolation()) {
-            println "Map.of() usage detected. Please use LinkedHashMap instead for consistent serialization order:"
+            println "Map.of() usage detected. Please use LinkedHashMapFactory.of() instead for consistent serialization order:"
             result.getFailureReport().getDetails().each { violation ->
                 println "- ${violation}"
             }
