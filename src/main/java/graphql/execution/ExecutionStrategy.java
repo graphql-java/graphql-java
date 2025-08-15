@@ -292,7 +292,8 @@ public abstract class ExecutionStrategy {
                         fields,
                         parameters,
                         executionContext,
-                        (ec, esp) -> Async.toCompletableFuture(resolveFieldWithInfo(ec, esp))
+                        (ec, esp) -> Async.toCompletableFuture(resolveFieldWithInfo(ec, esp)),
+                        this::createExecutionStepInfo
                 ) : DeferredExecutionSupport.NOOP;
 
     }
@@ -1094,6 +1095,11 @@ public abstract class ExecutionStrategy {
                 parameters,
                 fieldDefinition,
                 fieldContainer);
+    }
+
+    private Supplier<ExecutionStepInfo> createExecutionStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
+        return FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
     }
 
     // Errors that result from the execution of deferred fields are kept in the deferred context only.

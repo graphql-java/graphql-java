@@ -153,12 +153,13 @@ public interface Instrumentation {
      * <p>
      * This is an EXPERIMENTAL instrumentation callback. The method signature will definitely change.
      *
-     * @param state the state created during the call to {@link #createStateAsync(InstrumentationCreateStateParameters)}
+     * @param parameters the parameters to this step
+     * @param state      the state created during the call to {@link #createStateAsync(InstrumentationCreateStateParameters)}
      *
-     * @return a nullable {@link ExecutionStrategyInstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @ExperimentalApi
-    default InstrumentationContext<Object> beginDeferredField(InstrumentationState state) {
+    default InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return noOp();
     }
 

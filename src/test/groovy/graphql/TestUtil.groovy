@@ -2,6 +2,9 @@ package graphql
 
 import graphql.execution.MergedField
 import graphql.execution.MergedSelectionSet
+import graphql.execution.pubsub.CapturingSubscriber
+import graphql.incremental.DelayedIncrementalPartialResult
+import graphql.incremental.IncrementalExecutionResult
 import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
 import graphql.language.Field
@@ -31,6 +34,8 @@ import graphql.schema.idl.TypeRuntimeWiring
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
 import groovy.json.JsonOutput
+import org.awaitility.Awaitility
+import org.reactivestreams.Publisher
 
 import java.util.function.Supplier
 import java.util.stream.Collectors
@@ -321,6 +326,22 @@ class TestUtil {
 
     static int rand(int min, int max) {
         return rn.nextInt(max - min + 1) + min
+    }
+
+
+    static List<Map<String, Object>> getIncrementalResults(IncrementalExecutionResult initialResult) {
+        Publisher<DelayedIncrementalPartialResult> deferredResultStream = initialResult.incrementalItemPublisher
+
+        def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>()
+
+        deferredResultStream.subscribe(subscriber)
+
+        Awaitility.await().untilTrue(subscriber.isDone())
+        if (subscriber.throwable != null) {
+            throw new RuntimeException(subscriber.throwable)
+        }
+        return subscriber.getEvents()
+                .collect { it.toSpecification() }
     }
 
 }
