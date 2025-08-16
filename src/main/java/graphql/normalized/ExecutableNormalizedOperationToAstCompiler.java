@@ -24,6 +24,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
+import graphql.util.LinkedHashMapFactory;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -100,7 +101,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                    @Nullable String operationName,
                                                    @NonNull List<ExecutableNormalizedField> topLevelFields,
                                                    @Nullable VariablePredicate variablePredicate) {
-        return compileToDocument(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate);
+        return compileToDocument(schema, operationKind, operationName, topLevelFields, LinkedHashMapFactory.of(), variablePredicate);
     }
 
     /**
@@ -151,7 +152,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                                    @NonNull List<ExecutableNormalizedField> topLevelFields,
                                                                    @Nullable VariablePredicate variablePredicate
     ) {
-        return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate);
+        return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, LinkedHashMapFactory.of(), variablePredicate);
     }
 
     /**
