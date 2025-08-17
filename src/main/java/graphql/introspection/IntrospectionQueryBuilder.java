@@ -27,7 +27,6 @@ import static graphql.language.TypeName.newTypeName;
  * by the options you specify
  */
 @PublicApi
-@NullUnmarked
 public class IntrospectionQueryBuilder {
     public static class Options {
 
