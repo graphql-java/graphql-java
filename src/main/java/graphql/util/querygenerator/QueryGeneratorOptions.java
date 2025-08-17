@@ -5,7 +5,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 
 import java.util.function.Predicate;
-import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Options for the {@link QueryGenerator} class.

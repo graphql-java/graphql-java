@@ -11,7 +11,6 @@ import graphql.language.SelectionSet;
 
 import java.util.List;
 import java.util.Objects;
-import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.language.Argument.newArgument;
 import static graphql.language.Document.newDocument;
