@@ -11,6 +11,7 @@ import graphql.language.SelectionSet;
 
 import java.util.List;
 import java.util.Objects;
+import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.language.Argument.newArgument;
 import static graphql.language.Document.newDocument;
@@ -26,6 +27,7 @@ import static graphql.language.TypeName.newTypeName;
  * by the options you specify
  */
 @PublicApi
+@NullUnmarked
 public class IntrospectionQueryBuilder {
     public static class Options {
 

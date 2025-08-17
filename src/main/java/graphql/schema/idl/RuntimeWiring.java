@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
@@ -175,6 +176,7 @@ public class RuntimeWiring {
     }
 
     @PublicApi
+    @NullUnmarked
     public static class Builder {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
         private final Map<String, DataFetcher> defaultDataFetchers = new LinkedHashMap<>();

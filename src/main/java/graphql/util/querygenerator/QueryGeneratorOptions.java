@@ -5,6 +5,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 
 import java.util.function.Predicate;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Options for the {@link QueryGenerator} class.
@@ -62,6 +63,7 @@ public class QueryGeneratorOptions {
      * Builder for {@link QueryGeneratorOptions}.
      */
     @ExperimentalApi
+    @NullUnmarked
     public static class QueryGeneratorOptionsBuilder {
         private int maxFieldCount = MAX_FIELD_COUNT_LIMIT;
 

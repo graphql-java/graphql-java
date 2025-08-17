@@ -11,6 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
 
@@ -26,6 +27,7 @@ import static graphql.Assert.assertNotNull;
  * is placed in the {@link ExecutionResult}
  */
 @PublicApi
+@NullUnmarked
 public class ExtensionsBuilder {
 
     // thread safe since there can be many changes say in DFs across threads
