@@ -3,6 +3,7 @@ package graphql.analysis;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * The query complexity info.
@@ -62,6 +63,7 @@ public class QueryComplexityInfo {
     }
 
     @PublicApi
+    @NullUnmarked
     public static class Builder {
 
         private int complexity;

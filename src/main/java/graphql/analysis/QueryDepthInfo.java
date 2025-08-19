@@ -1,6 +1,7 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * The query depth info.
@@ -38,6 +39,7 @@ public class QueryDepthInfo {
     }
 
     @PublicApi
+    @NullUnmarked
     public static class Builder {
 
         private int depth;

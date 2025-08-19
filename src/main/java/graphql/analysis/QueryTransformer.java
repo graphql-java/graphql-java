@@ -13,6 +13,7 @@ import graphql.util.TreeTransformer;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
@@ -98,6 +99,7 @@ public class QueryTransformer {
     }
 
     @PublicApi
+    @NullUnmarked
     public static class Builder {
         private GraphQLSchema schema;
         private Map<String, Object> variables;

@@ -17,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.NullUnmarked;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -247,6 +248,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     }
 
     @PublicApi
+    @NullUnmarked
     public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
         private ObjectTypeDefinition definition;
         private List<ObjectTypeExtensionDefinition> extensionDefinitions = emptyList();

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -193,6 +194,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
     }
 
     @PublicApi
+    @NullUnmarked
     public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
         private Object value;
         private String deprecationReason;
