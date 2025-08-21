@@ -243,7 +243,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.GraphQLInputType",
             "graphql.schema.GraphQLInputValueDefinition",
             "graphql.schema.GraphQLInterfaceType",
-            "graphql.schema.GraphQLList",
             "graphql.schema.GraphQLModifiedType",
             "graphql.schema.GraphQLNamedInputType",
             "graphql.schema.GraphQLNamedOutputType",
