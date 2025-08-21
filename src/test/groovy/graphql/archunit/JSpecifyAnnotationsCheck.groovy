@@ -227,7 +227,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.DefaultGraphqlTypeComparatorRegistry",
             "graphql.schema.DelegatingDataFetchingEnvironment",
             "graphql.schema.FieldCoordinates",
-            "graphql.schema.GraphQLAppliedDirective",
             "graphql.schema.GraphQLAppliedDirectiveArgument",
             "graphql.schema.GraphQLArgument",
             "graphql.schema.GraphQLCodeRegistry",
