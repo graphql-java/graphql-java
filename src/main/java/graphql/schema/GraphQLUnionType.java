@@ -16,7 +16,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
@@ -36,6 +39,7 @@ import static graphql.util.FpKit.getByName;
  * See <a href="https://graphql.org/learn/schema/#union-types">https://graphql.org/learn/schema/#union-types</a> for more details on the concept.
  */
 @PublicApi
+@NullMarked
 public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
@@ -46,7 +50,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     private final ImmutableList<UnionTypeExtensionDefinition> extensionDefinitions;
     private final DirectivesUtil.DirectivesHolder directives;
 
-    private ImmutableList<GraphQLNamedOutputType> replacedTypes;
+    private @Nullable ImmutableList<GraphQLNamedOutputType> replacedTypes;
 
     public static final String CHILD_TYPES = "types";
 
