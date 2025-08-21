@@ -252,7 +252,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.GraphQLNullableType",
             "graphql.schema.GraphQLObjectType",
             "graphql.schema.GraphQLOutputType",
-            "graphql.schema.GraphQLScalarType",
             "graphql.schema.GraphQLSchemaElement",
             "graphql.schema.GraphQLTypeReference",
             "graphql.schema.GraphQLTypeUtil",
