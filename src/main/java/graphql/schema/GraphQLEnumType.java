@@ -135,7 +135,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
         if (enumValueDefinition == null) {
             assertShouldNeverHappen(i18nMsg(locale, "Enum.badName", name, input.toString()));
-        };
+        }
         return EnumValue.newEnumValue(enumValueDefinition.getName()).build();
 
     }
