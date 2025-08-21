@@ -264,7 +264,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.GraphqlTypeComparatorEnvironment",
             "graphql.schema.GraphqlTypeComparatorRegistry",
             "graphql.schema.InputValueWithState",
-            "graphql.schema.PropertyDataFetcher",
             "graphql.schema.SchemaElementChildrenContainer",
             "graphql.schema.SchemaTransformer",
             "graphql.schema.SchemaTraverser",
