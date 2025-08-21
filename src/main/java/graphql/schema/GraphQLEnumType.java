@@ -13,6 +13,7 @@ import graphql.language.Value;
 import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
@@ -41,6 +42,7 @@ import static graphql.util.FpKit.getByName;
  * See <a href="https://graphql.org/learn/schema/#enumeration-types">https://graphql.org/learn/schema/#enumeration-types</a> for more details
  */
 @PublicApi
+@NullMarked
 public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
