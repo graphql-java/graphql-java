@@ -229,7 +229,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.FieldCoordinates",
             "graphql.schema.GraphQLAppliedDirectiveArgument",
             "graphql.schema.GraphQLArgument",
-            "graphql.schema.GraphQLCodeRegistry",
             "graphql.schema.GraphQLCompositeType",
             "graphql.schema.GraphQLDirective",
             "graphql.schema.GraphQLDirectiveContainer",
