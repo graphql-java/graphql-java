@@ -1,4 +1,4 @@
-package graphql
+package graphql.archunit
 
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.core.importer.ImportOption
@@ -14,7 +14,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.AssertException",
             "graphql.Directives",
             "graphql.ErrorClassification",
-            "graphql.ErrorType",
             "graphql.ExceptionWhileDataFetching",
             "graphql.ExecutionResult",
             "graphql.GraphQLContext",

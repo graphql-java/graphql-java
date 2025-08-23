@@ -11,7 +11,7 @@ import java.util.Map;
 
 /**
  * The interface describing graphql errors
- *
+ * <p>
  * NOTE: This class implements {@link java.io.Serializable} and hence it can be serialised and placed into a distributed cache.  However we
  * are not aiming to provide long term compatibility and do not intend for you to place this serialised data into permanent storage,
  * with times frames that cross graphql-java versions.  While we don't change things unnecessarily,  we may inadvertently break
@@ -42,7 +42,7 @@ public interface GraphQLError extends Serializable {
      * The graphql spec says that the (optional) path field of any error must be
      * a list of path entries starting at the root of the response
      * and ending with the field associated with the error
-     * https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format
+     * <a href="https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format">...</a>
      *
      * @return the path in list format
      */
@@ -54,7 +54,7 @@ public interface GraphQLError extends Serializable {
      * The graphql specification says that result of a call should be a map that follows certain rules on what items
      * should be present.  Certain JSON serializers may or may interpret the error to spec, so this method
      * is provided to produce a map that strictly follows the specification.
-     *
+     * <p>
      * See : <a href="https://spec.graphql.org/October2021/#sec-Errors">GraphQL Spec - 7.1.2 Errors</a>
      *
      * @return a map of the error that strictly follows the specification
