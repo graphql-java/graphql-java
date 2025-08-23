@@ -12,7 +12,6 @@ class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
             "graphql.AssertException",
-            "graphql.ExceptionWhileDataFetching",
             "graphql.ExecutionResult",
             "graphql.GraphQLContext",
             "graphql.GraphQLError",
