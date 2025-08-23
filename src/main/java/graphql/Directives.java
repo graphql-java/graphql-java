@@ -6,6 +6,7 @@ import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -34,6 +35,7 @@ import static graphql.schema.GraphQLNonNull.nonNull;
  * The directives that are understood by graphql-java
  */
 @PublicApi
+@NullMarked
 public class Directives {
 
     private static final String DEPRECATED = "deprecated";
