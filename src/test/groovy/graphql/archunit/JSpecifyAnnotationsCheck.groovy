@@ -11,8 +11,6 @@ import spock.lang.Specification
 class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
-            "graphql.AssertException",
-            "graphql.GraphQLError",
             "graphql.GraphqlErrorBuilder",
             "graphql.GraphqlErrorException",
             "graphql.ParseAndValidate",

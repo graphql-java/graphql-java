@@ -3,6 +3,8 @@ package graphql;
 
 import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
@@ -20,12 +22,13 @@ import java.util.Map;
  * @see <a href="https://spec.graphql.org/October2021/#sec-Errors">GraphQL Spec - 7.1.2 Errors</a>
  */
 @PublicApi
+@NullMarked
 public interface GraphQLError extends Serializable {
 
     /**
      * @return a description of the error intended for the developer as a guide to understand and correct the error
      */
-    String getMessage();
+    @Nullable String getMessage();
 
     /**
      * @return the location(s) within the GraphQL document at which the error occurred. Each {@link SourceLocation}
@@ -46,7 +49,7 @@ public interface GraphQLError extends Serializable {
      *
      * @return the path in list format
      */
-    default List<Object> getPath() {
+    default @Nullable List<Object> getPath() {
         return null;
     }
 
@@ -66,7 +69,7 @@ public interface GraphQLError extends Serializable {
     /**
      * @return a map of error extensions or null if there are none
      */
-    default Map<String, Object> getExtensions() {
+    default @Nullable Map<String, Object> getExtensions() {
         return null;
     }
 
@@ -91,6 +94,7 @@ public interface GraphQLError extends Serializable {
     /**
      * A builder of {@link GraphQLError}s
      */
+    @NullUnmarked
     interface Builder<B extends Builder<B>> {
 
         /**
@@ -110,7 +114,7 @@ public interface GraphQLError extends Serializable {
          *
          * @return this builder
          */
-        B locations(@Nullable List<SourceLocation> locations);
+        B locations(List<SourceLocation> locations);
 
         /**
          * This adds a location to the error
@@ -119,7 +123,7 @@ public interface GraphQLError extends Serializable {
          *
          * @return this builder
          */
-        B location(@Nullable SourceLocation location);
+        B location(SourceLocation location);
 
         /**
          * Sets the path of the message
@@ -128,7 +132,7 @@ public interface GraphQLError extends Serializable {
          *
          * @return this builder
          */
-        B path(@Nullable ResultPath path);
+        B path(ResultPath path);
 
         /**
          * Sets the path of the message
@@ -137,7 +141,7 @@ public interface GraphQLError extends Serializable {
          *
          * @return this builder
          */
-        B path(@Nullable List<Object> path);
+        B path(List<Object> path);
 
         /**
          * Sets the {@link ErrorClassification} of the message
@@ -155,7 +159,7 @@ public interface GraphQLError extends Serializable {
          *
          * @return this builder
          */
-        B extensions(@Nullable Map<String, Object> extensions);
+        B extensions(Map<String, Object> extensions);
 
         /**
          * @return a newly built GraphqlError
