@@ -11,7 +11,6 @@ import spock.lang.Specification
 class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
-            "graphql.TypeMismatchError",
             "graphql.TypeResolutionEnvironment",
             "graphql.UnresolvedTypeError",
             "graphql.agent.result.ExecutionTrackingResult",
