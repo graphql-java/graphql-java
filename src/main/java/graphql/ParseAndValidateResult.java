@@ -5,6 +5,8 @@ import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.validation.ValidationError;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,9 +20,9 @@ import java.util.function.Consumer;
 @PublicApi
 public class ParseAndValidateResult {
 
-    private final Document document;
+    private final @Nullable Document document;
     private final Map<String, Object> variables;
-    private final InvalidSyntaxException syntaxException;
+    private final @Nullable InvalidSyntaxException syntaxException;
     private final List<ValidationError> validationErrors;
 
     private ParseAndValidateResult(Builder builder) {
@@ -40,7 +42,7 @@ public class ParseAndValidateResult {
     /**
      * @return the parsed document or null if it's syntactically invalid.
      */
-    public Document getDocument() {
+    public @Nullable Document getDocument() {
         return document;
     }
 
@@ -54,7 +56,7 @@ public class ParseAndValidateResult {
     /**
      * @return the parsed document and variables or null if it's syntactically invalid.
      */
-    public DocumentAndVariables getDocumentAndVariables() {
+    public @Nullable DocumentAndVariables getDocumentAndVariables() {
         if (document != null) {
             return DocumentAndVariables.newDocumentAndVariables().document(document).variables(variables).build();
         }
@@ -64,7 +66,7 @@ public class ParseAndValidateResult {
     /**
      * @return the syntax exception or null if it's syntactically valid.
      */
-    public InvalidSyntaxException getSyntaxException() {
+    public @Nullable InvalidSyntaxException getSyntaxException() {
         return syntaxException;
     }
 
@@ -100,6 +102,7 @@ public class ParseAndValidateResult {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         private Document document;
         private Map<String, Object> variables = ImmutableKit.emptyMap();
