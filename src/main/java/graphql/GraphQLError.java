@@ -34,7 +34,7 @@ public interface GraphQLError extends Serializable {
      * @return the location(s) within the GraphQL document at which the error occurred. Each {@link SourceLocation}
      * describes the beginning of an associated syntax element
      */
-    List<SourceLocation> getLocations();
+    @Nullable List<SourceLocation> getLocations();
 
     /**
      * @return an object classifying this error

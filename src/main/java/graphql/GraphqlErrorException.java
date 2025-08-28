@@ -20,7 +20,7 @@ import java.util.Map;
 @NullMarked
 public class GraphqlErrorException extends GraphQLException implements GraphQLError {
 
-    private final List<SourceLocation> locations;
+    private final @Nullable List<SourceLocation> locations;
     private final @Nullable Map<String, Object> extensions;
     private final @Nullable List<Object> path;
     private final ErrorClassification errorClassification;
@@ -34,7 +34,7 @@ public class GraphqlErrorException extends GraphQLException implements GraphQLEr
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return locations;
     }
 

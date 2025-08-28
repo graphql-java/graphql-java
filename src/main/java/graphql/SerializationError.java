@@ -41,7 +41,7 @@ public class SerializationError implements GraphQLError {
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return exception.getLocations();
     }
 
