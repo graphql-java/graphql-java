@@ -2,6 +2,8 @@ I have already asked IntelliJ to infer nullity on this class. Can you help me ma
 
 Note that JSpecify is already used in this repository so it's already imported.
 
+If you see a builder static class, you can label it `@NullUnmarked` and not need to do anymore for this static class in terms of annotations.
+
 Analyze this Java class and add JSpecify annotations based on:
 1. Set the class to be `@NullMarked`
 2. Remove all the redundant `@NonNull` annotations that IntelliJ added

@@ -286,9 +286,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.util.TraverserContext",
             "graphql.util.TreeTransformer",
             "graphql.util.TreeTransformerUtil",
-            "graphql.validation.ValidationError",
-            "graphql.validation.ValidationErrorClassification",
-            "graphql.validation.ValidationErrorType",
             "graphql.validation.rules.DeferDirectiveLabel",
             "graphql.validation.rules.DeferDirectiveOnRootLevel",
             "graphql.validation.rules.DeferDirectiveOnValidOperation"
