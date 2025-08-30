@@ -2,18 +2,21 @@ package graphql.relay;
 
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
 @PublicApi
+@NullMarked
 public class DefaultPageInfo implements PageInfo {
 
-    private final ConnectionCursor startCursor;
-    private final ConnectionCursor endCursor;
+    private final @Nullable ConnectionCursor startCursor;
+    private final @Nullable ConnectionCursor endCursor;
     private final boolean hasPreviousPage;
     private final boolean hasNextPage;
 
-    public DefaultPageInfo(ConnectionCursor startCursor, ConnectionCursor endCursor, boolean hasPreviousPage, boolean hasNextPage) {
+    public DefaultPageInfo(@Nullable ConnectionCursor startCursor, @Nullable ConnectionCursor endCursor, boolean hasPreviousPage, boolean hasNextPage) {
         this.startCursor = startCursor;
         this.endCursor = endCursor;
         this.hasPreviousPage = hasPreviousPage;
@@ -21,13 +24,12 @@ public class DefaultPageInfo implements PageInfo {
     }
 
     @Override
-    public ConnectionCursor getStartCursor() {
+    public @Nullable ConnectionCursor getStartCursor() {
         return startCursor;
     }
 
-
     @Override
-    public ConnectionCursor getEndCursor() {
+    public @Nullable ConnectionCursor getEndCursor() {
         return endCursor;
     }
 
@@ -42,7 +44,7 @@ public class DefaultPageInfo implements PageInfo {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }
