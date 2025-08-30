@@ -12,7 +12,6 @@ class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
             "graphql.TypeResolutionEnvironment",
-            "graphql.analysis.FieldComplexityEnvironment",
             "graphql.analysis.MaxQueryComplexityInstrumentation",
             "graphql.analysis.MaxQueryDepthInstrumentation",
             "graphql.analysis.QueryComplexityCalculator",
