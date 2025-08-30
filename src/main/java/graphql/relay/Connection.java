@@ -10,7 +10,7 @@ import java.util.List;
  * This represents a connection in Relay, which is a list of {@link graphql.relay.Edge edge}s
  * as well as a {@link graphql.relay.PageInfo pageInfo} that describes the pagination of that list.
  * <p>
- * See <a href="https://facebook.github.io/relay/graphql/connections.htm">https://facebook.github.io/relay/graphql/connections.htm</a>
+ * See <a href=https://relay.dev/graphql/connections.htm">https://relay.dev/graphql/connections.htm</a>
  */
 @PublicApi
 @NullMarked
