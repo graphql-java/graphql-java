@@ -21,3 +21,5 @@ If you find NullAway errors, try and make the smallest possible change to fix th
 Finally, can you remove this class from the JSpecifyAnnotationsCheck as an exemption. Thanks
 
 You do not need to run the JSpecifyAnnotationsCheck. Removing the completed class is enough.
+
+Remember to delete all unused imports wehn you're done from the class you've just annotated.
