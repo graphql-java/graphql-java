@@ -191,7 +191,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.parser.ParserEnvironment",
             "graphql.parser.ParserOptions",
             "graphql.relay.Relay",
-            "graphql.relay.SimpleListConnection",
             "graphql.schema.AsyncDataFetcher",
             "graphql.schema.CoercingParseLiteralException",
             "graphql.schema.CoercingParseValueException",
