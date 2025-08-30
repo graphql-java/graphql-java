@@ -19,3 +19,5 @@ Finally, please check all of this works, by running the NullAway compile check.
 If you find NullAway errors, try and make the smallest possible change to fix them. If you must, you can use assertNotNull. Make sure to include a message as well.
 
 Finally, can you remove this class from the JSpecifyAnnotationsCheck as an exemption. Thanks
+
+You do not need to run the JSpecifyAnnotationsCheck. Removing the completed class is enough.
