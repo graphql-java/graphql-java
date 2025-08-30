@@ -13,3 +13,7 @@ Analyze this Java class and add JSpecify annotations based on:
 IntelliJ's infer nullity code analysis isn't comprehensive so feel free to make corrections.
 
 Finally, please check all of this works, by running the NullAway compile check.
+
+If you find NullAway errors, try and make the smallest possible change to fix them. If you must, you can use assertNotNull. Make sure to include a message as well.
+
+Finally, can you remove this class from the JSpecifyAnnotationsCheck as an exemption. Thanks

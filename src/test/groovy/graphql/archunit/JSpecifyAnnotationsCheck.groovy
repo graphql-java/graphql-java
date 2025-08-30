@@ -192,7 +192,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.parser.ParserOptions",
             "graphql.relay.Connection",
             "graphql.relay.ConnectionCursor",
-            "graphql.relay.DefaultConnection",
             "graphql.relay.DefaultConnectionCursor",
             "graphql.relay.DefaultEdge",
             "graphql.relay.DefaultPageInfo",
