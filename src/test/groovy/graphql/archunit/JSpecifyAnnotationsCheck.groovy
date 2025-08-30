@@ -190,7 +190,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.parser.Parser",
             "graphql.parser.ParserEnvironment",
             "graphql.parser.ParserOptions",
-            "graphql.relay.Edge",
             "graphql.relay.PageInfo",
             "graphql.relay.Relay",
             "graphql.relay.SimpleListConnection",
