@@ -141,7 +141,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.language.InterfaceTypeDefinition",
             "graphql.language.InterfaceTypeExtensionDefinition",
             "graphql.language.ListType",
-            "graphql.language.NamedNode",
             "graphql.language.Node",
             "graphql.language.NodeChildrenContainer",
             "graphql.language.NodeDirectivesBuilder",
