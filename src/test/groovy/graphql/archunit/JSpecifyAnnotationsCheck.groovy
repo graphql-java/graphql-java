@@ -269,7 +269,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility",
             "graphql.schema.visitor.GraphQLSchemaTraversalControl",
             "graphql.util.Anonymizer",
-            "graphql.util.Breadcrumb",
             "graphql.util.CyclicSchemaAnalyzer",
             "graphql.util.NodeAdapter",
             "graphql.util.NodeLocation",
