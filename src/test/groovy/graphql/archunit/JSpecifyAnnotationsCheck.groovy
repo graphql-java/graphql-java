@@ -109,7 +109,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.introspection.IntrospectionWithDirectivesSupport",
             "graphql.introspection.IntrospectionWithDirectivesSupport\$DirectivePredicateEnvironment",
             "graphql.language.AbstractDescribedNode",
-            "graphql.language.Argument",
             "graphql.language.AstNodeAdapter",
             "graphql.language.AstPrinter",
             "graphql.language.AstSignature",
@@ -285,6 +284,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.util.TraverserContext",
             "graphql.util.TreeTransformer",
             "graphql.util.TreeTransformerUtil",
+            // These classes will not be public API later, exempt here while marked as experimental
             "graphql.validation.rules.DeferDirectiveLabel",
             "graphql.validation.rules.DeferDirectiveOnRootLevel",
             "graphql.validation.rules.DeferDirectiveOnValidOperation"
