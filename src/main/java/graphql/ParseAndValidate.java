@@ -68,8 +68,7 @@ public class ParseAndValidate {
             // we use the query parser options by default if they are not specified
             parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultOperationParserOptions());
             Parser parser = new Parser();
-            // DZ TODO talking point: we can now delete null checks like the line below - you get an IDE warning about it
-            Locale locale = executionInput.getLocale() == null ? Locale.getDefault() : executionInput.getLocale();
+            Locale locale = executionInput.getLocale();
             ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
                     .document(executionInput.getQuery()).parserOptions(parserOptions)
                     .locale(locale)
