@@ -9,6 +9,7 @@ import graphql.PublicApi;
 import graphql.language.SourceLocation;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,14 +24,14 @@ import static graphql.Assert.assertNotNull;
 public class ValidationError implements GraphQLError {
 
     private final List<SourceLocation> locations = new ArrayList<>();
-    private final String description;
+    private final @Nullable String description;
     private final ValidationErrorClassification validationErrorType;
     private final List<String> queryPath = new ArrayList<>();
     private final ImmutableMap<String, Object> extensions;
 
     private ValidationError(Builder builder) {
         this.validationErrorType = assertNotNull(builder.validationErrorType, () -> "validationErrorType cannot be null");
-        this.description = assertNotNull(builder.description, () -> "description cannot be null");
+        this.description = builder.description;
         if (builder.sourceLocations != null) {
             this.locations.addAll(builder.sourceLocations);
         }
@@ -47,10 +48,12 @@ public class ValidationError implements GraphQLError {
     }
 
     @Override
+    @Nullable
     public String getMessage() {
         return description;
     }
 
+    @Nullable
     public String getDescription() {
         return description;
     }
