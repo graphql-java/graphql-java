@@ -5,6 +5,7 @@ import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.validation.ValidationError;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
@@ -18,6 +19,7 @@ import java.util.function.Consumer;
  * and validate operation.
  */
 @PublicApi
+@NullMarked
 public class ParseAndValidateResult {
 
     private final @Nullable Document document;
