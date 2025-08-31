@@ -17,20 +17,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static graphql.Assert.assertNotNull;
-
 @PublicApi
 @NullMarked
 public class ValidationError implements GraphQLError {
 
     private final List<SourceLocation> locations = new ArrayList<>();
     private final @Nullable String description;
-    private final ValidationErrorClassification validationErrorType;
+    private final @Nullable ValidationErrorClassification validationErrorType;
     private final List<String> queryPath = new ArrayList<>();
     private final ImmutableMap<String, Object> extensions;
 
     private ValidationError(Builder builder) {
-        this.validationErrorType = assertNotNull(builder.validationErrorType, () -> "validationErrorType cannot be null");
+        this.validationErrorType = builder.validationErrorType;
         this.description = builder.description;
         if (builder.sourceLocations != null) {
             this.locations.addAll(builder.sourceLocations);
@@ -43,18 +41,16 @@ public class ValidationError implements GraphQLError {
         this.extensions = (builder.extensions != null) ? ImmutableMap.copyOf(builder.extensions) : ImmutableMap.of();
     }
 
-    public ValidationErrorClassification getValidationErrorType() {
+    public @Nullable ValidationErrorClassification getValidationErrorType() {
         return validationErrorType;
     }
 
     @Override
-    @Nullable
-    public String getMessage() {
+    public @Nullable String getMessage() {
         return description;
     }
 
-    @Nullable
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
