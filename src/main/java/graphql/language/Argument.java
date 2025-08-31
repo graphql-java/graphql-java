@@ -32,7 +32,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     @Internal
     protected Argument(String name, Value value, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.name = name;
+        this.name = assertNotNull(name, () -> "Argument name cannot be null");
         this.value = assertNotNull(value, () -> "Argument value cannot be null");
     }
 
@@ -99,7 +99,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     @Override
     public Argument deepCopy() {
-        return new Argument(name, assertNotNull(deepCopy(value), "Argument value cannot be null"), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new Argument(assertNotNull(name, "Argument name cannot be null"), assertNotNull(deepCopy(value), "Argument value cannot be null"), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override

@@ -132,7 +132,7 @@ class NodeVisitorStubTest extends Specification {
 
         where:
         node                                                         | visitMethod
-        new Argument("", null)                                       | 'visitArgument'
+        new Argument("myArgument", NullValue.of())                   | 'visitArgument'
         new Directive("", emptyList())                               | 'visitDirective'
         new DirectiveLocation("")                                    | 'visitDirectiveLocation'
         Document.newDocument().build()                               | 'visitDocument'
