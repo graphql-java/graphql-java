@@ -12,6 +12,8 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +23,7 @@ import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
 
 @PublicApi
+@NullMarked
 public class TypeMismatchError implements GraphQLError {
 
     private final String message;
@@ -65,7 +68,7 @@ public class TypeMismatchError implements GraphQLError {
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return null;
     }
 
