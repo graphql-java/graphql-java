@@ -159,7 +159,7 @@ dependencies {
     errorprone 'com.google.errorprone:error_prone_core:2.41.0'
 
     // just tests - no Kotlin otherwise
-    testCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 }
 
 shadowJar {
