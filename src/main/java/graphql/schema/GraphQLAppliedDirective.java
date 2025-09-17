@@ -6,6 +6,9 @@ import graphql.PublicApi;
 import graphql.language.Directive;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -31,6 +34,7 @@ import static graphql.util.FpKit.getByName;
  * See <a href="https://graphql.org/learn/queries/#directives">https://graphql.org/learn/queries/#directives</a> for more details on the concept.
  */
 @PublicApi
+@NullMarked
 public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
 
     private final String name;
@@ -53,7 +57,7 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
     }
 
     @Override
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return null;
     }
 
@@ -61,7 +65,7 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
         return arguments;
     }
 
-    public GraphQLAppliedDirectiveArgument getArgument(String name) {
+    public @Nullable GraphQLAppliedDirectiveArgument getArgument(String name) {
         for (GraphQLAppliedDirectiveArgument argument : arguments) {
             if (argument.getName().equals(name)) {
                 return argument;
@@ -152,6 +156,7 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
         return new Builder(existing);
     }
 
+    @NullUnmarked
     public static class Builder extends GraphqlTypeBuilder<Builder> {
 
         private final Map<String, GraphQLAppliedDirectiveArgument> arguments = new LinkedHashMap<>();
