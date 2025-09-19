@@ -19,7 +19,7 @@ import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
-import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
+import graphql.execution.preparsed.caching.CachingDocumentProvider
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -1414,7 +1414,7 @@ many lines''']
         graphQL.getGraphQLSchema() == StarWarsSchema.starWarsSchema
         graphQL.getIdProvider() == ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER
         graphQL.getValueUnboxer() == ValueUnboxer.DEFAULT
-        graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
+        graphQL.getPreparsedDocumentProvider() instanceof CachingDocumentProvider
         graphQL.getInstrumentation() instanceof Instrumentation
         graphQL.getQueryStrategy() instanceof AsyncExecutionStrategy
         graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
