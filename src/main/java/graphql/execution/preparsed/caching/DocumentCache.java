@@ -5,6 +5,7 @@ import graphql.execution.preparsed.PreparsedDocumentEntry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Locale;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -37,10 +38,12 @@ public interface DocumentCache {
         private final String query;
         @Nullable
         private final String operationName;
+        private final Locale locale;
 
-        DocumentCacheKey(String query, @Nullable String operationName) {
+        DocumentCacheKey(String query, @Nullable String operationName, Locale locale) {
             this.query = query;
             this.operationName = operationName;
+            this.locale = locale;
         }
 
         public String getQuery() {
@@ -51,18 +54,24 @@ public interface DocumentCache {
             return operationName;
         }
 
+        public Locale getLocale() {
+            return locale;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
             DocumentCacheKey cacheKey = (DocumentCacheKey) o;
-            return Objects.equals(query, cacheKey.query) && Objects.equals(operationName, cacheKey.operationName);
+            return Objects.equals(query, cacheKey.query) &&
+                    Objects.equals(operationName, cacheKey.operationName) &&
+                    Objects.equals(locale, cacheKey.locale);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(query, operationName);
+            return Objects.hash(query, operationName, locale);
         }
     }
 }

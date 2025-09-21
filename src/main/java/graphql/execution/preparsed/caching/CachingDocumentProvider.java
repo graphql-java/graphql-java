@@ -43,7 +43,7 @@ public class CachingDocumentProvider implements PreparsedDocumentProvider {
             // saves creating keys and doing a lookup that will just call this function anyway
             return CompletableFuture.completedFuture(parseAndValidateFunction.apply(executionInput));
         }
-        DocumentCache.DocumentCacheKey cacheKey = new DocumentCache.DocumentCacheKey(executionInput.getQuery(), executionInput.getOperationName());
+        DocumentCache.DocumentCacheKey cacheKey = new DocumentCache.DocumentCacheKey(executionInput.getQuery(), executionInput.getOperationName(), executionInput.getLocale());
         PreparsedDocumentEntry cacheEntry = documentCache.get(cacheKey, key -> parseAndValidateFunction.apply(executionInput));
         return CompletableFuture.completedFuture(cacheEntry);
     }
