@@ -1,5 +1,6 @@
 package graphql.execution.preparsed.caching;
 
+import graphql.PublicApi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -11,6 +12,7 @@ import java.util.function.Function;
  * This represents a cache interface to get a document from a cache key.  You can use your own cache implementation
  * to back the caching of parsed graphql documents.
  */
+@PublicApi
 @NullMarked
 public interface DocumentCache {
     /**

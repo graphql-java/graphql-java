@@ -1,5 +1,8 @@
 package graphql.execution.preparsed.caching
 
+
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.Ticker
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.StarWarsSchema
@@ -7,7 +10,10 @@ import graphql.execution.preparsed.PreparsedDocumentEntry
 import graphql.parser.Parser
 import spock.lang.Specification
 
+import java.time.Duration
 import java.util.function.Function
+
+import static graphql.ExecutionInput.newExecutionInput
 
 class CachingDocumentProviderTest extends Specification {
     private String heroQuery1
@@ -30,7 +36,7 @@ class CachingDocumentProviderTest extends Specification {
                 .build()
 
         when:
-        def executionInput = ExecutionInput.newExecutionInput(heroQuery1)
+        def executionInput = newExecutionInput(heroQuery1)
                 .operationName("HeroNameQuery").build()
 
         def er = graphQL.execute(executionInput)
@@ -38,6 +44,84 @@ class CachingDocumentProviderTest extends Specification {
         then:
         er.errors.isEmpty()
         er.data == [hero: [name: "R2-D2"]]
+    }
+
+    def "different outcomes are cached correctly integration test"() {
+
+        def cachingDocumentProvider = new CachingDocumentProvider()
+        GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .preparsedDocumentProvider(cachingDocumentProvider)
+                .build()
+
+
+        def query = """        
+            query HeroNameQuery {
+              hero {
+                name
+              }
+            }
+            query HeroNameQuery2 {
+              hero {
+                nameAlias : name
+              }
+            }
+        """
+        def invalidQuery = """
+            query InvalidQuery {
+              hero {
+                nameX
+              }
+            }
+        """
+        when:
+        def ei = newExecutionInput(query).operationName("HeroNameQuery").build()
+        def er = graphQL.execute(ei)
+
+        then:
+        er.errors.isEmpty()
+        er.data == [hero: [name: "R2-D2"]]
+
+        when:
+        ei = newExecutionInput(query).operationName("HeroNameQuery2").build()
+        er = graphQL.execute(ei)
+
+        then:
+        er.errors.isEmpty()
+        er.data == [hero: [nameAlias: "R2-D2"]]
+
+        when:
+        ei = newExecutionInput(invalidQuery).operationName("InvalidQuery").build()
+        er = graphQL.execute(ei)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Validation error (FieldUndefined@[hero/nameX]) : Field 'nameX' in type 'Character' is undefined"
+
+        // now do them all again and they are cached but the outcome is the same
+
+        when:
+        ei = newExecutionInput(query).operationName("HeroNameQuery").build()
+        er = graphQL.execute(ei)
+
+        then:
+        er.errors.isEmpty()
+        er.data == [hero: [name: "R2-D2"]]
+
+        when:
+        ei = newExecutionInput(query).operationName("HeroNameQuery2").build()
+        er = graphQL.execute(ei)
+
+        then:
+        er.errors.isEmpty()
+        er.data == [hero: [nameAlias: "R2-D2"]]
+
+        when:
+        ei = newExecutionInput(invalidQuery).operationName("InvalidQuery").build()
+        er = graphQL.execute(ei)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Validation error (FieldUndefined@[hero/nameX]) : Field 'nameX' in type 'Character' is undefined"
     }
 
     def "integration still works when caffeine is not on the class path"() {
@@ -48,7 +132,7 @@ class CachingDocumentProviderTest extends Specification {
                 .preparsedDocumentProvider(cachingDocumentProvider)
                 .build()
         when:
-        def executionInput = ExecutionInput.newExecutionInput(heroQuery1)
+        def executionInput = newExecutionInput(heroQuery1)
                 .operationName("HeroNameQuery").build()
 
         def er = graphQL.execute(executionInput)
@@ -73,12 +157,11 @@ class CachingDocumentProviderTest extends Specification {
         def cache = new CaffeineDocumentCache(true)
         def cachingDocumentProvider = new CachingDocumentProvider(cache)
 
-        def ei = ExecutionInput.newExecutionInput("query q { f }").build()
+        def ei = newExecutionInput("query q { f }").build()
         def callback = new CountingDocProvider()
 
         when:
-        def cf = cachingDocumentProvider.getDocumentAsync(ei, callback)
-        def documentEntry = cf.join()
+        def documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
 
         then:
         !documentEntry.hasErrors()
@@ -86,8 +169,7 @@ class CachingDocumentProviderTest extends Specification {
         callback.count == 1
 
         when:
-        cf = cachingDocumentProvider.getDocumentAsync(ei, callback)
-        documentEntry = cf.join()
+        documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
 
         then:
         !documentEntry.hasErrors()
@@ -97,8 +179,7 @@ class CachingDocumentProviderTest extends Specification {
 
         when:
         cache.clear()
-        cf = cachingDocumentProvider.getDocumentAsync(ei, callback)
-        documentEntry = cf.join()
+        documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
 
         then:
         !documentEntry.hasErrors()
@@ -112,12 +193,11 @@ class CachingDocumentProviderTest extends Specification {
         def cache = new CaffeineDocumentCache(false)
         def cachingDocumentProvider = new CachingDocumentProvider(cache)
 
-        def ei = ExecutionInput.newExecutionInput("query q { f }").build()
+        def ei = newExecutionInput("query q { f }").build()
         def callback = new CountingDocProvider()
 
         when:
-        def cf = cachingDocumentProvider.getDocumentAsync(ei, callback)
-        def documentEntry = cf.join()
+        def documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
 
         then:
         !documentEntry.hasErrors()
@@ -125,8 +205,7 @@ class CachingDocumentProviderTest extends Specification {
         callback.count == 1
 
         when:
-        cf = cachingDocumentProvider.getDocumentAsync(ei, callback)
-        documentEntry = cf.join()
+        documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
 
         then:
         !documentEntry.hasErrors()
@@ -136,12 +215,56 @@ class CachingDocumentProviderTest extends Specification {
 
         when:
         cache.clear()
-        cf = cachingDocumentProvider.getDocumentAsync(ei, callback)
-        documentEntry = cf.join()
+        documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
 
         then:
         !documentEntry.hasErrors()
         documentEntry.document != null
         callback.count == 3
+    }
+
+    def "time can pass and entries can expire and the code handles that"() {
+        long nanoTime = 0
+        Ticker ticker = { return nanoTime }
+        def caffeineCache = Caffeine.newBuilder()
+                .ticker(ticker)
+                .expireAfterAccess(Duration.ofMinutes(2))
+                .<DocumentCache.DocumentCacheKey, PreparsedDocumentEntry> build()
+        def documentCache = new CaffeineDocumentCache(caffeineCache)
+        def cachingDocumentProvider = new CachingDocumentProvider(documentCache)
+
+        def ei = newExecutionInput("query q { f }").build()
+        def callback = new CountingDocProvider()
+
+        when:
+        def documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
+
+        then:
+        !documentEntry.hasErrors()
+        documentEntry.document != null
+        callback.count == 1
+
+        when:
+        documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
+
+        then:
+        !documentEntry.hasErrors()
+        documentEntry.document != null
+        callback.count == 1
+
+        when:
+        //
+        // this is kinda testing Caffeine but I am also trying to make sure that th wrapper
+        // code does the mappingFunction if its expired
+        //
+        // advance time
+        //
+        nanoTime += Duration.ofMinutes(5).toNanos()
+        documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
+
+        then:
+        !documentEntry.hasErrors()
+        documentEntry.document != null
+        callback.count == 2
     }
 }

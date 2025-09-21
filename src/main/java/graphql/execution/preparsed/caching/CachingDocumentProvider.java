@@ -44,13 +44,8 @@ public class CachingDocumentProvider implements PreparsedDocumentProvider {
             return CompletableFuture.completedFuture(parseAndValidateFunction.apply(executionInput));
         }
         DocumentCache.DocumentCacheKey cacheKey = new DocumentCache.DocumentCacheKey(executionInput.getQuery(), executionInput.getOperationName());
-        PreparsedDocumentEntry cacheEntry = documentCache.get(cacheKey, missFunction(executionInput, parseAndValidateFunction));
+        PreparsedDocumentEntry cacheEntry = documentCache.get(cacheKey, key -> parseAndValidateFunction.apply(executionInput));
         return CompletableFuture.completedFuture(cacheEntry);
     }
 
-    private static Function<DocumentCache.DocumentCacheKey, PreparsedDocumentEntry> missFunction(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
-        return key -> {
-            return parseAndValidateFunction.apply(executionInput);
-        };
-    }
 }
