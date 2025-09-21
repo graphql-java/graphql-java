@@ -18,7 +18,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -95,11 +95,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
          * Data for chained dispatching.
          * A result path is used to identify a DataFetcher.
          */
-        private final List<DataLoaderInvocation> allDataLoaderInvocations = Collections.synchronizedList(new ArrayList<>());
+        private final List<DataLoaderInvocation> allDataLoaderInvocations = new ArrayList<>();
+        // accessed outside of Lock
         private final Map<Integer, Set<DataLoaderInvocation>> levelToDataLoaderInvocation = new ConcurrentHashMap<>();
-        private final Set<Integer> dispatchingStartedPerLevel = ConcurrentHashMap.newKeySet();
-        private final Set<Integer> dispatchingFinishedPerLevel = ConcurrentHashMap.newKeySet();
-        private final Set<Integer> currentlyDelayedDispatchingLevels = ConcurrentHashMap.newKeySet();
+        private final Set<Integer> dispatchingStartedPerLevel = new HashSet<>();
+        private final Set<Integer> dispatchingFinishedPerLevel = new HashSet<>();
+        private final Set<Integer> currentlyDelayedDispatchingLevels = new HashSet<>();
 
 
         private final List<FieldValueInfo> deferredFragmentRootFieldsFetched = new ArrayList<>();
