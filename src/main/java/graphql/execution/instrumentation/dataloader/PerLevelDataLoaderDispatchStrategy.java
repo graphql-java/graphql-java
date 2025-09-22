@@ -533,7 +533,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             allDispatchedCFs.add(dispatch);
             dispatch.whenComplete((objects, throwable) -> {
                 if (objects != null && objects.size() > 0) {
-                    profiler.batchLoadedNewStrategy(dataLoaderInvocation.name, level, objects.size(), normalOrDelayed, chained);
+                    profiler.batchLoadedNewStrategy(dataLoaderInvocation.name, level, objects.size(), !normalOrDelayed, chained);
                 }
             });
         }
