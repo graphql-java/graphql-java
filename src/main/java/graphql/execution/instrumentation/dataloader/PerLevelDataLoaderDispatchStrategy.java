@@ -11,20 +11,19 @@ import graphql.execution.FieldValueInfo;
 import graphql.execution.incremental.AlternativeCallContext;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import graphql.util.LockKit;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 @Internal
@@ -41,59 +40,98 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private final Map<AlternativeCallContext, CallStack> deferredCallStackMap = new ConcurrentHashMap<>();
 
     private static class ChainedDLStack {
-        private final Map<Integer, Set<DataLoaderInvocation>> levelToDataLoaderInvocation = new LinkedHashMap<>();
-        private final Set<Integer> dispatchingStartedPerLevel = new LinkedHashSet<>();
-        private final Set<Integer> dispatchingFinishedPerLevel = new LinkedHashSet<>();
-        private final Set<Integer> currentlyDelayedDispatchingLevels = new LinkedHashSet<>();
 
-        public synchronized @Nullable Set<DataLoaderInvocation> aboutToStartDispatching(int level, boolean normalDispatchOrDelayed, boolean chained) {
-            Set<DataLoaderInvocation> relevantDataLoaderInvocations = levelToDataLoaderInvocation.remove(level);
+        private final Map<Integer, AtomicReference<StateForLevel>> stateMapPerLevel = new ConcurrentHashMap<>();
 
-            if (!chained) {
-                if (normalDispatchOrDelayed) {
-                    dispatchingStartedPerLevel.add(level);
-                } else {
-                    currentlyDelayedDispatchingLevels.add(level);
-                }
+        // Immutable state class for atomic updates
+        private static class StateForLevel {
+            final @Nullable Set<DataLoaderInvocation> dataLoaderInvocations;
+            final boolean dispatchingStarted;
+            final boolean dispatchingFinished;
+            final boolean currentlyDelayedDispatching;
+
+            public StateForLevel(@Nullable Set<DataLoaderInvocation> dataLoaderInvocations, boolean dispatchingStarted, boolean dispatchingFinished, boolean currentlyDelayedDispatching) {
+                this.dataLoaderInvocations = dataLoaderInvocations;
+                this.dispatchingStarted = dispatchingStarted;
+                this.dispatchingFinished = dispatchingFinished;
+                this.currentlyDelayedDispatching = currentlyDelayedDispatching;
             }
-
-            if (relevantDataLoaderInvocations == null || relevantDataLoaderInvocations.size() == 0) {
-                if (normalDispatchOrDelayed) {
-                    dispatchingFinishedPerLevel.add(level);
-                } else {
-                    currentlyDelayedDispatchingLevels.remove(level);
-                }
-            }
-            return relevantDataLoaderInvocations;
         }
 
 
-        public synchronized boolean newDataLoaderInvocation(DataLoaderInvocation dataLoaderInvocation) {
+        public @Nullable Set<DataLoaderInvocation> aboutToStartDispatching(int level, boolean normalDispatchOrDelayed, boolean chained) {
+            AtomicReference<StateForLevel> currentStateRef = stateMapPerLevel.computeIfAbsent(level, __ -> new AtomicReference<>());
+            while (true) {
+                StateForLevel currentState = currentStateRef.get();
 
-            int level = dataLoaderInvocation.level;
-            levelToDataLoaderInvocation.computeIfAbsent(level, k -> new LinkedHashSet<>()).add(dataLoaderInvocation);
-            boolean finished = dispatchingFinishedPerLevel.contains(level);
-            // we need to start a new delayed dispatching if
-            // the normal dispatching is finished and there is no currently delayed dispatching for this level
-            boolean newDelayedInvocation = finished && !currentlyDelayedDispatchingLevels.contains(level);
-            if (newDelayedInvocation) {
-                currentlyDelayedDispatchingLevels.add(level);
+                Set<DataLoaderInvocation> dataLoaderInvocations = currentState != null && currentState.dataLoaderInvocations != null ? new LinkedHashSet<>(currentState.dataLoaderInvocations) : null;
+
+                boolean dispatchingStarted = currentState != null && currentState.dispatchingStarted;
+                boolean dispatchingFinished = currentState != null && currentState.dispatchingFinished;
+                boolean currentlyDelayedDispatching = currentState != null && currentState.currentlyDelayedDispatching;
+
+                if (!chained) {
+                    if (normalDispatchOrDelayed) {
+                        dispatchingStarted = true;
+                    } else {
+                        currentlyDelayedDispatching = true;
+                    }
+                }
+
+                if (dataLoaderInvocations == null || dataLoaderInvocations.size() == 0) {
+                    if (normalDispatchOrDelayed) {
+                        dispatchingFinished = true;
+                    } else {
+                        currentlyDelayedDispatching = false;
+                    }
+                }
+
+                StateForLevel newState = new StateForLevel(null, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching);
+
+                if (currentStateRef.compareAndSet(currentState, newState)) {
+                    return dataLoaderInvocations;
+                }
             }
-            return newDelayedInvocation;
+        }
+
+
+        public boolean newDataLoaderInvocation(DataLoaderInvocation dataLoaderInvocation) {
+            int level = dataLoaderInvocation.level;
+            AtomicReference<StateForLevel> currentStateRef = stateMapPerLevel.computeIfAbsent(level, __ -> new AtomicReference<>());
+            while (true) {
+                StateForLevel currentState = currentStateRef.get();
+
+                Set<DataLoaderInvocation> dataLoaderInvocations = currentState != null ?
+                        (currentState.dataLoaderInvocations != null ? new LinkedHashSet<>(currentState.dataLoaderInvocations) : new LinkedHashSet<>()) :
+                        new LinkedHashSet<>();
+                dataLoaderInvocations.add(dataLoaderInvocation);
+
+                boolean dispatchingStarted = currentState != null && currentState.dispatchingStarted;
+                boolean dispatchingFinished = currentState != null && currentState.dispatchingFinished;
+                boolean currentlyDelayedDispatching = currentState != null && currentState.currentlyDelayedDispatching;
+
+                // we need to start a new delayed dispatching if
+                // the normal dispatching is finished and there is no currently delayed dispatching for this level
+                boolean newDelayedInvocation = dispatchingFinished && !currentlyDelayedDispatching;
+                if (newDelayedInvocation) {
+                    currentlyDelayedDispatching = true;
+                }
+
+                StateForLevel newState = new StateForLevel(dataLoaderInvocations, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching);
+
+                if (currentStateRef.compareAndSet(currentState, newState)) {
+                    return newDelayedInvocation;
+                }
+            }
         }
 
         public void clear() {
-            currentlyDelayedDispatchingLevels.clear();
-            levelToDataLoaderInvocation.clear();
-            dispatchingStartedPerLevel.clear();
-            dispatchingFinishedPerLevel.clear();
+            stateMapPerLevel.clear();
         }
 
     }
 
     private static class CallStack {
-
-        private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
 
 
         /**
