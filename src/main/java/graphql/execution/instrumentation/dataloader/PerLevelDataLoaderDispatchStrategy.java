@@ -42,7 +42,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         private final Map<Integer, AtomicReference<@Nullable StateForLevel>> stateMapPerLevel = new ConcurrentHashMap<>();
 
-        // Immutable state class for atomic updates
+        // a state for level points to a previous one
+        // all the invocations that are linked together are the relevant invocations for the next dispatch
         private static class StateForLevel {
             final @Nullable DataLoaderInvocation dataLoaderInvocation;
             final boolean dispatchingStarted;
