@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3)
+@Measurement(iterations = 3, time = 2)
 @Fork(2)
 public class CachingDocumentBenchmark {
 
@@ -37,7 +37,7 @@ public class CachingDocumentBenchmark {
     }
 
     private static final GraphQL GRAPHQL_CACHING_ON = buildGraphQL(true);
-    private static final GraphQL GRAPHQL_CACHING_OFF = buildGraphQL(true);
+    private static final GraphQL GRAPHQL_CACHING_OFF = buildGraphQL(false);
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
