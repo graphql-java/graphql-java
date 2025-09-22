@@ -11,9 +11,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 /**
+ * The CachingDocumentProvider allows previously parsed and validated operations to be cached and
+ * hence re-used.  This can lead to significant time savings, especially for large operations.
+ * <p>
  * By default, graphql-java will cache the parsed {@link PreparsedDocumentEntry} that represents
  * a parsed and validated graphql query IF {@link Caffeine} is present on the class path
  * at runtime.  If it's not then no caching takes place.
+ * <p>
+ * You can provide your own {@link DocumentCache} implementation and hence use any cache
+ * technology you like.
  */
 @PublicApi
 @NullMarked
@@ -23,6 +29,8 @@ public class CachingDocumentProvider implements PreparsedDocumentProvider {
     /**
      * By default, it will try to use a {@link Caffeine} backed implementation if it's on the class
      * path otherwise it will become a non caching mechanism.
+     *
+     * @see CaffeineDocumentCache
      */
     public CachingDocumentProvider() {
         this(new CaffeineDocumentCache());
@@ -35,6 +43,13 @@ public class CachingDocumentProvider implements PreparsedDocumentProvider {
      */
     public CachingDocumentProvider(DocumentCache documentCache) {
         this.documentCache = documentCache;
+    }
+
+    /**
+     * @return the {@link DocumentCache} being used
+     */
+    public DocumentCache getDocumentCache() {
+        return documentCache;
     }
 
     @Override

@@ -33,6 +33,10 @@ public class CaffeineDocumentCache implements DocumentCache {
         }
     }
 
+    /**
+     * Creates a cache that works if Caffeine is on the class path otherwise its
+     * a no op.
+     */
     public CaffeineDocumentCache() {
         this(isCaffeineAvailable);
     }
@@ -64,7 +68,8 @@ public class CaffeineDocumentCache implements DocumentCache {
         return caffeineCacheObj == null;
     }
 
-    public void clear() {
+    @Override
+    public void invalidateAll() {
         if (!isNoop()) {
             cache().invalidateAll();
         }

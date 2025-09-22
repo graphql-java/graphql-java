@@ -32,6 +32,10 @@ public interface DocumentCache {
     boolean isNoop();
 
     /**
+     * Called to clear the cache.  If your implementation doesn't support this, then just no op the method
+     */
+    void invalidateAll();
+    /**
      * This represents the key to the document cache
      */
     class DocumentCacheKey {

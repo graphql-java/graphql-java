@@ -4,6 +4,7 @@ package graphql.execution.preparsed.caching
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Ticker
 import graphql.ExecutionInput
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.preparsed.PreparsedDocumentEntry
@@ -44,6 +45,8 @@ class CachingDocumentProviderTest extends Specification {
         then:
         er.errors.isEmpty()
         er.data == [hero: [name: "R2-D2"]]
+
+        cachingDocumentProvider.getDocumentCache() instanceof CaffeineDocumentCache
     }
 
     def "different outcomes are cached correctly integration test"() {
@@ -125,21 +128,78 @@ class CachingDocumentProviderTest extends Specification {
     }
 
     def "integration still works when caffeine is not on the class path"() {
+        when:
         // we fake out the test here saying its NOT on the classpath
         def cache = new CaffeineDocumentCache(false)
         def cachingDocumentProvider = new CachingDocumentProvider(cache)
         GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .preparsedDocumentProvider(cachingDocumentProvider)
                 .build()
-        when:
         def executionInput = newExecutionInput(heroQuery1)
                 .operationName("HeroNameQuery").build()
 
-        def er = graphQL.execute(executionInput)
+        ExecutionResult er = null
+        for (int i = 0; i < count; i++) {
+            er = graphQL.execute(executionInput)
+            assert er.data == [hero: [name: "R2-D2"]]
+        }
+
 
         then:
         er.errors.isEmpty()
         er.data == [hero: [name: "R2-D2"]]
+
+        where:
+        count || _
+        1     || _
+        5     || _
+    }
+
+    def "integration of a custom cache"() {
+        when:
+
+        def cache = new DocumentCache() {
+            // not really useful in production since its unbounded
+            def map = new HashMap<DocumentCache.DocumentCacheKey,PreparsedDocumentEntry>()
+
+            @Override
+            PreparsedDocumentEntry get(DocumentCache.DocumentCacheKey key, Function<DocumentCache.DocumentCacheKey, PreparsedDocumentEntry> mappingFunction) {
+                return map.computeIfAbsent(key,mappingFunction)
+            }
+
+            @Override
+            boolean isNoop() {
+                return false
+            }
+
+            @Override
+            void invalidateAll() {
+                map.clear()
+            }
+        }
+        // a custom cache in play
+        def cachingDocumentProvider = new CachingDocumentProvider(cache)
+        GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .preparsedDocumentProvider(cachingDocumentProvider)
+                .build()
+        def executionInput = newExecutionInput(heroQuery1)
+                .operationName("HeroNameQuery").build()
+
+        ExecutionResult er = null
+        for (int i = 0; i < count; i++) {
+            er = graphQL.execute(executionInput)
+            assert er.data == [hero: [name: "R2-D2"]]
+        }
+
+
+        then:
+        er.errors.isEmpty()
+        er.data == [hero: [name: "R2-D2"]]
+
+        where:
+        count || _
+        1     || _
+        5     || _
     }
 
     class CountingDocProvider implements Function<ExecutionInput, PreparsedDocumentEntry> {
@@ -178,7 +238,7 @@ class CachingDocumentProviderTest extends Specification {
         callback.count == 1
 
         when:
-        cache.clear()
+        cache.invalidateAll()
         documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
 
         then:
@@ -214,7 +274,7 @@ class CachingDocumentProviderTest extends Specification {
         callback.count == 2
 
         when:
-        cache.clear()
+        cache.invalidateAll()
         documentEntry = cachingDocumentProvider.getDocumentAsync(ei, callback).join()
 
         then:
@@ -231,6 +291,8 @@ class CachingDocumentProviderTest extends Specification {
                 .expireAfterAccess(Duration.ofMinutes(2))
                 .<DocumentCache.DocumentCacheKey, PreparsedDocumentEntry> build()
         def documentCache = new CaffeineDocumentCache(caffeineCache)
+
+        // note this is a custom caffeine instance pass in
         def cachingDocumentProvider = new CachingDocumentProvider(documentCache)
 
         def ei = newExecutionInput("query q { f }").build()

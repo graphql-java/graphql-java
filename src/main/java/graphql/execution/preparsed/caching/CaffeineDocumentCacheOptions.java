@@ -5,18 +5,21 @@ import org.jspecify.annotations.NullMarked;
 
 import java.time.Duration;
 
+/**
+ * This controls the default options that get use in the {@link CaffeineDocumentCache} creation
+ */
 @PublicApi
 @NullMarked
 public class CaffeineDocumentCacheOptions {
 
     /**
-     * By default, we cache documents for 5 minutes
+     * By default, we expire documents after 5 minutes if they are not accessed
      */
     public static final Duration EXPIRED_AFTER_ACCESS = Duration.ofMinutes(5);
     /**
-     * By default, we hold 1000 entries
+     * By default, we hold 500 operations
      */
-    public static final int MAX_SIZE = 1000;
+    public static final int MAX_SIZE = 500;
 
     private static CaffeineDocumentCacheOptions defaultJvmOptions = newOptions()
             .expireAfterAccess(EXPIRED_AFTER_ACCESS)
@@ -35,7 +38,7 @@ public class CaffeineDocumentCacheOptions {
     /**
      * This sets new JVM wide default options for the {@link CaffeineDocumentCache}
      *
-     * @param jvmOptions
+     * @param jvmOptions the options to use
      */
     public static void setDefaultJvmOptions(CaffeineDocumentCacheOptions jvmOptions) {
         defaultJvmOptions = jvmOptions;
