@@ -17,7 +17,6 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,30 +40,35 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     private static class ChainedDLStack {
 
-        private final Map<Integer, AtomicReference<StateForLevel>> stateMapPerLevel = new ConcurrentHashMap<>();
+        private final Map<Integer, AtomicReference<@Nullable StateForLevel>> stateMapPerLevel = new ConcurrentHashMap<>();
 
         // Immutable state class for atomic updates
         private static class StateForLevel {
-            final @Nullable Set<DataLoaderInvocation> dataLoaderInvocations;
+            final @Nullable DataLoaderInvocation dataLoaderInvocation;
             final boolean dispatchingStarted;
             final boolean dispatchingFinished;
             final boolean currentlyDelayedDispatching;
+            final @Nullable StateForLevel prev;
 
-            public StateForLevel(@Nullable Set<DataLoaderInvocation> dataLoaderInvocations, boolean dispatchingStarted, boolean dispatchingFinished, boolean currentlyDelayedDispatching) {
-                this.dataLoaderInvocations = dataLoaderInvocations;
+            public StateForLevel(@Nullable DataLoaderInvocation dataLoaderInvocation,
+                                 boolean dispatchingStarted,
+                                 boolean dispatchingFinished,
+                                 boolean currentlyDelayedDispatching,
+                                 @Nullable StateForLevel prev) {
+                this.dataLoaderInvocation = dataLoaderInvocation;
                 this.dispatchingStarted = dispatchingStarted;
                 this.dispatchingFinished = dispatchingFinished;
                 this.currentlyDelayedDispatching = currentlyDelayedDispatching;
+                this.prev = prev;
             }
         }
 
 
-        public @Nullable Set<DataLoaderInvocation> aboutToStartDispatching(int level, boolean normalDispatchOrDelayed, boolean chained) {
-            AtomicReference<StateForLevel> currentStateRef = stateMapPerLevel.computeIfAbsent(level, __ -> new AtomicReference<>());
+        public @Nullable StateForLevel aboutToStartDispatching(int level, boolean normalDispatchOrDelayed, boolean chained) {
+            AtomicReference<@Nullable StateForLevel> currentStateRef = stateMapPerLevel.computeIfAbsent(level, __ -> new AtomicReference<>());
             while (true) {
                 StateForLevel currentState = currentStateRef.get();
 
-                Set<DataLoaderInvocation> dataLoaderInvocations = currentState != null && currentState.dataLoaderInvocations != null ? new LinkedHashSet<>(currentState.dataLoaderInvocations) : null;
 
                 boolean dispatchingStarted = currentState != null && currentState.dispatchingStarted;
                 boolean dispatchingFinished = currentState != null && currentState.dispatchingFinished;
@@ -78,7 +82,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                     }
                 }
 
-                if (dataLoaderInvocations == null || dataLoaderInvocations.size() == 0) {
+                if (currentState == null || currentState.dataLoaderInvocation == null) {
                     if (normalDispatchOrDelayed) {
                         dispatchingFinished = true;
                     } else {
@@ -86,10 +90,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                     }
                 }
 
-                StateForLevel newState = new StateForLevel(null, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching);
+                StateForLevel newState = new StateForLevel(null, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching, null);
 
                 if (currentStateRef.compareAndSet(currentState, newState)) {
-                    return dataLoaderInvocations;
+                    return currentState;
                 }
             }
         }
@@ -97,14 +101,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         public boolean newDataLoaderInvocation(DataLoaderInvocation dataLoaderInvocation) {
             int level = dataLoaderInvocation.level;
-            AtomicReference<StateForLevel> currentStateRef = stateMapPerLevel.computeIfAbsent(level, __ -> new AtomicReference<>());
+            AtomicReference<@Nullable StateForLevel> currentStateRef = stateMapPerLevel.computeIfAbsent(level, __ -> new AtomicReference<>());
             while (true) {
                 StateForLevel currentState = currentStateRef.get();
 
-                Set<DataLoaderInvocation> dataLoaderInvocations = currentState != null ?
-                        (currentState.dataLoaderInvocations != null ? new LinkedHashSet<>(currentState.dataLoaderInvocations) : new LinkedHashSet<>()) :
-                        new LinkedHashSet<>();
-                dataLoaderInvocations.add(dataLoaderInvocation);
 
                 boolean dispatchingStarted = currentState != null && currentState.dispatchingStarted;
                 boolean dispatchingFinished = currentState != null && currentState.dispatchingFinished;
@@ -117,7 +117,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                     currentlyDelayedDispatching = true;
                 }
 
-                StateForLevel newState = new StateForLevel(dataLoaderInvocations, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching);
+                StateForLevel newState = new StateForLevel(dataLoaderInvocation, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching, currentState);
 
                 if (currentStateRef.compareAndSet(currentState, newState)) {
                     return newDelayedInvocation;
@@ -560,20 +560,22 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     private void dispatchDLCFImpl(Integer level, CallStack callStack, boolean normalOrDelayed, boolean chained) {
 
-        Set<DataLoaderInvocation> relevantDataLoaderInvocations = callStack.chainedDLStack.aboutToStartDispatching(level, normalOrDelayed, chained);
-        if (relevantDataLoaderInvocations == null || relevantDataLoaderInvocations.isEmpty()) {
+        ChainedDLStack.StateForLevel stateForLevel = callStack.chainedDLStack.aboutToStartDispatching(level, normalOrDelayed, chained);
+        if (stateForLevel == null || stateForLevel.dataLoaderInvocation == null) {
             return;
         }
 
         List<CompletableFuture> allDispatchedCFs = new ArrayList<>();
-        for (DataLoaderInvocation dataLoaderInvocation : relevantDataLoaderInvocations) {
-            CompletableFuture<List> dispatch = dataLoaderInvocation.dataLoader.dispatch();
+        while (stateForLevel != null && stateForLevel.dataLoaderInvocation != null) {
+            final DataLoaderInvocation invocation = stateForLevel.dataLoaderInvocation;
+            CompletableFuture<List> dispatch = invocation.dataLoader.dispatch();
             allDispatchedCFs.add(dispatch);
             dispatch.whenComplete((objects, throwable) -> {
                 if (objects != null && objects.size() > 0) {
-                    profiler.batchLoadedNewStrategy(dataLoaderInvocation.name, level, objects.size(), !normalOrDelayed, chained);
+                    profiler.batchLoadedNewStrategy(invocation.name, level, objects.size(), !normalOrDelayed, chained);
                 }
             });
+            stateForLevel = stateForLevel.prev;
         }
         CompletableFuture.allOf(allDispatchedCFs.toArray(new CompletableFuture[0]))
                 .whenComplete((unused, throwable) -> {
