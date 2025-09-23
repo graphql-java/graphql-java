@@ -19,7 +19,6 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -134,163 +133,133 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     private static class CallStack {
 
+        private static class StateForLevel {
+            final boolean dispatched;
+            final int expectedFetchCount;
+            final int happenedFetchCount;
+            final int happenedCompleteFieldCount;
 
-        /**
-         * A general overview of teh tracked data:
-         * There are three aspects tracked per level:
-         * - number of expected and happened execute object calls (executeObject)
-         * - number of expected and happened fetches
-         * - number of happened sub selections finished fetching
-         * <p/>
-         * The level for an execute object call is the level of sub selection of the object: for
-         * { a {b {c}}} the level of "execute object a" is 2
-         * <p/>
-         * For fetches the level is the level of the field fetched
-         * <p/>
-         * For sub selections finished it is the level of the fields inside the sub selection:
-         * {a1 { b c} a2 } the level of {a1 a2} is 1, the level of {b c} is 2
-         * <p/>
-         * The main aspect for when a level is ready is when all expected fetch call happened, meaning
-         * we can dispatch this level as all data loaders in this level have been called
-         * (if the number of expected fetches is correct).
-         * <p/>
-         * The number of expected fetches is increased with every executeObject (based on the number of subselection
-         * fields for the execute object).
-         * Execute Object a (on level 2) with { a {f1 f2 f3} } means we expect 3 fetches on level 2.
-         * <p/>
-         * A finished subselection means we can predict the number of execute object calls in the next level as the subselection:
-         * { a {x} b {y} }
-         * If a is a list of 3 objects and b is a list of 2 objects we expect 3 + 2 = 5 execute object calls on the level 2 to be happening
-         * <p/>
-         * The finished sub selection is the only "cross level" event: a finished sub selections impacts the expected execute
-         * object calls on the next level.
-         * <p/>
-         * <p/>
-         * This means we know a level is ready to be dispatched if:
-         * - all expected fetched happened in the current level
-         * - all expected execute objects calls happened in the current level (because they inform the expected fetches)
-         * - all expected sub selections happened in the parent level (because they inform the expected execute object in the current level).
-         * The expected sub selections are equal to the expected object calls (in the parent level)
-         * - All expected sub selections happened in the parent parent level (again: meaning #happenedSubSelections == #expectedExecuteObjectCalls)
-         * - And so until the first level
-         */
+            public StateForLevel() {
+                this.dispatched = false;
+                this.expectedFetchCount = 0;
+                this.happenedFetchCount = 0;
+                this.happenedCompleteFieldCount = 0;
+            }
 
+            public StateForLevel(boolean dispatched, int expectedFetchCount, int happenedFetchCount, int happenedCompleteFieldCount) {
+                this.dispatched = dispatched;
+                this.expectedFetchCount = expectedFetchCount;
+                this.happenedFetchCount = happenedFetchCount;
+                this.happenedCompleteFieldCount = happenedCompleteFieldCount;
+            }
+
+            public StateForLevel(StateForLevel other) {
+                this.dispatched = other.dispatched;
+                this.expectedFetchCount = other.expectedFetchCount;
+                this.happenedFetchCount = other.happenedFetchCount;
+                this.happenedCompleteFieldCount = other.happenedCompleteFieldCount;
+            }
+
+            public StateForLevel copy() {
+                return new StateForLevel(this);
+            }
+
+            boolean allFieldsCompleted() {
+                return expectedFetchCount == happenedCompleteFieldCount;
+            }
+
+            boolean allFetchesHappened() {
+                return expectedFetchCount > 0 && expectedFetchCount == happenedFetchCount;
+            }
+
+
+        }
+
+        private final Map<Integer, AtomicReference<StateForLevel>> stateForLevelMap = new ConcurrentHashMap<>();
+
+        public void clear() {
+            stateForLevelMap.clear();
+        }
+
+        public StateForLevel get(int level) {
+            AtomicReference<StateForLevel> dataPerLevelAtomicReference = stateForLevelMap.computeIfAbsent(level, __ -> new AtomicReference<>(new StateForLevel()));
+            return Assert.assertNotNull(dataPerLevelAtomicReference.get());
+        }
+
+        public boolean tryUpdateLevel(int level, StateForLevel oldData, StateForLevel newData) {
+            AtomicReference<StateForLevel> dataPerLevelAtomicReference = Assert.assertNotNull(stateForLevelMap.get(level));
+            return dataPerLevelAtomicReference.compareAndSet(oldData, newData);
+        }
 
         private final LevelMap expectedFetchCountPerLevel = new LevelMap();
-        private final LevelMap fetchCountPerLevel = new LevelMap();
+        private final LevelMap happenedFetchCountPerLevel = new LevelMap();
         // happened complete field implies that the expected fetch field is correct
         // because completion triggers all needed executeObject, which determines the expected fetch field count
         private final LevelMap happenedCompleteFieldPerLevel = new LevelMap();
 
-        // an object call means a sub selection of a field of type object/interface/union
-        // the number of fields for sub selections increases the expected fetch count for this level
-//        private final LevelMap expectedExecuteObjectCallsPerLevel = new LevelMap();
-//        private final LevelMap happenedExecuteObjectCallsPerLevel = new LevelMap();
-
-
-        // this means one sub selection has been fully fetched
-        // and the expected execute objects calls for the next level have been calculated
-//        private final LevelMap happenedOnFieldValueCallsPerLevel = new LevelMap();
-
-        private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
-
+//        private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
 
         public ChainedDLStack chainedDLStack = new ChainedDLStack();
 
         private final List<FieldValueInfo> deferredFragmentRootFieldsFetched = new ArrayList<>();
 
         public CallStack() {
-            // in the first level there is only one sub selection,
-            // so we only expect one execute object call (which is actually an executionStrategy call)
-//            expectedExecuteObjectCallsPerLevel.set(1, 1);
         }
 
 
-        void increaseExpectedFetchCount(int level, int count) {
-            expectedFetchCountPerLevel.increment(level, count);
-        }
-
-        void clearExpectedFetchCount() {
-            expectedFetchCountPerLevel.clear();
-        }
-
-        void increaseHappenedFetchCount(int level) {
-            fetchCountPerLevel.increment(level, 1);
-        }
-
-
-        void clearFetchCount() {
-            fetchCountPerLevel.clear();
-        }
-
-        void increaseExpectedExecuteObjectCalls(int level, int count) {
-//            expectedExecuteObjectCallsPerLevel.increment(level, count);
-        }
-
-//        void clearExpectedObjectCalls() {
-//            expectedExecuteObjectCallsPerLevel.clear();
+//        void increaseExpectedFetchCount(int level, int count) {
+//            expectedFetchCountPerLevel.increment(level, count);
 //        }
 //
-//        void increaseHappenedExecuteObjectCalls(int level) {
-//            happenedExecuteObjectCallsPerLevel.increment(level, 1);
+//        void clearExpectedFetchCount() {
+//            expectedFetchCountPerLevel.clear();
 //        }
 //
-//        void clearHappenedExecuteObjectCalls() {
-//            happenedExecuteObjectCallsPerLevel.clear();
-//        }
-
-//        void increaseHappenedOnFieldValueCalls(int level) {
-//            happenedOnFieldValueCallsPerLevel.increment(level, 1);
+//        void increaseHappenedFetchCount(int level) {
+//            happenedFetchCountPerLevel.increment(level, 1);
 //        }
 //
-//        void clearHappenedOnFieldValueCalls() {
-//            happenedOnFieldValueCallsPerLevel.clear();
-//        }
-
-//        boolean allExecuteObjectCallsHappened(int level) {
-//            return happenedExecuteObjectCallsPerLevel.get(level) == expectedExecuteObjectCallsPerLevel.get(level);
-//        }
-
-//        boolean allSubSelectionsFetchingHappened(int level) {
-//            return happenedOnFieldValueCallsPerLevel.get(level) == expectedExecuteObjectCallsPerLevel.get(level);
+//
+//        void clearHappenedFetchCount() {
+//            happenedFetchCountPerLevel.clear();
 //        }
 //
-
-        boolean allFieldsCompleted(int level) {
-            return fetchCountPerLevel.get(level) == happenedCompleteFieldPerLevel.get(level);
-        }
-
-        boolean allFetchesHappened(int level) {
-            return fetchCountPerLevel.get(level) == expectedFetchCountPerLevel.get(level);
-        }
-
-        void clearDispatchLevels() {
-            dispatchedLevels.clear();
-        }
+//
+//        boolean allFieldsCompleted(int level) {
+//            return happenedFetchCountPerLevel.get(level) == happenedCompleteFieldPerLevel.get(level);
+//        }
+//
+//        boolean allFetchesHappened(int level) {
+//            return happenedFetchCountPerLevel.get(level) == expectedFetchCountPerLevel.get(level);
+//        }
+//
+//        void clearDispatchLevels() {
+//            dispatchedLevels.clear();
+//        }
 
         @Override
         public String toString() {
             return "CallStack{" +
                    "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
-                   ", fetchCountPerLevel=" + fetchCountPerLevel +
+                   ", fetchCountPerLevel=" + happenedFetchCountPerLevel +
 //                   ", expectedExecuteObjectCallsPerLevel=" + expectedExecuteObjectCallsPerLevel +
 //                   ", happenedExecuteObjectCallsPerLevel=" + happenedExecuteObjectCallsPerLevel +
 //                   ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
-                   ", dispatchedLevels" + dispatchedLevels +
+//                   ", dispatchedLevels" + dispatchedLevels +
                    '}';
         }
 
 
-        public void setDispatchedLevel(int level) {
-            if (!dispatchedLevels.add(level)) {
-                Assert.assertShouldNeverHappen("level " + level + " already dispatched");
-            }
-        }
+//        public void setDispatchedLevel(int level) {
+//            if (!dispatchedLevels.add(level)) {
+//                Assert.assertShouldNeverHappen("level " + level + " already dispatched");
+//            }
+//        }
 
-        public void clearHappenedCompleteFields() {
-            this.happenedCompleteFieldPerLevel.clear();
-
-        }
+//        public void clearHappenedCompleteFields() {
+//            this.happenedCompleteFieldPerLevel.clear();
+//
+//        }
     }
 
     public PerLevelDataLoaderDispatchStrategy(ExecutionContext executionContext) {
@@ -307,7 +276,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(1, fieldCount, initialCallStack);
+        increaseExpectedFetchCount(1, fieldCount, initialCallStack);
     }
 
     @Override
@@ -315,22 +284,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         CallStack callStack = getCallStack(parameters);
         resetCallStack(callStack);
         // field count is always 1 for serial execution
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(1, 1, callStack);
+        increaseExpectedFetchCount(1, 1, callStack);
     }
-
-//    @Override
-//    public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
-//        CallStack callStack = getCallStack(parameters);
-//        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, 1, callStack);
-//    }
-
-//    @Override
-//    public void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
-//        CallStack callStack = getCallStack(parameters);
-//        synchronized (callStack) {
-//            callStack.increaseHappenedOnFieldValueCalls(1);
-//        }
-//    }
 
     private CallStack getCallStack(ExecutionStrategyParameters parameters) {
         return getCallStack(parameters.getDeferredCallContext());
@@ -341,12 +296,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             return this.initialCallStack;
         } else {
             return alternativeCallContextMap.computeIfAbsent(alternativeCallContext, k -> {
+                // currently only works for subscriptions
                 CallStack callStack = new CallStack();
-                System.out.println("new callstack: " + callStack);
+//                System.out.println("new callstack: " + callStack);
                 int startLevel = alternativeCallContext.getStartLevel();
                 int fields = alternativeCallContext.getFields();
                 callStack.expectedFetchCountPerLevel.set(1, 1);
-                callStack.fetchCountPerLevel.set(1, 1);
+                callStack.happenedFetchCountPerLevel.set(1, 1);
                 return callStack;
             });
         }
@@ -356,151 +312,75 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         CallStack callStack = getCallStack(parameters);
         int curLevel = parameters.getPath().getLevel();
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(curLevel + 1, fieldCount, callStack);
+        increaseExpectedFetchCount(curLevel + 1, fieldCount, callStack);
     }
-
-//    @Override
-//    public void executeObjectOnFieldValuesInfo
-//            (List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
-//        // the level of the sub selection that is fully fetched is one level more than parameters level
-//        int curLevel = parameters.getPath().getLevel() + 1;
-//        CallStack callStack = getCallStack(parameters);
-//        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, callStack);
-//    }
 
 
     @Override
     public void newSubscriptionExecution(FieldValueInfo fieldValueInfo, AlternativeCallContext alternativeCallContext) {
         CallStack callStack = getCallStack(alternativeCallContext);
-        callStack.increaseHappenedFetchCount(1);
+//        callStack.increaseHappenedFetchCount(1);
         callStack.deferredFragmentRootFieldsFetched.add(fieldValueInfo);
-//        onFieldValuesInfoDispatchIfNeeded(callStack.deferredFragmentRootFieldsFetched, 1, callStack);
-    }
-
-    @Override
-    public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable
-            throwable, ExecutionStrategyParameters parameters) {
-        CallStack callStack = getCallStack(parameters);
-        boolean ready;
-        synchronized (callStack) {
-            callStack.deferredFragmentRootFieldsFetched.add(fieldValueInfo);
-            Assert.assertNotNull(parameters.getDeferredCallContext());
-            ready = callStack.deferredFragmentRootFieldsFetched.size() == parameters.getDeferredCallContext().getFields();
-        }
-//        if (ready) {
-//            int curLevel = parameters.getPath().getLevel();
-//            onFieldValuesInfoDispatchIfNeeded(callStack.deferredFragmentRootFieldsFetched, curLevel, callStack);
-//        }
     }
 
 //    @Override
-//    public void executeObjectOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
+//    public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable
+//            throwable, ExecutionStrategyParameters parameters) {
 //        CallStack callStack = getCallStack(parameters);
-//        // the level of the sub selection that is errored is one level more than parameters level
-//        int curLevel = parameters.getPath().getLevel() + 1;
+//        boolean ready;
 //        synchronized (callStack) {
-//            callStack.increaseHappenedOnFieldValueCalls(curLevel);
+//            callStack.deferredFragmentRootFieldsFetched.add(fieldValueInfo);
+//            Assert.assertNotNull(parameters.getDeferredCallContext());
+//            ready = callStack.deferredFragmentRootFieldsFetched.size() == parameters.getDeferredCallContext().getFields();
 //        }
-//    }
-//
 
-    private void increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(int curLevel,
-                                                                            int fieldCount,
-                                                                            CallStack callStack) {
-        synchronized (callStack) {
-            callStack.increaseExpectedFetchCount(curLevel, fieldCount);
+    /// /        if (ready) {
+    /// /            int curLevel = parameters.getPath().getLevel();
+    /// /            onFieldValuesInfoDispatchIfNeeded(callStack.deferredFragmentRootFieldsFetched, curLevel, callStack);
+    /// /        }
+//    }
+    private void increaseExpectedFetchCount(int curLevel,
+                                            int fieldCount,
+                                            CallStack callStack) {
+        while (true) {
+            CallStack.StateForLevel currentState = callStack.get(curLevel);
+            CallStack.StateForLevel newState = new CallStack.StateForLevel(currentState.dispatched,
+                    currentState.expectedFetchCount + fieldCount,
+                    currentState.happenedFetchCount,
+                    currentState.happenedCompleteFieldCount);
+            if (callStack.tryUpdateLevel(curLevel, currentState, newState)) {
+                return;
+            }
         }
     }
 
     private void resetCallStack(CallStack callStack) {
-        synchronized (callStack) {
-            callStack.clearDispatchLevels();
-//            callStack.clearExpectedObjectCalls();
-            callStack.clearHappenedCompleteFields();
-            callStack.clearExpectedFetchCount();
-            callStack.clearFetchCount();
-//            callStack.clearHappenedExecuteObjectCalls();
-//            callStack.clearHappenedOnFieldValueCalls();
-//            callStack.expectedExecuteObjectCallsPerLevel.set(1, 1);
-            callStack.chainedDLStack.clear();
-        }
+//        synchronized (callStack) {
+//            callStack.clearDispatchLevels();
+        callStack.clear();
+//            callStack.clearHappenedCompleteFields();
+//            callStack.clearExpectedFetchCount();
+//            callStack.clearHappenedFetchCount();
+        callStack.chainedDLStack.clear();
+//        }
     }
 
-//    private void onFieldValuesInfoDispatchIfNeeded(List<FieldValueInfo> fieldValueInfoList,
-//                                                   int subSelectionLevel,
-//                                                   CallStack callStack) {
-//        Integer dispatchLevel;
-//        synchronized (callStack) {
-//            dispatchLevel = handleSubSelectionFetched(fieldValueInfoList, subSelectionLevel, callStack);
-//        }
-//        // the handle on field values check for the next level if it is ready
-//        if (dispatchLevel != null) {
-//            dispatch(dispatchLevel, callStack);
-//        }
-//    }
 
     @Override
     public void fieldCompleted(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters parameters) {
         int level = parameters.getPath().getLevel();
-        System.out.println("field completed at level: " + level + " at: " + parameters.getPath());
+//        System.out.println("field completed at level: " + level + " at: " + parameters.getPath());
         CallStack callStack = getCallStack(parameters);
-        synchronized (callStack) {
-            callStack.happenedCompleteFieldPerLevel.increment(level, 1);
-        }
+        increaseHappenedFieldCompleteCount(level, callStack);
         int currentLevel = parameters.getPath().getLevel() + 1;
+        // check the levels below if they are ready for dispatch
         while (true) {
-            boolean levelReady;
-            synchronized (callStack) {
-                if (callStack.dispatchedLevels.contains(currentLevel)) {
-                    break;
-                }
-                levelReady = dispatchIfNeeded(currentLevel, callStack);
-            }
-            if (levelReady) {
-                dispatch(currentLevel, callStack);
-            } else {
+            if (!markAsDispatchedIfReady(currentLevel, callStack)) {
                 break;
             }
+            dispatch(currentLevel, callStack);
             currentLevel++;
         }
-    }
-
-    //
-// thread safety: called with callStack.lock
-//
-//    private @Nullable Integer handleSubSelectionFetched(List<FieldValueInfo> fieldValueInfos, int subSelectionLevel, CallStack
-//            callStack) {
-//        System.out.println("sub selection fetched at level :" + subSelectionLevel);
-//        callStack.increaseHappenedOnFieldValueCalls(subSelectionLevel);
-//        int expectedOnObjectCalls = getObjectCountForList(fieldValueInfos);
-//        // we expect on the next level of the current sub selection #expectedOnObjectCalls execute object calls
-//        callStack.increaseExpectedExecuteObjectCalls(subSelectionLevel + 1, expectedOnObjectCalls);
-//
-//        // maybe the object calls happened already (because the DataFetcher return directly values synchronously)
-//        // therefore we check the next levels if they are ready
-//        // if data loader chaining is disabled (the old algo) the level we dispatch is not really relevant as
-//        // we dispatch the whole registry anyway
-//
-//        if (checkLevelImpl(subSelectionLevel + 1, callStack)) {
-//            return subSelectionLevel + 1;
-//        } else {
-//            return null;
-//        }
-//    }
-
-    /**
-     * the amount of (non nullable) objects that will require an execute object call
-     */
-    private int getObjectCountForList(List<FieldValueInfo> fieldValueInfos) {
-        int result = 0;
-        for (FieldValueInfo fieldValueInfo : fieldValueInfos) {
-            if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
-                result += 1;
-            } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
-                result += getObjectCountForList(fieldValueInfo.getFieldValueInfos());
-            }
-        }
-        return result;
     }
 
 
@@ -512,78 +392,104 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
         CallStack callStack = getCallStack(executionStrategyParameters);
         int level = executionStrategyParameters.getPath().getLevel();
-        boolean dispatchNeeded;
-        synchronized (callStack) {
-            System.out.println("field fetched at level " + level + " - " + executionStrategyParameters.getPath());
-            callStack.increaseHappenedFetchCount(level);
-            dispatchNeeded = dispatchIfNeeded(level, callStack);
-        }
-        if (dispatchNeeded) {
+        increaseHappenedFetchCount(level, callStack);
+        if (markAsDispatchedIfReady(level, callStack)) {
             dispatch(level, callStack);
         }
 
     }
 
+    private void increaseHappenedFieldCompleteCount(int level, CallStack callStack) {
+        while (true) {
+            CallStack.StateForLevel currentState = callStack.get(level);
+            CallStack.StateForLevel newState = new CallStack.StateForLevel(currentState.dispatched,
+                    currentState.expectedFetchCount,
+                    currentState.happenedFetchCount,
+                    currentState.happenedCompleteFieldCount + 1);
+            if (callStack.tryUpdateLevel(level, currentState, newState)) {
+                return;
+            }
+        }
+    }
+
+    private void increaseHappenedFetchCount(int level, CallStack callStack) {
+        while (true) {
+            CallStack.StateForLevel currentState = callStack.get(level);
+            CallStack.StateForLevel newState = new CallStack.StateForLevel(currentState.dispatched,
+                    currentState.expectedFetchCount,
+                    currentState.happenedFetchCount + 1,
+                    currentState.happenedCompleteFieldCount);
+            if (callStack.tryUpdateLevel(level, currentState, newState)) {
+                return;
+            }
+        }
+    }
+
+
+    private boolean markAsDispatchedIfReady(int level, CallStack callStack) {
+        boolean previousLevelDispatched = true;
+        boolean previousLevelAllFieldsCompleted = true;
+        if (level > 1) {
+            CallStack.StateForLevel stateForLevel = callStack.get(level - 1);
+            previousLevelDispatched = stateForLevel.dispatched;
+            previousLevelAllFieldsCompleted = stateForLevel.allFieldsCompleted();
+        }
+        if (!previousLevelDispatched || !previousLevelAllFieldsCompleted) {
+            return false;
+        }
+        while (true) {
+            CallStack.StateForLevel currentState = callStack.get(level);
+            if (currentState.dispatched) {
+                return false;
+            }
+            if (!currentState.allFetchesHappened()) {
+                return false;
+            }
+            CallStack.StateForLevel newState = new CallStack.StateForLevel(true,
+                    currentState.expectedFetchCount,
+                    currentState.happenedFetchCount,
+                    currentState.happenedCompleteFieldCount);
+            if (callStack.tryUpdateLevel(level, currentState, newState)) {
+                return true;
+            }
+        }
+    }
 
     //
 // thread safety : called with callStack.lock
 //
-    private boolean dispatchIfNeeded(int level, CallStack callStack) {
-        boolean ready = checkLevelImpl(level, callStack);
-        if (ready) {
-            callStack.setDispatchedLevel(level);
-            return true;
-        }
-        return false;
-    }
-
-    //
-// thread safety: called with callStack.lock
-//
-//    private @Nullable Integer getHighestReadyLevel(int startFrom, CallStack callStack) {
-//        while (true) {
-//            if (!checkLevelImpl(curLevel + 1, callStack)) {
-//                callStack.highestReadyLevel = curLevel;
-//                return curLevel >= startFrom ? curLevel : null;
-//            }
-//            curLevel++;
+//    private boolean dispatchIfNeeded(int level, CallStack callStack) {
+//        boolean ready = checkLevelImpl(level, callStack);
+//        if (ready) {
+//            callStack.setDispatchedLevel(level);
+//            return true;
 //        }
+//        return false;
 //    }
 
-//    private boolean checkLevelBeingReady(int level, CallStack callStack) {
-//        Assert.assertTrue(level > 0);
+
+//    private boolean checkLevelImpl(int level, CallStack callStack) {
+//        System.out.println("checkLevelImpl " + level);
+//        // a level with zero expectations can't be ready
+//        if (callStack.expectedFetchCountPerLevel.get(level) == 0) {
+//            return false;
+//        }
 //
-//        for (int i = callStack.highestReadyLevel + 1; i <= level; i++) {
-//            if (!checkLevelImpl(i, callStack)) {
+//        // all fetches happened
+//        if (!callStack.allFetchesHappened(level)) {
+//            return false;
+//        }
+//
+//        int levelTmp = level - 1;
+//        while (levelTmp >= 1) {
+//            if (!callStack.allFieldsCompleted(levelTmp)) {
 //                return false;
 //            }
+//            levelTmp--;
 //        }
-//        callStack.highestReadyLevel = level;
+//        System.out.println("check ready " + level);
 //        return true;
 //    }
-
-    private boolean checkLevelImpl(int level, CallStack callStack) {
-        System.out.println("checkLevelImpl " + level);
-        // a level with zero expectations can't be ready
-        if (callStack.expectedFetchCountPerLevel.get(level) == 0) {
-            return false;
-        }
-
-        // all fetches happened
-        if (!callStack.allFetchesHappened(level)) {
-            return false;
-        }
-
-        int levelTmp = level - 1;
-        while (levelTmp >= 1) {
-            if (!callStack.allFieldsCompleted(levelTmp)) {
-                return false;
-            }
-            levelTmp--;
-        }
-        System.out.println("check ready " + level);
-        return true;
-    }
 
     void dispatch(int level, CallStack callStack) {
         if (!enableDataLoaderChaining) {
@@ -592,7 +498,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             dispatchAll(dataLoaderRegistry, level);
             return;
         }
-//        System.out.println("dispatching " + level);
         dispatchDLCFImpl(level, callStack, true, false);
     }
 
