@@ -175,15 +175,18 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
          * - And so until the first level
          */
 
+
         private final LevelMap expectedFetchCountPerLevel = new LevelMap();
         private final LevelMap fetchCountPerLevel = new LevelMap();
+        // happened complete field implies that the expected fetch field is correct
+        // because completion triggers all needed executeObject, which determines the expected fetch field count
+        private final LevelMap happenedCompleteFieldPerLevel = new LevelMap();
 
         // an object call means a sub selection of a field of type object/interface/union
         // the number of fields for sub selections increases the expected fetch count for this level
 //        private final LevelMap expectedExecuteObjectCallsPerLevel = new LevelMap();
 //        private final LevelMap happenedExecuteObjectCallsPerLevel = new LevelMap();
 
-        private final LevelMap happenedCompleteFieldPerLevel = new LevelMap();
 
         // this means one sub selection has been fully fetched
         // and the expected execute objects calls for the next level have been calculated
@@ -339,17 +342,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         } else {
             return alternativeCallContextMap.computeIfAbsent(alternativeCallContext, k -> {
                 CallStack callStack = new CallStack();
+                System.out.println("new callstack: " + callStack);
                 int startLevel = alternativeCallContext.getStartLevel();
                 int fields = alternativeCallContext.getFields();
-                System.out.println("startLevel for new callstack " + startLevel);
-                // we make sure that startLevel is considered done
-                for (int i = 1; i <= startLevel; i++) {
-                    callStack.increaseExpectedFetchCount(startLevel, 1);
-                    callStack.increaseHappenedFetchCount(1);
-                    if (i < startLevel) {
-                        callStack.happenedCompleteFieldPerLevel.set(startLevel, 1);
-                    }
-                }
+                callStack.expectedFetchCountPerLevel.set(1, 1);
+                callStack.fetchCountPerLevel.set(1, 1);
                 return callStack;
             });
         }
@@ -445,12 +442,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     @Override
     public void fieldCompleted(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters parameters) {
         int level = parameters.getPath().getLevel();
-//        System.out.println("field completed at level: " + level + " at: " + parameters.getPath());
+        System.out.println("field completed at level: " + level + " at: " + parameters.getPath());
         CallStack callStack = getCallStack(parameters);
-        int currentLevel = parameters.getPath().getLevel() + 1;
         synchronized (callStack) {
             callStack.happenedCompleteFieldPerLevel.increment(level, 1);
         }
+        int currentLevel = parameters.getPath().getLevel() + 1;
         while (true) {
             boolean levelReady;
             synchronized (callStack) {
@@ -517,7 +514,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         int level = executionStrategyParameters.getPath().getLevel();
         boolean dispatchNeeded;
         synchronized (callStack) {
-            System.out.println("field fetched at level " + level);
+            System.out.println("field fetched at level " + level + " - " + executionStrategyParameters.getPath());
             callStack.increaseHappenedFetchCount(level);
             dispatchNeeded = dispatchIfNeeded(level, callStack);
         }
@@ -576,12 +573,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         if (!callStack.allFetchesHappened(level)) {
             return false;
         }
-//        // the fetch count is actually correct because all execute object happened
-//        if (!callStack.allFieldsCompleted(level-1)) {
-//            return false;
-//        }
-        // the expected execute object call is correct because all sub selections got fetched on the parent
-        // and their parent and their parent etc
+
         int levelTmp = level - 1;
         while (levelTmp >= 1) {
             if (!callStack.allFieldsCompleted(levelTmp)) {

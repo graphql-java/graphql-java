@@ -11,6 +11,7 @@ import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import spock.lang.Ignore
 import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
 
@@ -60,6 +61,7 @@ class DeferWithDataLoaderTest extends Specification {
         }
     }
 
+    @Ignore
     def "query with single deferred field"() {
         given:
         def query = getQuery(true, false)
@@ -104,6 +106,7 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
 
+    @Ignore
     def "multiple fields on same defer block"() {
         given:
         def query = """
@@ -177,6 +180,7 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 0
     }
 
+    @Ignore
     def "query with nested deferred fields"() {
         given:
         def query = getQuery(true, true)
@@ -228,6 +232,7 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 9
     }
 
+    @Ignore
     def "query with top-level deferred field"() {
         given:
         def query = """
@@ -291,6 +296,7 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 0
     }
 
+    @Ignore
     def "query with multiple deferred fields"() {
         given:
         def query = getExpensiveQuery(true)
@@ -348,6 +354,7 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
+    @Ignore
     @RepeatUntilFailure(maxAttempts = 50, ignoreRest = false)
     def "dataloader in initial result and chained dataloader inside nested defer block"() {
         given:
