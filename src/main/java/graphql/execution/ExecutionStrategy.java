@@ -638,6 +638,7 @@ public abstract class ExecutionStrategy {
         );
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
+        executionContext.getDataLoaderDispatcherStrategy().fieldCompleted(fieldValueInfo, parameters);
         ctxCompleteField.onDispatched();
         if (fieldValueInfo.isFutureValue()) {
             CompletableFuture<Object> executionResultFuture = fieldValueInfo.getFieldValueFuture();

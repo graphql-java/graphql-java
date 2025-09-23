@@ -40,6 +40,10 @@ public interface DataLoaderDispatchStrategy {
 
     }
 
+    default void fieldCompleted(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
+
+    }
+
     default void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable throwable, ExecutionStrategyParameters parameters) {
 
     }
