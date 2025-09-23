@@ -119,7 +119,7 @@ jar {
 }
 
 dependencies {
-    api 'com.graphql-java:java-dataloader:5.0.2'
+    api 'com.graphql-java:java-dataloader:5.0.3'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     api "org.jspecify:jspecify:1.0.0"
 
