@@ -277,7 +277,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         CallStack callStack = getCallStack(parameters);
         int curLevel = parameters.getPath().getLevel();
-//        System.out.println("execute object " + curLevel + " at " + parameters.getPath() );
+//        System.out.println("execute object " + curLevel + " at " + parameters.getPath() + " with callstack " + callStack.hashCode());
         synchronized (callStack) {
             callStack.happenedExecuteObjectCallsPerLevel.increment(curLevel, 1);
             callStack.expectedFetchCountPerLevel.increment(curLevel + 1, fieldCount);
@@ -332,6 +332,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
         CallStack callStack = getCallStack(executionStrategyParameters);
         int level = executionStrategyParameters.getPath().getLevel();
+//        System.out.println("field fetched at: " + level + " path: " + executionStrategyParameters.getPath() + " callStack: " + callStack.hashCode());
         boolean dispatchNeeded;
         synchronized (callStack) {
             callStack.happenedFetchCountPerLevel.increment(level, 1);
@@ -345,13 +346,22 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     @Override
-    public void newSubscriptionExecution(FieldValueInfo fieldValueInfo, AlternativeCallContext alternativeCallContext) {
+    public void newSubscriptionExecution(AlternativeCallContext alternativeCallContext) {
+        CallStack callStack = new CallStack();
+        alternativeCallContextMap.put(alternativeCallContext, callStack);
+
+    }
+
+    @Override
+    public void subscriptionEventCompletionDone(AlternativeCallContext alternativeCallContext) {
         CallStack callStack = getCallStack(alternativeCallContext);
+        // this means the single root field is completed (it was never "fetched" because it is
+        // the event payload) and we can mark level 1 (root fields) as dispatched and level 0 as completed
         synchronized (callStack) {
-            callStack.happenedFetchCountPerLevel.increment(1, 1);
+            callStack.dispatchedLevels.add(1);
+            callStack.happenedExecuteObjectCallsPerLevel.set(0, 1);
         }
-        callStack.deferredFragmentRootFieldsFetched.add(fieldValueInfo);
-//        onFieldValuesInfoDispatchIfNeeded(callStack.deferredFragmentRootFieldsFetched, 1, callStack);
+        onCompletionFinished(0, callStack);
     }
 
     @Override
@@ -382,11 +392,17 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         } else {
             return alternativeCallContextMap.computeIfAbsent(alternativeCallContext, k -> {
                 CallStack callStack = new CallStack();
-//                System.out.println("new callstack: " + callStack);
-                int startLevel = alternativeCallContext.getStartLevel();
-                int fields = alternativeCallContext.getFields();
-                callStack.expectedFetchCountPerLevel.set(1, 1);
-                callStack.happenedFetchCountPerLevel.set(1, 1);
+//                System.out.println("new callstack : " + callStack.hashCode());
+                // for subscriptions there is only root field which is already fetched
+//                callStack.expectedFetchCountPerLevel.set(1, 1);
+//                callStack.happenedFetchCountPerLevel.set(1, 1);
+//                // the level 0 is done
+//                callStack.happenedExecuteObjectCallsPerLevel.set(0, 1);
+//                callStack.happenedCompletionFinishedCountPerLevel.set(0, 1);
+//                // level is 1 already dispatched
+//                callStack.setDispatchedLevel(1);
+//                int startLevel = alternativeCallContext.getStartLevel();
+//                int fields = alternativeCallContext.getFields();
                 return callStack;
             });
         }
@@ -400,7 +416,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
     }
 
-//
 
     private boolean markLevelAsDispatchedIfReady(int level, CallStack callStack) {
         boolean ready = isLevelReady(level, callStack);

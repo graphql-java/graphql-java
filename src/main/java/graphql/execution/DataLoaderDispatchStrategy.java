@@ -61,8 +61,11 @@ public interface DataLoaderDispatchStrategy {
     }
 
 
+    default void newSubscriptionExecution(AlternativeCallContext alternativeCallContext) {
 
-    default void newSubscriptionExecution(FieldValueInfo fieldValueInfo, AlternativeCallContext alternativeCallContext) {
+    }
+
+    default void subscriptionEventCompletionDone(AlternativeCallContext alternativeCallContext) {
 
     }
 }
