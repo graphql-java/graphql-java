@@ -169,8 +169,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         }
 
-        private final Object firstLevelDataLock = new Object() {
-        };
         private volatile int expectedFirstLevelFetchCount;
         private final AtomicInteger happenedFirstLevelFetchCount = new AtomicInteger();
 
@@ -288,6 +286,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             }
         }
 
+        // due to synchronous DataFetcher the completion calls on higher levels
+        // can happen before the completion calls on lower level
+        // this means sometimes a lower level completion means multiple levels are ready
+        // hence this loop here until a level is not ready or already dispatched
         int currentLevel = level + 2;
         while (true) {
             boolean levelReady;
