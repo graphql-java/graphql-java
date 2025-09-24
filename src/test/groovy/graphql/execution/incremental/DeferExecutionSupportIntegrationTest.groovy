@@ -23,7 +23,6 @@ import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -1691,7 +1690,6 @@ class DeferExecutionSupportIntegrationTest extends Specification {
 
     }
 
-    @Ignore("tmp not working")
     def "dataloader used inside defer"() {
         given:
         def query = '''
