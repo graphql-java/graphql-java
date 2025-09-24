@@ -135,8 +135,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     private static class CallStack {
 
-        private final LevelMap expectedFetchCountPerLevel = new LevelMap();
-        private final LevelMap happenedFetchCountPerLevel = new LevelMap();
+        private int expectedFirstLevelFetchCount;
+        private int happenedFirstLevelFetchCount;
         private final LevelMap happenedCompletionFinishedCountPerLevel = new LevelMap();
         private final LevelMap happenedExecuteObjectCallsPerLevel = new LevelMap();
 
@@ -154,8 +154,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         public void clear() {
             dispatchedLevels.clear();
             happenedExecuteObjectCallsPerLevel.clear();
-            expectedFetchCountPerLevel.clear();
-            happenedFetchCountPerLevel.clear();
+            expectedFirstLevelFetchCount = 0;
+            happenedFirstLevelFetchCount = 0;
             happenedCompletionFinishedCountPerLevel.clear();
             deferredFragmentRootFieldsCompleted = 0;
             chainedDLStack.clear();
@@ -178,7 +178,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
         synchronized (initialCallStack) {
             initialCallStack.happenedExecuteObjectCallsPerLevel.set(0, 1);
-            initialCallStack.expectedFetchCountPerLevel.set(1, fieldCount);
+            initialCallStack.expectedFirstLevelFetchCount = fieldCount;
         }
     }
 
@@ -189,7 +189,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         synchronized (callStack) {
             callStack.happenedExecuteObjectCallsPerLevel.set(0, 1);
             // field count is always 1 for serial execution
-            callStack.expectedFetchCountPerLevel.set(1, 1);
+            initialCallStack.expectedFirstLevelFetchCount = 1;
         }
     }
 
@@ -213,13 +213,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         int curLevel = parameters.getPath().getLevel();
         synchronized (callStack) {
             callStack.happenedExecuteObjectCallsPerLevel.increment(curLevel, 1);
-            callStack.expectedFetchCountPerLevel.increment(curLevel + 1, fieldCount);
         }
     }
 
     @Override
-    public void executeObjectOnFieldValuesInfo
-            (List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+    public void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getPath().getLevel();
         CallStack callStack = getCallStack(parameters);
         onCompletionFinished(curLevel, callStack);
@@ -229,7 +227,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void executeObjectOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         int curLevel = parameters.getPath().getLevel();
-//        System.out.println("completion finished for level " + curLevel);
         onCompletionFinished(curLevel, callStack);
     }
 
@@ -238,13 +235,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         synchronized (callStack) {
             callStack.happenedCompletionFinishedCountPerLevel.increment(level, 1);
         }
-        // on completion might mark multiple higher levels as ready
         int currentLevel = level + 2;
         while (true) {
             boolean levelReady;
             synchronized (callStack) {
                 if (callStack.dispatchedLevels.contains(currentLevel)) {
-//                        System.out.println("failed because already dispatched");
                     break;
                 }
                 levelReady = markLevelAsDispatchedIfReady(currentLevel, callStack);
@@ -252,7 +247,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             if (levelReady) {
                 dispatch(currentLevel, callStack);
             } else {
-//                    System.out.println("failed because level not ready");
                 break;
             }
             currentLevel++;
@@ -270,19 +264,17 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         CallStack callStack = getCallStack(executionStrategyParameters);
         int level = executionStrategyParameters.getPath().getLevel();
         boolean dispatchNeeded = false;
-//        System.out.println("field fetched for level " + level + " path: " + executionStrategyParameters.getPath());
         AlternativeCallContext deferredCallContext = executionStrategyParameters.getDeferredCallContext();
         if (level == 1 || (deferredCallContext != null && level == deferredCallContext.getStartLevel())) {
             synchronized (callStack) {
-                callStack.happenedFetchCountPerLevel.increment(level, 1);
-                dispatchNeeded = callStack.expectedFetchCountPerLevel.get(level) == callStack.happenedFetchCountPerLevel.get(level);
+                callStack.happenedFirstLevelFetchCount++;
+                dispatchNeeded = callStack.expectedFirstLevelFetchCount == callStack.happenedFirstLevelFetchCount;
                 if (dispatchNeeded) {
                     callStack.dispatchedLevels.add(level);
                 }
             }
         }
         if (dispatchNeeded) {
-//            System.out.println("Success field fetch");
             dispatch(level, callStack);
         }
 
@@ -354,7 +346,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 callStack.happenedExecuteObjectCallsPerLevel.set(startLevel - 1, 1);
 
                 // for the current level we set the fetch expectations
-                callStack.expectedFetchCountPerLevel.set(startLevel, fields);
+                callStack.expectedFirstLevelFetchCount = fields;
                 return callStack;
             });
         }
@@ -374,16 +366,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     private boolean isLevelReady(int level, CallStack callStack) {
-        // a level with zero expectations can't be ready
-//            int expectedFetchCount = callStack.expectedFetchCountPerLevel.get(level);
-//            if (expectedFetchCount == 0) {
-//                return false;
-//            }
-
-//            if (expectedFetchCount != callStack.happenedFetchCountPerLevel.get(level)) {
-//                return false;
-//            }
-
         // we expect that parent has been dispatched and that all parents fields are completed
         // all parent fields completed means all parent parent on completions finished calls must have happened
         int happenedExecuteObjectCalls = callStack.happenedExecuteObjectCallsPerLevel.get(level - 2);
@@ -393,7 +375,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     void dispatch(int level, CallStack callStack) {
-//        System.out.println("dispatching " + level);
         if (!enableDataLoaderChaining) {
             profiler.oldStrategyDispatchingAll(level);
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
@@ -404,11 +385,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     private void dispatchAll(DataLoaderRegistry dataLoaderRegistry, int level) {
-//        System.out.println("dispatch level " + level);
         for (DataLoader<?, ?> dataLoader : dataLoaderRegistry.getDataLoaders()) {
             dataLoader.dispatch().whenComplete((objects, throwable) -> {
                 if (objects != null && objects.size() > 0) {
-//                    System.out.println("dispatching " + objects.size() + " objects for level " + level);
                     Assert.assertNotNull(dataLoader.getName());
                     profiler.batchLoadedOldStrategy(dataLoader.getName(), level, objects.size());
                 }
