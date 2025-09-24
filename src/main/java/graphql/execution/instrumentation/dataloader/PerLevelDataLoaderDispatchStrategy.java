@@ -97,6 +97,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 if (currentStateRef.compareAndSet(currentState, newState)) {
                     return currentState;
                 }
+                Thread.onSpinWait();
             }
         }
 
@@ -124,6 +125,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 if (currentStateRef.compareAndSet(currentState, newState)) {
                     return newDelayedInvocation;
                 }
+                Thread.onSpinWait();
             }
         }
 
@@ -259,7 +261,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             if (callStack.tryUpdateLevel(curLevel, currentState, currentState.increaseHappenedExecuteObjectCalls())) {
                 return;
             }
-
+            Thread.onSpinWait();
         }
     }
 
@@ -284,6 +286,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             if (callStack.tryUpdateLevel(level, currentState, currentState.increaseHappenedCompletionFinishedCount())) {
                 break;
             }
+            Thread.onSpinWait();
         }
 
         // due to synchronous DataFetcher the completion calls on higher levels
@@ -345,6 +348,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             if (callStack.tryUpdateLevel(0, currentState, currentState.increaseHappenedExecuteObjectCalls())) {
                 break;
             }
+            Thread.onSpinWait();
         }
         onCompletionFinished(0, callStack);
     }
@@ -404,7 +408,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         boolean ready = isLevelReady(level, callStack);
         if (ready) {
             if (!callStack.dispatchedLevels.add(level)) {
-                // meaning another thread came before here
+                // meaning another thread came before us, so they will take care of dispatching
                 return false;
             }
             return true;
@@ -414,6 +418,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     private boolean isLevelReady(int level, CallStack callStack) {
+        Assert.assertTrue(level > 1);
         // we expect that parent has been dispatched and that all parents fields are completed
         // all parent fields completed means all parent parent on completions finished calls must have happened
         int happenedExecuteObjectCalls = callStack.get(level - 2).happenedExecuteObjectCalls;
