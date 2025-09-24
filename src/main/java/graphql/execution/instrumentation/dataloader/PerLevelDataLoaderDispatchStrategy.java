@@ -17,12 +17,12 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -135,29 +135,75 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     private static class CallStack {
 
-        private int expectedFirstLevelFetchCount;
-        private int happenedFirstLevelFetchCount;
-        private final LevelMap happenedCompletionFinishedCountPerLevel = new LevelMap();
-        private final LevelMap happenedExecuteObjectCallsPerLevel = new LevelMap();
+        static class StateForLevel {
+            private final int happenedCompletionFinishedCount;
+            private final int happenedExecuteObjectCalls;
 
-        private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
 
+            public StateForLevel() {
+                this.happenedCompletionFinishedCount = 0;
+                this.happenedExecuteObjectCalls = 0;
+            }
+
+            public StateForLevel(int happenedCompletionFinishedCount, int happenedExecuteObjectCalls) {
+                this.happenedCompletionFinishedCount = happenedCompletionFinishedCount;
+                this.happenedExecuteObjectCalls = happenedExecuteObjectCalls;
+            }
+
+            public StateForLevel(StateForLevel other) {
+                this.happenedCompletionFinishedCount = other.happenedCompletionFinishedCount;
+                this.happenedExecuteObjectCalls = other.happenedExecuteObjectCalls;
+            }
+
+            public StateForLevel copy() {
+                return new StateForLevel(this);
+            }
+
+            public StateForLevel increaseHappenedCompletionFinishedCount() {
+                return new StateForLevel(happenedCompletionFinishedCount + 1, happenedExecuteObjectCalls);
+            }
+
+            public StateForLevel increaseHappenedExecuteObjectCalls() {
+                return new StateForLevel(happenedCompletionFinishedCount, happenedExecuteObjectCalls + 1);
+            }
+
+        }
+
+        private final Object firstLevelDataLock = new Object() {
+        };
+        private volatile int expectedFirstLevelFetchCount;
+        private final AtomicInteger happenedFirstLevelFetchCount = new AtomicInteger();
+
+
+        private final Map<Integer, AtomicReference<StateForLevel>> stateForLevelMap = new ConcurrentHashMap<>();
+
+        private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
 
         public ChainedDLStack chainedDLStack = new ChainedDLStack();
 
-        private int deferredFragmentRootFieldsCompleted;
+        private final AtomicInteger deferredFragmentRootFieldsCompleted = new AtomicInteger();
 
         public CallStack() {
         }
 
 
+        public StateForLevel get(int level) {
+            AtomicReference<StateForLevel> dataPerLevelAtomicReference = stateForLevelMap.computeIfAbsent(level, __ -> new AtomicReference<>(new StateForLevel()));
+            return Assert.assertNotNull(dataPerLevelAtomicReference.get());
+        }
+
+        public boolean tryUpdateLevel(int level, StateForLevel oldData, StateForLevel newData) {
+            AtomicReference<StateForLevel> dataPerLevelAtomicReference = Assert.assertNotNull(stateForLevelMap.get(level));
+            return dataPerLevelAtomicReference.compareAndSet(oldData, newData);
+        }
+
+
         public void clear() {
             dispatchedLevels.clear();
-            happenedExecuteObjectCallsPerLevel.clear();
+            stateForLevelMap.clear();
             expectedFirstLevelFetchCount = 0;
-            happenedFirstLevelFetchCount = 0;
-            happenedCompletionFinishedCountPerLevel.clear();
-            deferredFragmentRootFieldsCompleted = 0;
+            happenedFirstLevelFetchCount.set(0);
+            deferredFragmentRootFieldsCompleted.set(0);
             chainedDLStack.clear();
         }
     }
@@ -176,21 +222,20 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
-        synchronized (initialCallStack) {
-            initialCallStack.happenedExecuteObjectCallsPerLevel.set(0, 1);
-            initialCallStack.expectedFirstLevelFetchCount = fieldCount;
-        }
+        // no concurrency access happening
+        CallStack.StateForLevel currentState = initialCallStack.get(0);
+        initialCallStack.tryUpdateLevel(0, currentState, new CallStack.StateForLevel(0, 1));
+        initialCallStack.expectedFirstLevelFetchCount = fieldCount;
     }
 
     @Override
     public void executionSerialStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         callStack.clear();
-        synchronized (callStack) {
-            callStack.happenedExecuteObjectCallsPerLevel.set(0, 1);
-            // field count is always 1 for serial execution
-            initialCallStack.expectedFirstLevelFetchCount = 1;
-        }
+        CallStack.StateForLevel currentState = initialCallStack.get(0);
+        initialCallStack.tryUpdateLevel(0, currentState, new CallStack.StateForLevel(0, 1));
+        // field count is always 1 for serial execution
+        initialCallStack.expectedFirstLevelFetchCount = 1;
     }
 
     @Override
@@ -211,8 +256,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         CallStack callStack = getCallStack(parameters);
         int curLevel = parameters.getPath().getLevel();
-        synchronized (callStack) {
-            callStack.happenedExecuteObjectCallsPerLevel.increment(curLevel, 1);
+        while (true) {
+            CallStack.StateForLevel currentState = callStack.get(curLevel);
+            if (callStack.tryUpdateLevel(curLevel, currentState, currentState.increaseHappenedExecuteObjectCalls())) {
+                return;
+            }
+
         }
     }
 
@@ -232,18 +281,20 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     private void onCompletionFinished(int level, CallStack callStack) {
-        synchronized (callStack) {
-            callStack.happenedCompletionFinishedCountPerLevel.increment(level, 1);
+        while (true) {
+            CallStack.StateForLevel currentState = callStack.get(level);
+            if (callStack.tryUpdateLevel(level, currentState, currentState.increaseHappenedCompletionFinishedCount())) {
+                break;
+            }
         }
+
         int currentLevel = level + 2;
         while (true) {
             boolean levelReady;
-            synchronized (callStack) {
-                if (callStack.dispatchedLevels.contains(currentLevel)) {
-                    break;
-                }
-                levelReady = markLevelAsDispatchedIfReady(currentLevel, callStack);
+            if (callStack.dispatchedLevels.contains(currentLevel)) {
+                break;
             }
+            levelReady = markLevelAsDispatchedIfReady(currentLevel, callStack);
             if (levelReady) {
                 dispatch(currentLevel, callStack);
             } else {
@@ -263,21 +314,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
         CallStack callStack = getCallStack(executionStrategyParameters);
         int level = executionStrategyParameters.getPath().getLevel();
-        boolean dispatchNeeded = false;
         AlternativeCallContext deferredCallContext = executionStrategyParameters.getDeferredCallContext();
         if (level == 1 || (deferredCallContext != null && level == deferredCallContext.getStartLevel())) {
-            synchronized (callStack) {
-                callStack.happenedFirstLevelFetchCount++;
-                dispatchNeeded = callStack.expectedFirstLevelFetchCount == callStack.happenedFirstLevelFetchCount;
-                if (dispatchNeeded) {
-                    callStack.dispatchedLevels.add(level);
-                }
+            int happenedFirstLevelFetchCount = callStack.happenedFirstLevelFetchCount.incrementAndGet();
+            if (happenedFirstLevelFetchCount == callStack.expectedFirstLevelFetchCount) {
+                callStack.dispatchedLevels.add(level);
+                dispatch(level, callStack);
             }
         }
-        if (dispatchNeeded) {
-            dispatch(level, callStack);
-        }
-
     }
 
 
@@ -293,9 +337,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         CallStack callStack = getCallStack(alternativeCallContext);
         // this means the single root field is completed (it was never "fetched" because it is
         // the event payload) and we can mark level 1 (root fields) as dispatched and level 0 as completed
-        synchronized (callStack) {
-            callStack.dispatchedLevels.add(1);
-            callStack.happenedExecuteObjectCallsPerLevel.set(0, 1);
+        callStack.dispatchedLevels.add(1);
+        while (true) {
+            CallStack.StateForLevel currentState = callStack.get(0);
+            if (callStack.tryUpdateLevel(0, currentState, currentState.increaseHappenedExecuteObjectCalls())) {
+                break;
+            }
         }
         onCompletionFinished(0, callStack);
     }
@@ -304,13 +351,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable
             throwable, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
-        boolean ready;
-        synchronized (callStack) {
-            callStack.deferredFragmentRootFieldsCompleted++;
-            Assert.assertNotNull(parameters.getDeferredCallContext());
-            ready = callStack.deferredFragmentRootFieldsCompleted == parameters.getDeferredCallContext().getFields();
-        }
-        if (ready) {
+        int deferredFragmentRootFieldsCompleted = callStack.deferredFragmentRootFieldsCompleted.incrementAndGet();
+        Assert.assertNotNull(parameters.getDeferredCallContext());
+        if (deferredFragmentRootFieldsCompleted == parameters.getDeferredCallContext().getFields()) {
             onCompletionFinished(parameters.getDeferredCallContext().getStartLevel() - 1, callStack);
         }
 
@@ -339,11 +382,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 if (startLevel > 1) {
                     // parent level is considered dispatched and all fields completed
                     callStack.dispatchedLevels.add(startLevel - 1);
-                    callStack.happenedExecuteObjectCallsPerLevel.set(startLevel - 2, 1);
-                    callStack.happenedCompletionFinishedCountPerLevel.set(startLevel - 2, 1);
+                    CallStack.StateForLevel stateForLevel = callStack.get(startLevel - 2);
+                    CallStack.StateForLevel newStateForLevel = stateForLevel.increaseHappenedExecuteObjectCalls().increaseHappenedCompletionFinishedCount();
+                    callStack.tryUpdateLevel(startLevel - 2, stateForLevel, newStateForLevel);
                 }
                 // the parent will have one completion therefore we set the expectation to 1
-                callStack.happenedExecuteObjectCallsPerLevel.set(startLevel - 1, 1);
+                CallStack.StateForLevel stateForLevel = callStack.get(startLevel - 1);
+                callStack.tryUpdateLevel(startLevel - 1, stateForLevel, stateForLevel.increaseHappenedExecuteObjectCalls());
 
                 // for the current level we set the fetch expectations
                 callStack.expectedFirstLevelFetchCount = fields;
@@ -357,7 +402,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         boolean ready = isLevelReady(level, callStack);
         if (ready) {
             if (!callStack.dispatchedLevels.add(level)) {
-                Assert.assertShouldNeverHappen("level " + level + " already dispatched");
+                // meaning another thread came before here
+                return false;
             }
             return true;
         }
@@ -368,9 +414,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private boolean isLevelReady(int level, CallStack callStack) {
         // we expect that parent has been dispatched and that all parents fields are completed
         // all parent fields completed means all parent parent on completions finished calls must have happened
-        int happenedExecuteObjectCalls = callStack.happenedExecuteObjectCallsPerLevel.get(level - 2);
+        int happenedExecuteObjectCalls = callStack.get(level - 2).happenedExecuteObjectCalls;
         return callStack.dispatchedLevels.contains(level - 1) &&
-               happenedExecuteObjectCalls > 0 && happenedExecuteObjectCalls == callStack.happenedCompletionFinishedCountPerLevel.get(level - 2);
+               happenedExecuteObjectCalls > 0 && happenedExecuteObjectCalls == callStack.get(level - 2).happenedCompletionFinishedCount;
 
     }
 
