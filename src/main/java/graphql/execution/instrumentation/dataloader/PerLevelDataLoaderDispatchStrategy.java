@@ -134,48 +134,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     private static class CallStack {
 
-
-        /**
-         * A general overview of teh tracked data:
-         * There are three aspects tracked per level:
-         * - number of expected and happened execute object calls (executeObject)
-         * - number of expected and happened fetches
-         * - number of happened sub selections finished fetching
-         * <p/>
-         * The level for an execute object call is the level of sub selection of the object: for
-         * { a {b {c}}} the level of "execute object a" is 2
-         * <p/>
-         * For fetches the level is the level of the field fetched
-         * <p/>
-         * For sub selections finished it is the level of the fields inside the sub selection:
-         * {a1 { b c} a2 } the level of {a1 a2} is 1, the level of {b c} is 2
-         * <p/>
-         * The main aspect for when a level is ready is when all expected fetch call happened, meaning
-         * we can dispatch this level as all data loaders in this level have been called
-         * (if the number of expected fetches is correct).
-         * <p/>
-         * The number of expected fetches is increased with every executeObject (based on the number of subselection
-         * fields for the execute object).
-         * Execute Object a (on level 2) with { a {f1 f2 f3} } means we expect 3 fetches on level 2.
-         * <p/>
-         * A finished subselection means we can predict the number of execute object calls in the next level as the subselection:
-         * { a {x} b {y} }
-         * If a is a list of 3 objects and b is a list of 2 objects we expect 3 + 2 = 5 execute object calls on the level 2 to be happening
-         * <p/>
-         * The finished sub selection is the only "cross level" event: a finished sub selections impacts the expected execute
-         * object calls on the next level.
-         * <p/>
-         * <p/>
-         * This means we know a level is ready to be dispatched if:
-         * - all expected fetched happened in the current level
-         * - all expected execute objects calls happened in the current level (because they inform the expected fetches)
-         * - all expected sub selections happened in the parent level (because they inform the expected execute object in the current level).
-         * The expected sub selections are equal to the expected object calls (in the parent level)
-         * - All expected sub selections happened in the parent parent level (again: meaning #happenedSubSelections == #expectedExecuteObjectCalls)
-         * - And so until the first level
-         */
-
-
         private final LevelMap expectedFetchCountPerLevel = new LevelMap();
         private final LevelMap happenedFetchCountPerLevel = new LevelMap();
         private final LevelMap happenedCompletionFinishedCountPerLevel = new LevelMap();
@@ -192,37 +150,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
 
 
-        void clearDispatchLevels() {
-            dispatchedLevels.clear();
-        }
-
-        @Override
-        public String toString() {
-            return "CallStack{" +
-                   "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
-                   ", fetchCountPerLevel=" + happenedFetchCountPerLevel +
-//                   ", expectedExecuteObjectCallsPerLevel=" + expectedExecuteObjectCallsPerLevel +
-//                   ", happenedExecuteObjectCallsPerLevel=" + happenedExecuteObjectCallsPerLevel +
-//                   ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
-                   ", dispatchedLevels" + dispatchedLevels +
-                   '}';
-        }
-
-
-        public void setDispatchedLevel(int level) {
-            if (!dispatchedLevels.add(level)) {
-                Assert.assertShouldNeverHappen("level " + level + " already dispatched");
-            }
-        }
-
         public void clear() {
             dispatchedLevels.clear();
             happenedExecuteObjectCallsPerLevel.clear();
             expectedFetchCountPerLevel.clear();
             happenedFetchCountPerLevel.clear();
             happenedCompletionFinishedCountPerLevel.clear();
-
-
+            deferredFragmentRootFieldsCompleted = 0;
+            chainedDLStack.clear();
         }
     }
 
@@ -240,7 +175,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
-//        System.out.println("execution strategy started");
         synchronized (initialCallStack) {
             initialCallStack.happenedExecuteObjectCallsPerLevel.set(0, 1);
             initialCallStack.expectedFetchCountPerLevel.set(1, fieldCount);
@@ -250,10 +184,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     @Override
     public void executionSerialStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
-        resetCallStack(callStack);
-        // field count is always 1 for serial execution
+        callStack.clear();
         synchronized (callStack) {
             callStack.happenedExecuteObjectCallsPerLevel.set(0, 1);
+            // field count is always 1 for serial execution
             callStack.expectedFetchCountPerLevel.set(1, 1);
         }
     }
@@ -261,7 +195,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     @Override
     public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
-//        System.out.println("1st level fields completed");
         onCompletionFinished(0, callStack);
 
     }
@@ -277,7 +210,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         CallStack callStack = getCallStack(parameters);
         int curLevel = parameters.getPath().getLevel();
-//        System.out.println("execute object " + curLevel + " at " + parameters.getPath() + " with callstack " + callStack.hashCode());
         synchronized (callStack) {
             callStack.happenedExecuteObjectCallsPerLevel.increment(curLevel, 1);
             callStack.expectedFetchCountPerLevel.increment(curLevel + 1, fieldCount);
@@ -289,7 +221,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             (List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getPath().getLevel();
         CallStack callStack = getCallStack(parameters);
-//        System.out.println("completion finished at " + curLevel + " at " + parameters.getPath() );
         onCompletionFinished(curLevel, callStack);
     }
 
@@ -332,7 +263,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
         CallStack callStack = getCallStack(executionStrategyParameters);
         int level = executionStrategyParameters.getPath().getLevel();
-//        System.out.println("field fetched at: " + level + " path: " + executionStrategyParameters.getPath() + " callStack: " + callStack.hashCode());
         boolean dispatchNeeded;
         synchronized (callStack) {
             callStack.happenedFetchCountPerLevel.increment(level, 1);
@@ -380,7 +310,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     }
 
-//
 
     private CallStack getCallStack(ExecutionStrategyParameters parameters) {
         return getCallStack(parameters.getDeferredCallContext());
@@ -391,14 +320,18 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             return this.initialCallStack;
         } else {
             return alternativeCallContextMap.computeIfAbsent(alternativeCallContext, k -> {
+                /*
+                  This is only for handling deferred cases. Subscription cases will also get a new callStack, but
+                  it is explicitly created in `newSubscriptionExecution`.
+                  The reason we are doing this lazily is, because we don't have explicit startDeferred callback.
+                 */
                 CallStack callStack = new CallStack();
-//                System.out.println("new callstack : " + callStack.hashCode());
                 // on which level the fields are
                 int startLevel = k.getStartLevel();
                 // how many fields are deferred on this level
                 int fields = k.getFields();
                 if (startLevel > 1) {
-                    // parent level is considered dispatched all fields completed
+                    // parent level is considered dispatched and all fields completed
                     callStack.dispatchedLevels.add(startLevel - 1);
                     callStack.happenedExecuteObjectCallsPerLevel.set(startLevel - 2, 1);
                     callStack.happenedCompletionFinishedCountPerLevel.set(startLevel - 2, 1);
@@ -414,19 +347,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
 
-    private void resetCallStack(CallStack callStack) {
-        synchronized (callStack) {
-            callStack.clear();
-            callStack.chainedDLStack.clear();
-        }
-    }
-
-
     private boolean markLevelAsDispatchedIfReady(int level, CallStack callStack) {
         boolean ready = isLevelReady(level, callStack);
-//        System.out.println("markLevelAsDispatchedIfReady level: " + level + " ready: " + ready + " callstack: " + callStack.hashCode());
         if (ready) {
-            callStack.setDispatchedLevel(level);
+            if (!callStack.dispatchedLevels.add(level)) {
+                Assert.assertShouldNeverHappen("level " + level + " already dispatched");
+            }
             return true;
         }
         return false;
@@ -456,7 +382,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     void dispatch(int level, CallStack callStack) {
-//        System.out.println("dispatching at " + level);
         if (!enableDataLoaderChaining) {
             profiler.oldStrategyDispatchingAll(level);
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
