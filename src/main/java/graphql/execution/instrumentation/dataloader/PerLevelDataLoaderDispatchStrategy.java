@@ -17,6 +17,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -139,7 +140,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         private final LevelMap happenedCompletionFinishedCountPerLevel = new LevelMap();
         private final LevelMap happenedExecuteObjectCallsPerLevel = new LevelMap();
 
-        private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
+        private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
 
 
         public ChainedDLStack chainedDLStack = new ChainedDLStack();
@@ -228,8 +229,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void executeObjectOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         int curLevel = parameters.getPath().getLevel();
+//        System.out.println("completion finished for level " + curLevel);
         onCompletionFinished(curLevel, callStack);
     }
+
 
     private void onCompletionFinished(int level, CallStack callStack) {
         synchronized (callStack) {
@@ -241,6 +244,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             boolean levelReady;
             synchronized (callStack) {
                 if (callStack.dispatchedLevels.contains(currentLevel)) {
+//                        System.out.println("failed because already dispatched");
                     break;
                 }
                 levelReady = markLevelAsDispatchedIfReady(currentLevel, callStack);
@@ -248,12 +252,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             if (levelReady) {
                 dispatch(currentLevel, callStack);
             } else {
+//                    System.out.println("failed because level not ready");
                 break;
             }
             currentLevel++;
         }
 
     }
+
 
     @Override
     public void fieldFetched(ExecutionContext executionContext,
@@ -263,12 +269,20 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
         CallStack callStack = getCallStack(executionStrategyParameters);
         int level = executionStrategyParameters.getPath().getLevel();
-        boolean dispatchNeeded;
-        synchronized (callStack) {
-            callStack.happenedFetchCountPerLevel.increment(level, 1);
-            dispatchNeeded = markLevelAsDispatchedIfReady(level, callStack);
+        boolean dispatchNeeded = false;
+//        System.out.println("field fetched for level " + level + " path: " + executionStrategyParameters.getPath());
+        AlternativeCallContext deferredCallContext = executionStrategyParameters.getDeferredCallContext();
+        if (level == 1 || (deferredCallContext != null && level == deferredCallContext.getStartLevel())) {
+            synchronized (callStack) {
+                callStack.happenedFetchCountPerLevel.increment(level, 1);
+                dispatchNeeded = callStack.expectedFetchCountPerLevel.get(level) == callStack.happenedFetchCountPerLevel.get(level);
+                if (dispatchNeeded) {
+                    callStack.dispatchedLevels.add(level);
+                }
+            }
         }
         if (dispatchNeeded) {
+//            System.out.println("Success field fetch");
             dispatch(level, callStack);
         }
 
@@ -361,27 +375,25 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     private boolean isLevelReady(int level, CallStack callStack) {
         // a level with zero expectations can't be ready
-        int expectedFetchCount = callStack.expectedFetchCountPerLevel.get(level);
-        if (expectedFetchCount == 0) {
-            return false;
-        }
+//            int expectedFetchCount = callStack.expectedFetchCountPerLevel.get(level);
+//            if (expectedFetchCount == 0) {
+//                return false;
+//            }
 
-        if (expectedFetchCount != callStack.happenedFetchCountPerLevel.get(level)) {
-            return false;
-        }
-        if (level == 1) {
-            // for the root fields we just expect that they were all fetched
-            return true;
-        }
+//            if (expectedFetchCount != callStack.happenedFetchCountPerLevel.get(level)) {
+//                return false;
+//            }
 
         // we expect that parent has been dispatched and that all parents fields are completed
         // all parent fields completed means all parent parent on completions finished calls must have happened
+        int happenedExecuteObjectCalls = callStack.happenedExecuteObjectCallsPerLevel.get(level - 2);
         return callStack.dispatchedLevels.contains(level - 1) &&
-               callStack.happenedExecuteObjectCallsPerLevel.get(level - 2) == callStack.happenedCompletionFinishedCountPerLevel.get(level - 2);
+               happenedExecuteObjectCalls > 0 && happenedExecuteObjectCalls == callStack.happenedCompletionFinishedCountPerLevel.get(level - 2);
 
     }
 
     void dispatch(int level, CallStack callStack) {
+//        System.out.println("dispatching " + level);
         if (!enableDataLoaderChaining) {
             profiler.oldStrategyDispatchingAll(level);
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
@@ -392,9 +404,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     private void dispatchAll(DataLoaderRegistry dataLoaderRegistry, int level) {
+//        System.out.println("dispatch level " + level);
         for (DataLoader<?, ?> dataLoader : dataLoaderRegistry.getDataLoaders()) {
             dataLoader.dispatch().whenComplete((objects, throwable) -> {
                 if (objects != null && objects.size() > 0) {
+//                    System.out.println("dispatching " + objects.size() + " objects for level " + level);
                     Assert.assertNotNull(dataLoader.getName());
                     profiler.batchLoadedOldStrategy(dataLoader.getName(), level, objects.size());
                 }
