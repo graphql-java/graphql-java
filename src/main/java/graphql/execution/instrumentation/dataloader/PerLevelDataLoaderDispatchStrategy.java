@@ -97,7 +97,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 if (currentStateRef.compareAndSet(currentState, newState)) {
                     return currentState;
                 }
-                Thread.onSpinWait();
             }
         }
 
@@ -125,7 +124,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 if (currentStateRef.compareAndSet(currentState, newState)) {
                     return newDelayedInvocation;
                 }
-                Thread.onSpinWait();
             }
         }
 
@@ -261,7 +259,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             if (callStack.tryUpdateLevel(curLevel, currentState, currentState.increaseHappenedExecuteObjectCalls())) {
                 return;
             }
-            Thread.onSpinWait();
         }
     }
 
@@ -286,7 +283,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             if (callStack.tryUpdateLevel(level, currentState, currentState.increaseHappenedCompletionFinishedCount())) {
                 break;
             }
-            Thread.onSpinWait();
         }
 
         // due to synchronous DataFetcher the completion calls on higher levels
@@ -348,7 +344,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             if (callStack.tryUpdateLevel(0, currentState, currentState.increaseHappenedExecuteObjectCalls())) {
                 break;
             }
-            Thread.onSpinWait();
         }
         onCompletionFinished(0, callStack);
     }
