@@ -4,6 +4,7 @@ import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -14,16 +15,28 @@ import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderFactory;
 import org.dataloader.DataLoaderRegistry;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+@State(Scope.Benchmark)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(2)
 public class DataLoaderPerformance {
 
     static Owner o1 = new Owner("O-1", "Andi", List.of("P-1", "P-2", "P-3"));
@@ -560,6 +573,9 @@ public class DataLoaderPerformance {
 
     }
 
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void executeRequestWithDataLoaders(MyState myState, Blackhole blackhole) {
         DataLoader ownerDL = DataLoaderFactory.newDataLoader(ownerBatchLoader);
         DataLoader petDL = DataLoaderFactory.newDataLoader(petBatchLoader);
@@ -571,7 +587,7 @@ public class DataLoaderPerformance {
                 .dataLoaderRegistry(registry)
 //                .profileExecution(true)
                 .build();
-//        executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true);
+        executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true);
         ExecutionResult execute = myState.graphQL.execute(executionInput);
 //        ProfilerResult profilerResult = executionInput.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY);
 //        System.out.println("execute: " + execute);

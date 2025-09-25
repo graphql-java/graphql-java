@@ -72,9 +72,16 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 StateForLevel currentState = currentStateRef.get();
 
 
-                boolean dispatchingStarted = currentState != null && currentState.dispatchingStarted;
-                boolean dispatchingFinished = currentState != null && currentState.dispatchingFinished;
-                boolean currentlyDelayedDispatching = currentState != null && currentState.currentlyDelayedDispatching;
+                boolean dispatchingStarted = false;
+                boolean dispatchingFinished = false;
+                boolean currentlyDelayedDispatching = false;
+
+                if (currentState != null) {
+                    dispatchingStarted = currentState.dispatchingStarted;
+                    dispatchingFinished = currentState.dispatchingFinished;
+                    currentlyDelayedDispatching = currentState.currentlyDelayedDispatching;
+
+                }
 
                 if (!chained) {
                     if (normalDispatchOrDelayed) {
@@ -107,10 +114,16 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             while (true) {
                 StateForLevel currentState = currentStateRef.get();
 
+                boolean dispatchingStarted = false;
+                boolean dispatchingFinished = false;
+                boolean currentlyDelayedDispatching = false;
 
-                boolean dispatchingStarted = currentState != null && currentState.dispatchingStarted;
-                boolean dispatchingFinished = currentState != null && currentState.dispatchingFinished;
-                boolean currentlyDelayedDispatching = currentState != null && currentState.currentlyDelayedDispatching;
+                if (currentState != null) {
+                    dispatchingStarted = currentState.dispatchingStarted;
+                    dispatchingFinished = currentState.dispatchingFinished;
+                    currentlyDelayedDispatching = currentState.currentlyDelayedDispatching;
+
+                }
 
                 // we need to start a new delayed dispatching if
                 // the normal dispatching is finished and there is no currently delayed dispatching for this level
@@ -134,6 +147,35 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     private static class CallStack {
+
+        /**
+         * We track three things per level:
+         * - the number of execute object calls
+         * - the number of object completion calls
+         * - if the level is already dispatched
+         * <p/>
+         * The number of execute object calls is the number of times the execution
+         * of a field with sub selection (meaning it is an object) started.
+         * <p/>
+         * For each execute object call there will be one matching object completion call,
+         * indicating that the all fields in the sub selection have been fetched AND completed.
+         * Completion implies the fetched value is "resolved" (CompletableFuture is completed if it was a CF)
+         * and it the engine has processed it and called any needed subsequent execute object calls (if the result
+         * was none null and of Object of [Object] (or [[Object]] etc).
+         * <p/>
+         * Together we know a that a level is ready for dispatch if:
+         * - the parent was dispatched
+         * - the #executeObject == #completionFinished in the grandparent level.
+         * <p/>
+         * The second condition implies that all execute object calls in the parent level happened
+         * which again implies that all fetch fields in the current level have happened.
+         * <p/>
+         * For the first level we track only if all expected fetched field calls have happened.
+         */
+
+        /**
+         * The whole algo is impleted lock free and relies purely on CAS methods to handle concurrency.
+         */
 
         static class StateForLevel {
             private final int happenedCompletionFinishedCount;
