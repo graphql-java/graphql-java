@@ -18,6 +18,8 @@ import spock.lang.Unroll
 import java.util.concurrent.CompletableFuture
 
 import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.combineExecutionResults
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedExpensiveData
@@ -83,9 +85,7 @@ class DeferWithDataLoaderTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
-        if (exhaustedStrategy) {
-            executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
-        }
+        executionInput.getGraphQLContext().putAll(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)
 
@@ -109,7 +109,7 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
 
         where:
-        exhaustedStrategy << [false, true]
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
     }
 
     @Unroll
@@ -147,9 +147,7 @@ class DeferWithDataLoaderTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
-        if (exhaustedStrategy) {
-            executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
-        }
+        executionInput.getGraphQLContext().putAll(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)
 
@@ -189,7 +187,7 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 0
 
         where:
-        exhaustedStrategy << [false, true]
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
 
     }
 
@@ -215,9 +213,7 @@ class DeferWithDataLoaderTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
-        if (exhaustedStrategy) {
-            executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
-        }
+        executionInput.getGraphQLContext().putAll(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
 
 
         ExecutionResult result = graphQL.execute(executionInput)
@@ -249,7 +245,7 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 9
 
         where:
-        exhaustedStrategy << [false, true]
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
 
     }
 
@@ -287,9 +283,7 @@ class DeferWithDataLoaderTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
-        if (exhaustedStrategy) {
-            executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
-        }
+        executionInput.getGraphQLContext().putAll(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
 
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)
@@ -321,11 +315,12 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 0
 
         where:
-        exhaustedStrategy << [false, true]
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
 
     }
 
     @Unroll
+    @RepeatUntilFailure(maxAttempts = 5, ignoreRest = false)
     def "query with multiple deferred fields"() {
         given:
         def query = getExpensiveQuery(true)
@@ -351,6 +346,7 @@ class DeferWithDataLoaderTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
+        executionInput.getGraphQLContext().putAll(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)
 
@@ -378,12 +374,11 @@ class DeferWithDataLoaderTest extends Specification {
         combined.errors == null
         combined.data == expectedExpensiveData
 
-        // TODO: Why the load counters are only 1?
-        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == (contextKey != ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING ? 1 : 2)
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
         where:
-        exhaustedStrategy << [false, true]
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
 
     }
 
