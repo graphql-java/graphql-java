@@ -33,6 +33,8 @@ import java.util.concurrent.TimeUnit
 import java.util.stream.Collectors
 
 import static graphql.ExecutionInput.newExecutionInput
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class DataLoaderHangingTest extends Specification {
@@ -137,10 +139,11 @@ class DataLoaderHangingTest extends Specification {
         def futures = Async.ofExpectedSize(NUM_OF_REPS)
         for (int i = 0; i < NUM_OF_REPS; i++) {
             DataLoaderRegistry dataLoaderRegistry = mkNewDataLoaderRegistry(executor)
+            def contextMap = contextKey == null ? Collections.emptyMap() : [(contextKey): true]
 
             def result = graphql.executeAsync(newExecutionInput()
                     .dataLoaderRegistry(dataLoaderRegistry)
-                    .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining] as Map)
+                    .graphQLContext(contextMap)
                     .query("""
                     query getArtistsWithData {
                       listArtists(limit: 1) {
@@ -183,7 +186,7 @@ class DataLoaderHangingTest extends Specification {
                 .join()
 
         where:
-        enableDataLoaderChaining << [true, false]
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
 
     }
 
@@ -370,7 +373,7 @@ class DataLoaderHangingTest extends Specification {
         ExecutionInput executionInput = newExecutionInput()
                 .query(query)
                 .graphQLContext(["registry": registry])
-                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): false])
+                .graphQLContext([(ENABLE_DATA_LOADER_CHAINING): false])
                 .dataLoaderRegistry(registry)
                 .build()
 

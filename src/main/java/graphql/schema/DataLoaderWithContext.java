@@ -2,6 +2,7 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.execution.incremental.AlternativeCallContext;
+import graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import org.dataloader.DataLoader;
 import org.dataloader.DelegatingDataLoader;
@@ -37,6 +38,9 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
             int level = dfe.getExecutionStepInfo().getPath().getLevel();
             String path = dfe.getExecutionStepInfo().getPath().toString();
             ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderInvocation(path, level, delegate, dataLoaderName, key, alternativeCallContext);
+        } else if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof ExhaustedDataLoaderDispatchStrategy) {
+            AlternativeCallContext alternativeCallContext = dfeInternalState.getDeferredCallContext();
+            ((ExhaustedDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderInvocation(alternativeCallContext);
         }
         return result;
     }

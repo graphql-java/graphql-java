@@ -483,6 +483,11 @@ public class DataLoaderPerformance {
     static BatchLoader<String, Owner> ownerBatchLoader = list -> {
         List<Owner> collect = list.stream().map(key -> {
             Owner owner = owners.get(key);
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             return owner;
         }).collect(Collectors.toList());
         return CompletableFuture.completedFuture(collect);
@@ -490,6 +495,11 @@ public class DataLoaderPerformance {
     static BatchLoader<String, Pet> petBatchLoader = list -> {
         List<Pet> collect = list.stream().map(key -> {
             Pet owner = pets.get(key);
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
             return owner;
         }).collect(Collectors.toList());
         return CompletableFuture.completedFuture(collect);
@@ -532,20 +542,20 @@ public class DataLoaderPerformance {
                 });
                 DataFetcher petsDf = (env -> {
                     Owner owner = env.getSource();
-                    return env.getDataLoader(petDLName).loadMany((List) owner.petIds)
-                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
+                    return env.getDataLoader(petDLName).loadMany((List) owner.petIds);
+//                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
                 });
 
                 DataFetcher petFriendsDF = (env -> {
                     Pet pet = env.getSource();
-                    return env.getDataLoader(petDLName).loadMany((List) pet.friendsIds)
-                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
+                    return env.getDataLoader(petDLName).loadMany((List) pet.friendsIds);
+//                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
                 });
 
                 DataFetcher petOwnerDF = (env -> {
                     Pet pet = env.getSource();
-                    return env.getDataLoader(ownerDLName).load(pet.ownerId)
-                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
+                    return env.getDataLoader(ownerDLName).load(pet.ownerId);
+//                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
                 });
 
 

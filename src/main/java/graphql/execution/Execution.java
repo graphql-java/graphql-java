@@ -9,12 +9,15 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQL;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
+import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.Profiler;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
+import graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -261,6 +264,12 @@ public class Execution {
     private DataLoaderDispatchStrategy createDataLoaderDispatchStrategy(ExecutionContext executionContext, ExecutionStrategy executionStrategy) {
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
+        }
+        if (executionContext.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, false)) {
+            if (executionContext.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+                throw new GraphQLException("enabling data loader chaining and exhausted dispatching at the same time ambiguous");
+            }
+            return new ExhaustedDataLoaderDispatchStrategy(executionContext);
         }
         return new PerLevelDataLoaderDispatchStrategy(executionContext);
     }

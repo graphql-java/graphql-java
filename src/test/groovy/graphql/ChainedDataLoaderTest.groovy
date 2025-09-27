@@ -1,6 +1,5 @@
 package graphql
 
-
 import graphql.schema.DataFetcher
 import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
@@ -9,16 +8,20 @@ import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
+import spock.lang.Unroll
 
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.setEnableDataLoaderChaining
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.setEnableDataLoaderExhaustedDispatching
 import static java.util.concurrent.CompletableFuture.supplyAsync
 
 class ChainedDataLoaderTest extends Specification {
 
 
+    @Unroll
     def "chained data loaders"() {
         given:
         def sdl = '''
@@ -69,7 +72,7 @@ class ChainedDataLoaderTest extends Specification {
 
         def query = "{ dogName catName } "
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
-        setEnableDataLoaderChaining(ei.graphQLContext, true)
+        chainedDataLoaderOrExhaustedDispatcher ? setEnableDataLoaderChaining(ei.graphQLContext, true) : setEnableDataLoaderExhaustedDispatching(ei.graphQLContext, true)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -78,8 +81,12 @@ class ChainedDataLoaderTest extends Specification {
         then:
         er.data == [dogName: "Luna", catName: "Tiger"]
         batchLoadCalls == 2
+
+        where:
+        chainedDataLoaderOrExhaustedDispatcher << [true, false]
     }
 
+    @Unroll
     @RepeatUntilFailure(maxAttempts = 20, ignoreRest = false)
     def "parallel different data loaders"() {
         given:
@@ -161,7 +168,7 @@ class ChainedDataLoaderTest extends Specification {
 
         def query = "{ hello helloDelayed} "
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
-        setEnableDataLoaderChaining(ei.graphQLContext, true)
+        chainedDataLoaderOrExhaustedDispatcher ? setEnableDataLoaderChaining(ei.graphQLContext, true) : setEnableDataLoaderExhaustedDispatching(ei.graphQLContext, true)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -171,9 +178,14 @@ class ChainedDataLoaderTest extends Specification {
         er.data == [hello: "friendsLunakey1Skipperkey2", helloDelayed: "friendsLunakey1-delayedSkipperkey2-delayed"]
         batchLoadCalls.get() == 6
 
+        where:
+        chainedDataLoaderOrExhaustedDispatcher << [true, false]
+
+
     }
 
 
+    @Unroll
     def "more complicated chained data loader for one DF"() {
         given:
         def sdl = '''
@@ -251,7 +263,7 @@ class ChainedDataLoaderTest extends Specification {
 
         def query = "{ foo } "
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
-        setEnableDataLoaderChaining(ei.graphQLContext, true)
+        chainedDataLoaderOrExhaustedDispatcher ? setEnableDataLoaderChaining(ei.graphQLContext, true) : setEnableDataLoaderExhaustedDispatching(ei.graphQLContext, true)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -261,9 +273,13 @@ class ChainedDataLoaderTest extends Specification {
         er.data == [foo: "start-batchloader1-otherCF1-otherCF2-start-batchloader1-batchloader2-apply"]
         batchLoadCalls1 == 1
         batchLoadCalls2 == 1
+        where:
+        chainedDataLoaderOrExhaustedDispatcher << [true, false]
+
     }
 
 
+    @Unroll
     def "chained data loaders with an delayed data loader"() {
         given:
         def sdl = '''
@@ -320,7 +336,7 @@ class ChainedDataLoaderTest extends Specification {
 
         def query = "{ dogName catName } "
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
-        setEnableDataLoaderChaining(ei.graphQLContext, true)
+        chainedDataLoaderOrExhaustedDispatcher ? setEnableDataLoaderChaining(ei.graphQLContext, true) : setEnableDataLoaderExhaustedDispatching(ei.graphQLContext, true)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -329,8 +345,12 @@ class ChainedDataLoaderTest extends Specification {
         then:
         er.data == [dogName: "Luna2", catName: "Tiger2"]
         batchLoadCalls == 3
+        where:
+        chainedDataLoaderOrExhaustedDispatcher << [true, false]
+
     }
 
+    @Unroll
     def "chained data loaders with two delayed data loaders"() {
         given:
         def sdl = '''
@@ -382,7 +402,7 @@ class ChainedDataLoaderTest extends Specification {
 
         def eiBuilder = ExecutionInput.newExecutionInput(query)
         def ei = eiBuilder.dataLoaderRegistry(dataLoaderRegistry).build()
-        setEnableDataLoaderChaining(ei.graphQLContext, true);
+        chainedDataLoaderOrExhaustedDispatcher ? setEnableDataLoaderChaining(ei.graphQLContext, true) : setEnableDataLoaderExhaustedDispatching(ei.graphQLContext, true)
 
 
         when:
@@ -392,6 +412,10 @@ class ChainedDataLoaderTest extends Specification {
         then:
         er.data == [foo: "fooFirstValue", bar: "barFirstValue"]
         batchLoadCalls.get() == 1 || batchLoadCalls.get() == 2 // depending on timing, it can be 1 or 2 calls
+
+        where:
+        chainedDataLoaderOrExhaustedDispatcher << [true, false]
+
     }
 
     def "handling of chained DataLoaders is disabled by default"() {
@@ -451,6 +475,33 @@ class ChainedDataLoaderTest extends Specification {
         then:
         batchLoadCalls == 1
         !er.isDone()
+    }
+
+
+    def "setting chained and exhausted at the same time caused error"() {
+        given:
+        def sdl = '''
+
+        type Query {
+            echo:String
+        }
+        '''
+        def schema = TestUtil.schema(sdl, [:])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{echo} "
+        def ei = newExecutionInput(query).dataLoaderRegistry(new DataLoaderRegistry()).build()
+        setEnableDataLoaderChaining(ei.graphQLContext, true)
+        setEnableDataLoaderExhaustedDispatching(ei.graphQLContext, true)
+
+
+        when:
+        def er = graphQL.executeAsync(ei)
+        er.get()
+
+        then:
+        def e = thrown(ExecutionException)
+        e.getCause().getMessage() == "enabling data loader chaining and exhausted dispatching at the same time ambiguous"
     }
 
 
