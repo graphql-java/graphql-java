@@ -278,8 +278,7 @@ public class Execution {
         }
     }
 
-    private ExecutionResult mergeExtensionsBuilderIfPresent(ExecutionResult executionResult, GraphQLContext
-            graphQLContext) {
+    private ExecutionResult mergeExtensionsBuilderIfPresent(ExecutionResult executionResult, GraphQLContext graphQLContext) {
         Object builder = graphQLContext.get(ExtensionsBuilder.class);
         if (builder instanceof ExtensionsBuilder) {
             ExtensionsBuilder extensionsBuilder = (ExtensionsBuilder) builder;
