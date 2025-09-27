@@ -15,7 +15,9 @@ import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy;
+import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
@@ -262,8 +264,10 @@ public class Execution {
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }
-//        return new PerLevelDataLoaderDispatchStrategy(executionContext);
-        return new ExhaustedDataLoaderDispatchStrategy(executionContext);
+        if (executionContext.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, false)) {
+            return new ExhaustedDataLoaderDispatchStrategy(executionContext);
+        }
+        return new PerLevelDataLoaderDispatchStrategy(executionContext);
     }
 
 
@@ -274,7 +278,8 @@ public class Execution {
         }
     }
 
-    private ExecutionResult mergeExtensionsBuilderIfPresent(ExecutionResult executionResult, GraphQLContext graphQLContext) {
+    private ExecutionResult mergeExtensionsBuilderIfPresent(ExecutionResult executionResult, GraphQLContext
+            graphQLContext) {
         Object builder = graphQLContext.get(ExtensionsBuilder.class);
         if (builder instanceof ExtensionsBuilder) {
             ExtensionsBuilder extensionsBuilder = (ExtensionsBuilder) builder;

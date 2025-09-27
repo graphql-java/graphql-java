@@ -265,13 +265,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     }
 
 
-    public void newDataLoaderInvocation(String resultPath,
-                                        int level,
-                                        DataLoader dataLoader,
-                                        String dataLoaderName,
-                                        Object key,
-                                        @Nullable AlternativeCallContext alternativeCallContext) {
-//        DataLoaderInvocation dataLoaderInvocation = new DataLoaderInvocation(resultPath, level, dataLoader, dataLoaderName, key);
+    public void newDataLoaderInvocation(@Nullable AlternativeCallContext alternativeCallContext) {
         CallStack callStack = getCallStack(alternativeCallContext);
         newDataLoaderInvocationMaybeDispatch(callStack);
     }
