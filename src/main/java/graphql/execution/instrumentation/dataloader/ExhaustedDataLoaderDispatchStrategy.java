@@ -19,8 +19,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 
 @Internal
 @NullMarked
@@ -36,62 +34,100 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
 
     private static class CallStack {
 
+        // 30 bits for objectRunningCount
+        // 1 bit for dataLoaderToDispatch
+        // 1 bit for currentlyDispatching
 
-        static class State {
-            final int objectRunningCount;
-            final boolean dataLoaderToDispatch;
-            final boolean currentlyDispatching;
+        // Bit positions (from right to left)
+        static final int currentlyDispatchingShift = 0;
+        static final int dataLoaderToDispatchShift = 1;
+        static final int objectRunningCountShift = 2;
 
-            State(int objectRunningCount, boolean dataLoaderToDispatch, boolean currentlyDispatching) {
-                this.objectRunningCount = objectRunningCount;
-                this.dataLoaderToDispatch = dataLoaderToDispatch;
-                this.currentlyDispatching = currentlyDispatching;
-            }
-
-            public State copy() {
-                return new State(objectRunningCount, dataLoaderToDispatch, currentlyDispatching);
-            }
-
-            public State incrementObjectRunningCount() {
-                return new State(objectRunningCount + 1, dataLoaderToDispatch, currentlyDispatching);
-            }
-
-            public State decrementObjetRunningCount() {
-                return new State(objectRunningCount - 1, dataLoaderToDispatch, currentlyDispatching);
-            }
-
-            public State dataLoaderToDispatch() {
-                return new State(objectRunningCount, true, currentlyDispatching);
-            }
-
-            public State startDispatching() {
-                return new State(objectRunningCount, false, true);
-            }
-
-            public State stopDispatching() {
-                return new State(objectRunningCount, false, false);
-            }
+        // mask
+        static final int booleanMask = 1;
+        static final int objectRunningCountMask = (1 << 30) - 1;
 
 
-            @Override
-            public String toString() {
-                return "State{" +
-                       "objectRunningCount=" + objectRunningCount +
-                       ", dataLoaderToDispatch=" + dataLoaderToDispatch +
-                       '}';
+        public static int getObjectRunningCount(int state) {
+            return (state >> objectRunningCountShift) & objectRunningCountMask;
+        }
+
+        public static int setObjectRunningCount(int state, int objectRunningCount) {
+            return (state & ~(objectRunningCountMask << objectRunningCountShift)) |
+                   (objectRunningCount << objectRunningCountShift);
+        }
+
+        public static int setDataLoaderToDispatch(int state, boolean dataLoaderToDispatch) {
+            return (state & ~(booleanMask << dataLoaderToDispatchShift)) |
+                   ((dataLoaderToDispatch ? 1 : 0) << dataLoaderToDispatchShift);
+        }
+
+        public static int setCurrentlyDispatching(int state, boolean currentlyDispatching) {
+            return (state & ~(booleanMask << currentlyDispatchingShift)) |
+                   ((currentlyDispatching ? 1 : 0) << currentlyDispatchingShift);
+        }
+
+
+        public static boolean getDataLoaderToDispatch(int state) {
+            return ((state >> dataLoaderToDispatchShift) & booleanMask) != 0;
+        }
+
+        public static boolean getCurrentlyDispatching(int state) {
+            return ((state >> currentlyDispatchingShift) & booleanMask) != 0;
+        }
+
+//        public static int newState(int objectRunningCount, boolean dataLoaderToDispatch, boolean currentlyDispatching) {
+//            return (objectRunningCount << objectRunningCountShift) |
+//                   ((dataLoaderToDispatch ? 1 : 0) << dataLoaderToDispatchShift) |
+//                   ((currentlyDispatching ? 1 : 0) << currentlyDispatchingShift);
+//        }
+
+        public void incrementObjectRunningCount() {
+            while (true) {
+                int oldState = getState();
+                int objectRunningCount = getObjectRunningCount(oldState);
+                int newState = setObjectRunningCount(oldState, objectRunningCount + 1);
+                if (tryUpdateState(oldState, newState)) {
+                    return;
+                }
             }
         }
 
-        private final AtomicLong state = new AtomicLong();
-        private final AtomicReference<State> stateRef = new AtomicReference<>(new State(0, false, false));
-
-        public State getState() {
-            return Assert.assertNotNull(stateRef.get());
+        public int decrementObjectRunningCount() {
+            while (true) {
+                int oldState = getState();
+                int objectRunningCount = getObjectRunningCount(oldState);
+                int newState = setObjectRunningCount(oldState, objectRunningCount - 1);
+                if (tryUpdateState(oldState, newState)) {
+                    return newState;
+                }
+            }
         }
 
-        public boolean tryUpdateState(State oldState, State newState) {
-            System.out.println("updateState: " + oldState + " -> " + newState);
-            return stateRef.compareAndSet(oldState, newState);
+        public int dataLoaderToDispatch() {
+            while (true) {
+                int oldState = getState();
+                int newState = setDataLoaderToDispatch(oldState, true);
+                if (tryUpdateState(oldState, newState)) {
+                    return newState;
+                }
+            }
+        }
+
+        public static String printState(int state) {
+            return "objectRunningCount: " + getObjectRunningCount(state) +
+                   ",dataLoaderToDispatch: " + getDataLoaderToDispatch(state) +
+                   ",currentlyDispatching: " + getCurrentlyDispatching(state);
+        }
+
+        private final AtomicInteger state = new AtomicInteger();
+
+        public int getState() {
+            return state.get();
+        }
+
+        public boolean tryUpdateState(int oldState, int newState) {
+            return state.compareAndSet(oldState, newState);
         }
 
         private final AtomicInteger deferredFragmentRootFieldsCompleted = new AtomicInteger();
@@ -102,7 +138,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
 
         public void clear() {
             deferredFragmentRootFieldsCompleted.set(0);
-            stateRef.set(new State(0, false, false));
+            state.set(0);
         }
     }
 
@@ -118,8 +154,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
         // no concurrency access happening
-        CallStack.State state = initialCallStack.getState();
-        Assert.assertTrue(initialCallStack.tryUpdateState(state, state.incrementObjectRunningCount()));
+        initialCallStack.incrementObjectRunningCount();
     }
 
     @Override
@@ -132,21 +167,15 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     public void executionSerialStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         callStack.clear();
-        CallStack.State state = callStack.getState();
         // no concurrency access happening
-        Assert.assertTrue(callStack.tryUpdateState(state, state.incrementObjectRunningCount()));
+        callStack.incrementObjectRunningCount();
     }
 
 
     @Override
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         CallStack callStack = getCallStack(parameters);
-        while (true) {
-            CallStack.State state = callStack.getState();
-            if (callStack.tryUpdateState(state, state.incrementObjectRunningCount())) {
-                break;
-            }
-        }
+        callStack.incrementObjectRunningCount();
     }
 
 
@@ -189,52 +218,33 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
 
 
     private void decrementObjectRunningAndMaybeDispatch(CallStack callStack) {
-        CallStack.State oldState;
-        CallStack.State newState;
-        while (true) {
-            oldState = callStack.getState();
-            newState = oldState.decrementObjetRunningCount();
-            if (callStack.tryUpdateState(oldState, newState)) {
-                break;
-            }
-        }
+        int newState = callStack.decrementObjectRunningCount();
         // this means we have not fetching running and we can execute
-        if (newState.objectRunningCount == 0 && !newState.currentlyDispatching) {
+        if (CallStack.getObjectRunningCount(newState) == 0 && !CallStack.getCurrentlyDispatching(newState)) {
             dispatchImpl(callStack);
         }
     }
 
     private void newDataLoaderInvocationMaybeDispatch(CallStack callStack) {
-        CallStack.State oldState;
-        CallStack.State newState;
-        while (true) {
-            oldState = callStack.getState();
-            newState = oldState.dataLoaderToDispatch();
-            if (callStack.tryUpdateState(oldState, newState)) {
-                break;
-            }
-        }
-//        System.out.println("new data loader invocation maybe with state: " + newState);
+        int newState = callStack.dataLoaderToDispatch();
         // this means we are not waiting for some fetching to be finished and we need to dispatch
-        if (newState.objectRunningCount == 0 && !newState.currentlyDispatching) {
+        if (CallStack.getObjectRunningCount(newState) == 0 && !CallStack.getCurrentlyDispatching(newState)) {
             dispatchImpl(callStack);
         }
-
     }
 
 
     private void dispatchImpl(CallStack callStack) {
-
-        CallStack.State oldState;
         while (true) {
-            oldState = callStack.getState();
-            if (!oldState.dataLoaderToDispatch) {
-                CallStack.State newState = oldState.stopDispatching();
+            int oldState = callStack.getState();
+            if (!CallStack.getDataLoaderToDispatch(oldState)) {
+                int newState = CallStack.setCurrentlyDispatching(oldState, false);
                 if (callStack.tryUpdateState(oldState, newState)) {
                     return;
                 }
             }
-            CallStack.State newState = oldState.startDispatching();
+            int newState = CallStack.setCurrentlyDispatching(oldState, true);
+            newState = CallStack.setDataLoaderToDispatch(newState, false);
             if (callStack.tryUpdateState(oldState, newState)) {
                 break;
             }
