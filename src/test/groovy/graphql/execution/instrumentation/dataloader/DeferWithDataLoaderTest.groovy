@@ -13,6 +13,7 @@ import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 
@@ -348,7 +349,8 @@ class DeferWithDataLoaderTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
-    @RepeatUntilFailure(maxAttempts = 50, ignoreRest = false)
+    @Unroll
+    @RepeatUntilFailure(maxAttempts = 20, ignoreRest = false)
     def "dataloader in initial result and chained dataloader inside nested defer block"() {
         given:
         def sdl = '''
@@ -446,7 +448,7 @@ class DeferWithDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
         def ei = ExecutionInput.newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
         ei.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
-        ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true)
+        dataLoaderChainingOrExhaustedDispatching ? ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true) : ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
 
         when:
         CompletableFuture<IncrementalExecutionResult> erCF = graphQL.executeAsync(ei)
@@ -476,6 +478,9 @@ class DeferWithDataLoaderTest extends Specification {
                         [address: "Address 3"]
                 ]
         )
+
+        where:
+        dataLoaderChainingOrExhaustedDispatching << [true, false]
 
     }
 

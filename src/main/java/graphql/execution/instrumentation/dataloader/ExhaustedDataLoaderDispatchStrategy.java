@@ -47,7 +47,6 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
         static final int booleanMask = 1;
         static final int objectRunningCountMask = (1 << 30) - 1;
 
-
         public static int getObjectRunningCount(int state) {
             return (state >> objectRunningCountShift) & objectRunningCountMask;
         }
@@ -76,11 +75,6 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
             return ((state >> currentlyDispatchingShift) & booleanMask) != 0;
         }
 
-//        public static int newState(int objectRunningCount, boolean dataLoaderToDispatch, boolean currentlyDispatching) {
-//            return (objectRunningCount << objectRunningCountShift) |
-//                   ((dataLoaderToDispatch ? 1 : 0) << dataLoaderToDispatchShift) |
-//                   ((currentlyDispatching ? 1 : 0) << currentlyDispatchingShift);
-//        }
 
         public void incrementObjectRunningCount() {
             while (true) {
@@ -114,6 +108,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
             }
         }
 
+        // for debugging
         public static String printState(int state) {
             return "objectRunningCount: " + getObjectRunningCount(state) +
                    ",dataLoaderToDispatch: " + getDataLoaderToDispatch(state) +
@@ -183,6 +178,13 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     public void newSubscriptionExecution(AlternativeCallContext alternativeCallContext) {
         CallStack callStack = new CallStack();
         alternativeCallContextMap.put(alternativeCallContext, callStack);
+        callStack.incrementObjectRunningCount();
+    }
+
+    @Override
+    public void subscriptionEventCompletionDone(AlternativeCallContext alternativeCallContext) {
+        CallStack callStack = getCallStack(alternativeCallContext);
+        decrementObjectRunningAndMaybeDispatch(callStack);
     }
 
     @Override
