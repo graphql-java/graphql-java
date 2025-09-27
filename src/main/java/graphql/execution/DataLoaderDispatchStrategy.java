@@ -64,4 +64,8 @@ public interface DataLoaderDispatchStrategy {
     default void subscriptionEventCompletionDone(AlternativeCallContext alternativeCallContext) {
 
     }
+
+    default void finishedFetching(ExecutionContext executionContext, ExecutionStrategyParameters newParameters) {
+
+    }
 }

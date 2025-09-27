@@ -15,7 +15,6 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.incremental.AlternativeCallContext;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -233,9 +232,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         if (dataLoader == null) {
             return null;
         }
-        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
-            return dataLoader;
-        }
+//        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+//            return dataLoader;
+//        }
         return new DataLoaderWithContext<>(this, dataLoaderName, dataLoader);
     }
 

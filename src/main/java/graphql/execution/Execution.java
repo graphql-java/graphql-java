@@ -15,7 +15,7 @@ import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
+import graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
@@ -262,7 +262,8 @@ public class Execution {
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }
-        return new PerLevelDataLoaderDispatchStrategy(executionContext);
+//        return new PerLevelDataLoaderDispatchStrategy(executionContext);
+        return new ExhaustedDataLoaderDispatchStrategy(executionContext);
     }
 
 

@@ -71,6 +71,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         dataLoaderDispatcherStrategy.executionSerialStrategy(executionContext, newParameters);
 
         Object fieldWithInfo = resolveFieldWithInfo(executionContext, newParameters);
+        dataLoaderDispatcherStrategy.finishedFetching(executionContext, newParameters);
         if (fieldWithInfo instanceof CompletableFuture) {
             //noinspection unchecked
             return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {

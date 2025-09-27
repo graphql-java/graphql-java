@@ -391,8 +391,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     @Override
-    public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable
-            throwable, ExecutionStrategyParameters parameters) {
+    public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable throwable, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         int deferredFragmentRootFieldsCompleted = callStack.deferredFragmentRootFieldsCompleted.incrementAndGet();
         Assert.assertNotNull(parameters.getDeferredCallContext());
