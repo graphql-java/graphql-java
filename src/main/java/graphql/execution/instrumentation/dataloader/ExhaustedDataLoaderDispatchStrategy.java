@@ -6,7 +6,6 @@ import graphql.Profiler;
 import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
-import graphql.execution.FieldValueInfo;
 import graphql.execution.incremental.AlternativeCallContext;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
@@ -76,13 +75,13 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
         }
 
 
-        public void incrementObjectRunningCount() {
+        public int incrementObjectRunningCount() {
             while (true) {
                 int oldState = getState();
                 int objectRunningCount = getObjectRunningCount(oldState);
                 int newState = setObjectRunningCount(oldState, objectRunningCount + 1);
                 if (tryUpdateState(oldState, newState)) {
-                    return;
+                    return newState;
                 }
             }
         }
@@ -149,7 +148,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
         // no concurrency access happening
-        initialCallStack.incrementObjectRunningCount();
+        int newState = initialCallStack.incrementObjectRunningCount();
     }
 
     @Override
@@ -170,7 +169,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     @Override
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         CallStack callStack = getCallStack(parameters);
-        callStack.incrementObjectRunningCount();
+        int newState = callStack.incrementObjectRunningCount();
     }
 
 
@@ -188,14 +187,24 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     }
 
     @Override
-    public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable throwable, ExecutionStrategyParameters parameters) {
+    public void deferFieldFetched(ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         int deferredFragmentRootFieldsCompleted = callStack.deferredFragmentRootFieldsCompleted.incrementAndGet();
         Assert.assertNotNull(parameters.getDeferredCallContext());
         if (deferredFragmentRootFieldsCompleted == parameters.getDeferredCallContext().getFields()) {
             decrementObjectRunningAndMaybeDispatch(callStack);
         }
+    }
 
+    @Override
+    public void startComplete(ExecutionStrategyParameters parameters) {
+        getCallStack(parameters).incrementObjectRunningCount();
+    }
+
+    @Override
+    public void stopComplete(ExecutionStrategyParameters parameters) {
+        CallStack callStack = getCallStack(parameters);
+        decrementObjectRunningAndMaybeDispatch(callStack);
     }
 
     private CallStack getCallStack(ExecutionStrategyParameters parameters) {
@@ -213,6 +222,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
                   The reason we are doing this lazily is, because we don't have explicit startDeferred callback.
                  */
                 CallStack callStack = new CallStack();
+                callStack.incrementObjectRunningCount();
                 return callStack;
             });
         }

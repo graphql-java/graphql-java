@@ -361,15 +361,21 @@ public abstract class ExecutionStrategy {
         Object fetchedValueObj = fetchField(executionContext, parameters);
         if (fetchedValueObj instanceof CompletableFuture) {
             CompletableFuture<Object> fetchFieldFuture = (CompletableFuture<Object>) fetchedValueObj;
-            CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
-                    completeField(fieldDef, executionContext, parameters, fetchedValue));
+            CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) -> {
+                executionContext.getDataLoaderDispatcherStrategy().startComplete(parameters);
+                FieldValueInfo completeFieldResult = completeField(fieldDef, executionContext, parameters, fetchedValue);
+                executionContext.getDataLoaderDispatcherStrategy().stopComplete(parameters);
+                return completeFieldResult;
+            });
 
             fieldCtx.onDispatched();
             result.whenComplete(fieldCtx::onCompleted);
             return result;
         } else {
             try {
+                executionContext.getDataLoaderDispatcherStrategy().startComplete(parameters);
                 FieldValueInfo fieldValueInfo = completeField(fieldDef, executionContext, parameters, fetchedValueObj);
+                executionContext.getDataLoaderDispatcherStrategy().stopComplete(parameters);
                 fieldCtx.onDispatched();
                 fieldCtx.onCompleted(FetchedValue.getFetchedValue(fetchedValueObj), null);
                 return fieldValueInfo;

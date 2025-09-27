@@ -61,6 +61,7 @@ class DeferWithDataLoaderTest extends Specification {
         }
     }
 
+    @Unroll
     def "query with single deferred field"() {
         given:
         def query = getQuery(true, false)
@@ -82,6 +83,9 @@ class DeferWithDataLoaderTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
+        if (exhaustedStrategy) {
+            executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
+        }
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)
 
@@ -103,8 +107,12 @@ class DeferWithDataLoaderTest extends Specification {
 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+
+        where:
+        exhaustedStrategy << [false, true]
     }
 
+    @Unroll
     def "multiple fields on same defer block"() {
         given:
         def query = """
@@ -139,6 +147,9 @@ class DeferWithDataLoaderTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
+        if (exhaustedStrategy) {
+            executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
+        }
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)
 
@@ -176,8 +187,13 @@ class DeferWithDataLoaderTest extends Specification {
         ]
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 0
+
+        where:
+        exhaustedStrategy << [false, true]
+
     }
 
+    @Unroll
     def "query with nested deferred fields"() {
         given:
         def query = getQuery(true, true)
@@ -199,6 +215,10 @@ class DeferWithDataLoaderTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
+        if (exhaustedStrategy) {
+            executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
+        }
+
 
         ExecutionResult result = graphQL.execute(executionInput)
 
@@ -227,8 +247,13 @@ class DeferWithDataLoaderTest extends Specification {
 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 9
+
+        where:
+        exhaustedStrategy << [false, true]
+
     }
 
+    @Unroll
     def "query with top-level deferred field"() {
         given:
         def query = """
@@ -242,7 +267,7 @@ class DeferWithDataLoaderTest extends Specification {
                     expensiveShops {
                         name
                     }
-                }
+               }
             }
 """
 
@@ -262,6 +287,10 @@ class DeferWithDataLoaderTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
+        if (exhaustedStrategy) {
+            executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
+        }
+
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)
 
@@ -290,8 +319,13 @@ class DeferWithDataLoaderTest extends Specification {
 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 0
+
+        where:
+        exhaustedStrategy << [false, true]
+
     }
 
+    @Unroll
     def "query with multiple deferred fields"() {
         given:
         def query = getExpensiveQuery(true)
@@ -347,6 +381,10 @@ class DeferWithDataLoaderTest extends Specification {
         // TODO: Why the load counters are only 1?
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+
+        where:
+        exhaustedStrategy << [false, true]
+
     }
 
     @Unroll
