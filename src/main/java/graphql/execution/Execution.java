@@ -9,6 +9,7 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQL;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
+import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.Profiler;
 import graphql.execution.incremental.IncrementalCallState;
@@ -265,6 +266,9 @@ public class Execution {
             return DataLoaderDispatchStrategy.NO_OP;
         }
         if (executionContext.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, false)) {
+            if (executionContext.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+                throw new GraphQLException("enabling data loader chaining and exhausted dispatching at the same time ambiguous");
+            }
             return new ExhaustedDataLoaderDispatchStrategy(executionContext);
         }
         return new PerLevelDataLoaderDispatchStrategy(executionContext);
