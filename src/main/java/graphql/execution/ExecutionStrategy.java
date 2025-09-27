@@ -373,9 +373,7 @@ public abstract class ExecutionStrategy {
             return result;
         } else {
             try {
-                executionContext.getDataLoaderDispatcherStrategy().startComplete(parameters);
                 FieldValueInfo fieldValueInfo = completeField(fieldDef, executionContext, parameters, fetchedValueObj);
-                executionContext.getDataLoaderDispatcherStrategy().stopComplete(parameters);
                 fieldCtx.onDispatched();
                 fieldCtx.onCompleted(FetchedValue.getFetchedValue(fetchedValueObj), null);
                 return fieldValueInfo;
