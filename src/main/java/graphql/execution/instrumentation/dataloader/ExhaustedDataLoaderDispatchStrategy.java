@@ -147,8 +147,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
         Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
-        // no concurrency access happening
-        int newState = initialCallStack.incrementObjectRunningCount();
+        initialCallStack.incrementObjectRunningCount();
     }
 
     @Override
@@ -161,17 +160,8 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     public void executionSerialStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         callStack.clear();
-        // no concurrency access happening
         callStack.incrementObjectRunningCount();
     }
-
-
-    @Override
-    public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, int fieldCount) {
-        CallStack callStack = getCallStack(parameters);
-        int newState = callStack.incrementObjectRunningCount();
-    }
-
 
     @Override
     public void newSubscriptionExecution(AlternativeCallContext alternativeCallContext) {
