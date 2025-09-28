@@ -97,16 +97,6 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
             }
         }
 
-        public int dataLoaderToDispatch() {
-            while (true) {
-                int oldState = getState();
-                int newState = setDataLoaderToDispatch(oldState, true);
-                if (tryUpdateState(oldState, newState)) {
-                    return newState;
-                }
-            }
-        }
-
         // for debugging
         public static String printState(int state) {
             return "objectRunningCount: " + getObjectRunningCount(state) +
@@ -221,16 +211,26 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
 
     private void decrementObjectRunningAndMaybeDispatch(CallStack callStack) {
         int newState = callStack.decrementObjectRunningCount();
-        // this means we have not fetching running and we can execute
-        if (CallStack.getObjectRunningCount(newState) == 0 && !CallStack.getCurrentlyDispatching(newState)) {
+        if (CallStack.getObjectRunningCount(newState) == 0 && CallStack.getDataLoaderToDispatch(newState) && !CallStack.getCurrentlyDispatching(newState)) {
             dispatchImpl(callStack);
         }
     }
 
     private void newDataLoaderInvocationMaybeDispatch(CallStack callStack) {
-        int newState = callStack.dataLoaderToDispatch();
-        // this means we are not waiting for some fetching to be finished and we need to dispatch
-        if (CallStack.getObjectRunningCount(newState) == 0 && !CallStack.getCurrentlyDispatching(newState)) {
+        int currentState;
+        while (true) {
+            int oldState = callStack.getState();
+            if (CallStack.getDataLoaderToDispatch(oldState)) {
+                return;
+            }
+            int newState = CallStack.setDataLoaderToDispatch(oldState, true);
+            if (callStack.tryUpdateState(oldState, newState)) {
+                currentState = newState;
+                break;
+            }
+        }
+
+        if (CallStack.getObjectRunningCount(currentState) == 0 && !CallStack.getCurrentlyDispatching(currentState)) {
             dispatchImpl(callStack);
         }
     }
