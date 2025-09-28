@@ -590,10 +590,26 @@ public class DataLoaderPerformance {
         executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true);
         ExecutionResult execute = myState.graphQL.execute(executionInput);
 //        ProfilerResult profilerResult = executionInput.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY);
-//        System.out.println(profilerResult.shortSummaryMap());
+//        System.out.println("execute: " + execute);
         Assert.assertTrue(execute.isDataPresent());
         Assert.assertTrue(execute.getErrors().isEmpty());
         blackhole.consume(execute);
+    }
+
+    public static void main(String[] args) {
+        DataLoaderPerformance dataLoaderPerformance = new DataLoaderPerformance();
+        MyState myState = new MyState();
+        myState.setup();
+        Blackhole blackhole = new Blackhole("Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
+        for (int i = 0; i < 1; i++) {
+            dataLoaderPerformance.executeRequestWithDataLoaders(myState, blackhole);
+        }
+//        System.out.println(PerLevelDataLoaderDispatchStrategy.fieldFetchedCount);
+//        System.out.println(PerLevelDataLoaderDispatchStrategy.onCompletionFinishedCount);
+//        System.out.println(PerLevelDataLoaderDispatchStrategy.isReadyCounter);
+//        System.out.println(Duration.ofNanos(PerLevelDataLoaderDispatchStrategy.isReadyCounterNS.get()).toMillis());
+
+
     }
 
 
