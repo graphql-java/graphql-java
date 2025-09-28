@@ -1,4 +1,4 @@
-package graphql
+package graphql.archunit
 
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.core.importer.ImportOption
@@ -12,10 +12,6 @@ class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
             "graphql.AssertException",
-            "graphql.Directives",
-            "graphql.ErrorClassification",
-            "graphql.ErrorType",
-            "graphql.ExceptionWhileDataFetching",
             "graphql.ExecutionResult",
             "graphql.GraphQLContext",
             "graphql.GraphQLError",
@@ -227,14 +223,11 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.DefaultGraphqlTypeComparatorRegistry",
             "graphql.schema.DelegatingDataFetchingEnvironment",
             "graphql.schema.FieldCoordinates",
-            "graphql.schema.GraphQLAppliedDirective",
             "graphql.schema.GraphQLAppliedDirectiveArgument",
             "graphql.schema.GraphQLArgument",
-            "graphql.schema.GraphQLCodeRegistry",
             "graphql.schema.GraphQLCompositeType",
             "graphql.schema.GraphQLDirective",
             "graphql.schema.GraphQLDirectiveContainer",
-            "graphql.schema.GraphQLEnumType",
             "graphql.schema.GraphQLEnumValueDefinition",
             "graphql.schema.GraphQLFieldDefinition",
             "graphql.schema.GraphQLFieldsContainer",
@@ -246,9 +239,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.GraphQLInputType",
             "graphql.schema.GraphQLInputValueDefinition",
             "graphql.schema.GraphQLInterfaceType",
-            "graphql.schema.GraphQLList",
             "graphql.schema.GraphQLModifiedType",
-            "graphql.schema.GraphQLNamedInputType",
             "graphql.schema.GraphQLNamedOutputType",
             "graphql.schema.GraphQLNamedSchemaElement",
             "graphql.schema.GraphQLNamedType",
@@ -256,21 +247,16 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.GraphQLNullableType",
             "graphql.schema.GraphQLObjectType",
             "graphql.schema.GraphQLOutputType",
-            "graphql.schema.GraphQLScalarType",
-            "graphql.schema.GraphQLSchema",
             "graphql.schema.GraphQLSchemaElement",
-            "graphql.schema.GraphQLType",
             "graphql.schema.GraphQLTypeReference",
             "graphql.schema.GraphQLTypeUtil",
             "graphql.schema.GraphQLTypeVisitor",
             "graphql.schema.GraphQLTypeVisitorStub",
-            "graphql.schema.GraphQLUnionType",
             "graphql.schema.GraphQLUnmodifiedType",
             "graphql.schema.GraphqlElementParentTree",
             "graphql.schema.GraphqlTypeComparatorEnvironment",
             "graphql.schema.GraphqlTypeComparatorRegistry",
             "graphql.schema.InputValueWithState",
-            "graphql.schema.PropertyDataFetcher",
             "graphql.schema.SchemaElementChildrenContainer",
             "graphql.schema.SchemaTransformer",
             "graphql.schema.SchemaTraverser",
