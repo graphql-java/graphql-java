@@ -10,6 +10,8 @@ import org.jspecify.annotations.NullMarked;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static graphql.execution.Async.toCompletableFuture;
+
 /**
  * The CachingDocumentProvider allows previously parsed and validated operations to be cached and
  * hence re-used.  This can lead to significant time savings, especially for large operations.
@@ -56,11 +58,11 @@ public class CachingDocumentProvider implements PreparsedDocumentProvider {
     public CompletableFuture<PreparsedDocumentEntry> getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
         if (documentCache.isNoop()) {
             // saves creating keys and doing a lookup that will just call this function anyway
-            return CompletableFuture.completedFuture(parseAndValidateFunction.apply(executionInput));
+            return toCompletableFuture(parseAndValidateFunction.apply(executionInput));
         }
         DocumentCache.DocumentCacheKey cacheKey = new DocumentCache.DocumentCacheKey(executionInput.getQuery(), executionInput.getOperationName(), executionInput.getLocale());
-        PreparsedDocumentEntry cacheEntry = documentCache.get(cacheKey, key -> parseAndValidateFunction.apply(executionInput));
-        return CompletableFuture.completedFuture(cacheEntry);
+        Object cacheEntry = documentCache.get(cacheKey, key -> parseAndValidateFunction.apply(executionInput));
+        return toCompletableFuture(cacheEntry);
     }
 
 }

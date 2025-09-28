@@ -1,6 +1,5 @@
 package graphql.execution.preparsed.caching
 
-
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Ticker
 import graphql.ExecutionInput
@@ -12,9 +11,11 @@ import graphql.parser.Parser
 import spock.lang.Specification
 
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
 import static graphql.ExecutionInput.newExecutionInput
+import static graphql.execution.preparsed.caching.DocumentCache.DocumentCacheKey
 
 class CachingDocumentProviderTest extends Specification {
     private String heroQuery1
@@ -160,11 +161,14 @@ class CachingDocumentProviderTest extends Specification {
 
         def cache = new DocumentCache() {
             // not really useful in production since its unbounded
-            def map = new HashMap<DocumentCache.DocumentCacheKey,PreparsedDocumentEntry>()
+            def map = new HashMap<DocumentCacheKey, PreparsedDocumentEntry>()
 
             @Override
-            PreparsedDocumentEntry get(DocumentCache.DocumentCacheKey key, Function<DocumentCache.DocumentCacheKey, PreparsedDocumentEntry> mappingFunction) {
-                return map.computeIfAbsent(key,mappingFunction)
+            Object get(DocumentCacheKey key, Function<DocumentCacheKey, PreparsedDocumentEntry> mappingFunction) {
+                // we can have async values
+                return CompletableFuture.supplyAsync {
+                    return map.computeIfAbsent(key, mappingFunction)
+                }
             }
 
             @Override
@@ -289,7 +293,7 @@ class CachingDocumentProviderTest extends Specification {
         def caffeineCache = Caffeine.newBuilder()
                 .ticker(ticker)
                 .expireAfterAccess(Duration.ofMinutes(2))
-                .<DocumentCache.DocumentCacheKey, PreparsedDocumentEntry> build()
+                .<DocumentCacheKey, PreparsedDocumentEntry> build()
         def documentCache = new CaffeineDocumentCache(caffeineCache)
 
         // note this is a custom caffeine instance pass in

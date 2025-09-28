@@ -1,5 +1,6 @@
 package graphql.execution.preparsed.caching;
 
+import graphql.DuckTyped;
 import graphql.PublicApi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import org.jspecify.annotations.NullMarked;
@@ -17,14 +18,18 @@ import java.util.function.Function;
 @NullMarked
 public interface DocumentCache {
     /**
-     * Called to get a document that has previously been parsed ad validated.
+     * Called to get a document that has previously been parsed ad validated.  The return value of this method
+     * can be either a {@link PreparsedDocumentEntry} or a {@link java.util.concurrent.CompletableFuture} promise
+     * to a {@link PreparsedDocumentEntry}.  This allows caches that are in memory to return direct values OR
+     * if the cache is distributed, it can return a promise to a value.
      *
      * @param key             the cache key
      * @param mappingFunction if the value is missing in cache this function can be called to create a value
      *
-     * @return a non null document entry
+     * @return a non-null {@link PreparsedDocumentEntry} or a promise to one via a {@link java.util.concurrent.CompletableFuture}
      */
-    PreparsedDocumentEntry get(DocumentCacheKey key, Function<DocumentCacheKey, PreparsedDocumentEntry> mappingFunction);
+    @DuckTyped(shape = "PreparsedDocumentEntry | CompletableFuture<PreparsedDocumentEntry")
+    Object get(DocumentCacheKey key, Function<DocumentCacheKey, PreparsedDocumentEntry> mappingFunction);
 
     /**
      * @return true if the cache in fact does no caching otherwise false.  This helps the implementation optimise how the cache is used or not.
@@ -35,6 +40,7 @@ public interface DocumentCache {
      * Called to clear the cache.  If your implementation doesn't support this, then just no op the method
      */
     void invalidateAll();
+
     /**
      * This represents the key to the document cache
      */
