@@ -64,4 +64,20 @@ public interface DataLoaderDispatchStrategy {
     default void subscriptionEventCompletionDone(AlternativeCallContext alternativeCallContext) {
 
     }
+
+    default void finishedFetching(ExecutionContext executionContext, ExecutionStrategyParameters newParameters) {
+
+    }
+
+    default void deferFieldFetched(ExecutionStrategyParameters executionStrategyParameters) {
+
+    }
+
+    default void startComplete(ExecutionStrategyParameters parameters) {
+
+    }
+
+    default void stopComplete(ExecutionStrategyParameters parameters) {
+
+    }
 }

@@ -1,6 +1,6 @@
 package graphql
 
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
+
 import graphql.schema.DataFetcher
 import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
@@ -11,6 +11,9 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
+
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
 
 class MutationTest extends Specification {
 
@@ -162,6 +165,7 @@ class MutationTest extends Specification {
         ]
     }
 
+    @Unroll
     def "simple async mutation with DataLoader"() {
         def sdl = """
             type Query {
@@ -214,7 +218,8 @@ class MutationTest extends Specification {
                 plus2(arg:10)
                 plus3(arg:10)
              }
-        """).dataLoaderRegistry(dlReg).build()
+        """).graphQLContext(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
+                .dataLoaderRegistry(dlReg).build()
         when:
         def er = graphQL.execute(ei)
 
@@ -225,6 +230,8 @@ class MutationTest extends Specification {
                 plus2: 12,
                 plus3: 13,
         ]
+        where:
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
     }
 
     /*
@@ -439,7 +446,7 @@ class MutationTest extends Specification {
                     }
                 }
              }
-        """).dataLoaderRegistry(dlReg).graphQLContext([DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING]: enableDataLoaderChaining).build()
+        """).dataLoaderRegistry(dlReg).graphQLContext(contextKey == null ? Collections.emptyMap() : [(contextKey): true]).build()
         when:
         def cf = graphQL.executeAsync(ei)
 
@@ -465,7 +472,7 @@ class MutationTest extends Specification {
         ]
 
         where:
-        enableDataLoaderChaining << [true, false]
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
     }
 
 
@@ -475,16 +482,16 @@ class MutationTest extends Specification {
         // concurrency bugs are hard to find, so run this test a lot of times
         for (int i = 0; i < 150; i++) {
             println "iteration $i"
-            runTest(enableDataLoaderChaining)
+            runTest(contextKey)
         }
         then:
         noExceptionThrown()
 
         where:
-        enableDataLoaderChaining << [true, false]
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
     }
 
-    def runTest(boolean enableDataLoaderChaining) {
+    def runTest(String contextKey) {
         def sdl = """
             type Query {
                 q : String
@@ -690,7 +697,7 @@ class MutationTest extends Specification {
                     }
                 }
              }
-        """).dataLoaderRegistry(dlReg).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining]).build()
+        """).dataLoaderRegistry(dlReg).graphQLContext(contextKey == null ? Collections.emptyMap() : [(contextKey): true]).build()
         def cf = graphQL.executeAsync(ei)
 
         Awaitility.await().until { cf.isDone() }

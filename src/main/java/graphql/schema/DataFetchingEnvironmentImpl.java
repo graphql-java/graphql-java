@@ -233,7 +233,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         if (dataLoader == null) {
             return null;
         }
-        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)
+            && !graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, false)) {
             return dataLoader;
         }
         return new DataLoaderWithContext<>(this, dataLoaderName, dataLoader);
@@ -273,8 +274,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public String toString() {
         return "DataFetchingEnvironmentImpl{" +
-                "executionStepInfo=" + executionStepInfo +
-                '}';
+               "executionStepInfo=" + executionStepInfo +
+               '}';
     }
 
     @NullUnmarked

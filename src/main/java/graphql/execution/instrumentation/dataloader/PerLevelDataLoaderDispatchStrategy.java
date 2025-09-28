@@ -391,8 +391,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     @Override
-    public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable
-            throwable, ExecutionStrategyParameters parameters) {
+    public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable throwable, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         int deferredFragmentRootFieldsCompleted = callStack.deferredFragmentRootFieldsCompleted.incrementAndGet();
         Assert.assertNotNull(parameters.getDeferredCallContext());
@@ -423,7 +422,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 // how many fields are deferred on this level
                 int fields = k.getFields();
                 if (startLevel > 1) {
-                    // parent level is considered dispatched and all fields completed
+                    // parent level is considered dispatched and all fields completed (meaning the grandparent level has all object completion call happened)
                     callStack.dispatchedLevels.add(startLevel - 1);
                     CallStack.StateForLevel stateForLevel = callStack.get(startLevel - 2);
                     CallStack.StateForLevel newStateForLevel = stateForLevel.increaseHappenedExecuteObjectCalls().increaseHappenedCompletionFinishedCount();

@@ -12,16 +12,20 @@ import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executors
 
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class Issue1178DataLoaderDispatchTest extends Specification {
 
 
+    @Unroll
     @RepeatUntilFailure(maxAttempts = 100, ignoreRest = false)
     def "shouldn't dispatch twice in multithreaded env"() {
         setup:
@@ -81,7 +85,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
         then: "execution shouldn't error"
         def ei = ExecutionInput.newExecutionInput()
-                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .query("""
                 query { 
@@ -120,7 +124,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
         Awaitility.await().until { resultCF.isDone() }
         assert resultCF.get().errors.empty
         where:
-        enableDataLoaderChaining << [true, false]
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
 
     }
 

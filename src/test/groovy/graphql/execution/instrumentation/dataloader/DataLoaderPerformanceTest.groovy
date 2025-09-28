@@ -4,8 +4,11 @@ import graphql.ExecutionInput
 import graphql.GraphQL
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedExpensiveData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveQuery
@@ -24,12 +27,14 @@ class DataLoaderPerformanceTest extends Specification {
         graphQL = dataLoaderPerformanceData.setupGraphQL()
     }
 
+    @Unroll
     def "760 ensure data loader is performant for lists"() {
         when:
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getQuery())
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -41,10 +46,16 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
         where:
-        incrementalSupport << [true, false]
-        enableDataLoaderChaining << [true, false]
+        incrementalSupport | contextKey
+        false              | ENABLE_DATA_LOADER_CHAINING
+        true               | ENABLE_DATA_LOADER_CHAINING
+        false              | ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
+        true               | ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
+        false              | null
+        true               | null
     }
 
+    @Unroll
     def "970 ensure data loader is performant for multiple field with lists"() {
 
         when:
@@ -52,7 +63,8 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -63,10 +75,16 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
 
         where:
-        incrementalSupport << [true, false]
-        enableDataLoaderChaining << [true, false]
+        incrementalSupport | contextKey
+        false              | ENABLE_DATA_LOADER_CHAINING
+        true               | ENABLE_DATA_LOADER_CHAINING
+        false              | ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
+        true               | ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
+        false              | null
+        true               | null
     }
 
+    @Unroll
     def "ensure data loader is performant for lists using async batch loading"() {
 
         when:
@@ -76,7 +94,8 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getQuery())
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
                 .build()
 
         def result = graphQL.execute(executionInput)
@@ -89,10 +108,16 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
         where:
-        incrementalSupport << [true, false]
-        enableDataLoaderChaining << [true, false]
+        incrementalSupport | contextKey
+        false              | ENABLE_DATA_LOADER_CHAINING
+        true               | ENABLE_DATA_LOADER_CHAINING
+        false              | ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
+        true               | ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
+        false              | null
+        true               | null
     }
 
+    @Unroll
     def "970 ensure data loader is performant for multiple field with lists using async batch loading"() {
 
         when:
@@ -102,7 +127,8 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
                 .build()
 
         def result = graphQL.execute(executionInput)
@@ -114,8 +140,12 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
 
         where:
-        incrementalSupport << [true, false]
-        enableDataLoaderChaining << [true, false]
-
+        incrementalSupport | contextKey
+        false              | ENABLE_DATA_LOADER_CHAINING
+        true               | ENABLE_DATA_LOADER_CHAINING
+        false              | ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
+        true               | ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
+        false              | null
+        true               | null
     }
 }
