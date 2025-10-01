@@ -448,6 +448,7 @@ public abstract class ExecutionStrategy {
                     .selectionSet(fieldCollector)
                     .queryDirectives(queryDirectives)
                     .deferredCallContext(parameters.getDeferredCallContext())
+                    .level(parameters.getPath().getLevel())
                     .build();
         });
 
