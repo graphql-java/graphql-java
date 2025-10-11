@@ -32,7 +32,7 @@ class ResultPathTest extends Specification {
         actual.toString() == expected
 
         where:
-        actual                                                        || expected
+        actual                                                     || expected
         ResultPath.rootPath()                                      || ""
         ResultPath.rootPath().segment("A")                         || "/A"
         ResultPath.rootPath().segment("A").segment(1).segment("B") || "/A[1]/B"
@@ -46,10 +46,25 @@ class ResultPathTest extends Specification {
         actual.toList() == expected
 
         where:
-        actual                                                                     || expected
+        actual                                                                  || expected
         ResultPath.rootPath()                                                   || []
         ResultPath.rootPath().segment("A").sibling("B")                         || ["B"]
         ResultPath.rootPath().segment("A").segment(1).segment("B").sibling("C") || ["A", 1, "C"]
+    }
+
+    @Unroll
+    "unit test getLevel works as expected : #actual"() {
+
+        expect:
+        actual.getLevel() == expected
+
+        where:
+        actual                                                     || expected
+        ResultPath.rootPath()                                      || 0
+        ResultPath.rootPath().segment("A")                         || 1
+        ResultPath.rootPath().segment("A").segment("B")            || 2
+        ResultPath.rootPath().segment("A").segment(1).segment("B") || 2
+        ResultPath.rootPath().segment("A").segment("B").segment(1) || 2
     }
 
 
