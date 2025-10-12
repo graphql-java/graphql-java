@@ -44,8 +44,8 @@ public class ResultPath {
     private ResultPath() {
         parent = null;
         segment = null;
-        this.toStringValue = initString();
         this.level = 0;
+        this.toStringValue = initString();
     }
 
     private ResultPath(ResultPath parent, String segment) {

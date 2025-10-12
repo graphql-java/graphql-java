@@ -46,18 +46,18 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         // a state for level points to a previous one
         // all the invocations that are linked together are the relevant invocations for the next dispatch
         private static class StateForLevel {
-            final @Nullable DataLoaderInvocation dataLoaderInvocation;
+            final @Nullable DataLoader dataLoader;
             final boolean dispatchingStarted;
             final boolean dispatchingFinished;
             final boolean currentlyDelayedDispatching;
             final @Nullable StateForLevel prev;
 
-            public StateForLevel(@Nullable DataLoaderInvocation dataLoaderInvocation,
+            public StateForLevel(@Nullable DataLoader dataLoader,
                                  boolean dispatchingStarted,
                                  boolean dispatchingFinished,
                                  boolean currentlyDelayedDispatching,
                                  @Nullable StateForLevel prev) {
-                this.dataLoaderInvocation = dataLoaderInvocation;
+                this.dataLoader = dataLoader;
                 this.dispatchingStarted = dispatchingStarted;
                 this.dispatchingFinished = dispatchingFinished;
                 this.currentlyDelayedDispatching = currentlyDelayedDispatching;
@@ -91,7 +91,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                     }
                 }
 
-                if (currentState == null || currentState.dataLoaderInvocation == null) {
+                if (currentState == null || currentState.dataLoader == null) {
                     if (normalDispatchOrDelayed) {
                         dispatchingFinished = true;
                     } else {
@@ -108,8 +108,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
 
 
-        public boolean newDataLoaderInvocation(DataLoaderInvocation dataLoaderInvocation) {
-            int level = dataLoaderInvocation.level;
+        public boolean newDataLoaderInvocation(int level, DataLoader dataLoader) {
             AtomicReference<@Nullable StateForLevel> currentStateRef = stateMapPerLevel.computeIfAbsent(level, __ -> new AtomicReference<>());
             while (true) {
                 StateForLevel currentState = currentStateRef.get();
@@ -132,7 +131,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                     currentlyDelayedDispatching = true;
                 }
 
-                StateForLevel newState = new StateForLevel(dataLoaderInvocation, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching, currentState);
+                StateForLevel newState = new StateForLevel(dataLoader, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching, currentState);
 
                 if (currentStateRef.compareAndSet(currentState, newState)) {
                     return newDelayedInvocation;
@@ -487,20 +486,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private void dispatchDLCFImpl(Integer level, CallStack callStack, boolean normalOrDelayed, boolean chained) {
 
         ChainedDLStack.StateForLevel stateForLevel = callStack.chainedDLStack.aboutToStartDispatching(level, normalOrDelayed, chained);
-        if (stateForLevel == null || stateForLevel.dataLoaderInvocation == null) {
+        if (stateForLevel == null || stateForLevel.dataLoader == null) {
             return;
         }
 
         List<CompletableFuture> allDispatchedCFs = new ArrayList<>();
-        while (stateForLevel != null && stateForLevel.dataLoaderInvocation != null) {
-            final DataLoaderInvocation invocation = stateForLevel.dataLoaderInvocation;
-            CompletableFuture<List> dispatch = invocation.dataLoader.dispatch();
+        while (stateForLevel != null && stateForLevel.dataLoader != null) {
+            CompletableFuture<List> dispatch = stateForLevel.dataLoader.dispatch();
             allDispatchedCFs.add(dispatch);
-            dispatch.whenComplete((objects, throwable) -> {
-                if (objects != null && objects.size() > 0) {
-                    profiler.batchLoadedNewStrategy(invocation.name, level, objects.size(), !normalOrDelayed, chained);
-                }
-            });
             stateForLevel = stateForLevel.prev;
         }
         CompletableFuture.allOf(allDispatchedCFs.toArray(new CompletableFuture[0]))
@@ -512,51 +505,19 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
 
-    public void newDataLoaderInvocation(String resultPath,
-                                        int level,
+    public void newDataLoaderInvocation(int level,
                                         DataLoader dataLoader,
-                                        String dataLoaderName,
-                                        Object key,
                                         @Nullable AlternativeCallContext alternativeCallContext) {
         if (!enableDataLoaderChaining) {
             return;
         }
-        DataLoaderInvocation dataLoaderInvocation = new DataLoaderInvocation(resultPath, level, dataLoader, dataLoaderName, key);
         CallStack callStack = getCallStack(alternativeCallContext);
-        boolean newDelayedInvocation = callStack.chainedDLStack.newDataLoaderInvocation(dataLoaderInvocation);
+        boolean newDelayedInvocation = callStack.chainedDLStack.newDataLoaderInvocation(level, dataLoader);
         if (newDelayedInvocation) {
             dispatchDLCFImpl(level, callStack, false, false);
         }
     }
 
-    /**
-     * A single data loader invocation.
-     */
-    private static class DataLoaderInvocation {
-        final String resultPath;
-        final int level;
-        final DataLoader dataLoader;
-        final String name;
-        final Object key;
-
-        public DataLoaderInvocation(String resultPath, int level, DataLoader dataLoader, String name, Object key) {
-            this.resultPath = resultPath;
-            this.level = level;
-            this.dataLoader = dataLoader;
-            this.name = name;
-            this.key = key;
-        }
-
-        @Override
-        public String toString() {
-            return "ResultPathWithDataLoader{" +
-                   "resultPath='" + resultPath + '\'' +
-                   ", level=" + level +
-                   ", key=" + key +
-                   ", name='" + name + '\'' +
-                   '}';
-        }
-    }
 
 }
 

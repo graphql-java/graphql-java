@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3)
+@Measurement(iterations = 5)
 @Fork(2)
 public class DataLoaderPerformance {
 
@@ -481,25 +481,17 @@ public class DataLoaderPerformance {
 
 
     static BatchLoader<String, Owner> ownerBatchLoader = list -> {
+//        System.out.println("OwnerBatchLoader with " +  list.size() );
         List<Owner> collect = list.stream().map(key -> {
             Owner owner = owners.get(key);
-            try {
-                Thread.sleep(50);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
             return owner;
         }).collect(Collectors.toList());
         return CompletableFuture.completedFuture(collect);
     };
     static BatchLoader<String, Pet> petBatchLoader = list -> {
+//        System.out.println("PetBatchLoader with list: " + list.size());
         List<Pet> collect = list.stream().map(key -> {
             Pet owner = pets.get(key);
-            try {
-                Thread.sleep(5);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
             return owner;
         }).collect(Collectors.toList());
         return CompletableFuture.completedFuture(collect);
@@ -520,9 +512,6 @@ public class DataLoaderPerformance {
             try {
                 String sdl = PerformanceTestingUtils.loadResource("dataLoaderPerformanceSchema.graphqls");
 
-
-                DataLoaderRegistry registry = new DataLoaderRegistry();
-
                 DataFetcher ownersDF = (env -> {
                     // Load all 103 owners (O-1 through O-103)
                     List<Object> allOwnerIds = List.of(
@@ -542,20 +531,20 @@ public class DataLoaderPerformance {
                 });
                 DataFetcher petsDf = (env -> {
                     Owner owner = env.getSource();
-                    return env.getDataLoader(petDLName).loadMany((List) owner.petIds);
-//                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
+                    return env.getDataLoader(petDLName).loadMany((List) owner.petIds)
+                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
                 });
 
                 DataFetcher petFriendsDF = (env -> {
                     Pet pet = env.getSource();
-                    return env.getDataLoader(petDLName).loadMany((List) pet.friendsIds);
-//                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
+                    return env.getDataLoader(petDLName).loadMany((List) pet.friendsIds)
+                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
                 });
 
                 DataFetcher petOwnerDF = (env -> {
                     Pet pet = env.getSource();
-                    return env.getDataLoader(ownerDLName).load(pet.ownerId);
-//                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
+                    return env.getDataLoader(ownerDLName).load(pet.ownerId)
+                            .thenCompose((result) -> CompletableFuture.supplyAsync(() -> null).thenApply((__) -> result));
                 });
 
 
@@ -598,6 +587,7 @@ public class DataLoaderPerformance {
 //                .profileExecution(true)
                 .build();
         executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true);
+//        executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true);
         ExecutionResult execute = myState.graphQL.execute(executionInput);
 //        ProfilerResult profilerResult = executionInput.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY);
 //        System.out.println("execute: " + execute);
