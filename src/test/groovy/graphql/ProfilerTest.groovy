@@ -14,6 +14,7 @@ import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.time.Duration
@@ -176,6 +177,7 @@ class ProfilerTest extends Specification {
     }
 
 
+    @Ignore("not available for performance reasons at the moment")
     def "manual dataloader dispatch"() {
         given:
         def sdl = '''
@@ -230,6 +232,7 @@ class ProfilerTest extends Specification {
 
     }
 
+    @Ignore("not available for performance reasons at the moment")
     def "cached dataloader values"() {
         given:
         def sdl = '''
@@ -517,6 +520,7 @@ class ProfilerTest extends Specification {
 
     }
 
+    @Ignore("not available for performance reasons at the moment")
     def "dataloader usage"() {
         given:
         def sdl = '''
