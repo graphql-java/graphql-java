@@ -3186,6 +3186,34 @@ fragment personName on Person {
         ExecutableNormalizedOperationFactory.Options.setDefaultOptions(ExecutableNormalizedOperationFactory.Options.defaultOptions().maxFieldsCount(ExecutableNormalizedOperationFactory.Options.DEFAULT_MAX_FIELDS_COUNT))
     }
 
+    def "failing test for Query directive impl and fragments"() {
+        String schema = """
+        type Query {
+            foo: String
+        }
+        """
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = "{...F1 ...F1 } fragment F1 on Query { foo @include(if: true) } "
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+        when:
+        def operation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                null,
+                RawVariables.emptyVariables()
+        )
+        def rootField = operation.topLevelFields[0]
+        def directives = operation.getQueryDirectives(rootField)
+        def byName = directives.getImmediateDirectivesByName();
+        then:
+        byName == [include: null]
+    }
+
 
     private static ExecutableNormalizedOperation localCreateExecutableNormalizedOperation(
             GraphQLSchema graphQLSchema,
