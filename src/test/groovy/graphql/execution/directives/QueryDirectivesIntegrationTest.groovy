@@ -1,6 +1,5 @@
 package graphql.execution.directives
 
-
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.RawVariables
@@ -9,6 +8,8 @@ import graphql.normalized.ExecutableNormalizedOperationFactory
 import graphql.normalized.NormalizedInputValue
 import graphql.schema.DataFetcher
 import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLDirective
+import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 /**
@@ -206,6 +207,72 @@ class QueryDirectivesIntegrationTest extends Specification {
         ]
 
     }
+
+    def "fragments used multiple times and directives on it"() {
+        String schema = """
+        type Query {
+            foo: String
+        }
+        """
+        QueryDirectives queryDirectives
+        def fooDF = { env ->
+            queryDirectives = env.getQueryDirectives()
+            return "Foo"
+        } as DataFetcher
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema, [Query: [foo: fooDF]])
+
+        String query = "{...F1 ...F1 } fragment F1 on Query { foo @include(if: true) } "
+
+        def graphql = GraphQL.newGraphQL(graphQLSchema).build()
+        when:
+        def er = graphql.execute(query)
+        then:
+        er.data == [foo: "Foo"]
+        def byName = queryDirectives.getImmediateDirectivesByName();
+        byName.size() == 1
+        byName["include"].size() == 1
+        byName["include"][0] instanceof GraphQLDirective
+
+
+    }
+
+    def "fragments used multiple times and directives on it deeper"() {
+        String schema = """
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            hello: String
+        }
+        """
+        QueryDirectives queryDirectives
+        def fooDF = { env ->
+            return "Foo"
+        } as DataFetcher
+
+        def helloDF = { env ->
+            queryDirectives = env.getQueryDirectives()
+            return "world"
+        } as DataFetcher
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema, [Query: [foo: fooDF], Foo: [hello: helloDF]])
+
+        String query = "{foo{...F1  ...F1 } } fragment F1 on Foo { hello @include(if: true) hello @include(if:true) } "
+
+        def graphql = GraphQL.newGraphQL(graphQLSchema).build()
+        when:
+        def er = graphql.execute(query)
+        then:
+        er.data == [foo: [hello: "world"]]
+        def byName = queryDirectives.getImmediateDirectivesByName();
+        byName.size() == 1
+        byName["include"].size() == 2
+        byName["include"][0] instanceof GraphQLDirective
+        byName["include"][1] instanceof GraphQLDirective
+        byName["include"][0] != byName["include"][1]
+    }
+
 
     def simplifiedInputValuesWithState(Map<String, List<QueryAppliedDirective>> mapOfDirectives) {
         def simpleMap = [:]
