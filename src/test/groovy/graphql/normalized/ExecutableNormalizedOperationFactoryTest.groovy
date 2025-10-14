@@ -13,6 +13,7 @@ import graphql.language.Document
 import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.OperationDefinition
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLTypeUtil
 import graphql.util.TraversalControl
@@ -3211,7 +3212,9 @@ fragment personName on Person {
         def directives = operation.getQueryDirectives(rootField)
         def byName = directives.getImmediateDirectivesByName();
         then:
-        byName == [include: null]
+        byName.size() == 1
+        byName["include"].size() == 1
+        byName["include"][0] instanceof GraphQLDirective
     }
 
 
