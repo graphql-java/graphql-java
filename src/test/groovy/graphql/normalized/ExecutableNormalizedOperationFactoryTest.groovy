@@ -3187,7 +3187,7 @@ fragment personName on Person {
         ExecutableNormalizedOperationFactory.Options.setDefaultOptions(ExecutableNormalizedOperationFactory.Options.defaultOptions().maxFieldsCount(ExecutableNormalizedOperationFactory.Options.DEFAULT_MAX_FIELDS_COUNT))
     }
 
-    def "failing test for Query directive impl and fragments"() {
+    def "fragments used multiple times and directives on it"() {
         String schema = """
         type Query {
             foo: String
@@ -3215,6 +3215,41 @@ fragment personName on Person {
         byName.size() == 1
         byName["include"].size() == 1
         byName["include"][0] instanceof GraphQLDirective
+    }
+
+    def "fragments used multiple times and directives on it deeper"() {
+        String schema = """
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            hello: String
+        }
+        """
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = "{foo{...F1  ...F1 } } fragment F1 on Foo { hello @include(if: true) hello @include(if:true) } "
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+        when:
+        def operation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                null,
+                RawVariables.emptyVariables()
+        )
+        def enf = operation.topLevelFields[0].children[0]
+        def directives = operation.getQueryDirectives(enf)
+        def byName = directives.getImmediateDirectivesByName();
+        then:
+        byName.size() == 1
+        byName["include"].size() == 2
+        byName["include"][0] instanceof GraphQLDirective
+        byName["include"][1] instanceof GraphQLDirective
+        byName["include"][0] != byName["include"][1]
     }
 
 

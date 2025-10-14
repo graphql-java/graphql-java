@@ -61,6 +61,7 @@ import java.util.stream.Collectors;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.map;
+import static graphql.collect.ImmutableKit.mapToSet;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
@@ -590,7 +591,7 @@ public class ExecutableNormalizedOperationFactory {
         }
 
         private static MergedField newMergedField(ImmutableList<CollectedField> fieldAndAstParents) {
-            return MergedField.newMergedField(map(fieldAndAstParents, fieldAndAstParent -> fieldAndAstParent.field)).build();
+            return MergedField.newMergedField(mapToSet(fieldAndAstParents, fieldAndAstParent -> fieldAndAstParent.field)).build();
         }
 
         private void updateFieldToNFMap(ExecutableNormalizedField executableNormalizedField,
