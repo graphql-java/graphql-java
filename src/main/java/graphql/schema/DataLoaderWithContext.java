@@ -47,18 +47,16 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         assertNotNull(keyContexts);
 
         CompletableFuture<List<V>> result;
-        synchronized (this) {
-            List<CompletableFuture<V>> collect = new ArrayList<>(keys.size());
-            for (int i = 0; i < keys.size(); i++) {
-                K key = keys.get(i);
-                Object keyContext = null;
-                if (i < keyContexts.size()) {
-                    keyContext = keyContexts.get(i);
-                }
-                collect.add(delegate.load(key, keyContext));
+        List<CompletableFuture<V>> collect = new ArrayList<>(keys.size());
+        for (int i = 0; i < keys.size(); i++) {
+            K key = keys.get(i);
+            Object keyContext = null;
+            if (i < keyContexts.size()) {
+                keyContext = keyContexts.get(i);
             }
-            result = Async.allOf(collect);
+            collect.add(delegate.load(key, keyContext));
         }
+        result = Async.allOf(collect);
         newDataLoaderInvocation();
         return result;
     }
@@ -68,15 +66,13 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         assertNotNull(keysAndContexts);
 
         CompletableFuture<Map<K, V>> result;
-        synchronized (this) {
-            Map<K, CompletableFuture<V>> collect = new HashMap<>(keysAndContexts.size());
-            for (Map.Entry<K, ?> entry : keysAndContexts.entrySet()) {
-                K key = entry.getKey();
-                Object keyContext = entry.getValue();
-                collect.put(key, delegate.load(key, keyContext));
-            }
-            result = Async.allOf(collect);
+        Map<K, CompletableFuture<V>> collect = new HashMap<>(keysAndContexts.size());
+        for (Map.Entry<K, ?> entry : keysAndContexts.entrySet()) {
+            K key = entry.getKey();
+            Object keyContext = entry.getValue();
+            collect.put(key, delegate.load(key, keyContext));
         }
+        result = Async.allOf(collect);
         newDataLoaderInvocation();
         return result;
     }
@@ -93,8 +89,6 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
             ((ExhaustedDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderInvocation(alternativeCallContext);
         }
     }
-
-
 
 
 }
