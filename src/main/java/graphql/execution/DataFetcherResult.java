@@ -127,7 +127,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
      *
      * @return a new instance with where the data value has been transformed
      */
-    public <R> DataFetcherResult<R> map(Function<@Nullable T, @Nullable R> transformation) {
+    public <R extends @Nullable Object> DataFetcherResult<R> map(Function<@Nullable T, @Nullable R> transformation) {
         return new Builder<>(transformation.apply(this.data))
                 .errors(this.errors)
                 .extensions(this.extensions)
@@ -144,9 +144,9 @@ public class DataFetcherResult<T extends @Nullable Object> {
 
         DataFetcherResult<?> that = (DataFetcherResult<?>) o;
         return Objects.equals(data, that.data)
-                && errors.equals(that.errors)
-                && Objects.equals(localContext, that.localContext)
-                && Objects.equals(extensions, that.extensions);
+               && errors.equals(that.errors)
+               && Objects.equals(localContext, that.localContext)
+               && Objects.equals(extensions, that.extensions);
     }
 
     @Override
@@ -157,11 +157,11 @@ public class DataFetcherResult<T extends @Nullable Object> {
     @Override
     public String toString() {
         return "DataFetcherResult{" +
-                "data=" + data +
-                ", errors=" + errors +
-                ", localContext=" + localContext +
-                ", extensions=" + extensions +
-                '}';
+               "data=" + data +
+               ", errors=" + errors +
+               ", localContext=" + localContext +
+               ", extensions=" + extensions +
+               '}';
     }
 
     /**
