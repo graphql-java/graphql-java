@@ -35,5 +35,7 @@ jobs:
         uses: EnricoMi/publish-unit-test-result-action@v2.20.0
         if: always()
         with:
-          files: '**/build/test-results/test/TEST-*.xml'
-
+          files: |
+            **/build/test-results/test/TEST-*.xml
+            **/build/test-results/testWithJava11/TEST-*.xml
+            **/build/test-results/testWithJava17/TEST-*.xml
