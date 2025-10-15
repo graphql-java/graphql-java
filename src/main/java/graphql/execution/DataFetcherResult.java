@@ -44,14 +44,14 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 @NullMarked
-public class DataFetcherResult<T> {
+public class DataFetcherResult<T extends @Nullable Object> {
 
-    private final @Nullable T data;
+    private final T data;
     private final List<GraphQLError> errors;
     private final @Nullable Object localContext;
     private final @Nullable Map<Object, Object> extensions;
 
-    private DataFetcherResult(@Nullable T data, List<GraphQLError> errors, @Nullable Object localContext, @Nullable Map<Object, Object> extensions) {
+    private DataFetcherResult(T data, List<GraphQLError> errors, @Nullable Object localContext, @Nullable Map<Object, Object> extensions) {
         this.data = data;
         this.errors = ImmutableList.copyOf(assertNotNull(errors));
         this.localContext = localContext;
@@ -61,7 +61,7 @@ public class DataFetcherResult<T> {
     /**
      * @return The data fetched. May be null.
      */
-    public @Nullable T getData() {
+    public T getData() {
         return data;
     }
 
@@ -175,8 +175,8 @@ public class DataFetcherResult<T> {
         return new Builder<>();
     }
 
-    public static class Builder<T> {
-        private @Nullable T data;
+    public static class Builder<T extends @Nullable Object> {
+        private T data;
         private @Nullable Object localContext;
         private final List<GraphQLError> errors = new ArrayList<>();
         private @Nullable Map<Object, Object> extensions;
@@ -188,14 +188,14 @@ public class DataFetcherResult<T> {
             extensions = existing.extensions;
         }
 
-        public Builder(@Nullable T data) {
+        public Builder(T data) {
             this.data = data;
         }
 
         public Builder() {
         }
 
-        public Builder<T> data(@Nullable T data) {
+        public Builder<T> data(T data) {
             this.data = data;
             return this;
         }
