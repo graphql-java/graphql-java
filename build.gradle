@@ -309,6 +309,10 @@ artifacts {
 }
 
 List<TestDescriptor> failedTests = []
+Map<String, Integer> testsAndTime = [:]
+Map<String, Integer> testClassesAndTime = [:]
+int testCount = 0
+long testTime = 0L
 
 tasks.withType(Test) {
     useJUnitPlatform()
@@ -322,8 +326,18 @@ tasks.withType(Test) {
     dependsOn "jmhClasses"
 
     afterTest { TestDescriptor descriptor, TestResult result ->
+        testCount++
         if (result.getFailedTestCount() > 0) {
             failedTests.add(descriptor)
+        }
+        def ms = (int) (result.endTime - result.startTime)
+        testTime += ms
+        String className = descriptor.className ?: "unknown"
+        String name = className + "." + descriptor.displayName
+        if (ms > 500) {
+            testsAndTime[name] = ms
+            testClassesAndTime.compute(className) { k, v -> v == null ? ms : v + ms }
+            println "\tTest '$name' took ${ms}ms"
         }
     }
 }
@@ -349,6 +363,10 @@ test.dependsOn testWithJava11
  * See https://github.com/gradle/gradle/issues/20151
  */
 gradle.buildFinished {
+    println "\n\n"
+    println "============================"
+    println "$testCount tests run in $testTime ms"
+    println "============================"
     if (!failedTests.isEmpty()) {
         println "\n\n"
         println "============================"
@@ -359,6 +377,28 @@ gradle.buildFinished {
         }
         println "============================"
     }
+    // slowest tests
+    println "\n\n"
+    println "============================"
+    println "Top 20 slowest test classes"
+    println "============================"
+    showTestResults(testClassesAndTime,20) { e ->
+        println "\tTest class ${e.key} took ${e.value}ms"
+    }
+    println "\n\n"
+    println "============================"
+    println "Top 50 slowest tests"
+    println "============================"
+    showTestResults(testsAndTime,50) { e ->
+        println "\tTest ${e.key} took ${e.value}ms"
+    }
+}
+
+static private showTestResults(Map<String, Integer> testMap, int limit, Closure closure) {
+    testMap.entrySet().stream()
+            .sorted { e1, e2 -> e2.getValue() - e1.getValue() }
+            .limit(limit)
+            .forEach(closure)
 }
 
 
