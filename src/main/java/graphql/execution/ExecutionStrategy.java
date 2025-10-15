@@ -207,11 +207,11 @@ public abstract class ExecutionStrategy {
         List<String> fieldNames = parameters.getFields().getKeys();
 
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
+        List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
         Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
         CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
-        List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
-        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
         BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
 
         resolveObjectCtx.onDispatched();
@@ -360,8 +360,12 @@ public abstract class ExecutionStrategy {
         Object fetchedValueObj = fetchField(executionContext, parameters);
         if (fetchedValueObj instanceof CompletableFuture) {
             CompletableFuture<Object> fetchFieldFuture = (CompletableFuture<Object>) fetchedValueObj;
-            CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
-                    completeField(fieldDef, executionContext, parameters, fetchedValue));
+            CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) -> {
+                executionContext.getDataLoaderDispatcherStrategy().startComplete(parameters);
+                FieldValueInfo completeFieldResult = completeField(fieldDef, executionContext, parameters, fetchedValue);
+                executionContext.getDataLoaderDispatcherStrategy().stopComplete(parameters);
+                return completeFieldResult;
+            });
 
             fieldCtx.onDispatched();
             result.whenComplete(fieldCtx::onCompleted);
@@ -444,6 +448,7 @@ public abstract class ExecutionStrategy {
                     .selectionSet(fieldCollector)
                     .queryDirectives(queryDirectives)
                     .deferredCallContext(parameters.getDeferredCallContext())
+                    .level(parameters.getPath().getLevel())
                     .build();
         });
 

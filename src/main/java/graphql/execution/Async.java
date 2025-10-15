@@ -11,14 +11,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
+import static java.util.stream.Collectors.toList;
 
 @Internal
 @SuppressWarnings("FutureReturnValueIgnored")
@@ -408,4 +411,24 @@ public class Async {
     public static <T> @NonNull CompletableFuture<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
         return completableFuture != null ? completableFuture : CompletableFuture.completedFuture(null);
     }
+
+    public static <T> CompletableFuture<List<T>> allOf(List<CompletableFuture<T>> cfs) {
+        return CompletableFuture.allOf(cfs.toArray(CompletableFuture[]::new))
+                .thenApply(v -> cfs.stream()
+                        .map(CompletableFuture::join)
+                        .collect(toList())
+                );
+    }
+
+    public static <K, V> CompletableFuture<Map<K, V>> allOf(Map<K, CompletableFuture<V>> cfs) {
+        return CompletableFuture.allOf(cfs.values().toArray(CompletableFuture[]::new))
+                .thenApply(v -> cfs.entrySet().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        task -> task.getValue().join())
+                        )
+                );
+    }
+
 }

@@ -182,6 +182,8 @@ public interface DeferredExecutionSupport {
                 InstrumentationContext<Object> deferredFieldCtx = nonNullCtx(instrumentation.beginDeferredField(fieldParameters, executionContext.getInstrumentationState()));
 
                 CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn.apply(this.executionContext, executionStrategyParameters);
+                executionContext.getDataLoaderDispatcherStrategy().deferFieldFetched(executionStrategyParameters);
+
 
                 deferredFieldCtx.onDispatched();
 

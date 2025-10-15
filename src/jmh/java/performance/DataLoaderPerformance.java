@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3)
+@Measurement(iterations = 5)
 @Fork(2)
 public class DataLoaderPerformance {
 
@@ -481,6 +481,7 @@ public class DataLoaderPerformance {
 
 
     static BatchLoader<String, Owner> ownerBatchLoader = list -> {
+//        System.out.println("OwnerBatchLoader with " +  list.size() );
         List<Owner> collect = list.stream().map(key -> {
             Owner owner = owners.get(key);
             return owner;
@@ -488,6 +489,7 @@ public class DataLoaderPerformance {
         return CompletableFuture.completedFuture(collect);
     };
     static BatchLoader<String, Pet> petBatchLoader = list -> {
+//        System.out.println("PetBatchLoader with list: " + list.size());
         List<Pet> collect = list.stream().map(key -> {
             Pet owner = pets.get(key);
             return owner;
@@ -509,9 +511,6 @@ public class DataLoaderPerformance {
         public void setup() {
             try {
                 String sdl = PerformanceTestingUtils.loadResource("dataLoaderPerformanceSchema.graphqls");
-
-
-                DataLoaderRegistry registry = new DataLoaderRegistry();
 
                 DataFetcher ownersDF = (env -> {
                     // Load all 103 owners (O-1 through O-103)
@@ -588,12 +587,29 @@ public class DataLoaderPerformance {
 //                .profileExecution(true)
                 .build();
         executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true);
+//        executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true);
         ExecutionResult execute = myState.graphQL.execute(executionInput);
 //        ProfilerResult profilerResult = executionInput.getGraphQLContext().get(ProfilerResult.PROFILER_CONTEXT_KEY);
-//        System.out.println(profilerResult.shortSummaryMap());
+//        System.out.println("execute: " + execute);
         Assert.assertTrue(execute.isDataPresent());
         Assert.assertTrue(execute.getErrors().isEmpty());
         blackhole.consume(execute);
+    }
+
+    public static void main(String[] args) {
+        DataLoaderPerformance dataLoaderPerformance = new DataLoaderPerformance();
+        MyState myState = new MyState();
+        myState.setup();
+        Blackhole blackhole = new Blackhole("Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
+        for (int i = 0; i < 1; i++) {
+            dataLoaderPerformance.executeRequestWithDataLoaders(myState, blackhole);
+        }
+//        System.out.println(PerLevelDataLoaderDispatchStrategy.fieldFetchedCount);
+//        System.out.println(PerLevelDataLoaderDispatchStrategy.onCompletionFinishedCount);
+//        System.out.println(PerLevelDataLoaderDispatchStrategy.isReadyCounter);
+//        System.out.println(Duration.ofNanos(PerLevelDataLoaderDispatchStrategy.isReadyCounterNS.get()).toMillis());
+
+
     }
 
 

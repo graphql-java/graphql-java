@@ -7,6 +7,7 @@ import graphql.schema.PropertyDataFetcherHelper;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING;
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING;
 
 /**
  * This allows you to control "unusual" aspects of the GraphQL system
@@ -344,10 +345,14 @@ public class GraphQLUnusualConfiguration {
         }
 
         /**
-         * @return true if @defer and @stream behaviour is enabled for this execution.
+         * returns true if chained data loader dispatching is enabled
          */
         public boolean isDataLoaderChainingEnabled() {
             return contextConfig.getBoolean(ENABLE_DATA_LOADER_CHAINING);
+        }
+
+        public boolean isDataLoaderExhaustedDispatchingEnabled() {
+            return contextConfig.get(ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING);
         }
 
         /**
@@ -358,6 +363,17 @@ public class GraphQLUnusualConfiguration {
             contextConfig.put(ENABLE_DATA_LOADER_CHAINING, enable);
             return this;
         }
+
+        /**
+         * Enables a dispatching strategy that will dispatch as long as there is no
+         * other data fetcher or batch loader running.
+         */
+        @ExperimentalApi
+        public DataloaderConfig enableDataLoaderExhaustedDispatching(boolean enable) {
+            contextConfig.put(ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, enable);
+            return this;
+        }
+
 
     }
 

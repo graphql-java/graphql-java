@@ -60,6 +60,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Document document;
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final QueryDirectives queryDirectives;
+    private final int level;
 
     // used for internal() method
     private final DFEInternalState dfeInternalState;
@@ -86,6 +87,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.document = builder.document;
         this.variables = builder.variables == null ? ImmutableMapWithNullValues.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
+        this.level = builder.level;
 
         // internal state
         this.dfeInternalState = new DFEInternalState(builder.dataLoaderDispatchStrategy, builder.alternativeCallContext, builder.profiler);
@@ -233,7 +235,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         if (dataLoader == null) {
             return null;
         }
-        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+        if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)
+            && !graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, false)) {
             return dataLoader;
         }
         return new DataLoaderWithContext<>(this, dataLoaderName, dataLoader);
@@ -273,8 +276,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public String toString() {
         return "DataFetchingEnvironmentImpl{" +
-                "executionStepInfo=" + executionStepInfo +
-                '}';
+               "executionStepInfo=" + executionStepInfo +
+               '}';
+    }
+
+    public int getLevel() {
+        return level;
     }
 
     @NullUnmarked
@@ -304,6 +311,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
         private Profiler profiler;
         private AlternativeCallContext alternativeCallContext;
+        private int level;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -330,6 +338,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.dataLoaderDispatchStrategy = env.dfeInternalState.dataLoaderDispatchStrategy;
             this.profiler = env.dfeInternalState.profiler;
             this.alternativeCallContext = env.dfeInternalState.alternativeCallContext;
+            this.level = env.level;
         }
 
         public Builder() {
@@ -465,6 +474,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         public Builder profiler(Profiler profiler) {
             this.profiler = profiler;
+            return this;
+        }
+
+        public Builder level(int level) {
+            this.level = level;
             return this;
         }
     }

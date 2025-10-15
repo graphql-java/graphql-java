@@ -11,6 +11,7 @@ import graphql.TestUtil
 import graphql.TypeMismatchError
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.LegacyTestingInstrumentation
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.FlowMessagePublisher
@@ -32,8 +33,8 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
@@ -776,7 +777,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         executionInput.cancel()
 
         // make things over the subscription
-        promises.forEach {it.run()}
+        promises.forEach { it.run() }
 
 
         then:
@@ -801,6 +802,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
     }
 
 
+    @Unroll
     def "DataLoader works on each subscription event"() {
         given:
         def sdl = """
@@ -856,6 +858,9 @@ class SubscriptionExecutionStrategyTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema)
                 .build()
 
+        if (exhaustedStrategy) {
+            ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
+        }
 
         when:
         def executionResult = graphQL.execute(ei)
@@ -873,5 +878,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         events[1].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
         events[2].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
 
+        where:
+        exhaustedStrategy << [false, true]
     }
 }
