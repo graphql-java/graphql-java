@@ -1022,4 +1022,76 @@ type Query {
 }
 """
     }
+
+    def "issue 4133 reproduction"() {
+        def sdl = """
+            directive @remove on FIELD_DEFINITION
+            
+            type Query {
+              rental: Rental @remove
+              customer: Customer
+            }
+            
+            type Store {
+              inventory: Inventory @remove
+            }
+            
+            type Inventory {
+              store: Store @remove
+            }
+            
+            type Customer {
+              rental: Rental
+              payment: Payment @remove
+            }
+            
+            type Payment {
+              inventory: Inventory @remove
+            }
+            
+            type Rental {
+              id: ID
+              customer: Customer @remove
+            }
+        """
+
+        def schema = TestUtil.schema(sdl)
+
+        def visitor = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.hasAppliedDirective("remove")) {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getFields().stream().allMatch(field -> field.hasAppliedDirective("remove"))) {
+                    return deleteNode(context)
+                }
+
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, visitor)
+        def newSdl = new SchemaPrinter().print(newSchema)
+
+        then:
+        newSdl == """
+type Query {
+  customer: Customer
+}
+
+type Customer {
+  rental: Rental
+}
+
+type Rental {
+  id: ID
+}""".stripIndent().trim()
+    }
 }
