@@ -304,7 +304,7 @@ type SubChildChanged {
                 .name("Query")
                 .field({ builder ->
                     builder.name("foo")
-                           .type(Scalars.GraphQLString)
+                            .type(Scalars.GraphQLString)
                 }).build()
 
         def fooCoordinates = FieldCoordinates.coordinates("Query", "foo")
@@ -347,7 +347,7 @@ type SubChildChanged {
         })
 
         def fooTransformedCoordinates = FieldCoordinates.coordinates("Query", "fooChanged")
-        codeRegistry = codeRegistry.transform({it.dataFetcher(fooTransformedCoordinates, dataFetcher)})
+        codeRegistry = codeRegistry.transform({ it.dataFetcher(fooTransformedCoordinates, dataFetcher) })
         newSchema = newSchema.transform({
             builder -> builder.codeRegistry(codeRegistry)
         })
@@ -871,7 +871,7 @@ type Query {
             @Override
             TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
                 if (node.getName() == "Foo") {
-                    GraphQLScalarType newNode = node.transform({sc -> sc.name("Bar")})
+                    GraphQLScalarType newNode = node.transform({ sc -> sc.name("Bar") })
                     return changeNode(context, newNode)
                 }
                 return super.visitGraphQLScalarType(node, context)
@@ -901,7 +901,7 @@ type Query {
             @Override
             TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
                 if (node.getName() == "Foo") {
-                    GraphQLScalarType newNode = node.transform({sc -> sc.name("Bar")})
+                    GraphQLScalarType newNode = node.transform({ sc -> sc.name("Bar") })
                     return changeNode(context, newNode)
                 }
                 return super.visitGraphQLScalarType(node, context)
@@ -1021,5 +1021,85 @@ type Query {
   b: String @deprecated(reason : "NEW REASON")
 }
 """
+    }
+
+    def "issue 4133 reproduction"() {
+        def sdl = """
+            directive @remove on FIELD_DEFINITION
+            
+            type Query {
+              rental: Rental @remove
+              customer: Customer
+            }
+            
+            type Store {
+              inventory: Inventory @remove
+            }
+            
+            type Inventory {
+              store: Store @remove
+            }
+            
+            type Customer {
+              rental: Rental
+              payment: Payment @remove
+            }
+            
+            type Payment {
+              inventory: Inventory @remove
+            }
+            
+            type Rental {
+              id: ID
+              customer: Customer @remove
+            }
+        """
+
+        def schema = TestUtil.schema(sdl)
+        schema = schema.transform { builder ->
+            for (def type : schema.getTypeMap().values()) {
+                if (type != schema.getQueryType() && type != schema.getMutationType() && type != schema.getSubscriptionType()) {
+                    builder.additionalType(type)
+                }
+            }
+        }
+
+
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.hasAppliedDirective("remove")) {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getFields().stream().allMatch(field -> field.hasAppliedDirective("remove"))) {
+                    return deleteNode(context)
+                }
+
+                return TraversalControl.CONTINUE
+            }
+        }
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, visitor)
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        def newSdl = printer.print(newSchema)
+
+        then:
+        newSdl.trim() == """type Customer {
+  rental: Rental
+}
+
+type Query {
+  customer: Customer
+}
+
+type Rental {
+  id: ID
+}""".trim()
     }
 }
