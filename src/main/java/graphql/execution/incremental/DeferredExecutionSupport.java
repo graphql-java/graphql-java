@@ -3,6 +3,7 @@ package graphql.execution.incremental;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.Internal;
@@ -117,7 +118,8 @@ public interface DeferredExecutionSupport {
         @Override
         public Set<IncrementalCall<? extends IncrementalPayload>> createCalls() {
             ImmutableSet<DeferredExecution> deferredExecutions = deferredExecutionToFields.keySet();
-            Set<IncrementalCall<? extends IncrementalPayload>> set = new HashSet<>(deferredExecutions.size());
+            Set<IncrementalCall<? extends IncrementalPayload>> set = Sets.newHashSetWithExpectedSize(deferredExecutions.size());
+
             for (DeferredExecution deferredExecution : deferredExecutions) {
                 set.add(this.createDeferredFragmentCall(deferredExecution));
             }
