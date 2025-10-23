@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.Maps;
 import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.incremental.AlternativeCallContext;
@@ -66,7 +67,7 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         assertNotNull(keysAndContexts);
 
         CompletableFuture<Map<K, V>> result;
-        Map<K, CompletableFuture<V>> collect = new HashMap<>(keysAndContexts.size());
+        Map<K, CompletableFuture<V>> collect = Maps.newHashMapWithExpectedSize(keysAndContexts.size());
         for (Map.Entry<K, ?> entry : keysAndContexts.entrySet()) {
             K key = entry.getKey();
             Object keyContext = entry.getValue();

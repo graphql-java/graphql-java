@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import com.google.common.collect.Maps;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
@@ -109,7 +110,7 @@ public class ValuesResolver {
             Locale locale
     ) {
         GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
-        Map<String, NormalizedInputValue> result = new LinkedHashMap<>();
+        Map<String, NormalizedInputValue> result = Maps.newLinkedHashMapWithExpectedSize(variableDefinitions.size());
         for (VariableDefinition variableDefinition : variableDefinitions) {
             String variableName = variableDefinition.getName();
             GraphQLType variableType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
@@ -330,7 +331,7 @@ public class ValuesResolver {
             return ImmutableKit.emptyMap();
         }
 
-        Map<String, Object> coercedValues = new LinkedHashMap<>();
+        Map<String, Object> coercedValues = Maps.newLinkedHashMapWithExpectedSize(arguments.size());
         Map<String, Argument> argumentMap = argumentMap(arguments);
         for (GraphQLArgument argumentDefinition : argumentTypes) {
             GraphQLInputType argumentType = argumentDefinition.getType();
@@ -384,7 +385,7 @@ public class ValuesResolver {
     }
 
     private static Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>(arguments.size());
+        Map<String, Argument> result = Maps.newLinkedHashMapWithExpectedSize(arguments.size());
         for (Argument argument : arguments) {
             result.put(argument.getName(), argument);
         }
@@ -463,8 +464,9 @@ public class ValuesResolver {
                                                                 Value value,
                                                                 Map<String, NormalizedInputValue> normalizedVariables) {
         if (value instanceof ArrayValue) {
-            List<Object> result = new ArrayList<>();
-            for (Value valueInArray : ((ArrayValue) value).getValues()) {
+            List<Value> values = ((ArrayValue) value).getValues();
+            List<Object> result = new ArrayList<>(values.size());
+            for (Value valueInArray : values) {
                 Object normalisedValue = literalToNormalizedValue(
                         fieldVisibility,
                         type.getWrappedType(),
