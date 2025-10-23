@@ -2,7 +2,6 @@ package graphql.schema.idl;
 
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -148,10 +147,13 @@ class SchemaTypeDirectivesChecker {
         });
     }
 
-    private boolean inRightLocation(DirectiveLocation expectedLocation, DirectiveDefinition directiveDefinition) {
-        List<String> names = ImmutableKit.map(directiveDefinition.getDirectiveLocations(),
-                it -> it.getName().toUpperCase());
-        return names.contains(expectedLocation.name().toUpperCase());
+    private static boolean inRightLocation(DirectiveLocation expectedLocation, DirectiveDefinition directiveDefinition) {
+        for (graphql.language.DirectiveLocation location : directiveDefinition.getDirectiveLocations()) {
+            if (location.getName().equalsIgnoreCase(expectedLocation.name())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void checkDirectiveArguments(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, Node<?> element, String elementName, Directive directive, DirectiveDefinition directiveDefinition) {
@@ -175,7 +177,7 @@ class SchemaTypeDirectivesChecker {
         });
     }
 
-    private boolean isNoNullArgWithoutDefaultValue(InputValueDefinition definitionArgument) {
+    private static boolean isNoNullArgWithoutDefaultValue(InputValueDefinition definitionArgument) {
         return definitionArgument.getType() instanceof NonNullType && definitionArgument.getDefaultValue() == null;
     }
 
@@ -192,7 +194,7 @@ class SchemaTypeDirectivesChecker {
         });
     }
 
-    private void assertTypeName(NamedNode<?> node, List<GraphQLError> errors) {
+    private static void assertTypeName(NamedNode<?> node, List<GraphQLError> errors) {
         if (node.getName().length() >= 2 && node.getName().startsWith("__")) {
             errors.add((new IllegalNameError(node)));
         }
@@ -215,7 +217,7 @@ class SchemaTypeDirectivesChecker {
         }
     }
 
-    private TypeDefinition<?> findTypeDefFromRegistry(String typeName, TypeDefinitionRegistry typeRegistry) {
+    private static TypeDefinition<?> findTypeDefFromRegistry(String typeName, TypeDefinitionRegistry typeRegistry) {
         TypeDefinition<?> typeDefinition = typeRegistry.getTypeOrNull(typeName);
         if (typeDefinition != null) {
             return typeDefinition;
