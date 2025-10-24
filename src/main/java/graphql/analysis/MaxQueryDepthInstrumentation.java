@@ -8,6 +8,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
@@ -21,8 +22,8 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  * exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
 @PublicApi
+@NullMarked
 public class MaxQueryDepthInstrumentation extends SimplePerformantInstrumentation {
-
 
     private final int maxDepth;
     private final Function<QueryDepthInfo, Boolean> maxQueryDepthExceededFunction;
@@ -48,7 +49,7 @@ public class MaxQueryDepthInstrumentation extends SimplePerformantInstrumentatio
     }
 
     @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         QueryTraverser queryTraverser = newQueryTraverser(parameters.getExecutionContext());
         int depth = queryTraverser.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
         if (depth > maxDepth) {
@@ -84,7 +85,7 @@ public class MaxQueryDepthInstrumentation extends SimplePerformantInstrumentatio
                 .build();
     }
 
-    private int getPathLength(QueryVisitorFieldEnvironment path) {
+    private int getPathLength(@Nullable QueryVisitorFieldEnvironment path) {
         int length = 1;
         while (path != null) {
             path = path.getParentEnvironment();

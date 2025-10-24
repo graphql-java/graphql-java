@@ -4,6 +4,8 @@ import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ResultPath;
 import graphql.execution.UnresolvedTypeException;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -12,6 +14,7 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static java.lang.String.format;
 
 @PublicApi
+@NullMarked
 public class UnresolvedTypeError implements GraphQLError {
 
     private final String message;
@@ -45,7 +48,7 @@ public class UnresolvedTypeError implements GraphQLError {
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return null;
     }
 
