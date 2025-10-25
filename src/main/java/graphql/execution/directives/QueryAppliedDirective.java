@@ -41,7 +41,7 @@ public class QueryAppliedDirective {
 
     private QueryAppliedDirective(String name, Directive definition, Collection<QueryAppliedDirectiveArgument> arguments) {
         assertValidName(name);
-        assertNotNull(arguments, () -> "arguments can't be null");
+        assertNotNull(arguments, "arguments can't be null");
         this.name = name;
         this.arguments = ImmutableList.copyOf(arguments);
         this.definition = definition;
@@ -122,13 +122,13 @@ public class QueryAppliedDirective {
         }
 
         public Builder argument(QueryAppliedDirectiveArgument argument) {
-            assertNotNull(argument, () -> "argument must not be null");
+            assertNotNull(argument,"argument must not be null");
             arguments.put(argument.getName(), argument);
             return this;
         }
 
         public Builder replaceArguments(List<QueryAppliedDirectiveArgument> arguments) {
-            assertNotNull(arguments, () -> "arguments must not be null");
+            assertNotNull(arguments, "arguments must not be null");
             this.arguments.clear();
             for (QueryAppliedDirectiveArgument argument : arguments) {
                 this.arguments.put(argument.getName(), argument);

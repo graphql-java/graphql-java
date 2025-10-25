@@ -164,14 +164,14 @@ public class GraphQL {
 
 
     private GraphQL(Builder builder) {
-        this.graphQLSchema = assertNotNull(builder.graphQLSchema, () -> "graphQLSchema must be non null");
-        this.queryStrategy = assertNotNull(builder.queryExecutionStrategy, () -> "queryStrategy must not be null");
-        this.mutationStrategy = assertNotNull(builder.mutationExecutionStrategy, () -> "mutationStrategy must not be null");
-        this.subscriptionStrategy = assertNotNull(builder.subscriptionExecutionStrategy, () -> "subscriptionStrategy must not be null");
-        this.idProvider = assertNotNull(builder.idProvider, () -> "idProvider must be non null");
-        this.instrumentation = assertNotNull(builder.instrumentation, () -> "instrumentation must not be null");
-        this.preparsedDocumentProvider = assertNotNull(builder.preparsedDocumentProvider, () -> "preparsedDocumentProvider must be non null");
-        this.valueUnboxer = assertNotNull(builder.valueUnboxer, () -> "valueUnboxer must not be null");
+        this.graphQLSchema = assertNotNull(builder.graphQLSchema, "graphQLSchema must be non null");
+        this.queryStrategy = assertNotNull(builder.queryExecutionStrategy, "queryStrategy must not be null");
+        this.mutationStrategy = assertNotNull(builder.mutationExecutionStrategy, "mutationStrategy must not be null");
+        this.subscriptionStrategy = assertNotNull(builder.subscriptionExecutionStrategy, "subscriptionStrategy must not be null");
+        this.idProvider = assertNotNull(builder.idProvider, "idProvider must be non null");
+        this.instrumentation = assertNotNull(builder.instrumentation, "instrumentation must not be null");
+        this.preparsedDocumentProvider = assertNotNull(builder.preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
+        this.valueUnboxer = assertNotNull(builder.valueUnboxer, "valueUnboxer must not be null");
         this.doNotAutomaticallyDispatchDataLoader = builder.doNotAutomaticallyDispatchDataLoader;
     }
 
@@ -288,22 +288,22 @@ public class GraphQL {
         }
 
         public Builder schema(GraphQLSchema graphQLSchema) {
-            this.graphQLSchema = assertNotNull(graphQLSchema, () -> "GraphQLSchema must be non null");
+            this.graphQLSchema = assertNotNull(graphQLSchema, "GraphQLSchema must be non null");
             return this;
         }
 
         public Builder queryExecutionStrategy(ExecutionStrategy executionStrategy) {
-            this.queryExecutionStrategy = assertNotNull(executionStrategy, () -> "Query ExecutionStrategy must be non null");
+            this.queryExecutionStrategy = assertNotNull(executionStrategy, "Query ExecutionStrategy must be non null");
             return this;
         }
 
         public Builder mutationExecutionStrategy(ExecutionStrategy executionStrategy) {
-            this.mutationExecutionStrategy = assertNotNull(executionStrategy, () -> "Mutation ExecutionStrategy must be non null");
+            this.mutationExecutionStrategy = assertNotNull(executionStrategy, "Mutation ExecutionStrategy must be non null");
             return this;
         }
 
         public Builder subscriptionExecutionStrategy(ExecutionStrategy executionStrategy) {
-            this.subscriptionExecutionStrategy = assertNotNull(executionStrategy, () -> "Subscription ExecutionStrategy must be non null");
+            this.subscriptionExecutionStrategy = assertNotNull(executionStrategy, "Subscription ExecutionStrategy must be non null");
             return this;
         }
 
@@ -316,22 +316,22 @@ public class GraphQL {
          * @return this builder
          */
         public Builder defaultDataFetcherExceptionHandler(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
-            this.defaultExceptionHandler = assertNotNull(dataFetcherExceptionHandler, () -> "The DataFetcherExceptionHandler must be non null");
+            this.defaultExceptionHandler = assertNotNull(dataFetcherExceptionHandler, "The DataFetcherExceptionHandler must be non null");
             return this;
         }
 
         public Builder instrumentation(Instrumentation instrumentation) {
-            this.instrumentation = assertNotNull(instrumentation, () -> "Instrumentation must be non null");
+            this.instrumentation = assertNotNull(instrumentation, "Instrumentation must be non null");
             return this;
         }
 
         public Builder preparsedDocumentProvider(PreparsedDocumentProvider preparsedDocumentProvider) {
-            this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, () -> "PreparsedDocumentProvider must be non null");
+            this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "PreparsedDocumentProvider must be non null");
             return this;
         }
 
         public Builder executionIdProvider(ExecutionIdProvider executionIdProvider) {
-            this.idProvider = assertNotNull(executionIdProvider, () -> "ExecutionIdProvider must be non null");
+            this.idProvider = assertNotNull(executionIdProvider, "ExecutionIdProvider must be non null");
             return this;
         }
 

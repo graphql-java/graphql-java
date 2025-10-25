@@ -316,7 +316,7 @@ public class TypeDefinitionRegistry implements Serializable {
      * @param definition the definition to remove
      */
     public void remove(SDLDefinition definition) {
-        assertNotNull(definition, () -> "definition to remove can't be null");
+        assertNotNull(definition, "definition to remove can't be null");
         schemaParseOrder.removeDefinition(definition);
         if (definition instanceof ObjectTypeExtensionDefinition) {
             removeFromList(objectTypeExtensions, (TypeDefinition) definition);
@@ -364,8 +364,8 @@ public class TypeDefinitionRegistry implements Serializable {
      * @param definition the definition to remove
      */
     public void remove(String key, SDLDefinition definition) {
-        assertNotNull(definition, () -> "definition to remove can't be null");
-        assertNotNull(key, () -> "key to remove can't be null");
+        assertNotNull(definition, "definition to remove can't be null");
+        assertNotNull(key, "key to remove can't be null");
         schemaParseOrder.removeDefinition(definition);
         if (definition instanceof ObjectTypeExtensionDefinition) {
             removeFromMap(objectTypeExtensions, key);

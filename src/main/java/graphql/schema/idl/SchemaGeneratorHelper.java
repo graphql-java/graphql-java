@@ -505,7 +505,7 @@ public class SchemaGeneratorHelper {
 
         if (wiringFactory.providesTypeResolver(environment)) {
             typeResolver = wiringFactory.getTypeResolver(environment);
-            assertNotNull(typeResolver, () -> "The WiringFactory indicated it provides a interface type resolver but then returned null");
+            assertNotNull(typeResolver, "The WiringFactory indicated it provides a interface type resolver but then returned null");
 
         } else {
             typeResolver = wiring.getTypeResolvers().get(interfaceType.getName());
@@ -527,7 +527,7 @@ public class SchemaGeneratorHelper {
 
         if (wiringFactory.providesTypeResolver(environment)) {
             typeResolver = wiringFactory.getTypeResolver(environment);
-            assertNotNull(typeResolver, () -> "The WiringFactory indicated it union provides a type resolver but then returned null");
+            assertNotNull(typeResolver, "The WiringFactory indicated it union provides a type resolver but then returned null");
 
         } else {
             typeResolver = wiring.getTypeResolvers().get(unionType.getName());
@@ -835,14 +835,14 @@ public class SchemaGeneratorHelper {
         DataFetcherFactory<?> dataFetcherFactory;
         if (wiringFactory.providesDataFetcherFactory(wiringEnvironment)) {
             dataFetcherFactory = wiringFactory.getDataFetcherFactory(wiringEnvironment);
-            assertNotNull(dataFetcherFactory, () -> "The WiringFactory indicated it provides a data fetcher factory but then returned null");
+            assertNotNull(dataFetcherFactory, "The WiringFactory indicated it provides a data fetcher factory but then returned null");
         } else {
             //
             // ok they provide a data fetcher directly
             DataFetcher<?> dataFetcher;
             if (wiringFactory.providesDataFetcher(wiringEnvironment)) {
                 dataFetcher = wiringFactory.getDataFetcher(wiringEnvironment);
-                assertNotNull(dataFetcher, () -> "The WiringFactory indicated it provides a data fetcher but then returned null");
+                assertNotNull(dataFetcher, "The WiringFactory indicated it provides a data fetcher but then returned null");
             } else {
                 dataFetcher = runtimeWiring.getDataFetchersForType(parentTypeName).get(fieldName);
                 if (dataFetcher == null) {

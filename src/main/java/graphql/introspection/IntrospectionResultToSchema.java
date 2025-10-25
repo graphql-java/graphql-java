@@ -73,12 +73,11 @@ public class IntrospectionResultToSchema {
      */
     @SuppressWarnings("unchecked")
     public Document createSchemaDefinition(Map<String, Object> introspectionResult) {
-        assertTrue(introspectionResult.get("__schema") != null, () -> "__schema expected");
         Map<String, Object> schema = (Map<String, Object>) introspectionResult.get("__schema");
-
+        assertNotNull(schema, "__schema expected");
 
         Map<String, Object> queryType = (Map<String, Object>) schema.get("queryType");
-        assertNotNull(queryType, () -> "queryType expected");
+        assertNotNull(queryType, "queryType expected");
         TypeName query = TypeName.newTypeName().name((String) queryType.get("name")).build();
         boolean nonDefaultQueryName = !"Query".equals(query.getName());
 
@@ -155,8 +154,8 @@ public class IntrospectionResultToSchema {
     }
 
     private List<DirectiveLocation> createDirectiveLocations(List<Object> locations) {
-        assertNotEmpty(locations, () -> "the locations of directive should not be empty.");
-        ArrayList<DirectiveLocation> result = new ArrayList<>();
+        assertNotEmpty(locations, "the locations of directive should not be empty.");
+        List<DirectiveLocation> result = new ArrayList<>(locations.size());
         for (Object location : locations) {
             DirectiveLocation directiveLocation = DirectiveLocation.newDirectiveLocation().name(location.toString()).build();
             result.add(directiveLocation);
@@ -202,7 +201,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     UnionTypeDefinition createUnion(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("UNION"), () -> "wrong input");
+        assertTrue(input.get("kind").equals("UNION"), "wrong input");
 
         UnionTypeDefinition.Builder unionTypeDefinition = UnionTypeDefinition.newUnionTypeDefinition();
         unionTypeDefinition.name((String) input.get("name"));
@@ -220,7 +219,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     EnumTypeDefinition createEnum(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("ENUM"), () -> "wrong input");
+        assertTrue(input.get("kind").equals("ENUM"), "wrong input");
 
         EnumTypeDefinition.Builder enumTypeDefinition = EnumTypeDefinition.newEnumTypeDefinition().name((String) input.get("name"));
         enumTypeDefinition.description(toDescription(input));
@@ -242,7 +241,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     InterfaceTypeDefinition createInterface(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("INTERFACE"), () -> "wrong input");
+        assertTrue(input.get("kind").equals("INTERFACE"), "wrong input");
 
         InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name((String) input.get("name"));
         interfaceTypeDefinition.description(toDescription(input));
@@ -263,7 +262,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     InputObjectTypeDefinition createInputObject(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("INPUT_OBJECT"), () -> "wrong input");
+        assertTrue(input.get("kind").equals("INPUT_OBJECT"), "wrong input");
 
         InputObjectTypeDefinition.Builder inputObjectTypeDefinition = InputObjectTypeDefinition.newInputObjectDefinition()
                 .name((String) input.get("name"))
@@ -278,7 +277,7 @@ public class IntrospectionResultToSchema {
 
     @SuppressWarnings("unchecked")
     ObjectTypeDefinition createObject(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("OBJECT"), () -> "wrong input");
+        assertTrue(input.get("kind").equals("OBJECT"), "wrong input");
 
         ObjectTypeDefinition.Builder objectTypeDefinition = ObjectTypeDefinition.newObjectTypeDefinition().name((String) input.get("name"));
         objectTypeDefinition.description(toDescription(input));
@@ -295,7 +294,7 @@ public class IntrospectionResultToSchema {
     }
 
     private List<FieldDefinition> createFields(List<Map<String, Object>> fields) {
-        List<FieldDefinition> result = new ArrayList<>();
+        List<FieldDefinition> result = new ArrayList<>(fields.size());
         for (Map<String, Object> field : fields) {
             FieldDefinition.Builder fieldDefinition = FieldDefinition.newFieldDefinition().name((String) field.get("name"));
             fieldDefinition.description(toDescription(field));
@@ -312,7 +311,6 @@ public class IntrospectionResultToSchema {
     }
 
     private void createDeprecatedDirective(Map<String, Object> field, NodeDirectivesBuilder nodeDirectivesBuilder) {
-        List<Directive> directives = new ArrayList<>();
         if (Boolean.TRUE.equals(field.get("isDeprecated"))) {
             String reason = (String) field.get("deprecationReason");
             if (reason == null) {
@@ -320,14 +318,13 @@ public class IntrospectionResultToSchema {
             }
             Argument reasonArg = Argument.newArgument().name("reason").value(StringValue.newStringValue().value(reason).build()).build();
             Directive deprecated = Directive.newDirective().name("deprecated").arguments(Collections.singletonList(reasonArg)).build();
-            directives.add(deprecated);
+            nodeDirectivesBuilder.directive(deprecated);
         }
-        nodeDirectivesBuilder.directives(directives);
     }
 
     @SuppressWarnings("unchecked")
     private List<InputValueDefinition> createInputValueDefinitions(List<Map<String, Object>> args) {
-        List<InputValueDefinition> result = new ArrayList<>();
+        List<InputValueDefinition> result = new ArrayList<>(args.size());
         for (Map<String, Object> arg : args) {
             Type argType = createTypeIndirection((Map<String, Object>) arg.get("type"));
             InputValueDefinition.Builder inputValueDefinition = InputValueDefinition.newInputValueDefinition().name((String) arg.get("name")).type(argType);

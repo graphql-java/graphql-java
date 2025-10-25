@@ -428,7 +428,7 @@ public class MergedField {
             if (this.singleField != null && this.fields == null) {
                 return new MergedField(singleField, deferredExecutions);
             }
-            ImmutableList<Field> fields = assertNotNull(this.fields, () -> "You MUST add at least one field via the builder").build();
+            ImmutableList<Field> fields = assertNotNull(this.fields, "You MUST add at least one field via the builder").build();
             assertNotEmpty(fields);
             return new MultiMergedField(fields, deferredExecutions);
         }

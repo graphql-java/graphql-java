@@ -146,7 +146,7 @@ public class Anonymizer {
     }
 
     public static AnonymizeResult anonymizeSchemaAndQueries(GraphQLSchema schema, List<String> queries, Map<String, Object> variables) {
-        assertNotNull(queries, () -> "queries can't be null");
+        assertNotNull(queries, "queries can't be null");
 
         AtomicInteger defaultStringValueCounter = new AtomicInteger(1);
         AtomicInteger defaultIntValueCounter = new AtomicInteger(1);

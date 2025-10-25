@@ -69,7 +69,7 @@ public class ExecutionInput {
             return PERSISTED_QUERY_MARKER;
         }
 
-        return assertNotNull(builder.query, () -> "query can't be null");
+        return assertNotNull(builder.query, "query can't be null");
     }
 
     /**
@@ -432,13 +432,13 @@ public class ExecutionInput {
          * @return this builder
          */
         public Builder variables(Map<String, Object> rawVariables) {
-            assertNotNull(rawVariables, () -> "variables map can't be null");
+            assertNotNull(rawVariables, "variables map can't be null");
             this.rawVariables = RawVariables.of(rawVariables);
             return this;
         }
 
         public Builder extensions(Map<String, Object> extensions) {
-            this.extensions = assertNotNull(extensions, () -> "extensions map can't be null");
+            this.extensions = assertNotNull(extensions, "extensions map can't be null");
             return this;
         }
 

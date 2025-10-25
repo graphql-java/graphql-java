@@ -129,7 +129,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<B>> implements Gr
      * @return a newly built GraphqlError
      */
     public GraphQLError build() {
-        assertNotNull(message, () -> "You must provide error message");
+        assertNotNull(message, "You must provide error message");
         return new GraphqlErrorImpl(message, locations, errorType, path, extensions);
     }
 

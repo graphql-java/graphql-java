@@ -74,7 +74,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
                             List<GraphQLAppliedDirective> appliedDirectives,
                             String deprecationReason) {
         assertValidName(name);
-        assertNotNull(type, () -> "type can't be null");
+        assertNotNull(type, "type can't be null");
         this.name = name;
         this.description = description;
         this.originalType = type;
@@ -500,7 +500,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         }
 
         public GraphQLArgument build() {
-            assertNotNull(type, () -> "type can't be null");
+            assertNotNull(type, "type can't be null");
 
             return new GraphQLArgument(
                     name,

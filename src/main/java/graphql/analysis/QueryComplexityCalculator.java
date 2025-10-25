@@ -25,10 +25,10 @@ public class QueryComplexityCalculator {
     private final CoercedVariables variables;
 
     public QueryComplexityCalculator(Builder builder) {
-        this.fieldComplexityCalculator = assertNotNull(builder.fieldComplexityCalculator, () -> "fieldComplexityCalculator can't be null");
-        this.schema = assertNotNull(builder.schema, () -> "schema can't be null");
-        this.document = assertNotNull(builder.document, () -> "document can't be null");
-        this.variables = assertNotNull(builder.variables, () -> "variables can't be null");
+        this.fieldComplexityCalculator = assertNotNull(builder.fieldComplexityCalculator, "fieldComplexityCalculator can't be null");
+        this.schema = assertNotNull(builder.schema, "schema can't be null");
+        this.document = assertNotNull(builder.document, "document can't be null");
+        this.variables = assertNotNull(builder.variables, "variables can't be null");
         this.operationName = builder.operationName;
     }
 

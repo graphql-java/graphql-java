@@ -60,7 +60,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                             EnumTypeDefinition definition,
                             List<EnumTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
-        assertNotNull(directives, () -> "directives cannot be null");
+        assertNotNull(directives, "directives cannot be null");
 
         this.name = name;
         this.description = description;
@@ -365,7 +365,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         }
 
         public Builder value(String name, Object value) {
-            assertNotNull(value, () -> "value can't be null");
+            assertNotNull(value, "value can't be null");
             return value(newEnumValueDefinition().name(name)
                     .value(value).build());
         }
@@ -388,7 +388,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         }
 
         public Builder value(GraphQLEnumValueDefinition enumValueDefinition) {
-            assertNotNull(enumValueDefinition, () -> "enumValueDefinition can't be null");
+            assertNotNull(enumValueDefinition, "enumValueDefinition can't be null");
             values.put(enumValueDefinition.getName(), enumValueDefinition);
             return this;
         }

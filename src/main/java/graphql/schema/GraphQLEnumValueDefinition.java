@@ -43,7 +43,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
                                        List<GraphQLAppliedDirective> appliedDirectives,
                                        EnumValueDefinition definition) {
         assertValidName(name);
-        assertNotNull(directives, () -> "directives cannot be null");
+        assertNotNull(directives, "directives cannot be null");
 
         this.name = name;
         this.description = description;
