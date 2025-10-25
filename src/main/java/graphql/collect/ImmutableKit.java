@@ -136,7 +136,7 @@ public final class ImmutableKit {
      *
      * @return a map immutable list of results
      */
-    public static <T, R> ImmutableList<R> mapAndDropNulls(Collection<? extends T> collection, Function<? super T, ? extends R> mapper) {
+    public static <T, R> ImmutableList<R> mapAndDropNulls(Collection<? extends T> collection, Function<? super T, ? extends @Nullable R> mapper) {
         assertNotNull(collection);
         assertNotNull(mapper);
         ImmutableList.Builder<R> builder = ImmutableList.builderWithExpectedSize(collection.size());
