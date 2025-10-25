@@ -1,5 +1,6 @@
 package graphql;
 
+import com.google.common.collect.Maps;
 import graphql.language.SourceLocation;
 import graphql.util.FpKit;
 
@@ -20,7 +21,7 @@ import static graphql.collect.ImmutableKit.mapAndDropNulls;
 public class GraphqlErrorHelper {
 
     public static Map<String, Object> toSpecification(GraphQLError error) {
-        Map<String, Object> errorMap = new LinkedHashMap<>();
+        Map<String, Object> errorMap = Maps.newLinkedHashMapWithExpectedSize(4);
         errorMap.put("message", error.getMessage());
         if (error.getLocations() != null) {
             errorMap.put("locations", locations(error.getLocations()));
@@ -73,7 +74,7 @@ public class GraphqlErrorHelper {
         if (line < 1 || column < 1) {
             return null;
         }
-        LinkedHashMap<String, Object> map = new LinkedHashMap<>(2);
+        Map<String, Object> map = Maps.newLinkedHashMapWithExpectedSize(2);
         map.put("line", line);
         map.put("column", column);
         return map;
@@ -120,7 +121,7 @@ public class GraphqlErrorHelper {
     private static void extractLocations(GraphQLError.Builder<?> errorBuilder, Map<String, Object> rawError) {
         List<Object> locations = (List<Object>) rawError.get("locations");
         if (locations != null) {
-            List<SourceLocation> sourceLocations = new ArrayList<>();
+            List<SourceLocation> sourceLocations = new ArrayList<>(locations.size());
             for (Object locationObj : locations) {
                 Map<String, Object> location = (Map<String, Object>) locationObj;
                 if (location != null) {
