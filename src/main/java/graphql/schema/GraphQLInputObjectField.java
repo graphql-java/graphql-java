@@ -56,8 +56,8 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             InputValueDefinition definition,
             String deprecationReason) {
         assertValidName(name);
-        assertNotNull(type, () -> "type can't be null");
-        assertNotNull(directives, () -> "directives cannot be null");
+        assertNotNull(type, "type can't be null");
+        assertNotNull(directives, "directives cannot be null");
 
         this.name = name;
         this.originalType = type;
@@ -375,7 +375,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         }
 
         public GraphQLInputObjectField build() {
-            assertNotNull(type, () -> "type can't be null");
+            assertNotNull(type, "type can't be null");
             return new GraphQLInputObjectField(
                     name,
                     description,

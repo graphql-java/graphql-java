@@ -73,7 +73,7 @@ public class ExecutionStepInfo {
         this.field = builder.field;
         this.path = builder.path;
         this.parent = builder.parentInfo;
-        this.type = assertNotNull(builder.type, () -> "you must provide a graphql type");
+        this.type = assertNotNull(builder.type, "you must provide a graphql type");
         this.arguments = builder.arguments;
         this.fieldContainer = builder.fieldContainer;
     }
@@ -88,7 +88,7 @@ public class ExecutionStepInfo {
                               GraphQLFieldDefinition fieldDefinition,
                               GraphQLObjectType fieldContainer,
                               Supplier<ImmutableMapWithNullValues<String, Object>> arguments) {
-        this.type = assertNotNull(type, () -> "you must provide a graphql type");
+        this.type = assertNotNull(type, "you must provide a graphql type");
         this.path = path;
         this.parent = parent;
         this.field = field;
@@ -223,7 +223,7 @@ public class ExecutionStepInfo {
      * @return a new type info with the same
      */
     public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLOutputType newType) {
-        assertTrue(!GraphQLTypeUtil.isNonNull(newType), () -> "newType can't be non null");
+        assertTrue(!GraphQLTypeUtil.isNonNull(newType), "newType can't be non null");
         if (isNonNullType()) {
             return transform(GraphQLNonNull.nonNull(newType));
         } else {

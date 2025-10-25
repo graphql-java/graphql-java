@@ -47,12 +47,12 @@ public class QueryTransformer {
                              Map<String, FragmentDefinition> fragmentsByName,
                              Map<String, Object> variables,
                              QueryTraversalOptions options) {
-        this.schema = assertNotNull(schema, () -> "schema can't be null");
-        this.variables = assertNotNull(variables, () -> "variables can't be null");
-        this.root = assertNotNull(root, () -> "root can't be null");
+        this.schema = assertNotNull(schema, "schema can't be null");
+        this.variables = assertNotNull(variables, "variables can't be null");
+        this.root = assertNotNull(root, "root can't be null");
         this.rootParentType = assertNotNull(rootParentType);
-        this.fragmentsByName = assertNotNull(fragmentsByName, () -> "fragmentsByName can't be null");
-        this.options = assertNotNull(options, () -> "options can't be null");
+        this.fragmentsByName = assertNotNull(fragmentsByName, "fragmentsByName can't be null");
+        this.options = assertNotNull(options, "options can't be null");
     }
 
     /**
@@ -177,7 +177,7 @@ public class QueryTransformer {
          * @return this builder
          */
         public Builder options(QueryTraversalOptions options) {
-            this.options = assertNotNull(options, () -> "options can't be null");
+            this.options = assertNotNull(options, "options can't be null");
             return this;
         }
 

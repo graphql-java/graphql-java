@@ -21,7 +21,7 @@ public class CombinedWiringFactory implements WiringFactory {
     private final List<WiringFactory> factories;
 
     public CombinedWiringFactory(List<WiringFactory> factories) {
-        assertNotNull(factories, () -> "You must provide a list of wiring factories");
+        assertNotNull(factories, "You must provide a list of wiring factories");
         this.factories = new ArrayList<>(factories);
     }
 

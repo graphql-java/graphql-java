@@ -21,6 +21,13 @@ public class Assert {
         throw new NullPointerException(msg.get());
     }
 
+    public static <T> T assertNotNullWithNPE(T object, String constantMsg) {
+        if (object != null) {
+            return object;
+        }
+        throw new NullPointerException(constantMsg);
+    }
+
     @Contract("null -> fail")
     public static <T> T assertNotNull(@Nullable T object) {
         if (object != null) {
@@ -78,6 +85,14 @@ public class Assert {
         throwAssert(msg.get());
     }
 
+    @Contract("!null,_ -> fail")
+    public static <T> void assertNull(@Nullable T object, String constantMsg) {
+        if (object == null) {
+            return;
+        }
+        throwAssert(constantMsg);
+    }
+
     @Contract("!null -> fail")
     public static <T> void assertNull(@Nullable Object object) {
         if (object == null) {
@@ -112,6 +127,13 @@ public class Assert {
     public static <T> Collection<T> assertNotEmpty(Collection<T> collection, Supplier<String> msg) {
         if (collection == null || collection.isEmpty()) {
             throwAssert(msg.get());
+        }
+        return collection;
+    }
+
+    public static <T> Collection<T> assertNotEmpty(Collection<T> collection, String constantMsg) {
+        if (collection == null || collection.isEmpty()) {
+            throwAssert(constantMsg);
         }
         return collection;
     }

@@ -433,12 +433,12 @@ public class SchemaTransformer {
             GraphQLSchemaElement parent,
             Map<NodeZipper<GraphQLSchemaElement>, Breadcrumb<GraphQLSchemaElement>> sameParentsZipper) {
         Set<NodeZipper<GraphQLSchemaElement>> sameParent = sameParentsZipper.keySet();
-        assertNotEmpty(sameParent, () -> "expected at least one zipper");
+        assertNotEmpty(sameParent, "expected at least one zipper");
 
         Map<String, List<GraphQLSchemaElement>> childrenMap = new HashMap<>(SCHEMA_ELEMENT_ADAPTER.getNamedChildren(parent));
         Map<String, Integer> indexCorrection = new HashMap<>();
 
-        List<ZipperWithOneParent> zipperWithOneParents = new ArrayList<>();
+        List<ZipperWithOneParent> zipperWithOneParents = new ArrayList<>(sameParent.size());
         for (NodeZipper<GraphQLSchemaElement> zipper : sameParent) {
             Breadcrumb<GraphQLSchemaElement> breadcrumb = sameParentsZipper.get(zipper);
             zipperWithOneParents.add(new ZipperWithOneParent(zipper, breadcrumb));

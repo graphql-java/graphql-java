@@ -78,10 +78,10 @@ public class GraphQLSchema {
      */
     @Internal
     private GraphQLSchema(Builder builder) {
-        assertNotNull(builder.additionalTypes, () -> "additionalTypes can't be null");
-        assertNotNull(builder.queryType, () -> "queryType can't be null");
-        assertNotNull(builder.additionalDirectives, () -> "directives can't be null");
-        assertNotNull(builder.codeRegistry, () -> "codeRegistry can't be null");
+        assertNotNull(builder.additionalTypes, "additionalTypes can't be null");
+        assertNotNull(builder.queryType, "queryType can't be null");
+        assertNotNull(builder.additionalDirectives, "directives can't be null");
+        assertNotNull(builder.codeRegistry, "codeRegistry can't be null");
 
         this.queryType = builder.queryType;
         this.mutationType = builder.mutationType;
@@ -112,7 +112,7 @@ public class GraphQLSchema {
                          ImmutableMap<String, GraphQLNamedType> typeMap,
                          ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes
     ) {
-        assertNotNull(codeRegistry, () -> "codeRegistry can't be null");
+        assertNotNull(codeRegistry, "codeRegistry can't be null");
 
         this.queryType = existingSchema.queryType;
         this.mutationType = existingSchema.mutationType;
@@ -137,7 +137,7 @@ public class GraphQLSchema {
      */
     @Internal
     public GraphQLSchema(BuilderWithoutTypes builder) {
-        assertNotNull(builder.codeRegistry, () -> "codeRegistry can't be null");
+        assertNotNull(builder.codeRegistry, "codeRegistry can't be null");
 
         GraphQLSchema existingSchema = builder.existingSchema;
 
@@ -768,7 +768,7 @@ public class GraphQLSchema {
         }
 
         public Builder withSchemaDirective(GraphQLDirective directive) {
-            assertNotNull(directive, () -> "directive can't be null");
+            assertNotNull(directive, "directive can't be null");
             schemaDirectives.add(directive);
             return this;
         }
@@ -792,7 +792,7 @@ public class GraphQLSchema {
         }
 
         public Builder withSchemaAppliedDirective(GraphQLAppliedDirective appliedDirective) {
-            assertNotNull(appliedDirective, () -> "directive can't be null");
+            assertNotNull(appliedDirective, "directive can't be null");
             schemaAppliedDirectives.add(appliedDirective);
             return this;
         }
@@ -842,8 +842,8 @@ public class GraphQLSchema {
         }
 
         private GraphQLSchema buildImpl() {
-            assertNotNull(additionalTypes, () -> "additionalTypes can't be null");
-            assertNotNull(additionalDirectives, () -> "additionalDirectives can't be null");
+            assertNotNull(additionalTypes, "additionalTypes can't be null");
+            assertNotNull(additionalDirectives, "additionalDirectives can't be null");
 
             // schemas built via the schema generator have the deprecated directive BUT we want it present for hand built
             // schemas - it's inherently part of the spec!
