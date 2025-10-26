@@ -265,7 +265,7 @@ public class FpKit {
      *
      * @return a <strong>new</strong> list composed of the two concatenated lists elements
      */
-    public static <T> List<T> concat(List<T> l1, List<T> l2) {
+    public static <T> List<T> concat(List<? extends T> l1, List<? extends T> l2) {
         List<T> l = new ArrayList<>(l1.size() + l2.size());
         l.addAll(l1);
         l.addAll(l2);
