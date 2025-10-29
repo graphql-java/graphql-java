@@ -1,5 +1,7 @@
 package graphql;
 
+import org.jspecify.annotations.NullMarked;
+
 /**
  * Errors in graphql-java can have a classification to help with the processing
  * of errors.  Custom {@link graphql.GraphQLError} implementations could use
@@ -8,6 +10,7 @@ package graphql;
  * graphql-java ships with a standard set of error classifications via {@link graphql.ErrorType}
  */
 @PublicApi
+@NullMarked
 public interface ErrorClassification {
 
     /**
