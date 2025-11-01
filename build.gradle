@@ -1,4 +1,5 @@
 import net.ltgt.gradle.errorprone.CheckSeverity
+import org.gradle.api.file.DuplicatesStrategy
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -10,7 +11,7 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "8.3.8"
+    id "com.gradleup.shadow" version "9.0.0"
     id "biz.aQute.bnd.builder" version "6.4.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
@@ -206,6 +207,15 @@ shadowJar {
 -removeheaders: Private-Package
 Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.annotations;resolution:=optional,*
 ''')
+}
+
+tasks.named('jmhJar') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        project.configurations.jmhRuntimeClasspath
+                .filter { it.exists() }
+                .collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
 
