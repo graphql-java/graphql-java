@@ -329,6 +329,81 @@ class TestUtil {
     }
 
 
+    /**
+     * Helper to say that a sub list is contained inside rhe master list in order for its entire length
+     *
+     * @param source the source list to check
+     * @param target the target list
+     * @return true if the target lists are inside the source list in order
+     */
+    static <T> boolean listContainsInOrder(List<T> source, List<T> target, List<T>... targets) {
+        def index = indexOfSubListFrom(0, source, target)
+        if (index == -1) {
+            return false
+        }
+        for (List<T> list : targets) {
+            index = indexOfSubListFrom(index, source, list)
+            if (index == -1) {
+                return false
+            }
+        }
+        return true
+    }
+
+    /**
+     * Finds the index of the target list inside the source list starting from the specified index
+     *
+     * @param startIndex the starting index
+     * @param source the source list
+     * @param target the target list
+     * @return the index of the target list or -1
+     */
+    static <T> int indexOfSubListFrom(int startIndex, List<T> source, List<T> target) {
+        def subListSize = target.size()
+        def masterListSize = source.size()
+        if (masterListSize < subListSize) {
+            return -1
+        }
+        if (target.isEmpty() || source.isEmpty()) {
+            return -1
+        }
+        for (int i = startIndex; i < masterListSize; i++) {
+            // starting at each index look for the sub list
+            if (i + subListSize > masterListSize) {
+                return -1
+            }
+
+            boolean matches = true
+            for (int j = 0; j < subListSize; j++) {
+                T sub = target.get(j)
+                T m = source.get(i + j)
+                if (!eq(sub, m)) {
+                    matches = false
+                    break
+                }
+            }
+            if (matches) {
+                return i
+            }
+        }
+        return -1
+    }
+
+    private static <T> boolean eq(T t1, T t2) {
+        if (t1 == null && t2 == null) {
+            return true
+        }
+        if (t1 != null && t2 != null) {
+            return t1 == t2
+        }
+        return false
+    }
+
+
+    static <T> T last(List<T> list) {
+        return list.get(list.size()-1)
+    }
+
     static List<Map<String, Object>> getIncrementalResults(IncrementalExecutionResult initialResult) {
         Publisher<DelayedIncrementalPartialResult> deferredResultStream = initialResult.incrementalItemPublisher
 
