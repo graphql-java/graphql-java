@@ -560,6 +560,7 @@ class InstrumentationTest extends Specification {
                                           "end:field-hero",
                                           "end:execution-strategy",
                                           "end:execute-operation",
+                                          "start:reactive-results-defer",
                                           "end:execution",
                                           //
                                           // the deferred field resolving now happens after the operation has come back
@@ -571,6 +572,8 @@ class InstrumentationTest extends Specification {
                                           "end:complete-name",
                                           "end:field-name",
                                           "end:deferred-field-name",
+
+                                          "end:reactive-results-defer",
         ]
     }
 
