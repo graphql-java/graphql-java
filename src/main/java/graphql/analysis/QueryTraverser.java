@@ -238,7 +238,7 @@ public class QueryTraverser {
          * @return this builder
          */
         public Builder schema(GraphQLSchema schema) {
-            this.schema = assertNotNull(schema, () -> "schema can't be null");
+            this.schema = assertNotNull(schema, "schema can't be null");
             return this;
         }
 
@@ -264,7 +264,7 @@ public class QueryTraverser {
          * @return this builder
          */
         public Builder document(Document document) {
-            this.document = assertNotNull(document, () -> "document can't be null");
+            this.document = assertNotNull(document, "document can't be null");
             return this;
         }
 
@@ -276,7 +276,7 @@ public class QueryTraverser {
          * @return this builder
          */
         public Builder variables(Map<String, Object> variables) {
-            assertNotNull(variables, () -> "variables can't be null");
+            assertNotNull(variables, "variables can't be null");
             this.rawVariables = RawVariables.of(variables);
             return this;
         }
@@ -289,7 +289,7 @@ public class QueryTraverser {
          * @return this builder
          */
         public Builder coercedVariables(CoercedVariables coercedVariables) {
-            assertNotNull(coercedVariables, () -> "coercedVariables can't be null");
+            assertNotNull(coercedVariables, "coercedVariables can't be null");
             this.coercedVariables = coercedVariables;
             return this;
         }
@@ -303,7 +303,7 @@ public class QueryTraverser {
          * @return this builder
          */
         public Builder root(Node root) {
-            this.root = assertNotNull(root, () -> "root can't be null");
+            this.root = assertNotNull(root, "root can't be null");
             return this;
         }
 
@@ -315,7 +315,7 @@ public class QueryTraverser {
          * @return this builder
          */
         public Builder rootParentType(GraphQLCompositeType rootParentType) {
-            this.rootParentType = assertNotNull(rootParentType, () -> "rootParentType can't be null");
+            this.rootParentType = assertNotNull(rootParentType, "rootParentType can't be null");
             return this;
         }
 
@@ -327,7 +327,7 @@ public class QueryTraverser {
          * @return this builder
          */
         public Builder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
-            this.fragmentsByName = assertNotNull(fragmentsByName, () -> "fragmentsByName can't be null");
+            this.fragmentsByName = assertNotNull(fragmentsByName, "fragmentsByName can't be null");
             return this;
         }
 
@@ -338,7 +338,7 @@ public class QueryTraverser {
          * @return this builder
          */
         public Builder options(QueryTraversalOptions options) {
-            this.options = assertNotNull(options, () -> "options can't be null");
+            this.options = assertNotNull(options, "options can't be null");
             return this;
         }
 

@@ -49,14 +49,14 @@ public class ResultPath {
     }
 
     private ResultPath(ResultPath parent, String segment) {
-        this.parent = assertNotNull(parent, () -> "Must provide a parent path");
-        this.segment = assertNotNull(segment, () -> "Must provide a sub path");
+        this.parent = assertNotNull(parent, "Must provide a parent path");
+        this.segment = assertNotNull(segment, "Must provide a sub path");
         this.toStringValue = initString();
         this.level = parent.level + 1;
     }
 
     private ResultPath(ResultPath parent, int segment) {
-        this.parent = assertNotNull(parent, () -> "Must provide a parent path");
+        this.parent = assertNotNull(parent, "Must provide a parent path");
         this.segment = segment;
         this.toStringValue = initString();
         this.level = parent.level;
@@ -134,13 +134,13 @@ public class ResultPath {
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
             if ("/".equals(token)) {
-                assertTrue(st.hasMoreTokens(), () -> String.format(mkErrMsg(), finalPathString));
+                assertTrue(st.hasMoreTokens(), mkErrMsg(), finalPathString);
                 path = path.segment(st.nextToken());
             } else if ("[".equals(token)) {
-                assertTrue(st.countTokens() >= 2, () -> String.format(mkErrMsg(), finalPathString));
+                assertTrue(st.countTokens() >= 2, mkErrMsg(), finalPathString);
                 path = path.segment(Integer.parseInt(st.nextToken()));
                 String closingBrace = st.nextToken();
-                assertTrue(closingBrace.equals("]"), () -> String.format(mkErrMsg(), finalPathString));
+                assertTrue(closingBrace.equals("]"), mkErrMsg(), finalPathString);
             } else {
                 throw new AssertException(format(mkErrMsg(), pathString));
             }
@@ -217,7 +217,7 @@ public class ResultPath {
      * @return a new path with the last segment replaced
      */
     public ResultPath replaceSegment(int segment) {
-        assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
         return new ResultPath(parent, segment);
     }
 
@@ -230,7 +230,7 @@ public class ResultPath {
      * @return a new path with the last segment replaced
      */
     public ResultPath replaceSegment(String segment) {
-        assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
         return new ResultPath(parent, segment);
     }
 

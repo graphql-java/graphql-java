@@ -182,7 +182,7 @@ public class NormalizedField {
     public GraphQLOutputType getType(GraphQLSchema schema) {
         List<GraphQLFieldDefinition> fieldDefinitions = getFieldDefinitions(schema);
         Set<String> fieldTypes = fieldDefinitions.stream().map(fd -> simplePrint(fd.getType())).collect(toSet());
-        assertTrue(fieldTypes.size() == 1, () -> "More than one type ... use getTypes");
+        assertTrue(fieldTypes.size() == 1, "More than one type ... use getTypes");
         return fieldDefinitions.get(0).getType();
     }
 
@@ -429,8 +429,8 @@ public class NormalizedField {
     }
 
     public List<NormalizedField> getChildren(int includingRelativeLevel) {
+        assertTrue(includingRelativeLevel >= 1, "relative level must be >= 1");
         List<NormalizedField> result = new ArrayList<>();
-        assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
 
         this.getChildren().forEach(child -> {
             traverseImpl(child, result::add, 1, includingRelativeLevel);

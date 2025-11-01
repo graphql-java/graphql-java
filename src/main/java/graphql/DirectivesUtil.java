@@ -64,16 +64,16 @@ public class DirectivesUtil {
 
     @Deprecated(since = "2022-02-24") // use GraphQLAppliedDirectives eventually
     public static List<GraphQLDirective> add(List<GraphQLDirective> targetList, GraphQLDirective newDirective) {
-        assertNotNull(targetList, () -> "directive list can't be null");
-        assertNotNull(newDirective, () -> "directive can't be null");
+        assertNotNull(targetList, "directive list can't be null");
+        assertNotNull(newDirective, "directive can't be null");
         targetList.add(newDirective);
         return targetList;
     }
 
     @Deprecated(since = "2022-02-24") // use GraphQLAppliedDirectives eventually
     public static List<GraphQLDirective> addAll(List<GraphQLDirective> targetList, List<GraphQLDirective> newDirectives) {
-        assertNotNull(targetList, () -> "directive list can't be null");
-        assertNotNull(newDirectives, () -> "directive list can't be null");
+        assertNotNull(targetList, "directive list can't be null");
+        assertNotNull(newDirectives, "directive list can't be null");
         targetList.addAll(newDirectives);
         return targetList;
     }

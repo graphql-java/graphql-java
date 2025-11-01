@@ -220,7 +220,7 @@ public class PrettyAstPrinter extends AstPrinter {
 
     private String node(Node node, Class startClass) {
         if (startClass != null) {
-            assertTrue(startClass.isInstance(node), () -> "The starting class must be in the inherit tree");
+            assertTrue(startClass.isInstance(node), "The starting class must be in the inherit tree");
         }
         StringBuilder builder = new StringBuilder();
 

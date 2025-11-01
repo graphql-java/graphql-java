@@ -455,7 +455,7 @@ public class SchemaGeneratorDirectiveHelper {
         // wiring factory is last (if present)
         env = envBuilder.apply(outputObject, allDirectives, allAppliedDirectives, null, null);
         if (wiringFactory.providesSchemaDirectiveWiring(env)) {
-            schemaDirectiveWiring = assertNotNull(wiringFactory.getSchemaDirectiveWiring(env), () -> "Your WiringFactory MUST provide a non null SchemaDirectiveWiring");
+            schemaDirectiveWiring = assertNotNull(wiringFactory.getSchemaDirectiveWiring(env), "Your WiringFactory MUST provide a non null SchemaDirectiveWiring");
             outputObject = invokeWiring(outputObject, invoker, schemaDirectiveWiring, env);
         }
 

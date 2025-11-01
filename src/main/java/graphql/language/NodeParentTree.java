@@ -29,14 +29,14 @@ public class NodeParentTree<T extends Node> {
 
     @Internal
     public NodeParentTree(Deque<T> nodeStack) {
-        assertNotNull(nodeStack, () -> "You MUST have a non null stack of nodes");
-        assertTrue(!nodeStack.isEmpty(), () -> "You MUST have a non empty stack of nodes");
+        assertNotNull(nodeStack, "You MUST have a non null stack of nodes");
+        assertTrue(!nodeStack.isEmpty(), "You MUST have a non empty stack of nodes");
 
         Deque<T> copy = new ArrayDeque<>(nodeStack);
         path = mkPath(copy);
         node = copy.pop();
         if (!copy.isEmpty()) {
-            parent = new NodeParentTree<T>(copy);
+            parent = new NodeParentTree<>(copy);
         } else {
             parent = null;
         }
@@ -88,8 +88,6 @@ public class NodeParentTree<T extends Node> {
 
     @Override
     public String toString() {
-        return String.valueOf(node) +
-                " - parent : " +
-                parent;
+        return node + " - parent : " + parent;
     }
 }
