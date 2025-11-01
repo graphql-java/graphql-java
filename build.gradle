@@ -10,7 +10,7 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "9.0.1"
+    id "com.gradleup.shadow" version "8.3.8"
     id "biz.aQute.bnd.builder" version "6.4.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
@@ -18,7 +18,7 @@ plugins {
     id "net.ltgt.errorprone" version '4.3.0'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.2.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.2.21'
 }
 
 java {
@@ -119,7 +119,7 @@ jar {
 }
 
 dependencies {
-    api 'com.graphql-java:java-dataloader:5.0.2'
+    api 'com.graphql-java:java-dataloader:5.0.3'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     api "org.jspecify:jspecify:1.0.0"
 
@@ -128,19 +128,19 @@ dependencies {
 
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
-    testImplementation 'net.bytebuddy:byte-buddy:1.17.6'
+    testImplementation 'net.bytebuddy:byte-buddy:1.17.8'
     testImplementation 'org.objenesis:objenesis:3.4'
     testImplementation 'org.apache.groovy:groovy:4.0.28"'
     testImplementation 'org.apache.groovy:groovy-json:4.0.28'
-    testImplementation 'com.google.code.gson:gson:2.13.1'
-    testImplementation 'org.eclipse.jetty:jetty-server:11.0.25'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.19.2'
+    testImplementation 'com.google.code.gson:gson:2.13.2'
+    testImplementation 'org.eclipse.jetty:jetty-server:11.0.26'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.20.0'
     testImplementation 'org.awaitility:awaitility-groovy:4.3.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.7.8"
+    testImplementation "io.projectreactor:reactor-core:3.7.12"
 
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
@@ -155,11 +155,11 @@ dependencies {
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
-    errorprone 'com.uber.nullaway:nullaway:0.12.8'
-    errorprone 'com.google.errorprone:error_prone_core:2.41.0'
+    errorprone 'com.uber.nullaway:nullaway:0.12.10'
+    errorprone 'com.google.errorprone:error_prone_core:2.43.0'
 
     // just tests - no Kotlin otherwise
-    testCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 }
 
 shadowJar {
@@ -309,6 +309,10 @@ artifacts {
 }
 
 List<TestDescriptor> failedTests = []
+Map<String, Integer> testsAndTime = [:]
+Map<String, Integer> testClassesAndTime = [:]
+int testCount = 0
+long testTime = 0L
 
 tasks.withType(Test) {
     useJUnitPlatform()
@@ -322,8 +326,18 @@ tasks.withType(Test) {
     dependsOn "jmhClasses"
 
     afterTest { TestDescriptor descriptor, TestResult result ->
+        testCount++
         if (result.getFailedTestCount() > 0) {
             failedTests.add(descriptor)
+        }
+        def ms = (int) (result.endTime - result.startTime)
+        testTime += ms
+        String className = descriptor.className ?: "unknown"
+        String name = className + "." + descriptor.displayName
+        if (ms > 500) {
+            testsAndTime[name] = ms
+            testClassesAndTime.compute(className) { k, v -> v == null ? ms : v + ms }
+            println "\tTest '$name' took ${ms}ms"
         }
     }
 }
@@ -349,6 +363,10 @@ test.dependsOn testWithJava11
  * See https://github.com/gradle/gradle/issues/20151
  */
 gradle.buildFinished {
+    println "\n\n"
+    println "============================"
+    println "$testCount tests run in $testTime ms"
+    println "============================"
     if (!failedTests.isEmpty()) {
         println "\n\n"
         println "============================"
@@ -359,6 +377,28 @@ gradle.buildFinished {
         }
         println "============================"
     }
+    // slowest tests
+    println "\n\n"
+    println "============================"
+    println "Top 20 slowest test classes"
+    println "============================"
+    showTestResults(testClassesAndTime,20) { e ->
+        println "\tTest class ${e.key} took ${e.value}ms"
+    }
+    println "\n\n"
+    println "============================"
+    println "Top 50 slowest tests"
+    println "============================"
+    showTestResults(testsAndTime,50) { e ->
+        println "\tTest ${e.key} took ${e.value}ms"
+    }
+}
+
+static private showTestResults(Map<String, Integer> testMap, int limit, Closure closure) {
+    testMap.entrySet().stream()
+            .sorted { e1, e2 -> e2.getValue() - e1.getValue() }
+            .limit(limit)
+            .forEach(closure)
 }
 
 

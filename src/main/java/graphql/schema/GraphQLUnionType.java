@@ -16,6 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
@@ -249,6 +250,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     }
 
     @PublicApi
+    @NullUnmarked
     public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
         private TypeResolver typeResolver;
         private UnionTypeDefinition definition;

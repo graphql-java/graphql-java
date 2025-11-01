@@ -175,9 +175,11 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 i13nFieldParameters, executionContext.getInstrumentationState()
         ));
 
+
+        executionContext.getDataLoaderDispatcherStrategy().newSubscriptionExecution(newParameters.getDeferredCallContext());
         Object fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, newParameters, eventPayload);
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
-        executionContext.getDataLoaderDispatcherStrategy().newSubscriptionExecution(fieldValueInfo, newParameters.getDeferredCallContext());
+        executionContext.getDataLoaderDispatcherStrategy().subscriptionEventCompletionDone(newParameters.getDeferredCallContext());
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
                 .thenApply(val -> new ExecutionResultImpl(val, newParameters.getDeferredCallContext().getErrors()))

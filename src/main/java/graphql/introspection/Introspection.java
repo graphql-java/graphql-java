@@ -199,7 +199,7 @@ public class Introspection {
     public static final GraphQLEnumType __TypeKind = GraphQLEnumType.newEnum()
             .name("__TypeKind")
             .description("An enum describing what kind of type a given __Type is")
-            .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar. 'specifiedByURL' is a valid field")
+            .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar. `specifiedByURL` is a valid field")
             .value("OBJECT", TypeKind.OBJECT, "Indicates this type is an object. `fields` and `interfaces` are valid fields.")
             .value("INTERFACE", TypeKind.INTERFACE, "Indicates this type is an interface. `fields` and `possibleTypes` are valid fields.")
             .value("UNION", TypeKind.UNION, "Indicates this type is a union. `possibleTypes` is a valid field.")
@@ -678,11 +678,11 @@ public class Introspection {
                     .type(__Type))
             .field(newFieldDefinition()
                     .name("directives")
-                    .description("'A list of all directives supported by this server.")
+                    .description("A list of all directives supported by this server.")
                     .type(nonNull(list(nonNull(__Directive)))))
             .field(newFieldDefinition()
                     .name("subscriptionType")
-                    .description("'If this server support subscription, the type that subscription operations will be rooted at.")
+                    .description("If this server support subscription, the type that subscription operations will be rooted at.")
                     .type(__Type))
             .build();
 

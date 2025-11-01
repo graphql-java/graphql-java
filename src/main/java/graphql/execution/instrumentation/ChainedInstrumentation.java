@@ -171,10 +171,9 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @ExperimentalApi
     @Override
-    public InstrumentationContext<Object> beginDeferredField(InstrumentationState instrumentationState) {
-        return new ChainedDeferredExecutionStrategyInstrumentationContext(chainedMapAndDropNulls(instrumentationState, Instrumentation::beginDeferredField));
+    public InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginDeferredField(parameters, specificState));
     }
-
 
     @Override
     public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {

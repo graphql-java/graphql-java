@@ -3,6 +3,7 @@ package graphql.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import graphql.Internal;
 import org.jspecify.annotations.NonNull;
@@ -25,7 +26,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static java.util.Collections.singletonList;
 
 @Internal
 public class FpKit {
@@ -39,7 +39,7 @@ public class FpKit {
     //
     // From a collection of keyed things, get a map of them by key, merging them according to the merge function
     public static <T, NewKey> Map<NewKey, T> toMap(Collection<T> collection, Function<T, NewKey> keyFunction, BinaryOperator<T> mergeFunc) {
-        Map<NewKey, T> resultMap = new LinkedHashMap<>();
+        Map<NewKey, T> resultMap = Maps.newLinkedHashMapWithExpectedSize(collection.size());
         for (T obj : collection) {
             NewKey key = keyFunction.apply(obj);
             if (resultMap.containsKey(key)) {
@@ -250,7 +250,10 @@ public class FpKit {
      * @return a <strong>new</strong> list composed of the first list elements and the new element
      */
     public static <T> List<T> concat(List<T> l, T t) {
-        return concat(l, singletonList(t));
+        List<T> list = new ArrayList<>(l.size() + 1);
+        list.addAll(l);
+        list.add(t);
+        return list;
     }
 
     /**
@@ -262,10 +265,10 @@ public class FpKit {
      *
      * @return a <strong>new</strong> list composed of the two concatenated lists elements
      */
-    public static <T> List<T> concat(List<T> l1, List<T> l2) {
-        ArrayList<T> l = new ArrayList<>(l1);
+    public static <T> List<T> concat(List<? extends T> l1, List<? extends T> l2) {
+        List<T> l = new ArrayList<>(l1.size() + l2.size());
+        l.addAll(l1);
         l.addAll(l2);
-        l.trimToSize();
         return l;
     }
 

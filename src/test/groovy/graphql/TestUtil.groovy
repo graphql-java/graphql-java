@@ -328,6 +328,7 @@ class TestUtil {
         return rn.nextInt(max - min + 1) + min
     }
 
+
     /**
      * Helper to say that a sub list is contained inside rhe master list in order for its entire length
      *
@@ -417,4 +418,5 @@ class TestUtil {
         return subscriber.getEvents()
                 .collect { it.toSpecification() }
     }
+
 }

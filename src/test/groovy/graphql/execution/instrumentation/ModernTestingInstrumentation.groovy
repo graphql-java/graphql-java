@@ -112,6 +112,12 @@ class ModernTestingInstrumentation implements Instrumentation {
     }
 
     @Override
+    InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
+        return new TestingInstrumentContext("deferred-field-$parameters.field.name", executionList, throwableList, useOnDispatch)
+    }
+
+    @Override
     ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         return executionInput

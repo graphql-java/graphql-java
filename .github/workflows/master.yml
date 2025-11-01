@@ -7,7 +7,31 @@ on:
 permissions: # For test summary bot
   checks: write
 jobs:
-  buildAndPublish:
+  buildAndTest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        gradle-argument: [ 'assemble && ./gradlew check -x test','testWithJava11', 'testWithJava17', 'test -x testWithJava11 -x testWithJava17' ]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: gradle/actions/wrapper-validation@v5
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+      - name: build and test
+        run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2.20.0
+        if: always()
+        with:
+          files: |
+            **/build/test-results/test/TEST-*.xml
+            **/build/test-results/testWithJava11/TEST-*.xml
+            **/build/test-results/testWithJava17/TEST-*.xml
+  publishToMavenCentral:
+    needs: buildAndTest
     runs-on: ubuntu-latest
     env:
       MAVEN_CENTRAL_USER: ${{ secrets.MAVEN_CENTRAL_USER }}
@@ -18,19 +42,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-      - uses: gradle/actions/wrapper-validation@v4
+      - uses: gradle/actions/wrapper-validation@v5
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '21'
           distribution: 'corretto'
-      - name: build test and publish
-        run: ./gradlew assemble && ./gradlew check --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.20.0
-        if: always()
-        with:
-          files: |
-            **/build/test-results/test/TEST-*.xml
-            **/build/test-results/testWithJava11/TEST-*.xml
-            **/build/test-results/testWithJava17/TEST-*.xml
+      - name: publishToMavenCentral
+        run: ./gradlew assemble && ./gradlew check -x test -x testng --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace

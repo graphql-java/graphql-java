@@ -3,18 +3,23 @@ package graphql.execution.incremental;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
+import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.ResultPath;
 import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.incremental.IncrementalPayload;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NonNull;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,6 +31,8 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 
 /**
  * The purpose of this class hierarchy is to encapsulate most of the logic for deferring field execution, thus
@@ -59,16 +66,19 @@ public interface DeferredExecutionSupport {
         private final ExecutionStrategyParameters parameters;
         private final ExecutionContext executionContext;
         private final BiFunction<ExecutionContext, ExecutionStrategyParameters, CompletableFuture<FieldValueInfo>> resolveFieldWithInfoFn;
+        private final BiFunction<ExecutionContext, ExecutionStrategyParameters, Supplier<ExecutionStepInfo>> executionStepInfoFn;
         private final Map<String, Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> dfCache = new HashMap<>();
 
         public DeferredExecutionSupportImpl(
                 MergedSelectionSet mergedSelectionSet,
                 ExecutionStrategyParameters parameters,
                 ExecutionContext executionContext,
-                BiFunction<ExecutionContext, ExecutionStrategyParameters, CompletableFuture<FieldValueInfo>> resolveFieldWithInfoFn
+                BiFunction<ExecutionContext, ExecutionStrategyParameters, CompletableFuture<FieldValueInfo>> resolveFieldWithInfoFn,
+                BiFunction<ExecutionContext, ExecutionStrategyParameters, Supplier<ExecutionStepInfo>> executionStepInfoFn
         ) {
             this.executionContext = executionContext;
             this.resolveFieldWithInfoFn = resolveFieldWithInfoFn;
+            this.executionStepInfoFn = executionStepInfoFn;
             ImmutableListMultimap.Builder<DeferredExecution, MergedField> deferredExecutionToFieldsBuilder = ImmutableListMultimap.builder();
             ImmutableSet.Builder<MergedField> deferredFieldsBuilder = ImmutableSet.builder();
             ImmutableList.Builder<String> nonDeferredFieldNamesBuilder = ImmutableList.builder();
@@ -108,7 +118,8 @@ public interface DeferredExecutionSupport {
         @Override
         public Set<IncrementalCall<? extends IncrementalPayload>> createCalls() {
             ImmutableSet<DeferredExecution> deferredExecutions = deferredExecutionToFields.keySet();
-            Set<IncrementalCall<? extends IncrementalPayload>> set = new HashSet<>(deferredExecutions.size());
+            Set<IncrementalCall<? extends IncrementalPayload>> set = Sets.newHashSetWithExpectedSize(deferredExecutions.size());
+
             for (DeferredExecution deferredExecution : deferredExecutions) {
                 set.add(this.createDeferredFragmentCall(deferredExecution));
             }
@@ -153,37 +164,48 @@ public interface DeferredExecutionSupport {
                     }
             );
 
-
-            Instrumentation instrumentation = executionContext.getInstrumentation();
-
-            instrumentation.beginDeferredField(executionContext.getInstrumentationState());
-
             // todo: handle cached computations
             return dfCache.computeIfAbsent(
                     currentField.getResultKey(),
                     // The same field can be associated with multiple defer executions, so
                     // we memoize the field resolution to avoid multiple calls to the same data fetcher
-                    key -> FpKit.interThreadMemoize(() -> {
-                        CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn.apply(executionContext, executionStrategyParameters);
-
-                        fieldValueResult.whenComplete((fieldValueInfo, throwable) -> {
-                            executionContext.getDataLoaderDispatcherStrategy().deferredOnFieldValue(currentField.getResultKey(), fieldValueInfo, throwable, executionStrategyParameters);
-                        });
-
-
-                                CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
-                                        .thenCompose(fvi -> fvi
-                                                .getFieldValueFuture()
-                                                .thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build())
-                                        );
-
-                                return executionResultCF
-                                        .thenApply(executionResult ->
-                                                new DeferredFragmentCall.FieldWithExecutionResult(currentField.getResultKey(), executionResult)
-                                        );
-                            }
+                    key -> FpKit.interThreadMemoize(resolveDeferredFieldValue(currentField, executionContext, executionStrategyParameters)
                     )
             );
+        }
+
+        @NonNull
+        private Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> resolveDeferredFieldValue(MergedField currentField, ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters) {
+            return () -> {
+
+                Instrumentation instrumentation = executionContext.getInstrumentation();
+                Supplier<ExecutionStepInfo> executionStepInfo = executionStepInfoFn.apply(executionContext, executionStrategyParameters);
+                InstrumentationFieldParameters fieldParameters = new InstrumentationFieldParameters(executionContext, executionStepInfo);
+                InstrumentationContext<Object> deferredFieldCtx = nonNullCtx(instrumentation.beginDeferredField(fieldParameters, executionContext.getInstrumentationState()));
+
+                CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn.apply(this.executionContext, executionStrategyParameters);
+                executionContext.getDataLoaderDispatcherStrategy().deferFieldFetched(executionStrategyParameters);
+
+
+                deferredFieldCtx.onDispatched();
+
+                fieldValueResult.whenComplete((fieldValueInfo, throwable) -> {
+                    this.executionContext.getDataLoaderDispatcherStrategy().deferredOnFieldValue(currentField.getResultKey(), fieldValueInfo, throwable, executionStrategyParameters);
+                    deferredFieldCtx.onCompleted(fieldValueInfo, throwable);
+                });
+
+
+                CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
+                        .thenCompose(fvi -> fvi
+                                .getFieldValueFuture()
+                                .thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build())
+                        );
+
+                return executionResultCF
+                        .thenApply(executionResult ->
+                                new DeferredFragmentCall.FieldWithExecutionResult(currentField.getResultKey(), executionResult)
+                        );
+            };
         }
     }
 

@@ -61,6 +61,18 @@ public final class ImmutableKit {
         return builder.build();
     }
 
+    public static <T, R> ImmutableSet<R> mapToSet(Collection<? extends T> collection, Function<? super T, ? extends R> mapper) {
+        assertNotNull(collection);
+        assertNotNull(mapper);
+        ImmutableSet.Builder<R> builder = ImmutableSet.builderWithExpectedSize(collection.size());
+        for (T t : collection) {
+            R r = mapper.apply(t);
+            builder.add(r);
+        }
+        return builder.build();
+    }
+
+
     /**
      * This is more efficient than `c.stream().filter().collect()` because it does not create the intermediate objects needed
      * for the flexible style.  Benchmarking has shown this to outperform `stream()`.
@@ -124,7 +136,7 @@ public final class ImmutableKit {
      *
      * @return a map immutable list of results
      */
-    public static <T, R> ImmutableList<R> mapAndDropNulls(Collection<? extends T> collection, Function<? super T, ? extends R> mapper) {
+    public static <T, R> ImmutableList<R> mapAndDropNulls(Collection<? extends T> collection, Function<? super T, ? extends @Nullable R> mapper) {
         assertNotNull(collection);
         assertNotNull(mapper);
         ImmutableList.Builder<R> builder = ImmutableList.builderWithExpectedSize(collection.size());

@@ -90,6 +90,11 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
     }
 
     @Override
+    public InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginDeferredField(parameters, specificState));
+    }
+
+    @Override
     public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginSubscribedFieldEvent(parameters, specificState));
     }
