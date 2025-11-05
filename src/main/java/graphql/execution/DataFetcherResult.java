@@ -46,12 +46,12 @@ import static graphql.Assert.assertNotNull;
 @NullMarked
 public class DataFetcherResult<T extends @Nullable Object> {
 
-    private final T data;
+    private final @Nullable T data;
     private final List<GraphQLError> errors;
     private final @Nullable Object localContext;
     private final @Nullable Map<Object, Object> extensions;
 
-    private DataFetcherResult(T data, List<GraphQLError> errors, @Nullable Object localContext, @Nullable Map<Object, Object> extensions) {
+    private DataFetcherResult(@Nullable T data, List<GraphQLError> errors, @Nullable Object localContext, @Nullable Map<Object, Object> extensions) {
         this.data = data;
         this.errors = ImmutableList.copyOf(assertNotNull(errors));
         this.localContext = localContext;
@@ -61,7 +61,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
     /**
      * @return The data fetched. May be null.
      */
-    public T getData() {
+    public @Nullable T getData() {
         return data;
     }
 
@@ -127,7 +127,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
      *
      * @return a new instance with where the data value has been transformed
      */
-    public <R extends @Nullable Object> DataFetcherResult<R> map(Function<@Nullable T, @Nullable R> transformation) {
+    public <R> DataFetcherResult<R> map(Function<@Nullable T, @Nullable R> transformation) {
         return new Builder<>(transformation.apply(this.data))
                 .errors(this.errors)
                 .extensions(this.extensions)
@@ -176,7 +176,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
     }
 
     public static class Builder<T extends @Nullable Object> {
-        private T data;
+        private @Nullable T data;
         private @Nullable Object localContext;
         private final List<GraphQLError> errors = new ArrayList<>();
         private @Nullable Map<Object, Object> extensions;
@@ -188,14 +188,14 @@ public class DataFetcherResult<T extends @Nullable Object> {
             extensions = existing.extensions;
         }
 
-        public Builder(T data) {
+        public Builder(@Nullable T data) {
             this.data = data;
         }
 
         public Builder() {
         }
 
-        public Builder<T> data(T data) {
+        public Builder<T> data(@Nullable T data) {
             this.data = data;
             return this;
         }
