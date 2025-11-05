@@ -44,7 +44,7 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 @NullMarked
-public class DataFetcherResult<T> {
+public class DataFetcherResult<T extends @Nullable Object> {
 
     private final @Nullable T data;
     private final List<GraphQLError> errors;
@@ -144,9 +144,9 @@ public class DataFetcherResult<T> {
 
         DataFetcherResult<?> that = (DataFetcherResult<?>) o;
         return Objects.equals(data, that.data)
-                && errors.equals(that.errors)
-                && Objects.equals(localContext, that.localContext)
-                && Objects.equals(extensions, that.extensions);
+               && errors.equals(that.errors)
+               && Objects.equals(localContext, that.localContext)
+               && Objects.equals(extensions, that.extensions);
     }
 
     @Override
@@ -157,11 +157,11 @@ public class DataFetcherResult<T> {
     @Override
     public String toString() {
         return "DataFetcherResult{" +
-                "data=" + data +
-                ", errors=" + errors +
-                ", localContext=" + localContext +
-                ", extensions=" + extensions +
-                '}';
+               "data=" + data +
+               ", errors=" + errors +
+               ", localContext=" + localContext +
+               ", extensions=" + extensions +
+               '}';
     }
 
     /**
@@ -175,7 +175,7 @@ public class DataFetcherResult<T> {
         return new Builder<>();
     }
 
-    public static class Builder<T> {
+    public static class Builder<T extends @Nullable Object> {
         private @Nullable T data;
         private @Nullable Object localContext;
         private final List<GraphQLError> errors = new ArrayList<>();
