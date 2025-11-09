@@ -43,6 +43,12 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         return result;
     }
 
+    @Override
+    public CompletableFuture<List<V>> loadMany(List<K> keys) {
+        CompletableFuture<List<V>> result = super.loadMany(keys);
+        newDataLoaderInvocation();
+        return result;
+    }
 
     @Override
     public CompletableFuture<List<V>> loadMany(List<K> keys, List<Object> keyContexts) {
