@@ -59,7 +59,6 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
     }
 
     private void newDataLoaderInvocation() {
-        System.out.println("newDataLoaderInvocation");
         DataFetchingEnvironmentImpl dfeImpl = (DataFetchingEnvironmentImpl) dfe;
         DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfeImpl.toInternal();
         if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof PerLevelDataLoaderDispatchStrategy) {
