@@ -473,14 +473,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     private void dispatchAll(DataLoaderRegistry dataLoaderRegistry, int level) {
-        for (DataLoader<?, ?> dataLoader : dataLoaderRegistry.getDataLoaders()) {
-            dataLoader.dispatch().whenComplete((objects, throwable) -> {
-                if (objects != null && objects.size() > 0) {
-                    Assert.assertNotNull(dataLoader.getName());
-                    profiler.batchLoadedOldStrategy(dataLoader.getName(), level, objects.size());
-                }
-            });
-        }
+        dataLoaderRegistry.dispatchAll();
     }
 
     private void dispatchDLCFImpl(Integer level, CallStack callStack, boolean normalOrDelayed, boolean chained) {
