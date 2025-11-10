@@ -83,9 +83,9 @@ public class SchemaTraverser {
 
 
     public TraverserResult depthFirst(final Traverser<GraphQLSchemaElement> traverser,
-                                      final TraverserDelegateVisitor traverserDelegateVisitor,
+                                      final TraverserVisitor<GraphQLSchemaElement> traverserVisitor,
                                       Collection<? extends GraphQLSchemaElement> roots) {
-        return doTraverse(traverser, roots, traverserDelegateVisitor);
+        return doTraverse(traverser, roots, traverserVisitor);
     }
 
     private Traverser<GraphQLSchemaElement> initTraverser() {
@@ -94,8 +94,8 @@ public class SchemaTraverser {
 
     private TraverserResult doTraverse(Traverser<GraphQLSchemaElement> traverser,
                                        Collection<? extends GraphQLSchemaElement> roots,
-                                       TraverserDelegateVisitor traverserDelegateVisitor) {
-        return traverser.traverse(roots, traverserDelegateVisitor);
+                                       TraverserVisitor<GraphQLSchemaElement> traverserVisitor) {
+        return traverser.traverse(roots, traverserVisitor);
     }
 
     private static class TraverserDelegateVisitor implements TraverserVisitor<GraphQLSchemaElement> {
