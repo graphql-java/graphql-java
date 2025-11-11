@@ -2,12 +2,17 @@ package graphql.execution.preparsed;
 
 
 import graphql.ExecutionInput;
-import graphql.Internal;
+import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-@Internal
+/**
+ * A {@link PreparsedDocumentProvider that does nothing}
+ */
+@PublicApi
+@NullMarked
 public class NoOpPreparsedDocumentProvider implements PreparsedDocumentProvider {
     public static final NoOpPreparsedDocumentProvider INSTANCE = new NoOpPreparsedDocumentProvider();
 

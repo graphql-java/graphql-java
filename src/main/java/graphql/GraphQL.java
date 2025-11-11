@@ -23,6 +23,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.execution.preparsed.caching.CachingDocumentProvider;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -279,7 +280,8 @@ public class GraphQL {
         private DataFetcherExceptionHandler defaultExceptionHandler = new SimpleDataFetcherExceptionHandler();
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = null; // deliberate default here
-        private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
+        private PreparsedDocumentProvider preparsedDocumentProvider = null;
+        private boolean doNotCacheOperationDocuments = false;
         private boolean doNotAutomaticallyDispatchDataLoader = false;
         private ValueUnboxer valueUnboxer = ValueUnboxer.DEFAULT;
 
@@ -325,8 +327,29 @@ public class GraphQL {
             return this;
         }
 
+        /**
+         * A {@link PreparsedDocumentProvider} allows you to provide a custom implementation of how
+         * operation documents are retrieved and possibly cached.  By default, the inbuilt {@link CachingDocumentProvider}
+         * will be used, but you can replace that with your own implementation
+         *
+         * @param preparsedDocumentProvider the provider to use
+         *
+         * @return this builder
+         */
         public Builder preparsedDocumentProvider(PreparsedDocumentProvider preparsedDocumentProvider) {
             this.preparsedDocumentProvider = assertNotNull(preparsedDocumentProvider, "PreparsedDocumentProvider must be non null");
+            return this;
+        }
+
+
+        /**
+         * Deactivates the caching of operation documents via the inbuilt {@link graphql.execution.preparsed.caching.CachingDocumentProvider}
+         * If deactivated, no caching will be performed
+         *
+         * @return this builder
+         */
+        public Builder doNotCacheOperationDocuments() {
+            this.doNotCacheOperationDocuments = true;
             return this;
         }
 
@@ -366,6 +389,9 @@ public class GraphQL {
 
             if (instrumentation == null) {
                 this.instrumentation = SimplePerformantInstrumentation.INSTANCE;
+            }
+            if (preparsedDocumentProvider == null) {
+                preparsedDocumentProvider = (doNotCacheOperationDocuments ? NoOpPreparsedDocumentProvider.INSTANCE : new CachingDocumentProvider());
             }
             return new GraphQL(this);
         }

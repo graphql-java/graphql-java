@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.Document
 import graphql.language.SourceLocation
 import graphql.parser.InvalidSyntaxException
@@ -121,7 +122,9 @@ class ParseAndValidateTest extends Specification {
     def "can use the graphql context to stop certain validation rules"() {
 
         def sdl = '''type Query { foo : ID } '''
-        def graphQL = TestUtil.graphQL(sdl).build()
+        // if you use validation rule predicates - then you cant use caching
+        def graphQL = TestUtil.graphQL(sdl)
+                .preparsedDocumentProvider(NoOpPreparsedDocumentProvider.INSTANCE).build()
 
         Predicate<Class<?>> predicate = new Predicate<Class<?>>() {
             @Override

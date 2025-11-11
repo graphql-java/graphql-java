@@ -20,6 +20,8 @@ import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
+import graphql.execution.preparsed.PreparsedDocumentProvider
+import graphql.execution.preparsed.caching.CachingDocumentProvider
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -1414,7 +1416,7 @@ many lines''']
         graphQL.getGraphQLSchema() == StarWarsSchema.starWarsSchema
         graphQL.getIdProvider() == ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER
         graphQL.getValueUnboxer() == ValueUnboxer.DEFAULT
-        graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
+        graphQL.getPreparsedDocumentProvider() instanceof CachingDocumentProvider
         graphQL.getInstrumentation() instanceof Instrumentation
         graphQL.getQueryStrategy() instanceof AsyncExecutionStrategy
         graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
@@ -1604,5 +1606,27 @@ many lines''']
         then:
         !er.errors.isEmpty()
         er.errors[0].message.contains("Unknown operation named 'X'")
+    }
+
+    def "caching document provider is default unless they say otherwise"() {
+        when:
+        def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build()
+        then:
+        graphQL.getPreparsedDocumentProvider() instanceof CachingDocumentProvider
+
+        when:
+        graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).doNotCacheOperationDocuments().build()
+        then:
+        graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
+
+
+        PreparsedDocumentProvider customProvider = { ei, func -> func.apply(ei) }
+        when:
+        graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .doNotCacheOperationDocuments() // doesnt matter if they provide an implementation
+                .preparsedDocumentProvider(customProvider)
+                .build()
+        then:
+        graphQL.getPreparsedDocumentProvider() == customProvider
     }
 }

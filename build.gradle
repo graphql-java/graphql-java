@@ -127,6 +127,12 @@ dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
 
+    // we can compile against caffeine but its not shipped as a runtime dependency
+    compileOnly 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+    // we need caffeine to write tests however
+    testImplementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+
+
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
     testImplementation 'net.bytebuddy:byte-buddy:1.17.8'
