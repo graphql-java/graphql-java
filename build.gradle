@@ -127,7 +127,7 @@ dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
 
-    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
     testImplementation 'net.bytebuddy:byte-buddy:1.17.8'
     testImplementation 'org.objenesis:objenesis:3.4'
@@ -241,9 +241,10 @@ task buildNewJar(type: Jar) {
     manifest {
         from file("build/extract/META-INF/MANIFEST.MF")
     }
+    def projectVersion = version
     doLast {
-        delete("build/libs/graphql-java-${project.version}.jar")
-        file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
+        delete("build/libs/graphql-java-${projectVersion}.jar")
+        file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${projectVersion}.jar"))
     }
 }
 
@@ -321,10 +322,7 @@ javadoc {
     options.encoding = 'UTF-8'
 }
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
+// Removed deprecated archives configuration in favor of direct assemble dependencies
 
 List<TestDescriptor> failedTests = []
 Map<String, Integer> testsAndTime = [:]
@@ -431,7 +429,7 @@ publishing {
     publications {
 
         graphqlJava(MavenPublication) {
-            version version
+            version = version
             from components.java
 
             artifact sourcesJar {
@@ -496,7 +494,7 @@ nexusPublishing {
 }
 
 signing {
-    required { !project.hasProperty('publishToMavenLocal') }
+    setRequired { !project.hasProperty('publishToMavenLocal') }
     def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
     useInMemoryPgpKeys(signingKey, "")
     sign publishing.publications
