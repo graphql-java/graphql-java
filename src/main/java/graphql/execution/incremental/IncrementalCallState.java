@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+import java.util.concurrent.CompletableFuture;
+
 import static graphql.incremental.DelayedIncrementalPartialResultImpl.newIncrementalExecutionResult;
 
 /**
@@ -29,6 +31,9 @@ public class IncrementalCallState {
     private final Supplier<SingleSubscriberPublisher<DelayedIncrementalPartialResult>> publisher = createPublisher();
     private final AtomicInteger pendingCalls = new AtomicInteger();
     private final LockKit.ReentrantLock publisherLock = new LockKit.ReentrantLock();
+
+    // Completed when the very first incremental call is detected/enqueued
+    private final CompletableFuture<Void> incrementalCallsDetectedFuture = new CompletableFuture<>();
 
     @SuppressWarnings("FutureReturnValueIgnored")
     private void drainIncrementalCalls() {
@@ -76,6 +81,9 @@ public class IncrementalCallState {
             incrementalCallsDetected.set(true);
             incrementalCalls.offer(incrementalCall);
             pendingCalls.incrementAndGet();
+            if (!incrementalCallsDetectedFuture.isDone()) {
+                incrementalCallsDetectedFuture.complete(null);
+            }
         });
     }
 
@@ -85,6 +93,13 @@ public class IncrementalCallState {
 
     public boolean getIncrementalCallsDetected() {
         return incrementalCallsDetected.get();
+    }
+
+    /**
+     * @return a future that completes when the first incremental call is detected.
+     */
+    public CompletableFuture<Void> getIncrementalCallsDetectedFuture() {
+        return incrementalCallsDetectedFuture;
     }
 
     private Supplier<SingleSubscriberPublisher<DelayedIncrementalPartialResult>> createPublisher() {
@@ -102,6 +117,11 @@ public class IncrementalCallState {
      */
     public Publisher<DelayedIncrementalPartialResult> startDeferredCalls() {
         return publisher.get();
+    }
+
+    public void startDrainingNow() {
+        publisher.get();
+        drainIncrementalCalls();
     }
 
 }

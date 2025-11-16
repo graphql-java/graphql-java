@@ -26,6 +26,7 @@ import graphql.execution.reactive.ReactiveSupport;
 import graphql.extensions.ExtensionsBuilder;
 import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalExecutionResultImpl;
+import graphql.execution.incremental.IncrementalExecutionContextKeys;
 import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.NodeUtil;
@@ -48,6 +49,7 @@ import static graphql.Directives.EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIV
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
+import static graphql.execution.incremental.IncrementalExecutionContextKeys.EAGER_DEFER_PUBLISHER;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
 import static java.util.concurrent.CompletableFuture.completedFuture;
@@ -218,6 +220,27 @@ public class Execution {
             DataLoaderDispatchStrategy dataLoaderDispatchStrategy = createDataLoaderDispatchStrategy(executionContext, executionStrategy);
             executionContext.setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
             result = executionStrategy.execute(executionContext, parameters);
+            
+            if (executionContext.hasIncrementalSupport() &&
+                    executionContext.getGraphQLContext().getBoolean(IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START, false)) {
+                final CompletableFuture<ExecutionResult> mainResult = result;
+                CompletableFuture.runAsync(() -> {
+                    IncrementalCallState incrementalCallState = executionContext.getIncrementalCallState();
+                    CompletableFuture.anyOf(incrementalCallState.getIncrementalCallsDetectedFuture(), mainResult).join();
+
+                    if (incrementalCallState.getIncrementalCallsDetected()) {
+                        InstrumentationReactiveResultsParameters resultsParameters = new InstrumentationReactiveResultsParameters(executionContext, InstrumentationReactiveResultsParameters.ResultType.DEFER);
+                        InstrumentationContext<Void> ctx = nonNullCtx(executionContext.getInstrumentation().beginReactiveResults(resultsParameters, executionContext.getInstrumentationState()));
+                        Publisher<DelayedIncrementalPartialResult> publisher = incrementalCallState.startDeferredCalls();
+                        ctx.onDispatched();
+
+                        publisher = ReactiveSupport.whenPublisherFinishes(publisher, throwable -> ctx.onCompleted(null, throwable));
+                        executionContext.getGraphQLContext().put(EAGER_DEFER_PUBLISHER, publisher);
+
+                        incrementalCallState.startDrainingNow();
+                    }
+                });
+            }
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non-null types all the way from an offending non-null type
             // up to the root object type and there was a null value somewhere.
@@ -245,6 +268,15 @@ public class Execution {
      */
     private CompletableFuture<ExecutionResult> incrementalSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
         return result.thenApply(er -> {
+            // If we've aready started the deferred publisher early, attach it now without re-instrumenting.
+            Object maybePublisher = executionContext.getGraphQLContext().get(EAGER_DEFER_PUBLISHER);
+            if (maybePublisher instanceof Publisher) {
+                Publisher<DelayedIncrementalPartialResult> publisher = (Publisher<DelayedIncrementalPartialResult>) maybePublisher;
+                return IncrementalExecutionResultImpl.fromExecutionResult(er)
+                        .hasNext(true)
+                        .incrementalItemPublisher(publisher)
+                        .build();
+            }
             IncrementalCallState incrementalCallState = executionContext.getIncrementalCallState();
             if (incrementalCallState.getIncrementalCallsDetected()) {
                 InstrumentationReactiveResultsParameters parameters = new InstrumentationReactiveResultsParameters(executionContext, InstrumentationReactiveResultsParameters.ResultType.DEFER);
