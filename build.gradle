@@ -12,7 +12,7 @@ plugins {
     id 'antlr'
     id 'signing'
     id "com.gradleup.shadow" version "9.0.0"
-    id "biz.aQute.bnd.builder" version "6.4.0"
+    id "biz.aQute.bnd.builder" version "7.1.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
@@ -127,7 +127,7 @@ dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
 
-    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
     testImplementation 'net.bytebuddy:byte-buddy:1.17.8'
     testImplementation 'org.objenesis:objenesis:3.4'
@@ -146,6 +146,9 @@ dependencies {
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
     testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
+    
+    // JUnit Platform launcher required for Gradle 9
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
     antlr 'org.antlr:antlr4:' + antlrVersion
 
@@ -162,6 +165,8 @@ dependencies {
     // just tests - no Kotlin otherwise
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 }
+
+import aQute.bnd.gradle.BundleTaskExtension
 
 shadowJar {
     minimize()
@@ -186,27 +191,28 @@ shadowJar {
     manifest {
         attributes('Automatic-Module-Name': 'com.graphqljava')
     }
-    //Apply biz.aQute.bnd.builder plugin logic to shadowJar as in BndBuilderPlugin 
-    convention.plugins.bundle = new aQute.bnd.gradle.BundleTaskConvention(it)
-    doLast {
-        //Call bnd after the ShadowJar was built to update the MANIFEST.MF
-        buildBundle()
-    }
+}
 
-    //Configure bnd for shadowJar
-    // -exportcontents: graphql.*  Adds all packages of graphql and below to the exported packages list
-    // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and 
-    //                                  also the repackaged packages like guava, which would be wrong after repackaging.
-    // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
-    //                  Guava was repackaged and included inside the jar, so we need to remove it.
-    //                  ANTLR was shaded, so we need to remove it.
-    //                  sun.misc is a JRE internal-only class that is not directly used by graphql-java. It was causing problems in libraries using graphql-java.
-    //                  The last ,* copies all the existing imports from the other dependencies, which is required.
-    bnd('''
+// Apply bnd to shadowJar task manually for Gradle 9 compatibility
+tasks.named('shadowJar').configure {
+    // Get the BundleTaskExtension added by bnd plugin
+    def bundle = extensions.findByType(BundleTaskExtension)
+    if (bundle != null) {
+        //Configure bnd for shadowJar
+        // -exportcontents: graphql.*  Adds all packages of graphql and below to the exported packages list
+        // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and 
+        //                                  also the repackaged packages like guava, which would be wrong after repackaging.
+        // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
+        //                  Guava was repackaged and included inside the jar, so we need to remove it.
+        //                  ANTLR was shaded, so we need to remove it.
+        //                  sun.misc is a JRE internal-only class that is not directly used by graphql-java. It was causing problems in libraries using graphql-java.
+        //                  The last ,* copies all the existing imports from the other dependencies, which is required.
+        bundle.bnd('''
 -exportcontents: graphql.*
 -removeheaders: Private-Package
 Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.annotations;resolution:=optional,*
 ''')
+    }
 }
 
 tasks.named('jmhJar') {
@@ -235,9 +241,10 @@ task buildNewJar(type: Jar) {
     manifest {
         from file("build/extract/META-INF/MANIFEST.MF")
     }
+    def projectVersion = version
     doLast {
-        delete("build/libs/graphql-java-${project.version}.jar")
-        file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
+        delete("build/libs/graphql-java-${projectVersion}.jar")
+        file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${projectVersion}.jar"))
     }
 }
 
@@ -254,6 +261,8 @@ check.dependsOn testng
 compileJava {
     options.compilerArgs += ["-parameters"]
     source file("build/generated-src"), sourceSets.main.java
+    // Gradle 9 requires explicit task dependencies
+    mustRunAfter generateTestGrammarSource, generateJmhGrammarSource
 }
 
 tasks.withType(GroovyCompile) {
@@ -313,10 +322,7 @@ javadoc {
     options.encoding = 'UTF-8'
 }
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
+// Removed deprecated archives configuration in favor of direct assemble dependencies
 
 List<TestDescriptor> failedTests = []
 Map<String, Integer> testsAndTime = [:]
@@ -423,7 +429,7 @@ publishing {
     publications {
 
         graphqlJava(MavenPublication) {
-            version version
+            version = version
             from components.java
 
             artifact sourcesJar {
@@ -488,7 +494,7 @@ nexusPublishing {
 }
 
 signing {
-    required { !project.hasProperty('publishToMavenLocal') }
+    setRequired { !project.hasProperty('publishToMavenLocal') }
     def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
     useInMemoryPgpKeys(signingKey, "")
     sign publishing.publications
