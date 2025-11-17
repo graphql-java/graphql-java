@@ -310,14 +310,6 @@ public abstract class ExecutionStrategy {
 
         executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
 
-        if (executionContext.hasIncrementalSupport()
-                && deferredExecutionSupport.deferredFieldsCount() > 0
-                && executionContext.getGraphQLContext().getBoolean(IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START, false)) {
-
-            executionContext.getIncrementalCallState().startDeferredCalls();
-            executionContext.getIncrementalCallState().startDrainingNow();
-        }
-
         // Only non-deferred fields should be considered for calculating the expected size of futures.
         Async.CombinedBuilder<FieldValueInfo> futures = Async
                 .ofExpectedSize(fields.size() - deferredExecutionSupport.deferredFieldsCount());
@@ -334,7 +326,17 @@ public abstract class ExecutionStrategy {
                 Object fieldValueInfo = resolveFieldWithInfo(executionContext, newParameters);
                 futures.addObject(fieldValueInfo);
             }
+
         }
+
+        if (executionContext.hasIncrementalSupport()
+                && deferredExecutionSupport.deferredFieldsCount() > 0
+                && executionContext.getGraphQLContext().getBoolean(IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START, false)) {
+
+            executionContext.getIncrementalCallState().startDeferredCalls();
+            executionContext.getIncrementalCallState().startDrainingNow();
+        }
+
         return futures;
     }
 
