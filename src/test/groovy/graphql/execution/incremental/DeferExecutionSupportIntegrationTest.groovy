@@ -1787,11 +1787,20 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         ]
 
         when:
-        def sub = new CapturingSubscriber<DelayedIncrementalPartialResult>()
-        initialResult.incrementalItemPublisher.subscribe(sub)
+        def incrementalResults = getIncrementalResults(initialResult)
 
         then:
-        Awaitility.await().untilTrue(sub.isDone())
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: [],
+                                        data: [post: [summary: "A summary"]]
+                                ]
+                        ]
+                ]
+        ]
     }
 
 

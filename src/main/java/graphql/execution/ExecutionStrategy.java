@@ -333,7 +333,6 @@ public abstract class ExecutionStrategy {
                 && deferredExecutionSupport.deferredFieldsCount() > 0
                 && executionContext.getGraphQLContext().getBoolean(IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START, false)) {
 
-            executionContext.getIncrementalCallState().startDeferredCalls();
             executionContext.getIncrementalCallState().startDrainingNow();
         }
 
