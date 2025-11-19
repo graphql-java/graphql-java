@@ -1,6 +1,7 @@
 package graphql;
 
 import graphql.execution.ResponseMapFactory;
+import graphql.execution.incremental.IncrementalExecutionContextKeys;
 import graphql.introspection.GoodFaithIntrospection;
 import graphql.parser.ParserOptions;
 import graphql.schema.PropertyDataFetcherHelper;
@@ -335,6 +336,15 @@ public class GraphQLUnusualConfiguration {
         @ExperimentalApi
         public IncrementalSupportConfig enableIncrementalSupport(boolean enable) {
             contextConfig.put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, enable);
+            return this;
+        }
+
+        /**
+         * This controls whether @defer field execution starts as early as possible.
+         */
+        @ExperimentalApi
+        public IncrementalSupportConfig enableEarlyIncrementalFieldExecution(boolean enable) {
+            contextConfig.put(IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START, enable);
             return this;
         }
     }
