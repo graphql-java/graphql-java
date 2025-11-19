@@ -105,7 +105,6 @@ public class IncrementalCallState {
     }
 
     public void startDrainingNow() {
-        startDeferredCalls();
         drainIncrementalCalls();
     }
 
