@@ -1,5 +1,5 @@
+import aQute.bnd.gradle.BundleTaskExtension
 import net.ltgt.gradle.errorprone.CheckSeverity
-import org.gradle.api.file.DuplicatesStrategy
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -165,8 +165,6 @@ dependencies {
     // just tests - no Kotlin otherwise
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 }
-
-import aQute.bnd.gradle.BundleTaskExtension
 
 shadowJar {
     minimize()
@@ -362,12 +360,24 @@ tasks.register('testWithJava17', Test) {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    dependsOn tasks.named('testClasses')
+
 }
+
 tasks.register('testWithJava11', Test) {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(11)
     }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    dependsOn tasks.named('testClasses')
+
 }
+
 test.dependsOn testWithJava17
 test.dependsOn testWithJava11
 
