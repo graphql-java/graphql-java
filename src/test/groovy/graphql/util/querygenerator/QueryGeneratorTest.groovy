@@ -5,13 +5,8 @@ import graphql.TestUtil
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import graphql.validation.Validator
-import org.junit.Assert
 import spock.lang.Specification
 
-import static org.junit.Assert.assertEquals
-import static org.junit.Assert.assertFalse
-import static org.junit.Assert.assertNotNull
-import static org.junit.Assert.assertTrue
 
 class QueryGeneratorTest extends Specification {
     def "generate query for simple type"() {
@@ -51,10 +46,10 @@ class QueryGeneratorTest extends Specification {
         def result = executeTest(schema, fieldPath, expectedNoOperation)
 
         then:
-        assertNotNull(result)
-        assertEquals("Bar", result.usedType)
-        assertEquals(4, result.totalFieldCount)
-        assertFalse(result.reachedMaxFieldCount)
+        result != null
+        "Bar" == result.usedType
+        4 == result.totalFieldCount
+        !result.reachedMaxFieldCount
 
         when: "operation and arguments are passed"
         def expectedWithOperation = """
@@ -81,7 +76,7 @@ query barTestOperation {
         )
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
 
@@ -113,7 +108,7 @@ query barTestOperation {
         def result = executeTest(schema, fieldPath, expectedNoOperation)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "generate query field of non-nullable type"() {
@@ -144,7 +139,7 @@ query barTestOperation {
         def result = executeTest(schema, fieldPath, expectedNoOperation)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "generate query for type with nested type"() {
@@ -189,7 +184,7 @@ query barTestOperation {
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "generate query for deeply nested field"() {
@@ -236,7 +231,7 @@ query barTestOperation {
         def result = executeTest(schema, fieldPath, expectedNoOperation)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "straight forward cyclic dependency"() {
@@ -272,7 +267,7 @@ query barTestOperation {
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "cyclic dependency with 2 fields of the same type"() {
@@ -313,7 +308,7 @@ query barTestOperation {
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "transitive cyclic dependency"() {
@@ -370,7 +365,7 @@ query barTestOperation {
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "generate mutation and subscription for simple type"() {
@@ -411,7 +406,7 @@ mutation {
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
 
         when: "operation and arguments are passed"
 
@@ -434,7 +429,7 @@ subscription {
         )
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "generate query containing fields with arguments"() {
@@ -471,7 +466,7 @@ subscription {
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "generate query for the 'node' field, which returns an interface"() {
@@ -530,7 +525,7 @@ subscription {
         result = executeTest(schema, fieldPath, null, "(id: \"1\")", classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        assertNotNull(result)
+        result != null
 
         when: "passing typeName on field that doesn't return an interface"
         fieldPath = "Query.foo"
@@ -605,7 +600,7 @@ subscription {
         result = executeTest(schema, fieldPath, null, null, classifierType, expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        assertNotNull(result)
+        result != null
 
         when: "passing typeName that is not part of the union"
         fieldPath = "Query.something"
@@ -657,9 +652,9 @@ subscription {
         def result = executeTest(schema, fieldPath, null, null, null, expected, options)
 
         then:
-        assertNotNull(result)
-        assertEquals(3, result.totalFieldCount)
-        assertTrue(result.reachedMaxFieldCount)
+        result != null
+        3 == result.totalFieldCount
+        result.reachedMaxFieldCount
     }
 
     def "field limit enforcement may result in less fields than the MAX"() {
@@ -704,7 +699,7 @@ subscription {
         def result = executeTest(schema, fieldPath, null, null, null, expected, options)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "max field limit is enforced"() {
@@ -743,9 +738,9 @@ $resultFields
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
-        assertEquals(10_000, result.totalFieldCount)
-        assertTrue(result.reachedMaxFieldCount)
+        result != null
+        10_000 == result.totalFieldCount
+        result.reachedMaxFieldCount
     }
 
     def "filter types and field"() {
@@ -800,7 +795,7 @@ $resultFields
         def result = executeTest(schema, fieldPath, null, null, null, expected, options)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "union fields"() {
@@ -855,7 +850,7 @@ $resultFields
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "interface fields"() {
@@ -912,7 +907,7 @@ $resultFields
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "interface fields with a single implementing type"() {
@@ -960,7 +955,7 @@ $resultFields
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "cyclic dependency with union"() {
@@ -1018,7 +1013,7 @@ $resultFields
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "union fields with a single type in union"() {
@@ -1064,7 +1059,7 @@ $resultFields
         def result = executeTest(schema, fieldPath, expected)
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     def "generates query for large type"() {
@@ -1079,7 +1074,7 @@ $resultFields
         def result = executeTest(schema, fieldPath, null, "(id: \"issue-id-1\")", "JiraIssue", expected, QueryGeneratorOptions.newBuilder().build())
 
         then:
-        assertNotNull(result)
+        result != null
     }
 
     private static QueryGeneratorResult executeTest(
@@ -1115,7 +1110,7 @@ $resultFields
 
         executeQuery(query, schema)
 
-        assertEquals(expected.trim(), query.trim())
+        expected.trim() == query.trim()
 
         return result
     }
@@ -1126,7 +1121,7 @@ $resultFields
         def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
 
         if (!errors.isEmpty()) {
-            Assert.fail("Validation errors: " + errors.collect { it.getMessage() }.join(", "))
+            throw new Exception("Validation errors: " + errors.collect { it.getMessage() }.join(", "))
         }
 
     }
