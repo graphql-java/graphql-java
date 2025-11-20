@@ -15,6 +15,7 @@ import graphql.UnresolvedTypeError;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.incremental.DeferredExecutionSupport;
+import graphql.execution.incremental.IncrementalExecutionContextKeys;
 import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.FieldFetchingInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
@@ -325,7 +326,16 @@ public abstract class ExecutionStrategy {
                 Object fieldValueInfo = resolveFieldWithInfo(executionContext, newParameters);
                 futures.addObject(fieldValueInfo);
             }
+
         }
+
+        if (executionContext.hasIncrementalSupport()
+                && deferredExecutionSupport.deferredFieldsCount() > 0
+                && executionContext.getGraphQLContext().getBoolean(IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START, false)) {
+
+            executionContext.getIncrementalCallState().startDrainingNow();
+        }
+
         return futures;
     }
 
