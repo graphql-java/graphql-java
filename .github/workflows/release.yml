@@ -19,7 +19,7 @@ jobs:
       RELEASE_VERSION: ${{ github.event.inputs.version }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
       - name: Set up JDK 21
         uses: actions/setup-java@v5
