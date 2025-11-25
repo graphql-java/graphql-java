@@ -230,7 +230,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
 
     @Override
-    public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
+    public <K, V extends @Nullable Object> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
         DataLoader<K, V> dataLoader = dataLoaderRegistry.getDataLoader(dataLoaderName);
         if (dataLoader == null) {
             return null;

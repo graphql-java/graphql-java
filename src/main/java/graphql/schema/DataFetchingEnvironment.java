@@ -231,14 +231,14 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @param dataLoaderName the name of the data loader to fetch
      * @param <K>            the key type
-     * @param <V>            the value type
+     * @param <V>            the value type (may be nullable to match {@link DataLoader}'s type parameter)
      *
      * @return the named data loader or null
      *
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     @Nullable
-    <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+    <K, V extends @Nullable Object> DataLoader<K, V> getDataLoader(String dataLoaderName);
 
 
     /**
