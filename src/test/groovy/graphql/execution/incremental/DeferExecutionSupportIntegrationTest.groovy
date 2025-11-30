@@ -7,6 +7,7 @@ import graphql.ExecutionResult
 import graphql.ExperimentalApi
 import graphql.GraphQL
 import graphql.GraphqlErrorBuilder
+import graphql.GraphQLContext
 import graphql.TestUtil
 import graphql.execution.DataFetcherResult
 import graphql.execution.pubsub.CapturingSubscriber
@@ -27,6 +28,8 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
@@ -1724,6 +1727,151 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                                   hasNext    : false
         ]
 
+    }
+
+    def "eager defer starts before initial result completes when ENABLE_EAGER_DEFER_START"() {
+        given:
+        def deferStarted = new CountDownLatch(1)
+        def allowDeferredComplete = new CountDownLatch(1)
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(newTypeWiring("Query")
+                        .dataFetcher("post", resolve([id: "1001"]))
+                )
+                .type(newTypeWiring("Query").dataFetcher("hello", resolve("world", 4000)))
+                .type(newTypeWiring("Post").dataFetcher("summary", { env ->
+                    deferStarted.countDown()
+                    allowDeferredComplete.await(2, TimeUnit.SECONDS)
+                    CompletableFuture.completedFuture("A summary")
+                } as DataFetcher))
+                .type(newTypeWiring("Item").typeResolver(itemTypeResolver()))
+                .build()
+
+        def schema = TestUtil.schema(schemaSpec, runtimeWiring)
+                .transform({ b -> b.additionalDirective(Directives.DeferDirective) })
+        def testGraphQL = GraphQL.newGraphQL(schema).build()
+
+        def ctx = GraphQLContext.newContext().build()
+        ctx.put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
+        ctx.put(IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START, true)
+
+        def query = '''
+              query {
+                hello                  
+                ... @defer { post { summary } }  
+              }
+            '''
+
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .graphQLContext([(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT): true, (IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START): true])
+                .query(query)
+                .build()
+        def execFuture = CompletableFuture.supplyAsync {
+            testGraphQL.execute(executionInput)
+        }
+
+        then:
+        // Deferred fetcher starts while initial result is still computing
+        assert deferStarted.await(2000, TimeUnit.MILLISECONDS)
+        assert !execFuture.isDone()
+
+        when:
+        allowDeferredComplete.countDown()
+        def initialResult = execFuture.join() as IncrementalExecutionResult
+
+        then:
+        assert initialResult.toSpecification() == [
+                data   : [hello: "world"],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: [],
+                                        data: [post: [summary: "A summary"]]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+
+    def "incremental starts only after initial result when eager start disabled"() {
+        given:
+        def deferStarted = new CountDownLatch(1)
+        def allowDeferredComplete = new CountDownLatch(1)
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(newTypeWiring("Query")
+                        .dataFetcher("post", resolve([id: "1001"]))
+                )
+                .type(newTypeWiring("Query").dataFetcher("hello", resolve("world", 300)))
+                .type(newTypeWiring("Post").dataFetcher("summary", { env ->
+                    deferStarted.countDown()
+                    allowDeferredComplete.await(2, TimeUnit.SECONDS)
+                    CompletableFuture.completedFuture("A summary")
+                } as DataFetcher))
+                .type(newTypeWiring("Item").typeResolver(itemTypeResolver()))
+                .build()
+
+        def schema = TestUtil.schema(schemaSpec, runtimeWiring)
+                .transform({ b -> b.additionalDirective(Directives.DeferDirective) })
+        def testGraphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = '''
+              query {
+                hello                  
+                ... @defer { post { summary } }  
+              }
+            '''
+
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .graphQLContext([(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT): true]) // no eager flag
+                .query(query)
+                .build()
+        def execFuture = CompletableFuture.supplyAsync {
+            testGraphQL.execute(executionInput)
+        }
+
+        then:
+        assert !deferStarted.await(100, TimeUnit.MILLISECONDS)
+        assert !execFuture.isDone()
+
+        when:
+        def initialResult = execFuture.join() as IncrementalExecutionResult
+
+        then:
+        assert initialResult.toSpecification() == [
+                data   : [hello: "world"],
+                hasNext: true
+        ]
+        assert deferStarted.count == 1 // still not started, no subscriber yet
+
+        when:
+        allowDeferredComplete.countDown()
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: [],
+                                        data: [post: [summary: "A summary"]]
+                                ]
+                        ]
+                ]
+        ]
     }
 
 
