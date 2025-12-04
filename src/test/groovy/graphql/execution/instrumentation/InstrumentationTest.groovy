@@ -26,7 +26,6 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class InstrumentationTest extends Specification {
 
-
     def 'Instrumentation of simple serial execution'() {
         given:
 
@@ -341,7 +340,7 @@ class InstrumentationTest extends Specification {
         def instrumentation = new ModernTestingInstrumentation() {
             @Override
             InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
-                executionList.add("start:execution")
+                this.executionList.add("start:execution")
                 return null
             }
         }
@@ -561,6 +560,7 @@ class InstrumentationTest extends Specification {
                                           "end:field-hero",
                                           "end:execution-strategy",
                                           "end:execute-operation",
+                                          "start:reactive-results-defer",
                                           "end:execution",
                                           //
                                           // the deferred field resolving now happens after the operation has come back
@@ -572,6 +572,67 @@ class InstrumentationTest extends Specification {
                                           "end:complete-name",
                                           "end:field-name",
                                           "end:deferred-field-name",
+
+                                          "end:reactive-results-defer",
         ]
     }
+
+    def "can instrument defer reactive ending"() {
+
+        given:
+
+        def query = """
+        {
+            hero {
+                id
+                ... @defer(label: "name") {
+                    name
+                }
+            }
+        }
+        """
+
+
+        when:
+
+        def instrumentation = new ModernTestingInstrumentation()
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(new AsyncExecutionStrategy())
+                .instrumentation(instrumentation)
+                .build()
+
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext { it ->
+            GraphQL.unusualConfiguration(it).incrementalSupport().enableIncrementalSupport(true)
+        }.build()
+
+        IncrementalExecutionResult incrementalER = graphQL.execute(ei) as IncrementalExecutionResult
+        //
+        // cause the defer Publish to be finished
+        def results = TestUtil.getIncrementalResults(incrementalER)
+        then:
+
+        TestUtil.listContainsInOrder(instrumentation.executionList, [
+                "start:execution",
+                "start:parse",
+                "end:parse",
+                "start:validation",
+                "end:validation",
+                "start:execute-operation",
+        ], [
+                // then it ends initial operation
+                "end:execution-strategy",
+                "end:execute-operation",
+                "start:reactive-results-defer",
+                "end:execution",
+        ], [
+                // followed by
+                "end:reactive-results-defer"
+        ])
+
+        // last of all it finishes
+        TestUtil.last(instrumentation.executionList) == "end:reactive-results-defer"
+    }
+
 }

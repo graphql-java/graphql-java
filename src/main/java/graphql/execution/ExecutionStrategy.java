@@ -15,6 +15,7 @@ import graphql.UnresolvedTypeError;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.incremental.DeferredExecutionSupport;
+import graphql.execution.incremental.IncrementalExecutionContextKeys;
 import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.FieldFetchingInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
@@ -207,11 +208,11 @@ public abstract class ExecutionStrategy {
         List<String> fieldNames = parameters.getFields().getKeys();
 
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
+        List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
         Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
         CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
-        List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
-        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
         BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
 
         resolveObjectCtx.onDispatched();
@@ -325,7 +326,16 @@ public abstract class ExecutionStrategy {
                 Object fieldValueInfo = resolveFieldWithInfo(executionContext, newParameters);
                 futures.addObject(fieldValueInfo);
             }
+
         }
+
+        if (executionContext.hasIncrementalSupport()
+                && deferredExecutionSupport.deferredFieldsCount() > 0
+                && executionContext.getGraphQLContext().getBoolean(IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START, false)) {
+
+            executionContext.getIncrementalCallState().startDrainingNow();
+        }
+
         return futures;
     }
 
@@ -360,8 +370,12 @@ public abstract class ExecutionStrategy {
         Object fetchedValueObj = fetchField(executionContext, parameters);
         if (fetchedValueObj instanceof CompletableFuture) {
             CompletableFuture<Object> fetchFieldFuture = (CompletableFuture<Object>) fetchedValueObj;
-            CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
-                    completeField(fieldDef, executionContext, parameters, fetchedValue));
+            CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) -> {
+                executionContext.getDataLoaderDispatcherStrategy().startComplete(parameters);
+                FieldValueInfo completeFieldResult = completeField(fieldDef, executionContext, parameters, fetchedValue);
+                executionContext.getDataLoaderDispatcherStrategy().stopComplete(parameters);
+                return completeFieldResult;
+            });
 
             fieldCtx.onDispatched();
             result.whenComplete(fieldCtx::onCompleted);
@@ -444,6 +458,7 @@ public abstract class ExecutionStrategy {
                     .selectionSet(fieldCollector)
                     .queryDirectives(queryDirectives)
                     .deferredCallContext(parameters.getDeferredCallContext())
+                    .level(parameters.getPath().getLevel())
                     .build();
         });
 

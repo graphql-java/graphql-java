@@ -9,15 +9,20 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQL;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
+import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.Profiler;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
+import graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationReactiveResultsParameters;
+import graphql.execution.reactive.ReactiveSupport;
 import graphql.extensions.ExtensionsBuilder;
 import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalExecutionResultImpl;
@@ -242,9 +247,17 @@ public class Execution {
         return result.thenApply(er -> {
             IncrementalCallState incrementalCallState = executionContext.getIncrementalCallState();
             if (incrementalCallState.getIncrementalCallsDetected()) {
+                InstrumentationReactiveResultsParameters parameters = new InstrumentationReactiveResultsParameters(executionContext, InstrumentationReactiveResultsParameters.ResultType.DEFER);
+                InstrumentationContext<Void> ctx = nonNullCtx(executionContext.getInstrumentation().beginReactiveResults(parameters, executionContext.getInstrumentationState()));
+
                 // we start the rest of the query now to maximize throughput.  We have the initial important results,
                 // and now we can start the rest of the calls as early as possible (even before someone subscribes)
                 Publisher<DelayedIncrementalPartialResult> publisher = incrementalCallState.startDeferredCalls();
+                ctx.onDispatched();
+
+                //
+                // wrap this Publisher into one that can call us back when the publishing is done either in error or successful
+                publisher = ReactiveSupport.whenPublisherFinishes(publisher, throwable -> ctx.onCompleted(null, throwable));
 
                 return IncrementalExecutionResultImpl.fromExecutionResult(er)
                         // "hasNext" can, in theory, be "false" when all the incremental items are delivered in the
@@ -261,6 +274,12 @@ public class Execution {
     private DataLoaderDispatchStrategy createDataLoaderDispatchStrategy(ExecutionContext executionContext, ExecutionStrategy executionStrategy) {
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
+        }
+        if (executionContext.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, false)) {
+            if (executionContext.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+                throw new GraphQLException("enabling data loader chaining and exhausted dispatching at the same time ambiguous");
+            }
+            return new ExhaustedDataLoaderDispatchStrategy(executionContext);
         }
         return new PerLevelDataLoaderDispatchStrategy(executionContext);
     }

@@ -220,7 +220,7 @@ public class ValueTraverser {
 
     private static Object visitObjectValue(Object coercedValue, GraphQLInputObjectType inputObjectType, InputElements containingElements, ValueVisitor visitor) {
         if (coercedValue != null) {
-            assertTrue(coercedValue instanceof Map, () -> "A input object type MUST have an Map<String,Object> value");
+            assertTrue(coercedValue instanceof Map, "A input object type MUST have an Map<String,Object> value");
         }
         @SuppressWarnings("unchecked")
         Map<String, Object> map = (Map<String, Object>) coercedValue;
@@ -265,7 +265,7 @@ public class ValueTraverser {
 
     private static Object visitListValue(Object coercedValue, GraphQLList listInputType, InputElements containingElements, ValueVisitor visitor) {
         if (coercedValue != null) {
-            assertTrue(coercedValue instanceof List, () -> "A list type MUST have an List value");
+            assertTrue(coercedValue instanceof List, "A list type MUST have an List value");
         }
         @SuppressWarnings("unchecked")
         List<Object> list = (List<Object>) coercedValue;

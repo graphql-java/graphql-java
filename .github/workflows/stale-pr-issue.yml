@@ -16,7 +16,7 @@ jobs:
   close-pending:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v9
+      - uses: actions/stale@v10
         with:
           # GLOBAL ------------------------------------------------------------
           # Exempt any PRs or issues already added to a milestone

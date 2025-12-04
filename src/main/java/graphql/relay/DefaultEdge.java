@@ -16,7 +16,7 @@ public class DefaultEdge<T> implements Edge<T> {
     private final ConnectionCursor cursor;
 
     public DefaultEdge(@Nullable T node, ConnectionCursor cursor) {
-        this.cursor = assertNotNull(cursor, () -> "cursor cannot be null");
+        this.cursor = assertNotNull(cursor, "cursor cannot be null");
         this.node = node;
     }
 

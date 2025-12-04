@@ -64,9 +64,9 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
                              UnionTypeDefinition definition,
                              List<UnionTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
-        assertNotNull(types, () -> "types can't be null");
-        assertNotEmpty(types, () -> "A Union type must define one or more member types.");
-        assertNotNull(directives, () -> "directives cannot be null");
+        assertNotNull(types, "types can't be null");
+        assertNotEmpty(types, "A Union type must define one or more member types.");
+        assertNotNull(directives, "directives cannot be null");
 
         this.name = name;
         this.description = description;
@@ -298,13 +298,13 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         }
 
         public Builder possibleType(GraphQLObjectType type) {
-            assertNotNull(type, () -> "possible type can't be null");
+            assertNotNull(type, "possible type can't be null");
             types.put(type.getName(), type);
             return this;
         }
 
         public Builder possibleType(GraphQLTypeReference reference) {
-            assertNotNull(reference, () -> "reference can't be null");
+            assertNotNull(reference, "reference can't be null");
             types.put(reference.getName(), reference);
             return this;
         }

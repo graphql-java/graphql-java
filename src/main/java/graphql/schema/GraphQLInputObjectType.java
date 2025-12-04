@@ -56,8 +56,8 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
                                    InputObjectTypeDefinition definition,
                                    List<InputObjectTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
-        assertNotNull(fields, () -> "fields can't be null");
-        assertNotNull(directives, () -> "directives cannot be null");
+        assertNotNull(fields, "fields can't be null");
+        assertNotNull(directives, "directives cannot be null");
 
         this.name = name;
         this.description = description;
@@ -283,7 +283,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         }
 
         public Builder field(GraphQLInputObjectField field) {
-            assertNotNull(field, () -> "field can't be null");
+            assertNotNull(field, "field can't be null");
             fields.put(field.getName(), field);
             return this;
         }
@@ -302,7 +302,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
          * @return this
          */
         public Builder field(UnaryOperator<GraphQLInputObjectField.Builder> builderFunction) {
-            assertNotNull(builderFunction, () -> "builderFunction should not be null");
+            assertNotNull(builderFunction, "builderFunction should not be null");
             GraphQLInputObjectField.Builder builder = GraphQLInputObjectField.newInputObjectField();
             builder = builderFunction.apply(builder);
             return field(builder);

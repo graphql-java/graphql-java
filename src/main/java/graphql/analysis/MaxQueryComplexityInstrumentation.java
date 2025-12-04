@@ -75,7 +75,7 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
     public MaxQueryComplexityInstrumentation(int maxComplexity, FieldComplexityCalculator fieldComplexityCalculator,
                                              Function<QueryComplexityInfo, Boolean> maxQueryComplexityExceededFunction) {
         this.maxComplexity = maxComplexity;
-        this.fieldComplexityCalculator = assertNotNull(fieldComplexityCalculator, () -> "calculator can't be null");
+        this.fieldComplexityCalculator = assertNotNull(fieldComplexityCalculator, "calculator can't be null");
         this.maxQueryComplexityExceededFunction = maxQueryComplexityExceededFunction;
     }
 

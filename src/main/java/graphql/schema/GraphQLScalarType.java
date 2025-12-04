@@ -61,8 +61,8 @@ public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOut
                               List<ScalarTypeExtensionDefinition> extensionDefinitions,
                               @Nullable String specifiedByUrl) {
         assertValidName(name);
-        assertNotNull(coercing, () -> "coercing can't be null");
-        assertNotNull(directives, () -> "directives can't be null");
+        assertNotNull(coercing, "coercing can't be null");
+        assertNotNull(directives, "directives can't be null");
 
         this.name = name;
         this.description = description;

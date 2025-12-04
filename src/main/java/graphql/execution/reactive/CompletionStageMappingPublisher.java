@@ -35,7 +35,7 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
     @Override
     public void subscribe(Subscriber<? super D> downstreamSubscriber) {
-        assertNotNullWithNPE(downstreamSubscriber, () -> "Subscriber passed to subscribe must not be null");
+        assertNotNullWithNPE(downstreamSubscriber, "Subscriber passed to subscribe must not be null");
         upstreamPublisher.subscribe(createSubscriber(downstreamSubscriber));
     }
 

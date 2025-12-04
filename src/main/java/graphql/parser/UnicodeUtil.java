@@ -32,10 +32,9 @@ public class UnicodeUtil {
         // Index for parser to continue at, the last character of the escaped unicode character. Either } or hex digit
         int continueIndex = isBracedEscape(string, i) ? endIndexExclusive : endIndexExclusive - 1;
 
-        String hexStr = string.substring(startIndex, endIndexExclusive);
         int codePoint;
         try {
-            codePoint = Integer.parseInt(hexStr, 16);
+            codePoint = Integer.parseInt(string, startIndex, endIndexExclusive, 16);
         } catch (NumberFormatException e) {
             throw new InvalidUnicodeSyntaxException(i18n, "InvalidUnicode.invalidHexString", sourceLocation, offendingToken(string, i, continueIndex));
         }
@@ -51,8 +50,7 @@ public class UnicodeUtil {
             i = continueIndex + 2;
             int trailingStartIndex = isBracedEscape(string, i) ? i + 2 : i + 1;
             int trailingEndIndexExclusive = getEndIndexExclusive(i18n, string, i, sourceLocation);
-            String trailingHexStr = string.substring(trailingStartIndex, trailingEndIndexExclusive);
-            int trailingCodePoint = Integer.parseInt(trailingHexStr, 16);
+            int trailingCodePoint = Integer.parseInt(string, trailingStartIndex, trailingEndIndexExclusive, 16);
             continueIndex = isBracedEscape(string, i) ? trailingEndIndexExclusive : trailingEndIndexExclusive - 1;
 
             if (isTrailingSurrogateValue(trailingCodePoint)) {

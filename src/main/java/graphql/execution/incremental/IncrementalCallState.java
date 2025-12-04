@@ -104,4 +104,8 @@ public class IncrementalCallState {
         return publisher.get();
     }
 
+    public void startDrainingNow() {
+        drainIncrementalCalls();
+    }
+
 }

@@ -1,5 +1,6 @@
 package graphql.schema.scalars;
 
+import com.google.common.collect.Maps;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.language.ArrayValue;
@@ -92,7 +93,7 @@ public class ObjectScalar {
             }
             if (input instanceof ObjectValue) {
                 List<ObjectField> values = ((ObjectValue) input).getObjectFields();
-                Map<String, Object> parsedValues = new LinkedHashMap<>();
+                Map<String, Object> parsedValues = Maps.newLinkedHashMapWithExpectedSize(values.size());
                 values.forEach(fld -> {
                     Object parsedValue = parseLiteral(fld.getValue(), variables);
                     parsedValues.put(fld.getName(), parsedValue);

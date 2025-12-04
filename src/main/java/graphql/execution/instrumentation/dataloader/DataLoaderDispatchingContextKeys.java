@@ -26,12 +26,28 @@ public final class DataLoaderDispatchingContextKeys {
 
 
     /**
+     * Enabled a different dispatching strategy that mimics the JS event loop based one:
+     * DataLoader will be dispatched as soon as there is no data fetcher or batch loader currently running.
+     *
+     */
+    public static final String ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING = "__GJ_enable_data_loader_exhausted_dispatching";
+
+    /**
      * Enables the ability that chained DataLoaders are dispatched automatically.
      *
      * @param graphQLContext
      */
     public static void setEnableDataLoaderChaining(GraphQLContext graphQLContext, boolean enabled) {
         graphQLContext.put(ENABLE_DATA_LOADER_CHAINING, enabled);
+    }
+
+    /**
+     * Enables the ability that chained DataLoaders are dispatched automatically.
+     *
+     * @param graphQLContext
+     */
+    public static void setEnableDataLoaderExhaustedDispatching(GraphQLContext graphQLContext, boolean enabled) {
+        graphQLContext.put(ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, enabled);
     }
 
 

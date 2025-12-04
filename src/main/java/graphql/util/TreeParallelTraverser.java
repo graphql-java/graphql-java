@@ -131,8 +131,8 @@ public class TreeParallelTraverser<T> {
         public void compute() {
             currentContext.setPhase(TraverserContext.Phase.ENTER);
             TraversalControl traversalControl = visitor.enter(currentContext);
-            assertNotNull(traversalControl, () -> "result of enter must not be null");
-            assertTrue(QUIT != traversalControl, () -> "can't return QUIT for parallel traversing");
+            assertNotNull(traversalControl, "result of enter must not be null");
+            assertTrue(QUIT != traversalControl, "can't return QUIT for parallel traversing");
             if (traversalControl == ABORT) {
                 tryComplete();
                 return;

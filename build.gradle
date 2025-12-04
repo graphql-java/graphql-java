@@ -1,3 +1,4 @@
+import aQute.bnd.gradle.BundleTaskExtension
 import net.ltgt.gradle.errorprone.CheckSeverity
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
@@ -10,15 +11,15 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "8.3.8"
-    id "biz.aQute.bnd.builder" version "6.4.0"
+    id "com.gradleup.shadow" version "9.0.0"
+    id "biz.aQute.bnd.builder" version "7.1.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
     id "net.ltgt.errorprone" version '4.3.0'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.2.10'
+    id 'org.jetbrains.kotlin.jvm' version '2.2.21'
 }
 
 java {
@@ -119,32 +120,36 @@ jar {
 }
 
 dependencies {
-    api 'com.graphql-java:java-dataloader:5.0.2'
+    api 'com.graphql-java:java-dataloader:6.0.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     api "org.jspecify:jspecify:1.0.0"
 
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
 
-    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.1'
+
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
-    testImplementation 'net.bytebuddy:byte-buddy:1.17.7'
+    testImplementation 'net.bytebuddy:byte-buddy:1.18.1'
     testImplementation 'org.objenesis:objenesis:3.4'
     testImplementation 'org.apache.groovy:groovy:4.0.28"'
     testImplementation 'org.apache.groovy:groovy-json:4.0.28'
-    testImplementation 'com.google.code.gson:gson:2.13.1'
+    testImplementation 'com.google.code.gson:gson:2.13.2'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.26'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.19.2'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.20.1'
     testImplementation 'org.awaitility:awaitility-groovy:4.3.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.7.9"
+    testImplementation "io.projectreactor:reactor-core:3.8.0"
 
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
     testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
+    
+    // JUnit Platform launcher required for Gradle 9
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.1'
 
     antlr 'org.antlr:antlr4:' + antlrVersion
 
@@ -155,11 +160,11 @@ dependencies {
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
-    errorprone 'com.uber.nullaway:nullaway:0.12.8'
-    errorprone 'com.google.errorprone:error_prone_core:2.41.0'
+    errorprone 'com.uber.nullaway:nullaway:0.12.10'
+    errorprone 'com.google.errorprone:error_prone_core:2.44.0'
 
     // just tests - no Kotlin otherwise
-    testCompileOnly 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 }
 
 shadowJar {
@@ -185,27 +190,37 @@ shadowJar {
     manifest {
         attributes('Automatic-Module-Name': 'com.graphqljava')
     }
-    //Apply biz.aQute.bnd.builder plugin logic to shadowJar as in BndBuilderPlugin 
-    convention.plugins.bundle = new aQute.bnd.gradle.BundleTaskConvention(it)
-    doLast {
-        //Call bnd after the ShadowJar was built to update the MANIFEST.MF
-        buildBundle()
-    }
+}
 
-    //Configure bnd for shadowJar
-    // -exportcontents: graphql.*  Adds all packages of graphql and below to the exported packages list
-    // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and 
-    //                                  also the repackaged packages like guava, which would be wrong after repackaging.
-    // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
-    //                  Guava was repackaged and included inside the jar, so we need to remove it.
-    //                  ANTLR was shaded, so we need to remove it.
-    //                  sun.misc is a JRE internal-only class that is not directly used by graphql-java. It was causing problems in libraries using graphql-java.
-    //                  The last ,* copies all the existing imports from the other dependencies, which is required.
-    bnd('''
+// Apply bnd to shadowJar task manually for Gradle 9 compatibility
+tasks.named('shadowJar').configure {
+    // Get the BundleTaskExtension added by bnd plugin
+    def bundle = extensions.findByType(BundleTaskExtension)
+    if (bundle != null) {
+        //Configure bnd for shadowJar
+        // -exportcontents: graphql.*  Adds all packages of graphql and below to the exported packages list
+        // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and 
+        //                                  also the repackaged packages like guava, which would be wrong after repackaging.
+        // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
+        //                  Guava was repackaged and included inside the jar, so we need to remove it.
+        //                  ANTLR was shaded, so we need to remove it.
+        //                  sun.misc is a JRE internal-only class that is not directly used by graphql-java. It was causing problems in libraries using graphql-java.
+        //                  The last ,* copies all the existing imports from the other dependencies, which is required.
+        bundle.bnd('''
 -exportcontents: graphql.*
 -removeheaders: Private-Package
 Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.annotations;resolution:=optional,*
 ''')
+    }
+}
+
+tasks.named('jmhJar') {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from {
+        project.configurations.jmhRuntimeClasspath
+                .filter { it.exists() }
+                .collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }
 
 
@@ -225,9 +240,10 @@ task buildNewJar(type: Jar) {
     manifest {
         from file("build/extract/META-INF/MANIFEST.MF")
     }
+    def projectVersion = version
     doLast {
-        delete("build/libs/graphql-java-${project.version}.jar")
-        file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
+        delete("build/libs/graphql-java-${projectVersion}.jar")
+        file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${projectVersion}.jar"))
     }
 }
 
@@ -244,6 +260,8 @@ check.dependsOn testng
 compileJava {
     options.compilerArgs += ["-parameters"]
     source file("build/generated-src"), sourceSets.main.java
+    // Gradle 9 requires explicit task dependencies
+    mustRunAfter generateTestGrammarSource, generateJmhGrammarSource
 }
 
 tasks.withType(GroovyCompile) {
@@ -303,12 +321,13 @@ javadoc {
     options.encoding = 'UTF-8'
 }
 
-artifacts {
-    archives sourcesJar
-    archives javadocJar
-}
+// Removed deprecated archives configuration in favor of direct assemble dependencies
 
 List<TestDescriptor> failedTests = []
+Map<String, Integer> testsAndTime = [:]
+Map<String, Integer> testClassesAndTime = [:]
+int testCount = 0
+long testTime = 0L
 
 tasks.withType(Test) {
     useJUnitPlatform()
@@ -322,8 +341,18 @@ tasks.withType(Test) {
     dependsOn "jmhClasses"
 
     afterTest { TestDescriptor descriptor, TestResult result ->
+        testCount++
         if (result.getFailedTestCount() > 0) {
             failedTests.add(descriptor)
+        }
+        def ms = (int) (result.endTime - result.startTime)
+        testTime += ms
+        String className = descriptor.className ?: "unknown"
+        String name = className + "." + descriptor.displayName
+        if (ms > 500) {
+            testsAndTime[name] = ms
+            testClassesAndTime.compute(className) { k, v -> v == null ? ms : v + ms }
+            println "\tTest '$name' took ${ms}ms"
         }
     }
 }
@@ -332,12 +361,30 @@ tasks.register('testWithJava17', Test) {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    classpath += sourceSets.jmh.output
+    dependsOn "jmhClasses"
+
+
+    dependsOn tasks.named('testClasses')
+
 }
+
 tasks.register('testWithJava11', Test) {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(11)
     }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    dependsOn tasks.named('testClasses')
+
+    classpath += sourceSets.jmh.output
+    dependsOn "jmhClasses"
+
 }
+
 test.dependsOn testWithJava17
 test.dependsOn testWithJava11
 
@@ -349,6 +396,10 @@ test.dependsOn testWithJava11
  * See https://github.com/gradle/gradle/issues/20151
  */
 gradle.buildFinished {
+    println "\n\n"
+    println "============================"
+    println "$testCount tests run in $testTime ms"
+    println "============================"
     if (!failedTests.isEmpty()) {
         println "\n\n"
         println "============================"
@@ -359,6 +410,28 @@ gradle.buildFinished {
         }
         println "============================"
     }
+    // slowest tests
+    println "\n\n"
+    println "============================"
+    println "Top 20 slowest test classes"
+    println "============================"
+    showTestResults(testClassesAndTime,20) { e ->
+        println "\tTest class ${e.key} took ${e.value}ms"
+    }
+    println "\n\n"
+    println "============================"
+    println "Top 50 slowest tests"
+    println "============================"
+    showTestResults(testsAndTime,50) { e ->
+        println "\tTest ${e.key} took ${e.value}ms"
+    }
+}
+
+static private showTestResults(Map<String, Integer> testMap, int limit, Closure closure) {
+    testMap.entrySet().stream()
+            .sorted { e1, e2 -> e2.getValue() - e1.getValue() }
+            .limit(limit)
+            .forEach(closure)
 }
 
 
@@ -373,7 +446,7 @@ publishing {
     publications {
 
         graphqlJava(MavenPublication) {
-            version version
+            version = version
             from components.java
 
             artifact sourcesJar {
@@ -438,7 +511,7 @@ nexusPublishing {
 }
 
 signing {
-    required { !project.hasProperty('publishToMavenLocal') }
+    setRequired { !project.hasProperty('publishToMavenLocal') }
     def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
     useInMemoryPgpKeys(signingKey, "")
     sign publishing.publications

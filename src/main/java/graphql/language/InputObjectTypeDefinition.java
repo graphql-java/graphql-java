@@ -1,14 +1,13 @@
 package graphql.language;
 
-
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,10 +74,7 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(directives.getDirectives());
-        result.addAll(inputValueDefinitions);
-        return result;
+        return FpKit.concat(directives.getDirectives(), inputValueDefinitions);
     }
 
     @Override

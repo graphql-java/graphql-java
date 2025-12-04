@@ -9,6 +9,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
@@ -26,8 +27,8 @@ public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>
     private final List<T> data;
 
     public SimpleListConnection(List<T> data, String prefix) {
-        this.data = assertNotNull(data, () -> " data cannot be null");
-        assertTrue(!prefix.isEmpty(), () -> "prefix cannot be null or empty");
+        this.data = assertNotNull(data, " data cannot be null");
+        assertTrue(!prefix.isEmpty(), "prefix cannot be null or empty");
         this.prefix = prefix;
     }
 
@@ -36,7 +37,10 @@ public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>
     }
 
     private List<Edge<T>> buildEdges() {
-        List<Edge<T>> edges = new ArrayList<>();
+        if (data.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Edge<T>> edges = new ArrayList<>(data.size());
         int ix = 0;
         for (T object : data) {
             edges.add(new DefaultEdge<>(object, new DefaultConnectionCursor(createCursor(ix++))));
@@ -49,7 +53,7 @@ public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>
 
         List<Edge<T>> edges = buildEdges();
 
-        if (edges.size() == 0) {
+        if (edges.isEmpty()) {
             return emptyConnection();
         }
 
@@ -66,7 +70,7 @@ public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>
         }
 
         edges = edges.subList(begin, end);
-        if (edges.size() == 0) {
+        if (edges.isEmpty()) {
             return emptyConnection();
         }
 

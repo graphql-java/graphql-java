@@ -11,6 +11,8 @@ import graphql.TestUtil
 import graphql.TypeMismatchError
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.LegacyTestingInstrumentation
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
+import graphql.execution.instrumentation.ModernTestingInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.FlowMessagePublisher
@@ -32,8 +34,8 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
@@ -776,7 +778,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         executionInput.cancel()
 
         // make things over the subscription
-        promises.forEach {it.run()}
+        promises.forEach { it.run() }
 
 
         then:
@@ -801,6 +803,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
     }
 
 
+    @Unroll
     def "DataLoader works on each subscription event"() {
         given:
         def sdl = """
@@ -856,6 +859,9 @@ class SubscriptionExecutionStrategyTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema)
                 .build()
 
+        if (exhaustedStrategy) {
+            ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)
+        }
 
         when:
         def executionResult = graphQL.execute(ei)
@@ -873,5 +879,76 @@ class SubscriptionExecutionStrategyTest extends Specification {
         events[1].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
         events[2].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
 
+        where:
+        exhaustedStrategy << [false, true]
+    }
+
+
+    def "can instrument subscription reactive ending"() {
+
+        given:
+        Object publisher = new ReactiveStreamsMessagePublisher(2)
+
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return publisher
+            }
+        }
+
+        def wiringBuilder = buildBaseSubscriptionWiring(
+                PropertyDataFetcher.fetching("sender"), PropertyDataFetcher.fetching("text")
+        )
+        RuntimeWiring runtimeWiring = wiringBuilder
+                .type(newTypeWiring("Subscription").dataFetcher("newMessage", newMessageDF).build())
+                .build()
+
+        def instrumentation = new ModernTestingInstrumentation()
+
+        def graphQL = TestUtil.graphQL(idl, runtimeWiring)
+                .instrumentation(instrumentation)
+                .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        when:
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        msgStream instanceof SubscriptionPublisher
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        TestUtil.listContainsInOrder(instrumentation.executionList, [
+                "start:execution",
+                "start:parse",
+                "end:parse",
+                "start:validation",
+                "end:validation",
+                "start:execute-operation",
+                "start:execution-strategy",
+                "start:fetch-newMessage",
+                "end:fetch-newMessage",
+                "start:reactive-results-subscription",
+                "end:execution-strategy",
+                "end:execute-operation",
+                "end:execution",
+        ], [
+                // followed by
+                "end:reactive-results-subscription"
+        ])
+
+        // last of all it finishes
+        TestUtil.last(instrumentation.executionList) == "end:reactive-results-subscription"
     }
 }

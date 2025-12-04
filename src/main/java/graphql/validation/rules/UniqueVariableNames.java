@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import com.google.common.collect.Sets;
 import graphql.Internal;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
@@ -32,7 +33,7 @@ public class UniqueVariableNames extends AbstractRule {
             return;
         }
 
-        Set<String> variableNameList = new LinkedHashSet<>(variableDefinitions.size());
+        Set<String> variableNameList = Sets.newLinkedHashSetWithExpectedSize(variableDefinitions.size());
 
 
         for (VariableDefinition variableDefinition : variableDefinitions) {

@@ -10,6 +10,7 @@ import graphql.language.Field;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -298,7 +299,7 @@ public class MergedField {
         return new Builder().addField(field);
     }
 
-    public static Builder newMergedField(List<Field> fields) {
+    public static Builder newMergedField(Collection<Field> fields) {
         return new Builder().fields(fields);
     }
 
@@ -377,10 +378,10 @@ public class MergedField {
             return this.fields;
         }
 
-        public Builder fields(List<Field> fields) {
+        public Builder fields(Collection<Field> fields) {
             if (singleField == null && this.fields == null && fields.size() == 1) {
                 // even if you present a list - if its a list of one, we dont allocate a list
-                singleField = fields.get(0);
+                singleField = fields.iterator().next();
                 return this;
             } else {
                 this.fields = ensureFieldsListBuilder();
@@ -427,7 +428,7 @@ public class MergedField {
             if (this.singleField != null && this.fields == null) {
                 return new MergedField(singleField, deferredExecutions);
             }
-            ImmutableList<Field> fields = assertNotNull(this.fields, () -> "You MUST add at least one field via the builder").build();
+            ImmutableList<Field> fields = assertNotNull(this.fields, "You MUST add at least one field via the builder").build();
             assertNotEmpty(fields);
             return new MultiMergedField(fields, deferredExecutions);
         }
