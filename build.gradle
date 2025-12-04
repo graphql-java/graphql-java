@@ -127,7 +127,7 @@ dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:6.0.1'
 
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
     testImplementation 'net.bytebuddy:byte-buddy:1.18.1'
