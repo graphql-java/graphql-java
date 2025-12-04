@@ -2,11 +2,13 @@ package graphql.schema;
 
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Input types represent those set of types that are allowed to be accepted as graphql mutation input, as opposed
  * to {@link GraphQLOutputType}s which can only be used as graphql response output.
  */
 @PublicApi
+@NullMarked
 public interface GraphQLNamedInputType extends GraphQLInputType, GraphQLNamedType {
 }

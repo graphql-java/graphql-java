@@ -1,24 +1,28 @@
 package graphql;
 
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 /**
- * A base class for graphql runtime exceptions that also implement {@link graphql.GraphQLError} and can be used
+ * A base class for graphql runtime exceptions that also implement {@link GraphQLError} and can be used
  * in a general sense direct or have specialisations made of it.
  * <p>
- * This is aimed amongst other reasons at Kotlin consumers due to https://github.com/graphql-java/graphql-java/issues/1690
+ * This is aimed amongst other reasons at Kotlin consumers due to <a href="https://github.com/graphql-java/graphql-java/issues/1690">...</a>
  * as well as being a way to share common code.
  */
 @PublicApi
+@NullMarked
 public class GraphqlErrorException extends GraphQLException implements GraphQLError {
 
-    private final List<SourceLocation> locations;
-    private final Map<String, Object> extensions;
-    private final List<Object> path;
+    private final @Nullable List<SourceLocation> locations;
+    private final @Nullable Map<String, Object> extensions;
+    private final @Nullable List<Object> path;
     private final ErrorClassification errorClassification;
 
     protected GraphqlErrorException(BuilderBase<?, ?> builder) {
@@ -30,7 +34,7 @@ public class GraphqlErrorException extends GraphQLException implements GraphQLEr
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return locations;
     }
 
@@ -40,12 +44,12 @@ public class GraphqlErrorException extends GraphQLException implements GraphQLEr
     }
 
     @Override
-    public List<Object> getPath() {
+    public @Nullable List<Object> getPath() {
         return path;
     }
 
     @Override
-    public Map<String, Object> getExtensions() {
+    public @Nullable Map<String, Object> getExtensions() {
         return extensions;
     }
 
@@ -66,6 +70,7 @@ public class GraphqlErrorException extends GraphQLException implements GraphQLEr
      * @param <T> the derived class
      * @param <B> the class to be built
      */
+    @NullUnmarked
     protected abstract static class BuilderBase<T extends BuilderBase<T, B>, B extends GraphqlErrorException> {
         protected String message;
         protected Throwable cause;
@@ -89,7 +94,7 @@ public class GraphqlErrorException extends GraphQLException implements GraphQLEr
             return asDerivedType();
         }
 
-        public T sourceLocation(SourceLocation sourceLocation) {
+        public T sourceLocation(@Nullable SourceLocation sourceLocation) {
             return sourceLocations(sourceLocation == null ? null : Collections.singletonList(sourceLocation));
         }
 

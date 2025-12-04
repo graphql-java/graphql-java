@@ -3,6 +3,8 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -35,10 +37,11 @@ import java.util.function.Supplier;
  * @see graphql.schema.DataFetcher
  */
 @PublicApi
+@NullMarked
 public class PropertyDataFetcher<T> implements LightDataFetcher<T> {
 
-    private final String propertyName;
-    private final Function<Object, Object> function;
+    private final @Nullable String propertyName;
+    private final @Nullable Function<Object, Object> function;
 
     /**
      * This constructor will use the property name and examine the {@link DataFetchingEnvironment#getSource()}
@@ -107,23 +110,23 @@ public class PropertyDataFetcher<T> implements LightDataFetcher<T> {
     /**
      * @return the property that this is fetching for
      */
-    public String getPropertyName() {
+    public @Nullable String getPropertyName() {
         return propertyName;
     }
 
     @Override
-    public T get(GraphQLFieldDefinition fieldDefinition, Object source, Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
+    public @Nullable T get(GraphQLFieldDefinition fieldDefinition, Object source, Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
         return getImpl(source, fieldDefinition.getType(), environmentSupplier);
     }
 
     @Override
-    public T get(DataFetchingEnvironment environment) {
+    public @Nullable T get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();
         return getImpl(source, environment.getFieldType(), () -> environment);
     }
 
     @SuppressWarnings("unchecked")
-    private T getImpl(Object source, GraphQLOutputType fieldDefinition, Supplier<DataFetchingEnvironment> environmentSupplier) {
+    private @Nullable T getImpl(@Nullable Object source, GraphQLOutputType fieldDefinition, Supplier<DataFetchingEnvironment> environmentSupplier) {
         if (source == null) {
             return null;
         }
