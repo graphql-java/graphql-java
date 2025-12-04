@@ -47,7 +47,7 @@ public class ParseAndValidate {
     public static ParseAndValidateResult parseAndValidate(GraphQLSchema graphQLSchema, ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
-            List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), () -> "Parse result document cannot be null when parse succeeded"), executionInput.getLocale());
+            List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"), executionInput.getLocale());
             return result.transform(builder -> builder.validationErrors(errors));
         }
         return result;
