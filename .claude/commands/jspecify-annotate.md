@@ -22,4 +22,4 @@ Finally, can you remove this class from the JSpecifyAnnotationsCheck as an exemp
 
 You do not need to run the JSpecifyAnnotationsCheck. Removing the completed class is enough.
 
-Remember to delete all unused imports wehn you're done from the class you've just annotated.
+Remember to delete all unused imports when you're done from the class you've just annotated.
