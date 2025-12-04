@@ -13,7 +13,7 @@ jobs:
       matrix:
         gradle-argument: [ 'assemble && ./gradlew check -x test','testWithJava11', 'testWithJava17', 'test -x testWithJava11 -x testWithJava17' ]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -41,7 +41,7 @@ jobs:
       MAVEN_CENTRAL_PGP_KEY: ${{ secrets.MAVEN_CENTRAL_PGP_KEY }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
       - name: Set up JDK 21
         uses: actions/setup-java@v5
