@@ -148,7 +148,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
+    public <K, V extends @Nullable Object> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return delegateEnvironment.getDataLoader(dataLoaderName);
     }
 
