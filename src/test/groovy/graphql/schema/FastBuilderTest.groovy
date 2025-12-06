@@ -8,6 +8,8 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLDirective.newDirective
+import static graphql.schema.GraphQLAppliedDirective.newDirective as newAppliedDirective
+import static graphql.schema.GraphQLAppliedDirectiveArgument.newArgument as newAppliedArgument
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
@@ -893,5 +895,195 @@ class FastBuilderTest extends Specification {
         then: "directive argument type is resolved to input type"
         def resolvedDirective = schema.getDirective("config")
         resolvedDirective.getArgument("settings").getType() == configInput
+    }
+
+    // ==================== Phase 5: Applied Directives ====================
+
+    def "schema applied directive with type reference argument resolves correctly"() {
+        given: "a custom scalar for directive argument"
+        def configScalar = newScalar()
+                .name("ConfigValue")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive definition"
+        def directive = newDirective()
+                .name("config")
+                .validLocation(Introspection.DirectiveLocation.SCHEMA)
+                .argument(newArgument()
+                        .name("value")
+                        .type(configScalar))
+                .build()
+
+        and: "an applied directive with type reference"
+        def appliedDirective = newAppliedDirective()
+                .name("config")
+                .argument(newAppliedArgument()
+                        .name("value")
+                        .type(typeRef("ConfigValue"))
+                        .valueProgrammatic("test"))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(configScalar)
+                .additionalDirective(directive)
+                .withSchemaAppliedDirective(appliedDirective)
+                .build()
+
+        then: "applied directive argument type is resolved"
+        def resolved = schema.getSchemaAppliedDirective("config")
+        resolved.getArgument("value").getType() == configScalar
+    }
+
+    def "type with applied directive argument type reference resolves correctly"() {
+        given: "a custom scalar"
+        def customScalar = newScalar()
+                .name("MyScalar")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive definition"
+        def directive = newDirective()
+                .name("myDir")
+                .validLocation(Introspection.DirectiveLocation.ENUM)
+                .argument(newArgument()
+                        .name("arg")
+                        .type(customScalar))
+                .build()
+
+        and: "an applied directive with type reference"
+        def appliedDirective = newAppliedDirective()
+                .name("myDir")
+                .argument(newAppliedArgument()
+                        .name("arg")
+                        .type(typeRef("MyScalar"))
+                        .valueProgrammatic("value"))
+                .build()
+
+        and: "an enum with the applied directive"
+        def enumType = newEnum()
+                .name("Status")
+                .value("ACTIVE")
+                .withAppliedDirective(appliedDirective)
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("status")
+                        .type(enumType))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(customScalar)
+                .additionalType(enumType)
+                .additionalDirective(directive)
+                .build()
+
+        then: "applied directive argument type on enum is resolved"
+        def resolvedEnum = schema.getType("Status") as GraphQLEnumType
+        def resolvedApplied = resolvedEnum.getAppliedDirective("myDir")
+        resolvedApplied.getArgument("arg").getType() == customScalar
+    }
+
+    def "input object field with applied directive type reference resolves correctly"() {
+        given: "a custom scalar"
+        def customScalar = newScalar()
+                .name("FieldMeta")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive definition"
+        def directive = newDirective()
+                .name("meta")
+                .validLocation(Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION)
+                .argument(newArgument()
+                        .name("data")
+                        .type(customScalar))
+                .build()
+
+        and: "an applied directive with type reference"
+        def appliedDirective = newAppliedDirective()
+                .name("meta")
+                .argument(newAppliedArgument()
+                        .name("data")
+                        .type(typeRef("FieldMeta"))
+                        .valueProgrammatic("metadata"))
+                .build()
+
+        and: "an input type with field having applied directive"
+        def inputType = newInputObject()
+                .name("MyInput")
+                .field(newInputObjectField()
+                        .name("field1")
+                        .type(GraphQLString)
+                        .withAppliedDirective(appliedDirective))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("query")
+                        .argument(newArgument()
+                                .name("input")
+                                .type(inputType))
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(customScalar)
+                .additionalType(inputType)
+                .additionalDirective(directive)
+                .build()
+
+        then: "applied directive argument type on input field is resolved"
+        def resolvedInput = schema.getType("MyInput") as GraphQLInputObjectType
+        def field = resolvedInput.getField("field1")
+        def resolvedApplied = field.getAppliedDirective("meta")
+        resolvedApplied.getArgument("data").getType() == customScalar
+    }
+
+    def "multiple schema applied directives work correctly"() {
+        given: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        and: "multiple applied directives (no type refs)"
+        def applied1 = newAppliedDirective()
+                .name("dir1")
+                .build()
+        def applied2 = newAppliedDirective()
+                .name("dir2")
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .withSchemaAppliedDirectives([applied1, applied2])
+                .build()
+
+        then: "both applied directives are in schema"
+        schema.getSchemaAppliedDirective("dir1") != null
+        schema.getSchemaAppliedDirective("dir2") != null
     }
 }

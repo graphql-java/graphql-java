@@ -42,6 +42,7 @@ import static graphql.collect.ImmutableKit.nonNullCopyOf;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 
 /**
  * The schema represents the combined type system of the graphql engine.  This is how the engine knows
@@ -1241,6 +1242,8 @@ public class GraphQLSchema {
         public FastBuilder withSchemaAppliedDirective(GraphQLAppliedDirective applied) {
             if (applied != null) {
                 schemaAppliedDirectives.add(applied);
+                // Scan applied directive arguments for type references
+                shallowTypeRefCollector.scanAppliedDirectives(singletonList(applied));
             }
             return this;
         }

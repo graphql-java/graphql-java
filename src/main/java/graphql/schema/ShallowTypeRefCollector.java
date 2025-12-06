@@ -32,14 +32,35 @@ public class ShallowTypeRefCollector {
         if (type instanceof GraphQLInputObjectType) {
             handleInputObjectType((GraphQLInputObjectType) type);
         }
-        // Future phases will handle: GraphQLObjectType, GraphQLInterfaceType,
-        // GraphQLUnionType, applied directives on types
+        // Scan applied directives on all directive container types
+        if (type instanceof GraphQLDirectiveContainer) {
+            scanAppliedDirectives(((GraphQLDirectiveContainer) type).getAppliedDirectives());
+        }
+        // Future phases will handle: GraphQLObjectType fields, GraphQLInterfaceType fields,
+        // GraphQLUnionType members, GraphQLObjectType/InterfaceType interfaces
     }
 
     private void handleInputObjectType(GraphQLInputObjectType inputType) {
         for (GraphQLInputObjectField field : inputType.getFieldDefinitions()) {
             if (containsTypeReference(field.getType())) {
                 replaceTargets.add(field);
+            }
+            // Scan applied directives on input fields
+            scanAppliedDirectives(field.getAppliedDirectives());
+        }
+    }
+
+    /**
+     * Scan applied directives for type references in their arguments.
+     *
+     * @param appliedDirectives the applied directives to scan
+     */
+    public void scanAppliedDirectives(List<GraphQLAppliedDirective> appliedDirectives) {
+        for (GraphQLAppliedDirective applied : appliedDirectives) {
+            for (GraphQLAppliedDirectiveArgument arg : applied.getArguments()) {
+                if (containsTypeReference(arg.getType())) {
+                    replaceTargets.add(arg);
+                }
             }
         }
     }
@@ -94,9 +115,16 @@ public class ShallowTypeRefCollector {
                 replaceArgumentType((GraphQLArgument) target, typeMap);
             } else if (target instanceof GraphQLInputObjectField) {
                 replaceInputFieldType((GraphQLInputObjectField) target, typeMap);
+            } else if (target instanceof GraphQLAppliedDirectiveArgument) {
+                replaceAppliedDirectiveArgumentType((GraphQLAppliedDirectiveArgument) target, typeMap);
             }
             // Future phases will handle other target types
         }
+    }
+
+    private void replaceAppliedDirectiveArgumentType(GraphQLAppliedDirectiveArgument arg, Map<String, GraphQLNamedType> typeMap) {
+        GraphQLInputType resolvedType = resolveInputType(arg.getType(), typeMap);
+        arg.replaceType(resolvedType);
     }
 
     private void replaceInputFieldType(GraphQLInputObjectField field, Map<String, GraphQLNamedType> typeMap) {
