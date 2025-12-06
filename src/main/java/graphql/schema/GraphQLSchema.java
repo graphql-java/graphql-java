@@ -16,7 +16,6 @@ import graphql.language.SchemaDefinition;
 import graphql.language.SchemaExtensionDefinition;
 import graphql.schema.impl.GraphQLTypeCollectingVisitor;
 import graphql.schema.impl.SchemaUtil;
-import graphql.schema.impl.ShallowTypeRefCollector;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
@@ -1176,7 +1175,21 @@ public class GraphQLSchema {
          * @return this builder for chaining
          */
         public FastBuilder additionalDirective(GraphQLDirective directive) {
-            // Phase 2+: Will be implemented
+            if (directive == null) {
+                return this;
+            }
+
+            String name = directive.getName();
+            GraphQLDirective existing = directiveMap.get(name);
+            if (existing != null && existing != directive) {
+                throw new AssertException(String.format("Directive '%s' already exists with a different instance", name));
+            }
+
+            if (existing == null) {
+                directiveMap.put(name, directive);
+                shallowTypeRefCollector.handleDirective(directive);
+            }
+
             return this;
         }
 

@@ -2,12 +2,16 @@ package graphql.schema
 
 import graphql.AssertException
 import graphql.Scalars
+import graphql.introspection.Introspection
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLScalarType.newScalar
+import static graphql.schema.GraphQLTypeReference.typeRef
 
 class FastBuilderTest extends Specification {
 
@@ -269,5 +273,263 @@ class FastBuilderTest extends Specification {
         then: "both types are in schema"
         schema.getType("Scalar1") != null
         schema.getType("Scalar2") != null
+    }
+
+    // ==================== Phase 2: Directives with Scalar Arguments ====================
+
+    def "directive with type reference argument resolves correctly"() {
+        given: "a custom scalar"
+        def customScalar = newScalar()
+                .name("Foo")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive with type reference argument"
+        def directive = newDirective()
+                .name("bar")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .argument(newArgument()
+                        .name("arg")
+                        .type(typeRef("Foo")))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(customScalar))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(customScalar)
+                .additionalDirective(directive)
+                .build()
+
+        then: "directive argument type is resolved"
+        def resolvedDirective = schema.getDirective("bar")
+        resolvedDirective != null
+        resolvedDirective.getArgument("arg").getType() == customScalar
+    }
+
+    def "directive with NonNull wrapped type reference resolves correctly"() {
+        given: "a custom scalar"
+        def customScalar = newScalar()
+                .name("MyScalar")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive with NonNull type reference argument"
+        def directive = newDirective()
+                .name("myDirective")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .argument(newArgument()
+                        .name("arg")
+                        .type(GraphQLNonNull.nonNull(typeRef("MyScalar"))))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(customScalar)
+                .additionalDirective(directive)
+                .build()
+
+        then: "directive argument type is resolved with NonNull wrapper"
+        def resolvedDirective = schema.getDirective("myDirective")
+        def argType = resolvedDirective.getArgument("arg").getType()
+        argType instanceof GraphQLNonNull
+        ((GraphQLNonNull) argType).getWrappedType() == customScalar
+    }
+
+    def "directive with List wrapped type reference resolves correctly"() {
+        given: "a custom scalar"
+        def customScalar = newScalar()
+                .name("ListScalar")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive with List type reference argument"
+        def directive = newDirective()
+                .name("listDirective")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .argument(newArgument()
+                        .name("args")
+                        .type(GraphQLList.list(typeRef("ListScalar"))))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(customScalar)
+                .additionalDirective(directive)
+                .build()
+
+        then: "directive argument type is resolved with List wrapper"
+        def resolvedDirective = schema.getDirective("listDirective")
+        def argType = resolvedDirective.getArgument("args").getType()
+        argType instanceof GraphQLList
+        ((GraphQLList) argType).getWrappedType() == customScalar
+    }
+
+    def "missing type reference throws error"() {
+        given: "a directive referencing non-existent type"
+        def directive = newDirective()
+                .name("bar")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .argument(newArgument()
+                        .name("arg")
+                        .type(typeRef("NonExistent")))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building"
+        new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalDirective(directive)
+                .build()
+
+        then: "error for missing type"
+        thrown(AssertException)
+    }
+
+    def "duplicate directive with different instance throws error"() {
+        given: "two different directive instances with same name"
+        def directive1 = newDirective()
+                .name("duplicate")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .build()
+        def directive2 = newDirective()
+                .name("duplicate")
+                .validLocation(Introspection.DirectiveLocation.OBJECT)
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "adding both directives"
+        new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalDirective(directive1)
+                .additionalDirective(directive2)
+                .build()
+
+        then: "error is thrown"
+        thrown(AssertException)
+    }
+
+    def "same directive instance can be added multiple times"() {
+        given: "a directive"
+        def directive = newDirective()
+                .name("myDir")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "adding same directive twice"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalDirective(directive)
+                .additionalDirective(directive)
+                .build()
+
+        then: "no error and directive is in schema"
+        schema.getDirective("myDir") != null
+    }
+
+    def "additionalDirectives accepts collection"() {
+        given: "multiple directives"
+        def directive1 = newDirective()
+                .name("dir1")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .build()
+        def directive2 = newDirective()
+                .name("dir2")
+                .validLocation(Introspection.DirectiveLocation.OBJECT)
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "adding directives as collection"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalDirectives([directive1, directive2])
+                .build()
+
+        then: "both directives are in schema"
+        schema.getDirective("dir1") != null
+        schema.getDirective("dir2") != null
+    }
+
+    def "directive argument with concrete type (no type reference) works"() {
+        given: "a directive with concrete type argument"
+        def directive = newDirective()
+                .name("withString")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .argument(newArgument()
+                        .name("msg")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalDirective(directive)
+                .build()
+
+        then: "directive argument type remains unchanged"
+        def resolvedDirective = schema.getDirective("withString")
+        resolvedDirective.getArgument("msg").getType() == GraphQLString
     }
 }
