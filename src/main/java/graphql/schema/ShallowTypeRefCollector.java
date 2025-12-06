@@ -33,12 +33,14 @@ public class ShallowTypeRefCollector {
             handleInputObjectType((GraphQLInputObjectType) type);
         } else if (type instanceof GraphQLObjectType) {
             handleObjectType((GraphQLObjectType) type);
+        } else if (type instanceof GraphQLInterfaceType) {
+            handleInterfaceType((GraphQLInterfaceType) type);
         }
         // Scan applied directives on all directive container types
         if (type instanceof GraphQLDirectiveContainer) {
             scanAppliedDirectives(((GraphQLDirectiveContainer) type).getAppliedDirectives());
         }
-        // Future phases will handle: GraphQLInterfaceType fields, GraphQLUnionType members
+        // Future phases will handle: GraphQLUnionType members
     }
 
     private void handleObjectType(GraphQLObjectType objectType) {
@@ -69,6 +71,25 @@ public class ShallowTypeRefCollector {
         return false;
     }
 
+    private void handleInterfaceType(GraphQLInterfaceType interfaceType) {
+        // Scan fields for type references (same as object types)
+        for (GraphQLFieldDefinition field : interfaceType.getFieldDefinitions()) {
+            if (containsTypeReference(field.getType())) {
+                replaceTargets.add(field);
+            }
+            // Scan field arguments
+            for (GraphQLArgument arg : field.getArguments()) {
+                scanArgumentType(arg);
+            }
+            // Scan applied directives on field
+            scanAppliedDirectives(field.getAppliedDirectives());
+        }
+        // Interfaces can extend other interfaces
+        if (hasInterfaceTypeReferences(interfaceType.getInterfaces())) {
+            replaceTargets.add(new InterfaceInterfaceReplaceTarget(interfaceType));
+        }
+    }
+
     /**
      * Wrapper class to track object types that need interface replacement.
      */
@@ -77,6 +98,17 @@ public class ShallowTypeRefCollector {
 
         ObjectInterfaceReplaceTarget(GraphQLObjectType objectType) {
             this.objectType = objectType;
+        }
+    }
+
+    /**
+     * Wrapper class to track interface types that need interface replacement.
+     */
+    static class InterfaceInterfaceReplaceTarget {
+        final GraphQLInterfaceType interfaceType;
+
+        InterfaceInterfaceReplaceTarget(GraphQLInterfaceType interfaceType) {
+            this.interfaceType = interfaceType;
         }
     }
 
@@ -161,8 +193,10 @@ public class ShallowTypeRefCollector {
                 replaceFieldType((GraphQLFieldDefinition) target, typeMap);
             } else if (target instanceof ObjectInterfaceReplaceTarget) {
                 replaceObjectInterfaces((ObjectInterfaceReplaceTarget) target, typeMap);
+            } else if (target instanceof InterfaceInterfaceReplaceTarget) {
+                replaceInterfaceInterfaces((InterfaceInterfaceReplaceTarget) target, typeMap);
             }
-            // Future phases will handle: GraphQLInterfaceType interfaces, GraphQLUnionType members
+            // Future phases will handle: GraphQLUnionType members
         }
     }
 
@@ -205,6 +239,27 @@ public class ShallowTypeRefCollector {
             }
         }
         objectType.replaceInterfaces(resolvedInterfaces);
+    }
+
+    private void replaceInterfaceInterfaces(InterfaceInterfaceReplaceTarget target, Map<String, GraphQLNamedType> typeMap) {
+        GraphQLInterfaceType interfaceType = target.interfaceType;
+        List<GraphQLNamedOutputType> resolvedInterfaces = new ArrayList<>();
+        for (GraphQLNamedOutputType iface : interfaceType.getInterfaces()) {
+            if (iface instanceof GraphQLTypeReference) {
+                String typeName = ((GraphQLTypeReference) iface).getName();
+                GraphQLNamedType resolved = typeMap.get(typeName);
+                if (resolved == null) {
+                    throw new AssertException(String.format("Type '%s' not found in schema", typeName));
+                }
+                if (!(resolved instanceof GraphQLInterfaceType)) {
+                    throw new AssertException(String.format("Type '%s' is not an interface type", typeName));
+                }
+                resolvedInterfaces.add((GraphQLInterfaceType) resolved);
+            } else {
+                resolvedInterfaces.add(iface);
+            }
+        }
+        interfaceType.replaceInterfaces(resolvedInterfaces);
     }
 
     /**

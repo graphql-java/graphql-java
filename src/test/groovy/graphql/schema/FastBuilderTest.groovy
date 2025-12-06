@@ -1406,4 +1406,289 @@ class FastBuilderTest extends Specification {
         then: "error for missing interface"
         thrown(AssertException)
     }
+
+    // ==================== Phase 7: Interface Types ====================
+
+    def "interface type can be added to schema"() {
+        given: "an interface type"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .type(nodeInterface))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Node", { env -> null })
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(nodeInterface)
+                .build()
+
+        then: "interface type is in schema"
+        def resolvedInterface = schema.getType("Node")
+        resolvedInterface instanceof GraphQLInterfaceType
+        (resolvedInterface as GraphQLInterfaceType).getFieldDefinition("id") != null
+    }
+
+    def "interface type field with type reference resolves correctly"() {
+        given: "a custom object type"
+        def userType = newObject()
+                .name("User")
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString))
+                .build()
+
+        and: "an interface type with field returning User via type reference"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("owner")
+                        .type(typeRef("User")))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .type(nodeInterface))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Node", { env -> null })
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(nodeInterface)
+                .additionalType(userType)
+                .build()
+
+        then: "interface field type is resolved"
+        def resolvedInterface = schema.getType("Node") as GraphQLInterfaceType
+        resolvedInterface.getFieldDefinition("owner").getType() == userType
+    }
+
+    def "interface extending interface via type reference resolves correctly"() {
+        given: "a base interface"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        and: "an interface extending Node via type reference"
+        def namedNodeInterface = GraphQLInterfaceType.newInterface()
+                .name("NamedNode")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString))
+                .withInterface(typeRef("Node"))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .type(nodeInterface))
+                .build()
+
+        and: "code registry with type resolvers"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Node", { env -> null })
+                .typeResolver("NamedNode", { env -> null })
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(nodeInterface)
+                .additionalType(namedNodeInterface)
+                .build()
+
+        then: "interface extension is resolved"
+        def resolvedNamedNode = schema.getType("NamedNode") as GraphQLInterfaceType
+        resolvedNamedNode.getInterfaces().size() == 1
+        resolvedNamedNode.getInterfaces()[0] == nodeInterface
+    }
+
+    def "interface type resolver from interface is wired to code registry"() {
+        given: "an interface type with inline type resolver"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .typeResolver({ env -> null })
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .type(nodeInterface))
+                .build()
+
+        and: "code registry (no type resolver)"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(nodeInterface)
+                .build()
+
+        then: "type resolver is wired"
+        def resolvedInterface = schema.getType("Node") as GraphQLInterfaceType
+        schema.codeRegistry.getTypeResolver(resolvedInterface) != null
+    }
+
+    def "interface field argument with type reference resolves correctly"() {
+        given: "an input type"
+        def filterInput = newInputObject()
+                .name("FilterInput")
+                .field(newInputObjectField()
+                        .name("active")
+                        .type(Scalars.GraphQLBoolean))
+                .build()
+
+        and: "an interface type with field having argument with type reference"
+        def searchableInterface = GraphQLInterfaceType.newInterface()
+                .name("Searchable")
+                .field(newFieldDefinition()
+                        .name("search")
+                        .argument(newArgument()
+                                .name("filter")
+                                .type(typeRef("FilterInput")))
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("searchable")
+                        .type(searchableInterface))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Searchable", { env -> null })
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(searchableInterface)
+                .additionalType(filterInput)
+                .build()
+
+        then: "interface field argument type is resolved"
+        def resolvedInterface = schema.getType("Searchable") as GraphQLInterfaceType
+        resolvedInterface.getFieldDefinition("search").getArgument("filter").getType() == filterInput
+    }
+
+    def "interface with missing extended interface type reference throws error"() {
+        given: "an interface with missing extended interface reference"
+        def childInterface = GraphQLInterfaceType.newInterface()
+                .name("ChildInterface")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .withInterface(typeRef("NonExistentInterface"))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("child")
+                        .type(childInterface))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("ChildInterface", { env -> null })
+
+        when: "building"
+        new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(childInterface)
+                .build()
+
+        then: "error for missing interface"
+        thrown(AssertException)
+    }
+
+    def "interface field with applied directive type reference resolves correctly"() {
+        given: "a custom scalar"
+        def metaScalar = newScalar()
+                .name("InterfaceMetadata")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive definition"
+        def directive = newDirective()
+                .name("interfaceMeta")
+                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
+                .argument(newArgument()
+                        .name("info")
+                        .type(metaScalar))
+                .build()
+
+        and: "an applied directive with type reference"
+        def appliedDirective = newAppliedDirective()
+                .name("interfaceMeta")
+                .argument(newAppliedArgument()
+                        .name("info")
+                        .type(typeRef("InterfaceMetadata"))
+                        .valueProgrammatic("metadata"))
+                .build()
+
+        and: "an interface type with field having applied directive"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString)
+                        .withAppliedDirective(appliedDirective))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .type(nodeInterface))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Node", { env -> null })
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(metaScalar)
+                .additionalType(nodeInterface)
+                .additionalDirective(directive)
+                .build()
+
+        then: "applied directive argument type on interface field is resolved"
+        def resolvedInterface = schema.getType("Node") as GraphQLInterfaceType
+        def field = resolvedInterface.getFieldDefinition("id")
+        def resolvedApplied = field.getAppliedDirective("interfaceMeta")
+        resolvedApplied.getArgument("info").getType() == metaScalar
+    }
 }
