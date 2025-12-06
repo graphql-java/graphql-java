@@ -40,7 +40,9 @@ public class ShallowTypeRefCollector {
         if (type instanceof GraphQLDirectiveContainer) {
             scanAppliedDirectives(((GraphQLDirectiveContainer) type).getAppliedDirectives());
         }
-        // Future phases will handle: GraphQLUnionType members
+        if (type instanceof GraphQLUnionType) {
+            handleUnionType((GraphQLUnionType) type);
+        }
     }
 
     private void handleObjectType(GraphQLObjectType objectType) {
@@ -109,6 +111,27 @@ public class ShallowTypeRefCollector {
 
         InterfaceInterfaceReplaceTarget(GraphQLInterfaceType interfaceType) {
             this.interfaceType = interfaceType;
+        }
+    }
+
+    private void handleUnionType(GraphQLUnionType unionType) {
+        // Check if any possible types are type references
+        for (GraphQLNamedOutputType possibleType : unionType.getTypes()) {
+            if (possibleType instanceof GraphQLTypeReference) {
+                replaceTargets.add(new UnionTypesReplaceTarget(unionType));
+                break;
+            }
+        }
+    }
+
+    /**
+     * Wrapper class to track union types that need member type replacement.
+     */
+    static class UnionTypesReplaceTarget {
+        final GraphQLUnionType unionType;
+
+        UnionTypesReplaceTarget(GraphQLUnionType unionType) {
+            this.unionType = unionType;
         }
     }
 
@@ -195,8 +218,9 @@ public class ShallowTypeRefCollector {
                 replaceObjectInterfaces((ObjectInterfaceReplaceTarget) target, typeMap);
             } else if (target instanceof InterfaceInterfaceReplaceTarget) {
                 replaceInterfaceInterfaces((InterfaceInterfaceReplaceTarget) target, typeMap);
+            } else if (target instanceof UnionTypesReplaceTarget) {
+                replaceUnionTypes((UnionTypesReplaceTarget) target, typeMap);
             }
-            // Future phases will handle: GraphQLUnionType members
         }
     }
 
@@ -260,6 +284,27 @@ public class ShallowTypeRefCollector {
             }
         }
         interfaceType.replaceInterfaces(resolvedInterfaces);
+    }
+
+    private void replaceUnionTypes(UnionTypesReplaceTarget target, Map<String, GraphQLNamedType> typeMap) {
+        GraphQLUnionType unionType = target.unionType;
+        List<GraphQLNamedOutputType> resolvedTypes = new ArrayList<>();
+        for (GraphQLNamedOutputType possibleType : unionType.getTypes()) {
+            if (possibleType instanceof GraphQLTypeReference) {
+                String typeName = ((GraphQLTypeReference) possibleType).getName();
+                GraphQLNamedType resolved = typeMap.get(typeName);
+                if (resolved == null) {
+                    throw new AssertException(String.format("Type '%s' not found in schema", typeName));
+                }
+                if (!(resolved instanceof GraphQLObjectType)) {
+                    throw new AssertException(String.format("Type '%s' is not an object type (union members must be object types)", typeName));
+                }
+                resolvedTypes.add((GraphQLObjectType) resolved);
+            } else {
+                resolvedTypes.add(possibleType);
+            }
+        }
+        unionType.replaceTypes(resolvedTypes);
     }
 
     /**

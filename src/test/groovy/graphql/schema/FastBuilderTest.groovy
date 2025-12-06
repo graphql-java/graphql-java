@@ -1691,4 +1691,235 @@ class FastBuilderTest extends Specification {
         def resolvedApplied = field.getAppliedDirective("interfaceMeta")
         resolvedApplied.getArgument("info").getType() == metaScalar
     }
+
+    // ==================== Phase 8: Union Types ====================
+
+    def "union type can be added to schema"() {
+        given: "possible types for union"
+        def catType = newObject()
+                .name("Cat")
+                .field(newFieldDefinition()
+                        .name("meow")
+                        .type(GraphQLString))
+                .build()
+
+        def dogType = newObject()
+                .name("Dog")
+                .field(newFieldDefinition()
+                        .name("bark")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a union with concrete types"
+        def petUnion = GraphQLUnionType.newUnionType()
+                .name("Pet")
+                .possibleType(catType)
+                .possibleType(dogType)
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("pet")
+                        .type(petUnion))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Pet", { env -> null })
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(catType)
+                .additionalType(dogType)
+                .additionalType(petUnion)
+                .build()
+
+        then: "union type is in schema"
+        def resolvedUnion = schema.getType("Pet")
+        resolvedUnion instanceof GraphQLUnionType
+        (resolvedUnion as GraphQLUnionType).types.size() == 2
+    }
+
+    def "union type with type reference members resolves correctly"() {
+        given: "possible types for union"
+        def catType = newObject()
+                .name("Cat")
+                .field(newFieldDefinition()
+                        .name("meow")
+                        .type(GraphQLString))
+                .build()
+
+        def dogType = newObject()
+                .name("Dog")
+                .field(newFieldDefinition()
+                        .name("bark")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a union with type references"
+        def petUnion = GraphQLUnionType.newUnionType()
+                .name("Pet")
+                .possibleType(typeRef("Cat"))
+                .possibleType(typeRef("Dog"))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("pet")
+                        .type(petUnion))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Pet", { env -> null })
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(catType)
+                .additionalType(dogType)
+                .additionalType(petUnion)
+                .build()
+
+        then: "union member types are resolved"
+        def resolvedPet = schema.getType("Pet") as GraphQLUnionType
+        resolvedPet.types.collect { it.name }.toSet() == ["Cat", "Dog"].toSet()
+        resolvedPet.types[0] in [catType, dogType]
+        resolvedPet.types[1] in [catType, dogType]
+    }
+
+    def "union type resolver from union is wired to code registry"() {
+        given: "possible types for union"
+        def catType = newObject()
+                .name("Cat")
+                .field(newFieldDefinition()
+                        .name("meow")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a union with inline type resolver"
+        def petUnion = GraphQLUnionType.newUnionType()
+                .name("Pet")
+                .possibleType(catType)
+                .typeResolver({ env -> null })
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("pet")
+                        .type(petUnion))
+                .build()
+
+        and: "code registry (no type resolver)"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(catType)
+                .additionalType(petUnion)
+                .build()
+
+        then: "type resolver is wired"
+        def resolvedUnion = schema.getType("Pet") as GraphQLUnionType
+        schema.codeRegistry.getTypeResolver(resolvedUnion) != null
+    }
+
+    def "union with missing member type reference throws error"() {
+        given: "a union with missing type reference"
+        def petUnion = GraphQLUnionType.newUnionType()
+                .name("Pet")
+                .possibleType(typeRef("NonExistentType"))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("pet")
+                        .type(petUnion))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Pet", { env -> null })
+
+        when: "building"
+        new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(petUnion)
+                .build()
+
+        then: "error for missing type"
+        thrown(AssertException)
+    }
+
+    def "union with applied directive type reference resolves correctly"() {
+        given: "a custom scalar"
+        def metaScalar = newScalar()
+                .name("UnionMetadata")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive definition"
+        def directive = newDirective()
+                .name("unionMeta")
+                .validLocation(Introspection.DirectiveLocation.UNION)
+                .argument(newArgument()
+                        .name("info")
+                        .type(metaScalar))
+                .build()
+
+        and: "an applied directive with type reference"
+        def appliedDirective = newAppliedDirective()
+                .name("unionMeta")
+                .argument(newAppliedArgument()
+                        .name("info")
+                        .type(typeRef("UnionMetadata"))
+                        .valueProgrammatic("metadata"))
+                .build()
+
+        and: "possible type"
+        def catType = newObject()
+                .name("Cat")
+                .field(newFieldDefinition()
+                        .name("meow")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a union with applied directive"
+        def petUnion = GraphQLUnionType.newUnionType()
+                .name("Pet")
+                .possibleType(catType)
+                .withAppliedDirective(appliedDirective)
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("pet")
+                        .type(petUnion))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Pet", { env -> null })
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(metaScalar)
+                .additionalType(catType)
+                .additionalType(petUnion)
+                .additionalDirective(directive)
+                .build()
+
+        then: "applied directive argument type on union is resolved"
+        def resolvedUnion = schema.getType("Pet") as GraphQLUnionType
+        def resolvedApplied = resolvedUnion.getAppliedDirective("unionMeta")
+        resolvedApplied.getArgument("info").getType() == metaScalar
+    }
 }
