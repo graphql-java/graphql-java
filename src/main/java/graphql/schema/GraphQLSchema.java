@@ -1168,6 +1168,15 @@ public class GraphQLSchema {
                 }
             }
 
+            // For union types, wire type resolver if present
+            if (namedType instanceof GraphQLUnionType) {
+                GraphQLUnionType unionType = (GraphQLUnionType) namedType;
+                TypeResolver resolver = unionType.getTypeResolver();
+                if (resolver != null) {
+                    codeRegistryBuilder.typeResolverIfAbsent(unionType, resolver);
+                }
+            }
+
             return this;
         }
 
