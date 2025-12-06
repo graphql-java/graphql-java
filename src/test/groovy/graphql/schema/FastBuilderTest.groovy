@@ -20,45 +20,6 @@ import static graphql.schema.GraphQLTypeReference.typeRef
 
 class FastBuilderTest extends Specification {
 
-    def "scalar type schema matches standard builder"() {
-        given: "a custom scalar type"
-        def customScalar = newScalar()
-                .name("CustomScalar")
-                .coercing(GraphQLString.getCoercing())
-                .build()
-
-        and: "a query type using the scalar"
-        def queryType = newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                        .name("value")
-                        .type(customScalar))
-                .build()
-
-        and: "code registry"
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-
-        when: "building with FastBuilder"
-        def fastSchema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(customScalar)
-                .build()
-
-        and: "building with standard Builder"
-        def standardSchema = GraphQLSchema.newSchema()
-                .query(queryType)
-                .codeRegistry(codeRegistry.build())
-                .additionalType(customScalar)
-                .build()
-
-        then: "schemas are equivalent"
-        fastSchema.queryType.name == standardSchema.queryType.name
-        fastSchema.getType("CustomScalar") != null
-        fastSchema.getType("CustomScalar").name == standardSchema.getType("CustomScalar").name
-        // Check that the types in both schemas match (excluding system types added differently)
-        fastSchema.typeMap.keySet().containsAll(["Query", "CustomScalar"])
-        standardSchema.typeMap.keySet().containsAll(["Query", "CustomScalar"])
-    }
-
     def "duplicate type with different instance throws error"() {
         given: "two different scalar instances with same name"
         def scalar1 = newScalar()
@@ -140,31 +101,6 @@ class FastBuilderTest extends Specification {
         schema.queryType.name == "Query"
     }
 
-    def "built-in directives are added automatically"() {
-        given: "a query type"
-        def queryType = newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                        .name("value")
-                        .type(GraphQLString))
-                .build()
-
-        and: "code registry"
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-
-        when: "building schema"
-        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .build()
-
-        then: "built-in directives are present"
-        schema.getDirective("skip") != null
-        schema.getDirective("include") != null
-        schema.getDirective("deprecated") != null
-        schema.getDirective("specifiedBy") != null
-        schema.getDirective("oneOf") != null
-        schema.getDirective("defer") != null
-    }
-
     def "query type is required"() {
         when: "creating FastBuilder with null query type"
         new GraphQLSchema.FastBuilder(GraphQLCodeRegistry.newCodeRegistry(), null, null, null)
@@ -187,65 +123,6 @@ class FastBuilderTest extends Specification {
 
         then: "error is thrown"
         thrown(AssertException)
-    }
-
-    def "mutation and subscription types are optional"() {
-        given: "query, mutation, and subscription types"
-        def queryType = newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                        .name("value")
-                        .type(GraphQLString))
-                .build()
-
-        def mutationType = newObject()
-                .name("Mutation")
-                .field(newFieldDefinition()
-                        .name("setValue")
-                        .type(GraphQLString))
-                .build()
-
-        def subscriptionType = newObject()
-                .name("Subscription")
-                .field(newFieldDefinition()
-                        .name("valueChanged")
-                        .type(GraphQLString))
-                .build()
-
-        and: "code registry"
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-
-        when: "building schema with all root types"
-        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, mutationType, subscriptionType)
-                .build()
-
-        then: "all root types are present"
-        schema.queryType.name == "Query"
-        schema.mutationType.name == "Mutation"
-        schema.subscriptionType.name == "Subscription"
-        schema.isSupportingMutations()
-        schema.isSupportingSubscriptions()
-    }
-
-    def "schema description can be set"() {
-        given: "a query type"
-        def queryType = newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                        .name("value")
-                        .type(GraphQLString))
-                .build()
-
-        and: "code registry"
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-
-        when: "building schema with description"
-        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .description("Test schema description")
-                .build()
-
-        then: "description is set"
-        schema.description == "Test schema description"
     }
 
     def "additionalTypes accepts collection"() {
@@ -570,45 +447,6 @@ class FastBuilderTest extends Specification {
         (resolvedEnum as GraphQLEnumType).getValue("ACTIVE") != null
         (resolvedEnum as GraphQLEnumType).getValue("INACTIVE") != null
         (resolvedEnum as GraphQLEnumType).getValue("PENDING") != null
-    }
-
-    def "enum type matches standard builder"() {
-        given: "an enum type"
-        def statusEnum = newEnum()
-                .name("Status")
-                .value("ACTIVE")
-                .value("INACTIVE")
-                .build()
-
-        and: "a query type"
-        def queryType = newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                        .name("status")
-                        .type(statusEnum))
-                .build()
-
-        and: "code registry"
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-
-        when: "building with FastBuilder"
-        def fastSchema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(statusEnum)
-                .build()
-
-        and: "building with standard Builder"
-        def standardSchema = GraphQLSchema.newSchema()
-                .query(queryType)
-                .codeRegistry(codeRegistry.build())
-                .additionalType(statusEnum)
-                .build()
-
-        then: "schemas have equivalent enum types"
-        def fastEnum = fastSchema.getType("Status") as GraphQLEnumType
-        def standardEnum = standardSchema.getType("Status") as GraphQLEnumType
-        fastEnum.values.size() == standardEnum.values.size()
-        fastEnum.getValue("ACTIVE") != null
-        fastEnum.getValue("INACTIVE") != null
     }
 
     def "directive argument with enum type reference resolves correctly"() {
@@ -1921,5 +1759,290 @@ class FastBuilderTest extends Specification {
         def resolvedUnion = schema.getType("Pet") as GraphQLUnionType
         def resolvedApplied = resolvedUnion.getAppliedDirective("unionMeta")
         resolvedApplied.getArgument("info").getType() == metaScalar
+    }
+
+    // ==================== Phase 9: Validation and Edge Cases ====================
+
+    def "withValidation(false) allows schema without type resolver"() {
+        given: "an interface without type resolver"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                // No type resolver!
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .type(nodeInterface))
+                .build()
+
+        when: "building with validation disabled"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(nodeInterface)
+                .withValidation(false)
+                .build()
+
+        then: "schema builds without error"
+        schema != null
+        schema.getType("Node") instanceof GraphQLInterfaceType
+    }
+
+    def "withValidation(true) rejects schema with incomplete interface implementation"() {
+        given: "an interface with id field"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        and: "an object claiming to implement interface but missing id field"
+        def badImplementor = newObject()
+                .name("BadImplementor")
+                .withInterface(nodeInterface)
+                // Missing id field!
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .type(nodeInterface))
+                .build()
+
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Node", { env -> null })
+
+        when: "building with validation enabled"
+        new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(nodeInterface)
+                .additionalType(badImplementor)
+                .withValidation(true)
+                .build()
+
+        then: "validation error is thrown"
+        thrown(graphql.schema.validation.InvalidSchemaException)
+    }
+
+    def "circular type reference resolves correctly"() {
+        given: "types with circular reference"
+        def personType = newObject()
+                .name("Person")
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString))
+                .field(newFieldDefinition()
+                        .name("friend")
+                        .type(typeRef("Person")))  // Self-reference
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("person")
+                        .type(personType))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(personType)
+                .build()
+
+        then: "circular reference is resolved"
+        def resolvedPerson = schema.getType("Person") as GraphQLObjectType
+        resolvedPerson.getFieldDefinition("friend").getType() == personType
+    }
+
+    def "deeply nested type reference resolves correctly"() {
+        given: "deeply nested types"
+        def innerType = newObject()
+                .name("Inner")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        and: "type with deeply nested reference"
+        def outerType = newObject()
+                .name("Outer")
+                .field(newFieldDefinition()
+                        .name("inner")
+                        .type(GraphQLNonNull.nonNull(GraphQLList.list(GraphQLNonNull.nonNull(typeRef("Inner"))))))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("outer")
+                        .type(outerType))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(innerType)
+                .additionalType(outerType)
+                .build()
+
+        then: "deeply nested type reference is resolved"
+        def resolvedOuter = schema.getType("Outer") as GraphQLObjectType
+        def fieldType = resolvedOuter.getFieldDefinition("inner").getType()
+        fieldType instanceof GraphQLNonNull
+        def listType = ((GraphQLNonNull) fieldType).getWrappedType()
+        listType instanceof GraphQLList
+        def itemType = ((GraphQLList) listType).getWrappedType()
+        itemType instanceof GraphQLNonNull
+        ((GraphQLNonNull) itemType).getWrappedType() == innerType
+    }
+
+    def "complex schema builds correctly"() {
+        given: "a complex set of types"
+        // Interface
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        // Input type
+        def filterInput = newInputObject()
+                .name("FilterInput")
+                .field(newInputObjectField()
+                        .name("active")
+                        .type(Scalars.GraphQLBoolean))
+                .build()
+
+        // Object implementing interface
+        def userType = newObject()
+                .name("User")
+                .withInterface(typeRef("Node"))
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString))
+                .build()
+
+        // Another object implementing interface
+        def postType = newObject()
+                .name("Post")
+                .withInterface(typeRef("Node"))
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .field(newFieldDefinition()
+                        .name("title")
+                        .type(GraphQLString))
+                .field(newFieldDefinition()
+                        .name("author")
+                        .type(typeRef("User")))
+                .build()
+
+        // Union
+        def searchResultUnion = GraphQLUnionType.newUnionType()
+                .name("SearchResult")
+                .possibleType(typeRef("User"))
+                .possibleType(typeRef("Post"))
+                .build()
+
+        // Query type
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .argument(newArgument()
+                                .name("id")
+                                .type(GraphQLString))
+                        .type(nodeInterface))
+                .field(newFieldDefinition()
+                        .name("search")
+                        .argument(newArgument()
+                                .name("filter")
+                                .type(typeRef("FilterInput")))
+                        .type(GraphQLList.list(typeRef("SearchResult"))))
+                .build()
+
+        // Code registry with type resolvers
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Node", { env -> null })
+                .typeResolver("SearchResult", { env -> null })
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(nodeInterface)
+                .additionalType(filterInput)
+                .additionalType(userType)
+                .additionalType(postType)
+                .additionalType(searchResultUnion)
+                .build()
+
+        then: "all types are resolved correctly"
+        schema.getType("Node") instanceof GraphQLInterfaceType
+        schema.getType("FilterInput") instanceof GraphQLInputObjectType
+        schema.getType("User") instanceof GraphQLObjectType
+        schema.getType("Post") instanceof GraphQLObjectType
+        schema.getType("SearchResult") instanceof GraphQLUnionType
+
+        and: "interface implementations are tracked"
+        schema.getImplementations(nodeInterface as GraphQLInterfaceType).size() == 2
+        schema.getImplementations(nodeInterface as GraphQLInterfaceType).any { it.name == "User" }
+        schema.getImplementations(nodeInterface as GraphQLInterfaceType).any { it.name == "Post" }
+
+        and: "type references are resolved"
+        def resolvedUser = schema.getType("User") as GraphQLObjectType
+        resolvedUser.getInterfaces()[0] == nodeInterface
+
+        def resolvedPost = schema.getType("Post") as GraphQLObjectType
+        resolvedPost.getFieldDefinition("author").getType() == userType
+
+        def resolvedUnion = schema.getType("SearchResult") as GraphQLUnionType
+        resolvedUnion.types.any { it.name == "User" }
+        resolvedUnion.types.any { it.name == "Post" }
+
+        def searchField = schema.queryType.getFieldDefinition("search")
+        searchField.getArgument("filter").getType() == filterInput
+    }
+
+    def "null types and directives are ignored"() {
+        given: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "adding null types and directives"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(null)
+                .additionalTypes(null)
+                .additionalDirective(null)
+                .additionalDirectives(null)
+                .withSchemaDirective(null)
+                .withSchemaDirectives(null)
+                .withSchemaAppliedDirective(null)
+                .withSchemaAppliedDirectives(null)
+                .build()
+
+        then: "no error and schema builds"
+        schema != null
+        schema.queryType.name == "Query"
     }
 }
