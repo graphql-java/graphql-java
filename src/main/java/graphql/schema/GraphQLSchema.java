@@ -1150,8 +1150,14 @@ public class GraphQLSchema {
             // Shallow scan via ShallowTypeRefCollector
             shallowTypeRefCollector.handleTypeDef(namedType);
 
-            // Code registry wiring will be added in Phase 6 for object types
-            // Interface->implementations map will be added in Phase 6
+            // For object types, update interface→implementations map
+            if (namedType instanceof GraphQLObjectType) {
+                GraphQLObjectType objectType = (GraphQLObjectType) namedType;
+                for (GraphQLNamedOutputType iface : objectType.getInterfaces()) {
+                    String interfaceName = iface.getName();
+                    interfacesToImplementations.computeIfAbsent(interfaceName, k -> new ArrayList<>()).add(objectType);
+                }
+            }
 
             return this;
         }

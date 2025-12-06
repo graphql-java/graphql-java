@@ -31,13 +31,53 @@ public class ShallowTypeRefCollector {
     public void handleTypeDef(GraphQLNamedType type) {
         if (type instanceof GraphQLInputObjectType) {
             handleInputObjectType((GraphQLInputObjectType) type);
+        } else if (type instanceof GraphQLObjectType) {
+            handleObjectType((GraphQLObjectType) type);
         }
         // Scan applied directives on all directive container types
         if (type instanceof GraphQLDirectiveContainer) {
             scanAppliedDirectives(((GraphQLDirectiveContainer) type).getAppliedDirectives());
         }
-        // Future phases will handle: GraphQLObjectType fields, GraphQLInterfaceType fields,
-        // GraphQLUnionType members, GraphQLObjectType/InterfaceType interfaces
+        // Future phases will handle: GraphQLInterfaceType fields, GraphQLUnionType members
+    }
+
+    private void handleObjectType(GraphQLObjectType objectType) {
+        // Scan fields for type references
+        for (GraphQLFieldDefinition field : objectType.getFieldDefinitions()) {
+            if (containsTypeReference(field.getType())) {
+                replaceTargets.add(field);
+            }
+            // Scan field arguments
+            for (GraphQLArgument arg : field.getArguments()) {
+                scanArgumentType(arg);
+            }
+            // Scan applied directives on field
+            scanAppliedDirectives(field.getAppliedDirectives());
+        }
+        // Scan interfaces for type references
+        if (hasInterfaceTypeReferences(objectType.getInterfaces())) {
+            replaceTargets.add(new ObjectInterfaceReplaceTarget(objectType));
+        }
+    }
+
+    private boolean hasInterfaceTypeReferences(List<GraphQLNamedOutputType> interfaces) {
+        for (GraphQLNamedOutputType iface : interfaces) {
+            if (iface instanceof GraphQLTypeReference) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Wrapper class to track object types that need interface replacement.
+     */
+    static class ObjectInterfaceReplaceTarget {
+        final GraphQLObjectType objectType;
+
+        ObjectInterfaceReplaceTarget(GraphQLObjectType objectType) {
+            this.objectType = objectType;
+        }
     }
 
     private void handleInputObjectType(GraphQLInputObjectType inputType) {
@@ -117,8 +157,12 @@ public class ShallowTypeRefCollector {
                 replaceInputFieldType((GraphQLInputObjectField) target, typeMap);
             } else if (target instanceof GraphQLAppliedDirectiveArgument) {
                 replaceAppliedDirectiveArgumentType((GraphQLAppliedDirectiveArgument) target, typeMap);
+            } else if (target instanceof GraphQLFieldDefinition) {
+                replaceFieldType((GraphQLFieldDefinition) target, typeMap);
+            } else if (target instanceof ObjectInterfaceReplaceTarget) {
+                replaceObjectInterfaces((ObjectInterfaceReplaceTarget) target, typeMap);
             }
-            // Future phases will handle other target types
+            // Future phases will handle: GraphQLInterfaceType interfaces, GraphQLUnionType members
         }
     }
 
@@ -135,6 +179,74 @@ public class ShallowTypeRefCollector {
     private void replaceArgumentType(GraphQLArgument argument, Map<String, GraphQLNamedType> typeMap) {
         GraphQLInputType resolvedType = resolveInputType(argument.getType(), typeMap);
         argument.replaceType(resolvedType);
+    }
+
+    private void replaceFieldType(GraphQLFieldDefinition field, Map<String, GraphQLNamedType> typeMap) {
+        GraphQLOutputType resolvedType = resolveOutputType(field.getType(), typeMap);
+        field.replaceType(resolvedType);
+    }
+
+    private void replaceObjectInterfaces(ObjectInterfaceReplaceTarget target, Map<String, GraphQLNamedType> typeMap) {
+        GraphQLObjectType objectType = target.objectType;
+        List<GraphQLNamedOutputType> resolvedInterfaces = new ArrayList<>();
+        for (GraphQLNamedOutputType iface : objectType.getInterfaces()) {
+            if (iface instanceof GraphQLTypeReference) {
+                String typeName = ((GraphQLTypeReference) iface).getName();
+                GraphQLNamedType resolved = typeMap.get(typeName);
+                if (resolved == null) {
+                    throw new AssertException(String.format("Type '%s' not found in schema", typeName));
+                }
+                if (!(resolved instanceof GraphQLInterfaceType)) {
+                    throw new AssertException(String.format("Type '%s' is not an interface type", typeName));
+                }
+                resolvedInterfaces.add((GraphQLInterfaceType) resolved);
+            } else {
+                resolvedInterfaces.add(iface);
+            }
+        }
+        objectType.replaceInterfaces(resolvedInterfaces);
+    }
+
+    /**
+     * Resolve an output type, replacing any type references with actual types.
+     * Handles List and NonNull wrappers recursively.
+     */
+    private GraphQLOutputType resolveOutputType(GraphQLOutputType type, Map<String, GraphQLNamedType> typeMap) {
+        if (type instanceof GraphQLNonNull) {
+            GraphQLNonNull nonNull = (GraphQLNonNull) type;
+            GraphQLType wrappedType = nonNull.getWrappedType();
+            if (wrappedType instanceof GraphQLOutputType) {
+                GraphQLOutputType resolvedWrapped = resolveOutputType((GraphQLOutputType) wrappedType, typeMap);
+                if (resolvedWrapped != wrappedType) {
+                    nonNull.replaceType(resolvedWrapped);
+                }
+            }
+            return type;
+        }
+        if (type instanceof GraphQLList) {
+            GraphQLList list = (GraphQLList) type;
+            GraphQLType wrappedType = list.getWrappedType();
+            if (wrappedType instanceof GraphQLOutputType) {
+                GraphQLOutputType resolvedWrapped = resolveOutputType((GraphQLOutputType) wrappedType, typeMap);
+                if (resolvedWrapped != wrappedType) {
+                    list.replaceType(resolvedWrapped);
+                }
+            }
+            return type;
+        }
+        if (type instanceof GraphQLTypeReference) {
+            String typeName = ((GraphQLTypeReference) type).getName();
+            GraphQLNamedType resolved = typeMap.get(typeName);
+            if (resolved == null) {
+                throw new AssertException(String.format("Type '%s' not found in schema", typeName));
+            }
+            if (!(resolved instanceof GraphQLOutputType)) {
+                throw new AssertException(String.format("Type '%s' is not an output type", typeName));
+            }
+            return (GraphQLOutputType) resolved;
+        }
+        // Already a concrete type, return as-is
+        return type;
     }
 
     /**
