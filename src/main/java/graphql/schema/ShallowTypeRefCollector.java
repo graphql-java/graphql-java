@@ -29,9 +29,19 @@ public class ShallowTypeRefCollector {
      * @param type the named type to scan
      */
     public void handleTypeDef(GraphQLNamedType type) {
-        // Phase 1: Scalars without applied directives - nothing to do yet.
-        // Future phases will scan fields, arguments, interfaces, union members,
-        // applied directives, etc.
+        if (type instanceof GraphQLInputObjectType) {
+            handleInputObjectType((GraphQLInputObjectType) type);
+        }
+        // Future phases will handle: GraphQLObjectType, GraphQLInterfaceType,
+        // GraphQLUnionType, applied directives on types
+    }
+
+    private void handleInputObjectType(GraphQLInputObjectType inputType) {
+        for (GraphQLInputObjectField field : inputType.getFieldDefinitions()) {
+            if (containsTypeReference(field.getType())) {
+                replaceTargets.add(field);
+            }
+        }
     }
 
     /**
@@ -82,9 +92,16 @@ public class ShallowTypeRefCollector {
         for (Object target : replaceTargets) {
             if (target instanceof GraphQLArgument) {
                 replaceArgumentType((GraphQLArgument) target, typeMap);
+            } else if (target instanceof GraphQLInputObjectField) {
+                replaceInputFieldType((GraphQLInputObjectField) target, typeMap);
             }
             // Future phases will handle other target types
         }
+    }
+
+    private void replaceInputFieldType(GraphQLInputObjectField field, Map<String, GraphQLNamedType> typeMap) {
+        GraphQLInputType resolvedType = resolveInputType(field.getType(), typeMap);
+        field.replaceType(resolvedType);
     }
 
     private void replaceArgumentType(GraphQLArgument argument, Map<String, GraphQLNamedType> typeMap) {
