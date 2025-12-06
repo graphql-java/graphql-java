@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
+import graphql.AssertException;
 import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.Internal;
@@ -15,18 +16,22 @@ import graphql.language.SchemaDefinition;
 import graphql.language.SchemaExtensionDefinition;
 import graphql.schema.impl.GraphQLTypeCollectingVisitor;
 import graphql.schema.impl.SchemaUtil;
+import graphql.schema.impl.ShallowTypeRefCollector;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -158,6 +163,37 @@ public class GraphQLSchema {
 
         this.description = builder.description;
         this.codeRegistry = builder.codeRegistry;
+    }
+
+    /**
+     * Constructor for FastBuilder - assembles the schema from precomputed fields.
+     * Performs NO traversals, NO reference replacement, and NO validation.
+     */
+    @Internal
+    private GraphQLSchema(FastBuilder fastBuilder,
+                          ImmutableMap<String, GraphQLNamedType> typeMap,
+                          ImmutableList<GraphQLDirective> directives,
+                          ImmutableList<GraphQLDirective> schemaDirectives,
+                          ImmutableList<GraphQLAppliedDirective> schemaAppliedDirectives,
+                          ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes,
+                          ImmutableMap<String, ImmutableList<String>> interfaceNameToObjectTypeNames,
+                          GraphQLCodeRegistry codeRegistry) {
+        this.queryType = fastBuilder.queryType;
+        this.mutationType = fastBuilder.mutationType;
+        this.subscriptionType = fastBuilder.subscriptionType;
+        this.introspectionSchemaType = fastBuilder.introspectionSchemaType;
+        this.additionalTypes = ImmutableSet.of(); // Not used in FastBuilder path
+        this.introspectionSchemaField = Introspection.buildSchemaField(fastBuilder.introspectionSchemaType);
+        this.introspectionTypeField = Introspection.buildTypeField(fastBuilder.introspectionSchemaType);
+        this.directiveDefinitionsHolder = new DirectivesUtil.DirectivesHolder(directives, emptyList());
+        this.schemaAppliedDirectivesHolder = new DirectivesUtil.DirectivesHolder(schemaDirectives, schemaAppliedDirectives);
+        this.definition = fastBuilder.definition;
+        this.extensionDefinitions = nonNullCopyOf(fastBuilder.extensionDefinitions);
+        this.description = fastBuilder.description;
+        this.codeRegistry = codeRegistry;
+        this.typeMap = typeMap;
+        this.interfaceNameToObjectTypes = interfaceNameToObjectTypes;
+        this.interfaceNameToObjectTypeNames = interfaceNameToObjectTypeNames;
     }
 
     private static GraphQLDirective[] schemaDirectivesArray(GraphQLSchema existingSchema) {
@@ -1001,6 +1037,349 @@ public class GraphQLSchema {
                 throw new InvalidSchemaException(errors);
             }
             return graphQLSchema;
+        }
+    }
+
+    /**
+     * A high-performance schema builder that avoids all full-schema traversals performed by
+     * {@link GraphQLSchema.Builder#build()}. It is intended for constructing schemas, especially
+     * large or deeply nested schemas.
+     * <p>
+     * FastBuilder is an "expert mode" builder with stricter assumptions:
+     * <ul>
+     *   <li>No clearing/resetting of types or directives</li>
+     *   <li>All named types must be explicitly provided via {@link #additionalType(GraphQLType)}</li>
+     *   <li>Incremental work only: when a type or directive is added, only that node is examined</li>
+     *   <li>No schema traversals except shallow scans for local type references</li>
+     *   <li>Validation is optional, off by default</li>
+     * </ul>
+     * <p>
+     * Performance is gained by eliminating:
+     * <ol>
+     *   <li>Full traversal for code-registry wiring</li>
+     *   <li>Full traversal for type-reference replacement</li>
+     *   <li>Full traversal for validation (if disabled)</li>
+     * </ol>
+     */
+    @PublicApi
+    @NullMarked
+    public static final class FastBuilder {
+        // Fields consumed by the private constructor
+        private GraphQLObjectType queryType;
+        private @Nullable GraphQLObjectType mutationType;
+        private @Nullable GraphQLObjectType subscriptionType;
+        private GraphQLObjectType introspectionSchemaType;
+        private final Map<String, GraphQLNamedType> typeMap = new LinkedHashMap<>();
+        private final Map<String, GraphQLDirective> directiveMap = new LinkedHashMap<>();
+        private final List<GraphQLDirective> schemaDirectives = new ArrayList<>();
+        private final List<GraphQLAppliedDirective> schemaAppliedDirectives = new ArrayList<>();
+        private final Map<String, List<GraphQLObjectType>> interfacesToImplementations = new LinkedHashMap<>();
+        private @Nullable String description;
+        private @Nullable SchemaDefinition definition;
+        private @Nullable List<SchemaExtensionDefinition> extensionDefinitions;
+
+        // Additional fields for building
+        private final GraphQLCodeRegistry.Builder codeRegistryBuilder;
+        private final ShallowTypeRefCollector shallowTypeRefCollector = new ShallowTypeRefCollector();
+        private boolean validationEnabled = false;
+
+        /**
+         * Creates a new FastBuilder with the given code registry builder and root types.
+         *
+         * @param codeRegistryBuilder the code registry builder (required)
+         * @param queryType           the query type (required)
+         * @param mutationType        the mutation type (optional, may be null)
+         * @param subscriptionType    the subscription type (optional, may be null)
+         */
+        public FastBuilder(GraphQLCodeRegistry.Builder codeRegistryBuilder,
+                           GraphQLObjectType queryType,
+                           @Nullable GraphQLObjectType mutationType,
+                           @Nullable GraphQLObjectType subscriptionType) {
+            this.codeRegistryBuilder = assertNotNull(codeRegistryBuilder, () -> "codeRegistryBuilder can't be null");
+            this.queryType = assertNotNull(queryType, () -> "queryType can't be null");
+            this.mutationType = mutationType;
+            this.subscriptionType = subscriptionType;
+            this.introspectionSchemaType = Introspection.__Schema;
+
+            // Add introspection code to the registry
+            Introspection.addCodeForIntrospectionTypes(codeRegistryBuilder);
+
+            // Add root types
+            additionalType(queryType);
+            if (mutationType != null) {
+                additionalType(mutationType);
+            }
+            if (subscriptionType != null) {
+                additionalType(subscriptionType);
+            }
+        }
+
+        /**
+         * Adds a type to the schema. The type must be a named type (not a wrapper like List or NonNull).
+         *
+         * @param type the type to add
+         * @return this builder for chaining
+         */
+        public FastBuilder additionalType(GraphQLType type) {
+            if (type == null) {
+                return this;
+            }
+
+            // Unwrap to named type
+            GraphQLUnmodifiedType unwrapped = GraphQLTypeUtil.unwrapAll(type);
+            if (!(unwrapped instanceof GraphQLNamedType)) {
+                return this;
+            }
+            GraphQLNamedType namedType = (GraphQLNamedType) unwrapped;
+            String name = namedType.getName();
+
+            // Enforce uniqueness by name
+            GraphQLNamedType existing = typeMap.get(name);
+            if (existing != null && existing != namedType) {
+                throw new AssertException(String.format("Type '%s' already exists with a different instance", name));
+            }
+
+            // Skip if already added (same instance)
+            if (existing != null) {
+                return this;
+            }
+
+            // Insert into typeMap
+            typeMap.put(name, namedType);
+
+            // Shallow scan via ShallowTypeRefCollector
+            shallowTypeRefCollector.handleTypeDef(namedType);
+
+            // Code registry wiring will be added in Phase 6 for object types
+            // Interface->implementations map will be added in Phase 6
+
+            return this;
+        }
+
+        /**
+         * Adds multiple types to the schema.
+         *
+         * @param types the types to add
+         * @return this builder for chaining
+         */
+        public FastBuilder additionalTypes(Collection<? extends GraphQLType> types) {
+            if (types != null) {
+                types.forEach(this::additionalType);
+            }
+            return this;
+        }
+
+        /**
+         * Adds a directive definition to the schema.
+         *
+         * @param directive the directive to add
+         * @return this builder for chaining
+         */
+        public FastBuilder additionalDirective(GraphQLDirective directive) {
+            // Phase 2+: Will be implemented
+            return this;
+        }
+
+        /**
+         * Adds multiple directive definitions to the schema.
+         *
+         * @param directives the directives to add
+         * @return this builder for chaining
+         */
+        public FastBuilder additionalDirectives(Collection<? extends GraphQLDirective> directives) {
+            if (directives != null) {
+                directives.forEach(this::additionalDirective);
+            }
+            return this;
+        }
+
+        /**
+         * Adds a schema-level directive (deprecated, use applied directives).
+         *
+         * @param directive the directive to add
+         * @return this builder for chaining
+         */
+        public FastBuilder withSchemaDirective(GraphQLDirective directive) {
+            if (directive != null) {
+                schemaDirectives.add(directive);
+            }
+            return this;
+        }
+
+        /**
+         * Adds multiple schema-level directives.
+         *
+         * @param directives the directives to add
+         * @return this builder for chaining
+         */
+        public FastBuilder withSchemaDirectives(Collection<? extends GraphQLDirective> directives) {
+            if (directives != null) {
+                schemaDirectives.addAll(directives);
+            }
+            return this;
+        }
+
+        /**
+         * Adds a schema-level applied directive.
+         *
+         * @param applied the applied directive to add
+         * @return this builder for chaining
+         */
+        public FastBuilder withSchemaAppliedDirective(GraphQLAppliedDirective applied) {
+            if (applied != null) {
+                schemaAppliedDirectives.add(applied);
+            }
+            return this;
+        }
+
+        /**
+         * Adds multiple schema-level applied directives.
+         *
+         * @param appliedList the applied directives to add
+         * @return this builder for chaining
+         */
+        public FastBuilder withSchemaAppliedDirectives(Collection<? extends GraphQLAppliedDirective> appliedList) {
+            if (appliedList != null) {
+                schemaAppliedDirectives.addAll(appliedList);
+            }
+            return this;
+        }
+
+        /**
+         * Sets the schema definition (AST).
+         *
+         * @param def the schema definition
+         * @return this builder for chaining
+         */
+        public FastBuilder definition(SchemaDefinition def) {
+            this.definition = def;
+            return this;
+        }
+
+        /**
+         * Sets the schema extension definitions (AST).
+         *
+         * @param defs the extension definitions
+         * @return this builder for chaining
+         */
+        public FastBuilder extensionDefinitions(List<SchemaExtensionDefinition> defs) {
+            this.extensionDefinitions = defs;
+            return this;
+        }
+
+        /**
+         * Sets the schema description.
+         *
+         * @param description the description
+         * @return this builder for chaining
+         */
+        public FastBuilder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        /**
+         * Sets the introspection schema type.
+         *
+         * @param type the introspection schema type
+         * @return this builder for chaining
+         */
+        public FastBuilder introspectionSchemaType(GraphQLObjectType type) {
+            this.introspectionSchemaType = type;
+            return this;
+        }
+
+        /**
+         * Enables or disables schema validation.
+         *
+         * @param enabled true to enable validation, false to disable
+         * @return this builder for chaining
+         */
+        public FastBuilder withValidation(boolean enabled) {
+            this.validationEnabled = enabled;
+            return this;
+        }
+
+        /**
+         * Builds the GraphQL schema.
+         *
+         * @return the built schema
+         */
+        public GraphQLSchema build() {
+            // Step 1: Replace type references
+            shallowTypeRefCollector.replaceTypes(typeMap);
+
+            // Step 2: Add built-in directives if missing
+            addBuiltInDirectivesIfMissing();
+
+            // Step 3: Build final immutable objects
+            ImmutableMap<String, GraphQLNamedType> finalTypeMap = buildSortedImmutableTypeMap();
+            ImmutableList<GraphQLDirective> finalDirectives = buildImmutableDirectives();
+            ImmutableList<GraphQLDirective> finalSchemaDirectives = ImmutableList.copyOf(schemaDirectives);
+            ImmutableList<GraphQLAppliedDirective> finalSchemaAppliedDirectives = ImmutableList.copyOf(schemaAppliedDirectives);
+            ImmutableMap<String, ImmutableList<GraphQLObjectType>> finalInterfaceMap = buildImmutableInterfaceMap();
+            ImmutableMap<String, ImmutableList<String>> finalInterfaceNameMap = buildInterfaceNameMap(finalInterfaceMap);
+            GraphQLCodeRegistry finalCodeRegistry = codeRegistryBuilder.build();
+
+            // Step 4: Create schema via private constructor
+            GraphQLSchema schema = new GraphQLSchema(this, finalTypeMap, finalDirectives,
+                    finalSchemaDirectives, finalSchemaAppliedDirectives,
+                    finalInterfaceMap, finalInterfaceNameMap, finalCodeRegistry);
+
+            // Step 5: Optional validation
+            if (validationEnabled) {
+                Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(schema);
+                if (!errors.isEmpty()) {
+                    throw new InvalidSchemaException(errors);
+                }
+            }
+
+            // Step 6: Return
+            return schema;
+        }
+
+        private void addBuiltInDirectivesIfMissing() {
+            addDirectiveIfMissing(Directives.IncludeDirective);
+            addDirectiveIfMissing(Directives.SkipDirective);
+            addDirectiveIfMissing(Directives.DeprecatedDirective);
+            addDirectiveIfMissing(Directives.SpecifiedByDirective);
+            addDirectiveIfMissing(Directives.OneOfDirective);
+            addDirectiveIfMissing(Directives.DeferDirective);
+        }
+
+        private void addDirectiveIfMissing(GraphQLDirective directive) {
+            if (!directiveMap.containsKey(directive.getName())) {
+                directiveMap.put(directive.getName(), directive);
+            }
+        }
+
+        private ImmutableMap<String, GraphQLNamedType> buildSortedImmutableTypeMap() {
+            TreeMap<String, GraphQLNamedType> sorted = new TreeMap<>(typeMap);
+            return ImmutableMap.copyOf(sorted);
+        }
+
+        private ImmutableList<GraphQLDirective> buildImmutableDirectives() {
+            return ImmutableList.copyOf(directiveMap.values());
+        }
+
+        private ImmutableMap<String, ImmutableList<GraphQLObjectType>> buildImmutableInterfaceMap() {
+            ImmutableMap.Builder<String, ImmutableList<GraphQLObjectType>> builder = ImmutableMap.builder();
+            for (Map.Entry<String, List<GraphQLObjectType>> entry : interfacesToImplementations.entrySet()) {
+                ImmutableList<GraphQLObjectType> sortedObjectTypes = ImmutableList.copyOf(
+                        sortTypes(byNameAsc(), entry.getValue()));
+                builder.put(entry.getKey(), sortedObjectTypes);
+            }
+            return builder.build();
+        }
+
+        private ImmutableMap<String, ImmutableList<String>> buildInterfaceNameMap(
+                ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceMap) {
+            ImmutableMap.Builder<String, ImmutableList<String>> builder = ImmutableMap.builder();
+            for (Map.Entry<String, ImmutableList<GraphQLObjectType>> entry : interfaceMap.entrySet()) {
+                ImmutableList<String> objectTypeNames = map(entry.getValue(), GraphQLObjectType::getName);
+                builder.put(entry.getKey(), objectTypeNames);
+            }
+            return builder.build();
         }
     }
 }
