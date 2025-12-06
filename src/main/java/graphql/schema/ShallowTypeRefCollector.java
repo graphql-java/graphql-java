@@ -1,16 +1,21 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.AssertException;
 import graphql.Internal;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 /**
  * Collects type-refs found in type- and directive-definitions for later replacement with actual types.
  * This class performs shallow scans (no recursive traversal from one type-def to another) and
  * collects replacement targets that need their type references resolved.
+ * Also tracks interface-to-implementation relationships.
  */
 @Internal
 public class ShallowTypeRefCollector {
@@ -21,6 +26,9 @@ public class ShallowTypeRefCollector {
     // GraphQLObjectType (for interfaces), GraphQLInterfaceType (for interfaces),
     // GraphQLAppliedDirectiveArgument
     private final List<Object> replaceTargets = new ArrayList<>();
+
+    // Track interface implementations: interface name -> sorted set of implementing object type names
+    private final Map<String, TreeSet<String>> interfaceToObjectTypeNames = new LinkedHashMap<>();
 
     /**
      * Scan a type definition for type references.
@@ -58,7 +66,13 @@ public class ShallowTypeRefCollector {
             // Scan applied directives on field
             scanAppliedDirectives(field.getAppliedDirectives());
         }
-        // Scan interfaces for type references
+        // Track interface implementations and scan for type references
+        for (GraphQLNamedOutputType iface : objectType.getInterfaces()) {
+            String interfaceName = iface.getName();
+            interfaceToObjectTypeNames
+                    .computeIfAbsent(interfaceName, k -> new TreeSet<>())
+                    .add(objectType.getName());
+        }
         if (hasInterfaceTypeReferences(objectType.getInterfaces())) {
             replaceTargets.add(new ObjectInterfaceReplaceTarget(objectType));
         }
@@ -389,5 +403,19 @@ public class ShallowTypeRefCollector {
         }
         // Already a concrete type, return as-is
         return type;
+    }
+
+    /**
+     * Returns an immutable map of interface names to sorted lists of implementing object type names.
+     * The object type names are maintained in sorted order as they're added.
+     *
+     * @return immutable map from interface name to list of object type names
+     */
+    public ImmutableMap<String, ImmutableList<String>> getInterfaceNameToObjectTypeNames() {
+        ImmutableMap.Builder<String, ImmutableList<String>> builder = ImmutableMap.builder();
+        for (Map.Entry<String, TreeSet<String>> entry : interfaceToObjectTypeNames.entrySet()) {
+            builder.put(entry.getKey(), ImmutableList.copyOf(entry.getValue()));
+        }
+        return builder.build();
     }
 }
