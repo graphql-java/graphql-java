@@ -1086,4 +1086,324 @@ class FastBuilderTest extends Specification {
         schema.getSchemaAppliedDirective("dir1") != null
         schema.getSchemaAppliedDirective("dir2") != null
     }
+
+    // ==================== Phase 6: Object Types ====================
+
+    def "object type field with type reference resolves correctly"() {
+        given: "a custom object type"
+        def personType = newObject()
+                .name("Person")
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type with field returning Person via type reference"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("person")
+                        .type(typeRef("Person")))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(personType)
+                .build()
+
+        then: "field type is resolved"
+        def queryField = schema.queryType.getFieldDefinition("person")
+        queryField.getType() == personType
+    }
+
+    def "object type field with NonNull wrapped type reference resolves correctly"() {
+        given: "a custom object type"
+        def itemType = newObject()
+                .name("Item")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type with NonNull field"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("item")
+                        .type(GraphQLNonNull.nonNull(typeRef("Item"))))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(itemType)
+                .build()
+
+        then: "field type is resolved with NonNull wrapper"
+        def queryField = schema.queryType.getFieldDefinition("item")
+        def fieldType = queryField.getType()
+        fieldType instanceof GraphQLNonNull
+        ((GraphQLNonNull) fieldType).getWrappedType() == itemType
+    }
+
+    def "object type field with List wrapped type reference resolves correctly"() {
+        given: "a custom object type"
+        def userType = newObject()
+                .name("User")
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type with List field"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("users")
+                        .type(GraphQLList.list(typeRef("User"))))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(userType)
+                .build()
+
+        then: "field type is resolved with List wrapper"
+        def queryField = schema.queryType.getFieldDefinition("users")
+        def fieldType = queryField.getType()
+        fieldType instanceof GraphQLList
+        ((GraphQLList) fieldType).getWrappedType() == userType
+    }
+
+    def "object type implementing interface with type reference resolves correctly"() {
+        given: "an interface type"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        and: "an object type implementing interface via type reference"
+        def postType = newObject()
+                .name("Post")
+                .withInterface(typeRef("Node"))
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .field(newFieldDefinition()
+                        .name("title")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("post")
+                        .type(postType))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(nodeInterface)
+                .additionalType(postType)
+                .build()
+
+        then: "interface reference is resolved"
+        def resolvedPost = schema.getType("Post") as GraphQLObjectType
+        resolvedPost.getInterfaces().size() == 1
+        resolvedPost.getInterfaces()[0] == nodeInterface
+    }
+
+    def "interface to implementations map is built correctly"() {
+        given: "an interface type"
+        def entityInterface = GraphQLInterfaceType.newInterface()
+                .name("Entity")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        and: "multiple object types implementing interface"
+        def userType = newObject()
+                .name("User")
+                .withInterface(entityInterface)
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString))
+                .build()
+
+        def productType = newObject()
+                .name("Product")
+                .withInterface(entityInterface)
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .field(newFieldDefinition()
+                        .name("price")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("entity")
+                        .type(entityInterface))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(entityInterface)
+                .additionalType(userType)
+                .additionalType(productType)
+                .build()
+
+        then: "interface to implementations map is built"
+        def implementations = schema.getImplementations(entityInterface)
+        implementations.size() == 2
+        implementations.any { it.name == "User" }
+        implementations.any { it.name == "Product" }
+    }
+
+    def "object type field argument with type reference resolves correctly"() {
+        given: "an input type"
+        def filterInput = newInputObject()
+                .name("FilterInput")
+                .field(newInputObjectField()
+                        .name("status")
+                        .type(GraphQLString))
+                .build()
+
+        and: "an object type"
+        def resultType = newObject()
+                .name("Result")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type with field having argument with type reference"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("search")
+                        .argument(newArgument()
+                                .name("filter")
+                                .type(typeRef("FilterInput")))
+                        .type(resultType))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(filterInput)
+                .additionalType(resultType)
+                .build()
+
+        then: "field argument type is resolved"
+        def searchField = schema.queryType.getFieldDefinition("search")
+        searchField.getArgument("filter").getType() == filterInput
+    }
+
+    def "object type field with applied directive type reference resolves correctly"() {
+        given: "a custom scalar"
+        def metaScalar = newScalar()
+                .name("FieldMetadata")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive definition"
+        def directive = newDirective()
+                .name("fieldMeta")
+                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
+                .argument(newArgument()
+                        .name("info")
+                        .type(metaScalar))
+                .build()
+
+        and: "an applied directive with type reference"
+        def appliedDirective = newAppliedDirective()
+                .name("fieldMeta")
+                .argument(newAppliedArgument()
+                        .name("info")
+                        .type(typeRef("FieldMetadata"))
+                        .valueProgrammatic("metadata"))
+                .build()
+
+        and: "a query type with field having applied directive"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString)
+                        .withAppliedDirective(appliedDirective))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(metaScalar)
+                .additionalDirective(directive)
+                .build()
+
+        then: "applied directive argument type on field is resolved"
+        def field = schema.queryType.getFieldDefinition("value")
+        def resolvedApplied = field.getAppliedDirective("fieldMeta")
+        resolvedApplied.getArgument("info").getType() == metaScalar
+    }
+
+    def "object type missing field type reference throws error"() {
+        given: "a query type with missing type reference"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("missing")
+                        .type(typeRef("NonExistent")))
+                .build()
+
+        when: "building"
+        new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .build()
+
+        then: "error for missing type"
+        thrown(AssertException)
+    }
+
+    def "object type with missing interface type reference throws error"() {
+        given: "an object type with missing interface reference"
+        def objectType = newObject()
+                .name("MyObject")
+                .withInterface(typeRef("NonExistentInterface"))
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("obj")
+                        .type(objectType))
+                .build()
+
+        when: "building"
+        new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(objectType)
+                .build()
+
+        then: "error for missing interface"
+        thrown(AssertException)
+    }
 }
