@@ -10,6 +10,8 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.schema.GraphQLInputObjectType.newInputObject
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLScalarType.newScalar
 import static graphql.schema.GraphQLTypeReference.typeRef
@@ -644,5 +646,252 @@ class FastBuilderTest extends Specification {
         then: "directive argument type is resolved to enum"
         def resolvedDirective = schema.getDirective("log")
         resolvedDirective.getArgument("level").getType() == levelEnum
+    }
+
+    // ==================== Phase 4: Input Object Types ====================
+
+    def "input object type can be added to schema"() {
+        given: "an input object type"
+        def inputType = newInputObject()
+                .name("CreateUserInput")
+                .field(newInputObjectField()
+                        .name("name")
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name("email")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("createUser")
+                        .argument(newArgument()
+                                .name("input")
+                                .type(inputType))
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(inputType)
+                .build()
+
+        then: "input type is in schema"
+        def resolvedInput = schema.getType("CreateUserInput")
+        resolvedInput instanceof GraphQLInputObjectType
+        (resolvedInput as GraphQLInputObjectType).getField("name") != null
+        (resolvedInput as GraphQLInputObjectType).getField("email") != null
+    }
+
+    def "input object type with type reference field resolves correctly"() {
+        given: "a custom scalar"
+        def customScalar = newScalar()
+                .name("DateTime")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "an input object type with type reference"
+        def inputType = newInputObject()
+                .name("EventInput")
+                .field(newInputObjectField()
+                        .name("name")
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name("startDate")
+                        .type(typeRef("DateTime")))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("createEvent")
+                        .argument(newArgument()
+                                .name("input")
+                                .type(inputType))
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(customScalar)
+                .additionalType(inputType)
+                .build()
+
+        then: "input field type is resolved"
+        def resolvedInput = schema.getType("EventInput") as GraphQLInputObjectType
+        resolvedInput.getField("startDate").getType() == customScalar
+    }
+
+    def "input object type with nested input object type reference resolves correctly"() {
+        given: "an address input type"
+        def addressInput = newInputObject()
+                .name("AddressInput")
+                .field(newInputObjectField()
+                        .name("street")
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name("city")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a user input type with type reference to address"
+        def userInput = newInputObject()
+                .name("UserInput")
+                .field(newInputObjectField()
+                        .name("name")
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name("address")
+                        .type(typeRef("AddressInput")))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("createUser")
+                        .argument(newArgument()
+                                .name("input")
+                                .type(userInput))
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(addressInput)
+                .additionalType(userInput)
+                .build()
+
+        then: "nested input field type is resolved"
+        def resolvedUser = schema.getType("UserInput") as GraphQLInputObjectType
+        resolvedUser.getField("address").getType() == addressInput
+    }
+
+    def "input object type with NonNull wrapped type reference resolves correctly"() {
+        given: "an enum type"
+        def statusEnum = newEnum()
+                .name("Status")
+                .value("ACTIVE")
+                .value("INACTIVE")
+                .build()
+
+        and: "an input type with NonNull type reference"
+        def inputType = newInputObject()
+                .name("UpdateInput")
+                .field(newInputObjectField()
+                        .name("status")
+                        .type(GraphQLNonNull.nonNull(typeRef("Status"))))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("update")
+                        .argument(newArgument()
+                                .name("input")
+                                .type(inputType))
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(statusEnum)
+                .additionalType(inputType)
+                .build()
+
+        then: "input field type is resolved with NonNull wrapper"
+        def resolvedInput = schema.getType("UpdateInput") as GraphQLInputObjectType
+        def fieldType = resolvedInput.getField("status").getType()
+        fieldType instanceof GraphQLNonNull
+        ((GraphQLNonNull) fieldType).getWrappedType() == statusEnum
+    }
+
+    def "input object type with List wrapped type reference resolves correctly"() {
+        given: "a custom scalar"
+        def tagScalar = newScalar()
+                .name("Tag")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "an input type with List type reference"
+        def inputType = newInputObject()
+                .name("PostInput")
+                .field(newInputObjectField()
+                        .name("title")
+                        .type(GraphQLString))
+                .field(newInputObjectField()
+                        .name("tags")
+                        .type(GraphQLList.list(typeRef("Tag"))))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("createPost")
+                        .argument(newArgument()
+                                .name("input")
+                                .type(inputType))
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(tagScalar)
+                .additionalType(inputType)
+                .build()
+
+        then: "input field type is resolved with List wrapper"
+        def resolvedInput = schema.getType("PostInput") as GraphQLInputObjectType
+        def fieldType = resolvedInput.getField("tags").getType()
+        fieldType instanceof GraphQLList
+        ((GraphQLList) fieldType).getWrappedType() == tagScalar
+    }
+
+    def "directive argument can reference input object type"() {
+        given: "an input object type"
+        def configInput = newInputObject()
+                .name("ConfigInput")
+                .field(newInputObjectField()
+                        .name("enabled")
+                        .type(Scalars.GraphQLBoolean))
+                .build()
+
+        and: "a directive with input type reference argument"
+        def directive = newDirective()
+                .name("config")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .argument(newArgument()
+                        .name("settings")
+                        .type(typeRef("ConfigInput")))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(configInput)
+                .additionalDirective(directive)
+                .build()
+
+        then: "directive argument type is resolved to input type"
+        def resolvedDirective = schema.getDirective("config")
+        resolvedDirective.getArgument("settings").getType() == configInput
     }
 }
