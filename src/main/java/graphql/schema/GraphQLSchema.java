@@ -1044,6 +1044,15 @@ public class GraphQLSchema {
                 }
             }
 
+            // For interface types, wire type resolver if present
+            if (namedType instanceof GraphQLInterfaceType) {
+                GraphQLInterfaceType interfaceType = (GraphQLInterfaceType) namedType;
+                TypeResolver resolver = interfaceType.getTypeResolver();
+                if (resolver != null) {
+                    codeRegistryBuilder.typeResolverIfAbsent(interfaceType, resolver);
+                }
+            }
+
             return this;
         }
 
