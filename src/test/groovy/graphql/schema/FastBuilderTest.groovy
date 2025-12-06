@@ -8,6 +8,7 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLDirective.newDirective
+import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLScalarType.newScalar
@@ -531,5 +532,117 @@ class FastBuilderTest extends Specification {
         then: "directive argument type remains unchanged"
         def resolvedDirective = schema.getDirective("withString")
         resolvedDirective.getArgument("msg").getType() == GraphQLString
+    }
+
+    // ==================== Phase 3: Enumeration Types ====================
+
+    def "enum type can be added to schema"() {
+        given: "an enum type"
+        def statusEnum = newEnum()
+                .name("Status")
+                .value("ACTIVE")
+                .value("INACTIVE")
+                .value("PENDING")
+                .build()
+
+        and: "a query type using the enum"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("status")
+                        .type(statusEnum))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(statusEnum)
+                .build()
+
+        then: "enum type is in schema"
+        def resolvedEnum = schema.getType("Status")
+        resolvedEnum instanceof GraphQLEnumType
+        (resolvedEnum as GraphQLEnumType).values.size() == 3
+        (resolvedEnum as GraphQLEnumType).getValue("ACTIVE") != null
+        (resolvedEnum as GraphQLEnumType).getValue("INACTIVE") != null
+        (resolvedEnum as GraphQLEnumType).getValue("PENDING") != null
+    }
+
+    def "enum type matches standard builder"() {
+        given: "an enum type"
+        def statusEnum = newEnum()
+                .name("Status")
+                .value("ACTIVE")
+                .value("INACTIVE")
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("status")
+                        .type(statusEnum))
+                .build()
+
+        and: "code registry"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+
+        when: "building with FastBuilder"
+        def fastSchema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
+                .additionalType(statusEnum)
+                .build()
+
+        and: "building with standard Builder"
+        def standardSchema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .codeRegistry(codeRegistry.build())
+                .additionalType(statusEnum)
+                .build()
+
+        then: "schemas have equivalent enum types"
+        def fastEnum = fastSchema.getType("Status") as GraphQLEnumType
+        def standardEnum = standardSchema.getType("Status") as GraphQLEnumType
+        fastEnum.values.size() == standardEnum.values.size()
+        fastEnum.getValue("ACTIVE") != null
+        fastEnum.getValue("INACTIVE") != null
+    }
+
+    def "directive argument with enum type reference resolves correctly"() {
+        given: "an enum type"
+        def levelEnum = newEnum()
+                .name("LogLevel")
+                .value("DEBUG")
+                .value("INFO")
+                .value("WARN")
+                .value("ERROR")
+                .build()
+
+        and: "a directive with enum type reference argument"
+        def directive = newDirective()
+                .name("log")
+                .validLocation(Introspection.DirectiveLocation.FIELD)
+                .argument(newArgument()
+                        .name("level")
+                        .type(typeRef("LogLevel")))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalType(levelEnum)
+                .additionalDirective(directive)
+                .build()
+
+        then: "directive argument type is resolved to enum"
+        def resolvedDirective = schema.getDirective("log")
+        resolvedDirective.getArgument("level").getType() == levelEnum
     }
 }
