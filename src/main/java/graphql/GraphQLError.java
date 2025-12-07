@@ -27,8 +27,12 @@ public interface GraphQLError extends Serializable {
 
     /**
      * @return a description of the error intended for the developer as a guide to understand and correct the error
+     *
+     * Non-nullable from the spec:
+     * Every error must contain an entry with the key "message" with a string description of the error intended for
+     * the developer as a guide to understand and correct the error.
      */
-    @Nullable String getMessage();
+    String getMessage();
 
     /**
      * @return the location(s) within the GraphQL document at which the error occurred. Each {@link SourceLocation}

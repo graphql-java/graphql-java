@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 public class ValidationError implements GraphQLError {
 
     private final List<SourceLocation> locations = new ArrayList<>();
-    private final @Nullable String description;
+    private final String description;
     private final @Nullable ValidationErrorClassification validationErrorType;
     private final List<String> queryPath = new ArrayList<>();
     private final ImmutableMap<String, Object> extensions;
@@ -46,11 +46,11 @@ public class ValidationError implements GraphQLError {
     }
 
     @Override
-    public @Nullable String getMessage() {
+    public String getMessage() {
         return description;
     }
 
-    public @Nullable String getDescription() {
+    public String getDescription() {
         return description;
     }
 
