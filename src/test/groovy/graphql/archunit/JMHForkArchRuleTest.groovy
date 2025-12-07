@@ -18,6 +18,7 @@ class JMHForkArchRuleTest extends Specification {
         def importedClasses = new ClassFileImporter()
                 .importPackages("benchmark", "performance", "graphql.execution")
 
+
         def rule = classes()
                 .that().areAnnotatedWith(Fork.class)
                 .and().areTopLevelClasses()

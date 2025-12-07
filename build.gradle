@@ -1,5 +1,5 @@
+import aQute.bnd.gradle.BundleTaskExtension
 import net.ltgt.gradle.errorprone.CheckSeverity
-import org.gradle.api.file.DuplicatesStrategy
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -127,9 +127,10 @@ dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
 
-    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.1'
+
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
-    testImplementation 'net.bytebuddy:byte-buddy:1.17.8'
+    testImplementation 'net.bytebuddy:byte-buddy:1.18.1'
     testImplementation 'org.objenesis:objenesis:3.4'
     testImplementation 'org.apache.groovy:groovy:4.0.28"'
     testImplementation 'org.apache.groovy:groovy-json:4.0.28'
@@ -141,14 +142,14 @@ dependencies {
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.7.12"
+    testImplementation "io.projectreactor:reactor-core:3.8.0"
 
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
     testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
     
     // JUnit Platform launcher required for Gradle 9
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.1'
 
     antlr 'org.antlr:antlr4:' + antlrVersion
 
@@ -160,13 +161,11 @@ dependencies {
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
     errorprone 'com.uber.nullaway:nullaway:0.12.10'
-    errorprone 'com.google.errorprone:error_prone_core:2.43.0'
+    errorprone 'com.google.errorprone:error_prone_core:2.44.0'
 
     // just tests - no Kotlin otherwise
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 }
-
-import aQute.bnd.gradle.BundleTaskExtension
 
 shadowJar {
     minimize()
@@ -368,11 +367,28 @@ tasks.register('testWithJava17', Test) {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(17)
     }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    classpath += sourceSets.jmh.output
+    dependsOn "jmhClasses"
+
+
+    dependsOn tasks.named('testClasses')
+
 }
+
 tasks.register('testWithJava11', Test) {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(11)
     }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    dependsOn tasks.named('testClasses')
+
+    classpath += sourceSets.jmh.output
+    dependsOn "jmhClasses"
+
 }
 test.dependsOn testWithJava21
 test.dependsOn testWithJava17
