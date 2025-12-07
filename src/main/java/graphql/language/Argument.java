@@ -6,6 +6,9 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,6 +22,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class Argument extends AbstractNode<Argument> implements NamedNode<Argument> {
 
     public static final String CHILD_VALUE = "value";
@@ -26,10 +30,10 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     private final Value value;
 
     @Internal
-    protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected Argument(String name, Value value, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.name = name;
-        this.value = value;
+        this.name = assertNotNull(name, "Argument name cannot be null");
+        this.value = assertNotNull(value, "Argument value cannot be null");
     }
 
     /**
@@ -79,7 +83,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -95,7 +99,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     @Override
     public Argument deepCopy() {
-        return new Argument(name, deepCopy(value), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new Argument(assertNotNull(name, "Argument name cannot be null"), assertNotNull(deepCopy(value), "Argument value cannot be null"), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -117,6 +121,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();

@@ -4,6 +4,7 @@ import graphql.execution.DataFetcherResult;
 import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetchingEnvironment;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import static graphql.Assert.assertNotNull;
  */
 @SuppressWarnings("unchecked")
 @PublicApi
+@NullUnmarked
 public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<B>> implements GraphQLError.Builder<B> {
 
     private String message;
