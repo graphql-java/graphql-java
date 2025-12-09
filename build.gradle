@@ -390,6 +390,13 @@ tasks.register('testWithJava11', Test) {
     dependsOn "jmhClasses"
 
 }
+
+test {
+    doFirst {
+        println "Running tests with JDK ${System.getProperty('java.version')}"
+    }
+}
+
 test.dependsOn testWithJava21
 test.dependsOn testWithJava17
 test.dependsOn testWithJava11
