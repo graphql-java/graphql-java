@@ -224,8 +224,6 @@ public class Assert {
 
     private static final String invalidNameErrorMessage = "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]* - was '%s'";
 
-    private static final Pattern validNamePattern = Pattern.compile("[_A-Za-z][_0-9A-Za-z]*");
-
     /**
      * Validates that the Lexical token name matches the current spec.
      * currently non null, non empty,
@@ -235,10 +233,36 @@ public class Assert {
      * @return the name if valid, or AssertException if invalid.
      */
     public static String assertValidName(String name) {
-        if (name != null && !name.isEmpty() && validNamePattern.matcher(name).matches()) {
+        if (name != null && !name.isEmpty() && isValidName(name)) {
             return name;
         }
         return throwAssert(invalidNameErrorMessage, name);
+    }
+
+    /**
+     * Fast character-by-character validation without regex.
+     * Checks if name matches [_A-Za-z][_0-9A-Za-z]*
+     */
+    private static boolean isValidName(String name) {
+        if (name.isEmpty()) {
+            return false;
+        }
+
+        // First character must be [_A-Za-z]
+        char first = name.charAt(0);
+        if (!(first == '_' || (first >= 'A' && first <= 'Z') || (first >= 'a' && first <= 'z'))) {
+            return false;
+        }
+
+        // Remaining characters must be [_0-9A-Za-z]
+        for (int i = 1; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (!(c == '_' || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static <T> T throwAssert(String format, Object... args) {
