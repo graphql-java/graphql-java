@@ -5,10 +5,16 @@ import graphql.TestUtil
 import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirectiveContainer
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.TypeResolver
+import graphql.schema.idl.EchoingWiringFactory
+import graphql.schema.idl.RuntimeWiring
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
@@ -1245,5 +1251,52 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
+    }
+
+    def "issue 4191 - specific problem on field visibility"() {
+
+        Runtime runtime = Runtime.getRuntime();
+
+        long totalMemory = runtime.totalMemory(); // Current committed memory (bytes)
+        long freeMemory = runtime.freeMemory();   // Free memory within the committed memory (bytes)
+        long maxMemory = runtime.maxMemory();     // Maximum possible heap size (-Xmx value, in bytes)
+        long usedMemory = totalMemory - freeMemory; // Currently used memory (bytes)
+
+        System.out.println("Used Memory: " + usedMemory / (1024 * 1024) + " MB");
+        System.out.println("Free Memory: " + freeMemory / (1024 * 1024) + " MB");
+        System.out.println("Total Memory: " + totalMemory / (1024 * 1024) + " MB");
+        System.out.println("Max Memory: " + maxMemory / (1024 * 1024) + " MB");
+
+        def runtimeWiring = RuntimeWiring.MOCKED_WIRING
+
+        def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
+            def schemaElement = environment.schemaElement
+            if (schemaElement instanceof GraphQLFieldDefinition) {
+                return true
+            }
+            def parent = environment.parentElement as GraphQLFieldsContainer
+            if (parent.name == "Query" && schemaElement.name == "admin_effectiveRoleAssignmentsByPrincipal") {
+                return false
+            }
+            if (parent.name == "Query" && schemaElement.name == "admin_group") {
+                return false
+            }
+            return true
+        })
+
+        def schema = TestUtil.schemaFile("4191/4191-staging-raw-combined.graphqls", runtimeWiring)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+        def schemaGenerator = new SchemaGenerator()
+
+
+        def fromPrintedSchema = schemaGenerator.makeExecutableSchema(
+                new SchemaParser().parse(new SchemaPrinter().print(restrictedSchema)),
+                runtimeWiring
+        )
+        then:
+        noExceptionThrown()
+        fromPrintedSchema != null
     }
 }
