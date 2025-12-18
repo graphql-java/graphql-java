@@ -42,10 +42,8 @@ public class DeprecatedInputObjectAndArgumentsAreValid extends GraphQLTypeVisito
     // An applied directive's argument cannot be deprecated.
     @Override
     public TraversalControl visitGraphQLArgument(GraphQLArgument argument, TraverserContext<GraphQLSchemaElement> context) {
-        // There can only be at most one @deprecated, because it is not a repeatable directive
-        GraphQLAppliedDirective deprecatedDirective = argument.getAppliedDirective(Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName());
-
-        if (deprecatedDirective != null && GraphQLTypeUtil.isNonNull(argument.getType()) && !argument.hasSetDefaultValue()) {
+        boolean isDeprecated = isDeprecated(argument);
+        if (isDeprecated && GraphQLTypeUtil.isNonNull(argument.getType()) && !argument.hasSetDefaultValue()) {
             if (context.getParentNode() instanceof GraphQLFieldDefinition) {
                 GraphQLFieldDefinition fieldDefinition = (GraphQLFieldDefinition) context.getParentNode();
                 SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
@@ -59,6 +57,16 @@ public class DeprecatedInputObjectAndArgumentsAreValid extends GraphQLTypeVisito
             }
         }
         return TraversalControl.CONTINUE;
+    }
+
+    private boolean isDeprecated(GraphQLArgument argument) {
+        // There can only be at most one @deprecated, because it is not a repeatable directive
+        GraphQLAppliedDirective deprecatedDirective = argument.getAppliedDirective(Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName());
+        if (deprecatedDirective != null) {
+            return true;
+        }
+        // handle code built schemas, where they have no directive but `graphql.schema.GraphQLArgument.Builder#deprecate` has been called directly
+        return argument.isDeprecated();
     }
 
 }

@@ -1,6 +1,12 @@
 package graphql.schema.validation
 
+import graphql.Scalars
 import graphql.TestUtil
+import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLNonNull
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 class DeprecatedInputObjectAndArgumentsAreValidTest extends Specification {
@@ -293,4 +299,31 @@ class DeprecatedInputObjectAndArgumentsAreValidTest extends Specification {
         noExceptionThrown()
     }
 
+    def "schema build via code has the same validation rule"() {
+        when:
+        GraphQLArgument deprecatedArg = GraphQLArgument.newArgument()
+                .name("input")
+                .type(GraphQLNonNull.nonNull(Scalars.GraphQLString))
+                .deprecate("Some very good reason")
+                .build()
+
+        GraphQLFieldDefinition field = GraphQLFieldDefinition.newFieldDefinition()
+                .name("field")
+                .type(Scalars.GraphQLString)
+                .argument(deprecatedArg)
+                .build()
+
+        GraphQLObjectType queryType = GraphQLObjectType.newObject()
+                .name("Query")
+                .field(field)
+                .build()
+
+        GraphQLSchema.newSchema()
+                .query(queryType)
+                .build()
+
+        then:
+        def invalidSchemaException = thrown(InvalidSchemaException)
+        invalidSchemaException.message.contains("Required argument 'input' on field 'field' cannot be deprecated")
+    }
 }
