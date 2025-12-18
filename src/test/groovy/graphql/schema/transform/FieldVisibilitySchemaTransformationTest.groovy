@@ -2,14 +2,30 @@ package graphql.schema.transform
 
 import graphql.Scalars
 import graphql.TestUtil
+import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLCodeRegistry
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLInterfaceType
+import graphql.schema.GraphQLNamedType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLSchemaElement
+import graphql.schema.GraphQLType
+import graphql.schema.GraphQLTypeUtil
+import graphql.schema.GraphQLTypeVisitorStub
+import graphql.schema.SchemaTraverser
 import graphql.schema.TypeResolver
+import graphql.schema.idl.RuntimeWiring
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
+import graphql.util.TraversalControl
+import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -1073,7 +1089,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
             def directives = (environment.schemaElement as GraphQLDirectiveContainer).appliedDirectives
             return directives.find({ directive -> directive.name == "private" }) == null
-        }, { -> callbacks << "before" }, { -> callbacks << "after"} )
+        }, { -> callbacks << "before" }, { -> callbacks << "after" })
 
         GraphQLSchema schema = TestUtil.schema("""
 
@@ -1245,5 +1261,134 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
+    }
+
+    def "issue 4191 - specific problem on field visibility"() {
+
+        Runtime runtime = Runtime.getRuntime();
+
+        long totalMemory = runtime.totalMemory(); // Current committed memory (bytes)
+        long freeMemory = runtime.freeMemory();   // Free memory within the committed memory (bytes)
+        long maxMemory = runtime.maxMemory();     // Maximum possible heap size (-Xmx value, in bytes)
+        long usedMemory = totalMemory - freeMemory; // Currently used memory (bytes)
+
+        System.out.println("Used Memory: " + usedMemory / (1024 * 1024) + " MB");
+        System.out.println("Free Memory: " + freeMemory / (1024 * 1024) + " MB");
+        System.out.println("Total Memory: " + totalMemory / (1024 * 1024) + " MB");
+        System.out.println("Max Memory: " + maxMemory / (1024 * 1024) + " MB");
+
+        def runtimeWiring = RuntimeWiring.MOCKED_WIRING
+
+        def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
+            def schemaElement = environment.schemaElement
+            if (!schemaElement instanceof GraphQLFieldDefinition) {
+                return true
+            }
+            def parent = environment.parentElement as GraphQLFieldsContainer
+            if (parent.name == "Query" && schemaElement.name == "admin_effectiveRoleAssignmentsByPrincipal") {
+                return false
+            }
+            if (parent.name == "Query" && schemaElement.name == "admin_group") {
+                return false
+            }
+            return true
+        })
+
+        def schema = TestUtil.schemaFile("4191/4191-smaller.graphqls", runtimeWiring)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+        def schemaGenerator = new SchemaGenerator()
+
+
+        def fromPrintedSchema = schemaGenerator.makeExecutableSchema(
+                new SchemaParser().parse(new SchemaPrinter().print(restrictedSchema)),
+                runtimeWiring
+        )
+        then:
+        noExceptionThrown()
+        fromPrintedSchema != null
+    }
+
+    def "issue 4191 - specific problem on field visibility - smaller reproduction"() {
+        def schema = TestUtil.schemaFile("4191/4191-staging-raw-combined.graphqls", RuntimeWiring.MOCKED_WIRING)
+
+        def listOfElements = fieldReferenced(schema, [FieldCoordinates.coordinates("Query", "admin_effectiveRoleAssignmentsByPrincipal"),
+                                 FieldCoordinates.coordinates("Query", "admin_group")])
+
+        def printer = new SchemaPrinter()
+        for (GraphQLSchemaElement element  : listOfElements) {
+            println(printer.print(element))
+        }
+
+
+        def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
+            def schemaElement = environment.schemaElement
+            if (!schemaElement instanceof GraphQLFieldDefinition) {
+                return true
+            }
+            def parent = environment.parentElement as GraphQLFieldsContainer
+            if (parent.name == "Query" && schemaElement.name == "admin_effectiveRoleAssignmentsByPrincipal") {
+                return false
+            }
+            if (parent.name == "Query" && schemaElement.name == "admin_group") {
+                return false
+            }
+            return true
+        })
+
+        schema = TestUtil.schema("type Query { foo : String } ")
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+        def schemaGenerator = new SchemaGenerator()
+
+
+        def fromPrintedSchema = schemaGenerator.makeExecutableSchema(
+                new SchemaParser().parse(new SchemaPrinter().print(restrictedSchema)),
+                RuntimeWiring.MOCKED_WIRING
+        )
+        then:
+        noExceptionThrown()
+        fromPrintedSchema != null
+    }
+
+    private List<GraphQLSchemaElement> fieldReferenced(GraphQLSchema schema, List<FieldCoordinates> coordinates) {
+
+        def setOfNamedElements = new HashSet<String>()
+        def setOfElements = new HashSet<GraphQLSchemaElement>()
+        coordinates.forEach {
+            def fieldDefinition = schema.getFieldDefinition(it)
+            def result = new SchemaTraverser().depthFirst(new GraphQLTypeVisitorStub() {
+
+                @Override
+                protected TraversalControl visitGraphQLType(GraphQLSchemaElement node, TraverserContext<GraphQLSchemaElement> context) {
+                    if (node instanceof GraphQLType) {
+                        GraphQLType type = GraphQLTypeUtil.unwrapAllAs(node)
+                        if (type instanceof GraphQLNamedType) {
+                            def name = ((GraphQLNamedType) type).getName()
+                            if (!setOfNamedElements.contains(name)) {
+                                setOfNamedElements.add(name)
+                                setOfElements.add(type)
+                            }
+                        }
+                    }
+                    if (node instanceof GraphQLDirective) {
+                        String name = ((GraphQLDirective) node).getName()
+                        if (!setOfNamedElements.contains(name)) {
+                            setOfNamedElements.add(name)
+                            setOfElements.add(node)
+                        }
+                    }
+                    return super.visitGraphQLType(node, context)
+                }
+
+                @Override
+                TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
+                    return super.visitGraphQLInterfaceType(node, context)
+                }
+            }, fieldDefinition)
+        }
+        return new ArrayList<GraphQLSchemaElement>(setOfElements)
     }
 }
