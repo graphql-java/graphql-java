@@ -2,21 +2,11 @@ package graphql.schema.transform;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLImplementingType;
-import graphql.schema.GraphQLInputObjectField;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLNamedSchemaElement;
-import graphql.schema.GraphQLNamedType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLSchemaElement;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeVisitorStub;
-import graphql.schema.GraphQLUnionType;
-import graphql.schema.SchemaTraverser;
+import graphql.schema.*;
+import graphql.schema.idl.RuntimeWiring;
+import graphql.schema.idl.SchemaGenerator;
+import graphql.schema.idl.SchemaParser;
+import graphql.schema.idl.SchemaPrinter;
 import graphql.schema.impl.SchemaUtil;
 import graphql.schema.transform.VisibleFieldPredicateEnvironment.VisibleFieldPredicateEnvironmentImpl;
 import graphql.util.TraversalControl;
@@ -77,6 +67,16 @@ public class FieldVisibilitySchemaTransformation {
 
         new SchemaTraverser(getChildrenFn(interimSchema)).depthFirst(new TypeObservingVisitor(observedAfterTransform), getRootTypes(interimSchema));
 
+        Set<GraphQLType> differenceAB = new HashSet<>(observedBeforeTransform);
+        differenceAB.removeAll(observedAfterTransform);
+
+        System.out.printf("diff size = %d\n",differenceAB.size());
+        differenceAB.forEach( t -> {
+            System.out.printf("%s - %s \n", GraphQLTypeUtil.simplePrint(t), t.getClass().getSimpleName());
+        });
+
+        assertIsValid(interimSchema);
+
         // remove types that are not used after removing fields - (connected schema only)
         GraphQLSchema connectedSchema = transformSchema(interimSchema,
                 new TypeVisibilityVisitor(protectedTypeNames, observedBeforeTransform, observedAfterTransform));
@@ -88,6 +88,15 @@ public class FieldVisibilitySchemaTransformation {
         afterTransformationHook.run();
 
         return finalSchema;
+    }
+
+    private void assertIsValid(GraphQLSchema interimSchema) {
+        GraphQLSchema printedSchema = new SchemaGenerator().makeExecutableSchema(
+                new SchemaParser().parse(new SchemaPrinter().print(interimSchema)),
+                RuntimeWiring.MOCKED_WIRING
+        );
+        assert printedSchema != null;
+
     }
 
     // Creates a getChildrenFn that includes interface

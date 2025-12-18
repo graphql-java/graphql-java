@@ -1,0 +1,1176 @@
+type Query {
+    admin_effectiveRoleAssignmentsByPrincipal(after: String, before: String, directoryId: ID, first: Int, last: Int, orgId: ID!, principal: ID!): AdminRoleAssignmentEffectiveConnection @lifecycle(allowThirdParties : false, name : "AdminStagingOnly", stage : STAGING) @scopes(product : NO_GRANT_CHECKS, required : [MANAGE_ORG])
+    admin_group(input: AdminFetchGroupInput): AdminGroup @lifecycle(allowThirdParties : false, name : "AdminStagingOnly", stage : STAGING) @scopes(product : NO_GRANT_CHECKS, required : [MANAGE_ORG])
+    foo : Foo
+}
+
+type Foo {
+    bar : String
+}
+
+#------
+
+"Each policy will have its own specific shape."
+union AdminPolicy = AdminAccessUrl | AdminAiPolicy | AdminByok | AdminDataResidency
+
+type AdminRoleAssignmentSource {
+    role: String!
+    "Source can be USER | GROUP | INDIRECT"
+    source: String!
+}
+
+
+type AdminUnitApp {
+    id: ID!
+}
+
+union AdminEntitlementDetails = AdminCcpEntitlement | AdminHamsEntitlement
+
+"Freeze Windows feature representation."
+type AdminFreezeWindowsFeature {
+    isEntitled: Boolean
+}
+
+type AdminConnectedTo {
+    id: ID!
+}
+
+"Information needed to get details for a group."
+input AdminFetchGroupInput {
+    """
+    Unique ID associated with a directory.
+    If not specified, this operation will scope to all directories the requestor has permission to manage.
+    """
+    directoryId: String
+    "Unique ID of the group."
+    groupId: String!
+    """
+    Organization Id.
+    Should be ARI format.
+    """
+    orgId: String!
+}
+
+"Each feature will have its own specific shape."
+union AdminFeature = AdminAIFeature | AdminAuditLogFeature | AdminCustomDomains | AdminDataResidencyFeature | AdminExternalCollaboratorFeature | AdminFreezeWindowsFeature | AdminInsightsFeature | AdminIpAllowlistingFeature | AdminReleaseTrackFeature | AdminSandboxFeature | AdminStorageFeature | AdminUserManagement
+
+directive @scopes(product: GrantCheckProduct!, required: [Scope!]!) repeatable on FIELD_DEFINITION
+"""
+This is referenced with user public API defined in
+https://developer.atlassian.com/cloud/admin/organization/rest/api-group-users/#api-v2-orgs-orgid-directories-directoryid-users-get.
+"""
+type AdminUser {
+    """
+    The lifecycle status of the account.
+    Possible statuses are: ACTIVE/INACTIVE/CLOSED
+    """
+    accountStatus: String!
+    "The ISO-8601 date and time the user was first added to the organization."
+    addedAt: String
+    "User's avatar."
+    avatar: String
+    """
+    The claim status for the user account.
+    Indicates if a user is MANAGED or UNMANAGED by an organization
+    """
+    claimStatus: String!
+    "User department"
+    department: String
+    "The email address of the user."
+    email: String!
+    "Groups the user has membership of."
+    groups(after: String, before: String, first: Int, last: Int): AdminGroupConnection
+    "Unique ID of the user's account."
+    id: ID!
+    "Computed last active date across resources user has access to."
+    lastActiveDate: String
+    "Location of the user."
+    location: String
+    """
+    Indicates status of the users directory memberships in an organization.
+    Possible values are: ACTIVE/SUSPENDED/NO_MEMBERSHIP
+    """
+    membershipStatus: String
+    "The full name of the user."
+    name: String!
+    "The nickname of the user."
+    nickname: String
+    "The number of objects associated with the user."
+    resourceCounts: AdminResourceCounts
+    "The admin role IDs of the user."
+    roles: [String!]
+    """
+    The status for the user account
+    Possible statuses are: ACTIVE/SUSPENDED/NOT_INVITED/DEACTIVATED
+    """
+    status: String!
+    "User job title."
+    title: String
+    """
+    The email verification status of the user.
+    If true, the user verified their email after creating their account.
+    """
+    verified: Boolean!
+}
+
+"""
+Relay-style PageInfo type.
+
+See [PageInfo specification](https://relay.dev/assets/files/connections-932f4f2cdffd79724ac76373deb30dc8.htm#sec-undefined.PageInfo)
+"""
+type PageInfo {
+    "endCursor must be the cursor corresponding to the last node in `edges`."
+    endCursor: String
+    """
+    `hasNextPage` is used to indicate whether more edges exist following the set defined by the clients arguments. If the client is paginating
+    with `first` / `after`, then the server must return true if further edges exist, otherwise false. If the client is paginating with `last` / `before`,
+    then the client may return true if edges further from before exist, if it can do so efficiently, otherwise may return false.
+    """
+    hasNextPage: Boolean!
+    """
+    `hasPreviousPage` is used to indicate whether more edges exist prior to the set defined by the clients arguments. If the client is paginating
+    with `last` / `before`, then the server must return true if prior edges exist, otherwise false. If the client is paginating with `first` / `after`,
+    then the client may return true if edges prior to after exist, if it can do so efficiently, otherwise may return false.
+    """
+    hasPreviousPage: Boolean!
+    "startCursor must be the cursor corresponding to the first node in `edges`."
+    startCursor: String
+}
+
+"Example data residency policy."
+type AdminDataResidency {
+    "Data residency realm."
+    realm: String!
+    "Data residency regions."
+    regions: [String!]!
+}
+
+"The sort direction of the collection"
+enum SortDirection {
+    "Sort in ascending order"
+    ASC
+    "Sort in descending order"
+    DESC
+}
+
+type AdminCcpEntitlement {
+    offering: AdminCcpOffering
+    relatesFromEntitlements: [AdminCommerceEntitlementRelationship]
+}
+
+type AdminUnitPageInfo {
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+    nextCursor: String
+    previousCursor: String
+}
+
+"Icon for a resource."
+type AdminIcon {
+    name: String!
+    value: String!
+}
+
+"Represents a Site in Admin Hub."
+type AdminSite {
+    "App installed on the site."
+    appInstallations(after: String, before: String, first: Int, last: Int, owner: ID!): AdminWorkspaceConnection
+    "Site icon."
+    icon: AdminIcon
+    id: ID!
+    "Name of the site. Default to first part of url."
+    name: String!
+    """
+    Container of the site. Should be of ARI format.
+    An example of owner is an organization the site linked to.
+    """
+    owner: String!
+    "Sandbox information."
+    sandbox: AdminSandbox
+    "Url of the site."
+    url: String!
+}
+
+type AdminDimension {
+    id: ID!
+    value: String!
+}
+
+"AI feature representation."
+type AdminAIFeature {
+    "If AI is available for the workspace."
+    available: Boolean
+}
+
+"Ip Allowlisting feature representation."
+type AdminIpAllowlistingFeature {
+    "The Ip address field for the allowlisting."
+    ip: String
+}
+
+enum Scope {
+    "outbound-auth"
+    ADMIN_CONTAINER @value(val : "admin:container")
+    API_ACCESS @value(val : "api_access")
+    """
+    jira - granular scopes.
+    Each Jira Mutation and Query should have one or more of these in an `@scope` tag and one of the non-granular scopes above
+    """
+    APPLICATION_ROLE_READ @value(val : "read:application-role:jira")
+    ASYNC_TASK_DELETE @value(val : "delete:async-task:jira")
+    ATTACHMENT_DELETE @value(val : "delete:attachment:jira")
+    ATTACHMENT_READ @value(val : "read:attachment:jira")
+    ATTACHMENT_WRITE @value(val : "write:attachment:jira")
+    AUDIT_LOG_READ @value(val : "read:audit-log:jira")
+    AUTH_CONFLUENCE_USER @value(val : "auth:confluence-user")
+    AVATAR_DELETE @value(val : "delete:avatar:jira")
+    AVATAR_READ @value(val : "read:avatar:jira")
+    AVATAR_WRITE @value(val : "write:avatar:jira")
+    "papi"
+    CATALOG_READ @value(val : "read:catalog:all")
+    COMMENT_DELETE @value(val : "delete:comment:jira")
+    COMMENT_PROPERTY_DELETE @value(val : "delete:comment.property:jira")
+    COMMENT_PROPERTY_READ @value(val : "read:comment.property:jira")
+    COMMENT_PROPERTY_WRITE @value(val : "write:comment.property:jira")
+    COMMENT_READ @value(val : "read:comment:jira")
+    COMMENT_WRITE @value(val : "write:comment:jira")
+    "compass"
+    COMPASS_ATLASSIAN_EXTERNAL @firstPartyOnly @value(val : "compass:atlassian-external")
+    "confluence"
+    CONFLUENCE_ATLASSIAN_EXTERNAL @firstPartyOnly @value(val : "confluence:atlassian-external")
+    CUSTOM_FIELD_CONTEXTUAL_CONFIGURATION_READ @value(val : "read:custom-field-contextual-configuration:jira")
+    CUSTOM_FIELD_CONTEXTUAL_CONFIGURATION_WRITE @value(val : "write:custom-field-contextual-configuration:jira")
+    DASHBOARD_DELETE @value(val : "delete:dashboard:jira")
+    DASHBOARD_PROPERTY_DELETE @value(val : "delete:dashboard.property:jira")
+    DASHBOARD_PROPERTY_READ @value(val : "read:dashboard.property:jira")
+    DASHBOARD_PROPERTY_WRITE @value(val : "write:dashboard.property:jira")
+    DASHBOARD_READ @value(val : "read:dashboard:jira")
+    DASHBOARD_WRITE @value(val : "write:dashboard:jira")
+    DELETE_CONFLUENCE_ATTACHMENT @value(val : "delete:attachment:confluence")
+    DELETE_CONFLUENCE_BLOGPOST @value(val : "delete:blogpost:confluence")
+    DELETE_CONFLUENCE_COMMENT @value(val : "delete:comment:confluence")
+    DELETE_CONFLUENCE_CUSTOM_CONTENT @value(val : "delete:custom-content:confluence")
+    DELETE_CONFLUENCE_DATABASE @value(val : "delete:database:confluence")
+    DELETE_CONFLUENCE_FOLDER @value(val : "delete:folder:confluence")
+    DELETE_CONFLUENCE_PAGE @value(val : "delete:page:confluence")
+    DELETE_CONFLUENCE_SPACE @value(val : "delete:space:confluence")
+    DELETE_CONFLUENCE_WHITEBOARD @value(val : "delete:whiteboard:confluence")
+    DELETE_JSW_BOARD_SCOPE_ADMIN @value(val : "delete:board-scope.admin:jira-software")
+    DELETE_JSW_SPRINT @value(val : "delete:sprint:jira-software")
+    DELETE_ORGANIZATION @value(val : "delete:organization:jira-service-management")
+    DELETE_ORGANIZATION_PROPERTY @value(val : "delete:organization.property:jira-service-management")
+    DELETE_ORGANIZATION_USER @value(val : "delete:organization.user:jira-service-management")
+    DELETE_REQUESTTYPE_PROPERTY @value(val : "delete:requesttype.property:jira-service-management")
+    DELETE_REQUEST_FEEDBACK @value(val : "delete:request.feedback:jira-service-management")
+    DELETE_REQUEST_NOTIFICATION @value(val : "delete:request.notification:jira-service-management")
+    DELETE_REQUEST_PARTICIPANT @value(val : "delete:request.participant:jira-service-management")
+    DELETE_SERVICEDESK_CUSTOMER @value(val : "delete:servicedesk.customer:jira-service-management")
+    DELETE_SERVICEDESK_ORGANIZATION @value(val : "delete:servicedesk.organization:jira-service-management")
+    DELETE_SERVICEDESK_PROPERTY @value(val : "delete:servicedesk.property:jira-service-management")
+    FIELD_CONFIGURATION_DELETE @value(val : "delete:field-configuration:jira")
+    FIELD_CONFIGURATION_READ @value(val : "read:field-configuration:jira")
+    FIELD_CONFIGURATION_SCHEME_DELETE @value(val : "delete:field-configuration-scheme:jira")
+    FIELD_CONFIGURATION_SCHEME_READ @value(val : "read:field-configuration-scheme:jira")
+    FIELD_CONFIGURATION_SCHEME_WRITE @value(val : "write:field-configuration-scheme:jira")
+    FIELD_CONFIGURATION_WRITE @value(val : "write:field-configuration:jira")
+    FIELD_DEFAULT_VALUE_READ @value(val : "read:field.default-value:jira")
+    FIELD_DEFAULT_VALUE_WRITE @value(val : "write:field.default-value:jira")
+    FIELD_DELETE @value(val : "delete:field:jira")
+    FIELD_OPTIONS_READ @value(val : "read:field.options:jira")
+    FIELD_OPTION_DELETE @value(val : "delete:field.option:jira")
+    FIELD_OPTION_READ @value(val : "read:field.option:jira")
+    FIELD_OPTION_WRITE @value(val : "write:field.option:jira")
+    FIELD_READ @value(val : "read:field:jira")
+    FIELD_WRITE @value(val : "write:field:jira")
+    FILTER_COLUMN_DELETE @value(val : "delete:filter.column:jira")
+    FILTER_COLUMN_READ @value(val : "read:filter.column:jira")
+    FILTER_COLUMN_WRITE @value(val : "write:filter.column:jira")
+    FILTER_DEFAULT_SHARE_SCOPE_READ @value(val : "read:filter.default-share-scope:jira")
+    FILTER_DEFAULT_SHARE_SCOPE_WRITE @value(val : "write:filter.default-share-scope:jira")
+    FILTER_DELETE @value(val : "delete:filter:jira")
+    FILTER_READ @value(val : "read:filter:jira")
+    FILTER_WRITE @value(val : "write:filter:jira")
+    GROUP_DELETE @value(val : "delete:group:jira")
+    GROUP_READ @value(val : "read:group:jira")
+    GROUP_WRITE @value(val : "write:group:jira")
+    IDENTITY_ATLASSIAN_EXTERNAL @firstPartyOnly @value(val : "identity:atlassian-external")
+    INSTANCE_CONFIGURATION_READ @value(val : "read:instance-configuration:jira")
+    INSTANCE_CONFIGURATION_WRITE @value(val : "write:instance-configuration:jira")
+    ISSUE_ADJUSTMENTS_DELETE @value(val : "delete:issue-adjustments:jira")
+    ISSUE_ADJUSTMENTS_READ @value(val : "read:issue-adjustments:jira")
+    ISSUE_ADJUSTMENTS_WRITE @value(val : "write:issue-adjustments:jira")
+    ISSUE_CHANGELOG_READ @value(val : "read:issue.changelog:jira")
+    ISSUE_DELETE @value(val : "delete:issue:jira")
+    ISSUE_DETAILS_READ @value(val : "read:issue-details:jira")
+    ISSUE_EVENT_READ @value(val : "read:issue-event:jira")
+    ISSUE_FIELD_VALUES_READ @value(val : "read:issue-field-values:jira")
+    ISSUE_LINK_DELETE @value(val : "delete:issue-link:jira")
+    ISSUE_LINK_READ @value(val : "read:issue-link:jira")
+    ISSUE_LINK_TYPE_DELETE @value(val : "delete:issue-link-type:jira")
+    ISSUE_LINK_TYPE_READ @value(val : "read:issue-link-type:jira")
+    ISSUE_LINK_TYPE_WRITE @value(val : "write:issue-link-type:jira")
+    ISSUE_LINK_WRITE @value(val : "write:issue-link:jira")
+    ISSUE_META_READ @value(val : "read:issue-meta:jira")
+    ISSUE_PROPERTY_DELETE @value(val : "delete:issue.property:jira")
+    ISSUE_PROPERTY_READ @value(val : "read:issue.property:jira")
+    ISSUE_PROPERTY_WRITE @value(val : "write:issue.property:jira")
+    ISSUE_READ @value(val : "read:issue:jira")
+    ISSUE_REMOTE_LINK_DELETE @value(val : "delete:issue.remote-link:jira")
+    ISSUE_REMOTE_LINK_READ @value(val : "read:issue.remote-link:jira")
+    ISSUE_REMOTE_LINK_WRITE @value(val : "write:issue.remote-link:jira")
+    ISSUE_SECURITY_LEVEL_READ @value(val : "read:issue-security-level:jira")
+    ISSUE_SECURITY_SCHEME_READ @value(val : "read:issue-security-scheme:jira")
+    ISSUE_STATUS_READ @value(val : "read:issue-status:jira")
+    ISSUE_TIME_TRACKING_READ @value(val : "read:issue.time-tracking:jira")
+    ISSUE_TIME_TRACKING_WRITE @value(val : "write:issue.time-tracking:jira")
+    ISSUE_TRANSITION_READ @value(val : "read:issue.transition:jira")
+    ISSUE_TYPE_DELETE @value(val : "delete:issue-type:jira")
+    ISSUE_TYPE_HIERARCHY_READ @value(val : "read:issue-type-hierarchy:jira")
+    ISSUE_TYPE_PROPERTY_DELETE @value(val : "delete:issue-type.property:jira")
+    ISSUE_TYPE_PROPERTY_READ @value(val : "read:issue-type.property:jira")
+    ISSUE_TYPE_PROPERTY_WRITE @value(val : "write:issue-type.property:jira")
+    ISSUE_TYPE_READ @value(val : "read:issue-type:jira")
+    ISSUE_TYPE_SCHEME_DELETE @value(val : "delete:issue-type-scheme:jira")
+    ISSUE_TYPE_SCHEME_READ @value(val : "read:issue-type-scheme:jira")
+    ISSUE_TYPE_SCHEME_WRITE @value(val : "write:issue-type-scheme:jira")
+    ISSUE_TYPE_SCREEN_SCHEME_DELETE @value(val : "delete:issue-type-screen-scheme:jira")
+    ISSUE_TYPE_SCREEN_SCHEME_READ @value(val : "read:issue-type-screen-scheme:jira")
+    ISSUE_TYPE_SCREEN_SCHEME_WRITE @value(val : "write:issue-type-screen-scheme:jira")
+    ISSUE_TYPE_WRITE @value(val : "write:issue-type:jira")
+    ISSUE_VOTES_READ @value(val : "read:issue.votes:jira")
+    ISSUE_VOTE_READ @value(val : "read:issue.vote:jira")
+    ISSUE_VOTE_WRITE @value(val : "write:issue.vote:jira")
+    ISSUE_WATCHER_READ @value(val : "read:issue.watcher:jira")
+    ISSUE_WATCHER_WRITE @value(val : "write:issue.watcher:jira")
+    ISSUE_WORKLOG_DELETE @value(val : "delete:issue-worklog:jira")
+    ISSUE_WORKLOG_PROPERTY_DELETE @value(val : "delete:issue-worklog.property:jira")
+    ISSUE_WORKLOG_PROPERTY_READ @value(val : "read:issue-worklog.property:jira")
+    ISSUE_WORKLOG_PROPERTY_WRITE @value(val : "write:issue-worklog.property:jira")
+    ISSUE_WORKLOG_READ @value(val : "read:issue-worklog:jira")
+    ISSUE_WORKLOG_WRITE @value(val : "write:issue-worklog:jira")
+    ISSUE_WRITE @value(val : "write:issue:jira")
+    JIRA_ATLASSIAN_EXTERNAL @firstPartyOnly @value(val : "jira:atlassian-external")
+    JIRA_EXPRESSIONS_READ @value(val : "read:jira-expressions:jira")
+    JQL_READ @value(val : "read:jql:jira")
+    JQL_VALIDATE @value(val : "validate:jql:jira")
+    LABEL_READ @value(val : "read:label:jira")
+    LICENSE_READ @value(val : "read:license:jira")
+    "ecosystem"
+    MANAGE_APP @value(val : "manage:app")
+    MANAGE_DIRECTORY @value(val : "manage:directory")
+    MANAGE_JIRA_CONFIGURATION @value(val : "manage:jira-configuration")
+    MANAGE_JIRA_DATA_PROVIDER @value(val : "manage:jira-data-provider")
+    MANAGE_JIRA_PROJECT @value(val : "manage:jira-project")
+    MANAGE_JIRA_WEBHOOK @value(val : "manage:jira-webhook")
+    "identity"
+    MANAGE_ORG @value(val : "manage:org")
+    MANAGE_ORG_PUBLIC_APIS @value(val : "manage/org/public-api")
+    MANAGE_SERVICEDESK_CUSTOMER @value(val : "manage:servicedesk-customer")
+    "platform"
+    MIGRATE_CONFLUENCE @value(val : "migrate:confluence")
+    NOTIFICATION_SCHEME_READ @value(val : "read:notification-scheme:jira")
+    NOTIFICATION_SEND @value(val : "send:notification:jira")
+    PERMISSION_DELETE @value(val : "delete:permission:jira")
+    PERMISSION_READ @value(val : "read:permission:jira")
+    PERMISSION_SCHEME_DELETE @value(val : "delete:permission-scheme:jira")
+    PERMISSION_SCHEME_READ @value(val : "read:permission-scheme:jira")
+    PERMISSION_SCHEME_WRITE @value(val : "write:permission-scheme:jira")
+    PERMISSION_WRITE @value(val : "write:permission:jira")
+    PRIORITY_READ @value(val : "read:priority:jira")
+    PROJECT_AVATAR_DELETE @value(val : "delete:project.avatar:jira")
+    PROJECT_AVATAR_READ @value(val : "read:project.avatar:jira")
+    PROJECT_AVATAR_WRITE @value(val : "write:project.avatar:jira")
+    PROJECT_CATEGORY_DELETE @value(val : "delete:project-category:jira")
+    PROJECT_CATEGORY_READ @value(val : "read:project-category:jira")
+    PROJECT_CATEGORY_WRITE @value(val : "write:project-category:jira")
+    PROJECT_COMPONENT_DELETE @value(val : "delete:project.component:jira")
+    PROJECT_COMPONENT_READ @value(val : "read:project.component:jira")
+    PROJECT_COMPONENT_WRITE @value(val : "write:project.component:jira")
+    PROJECT_DELETE @value(val : "delete:project:jira")
+    PROJECT_EMAIL_READ @value(val : "read:project.email:jira")
+    PROJECT_EMAIL_WRITE @value(val : "write:project.email:jira")
+    PROJECT_FEATURE_READ @value(val : "read:project.feature:jira")
+    PROJECT_FEATURE_WRITE @value(val : "write:project.feature:jira")
+    PROJECT_PROPERTY_DELETE @value(val : "delete:project.property:jira")
+    PROJECT_PROPERTY_READ @value(val : "read:project.property:jira")
+    PROJECT_PROPERTY_WRITE @value(val : "write:project.property:jira")
+    PROJECT_READ @value(val : "read:project:jira")
+    PROJECT_ROLE_DELETE @value(val : "delete:project-role:jira")
+    PROJECT_ROLE_READ @value(val : "read:project-role:jira")
+    PROJECT_ROLE_WRITE @value(val : "write:project-role:jira")
+    PROJECT_TYPE_READ @value(val : "read:project-type:jira")
+    PROJECT_VERSION_DELETE @value(val : "delete:project-version:jira")
+    PROJECT_VERSION_READ @value(val : "read:project-version:jira")
+    PROJECT_VERSION_WRITE @value(val : "write:project-version:jira")
+    PROJECT_WRITE @value(val : "write:project:jira")
+    "bitbucket_repository_access_token"
+    PULL_REQUEST @value(val : "pullrequest")
+    PULL_REQUEST_WRITE @value(val : "pullrequest:write")
+    READ_ACCOUNT @value(val : "read:account")
+    READ_APP_SYSTEM_TOKEN @value(val : "read:app-system-token")
+    READ_COMPASS_ATTENTION_ITEM @value(val : "read:attention-item:compass")
+    READ_COMPASS_COMPONENT @value(val : "read:component:compass")
+    READ_COMPASS_EVENT @value(val : "read:event:compass")
+    READ_COMPASS_METRIC @value(val : "read:metric:compass")
+    READ_COMPASS_SCORECARD @value(val : "read:scorecard:compass")
+    READ_CONFLUENCE_ATTACHMENT @value(val : "read:attachment:confluence")
+    READ_CONFLUENCE_AUDIT_LOG @value(val : "read:audit-log:confluence")
+    READ_CONFLUENCE_BLOGPOST @value(val : "read:blogpost:confluence")
+    READ_CONFLUENCE_COMMENT @value(val : "read:comment:confluence")
+    READ_CONFLUENCE_CONFIGURATION @value(val : "read:configuration:confluence")
+    READ_CONFLUENCE_CONTENT_ANALYTICS @value(val : "read:analytics.content:confluence")
+    READ_CONFLUENCE_CONTENT_METADATA @value(val : "read:content.metadata:confluence")
+    READ_CONFLUENCE_CONTENT_PERMISSION @value(val : "read:content.permission:confluence")
+    READ_CONFLUENCE_CONTENT_PROPERTY @value(val : "read:content.property:confluence")
+    READ_CONFLUENCE_CONTENT_RESTRICTION @value(val : "read:content.restriction:confluence")
+    READ_CONFLUENCE_CUSTOM_CONTENT @value(val : "read:custom-content:confluence")
+    READ_CONFLUENCE_DATABASE @value(val : "read:database:confluence")
+    READ_CONFLUENCE_FOLDER @value(val : "read:folder:confluence")
+    READ_CONFLUENCE_GROUP @value(val : "read:group:confluence")
+    READ_CONFLUENCE_INLINE_TASK @value(val : "read:inlinetask:confluence")
+    READ_CONFLUENCE_LABEL @value(val : "read:label:confluence")
+    READ_CONFLUENCE_PAGE @value(val : "read:page:confluence")
+    READ_CONFLUENCE_RELATION @value(val : "read:relation:confluence")
+    READ_CONFLUENCE_SPACE @value(val : "read:space:confluence")
+    READ_CONFLUENCE_SPACE_PERMISSION @value(val : "read:space.permission:confluence")
+    READ_CONFLUENCE_SPACE_PROPERTY @value(val : "read:space.property:confluence")
+    READ_CONFLUENCE_SPACE_SETTING @value(val : "read:space.setting:confluence")
+    READ_CONFLUENCE_TEMPLATE @value(val : "read:template:confluence")
+    READ_CONFLUENCE_USER @value(val : "read:user:confluence")
+    READ_CONFLUENCE_USER_PROPERTY @value(val : "read:user.property:confluence")
+    READ_CONFLUENCE_WATCHER @value(val : "read:watcher:confluence")
+    READ_CONFLUENCE_WHITEBOARD @value(val : "read:whiteboard:confluence")
+    READ_CONTAINER @value(val : "read:container")
+    """
+    jira-servicedesk - granular
+    Each JSM Mutation and Query should have one or more of these in an `@scope` tag and one of the non-granular scopes above.
+    You can mix them with Jira scopes if needed.
+    """
+    READ_CUSTOMER @value(val : "read:customer:jira-service-management")
+    READ_DESIGN @value(val : "read:design:jira")
+    """
+    jira - non granular
+    Please add a granular scope as well.
+    """
+    READ_JIRA_USER @value(val : "read:jira-user")
+    READ_JIRA_WORK @value(val : "read:jira-work")
+    """
+    jsw scopes
+    Note - JSW does not have non granular scopes so it does not need two scope tags like JSM/Jira
+    """
+    READ_JSW_BOARD_SCOPE @value(val : "read:board-scope:jira-software")
+    READ_JSW_BOARD_SCOPE_ADMIN @value(val : "read:board-scope.admin:jira-software")
+    READ_JSW_BUILD @value(val : "read:build:jira-software")
+    READ_JSW_DEPLOYMENT @value(val : "read:deployment:jira-software")
+    READ_JSW_EPIC @value(val : "read:epic:jira-software")
+    READ_JSW_FEATURE_FLAG @value(val : "read:feature-flag:jira-software")
+    READ_JSW_ISSUE @value(val : "read:issue:jira-software")
+    READ_JSW_REMOTE_LINK @value(val : "read:remote-link:jira-software")
+    READ_JSW_SOURCE_CODE @value(val : "read:source-code:jira-software")
+    READ_JSW_SPRINT @value(val : "read:sprint:jira-software")
+    READ_KNOWLEDGEBASE @value(val : "read:knowledgebase:jira-service-management")
+    READ_ME @value(val : "read:me")
+    "notification-log"
+    READ_NOTIFICATIONS @value(val : "read:notifications")
+    READ_ORGANIZATION @value(val : "read:organization:jira-service-management")
+    READ_ORGANIZATION_PROPERTY @value(val : "read:organization.property:jira-service-management")
+    READ_ORGANIZATION_USER @value(val : "read:organization.user:jira-service-management")
+    READ_QUEUE @value(val : "read:queue:jira-service-management")
+    READ_REQUEST @value(val : "read:request:jira-service-management")
+    READ_REQUESTTYPE @value(val : "read:requesttype:jira-service-management")
+    READ_REQUESTTYPE_PROPERTY @value(val : "read:requesttype.property:jira-service-management")
+    READ_REQUEST_ACTION @value(val : "read:request.action:jira-service-management")
+    READ_REQUEST_APPROVAL @value(val : "read:request.approval:jira-service-management")
+    READ_REQUEST_ATTACHMENT @value(val : "read:request.attachment:jira-service-management")
+    READ_REQUEST_COMMENT @value(val : "read:request.comment:jira-service-management")
+    READ_REQUEST_FEEDBACK @value(val : "read:request.feedback:jira-service-management")
+    READ_REQUEST_NOTIFICATION @value(val : "read:request.notification:jira-service-management")
+    READ_REQUEST_PARTICIPANT @value(val : "read:request.participant:jira-service-management")
+    READ_REQUEST_SLA @value(val : "read:request.sla:jira-service-management")
+    READ_REQUEST_STATUS @value(val : "read:request.status:jira-service-management")
+    READ_SERVICEDESK @value(val : "read:servicedesk:jira-service-management")
+    READ_SERVICEDESK_CUSTOMER @value(val : "read:servicedesk.customer:jira-service-management")
+    READ_SERVICEDESK_ORGANIZATION @value(val : "read:servicedesk.organization:jira-service-management")
+    READ_SERVICEDESK_PROPERTY @value(val : "read:servicedesk.property:jira-service-management")
+    """
+    jira-servicedesk - non-granular
+    Please add a granular scope as well.
+    """
+    READ_SERVICEDESK_REQUEST @value(val : "read:servicedesk-request")
+    "teams"
+    READ_TEAM @value(val : "view:team:teams")
+    READ_TEAM_MEMBERS @value(val : "view:membership:teams")
+    READ_TEAM_MEMBERS_TEMP @value(val : "view:membership-temp:teams")
+    """
+    teams-temp
+    Note: These are temporary scopes and will be removed very soon. This is an intermittent solution to unblock customer to
+    create 3LO apps and use Teams capabilities.
+    More details at: https://hello.atlassian.net/wiki/x/L840XAE
+    """
+    READ_TEAM_TEMP @value(val : "view:team-temp:teams")
+    READ_TOWNSQUARE_COMMENT @value(val : "read:comment:townsquare")
+    READ_TOWNSQUARE_GOAL @value(val : "read:goal:townsquare")
+    "townsquare (Atlas)"
+    READ_TOWNSQUARE_PROJECT @value(val : "read:project:townsquare")
+    READ_TOWNSQUARE_WORKSPACE @value(val : "read:workspace:townsquare")
+    RESOLUTION_READ @value(val : "read:resolution:jira")
+    SCREENABLE_FIELD_DELETE @value(val : "delete:screenable-field:jira")
+    SCREENABLE_FIELD_READ @value(val : "read:screenable-field:jira")
+    SCREENABLE_FIELD_WRITE @value(val : "write:screenable-field:jira")
+    SCREEN_DELETE @value(val : "delete:screen:jira")
+    SCREEN_FIELD_READ @value(val : "read:screen-field:jira")
+    SCREEN_READ @value(val : "read:screen:jira")
+    SCREEN_SCHEME_DELETE @value(val : "delete:screen-scheme:jira")
+    SCREEN_SCHEME_READ @value(val : "read:screen-scheme:jira")
+    SCREEN_SCHEME_WRITE @value(val : "write:screen-scheme:jira")
+    SCREEN_TAB_DELETE @value(val : "delete:screen-tab:jira")
+    SCREEN_TAB_READ @value(val : "read:screen-tab:jira")
+    SCREEN_TAB_WRITE @value(val : "write:screen-tab:jira")
+    SCREEN_WRITE @value(val : "write:screen:jira")
+    STATUS_READ @value(val : "read:status:jira")
+    STORAGE_APP @value(val : "storage:app")
+    "trello"
+    TRELLO_ATLASSIAN_EXTERNAL @firstPartyOnly @value(val : "trello:atlassian-external")
+    USER_COLUMNS_READ @value(val : "read:user.columns:jira")
+    USER_CONFIGURATION_DELETE @value(val : "delete:user-configuration:jira")
+    USER_CONFIGURATION_READ @value(val : "read:user-configuration:jira")
+    USER_CONFIGURATION_WRITE @value(val : "write:user-configuration:jira")
+    USER_PROPERTY_DELETE @value(val : "delete:user.property:jira")
+    USER_PROPERTY_READ @value(val : "read:user.property:jira")
+    USER_PROPERTY_WRITE @value(val : "write:user.property:jira")
+    USER_READ @value(val : "read:user:jira")
+    VIEW_USERPROFILE @value(val : "view:userprofile")
+    WEBHOOK_DELETE @value(val : "delete:webhook:jira")
+    WEBHOOK_READ @value(val : "read:webhook:jira")
+    WEBHOOK_WRITE @value(val : "write:webhook:jira")
+    WORKFLOW_DELETE @value(val : "delete:workflow:jira")
+    WORKFLOW_PROPERTY_DELETE @value(val : "delete:workflow.property:jira")
+    WORKFLOW_PROPERTY_READ @value(val : "read:workflow.property:jira")
+    WORKFLOW_PROPERTY_WRITE @value(val : "write:workflow.property:jira")
+    WORKFLOW_READ @value(val : "read:workflow:jira")
+    WORKFLOW_SCHEME_DELETE @value(val : "delete:workflow-scheme:jira")
+    WORKFLOW_SCHEME_READ @value(val : "read:workflow-scheme:jira")
+    WORKFLOW_SCHEME_WRITE @value(val : "write:workflow-scheme:jira")
+    WORKFLOW_WRITE @value(val : "write:workflow:jira")
+    WRITE_COMPASS_COMPONENT @value(val : "write:component:compass")
+    WRITE_COMPASS_EVENT @value(val : "write:event:compass")
+    WRITE_COMPASS_METRIC @value(val : "write:metric:compass")
+    WRITE_COMPASS_SCORECARD @value(val : "write:scorecard:compass")
+    WRITE_CONFLUENCE_ATTACHMENT @value(val : "write:attachment:confluence")
+    WRITE_CONFLUENCE_AUDIT_LOG @value(val : "write:audit-log:confluence")
+    WRITE_CONFLUENCE_BLOGPOST @value(val : "write:blogpost:confluence")
+    WRITE_CONFLUENCE_COMMENT @value(val : "write:comment:confluence")
+    WRITE_CONFLUENCE_CONFIGURATION @value(val : "write:configuration:confluence")
+    WRITE_CONFLUENCE_CONTENT_PROPERTY @value(val : "write:content.property:confluence")
+    WRITE_CONFLUENCE_CONTENT_RESTRICTION @value(val : "write:content.restriction:confluence")
+    WRITE_CONFLUENCE_CUSTOM_CONTENT @value(val : "write:custom-content:confluence")
+    WRITE_CONFLUENCE_DATABASE @value(val : "write:database:confluence")
+    WRITE_CONFLUENCE_FOLDER @value(val : "write:folder:confluence")
+    WRITE_CONFLUENCE_GROUP @value(val : "write:group:confluence")
+    WRITE_CONFLUENCE_INLINE_TASK @value(val : "write:inlinetask:confluence")
+    WRITE_CONFLUENCE_LABEL @value(val : "write:label:confluence")
+    WRITE_CONFLUENCE_PAGE @value(val : "write:page:confluence")
+    WRITE_CONFLUENCE_RELATION @value(val : "write:relation:confluence")
+    WRITE_CONFLUENCE_SPACE @value(val : "write:space:confluence")
+    WRITE_CONFLUENCE_SPACE_PERMISSION @value(val : "write:space.permission:confluence")
+    WRITE_CONFLUENCE_SPACE_PROPERTY @value(val : "write:space.property:confluence")
+    WRITE_CONFLUENCE_SPACE_SETTING @value(val : "write:space.setting:confluence")
+    WRITE_CONFLUENCE_TEMPLATE @value(val : "write:template:confluence")
+    WRITE_CONFLUENCE_USER_PROPERTY @value(val : "write:user.property:confluence")
+    WRITE_CONFLUENCE_WATCHER @value(val : "write:watcher:confluence")
+    WRITE_CONFLUENCE_WHITEBOARD @value(val : "write:whiteboard:confluence")
+    WRITE_CONTAINER @value(val : "write:container")
+    WRITE_CUSTOMER @value(val : "write:customer:jira-service-management")
+    WRITE_DESIGN @value(val : "write:design:jira")
+    WRITE_JIRA_WORK @value(val : "write:jira-work")
+    WRITE_JSW_BOARD_SCOPE @value(val : "write:board-scope:jira-software")
+    WRITE_JSW_BOARD_SCOPE_ADMIN @value(val : "write:board-scope.admin:jira-software")
+    WRITE_JSW_BUILD @value(val : "write:build:jira-software")
+    WRITE_JSW_DEPLOYMENT @value(val : "write:deployment:jira-software")
+    WRITE_JSW_EPIC @value(val : "write:epic:jira-software")
+    WRITE_JSW_FEATURE_FLAG @value(val : "write:feature-flag:jira-software")
+    WRITE_JSW_ISSUE @value(val : "write:issue:jira-software")
+    WRITE_JSW_REMOTE_LINK @value(val : "write:remote-link:jira-software")
+    WRITE_JSW_SOURCE_CODE @value(val : "write:source-code:jira-software")
+    WRITE_JSW_SPRINT @value(val : "write:sprint:jira-software")
+    WRITE_NOTIFICATIONS @value(val : "write:notifications")
+    WRITE_ORGANIZATION @value(val : "write:organization:jira-service-management")
+    WRITE_ORGANIZATION_PROPERTY @value(val : "write:organization.property:jira-service-management")
+    WRITE_ORGANIZATION_USER @value(val : "write:organization.user:jira-service-management")
+    WRITE_REQUEST @value(val : "write:request:jira-service-management")
+    WRITE_REQUESTTYPE @value(val : "write:requesttype:jira-service-management")
+    WRITE_REQUESTTYPE_PROPERTY @value(val : "write:requesttype.property:jira-service-management")
+    WRITE_REQUEST_APPROVAL @value(val : "write:request.approval:jira-service-management")
+    WRITE_REQUEST_ATTACHMENT @value(val : "write:request.attachment:jira-service-management")
+    WRITE_REQUEST_COMMENT @value(val : "write:request.comment:jira-service-management")
+    WRITE_REQUEST_FEEDBACK @value(val : "write:request.feedback:jira-service-management")
+    WRITE_REQUEST_NOTIFICATION @value(val : "write:request.notification:jira-service-management")
+    WRITE_REQUEST_PARTICIPANT @value(val : "write:request.participant:jira-service-management")
+    WRITE_REQUEST_STATUS @value(val : "write:request.status:jira-service-management")
+    WRITE_SERVICEDESK @value(val : "write:servicedesk:jira-service-management")
+    WRITE_SERVICEDESK_CUSTOMER @value(val : "write:servicedesk.customer:jira-service-management")
+    WRITE_SERVICEDESK_ORGANIZATION @value(val : "write:servicedesk.organization:jira-service-management")
+    WRITE_SERVICEDESK_PROPERTY @value(val : "write:servicedesk.property:jira-service-management")
+    WRITE_SERVICEDESK_REQUEST @value(val : "write:servicedesk-request")
+    WRITE_TEAM @value(val : "write:team:teams")
+    WRITE_TEAM_MEMBERS_TEMP @value(val : "write:membership-temp:teams")
+    WRITE_TEAM_TEMP @value(val : "write:team-temp:teams")
+    WRITE_TOWNSQUARE_GOAL @value(val : "write:goal:townsquare")
+    WRITE_TOWNSQUARE_PROJECT @value(val : "write:project:townsquare")
+    WRITE_TOWNSQUARE_RELATIONSHIP @value(val : "write:relationship:townsquare")
+}
+
+" ---------------------------------------------------------------------------------------------"
+union AdminPrincipal = AdminGroup | AdminUser
+
+"Represent a group in admin hub."
+type AdminGroup {
+    "The number of objects associated with the group."
+    counts: AdminGroupCounts
+    "The group description."
+    description: String
+    "The ID of the directory."
+    directoryId: String!
+    "Unique ID of the group."
+    id: ID!
+    "The group name."
+    name: String!
+    "Users in the group."
+    users(after: String, before: String, first: Int, last: Int, searchUserInput: AdminSearchUserInput): AdminUserConnection
+}
+
+"Sort by fields commonly used for search inputs."
+input AdminSortBy {
+    "Sort order."
+    direction: SortDirection!
+    "Name of the sort by field."
+    fieldName: String!
+}
+
+type AdminHamsEntitlement {
+    currentEdition: String
+    id: ID!
+}
+
+type AdminUnitConnection {
+    edges: [AdminUnitEdge!]
+    pageInfo: AdminUnitPageInfo!
+}
+
+type AdminUserEdge {
+    cursor: String!
+    node: AdminUser
+}
+
+"Release track representation."
+type AdminReleaseTrackFeature {
+    "The release tracks for a workspace."
+    tracks: [String]
+}
+
+directive @firstPartyOnly on ENUM_VALUE
+type AdminWorkspaceConnection {
+    edges: [AdminWorkspaceEdge!]
+    end: Int
+    pageInfo: PageInfo!
+    "Below are needed for paginated workspaces to support existing UI experience."
+    start: Int
+    totalCount: Int!
+}
+
+type AdminRoleAssignmentEffectiveConnection {
+    """
+    |Authentication Category    |Callable      |
+    |:--------------------------|:-------------|
+    | SESSION | ✅ Yes |
+    | API_TOKEN | ✅ Yes |
+    | CONTAINER_TOKEN | ❌ No |
+    | FIRST_PARTY_OAUTH | ❌ No |
+    | THIRD_PARTY_OAUTH | ❌ No |
+    | UNAUTHENTICATED | ❌ No |
+    """
+    edges: [AdminRoleAssignmentEffectiveEdge!]
+    """
+    |Authentication Category    |Callable      |
+    |:--------------------------|:-------------|
+    | SESSION | ✅ Yes |
+    | API_TOKEN | ✅ Yes |
+    | CONTAINER_TOKEN | ❌ No |
+    | FIRST_PARTY_OAUTH | ❌ No |
+    | THIRD_PARTY_OAUTH | ❌ No |
+    | UNAUTHENTICATED | ❌ No |
+    """
+    pageInfo: PageInfo!
+}
+
+type AdminWorkspacePlan {
+    id: String!
+    name: String!
+}
+
+
+"Paginated group response following pagination standard."
+type AdminGroupConnection {
+    edges: [AdminGroupEdge!]
+    pageInfo: PageInfo!
+}
+
+type AdminGroupEdge {
+    cursor: String!
+    node: AdminGroup
+}
+
+"Defines relationships for a workspace."
+type AdminRelationships {
+    """
+    Workspace connected with current workspace.
+    Connection can be 2p -> 1p or collaboration context.
+    """
+    connections: [AdminConnectionNode!]
+    """
+    Entitlements provisioned for the workspace.
+    Entitlements, bundles, relatesFromEntitlements are consolidated into entitlements.
+    """
+    entitlements: [AdminEntitlement!]
+    "Features associated with the workspace."
+    features: [AdminFeature!]
+    """
+    Policies related to the workspace.
+
+    ### Field lifecycle
+
+    This field is in the 'STAGING' lifecycle stage
+
+    The field will _not_ be visible nor accessible/queryable in production environments. So AGG consumers outside Atlassian will never even know it exists
+    """
+    policies: [AdminPolicy!] @lifecycle(allowThirdParties : false, name : "AdminStagingOnly", stage : STAGING)
+}
+
+"The number of objects associated with the user."
+type AdminResourceCounts {
+    resources: Int!
+}
+
+"""
+Number of custom domains can be set up.
+Always 0 or positive.
+"""
+type AdminLimit {
+    limit: Int
+}
+
+"Represent Unit in Admin hub."
+type AdminUnit {
+    apps(after: String, before: String, first: Int, last: Int): AdminUnitAppsConnection
+    directory: AdminDirectory
+    id: ID!
+    name: String!
+    orgId: ID!
+    userStats: AdminUnitUserStats
+}
+
+
+"""
+See https://developer.atlassian.com/platform/graphql-gateway/schemas/lifecycle-support/#lifecycle-stages for more
+information on how to use these stages and what they mean in detail.
+| Lifecycle            | Visible in Prod | Needs `@optIn` directive |                     Allow third parties                       |
+|----------------------|:---------------:|:------------------------:|:-------------------------------------------------------------:|
+| STAGING              |       No        |            No            | By default no. Can enable via `allowThirdParties` directive   |
+| EXPERIMENTAL         |       Yes       |           Yes            | By default no. Can enable via `allowThirdParties` directive   |
+| BETA                 |       Yes       |           Yes            |                       Always                                  |
+| PRODUCTION (default) |       Yes       |            No            |                       Always                                  |
+"""
+enum LifecycleStage {
+    BETA
+    EXPERIMENTAL
+    PRODUCTION
+    STAGING
+}
+
+type AdminGroupCounts {
+    "The number of users that belong to the group."
+    members: Int
+    "The number of resources the group has roles assigned to, linked to the directories the requestor can manage."
+    resources: Int
+}
+
+"External Collaborator feature representation."
+type AdminExternalCollaboratorFeature {
+    "If external collaborators are enabled."
+    enabled: Boolean
+}
+
+input AdminSearchUserInput {
+    """
+    A list of user account IDs.
+    Min items: 1
+    Max items: 10
+    """
+    accountIds: [String!]
+    """
+    The lifecycle status of the account.
+    Min items: 1
+    Max items: 3
+    """
+    accountStatus: [String!]
+    """
+    The claim status for the user account.
+    By default, both managed and unmanaged accounts are returned.
+    """
+    claimStatus: String
+    """
+    A list of directory IDs.
+    The requestor must have permissions to administer resources linked to these directories.
+    """
+    directoryIds: [String!]
+    """
+    A list of email domains. Ex: @example.com
+    Can input the domains with or without the @ symbol
+    Min items: 1
+    Max items: 10
+    """
+    emailDomains: [String!]
+    """
+    A list of group IDs.
+    Min items: 1
+    Max items: 10
+    """
+    groupIds: [String!]
+    """
+    A list of membership statuses.
+    Min items: 1
+    Max items: 3
+    """
+    membershipStatus: [String!]
+    """
+    A list of resource IDs.
+    The resource IDs should be specified using the Atlassian Resource Identifier (ARI) format.
+    Min items: 1
+    Max items: 10
+    """
+    resourceIds: [String!]
+    "A list of role IDs."
+    roleIds: [String!]
+    "A search term to search the nickname and email fields."
+    searchTerm: String
+    sortBy: [AdminSortBy!]
+    "A list of user account statuses."
+    status: [String!]
+}
+
+"Represents sandbox info"
+type AdminSandbox {
+    parentId: ID
+    type: String!
+}
+
+"Organization in Admin Hub."
+type AdminOrganization {
+    id: ID!
+    "Name of the org."
+    name: String
+    "Units in the org."
+    units(after: String, before: String, first: Int, last: Int): AdminUnitConnection
+}
+
+"""
+Represents App manifest.
+Such is independent of installation.
+"""
+type AdminAppManifest {
+    "Id of the App."
+    appId: String!
+    "Version of the App."
+    version: String!
+}
+
+directive @lifecycle(allowThirdParties: Boolean! = false, name: String!, stage: LifecycleStage!) on FIELD_DEFINITION
+"Schema for a workspace."
+type AdminWorkspace {
+    "This represents App manifest."
+    appManifest: AdminAppManifest
+    "Atlassian or MarketplaceApp."
+    appType: AdminAppType
+    "Created timestamp."
+    createdAt: String
+    "Id of the creator."
+    createdBy: String
+    "Directory Id."
+    directoryId: ID
+    "Workspace ARI."
+    id: ID!
+    "Workspace name."
+    name: String!
+    """
+    Container of the workspace. Should be of ARI format.
+    An example of owner is an organization the workspace linked to.
+    """
+    owner: String
+    "Entities related to current workspace."
+    relationships: AdminRelationships
+    "Sandbox information."
+    sandbox: AdminSandbox
+    """
+    Workspace status.
+    For 1p it is ONLINE/OFFLINE/DEPRECATED
+    For 2p it is UPDATE_AVAILABLE/PAID_UPDATE_AVAILABLE/UP_TO_DATE/BLOCKED
+    """
+    status: String!
+    "Additional details for the Status, e.g: offline reasons"
+    statusDetails: [String!]
+    "Workspace type."
+    type: String!
+    "URL of the workspace."
+    url: String
+    """
+    Available for 2p App.
+    This information will be stitched in AGG from marketplace service.
+    Adding schema here for review purposes.
+    """
+    vendor: AdminVendor
+}
+
+"""
+Entitlement represents entitlement from different source systems.
+Entitlements here includes bundles, TWC or regular entitlements.
+"""
+type AdminEntitlement {
+    "Bundle Name information."
+    bundleName: String
+    "Details from source system."
+    entitlement: AdminEntitlementDetails
+    "Unique identifier of the entitlement."
+    id: ID!
+    "Resolved plan."
+    plan: AdminWorkspacePlan
+    "Licensed seat information."
+    seats: AdminSeats
+    "Define which system the entitlement is from."
+    sourceSystem: String!
+    "Type of the entitlement. Example: bundle/TWC/ regular."
+    type: String
+}
+
+"Contains usage."
+type AdminSeats {
+    usageInfo: AdminUsageInfo
+}
+
+"API reference: https://developer.atlassian.com/platform/usage-tracking/api-contracts/latest-usage-api-contract/"
+type AdminUsageInfo {
+    """
+    CreatedAt	The creation time of the latest usage data point in epoch milliseconds.
+    If createdBefore argument is present in request, the creation time of the returned usage data point will be at or before createdBefore.
+    """
+    createdAt: String!
+    "Dimensions of the usage that were recorded at the time of creation."
+    dimensions: [AdminDimension!]!
+    "Unique identifier of the usage."
+    id: String!
+    "The value as sent in the request that can be used by the client to match responses with the requests."
+    requestId: String!
+    """
+    Usage amount.
+    Use float to handle large int values.
+    """
+    usage: Float
+    "UsageIdentifier from the request for which a usage data point was found."
+    usageIdentifier: String!
+}
+
+"""
+Paginated users following pagination standard.
+PageInfo defined as common schema
+"""
+type AdminUserConnection {
+    edges: [AdminUserEdge!]
+    pageInfo: PageInfo!
+}
+
+type AdminWorkspaceEdge {
+    cursor: String!
+    node: AdminWorkspace
+}
+
+type AdminAiPolicy {
+    enabled: Boolean
+    suspended: String
+}
+
+type AdminRoleAssignmentEffective {
+    "Principal in question for this role assignment."
+    principal: AdminPrincipal!
+    "Resource in question for the given role assignment."
+    resource: AdminResource!
+    "All roles available to the principal + resource, plus information on how the role is assigned."
+    roleAssignmentSource(after: String, before: String, first: Int, last: Int): [AdminRoleAssignmentSource!]!
+}
+
+"Possible resource types."
+union AdminResource = AdminOrganization | AdminSite | AdminUnit | AdminWorkspace
+
+type AdminUnitAppEdge {
+    node: AdminUnitApp
+}
+
+"Custom domain feature representation."
+type AdminCustomDomains {
+    parent: AdminLimit
+    portal: AdminLimit
+    self: AdminLimit
+}
+
+"Sandbox feature representation."
+type AdminSandboxFeature {
+    "entitled sandbox name"
+    entitledSandbox: String
+    "Sandbox limit"
+    limit: Int
+}
+
+type AdminByok {
+    config: String!
+}
+
+enum GrantCheckProduct {
+    COMPASS
+    CONFLUENCE
+    JIRA
+    JIRA_SERVICEDESK
+    MERCURY
+    "Don't check whether a user has been granted access to a specific site(cloudId)"
+    NO_GRANT_CHECKS
+    TOWNSQUARE
+}
+
+
+"Insights feature representation."
+type AdminInsightsFeature {
+    "If insights are enabled."
+    isEnabled: Boolean
+}
+
+"Storage feature representation."
+type AdminStorageFeature {
+    "Storage name"
+    name: String
+}
+
+enum AdminAppType {
+    ATLASSIAN
+    MARKETPLACE_APP
+}
+
+"Represents connected workspaces."
+type AdminConnectionNode {
+    "Get connected workspace."
+    connectedTo: AdminConnectedTo
+    id: ID!
+}
+
+directive @value(val: String!) on ENUM_VALUE
+"User management representation."
+type AdminUserManagement {
+    "Roles supported for the workspace."
+    availableRoles: [String!]
+    "If user access is enabled."
+    userAccessEnabled: Boolean
+}
+
+type AdminProductListingResult {
+    name: String!
+    productId: ID
+}
+
+"URL users can use to gain access for resources."
+type AdminAccessUrl {
+    """
+    The date the access URL expires in ISO 8601 format (yyyy-MM-dd).
+    Defaults to 30 days from the date of creation.
+    """
+    expirationDate: String
+    "The unique id for the access URL."
+    id: ID!
+    """
+    The resourceUrl is the URL of the product that the role permissions will be granted
+    by the access URL.
+    """
+    resourceUrl: String
+    """
+    List of resources the access URL applies to.
+    Today the role assigned to user using this URL is default to member.
+    But can define eligible roles for access URL at resource level in the future.
+    """
+    resources: [AdminResource!]
+    "Current status of the access URL. (ACTIVE, EXPIRED)"
+    status: String!
+    "This is the access URL."
+    url: String!
+}
+
+"Audit log representation."
+type AdminAuditLogFeature {
+    allInclusive: Boolean
+    "auditlog events"
+    events: [String]
+}
+
+type AdminRoleAssignmentEffectiveEdge {
+    cursor: String!
+    node: AdminRoleAssignmentEffective
+}
+
+type AdminUnitUserStats {
+    "The total number of users in the Unit"
+    count: Int
+}
+
+"Data residency representation."
+type AdminDataResidencyFeature {
+    "If data residency is allowed."
+    isDataResidencyAllowed: Boolean
+    "The region where the data is stored."
+    realms: [String]
+}
+
+type AdminUnitAppsConnection {
+    count: Int
+    edges: [AdminUnitAppEdge!]
+    pageInfo: PageInfo!
+}
+
+
+type AdminCcpOffering {
+    id: ID!
+    name: String
+    productKey: ID
+    productListing: AdminProductListingResult
+}
+
+type AdminUnitEdge {
+    node: AdminUnit!
+}
+
+" ---------------------------------------------------------------------------------------------"
+type AdminDirectory {
+    id: ID!
+    owner: String!
+}
+
+"CCP schema."
+type AdminCommerceEntitlementRelationship {
+    entitlementId: ID
+    relationshipId: ID
+    relationshipType: String
+    transactionAccountId: ID
+}
+
+"""
+Describes vendor information.
+This information will be stitched in AGG from marketplace service.
+"""
+type AdminVendor {
+    id: ID!
+    name: String
+    type: String!
+}
