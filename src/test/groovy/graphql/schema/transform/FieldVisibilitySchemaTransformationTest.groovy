@@ -1271,7 +1271,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
             def schemaElement = environment.schemaElement
-            if (schemaElement instanceof GraphQLFieldDefinition) {
+            if (! schemaElement instanceof GraphQLFieldDefinition) {
                 return true
             }
             def parent = environment.parentElement as GraphQLFieldsContainer
