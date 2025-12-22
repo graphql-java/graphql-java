@@ -23,7 +23,7 @@ jobs:
       - name: build and test
         run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.21.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.22.0
         if: always()
         with:
           files: |
