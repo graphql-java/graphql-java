@@ -13,16 +13,7 @@ import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotEmpty;
@@ -539,7 +530,7 @@ public class SchemaTransformer {
         GraphQLObjectType mutation;
         GraphQLObjectType subscription;
         GraphQLObjectType introspectionSchemaType;
-        Set<GraphQLType> additionalTypes;
+        Set<GraphQLType> allTypesExceptOperationTypes;
         Set<GraphQLDirective> directives;
         Set<GraphQLDirective> schemaDirectives;
         Set<GraphQLAppliedDirective> schemaAppliedDirectives;
@@ -550,11 +541,25 @@ public class SchemaTransformer {
             query = schema.getQueryType();
             mutation = schema.isSupportingMutations() ? schema.getMutationType() : null;
             subscription = schema.isSupportingSubscriptions() ? schema.getSubscriptionType() : null;
-            additionalTypes = schema.getAdditionalTypes();
+            allTypesExceptOperationTypes = allTypesExceptOpOnes(schema);
             schemaDirectives = new LinkedHashSet<>(schema.getSchemaDirectives());
             schemaAppliedDirectives = new LinkedHashSet<>(schema.getSchemaAppliedDirectives());
             directives = new LinkedHashSet<>(schema.getDirectives());
             introspectionSchemaType = schema.getIntrospectionSchemaType();
+        }
+
+        private Set<GraphQLType> allTypesExceptOpOnes(GraphQLSchema schema) {
+            Set<GraphQLType> types = new HashSet<>(schema.getTypeMap().values());
+            removeIfNotNull(types, schema.getQueryType());
+            removeIfNotNull(types, schema.getMutationType());
+            removeIfNotNull(types, schema.getSubscriptionType());
+            return types;
+        }
+
+        private void removeIfNotNull(Set<GraphQLType> types, GraphQLType type) {
+            if (type != null) {
+                types.remove(type);
+            }
         }
 
         DummyRoot(GraphQLSchemaElement schemaElement) {
@@ -584,7 +589,7 @@ public class SchemaTransformer {
                 if (schema.isSupportingSubscriptions()) {
                     builder.child(SUBSCRIPTION, subscription);
                 }
-                builder.children(ADD_TYPES, additionalTypes);
+                builder.children(ADD_TYPES, allTypesExceptOperationTypes);
                 builder.children(DIRECTIVES, directives);
                 builder.children(SCHEMA_DIRECTIVES, schemaDirectives);
                 builder.children(SCHEMA_APPLIED_DIRECTIVES, schemaAppliedDirectives);
@@ -604,7 +609,7 @@ public class SchemaTransformer {
             mutation = newChildren.getChildOrNull(MUTATION);
             subscription = newChildren.getChildOrNull(SUBSCRIPTION);
             introspectionSchemaType = newChildren.getChildOrNull(INTROSPECTION);
-            additionalTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
+            allTypesExceptOperationTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
             directives = new LinkedHashSet<>(newChildren.getChildren(DIRECTIVES));
             schemaDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_DIRECTIVES));
             schemaAppliedDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_APPLIED_DIRECTIVES));
@@ -621,7 +626,7 @@ public class SchemaTransformer {
                     .query(this.query)
                     .mutation(this.mutation)
                     .subscription(this.subscription)
-                    .additionalTypes(this.additionalTypes)
+                    .additionalTypes(this.allTypesExceptOperationTypes)
                     .additionalDirectives(this.directives)
                     .introspectionSchemaType(this.introspectionSchemaType)
                     .withSchemaDirectives(this.schemaDirectives)
