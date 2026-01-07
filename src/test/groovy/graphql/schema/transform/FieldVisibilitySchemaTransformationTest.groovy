@@ -1073,7 +1073,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
             def directives = (environment.schemaElement as GraphQLDirectiveContainer).appliedDirectives
             return directives.find({ directive -> directive.name == "private" }) == null
-        }, { -> callbacks << "before" }, { -> callbacks << "after"} )
+        }, { -> callbacks << "before" }, { -> callbacks << "after" })
 
         GraphQLSchema schema = TestUtil.schema("""
 
@@ -1245,5 +1245,38 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
+
     }
+
+    def "remove all fields from a type which is referenced via additional types"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION
+        type Query {
+         foo: Foo
+        }
+        type Foo {
+         foo: String
+         toDelete: ToDelete @private
+        } 
+        type ToDelete {
+         toDelete:String @private
+        }
+        """)
+
+        when:
+        schema.typeMap
+        def patchedSchema = schema.transform { builder ->
+            schema.typeMap.each { entry ->
+                def type = entry.value
+                if (type != schema.queryType && type != schema.mutationType && type != schema.subscriptionType) {
+                    builder.additionalType(type)
+                }
+            }
+        }
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(patchedSchema)
+        then:
+        (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("toDelete") == null
+    }
+
 }
