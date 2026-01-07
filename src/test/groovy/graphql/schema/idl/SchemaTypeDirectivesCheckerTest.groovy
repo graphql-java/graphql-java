@@ -337,4 +337,70 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         then:
         errors.size() == 0
     }
+
+    def "two directives must not reference each other (two-way cycle)"() {
+        given:
+        def spec = '''
+            directive @foo(x: Int @bar(y: 1)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            directive @bar(y: Int @foo(x: 2)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            
+            type Query {
+                f1 : String
+            }
+        '''
+        def registry = parse(spec)
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
+
+        then:
+        errors.size() == 1
+        errors.get(0) instanceof DirectiveIllegalReferenceError
+        errors.get(0).getMessage().contains("forms a directive cycle via:")
+    }
+
+    def "three directives must not form a cycle (three-way cycle)"() {
+        given:
+        def spec = '''
+            directive @dirA(x: Int @dirB(y: 1)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            directive @dirB(y: Int @dirC(z: 2)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            directive @dirC(z: Int @dirA(x: 3)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            
+            type Query {
+                f1 : String
+            }
+        '''
+        def registry = parse(spec)
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
+
+        then:
+        errors.size() == 1
+        errors.get(0) instanceof DirectiveIllegalReferenceError
+        errors.get(0).getMessage().contains("forms a directive cycle via:")
+    }
+
+    def "directives referencing without cycles are allowed"() {
+        given:
+        def spec = '''
+            directive @leaf on ARGUMENT_DEFINITION
+            directive @foo(x: Int @leaf) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            directive @bar(y: Int @leaf) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            
+            type Query {
+                f1 : String @foo(x: 1) @bar(y: 2)
+            }
+        '''
+        def registry = parse(spec)
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
+
+        then:
+        errors.size() == 0
+    }
 }

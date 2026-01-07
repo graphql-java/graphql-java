@@ -30,10 +30,14 @@ import graphql.schema.idl.errors.IllegalNameError;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.NotAnInputTypeError;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
@@ -182,6 +186,10 @@ class SchemaTypeDirectivesChecker {
     }
 
     private void commonCheck(Collection<DirectiveDefinition> directiveDefinitions, List<GraphQLError> errors) {
+        List<DirectiveDefinition> directiveDefinitionList = new ArrayList<>(directiveDefinitions);
+        Map<String, DirectiveDefinition> directiveDefinitionMap = getByName(directiveDefinitionList, DirectiveDefinition::getName, mergeFirst());
+        Set<String> reportedCycles = new HashSet<>();
+
         directiveDefinitions.forEach(directiveDefinition -> {
             assertTypeName(directiveDefinition, errors);
             directiveDefinition.getInputValueDefinitions().forEach(inputValueDefinition -> {
@@ -191,7 +199,94 @@ class SchemaTypeDirectivesChecker {
                     errors.add(new DirectiveIllegalReferenceError(directiveDefinition, inputValueDefinition));
                 }
             });
+
+            // Check for indirect cycles (A -> B -> A, or A -> B -> C -> A)
+            List<String> cyclePath = new ArrayList<>();
+            cyclePath.add(directiveDefinition.getName());
+            if (hasDirectiveCycle(directiveDefinition, directiveDefinitionMap, cyclePath, new LinkedHashSet<>())) {
+                // Only report each cycle once (use a canonical representation to avoid duplicates)
+                String cycleKey = getCycleKey(cyclePath);
+                if (!reportedCycles.contains(cycleKey)) {
+                    reportedCycles.add(cycleKey);
+                    errors.add(new DirectiveIllegalReferenceError(directiveDefinition, cyclePath));
+                }
+            }
         });
+    }
+
+    /**
+     * Detects if a directive has a cycle through applied directives on its arguments.
+     *
+     * @param directiveDefinition the directive to check
+     * @param directiveDefinitionMap map of all directive definitions by name
+     * @param path the current path being explored (for error reporting)
+     * @param visited set of directive names currently in the recursion stack
+     * @return true if a cycle is detected
+     */
+    private boolean hasDirectiveCycle(DirectiveDefinition directiveDefinition,
+                                      Map<String, DirectiveDefinition> directiveDefinitionMap,
+                                      List<String> path,
+                                      Set<String> visited) {
+        String directiveName = directiveDefinition.getName();
+
+        // If already in the current path, we have found a cycle
+        if (visited.contains(directiveName)) {
+            return true;
+        }
+
+        visited.add(directiveName);
+
+        // Check all input value definitions (arguments) of this directive
+        for (InputValueDefinition inputValueDefinition : directiveDefinition.getInputValueDefinitions()) {
+            // Get all directives applied to this argument
+            for (Directive appliedDirective : inputValueDefinition.getDirectives()) {
+                String appliedDirectiveName = appliedDirective.getName();
+
+                // Skip self-reference (already handled separately with more specific error)
+                if (appliedDirectiveName.equals(directiveName)) {
+                    continue;
+                }
+
+                DirectiveDefinition referencedDirective = directiveDefinitionMap.get(appliedDirectiveName);
+                if (referencedDirective != null) {
+                    path.add(appliedDirectiveName);
+                    if (hasDirectiveCycle(referencedDirective, directiveDefinitionMap, path, visited)) {
+                        return true;
+                    }
+                    path.remove(path.size() - 1);
+                }
+            }
+        }
+
+        visited.remove(directiveName);
+        return false;
+    }
+
+    /**
+     * Creates a canonical key for a cycle to avoid reporting the same cycle multiple times.
+     * The key is the smallest rotation of the cycle path (excluding the last element which is the same as the first).
+     */
+    private static String getCycleKey(List<String> cyclePath) {
+        if (cyclePath.size() <= 1) {
+            return String.join("->", cyclePath);
+        }
+
+        // Remove the last element (same as first) for comparison
+        List<String> cycleWithoutLast = cyclePath.subList(0, cyclePath.size() - 1);
+
+        // Find the lexicographically smallest rotation
+        String smallest = String.join("->", cycleWithoutLast);
+        for (int i = 1; i < cycleWithoutLast.size(); i++) {
+            List<String> rotated = new ArrayList<>();
+            for (int j = 0; j < cycleWithoutLast.size(); j++) {
+                rotated.add(cycleWithoutLast.get((i + j) % cycleWithoutLast.size()));
+            }
+            String rotatedStr = String.join("->", rotated);
+            if (rotatedStr.compareTo(smallest) < 0) {
+                smallest = rotatedStr;
+            }
+        }
+        return smallest;
     }
 
     private static void assertTypeName(NamedNode<?> node, List<GraphQLError> errors) {
