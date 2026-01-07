@@ -357,7 +357,10 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         then:
         errors.size() == 1
         errors.get(0) instanceof DirectiveIllegalReferenceError
-        errors.get(0).getMessage().contains("forms a directive cycle via:")
+        // The cycle path should be: bar -> foo -> bar (or foo -> bar -> foo)
+        def msg = errors.get(0).getMessage()
+        msg.contains("forms a directive cycle via:")
+        (msg.contains("bar -> foo -> bar") || msg.contains("foo -> bar -> foo"))
     }
 
     def "three directives must not form a cycle (three-way cycle)"() {
@@ -380,7 +383,10 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         then:
         errors.size() == 1
         errors.get(0) instanceof DirectiveIllegalReferenceError
-        errors.get(0).getMessage().contains("forms a directive cycle via:")
+        // The cycle path should include all three directives
+        def msg = errors.get(0).getMessage()
+        msg.contains("forms a directive cycle via:")
+        msg.contains("dirA") && msg.contains("dirB") && msg.contains("dirC")
     }
 
     def "directives referencing without cycles are allowed"() {
