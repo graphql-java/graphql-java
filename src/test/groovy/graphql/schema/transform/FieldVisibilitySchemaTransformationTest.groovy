@@ -1279,4 +1279,36 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("toDelete") == null
     }
 
+    def "remove all fields from an input type which is referenced via additional types"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+        type Query {
+         foo(input: Input): String
+        }
+        input Input {
+         foo: String
+         toDelete:ToDelete @private
+        }
+        input ToDelete {
+         toDelete:String @private
+        }
+        """)
+
+        when:
+        schema.typeMap
+        def patchedSchema = schema.transform { builder ->
+            schema.typeMap.each { entry ->
+                def type = entry.value
+                if (type != schema.queryType && type != schema.mutationType && type != schema.subscriptionType) {
+                    builder.additionalType(type)
+                }
+            }
+        }
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(patchedSchema)
+        then:
+        (restrictedSchema.getType("Input") as GraphQLInputObjectType).getFieldDefinition("toDelete") == null
+    }
+
+
 }
