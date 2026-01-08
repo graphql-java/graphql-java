@@ -7,6 +7,9 @@ import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,11 +18,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @PublicApi
+@NullMarked
 public class ValidationError implements GraphQLError {
 
     private final List<SourceLocation> locations = new ArrayList<>();
     private final String description;
-    private final ValidationErrorClassification validationErrorType;
+    private final @Nullable ValidationErrorClassification validationErrorType;
     private final List<String> queryPath = new ArrayList<>();
     private final ImmutableMap<String, Object> extensions;
 
@@ -37,7 +41,7 @@ public class ValidationError implements GraphQLError {
         this.extensions = (builder.extensions != null) ? ImmutableMap.copyOf(builder.extensions) : ImmutableMap.of();
     }
 
-    public ValidationErrorClassification getValidationErrorType() {
+    public @Nullable ValidationErrorClassification getValidationErrorType() {
         return validationErrorType;
     }
 
@@ -107,6 +111,7 @@ public class ValidationError implements GraphQLError {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         private List<SourceLocation> sourceLocations;
         private Map<String, Object> extensions;

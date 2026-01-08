@@ -14,7 +14,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -29,7 +32,7 @@ import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChil
  * for example, a GraphQL system could define a scalar called Time which, while serialized as a string, promises to
  * conform to ISO‐8601. When querying a field of type Time, you can then rely on the ability to parse the result with an ISO‐8601 parser and use a client‐specific primitive for time.
  * <p>
- * From the spec : https://spec.graphql.org/October2021/#sec-Scalars
+ * From the spec : <a href="https://spec.graphql.org/October2021/#sec-Scalars">...</a>
  * </blockquote>
  * <p>
  * graphql-java ships with a set of predefined scalar types via {@link graphql.Scalars}
@@ -37,26 +40,26 @@ import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChil
  * @see graphql.Scalars
  */
 @PublicApi
-public class
-GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+@NullMarked
+public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
 
     private final String name;
-    private final String description;
+    private final @Nullable String description;
     private final Coercing<?, ?> coercing;
     private final ScalarTypeDefinition definition;
     private final ImmutableList<ScalarTypeExtensionDefinition> extensionDefinitions;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
-    private final String specifiedByUrl;
+    private final @Nullable String specifiedByUrl;
 
     @Internal
     private GraphQLScalarType(String name,
-                              String description,
+                              @Nullable String description,
                               Coercing<?, ?> coercing,
                               List<GraphQLDirective> directives,
                               List<GraphQLAppliedDirective> appliedDirectives,
                               ScalarTypeDefinition definition,
                               List<ScalarTypeExtensionDefinition> extensionDefinitions,
-                              String specifiedByUrl) {
+                              @Nullable String specifiedByUrl) {
         assertValidName(name);
         assertNotNull(coercing, "coercing can't be null");
         assertNotNull(directives, "directives can't be null");
@@ -76,11 +79,11 @@ GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, Grap
     }
 
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public String getSpecifiedByUrl() {
+    public @Nullable String getSpecifiedByUrl() {
         return specifiedByUrl;
     }
 
@@ -212,7 +215,6 @@ GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, Grap
     public static Builder newScalar(GraphQLScalarType existing) {
         return new Builder(existing);
     }
-
 
     @PublicApi
     @NullUnmarked
