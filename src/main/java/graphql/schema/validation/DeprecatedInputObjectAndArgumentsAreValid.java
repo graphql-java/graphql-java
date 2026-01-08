@@ -42,10 +42,9 @@ public class DeprecatedInputObjectAndArgumentsAreValid extends GraphQLTypeVisito
     // An applied directive's argument cannot be deprecated.
     @Override
     public TraversalControl visitGraphQLArgument(GraphQLArgument argument, TraverserContext<GraphQLSchemaElement> context) {
-        // There can only be at most one @deprecated, because it is not a repeatable directive
-        GraphQLAppliedDirective deprecatedDirective = argument.getAppliedDirective(Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName());
-
-        if (deprecatedDirective != null && GraphQLTypeUtil.isNonNull(argument.getType()) && !argument.hasSetDefaultValue()) {
+        // even if an argument is built using SLD or direct via code, the isDeprecated() method works
+        boolean isDeprecated = argument.isDeprecated();
+        if (isDeprecated && GraphQLTypeUtil.isNonNull(argument.getType()) && !argument.hasSetDefaultValue()) {
             if (context.getParentNode() instanceof GraphQLFieldDefinition) {
                 GraphQLFieldDefinition fieldDefinition = (GraphQLFieldDefinition) context.getParentNode();
                 SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
