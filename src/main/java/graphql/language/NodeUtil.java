@@ -138,5 +138,10 @@ public class NodeUtil {
         boolean hasDirective(String directiveName) {
             return directivesByName.containsKey(directiveName);
         }
+
+        @Override
+        public String toString() {
+            return directives.toString();
+        }
     }
 }
