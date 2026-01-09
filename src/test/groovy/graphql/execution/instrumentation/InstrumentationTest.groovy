@@ -1,11 +1,16 @@
 package graphql.execution.instrumentation
 
+import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
+import graphql.GraphqlErrorBuilder
+import graphql.GraphqlErrorBuilderTest
 import graphql.StarWarsSchema
 import graphql.TestUtil
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.DataFetcherExceptionHandlerResult
+import graphql.execution.DataFetcherResult
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
@@ -23,6 +28,8 @@ import spock.lang.Specification
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 class InstrumentationTest extends Specification {
 
@@ -150,6 +157,165 @@ class InstrumentationTest extends Specification {
         then:
         instrumentation.throwableList.size() == 1
         instrumentation.throwableList[0].getMessage() == "DF BANG!"
+    }
+
+    def "field fetch will instrument exceptions correctly - includes exception handling with onExceptionHandled"() {
+
+        given:
+
+        def query = """
+        {
+            hero {
+                id
+            }
+        }
+        """
+
+        def instrumentation = new LegacyTestingInstrumentation() {
+            def onHandledCalled = false
+            def onCompletedCalled = false
+            def onDispatchedCalled = false
+
+            @Override
+            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+                return new DataFetcher<Object>() {
+                    @Override
+                    Object get(DataFetchingEnvironment environment) {
+                        throw new RuntimeException("DF BANG!")
+                    }
+                }
+            }
+
+            @Override
+            FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+                return new FieldFetchingInstrumentationContext() {
+                    @Override
+                    void onDispatched() {
+                        onDispatchedCalled = true
+                    }
+
+                    @Override
+                    void onCompleted(Object result, Throwable t) {
+                        onCompletedCalled = true
+                    }
+
+                    @Override
+                    void onExceptionHandled(DataFetcherResult<Object> dataFetcherResult) {
+                        onHandledCalled = true
+                    }
+                }
+            }
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .defaultDataFetcherExceptionHandler { it ->
+                    // catch all exceptions and transform to graphql error with a prefixed message
+                    return CompletableFuture.completedFuture(
+                            DataFetcherExceptionHandlerResult.newResult(GraphqlErrorBuilder.newError()
+                                    .errorType(ErrorType.DataFetchingException)
+                                    .message("Handled " + it.exception.message)
+                                    .path(it.path)
+                                    .build())
+                            .build())
+                }
+                .instrumentation(instrumentation)
+                .build()
+
+        when:
+        def resp = graphQL.execute(query)
+
+        then: "exception handler turned the exception into a graphql error and message prefixed with Handled"
+        resp.errors.size() == 1
+        resp.errors[0].message == "Handled DF BANG!"
+
+        and: "all instrumentation methods were called"
+        instrumentation.onDispatchedCalled == true
+        instrumentation.onCompletedCalled == true
+        instrumentation.onHandledCalled == true
+    }
+
+
+    def "field fetch verify order and call of all methods"() {
+
+        given:
+
+        def query = """
+        {
+            hero {
+                id
+            }
+        }
+        """
+
+        def metric = []
+        def instrumentation = new SimplePerformantInstrumentation() {
+            def timeElapsed = new AtomicInteger()
+
+            @Override
+            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+                return new DataFetcher<Object>() {
+                    @Override
+                    Object get(DataFetchingEnvironment environment) {
+                        // simulate latency
+                        timeElapsed.addAndGet(50)
+                        throw new RuntimeException("DF BANG!")
+                    }
+                }
+            }
+
+            @Override
+            FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+                return new FieldFetchingInstrumentationContext() {
+                    def start = 0
+                    def duration = 0
+                    def hasError = false
+
+
+                    @Override
+                    void onDispatched() {
+                        start = 1
+                    }
+
+                    @Override
+                    void onCompleted(Object result, Throwable t) {
+                        duration = timeElapsed.get() - start
+                        metric = [duration, hasError]
+                    }
+
+                    @Override
+                    void onExceptionHandled(DataFetcherResult<Object> dataFetcherResult) {
+                        hasError = dataFetcherResult.errors != null && !dataFetcherResult.errors.isEmpty()
+                            && dataFetcherResult.errors.any { it.message.contains("Handled") }
+                    }
+                }
+            }
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .defaultDataFetcherExceptionHandler { it ->
+                    // catch all exceptions and transform to graphql error with a prefixed message
+                    return CompletableFuture.completedFuture(
+                            DataFetcherExceptionHandlerResult.newResult(GraphqlErrorBuilder.newError()
+                                    .errorType(ErrorType.DataFetchingException)
+                                    .message("Handled " + it.exception.message)
+                                    .path(it.path)
+                                    .build())
+                            .build())
+                }
+                .instrumentation(instrumentation)
+                .build()
+
+        when:
+        def resp = graphQL.execute(query)
+
+        then: "exception handler turned the exception into a graphql error and prefixed its message with 'Handled'"
+        resp.errors.size() == 1
+        resp.errors[0].message == "Handled DF BANG!"
+
+        and: "metric was captured i.e all instrumentation methods were called in the right order"
+        metric == [49, true]
     }
 
     /**

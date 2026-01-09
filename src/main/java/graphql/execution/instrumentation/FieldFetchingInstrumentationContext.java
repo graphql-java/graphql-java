@@ -2,6 +2,7 @@ package graphql.execution.instrumentation;
 
 import graphql.Internal;
 import graphql.PublicSpi;
+import graphql.execution.DataFetcherResult;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -24,6 +25,15 @@ public interface FieldFetchingInstrumentationContext extends InstrumentationCont
      * @param fetchedValue a value that a field's {@link graphql.schema.DataFetcher} returned
      */
     default void onFetchedValue(Object fetchedValue) {
+    }
+
+    /**
+     * This is called back after any {@link graphql.execution.DataFetcherExceptionHandler}) has run on any exception raised
+     * during a {@link graphql.schema.DataFetcher} invocation. This allows to see the final {@link DataFetcherResult}
+     * that will be used when performing the complete step.
+     * @param dataFetcherResult the final {@link DataFetcherResult} after the exception handler has run
+     */
+    default void onExceptionHandled(DataFetcherResult<Object> dataFetcherResult) {
     }
 
     @Internal
