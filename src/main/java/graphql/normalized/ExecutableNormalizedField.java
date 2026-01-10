@@ -198,9 +198,13 @@ public class ExecutableNormalizedField {
             return;
         }
 
+        var fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         for (String objectTypeName : objectTypeNames) {
             GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-            consumer.accept(assertNotNull(type.getField(fieldName), "No field %s found for type %s", fieldName, objectTypeName));
+            // Use field visibility to allow custom visibility implementations to provide placeholder fields
+            // for fields that don't exist on the local schema (e.g., in federated subgraphs)
+            GraphQLFieldDefinition field = fieldVisibility.getFieldDefinition(type, fieldName);
+            consumer.accept(assertNotNull(field, "No field %s found for type %s", fieldName, objectTypeName));
         }
     }
 
@@ -223,7 +227,8 @@ public class ExecutableNormalizedField {
 
         String objectTypeName = objectTypeNames.iterator().next();
         GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-        return assertNotNull(type.getField(fieldName), "No field %s found for type %s", fieldName, objectTypeName);
+        var fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
+        return assertNotNull(fieldVisibility.getFieldDefinition(type, fieldName), "No field %s found for type %s", fieldName, objectTypeName);
     }
 
     private static GraphQLFieldDefinition resolveIntrospectionField(GraphQLSchema schema, Set<String> objectTypeNames, String fieldName) {
