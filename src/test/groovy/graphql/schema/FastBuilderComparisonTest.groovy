@@ -65,7 +65,7 @@ class FastBuilderComparisonTest extends Specification {
 
         additionalTypes.each { type ->
             if (type != null) {
-                builder.additionalType(type)
+                builder.addType(type)
             }
         }
 

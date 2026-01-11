@@ -1117,31 +1117,30 @@ public class GraphQLSchema {
             Introspection.addCodeForIntrospectionTypes(codeRegistryBuilder);
 
             // Add root types
-            additionalType(queryType);
+            addType(queryType);
             if (mutationType != null) {
-                additionalType(mutationType);
+                addType(mutationType);
             }
             if (subscriptionType != null) {
-                additionalType(subscriptionType);
+                addType(subscriptionType);
             }
         }
 
         /**
          * Adds a type to the schema. The type must be a named type (not a wrapper like List or NonNull).
+         * A type added by this method will be included in {@link GraphQLSchema#getAdditionalTypes()}
+         * only when it is not reachable from the schema root types.
          *
          * @param type the type to add
          * @return this builder for chaining
          */
-        public FastBuilder additionalType(GraphQLType type) {
+        public FastBuilder addType(GraphQLType type) {
             if (type == null) {
                 return this;
             }
 
             // Unwrap to named type
             GraphQLUnmodifiedType unwrapped = GraphQLTypeUtil.unwrapAll(type);
-            if (!(unwrapped instanceof GraphQLNamedType)) {
-                return this;
-            }
             GraphQLNamedType namedType = (GraphQLNamedType) unwrapped;
             String name = namedType.getName();
 
@@ -1185,13 +1184,15 @@ public class GraphQLSchema {
 
         /**
          * Adds multiple types to the schema.
+         * A type added by this method will be included in {@link GraphQLSchema#getAdditionalTypes()}
+         * only when it is not reachable from the schema root types.
          *
          * @param types the types to add
          * @return this builder for chaining
          */
-        public FastBuilder additionalTypes(Collection<? extends GraphQLType> types) {
+        public FastBuilder addTypes(Collection<? extends GraphQLType> types) {
             if (types != null) {
-                types.forEach(this::additionalType);
+                types.forEach(this::addType);
             }
             return this;
         }
