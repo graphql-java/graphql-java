@@ -44,8 +44,8 @@ class FastBuilderTest extends Specification {
 
         when: "adding both scalars"
         new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(scalar1)
-                .additionalType(scalar2)
+                .addType(scalar1)
+                .addType(scalar2)
                 .build()
 
         then: "error is thrown"
@@ -72,8 +72,8 @@ class FastBuilderTest extends Specification {
 
         when: "adding same scalar twice"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(scalar)
-                .additionalType(scalar)
+                .addType(scalar)
+                .addType(scalar)
                 .build()
 
         then: "no error and scalar is in schema"
@@ -94,7 +94,7 @@ class FastBuilderTest extends Specification {
 
         when: "adding null type"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(null)
+                .addType(null)
                 .build()
 
         then: "no error"
@@ -149,7 +149,7 @@ class FastBuilderTest extends Specification {
 
         when: "adding types as collection"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalTypes([scalar1, scalar2])
+                .addTypes([scalar1, scalar2])
                 .build()
 
         then: "both types are in schema"
@@ -186,7 +186,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(customScalar)
+                .addType(customScalar)
                 .additionalDirective(directive)
                 .build()
 
@@ -223,7 +223,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(customScalar)
+                .addType(customScalar)
                 .additionalDirective(directive)
                 .build()
 
@@ -261,7 +261,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(customScalar)
+                .addType(customScalar)
                 .additionalDirective(directive)
                 .build()
 
@@ -437,7 +437,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(statusEnum)
+                .addType(statusEnum)
                 .build()
 
         then: "enum type is in schema"
@@ -479,7 +479,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(levelEnum)
+                .addType(levelEnum)
                 .additionalDirective(directive)
                 .build()
 
@@ -516,7 +516,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(inputType)
+                .addType(inputType)
                 .build()
 
         then: "input type is in schema"
@@ -558,8 +558,8 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(customScalar)
-                .additionalType(inputType)
+                .addType(customScalar)
+                .addType(inputType)
                 .build()
 
         then: "input field type is resolved"
@@ -604,8 +604,8 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(addressInput)
-                .additionalType(userInput)
+                .addType(addressInput)
+                .addType(userInput)
                 .build()
 
         then: "nested input field type is resolved"
@@ -643,8 +643,8 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(statusEnum)
-                .additionalType(inputType)
+                .addType(statusEnum)
+                .addType(inputType)
                 .build()
 
         then: "input field type is resolved with NonNull wrapper"
@@ -686,8 +686,8 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(tagScalar)
-                .additionalType(inputType)
+                .addType(tagScalar)
+                .addType(inputType)
                 .build()
 
         then: "input field type is resolved with List wrapper"
@@ -726,7 +726,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(configInput)
+                .addType(configInput)
                 .additionalDirective(directive)
                 .build()
 
@@ -773,7 +773,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(configScalar)
+                .addType(configScalar)
                 .additionalDirective(directive)
                 .withSchemaAppliedDirective(appliedDirective)
                 .build()
@@ -826,8 +826,8 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(customScalar)
-                .additionalType(enumType)
+                .addType(customScalar)
+                .addType(enumType)
                 .additionalDirective(directive)
                 .build()
 
@@ -885,8 +885,8 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(customScalar)
-                .additionalType(inputType)
+                .addType(customScalar)
+                .addType(inputType)
                 .additionalDirective(directive)
                 .build()
 
@@ -947,7 +947,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(personType)
+                .addType(personType)
                 .build()
 
         then: "field type is resolved"
@@ -975,7 +975,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(itemType)
+                .addType(itemType)
                 .build()
 
         then: "field type is resolved with NonNull wrapper"
@@ -1005,7 +1005,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(userType)
+                .addType(userType)
                 .build()
 
         then: "field type is resolved with List wrapper"
@@ -1047,8 +1047,8 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(nodeInterface)
-                .additionalType(postType)
+                .addType(nodeInterface)
+                .addType(postType)
                 .build()
 
         then: "interface reference is resolved"
@@ -1100,9 +1100,9 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(entityInterface)
-                .additionalType(userType)
-                .additionalType(productType)
+                .addType(entityInterface)
+                .addType(userType)
+                .addType(productType)
                 .build()
 
         then: "interface to implementations map is built"
@@ -1143,8 +1143,8 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(filterInput)
-                .additionalType(resultType)
+                .addType(filterInput)
+                .addType(resultType)
                 .build()
 
         then: "field argument type is resolved"
@@ -1189,7 +1189,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(metaScalar)
+                .addType(metaScalar)
                 .additionalDirective(directive)
                 .build()
 
@@ -1238,7 +1238,7 @@ class FastBuilderTest extends Specification {
         when: "building"
         new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(objectType)
+                .addType(objectType)
                 .build()
 
         then: "error for missing interface"
@@ -1270,7 +1270,7 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(nodeInterface)
+                .addType(nodeInterface)
                 .build()
 
         then: "interface type is in schema"
@@ -1310,8 +1310,8 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(nodeInterface)
-                .additionalType(userType)
+                .addType(nodeInterface)
+                .addType(userType)
                 .build()
 
         then: "interface field type is resolved"
@@ -1355,8 +1355,8 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(nodeInterface)
-                .additionalType(namedNodeInterface)
+                .addType(nodeInterface)
+                .addType(namedNodeInterface)
                 .build()
 
         then: "interface extension is resolved"
@@ -1388,7 +1388,7 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(nodeInterface)
+                .addType(nodeInterface)
                 .build()
 
         then: "type resolver is wired"
@@ -1430,8 +1430,8 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(searchableInterface)
-                .additionalType(filterInput)
+                .addType(searchableInterface)
+                .addType(filterInput)
                 .build()
 
         then: "interface field argument type is resolved"
@@ -1463,7 +1463,7 @@ class FastBuilderTest extends Specification {
 
         when: "building"
         new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(childInterface)
+                .addType(childInterface)
                 .build()
 
         then: "error for missing interface"
@@ -1518,8 +1518,8 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(metaScalar)
-                .additionalType(nodeInterface)
+                .addType(metaScalar)
+                .addType(nodeInterface)
                 .additionalDirective(directive)
                 .build()
 
@@ -1569,9 +1569,9 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(catType)
-                .additionalType(dogType)
-                .additionalType(petUnion)
+                .addType(catType)
+                .addType(dogType)
+                .addType(petUnion)
                 .build()
 
         then: "union type is in schema"
@@ -1617,9 +1617,9 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(catType)
-                .additionalType(dogType)
-                .additionalType(petUnion)
+                .addType(catType)
+                .addType(dogType)
+                .addType(petUnion)
                 .build()
 
         then: "union member types are resolved"
@@ -1658,8 +1658,8 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(catType)
-                .additionalType(petUnion)
+                .addType(catType)
+                .addType(petUnion)
                 .build()
 
         then: "type resolver is wired"
@@ -1688,7 +1688,7 @@ class FastBuilderTest extends Specification {
 
         when: "building"
         new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(petUnion)
+                .addType(petUnion)
                 .build()
 
         then: "error for missing type"
@@ -1749,9 +1749,9 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(metaScalar)
-                .additionalType(catType)
-                .additionalType(petUnion)
+                .addType(metaScalar)
+                .addType(catType)
+                .addType(petUnion)
                 .additionalDirective(directive)
                 .build()
 
@@ -1784,7 +1784,7 @@ class FastBuilderTest extends Specification {
         when: "building with validation disabled"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(nodeInterface)
+                .addType(nodeInterface)
                 .withValidation(false)
                 .build()
 
@@ -1826,8 +1826,8 @@ class FastBuilderTest extends Specification {
 
         when: "building with validation enabled"
         new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(nodeInterface)
-                .additionalType(badImplementor)
+                .addType(nodeInterface)
+                .addType(badImplementor)
                 .withValidation(true)
                 .build()
 
@@ -1858,7 +1858,7 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(personType)
+                .addType(personType)
                 .build()
 
         then: "circular reference is resolved"
@@ -1894,8 +1894,8 @@ class FastBuilderTest extends Specification {
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(innerType)
-                .additionalType(outerType)
+                .addType(innerType)
+                .addType(outerType)
                 .build()
 
         then: "deeply nested type reference is resolved"
@@ -1985,11 +1985,11 @@ class FastBuilderTest extends Specification {
 
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .additionalType(nodeInterface)
-                .additionalType(filterInput)
-                .additionalType(userType)
-                .additionalType(postType)
-                .additionalType(searchResultUnion)
+                .addType(nodeInterface)
+                .addType(filterInput)
+                .addType(userType)
+                .addType(postType)
+                .addType(searchResultUnion)
                 .build()
 
         then: "all types are resolved correctly"
@@ -2031,8 +2031,8 @@ class FastBuilderTest extends Specification {
         when: "adding null types and directives"
         def schema = new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .additionalType(null)
-                .additionalTypes(null)
+                .addType(null)
+                .addTypes(null)
                 .additionalDirective(null)
                 .additionalDirectives(null)
                 .withSchemaDirective(null)

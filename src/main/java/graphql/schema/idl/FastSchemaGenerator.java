@@ -104,8 +104,8 @@ public class FastSchemaGenerator {
                 subscriptionType);
 
         // Add all built types
-        fastBuilder.additionalTypes(allBuiltTypes);
-        fastBuilder.additionalTypes(additionalTypes);
+        fastBuilder.addTypes(allBuiltTypes);
+        fastBuilder.addTypes(additionalTypes);
 
         // Add all directive definitions
         fastBuilder.additionalDirectives(additionalDirectives);
