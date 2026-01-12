@@ -9,7 +9,6 @@ import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.TypeResolver
-import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -973,7 +972,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .build()
         when:
 
-        System.out.println((new SchemaPrinter()).print(schema))
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
         then:
@@ -1022,7 +1020,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .build()
         when:
 
-        System.out.println((new SchemaPrinter()).print(schema))
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
         then:
@@ -1057,7 +1054,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .build()
         when:
 
-        System.out.println((new SchemaPrinter()).print(schema))
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
         then:
@@ -1278,6 +1274,46 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("toDelete") == null
     }
+
+    def "remove field from a type which is referenced via additional types and an additional not reachable child is deleted"() {
+        given:
+        /*
+        the test case here is that ToDelete is changed, because ToDelete.toDelete is deleted
+        and additionally Indirect needs to be deleted because it is not reachable via the
+        Query type anymore.
+        We had a bug where ToDeleted was not deleted correctly, but because Indirect was, it resulted
+        in an invalid schema and exception.
+        */
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION
+        type Query {
+         foo: String
+         toDelete: ToDelete @private
+        }
+        type ToDelete {
+         bare: String @private
+         toDelete:[Indirect!] 
+        }
+        type Indirect {
+          foo: String
+        }
+        """)
+
+        when:
+        schema.typeMap
+        def patchedSchema = schema.transform { builder ->
+            schema.typeMap.each { entry ->
+                def type = entry.value
+                if (type != schema.queryType && type != schema.mutationType && type != schema.subscriptionType) {
+                    builder.additionalType(type)
+                }
+            }
+        }
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(patchedSchema)
+        then:
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("toDelete") == null
+    }
+
 
     def "remove all fields from an input type which is referenced via additional types"() {
         given:
