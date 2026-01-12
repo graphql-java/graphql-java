@@ -60,8 +60,8 @@ public class FieldVisibilitySchemaTransformation {
     }
 
     public final GraphQLSchema apply(GraphQLSchema schema) {
-        Set<GraphQLType> observedBeforeTransform = new HashSet<>();
-        Set<GraphQLType> observedAfterTransform = new HashSet<>();
+        Set<String> observedBeforeTransform = new LinkedHashSet<>();
+        Set<String> observedAfterTransform = new LinkedHashSet<>();
         Set<GraphQLType> markedForRemovalTypes = new HashSet<>();
 
         // query, mutation, and subscription types should not be removed
@@ -135,18 +135,22 @@ public class FieldVisibilitySchemaTransformation {
 
     private static class TypeObservingVisitor extends GraphQLTypeVisitorStub {
 
-        private final Set<GraphQLType> observedTypes;
+        private final Set<String> observedTypes;
 
 
-        private TypeObservingVisitor(Set<GraphQLType> observedTypes) {
+        private TypeObservingVisitor(Set<String> observedTypes) {
             this.observedTypes = observedTypes;
         }
 
         @Override
         protected TraversalControl visitGraphQLType(GraphQLSchemaElement node,
                                                     TraverserContext<GraphQLSchemaElement> context) {
-            if (node instanceof GraphQLType) {
-                observedTypes.add((GraphQLType) node);
+            if (node instanceof GraphQLObjectType ||
+                node instanceof GraphQLEnumType ||
+                node instanceof GraphQLInputObjectType ||
+                node instanceof GraphQLInterfaceType ||
+                node instanceof GraphQLUnionType) {
+                observedTypes.add(((GraphQLNamedType) node).getName());
             }
 
             return TraversalControl.CONTINUE;
@@ -243,12 +247,12 @@ public class FieldVisibilitySchemaTransformation {
     private static class TypeVisibilityVisitor extends GraphQLTypeVisitorStub {
 
         private final Set<String> protectedTypeNames;
-        private final Set<GraphQLType> observedBeforeTransform;
-        private final Set<GraphQLType> observedAfterTransform;
+        private final Set<String> observedBeforeTransform;
+        private final Set<String> observedAfterTransform;
 
         private TypeVisibilityVisitor(Set<String> protectedTypeNames,
-                                      Set<GraphQLType> observedTypes,
-                                      Set<GraphQLType> observedAfterTransform) {
+                                      Set<String> observedTypes,
+                                      Set<String> observedAfterTransform) {
             this.protectedTypeNames = protectedTypeNames;
             this.observedBeforeTransform = observedTypes;
             this.observedAfterTransform = observedAfterTransform;
@@ -263,17 +267,19 @@ public class FieldVisibilitySchemaTransformation {
         @Override
         public TraversalControl visitGraphQLType(GraphQLSchemaElement node,
                                                  TraverserContext<GraphQLSchemaElement> context) {
-            if (observedBeforeTransform.contains(node) &&
-                !observedAfterTransform.contains(node) &&
-                (node instanceof GraphQLObjectType ||
-                 node instanceof GraphQLEnumType ||
-                 node instanceof GraphQLInputObjectType ||
-                 node instanceof GraphQLInterfaceType ||
-                 node instanceof GraphQLUnionType)) {
-
-                return deleteNode(context);
+            if (node instanceof GraphQLObjectType ||
+                node instanceof GraphQLEnumType ||
+                node instanceof GraphQLInputObjectType ||
+                node instanceof GraphQLInterfaceType ||
+                node instanceof GraphQLUnionType) {
+                String name = ((GraphQLNamedType) node).getName();
+                if (observedBeforeTransform.contains(name) &&
+                    !observedAfterTransform.contains(name)
+                    && !protectedTypeNames.contains(name)
+                ) {
+                    return deleteNode(context);
+                }
             }
-
             return TraversalControl.CONTINUE;
         }
     }
