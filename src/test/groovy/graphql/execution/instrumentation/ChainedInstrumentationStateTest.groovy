@@ -8,6 +8,8 @@ import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.validation.ValidationError
 import spock.lang.Specification
 
@@ -225,6 +227,78 @@ class ChainedInstrumentationStateTest extends Specification {
         assertCalls(a)
         assertCalls(b)
         assertCalls(c)
+    }
+
+    def "basic chaining and state management when exception raised in data fetching"() {
+
+        def a = new NamedInstrumentation("A")
+        def b = new NamedInstrumentation("B")
+        def c = new NamedInstrumentation("C")
+        def nullState = new SimplePerformantInstrumentation()
+
+        def chainedInstrumentation = new ChainedInstrumentation([
+                a,
+                b,
+                nullState,
+                c,
+        ])
+
+        def query = """
+        query HeroNameAndFriendsQuery {
+            hero {
+                id
+            }
+        }
+        """
+
+        def expected = "onExceptionHandled:fetch-id"
+
+
+        when:
+        def strategy = new AsyncExecutionStrategy()
+        def schema = StarWarsSchema.starWarsSchema
+        def graphQL = GraphQL
+                .newGraphQL(schema.transform { schemaBuilder ->
+                    // throw exception when fetching the hero id
+                    def exceptionDataFetcher = new DataFetcher() {
+                        @Override
+                        Object get(DataFetchingEnvironment environment) {
+                            throw new RuntimeException("Data fetcher exception")
+                        }
+                    }
+                    schemaBuilder.codeRegistry(schema.codeRegistry.transform {
+                        it.dataFetcher(
+                                schema.getObjectType("Human"),
+                                schema.getObjectType("Human").getFieldDefinition("id"),
+                                exceptionDataFetcher
+                        )
+                        it.dataFetcher(
+                                schema.getObjectType("Droid"),
+                                schema.getObjectType("Droid").getFieldDefinition("id"),
+                                exceptionDataFetcher
+                        )
+                        return it
+                    }
+                    )
+                })
+                .queryExecutionStrategy(strategy)
+                .instrumentation(chainedInstrumentation)
+                .build()
+
+        graphQL.execute(query)
+
+        then:
+
+        chainedInstrumentation.getInstrumentations().size() == 4
+
+        a.executionList.any { it == expected }
+        b.executionList.any { it == expected }
+        c.executionList.any { it == expected }
+
+        assertCalls(a)
+        assertCalls(b)
+        assertCalls(c)
+
     }
 
     def "empty chain"() {

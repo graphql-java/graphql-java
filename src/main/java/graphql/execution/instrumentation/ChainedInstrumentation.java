@@ -6,6 +6,7 @@ import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.PublicApi;
 import graphql.execution.Async;
+import graphql.execution.DataFetcherResult;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
@@ -378,6 +379,11 @@ public class ChainedInstrumentation implements Instrumentation {
         @Override
         public void onFetchedValue(Object fetchedValue) {
             contexts.forEach(context -> context.onFetchedValue(fetchedValue));
+        }
+
+        @Override
+        public void onExceptionHandled(DataFetcherResult<Object> dataFetcherResult) {
+            contexts.forEach(context -> context.onExceptionHandled(dataFetcherResult));
         }
 
         @Override
