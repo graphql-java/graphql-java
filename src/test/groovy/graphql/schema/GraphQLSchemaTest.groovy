@@ -563,4 +563,116 @@ class GraphQLSchemaTest extends Specification {
 
     }
 
+    def "additionalTypes can contain any type when building programmatically - not restricted to detached types"() {
+        given: "types that will be directly reachable from Query"
+        def simpleType = newObject()
+                .name("SimpleType")
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(GraphQLString))
+                .build()
+
+        def simpleInputType = newInputObject()
+                .name("SimpleInput")
+                .field(newInputObjectField()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        def simpleInterface = GraphQLInterfaceType.newInterface()
+                .name("SimpleInterface")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        def simpleUnion = GraphQLUnionType.newUnionType()
+                .name("SimpleUnion")
+                .possibleType(simpleType)
+                .build()
+
+        def simpleEnum = GraphQLEnumType.newEnum()
+                .name("SimpleEnum")
+                .value("VALUE_A")
+                .value("VALUE_B")
+                .build()
+
+        def simpleScalar = GraphQLScalarType.newScalar()
+                .name("SimpleScalar")
+                .coercing(new Coercing() {
+                    @Override
+                    Object serialize(Object dataFetcherResult) { return dataFetcherResult }
+
+                    @Override
+                    Object parseValue(Object input) { return input }
+
+                    @Override
+                    Object parseLiteral(Object input) { return input }
+                })
+                .build()
+
+        and: "a query type that references all these types directly"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("simpleField")
+                        .type(simpleType))
+                .field(newFieldDefinition()
+                        .name("interfaceField")
+                        .type(simpleInterface))
+                .field(newFieldDefinition()
+                        .name("unionField")
+                        .type(simpleUnion))
+                .field(newFieldDefinition()
+                        .name("enumField")
+                        .type(simpleEnum))
+                .field(newFieldDefinition()
+                        .name("scalarField")
+                        .type(simpleScalar))
+                .field(newFieldDefinition()
+                        .name("inputField")
+                        .type(GraphQLString)
+                        .argument(newArgument()
+                                .name("input")
+                                .type(simpleInputType)))
+                .build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(simpleInterface, { env -> simpleType })
+                .typeResolver(simpleUnion, { env -> simpleType })
+                .build()
+
+        when: "we add ALL types (including already reachable ones) as additionalTypes"
+        def schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .codeRegistry(codeRegistry)
+                .additionalType(simpleType)        // already reachable via Query.simpleField
+                .additionalType(simpleInputType)   // already reachable via Query.inputField argument
+                .additionalType(simpleInterface)   // already reachable via Query.interfaceField
+                .additionalType(simpleUnion)       // already reachable via Query.unionField
+                .additionalType(simpleEnum)        // already reachable via Query.enumField
+                .additionalType(simpleScalar)      // already reachable via Query.scalarField
+                .build()
+
+        then: "schema builds successfully - no restriction on what can be in additionalTypes"
+        schema != null
+
+        and: "all types are in the type map (as expected)"
+        schema.getType("SimpleType") == simpleType
+        schema.getType("SimpleInput") == simpleInputType
+        schema.getType("SimpleInterface") == simpleInterface
+        schema.getType("SimpleUnion") == simpleUnion
+        schema.getType("SimpleEnum") == simpleEnum
+        schema.getType("SimpleScalar") == simpleScalar
+
+        and: "additionalTypes contains all types we added - even though they were already reachable"
+        schema.getAdditionalTypes().size() == 6
+        schema.getAdditionalTypes().contains(simpleType)
+        schema.getAdditionalTypes().contains(simpleInputType)
+        schema.getAdditionalTypes().contains(simpleInterface)
+        schema.getAdditionalTypes().contains(simpleUnion)
+        schema.getAdditionalTypes().contains(simpleEnum)
+        schema.getAdditionalTypes().contains(simpleScalar)
+    }
+
 }

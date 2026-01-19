@@ -219,6 +219,50 @@ public class GraphQLSchema {
         return introspectionSchemaType;
     }
 
+    /**
+     * Returns the set of "additional types" that were provided when building the schema.
+     * <p>
+     * Additional types are types that are not directly reachable via the root operation types
+     * (Query, Mutation, Subscription) but still need to be part of the schema. The most common
+     * use case is for interface implementations that are not directly referenced in field return types.
+     * <p>
+     * <b>When additional types are typically needed:</b>
+     * <ul>
+     *     <li><b>Interface implementations:</b> When an interface is used as a field's return type,
+     *     implementing types that are not directly referenced elsewhere need to be added so they
+     *     can be resolved at runtime and appear in introspection.</li>
+     *     <li><b>SDL-defined schemas:</b> When building from SDL, the {@link graphql.schema.idl.SchemaGenerator}
+     *     automatically detects types not connected to root operations and adds them as additional types.</li>
+     *     <li><b>Programmatic schemas with type references:</b> When using {@link GraphQLTypeReference}
+     *     to break circular dependencies, the actual type implementations may need to be provided
+     *     as additional types.</li>
+     * </ul>
+     * <p>
+     * <b>Example - Interface implementation not directly referenced:</b>
+     * <pre>{@code
+     * // Given this schema:
+     * // type Query { node: Node }
+     * // interface Node { id: ID! }
+     * // type User implements Node { id: ID!, name: String }
+     * //
+     * // User is not directly referenced from Query, so it needs to be added:
+     * GraphQLSchema.newSchema()
+     *     .query(queryType)
+     *     .additionalType(GraphQLObjectType.newObject().name("User")...)
+     *     .build();
+     * }</pre>
+     * <p>
+     * <b>Note:</b> There are no restrictions on what types can be added via this mechanism.
+     * Types that are already reachable from the root operations can also be added without causing
+     * errors - they will simply be present in both the type map (via traversal) and this set.
+     * After schema construction, use {@link #getTypeMap()} or {@link #getAllTypesAsList()} to get
+     * all types in the schema regardless of how they were discovered.
+     *
+     * @return an immutable set of types that were explicitly added as additional types
+     *
+     * @see Builder#additionalType(GraphQLType)
+     * @see Builder#additionalTypes(Set)
+     */
     public Set<GraphQLType> getAdditionalTypes() {
         return additionalTypes;
     }
@@ -722,16 +766,72 @@ public class GraphQLSchema {
             return this;
         }
 
+        /**
+         * Adds multiple types to the set of additional types.
+         * <p>
+         * Additional types are types that may not be directly reachable by traversing the schema
+         * from the root operation types (Query, Mutation, Subscription), but still need to be
+         * included in the schema. The most common use case is for object types that implement
+         * an interface but are not directly referenced as field return types.
+         * <p>
+         * <b>Example - Adding interface implementations:</b>
+         * <pre>{@code
+         * // If Node interface is used but User/Post types aren't directly referenced:
+         * builder.additionalTypes(Set.of(
+         *     GraphQLObjectType.newObject().name("User").withInterface(nodeInterface)...,
+         *     GraphQLObjectType.newObject().name("Post").withInterface(nodeInterface)...
+         * ));
+         * }</pre>
+         * <p>
+         * <b>Note:</b> There are no restrictions on what types can be added. Types already
+         * reachable from root operations can be added without causing errors - they will
+         * simply exist in both the traversed type map and this set.
+         *
+         * @param additionalTypes the types to add
+         *
+         * @return this builder
+         *
+         * @see GraphQLSchema#getAdditionalTypes()
+         */
         public Builder additionalTypes(Set<GraphQLType> additionalTypes) {
             this.additionalTypes.addAll(additionalTypes);
             return this;
         }
 
+        /**
+         * Adds a single type to the set of additional types.
+         * <p>
+         * Additional types are types that may not be directly reachable by traversing the schema
+         * from the root operation types (Query, Mutation, Subscription), but still need to be
+         * included in the schema. The most common use case is for object types that implement
+         * an interface but are not directly referenced as field return types.
+         * <p>
+         * <b>Note:</b> There are no restrictions on what types can be added. Types already
+         * reachable from root operations can be added without causing errors.
+         *
+         * @param additionalType the type to add
+         *
+         * @return this builder
+         *
+         * @see GraphQLSchema#getAdditionalTypes()
+         * @see #additionalTypes(Set)
+         */
         public Builder additionalType(GraphQLType additionalType) {
             this.additionalTypes.add(additionalType);
             return this;
         }
 
+        /**
+         * Clears all additional types that have been added to this builder.
+         * <p>
+         * This is useful when transforming an existing schema and you want to
+         * rebuild the additional types set from scratch.
+         *
+         * @return this builder
+         *
+         * @see #additionalType(GraphQLType)
+         * @see #additionalTypes(Set)
+         */
         public Builder clearAdditionalTypes() {
             this.additionalTypes.clear();
             return this;
