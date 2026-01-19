@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.schema.SchemaTransformer.transformSchema;
+import static graphql.schema.SchemaTransformer.transformSchemaWithDeletes;
 
 /**
  * Transforms a schema by applying a visibility predicate to every field.
@@ -75,7 +76,7 @@ public class FieldVisibilitySchemaTransformation {
         new SchemaTraverser(getChildrenFn(schema)).depthFirst(new TypeObservingVisitor(observedBeforeTransform), getRootTypes(schema));
 
         // remove fields
-        GraphQLSchema interimSchema = transformSchema(schema,
+        GraphQLSchema interimSchema = transformSchemaWithDeletes(schema,
                 new FieldRemovalVisitor(visibleFieldPredicate, markedForRemovalTypes));
 
         new SchemaTraverser(getChildrenFn(interimSchema)).depthFirst(new TypeObservingVisitor(observedAfterTransform), getRootTypes(interimSchema));
