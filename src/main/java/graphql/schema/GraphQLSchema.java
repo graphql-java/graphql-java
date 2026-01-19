@@ -222,17 +222,32 @@ public class GraphQLSchema {
     /**
      * Returns the set of "additional types" that were provided when building the schema.
      * <p>
-     * Additional types are types that are not directly reachable via the root operation types
-     * (Query, Mutation, Subscription) but still need to be part of the schema. The most common
-     * use case is for interface implementations that are not directly referenced in field return types.
+     * During schema construction, types are discovered by traversing the schema from multiple roots:
+     * <ul>
+     *     <li>Root operation types (Query, Mutation, Subscription)</li>
+     *     <li>Directive argument types</li>
+     *     <li>Introspection types</li>
+     *     <li>Types explicitly added via {@link Builder#additionalType(GraphQLType)}</li>
+     * </ul>
      * <p>
-     * <b>When additional types are typically needed:</b>
+     * Additional types are types that are not reachable via any of the automatic traversal paths
+     * but still need to be part of the schema. The most common use case is for interface
+     * implementations that are not directly referenced elsewhere.
+     * <p>
+     * <b>Types that do NOT need to be added as additional types:</b>
+     * <ul>
+     *     <li>Types reachable from Query, Mutation, or Subscription fields</li>
+     *     <li>Types used as directive arguments (these are discovered via directive traversal)</li>
+     * </ul>
+     * <p>
+     * <b>When additional types ARE typically needed:</b>
      * <ul>
      *     <li><b>Interface implementations:</b> When an interface is used as a field's return type,
-     *     implementing types that are not directly referenced elsewhere need to be added so they
-     *     can be resolved at runtime and appear in introspection.</li>
+     *     implementing object types are not automatically discovered because interfaces do not
+     *     reference their implementors. These need to be added so they can be resolved at runtime
+     *     and appear in introspection.</li>
      *     <li><b>SDL-defined schemas:</b> When building from SDL, the {@link graphql.schema.idl.SchemaGenerator}
-     *     automatically detects types not connected to root operations and adds them as additional types.</li>
+     *     automatically detects types not connected to any root and adds them as additional types.</li>
      *     <li><b>Programmatic schemas with type references:</b> When using {@link GraphQLTypeReference}
      *     to break circular dependencies, the actual type implementations may need to be provided
      *     as additional types.</li>
@@ -253,7 +268,7 @@ public class GraphQLSchema {
      * }</pre>
      * <p>
      * <b>Note:</b> There are no restrictions on what types can be added via this mechanism.
-     * Types that are already reachable from the root operations can also be added without causing
+     * Types that are already reachable from other roots can also be added without causing
      * errors - they will simply be present in both the type map (via traversal) and this set.
      * After schema construction, use {@link #getTypeMap()} or {@link #getAllTypesAsList()} to get
      * all types in the schema regardless of how they were discovered.
