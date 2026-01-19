@@ -1,5 +1,6 @@
 package graphql.schema.transform
 
+import graphql.AssertException
 import graphql.Scalars
 import graphql.TestUtil
 import graphql.schema.GraphQLAppliedDirective
@@ -1346,5 +1347,126 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Input") as GraphQLInputObjectType).getFieldDefinition("toDelete") == null
     }
 
+    /**
+     * This test reproduces the issue 4133 bug pattern with FieldVisibilitySchemaTransformation.
+     *
+     * The problem occurs when:
+     * 1. A field is marked @private and gets deleted
+     * 2. The traversal doesn't continue to children of deleted nodes
+     * 3. Types only reachable through deleted fields are not visited
+     * 4. Those unvisited types may have circular references using GraphQLTypeReference
+     * 5. During schema rebuild, stale object references point to types with unresolvable TypeReferences
+     *
+     * Schema structure:
+     * - Query.rental @private -> Rental (not visited because parent field deleted)
+     * - Query.customer -> Customer (visited)
+     * - Customer.rental -> TypeReference("Rental") (placeholder, doesn't cause Rental to be visited)
+     * - Rental.customer -> Customer (actual object reference to ORIGINAL unmodified Customer)
+     * - Customer.payment @private -> Payment (deleted, Payment not visited)
+     * - Payment.inventory -> TypeReference("Inventory")
+     * - Inventory not in schema -> ERROR during type reference resolution
+     *
+     * WORKAROUND: Add all types to additionalTypes before applying the transformation.
+     * This ensures all types are visited during the transformation.
+     */
+    def "issue 4133 - circular references with private fields - demonstrates the bug"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            rental: Rental @private
+            customer: Customer
+        }
+        
+        type Customer {
+            rental: Rental
+            payment: Payment @private
+        }
+        
+        type Rental {
+            id: ID
+            customer: Customer @private
+        }
+        
+        type Payment {
+            inventory: Inventory @private
+        }
+        
+        type Inventory {
+            payment: Payment @private
+        }
+        """)
+
+        when:
+        visibilitySchemaTransformation.apply(schema)
+
+        then:
+        // This demonstrates the bug - without the workaround, we get "type not found" error
+        def e = thrown(AssertException)
+        e.message.contains("not found in schema")
+    }
+
+    /**
+     * This test shows the workaround for issue 4133 - add all types to additionalTypes
+     * before applying the transformation to ensure all types are visited.
+     */
+    def "issue 4133 - circular references with private fields - workaround with additionalTypes"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            rental: Rental @private
+            customer: Customer
+        }
+        
+        type Customer {
+            rental: Rental
+            payment: Payment @private
+        }
+        
+        type Rental {
+            id: ID
+            customer: Customer @private
+        }
+        
+        type Payment {
+            inventory: Inventory @private
+        }
+        
+        type Inventory {
+            payment: Payment @private
+        }
+        """)
+
+        // WORKAROUND: Add all types to additionalTypes to ensure they are all visited
+        def patchedSchema = schema.transform { builder ->
+            schema.typeMap.each { entry ->
+                def type = entry.value
+                if (type != schema.queryType && type != schema.mutationType && type != schema.subscriptionType) {
+                    builder.additionalType(type)
+                }
+            }
+        }
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(patchedSchema)
+
+        then:
+        // Query should only have customer field (rental is private)
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("rental") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("customer") != null
+
+        // Customer should only have rental field (payment is private)
+        (restrictedSchema.getType("Customer") as GraphQLObjectType).getFieldDefinition("rental") != null
+        (restrictedSchema.getType("Customer") as GraphQLObjectType).getFieldDefinition("payment") == null
+
+        // Rental should only have id field (customer is private)
+        (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("id") != null
+        (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("customer") == null
+    }
 
 }

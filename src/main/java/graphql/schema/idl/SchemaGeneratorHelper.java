@@ -48,6 +48,7 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedInputType;
 import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
@@ -115,8 +116,8 @@ public class SchemaGeneratorHelper {
         private final RuntimeWiring wiring;
         private final Deque<String> typeStack = new ArrayDeque<>();
 
-        private final Map<String, GraphQLOutputType> outputGTypes = new LinkedHashMap<>();
-        private final Map<String, GraphQLInputType> inputGTypes = new LinkedHashMap<>();
+        private final Map<String, GraphQLNamedOutputType> outputGTypes = new LinkedHashMap<>();
+        private final Map<String, GraphQLNamedInputType> inputGTypes = new LinkedHashMap<>();
         private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
         private final GraphQLCodeRegistry.Builder codeRegistry;
         public final Map<String, OperationTypeDefinition> operationTypeDefs;
@@ -173,7 +174,7 @@ public class SchemaGeneratorHelper {
             outputGTypes.put(outputType.getName(), outputType);
             // certain types can be both input and output types, for example enums and scalars
             if (outputType instanceof GraphQLInputType) {
-                inputGTypes.put(outputType.getName(), (GraphQLInputType) outputType);
+                inputGTypes.put(outputType.getName(), (GraphQLNamedInputType) outputType);
             }
         }
 
@@ -181,7 +182,7 @@ public class SchemaGeneratorHelper {
             inputGTypes.put(inputType.getName(), inputType);
             // certain types can be both input and output types, for example enums and scalars
             if (inputType instanceof GraphQLOutputType) {
-                outputGTypes.put(inputType.getName(), (GraphQLOutputType) inputType);
+                outputGTypes.put(inputType.getName(), (GraphQLNamedOutputType) inputType);
             }
         }
 
@@ -996,12 +997,12 @@ public class SchemaGeneratorHelper {
      *
      * @return the additional types not referenced from the top level operations
      */
-    Set<GraphQLType> buildAdditionalTypes(BuildContext buildCtx) {
+    Set<GraphQLNamedType> buildAdditionalTypes(BuildContext buildCtx) {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
 
         Set<String> detachedTypeNames = getDetachedTypeNames(buildCtx);
 
-        Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
+        Set<GraphQLNamedType> additionalTypes = new LinkedHashSet<>();
         // recursively record detached types on the ctx and add them to the additionalTypes set
         typeRegistry.types().values().stream()
                 .filter(typeDefinition -> detachedTypeNames.contains(typeDefinition.getName()))

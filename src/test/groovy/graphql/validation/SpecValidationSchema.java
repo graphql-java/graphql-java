@@ -9,6 +9,7 @@ import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -236,7 +237,7 @@ public class SpecValidationSchema {
                             .type(inputDogType)))
             .build();
 
-    public static final Set<GraphQLType> specValidationDictionary = new HashSet<GraphQLType>() {{
+    public static final Set<GraphQLNamedType> specValidationDictionary = new HashSet<GraphQLNamedType>() {{
         add(dogCommand);
         add(catCommand);
         add(sentient);

@@ -112,7 +112,7 @@ public class FieldVisibilitySchemaTransformation {
 
     private GraphQLSchema removeUnreferencedTypes(Set<GraphQLType> markedForRemovalTypes, GraphQLSchema connectedSchema) {
         GraphQLSchema withoutAdditionalTypes = connectedSchema.transform(builder -> {
-            Set<GraphQLType> additionalTypes = new HashSet<>(connectedSchema.getAdditionalTypes());
+            Set<GraphQLNamedType> additionalTypes = new HashSet<>(connectedSchema.getAdditionalTypes());
             additionalTypes.removeAll(markedForRemovalTypes);
             builder.clearAdditionalTypes();
             builder.additionalTypes(additionalTypes);
