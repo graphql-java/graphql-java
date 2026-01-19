@@ -1056,13 +1056,13 @@ type Query {
         """
 
         def schema = TestUtil.schema(sdl)
-        schema = schema.transform { builder ->
-            for (def type : schema.getTypeMap().values()) {
-                if (type != schema.getQueryType() && type != schema.getMutationType() && type != schema.getSubscriptionType()) {
-                    builder.additionalType(type)
-                }
-            }
-        }
+//        schema = schema.transform { builder ->
+//            for (def type : schema.getTypeMap().values()) {
+//                if (type != schema.getQueryType() && type != schema.getMutationType() && type != schema.getSubscriptionType()) {
+//                    builder.additionalType(type)
+//                }
+//            }
+//        }
 
 
         def visitor = new GraphQLTypeVisitorStub() {
