@@ -607,7 +607,7 @@ public class SchemaTransformer {
         GraphQLObjectType mutation;
         GraphQLObjectType subscription;
         GraphQLObjectType introspectionSchemaType;
-        Set<GraphQLType> additionalTypes;
+        Set<GraphQLNamedType> additionalTypes;
         Set<GraphQLDirective> directives;
         Set<GraphQLDirective> schemaDirectives;
         Set<GraphQLAppliedDirective> schemaAppliedDirectives;

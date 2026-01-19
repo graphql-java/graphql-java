@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.language.OperationTypeDefinition;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.idl.errors.SchemaProblem;
@@ -130,7 +131,7 @@ public class SchemaGenerator {
 
         schemaGeneratorHelper.buildOperations(buildCtx, schemaBuilder);
 
-        Set<GraphQLType> additionalTypes = schemaGeneratorHelper.buildAdditionalTypes(buildCtx);
+        Set<GraphQLNamedType> additionalTypes = schemaGeneratorHelper.buildAdditionalTypes(buildCtx);
         schemaBuilder.additionalTypes(additionalTypes);
 
         buildCtx.getCodeRegistry().fieldVisibility(buildCtx.getWiring().getFieldVisibility());
