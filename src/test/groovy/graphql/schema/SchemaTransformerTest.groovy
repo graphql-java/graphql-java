@@ -1096,6 +1096,46 @@ type Rental {
 }""".trim()
     }
 
+    /**
+     * This test demonstrates a bug in SchemaTransformer when deleting nodes that form circular references.
+     *
+     * <h3>The Problem</h3>
+     * When a node is deleted via {@code deleteNode(context)}, the traversal does NOT continue to visit
+     * the children of that deleted node (see {@code TraverserState.pushAll()}). This becomes problematic
+     * when combined with how GraphQL-Java handles circular type references using {@code GraphQLTypeReference}.
+     *
+     * <h3>How GraphQLTypeReference Creates Asymmetry</h3>
+     * In circular references, one direction uses the actual type object, while the other uses a
+     * {@code GraphQLTypeReference} (a placeholder resolved during schema building):
+     * <ul>
+     *   <li>{@code Customer.rental} → {@code GraphQLTypeReference("Rental")} (placeholder)</li>
+     *   <li>{@code Rental.customer} → {@code Customer} (actual object reference)</li>
+     * </ul>
+     *
+     * <h3>Traversal in This Test</h3>
+     * <ol>
+     *   <li>{@code Query.rental} field is visited → has @remove → DELETED → children NOT traversed</li>
+     *   <li>{@code Rental} type is NOT visited via this path (it's a child of the deleted field)</li>
+     *   <li>{@code Query.customer} field is visited → {@code Customer} type IS visited</li>
+     *   <li>{@code Customer.rental} field is visited → but its type is {@code GraphQLTypeReference("Rental")}</li>
+     *   <li>The actual {@code Rental} GraphQLObjectType is NEVER visited (only referenced by name)</li>
+     *   <li>{@code Customer.payment} field is visited → has @remove → DELETED → {@code Payment} NOT visited</li>
+     *   <li>{@code Inventory} is NOT visited (only reachable through Payment)</li>
+     * </ol>
+     *
+     * <h3>The Error</h3>
+     * Since {@code Rental} is never visited, it retains its original {@code customer} field pointing to the
+     * ORIGINAL (unmodified) {@code Customer} object. This original Customer still has the {@code payment} field,
+     * which references {@code Payment}, which has {@code inventory: GraphQLTypeReference("Inventory")}.
+     *
+     * During schema rebuild, when resolving this TypeReference, {@code Inventory} is not found in the
+     * schema's type map (it was never visited/transformed), causing:
+     * {@code AssertException: type Inventory not found in schema}
+     *
+     * <h3>The Fix</h3>
+     * Use {@code SchemaTransformer.transformSchemaWithDeletes()} which ensures all types are visited
+     * by adding them to additionalTypes before transformation.
+     */
     def "issue 4133 simplified reproduction - demonstrates the bug"() {
         def sdl = """
             directive @remove on FIELD_DEFINITION
@@ -1125,7 +1165,6 @@ type Rental {
         """
 
         def schema = TestUtil.schema(sdl)
-        // NO WORKAROUND - this should fail with regular transformSchema
 
         def visitor = new GraphQLTypeVisitorStub() {
 
