@@ -4,6 +4,7 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.introspection.Introspection;
 import graphql.util.Breadcrumb;
 import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
@@ -100,6 +101,73 @@ public class SchemaTransformer {
     public static GraphQLSchema transformSchema(GraphQLSchema schema, GraphQLTypeVisitor visitor, Consumer<GraphQLSchema.Builder> postTransformation) {
         SchemaTransformer schemaTransformer = new SchemaTransformer();
         return schemaTransformer.transform(schema, visitor, postTransformation);
+    }
+
+    /**
+     * Transforms a GraphQLSchema with support for delete operations.
+     * <p>
+     * When a visitor uses {@link GraphQLTypeVisitor#deleteNode(TraverserContext)} to delete schema elements,
+     * the traversal does not continue to the children of deleted nodes. This can cause issues when types
+     * are only reachable through fields that get deleted, as those types won't be visited and transformed.
+     * <p>
+     * This method ensures all types in the schema are visited by adding them to the schema's additional types
+     * before transformation. This guarantees that even types only reachable through deleted fields will be
+     * properly visited and transformed.
+     * <p>
+     * Use this method instead of {@link #transformSchema(GraphQLSchema, GraphQLTypeVisitor)} when your
+     * visitor deletes fields or types that may reference other types via circular references.
+     *
+     * @param schema  the schema to transform
+     * @param visitor the visitor call back
+     *
+     * @return a new GraphQLSchema instance.
+     *
+     * @see GraphQLTypeVisitor#deleteNode(TraverserContext)
+     */
+    public static GraphQLSchema transformSchemaWithDeletes(GraphQLSchema schema, GraphQLTypeVisitor visitor) {
+        return transformSchemaWithDeletes(schema, visitor, null);
+    }
+
+    /**
+     * Transforms a GraphQLSchema with support for delete operations.
+     * <p>
+     * When a visitor uses {@link GraphQLTypeVisitor#deleteNode(TraverserContext)} to delete schema elements,
+     * the traversal does not continue to the children of deleted nodes. This can cause issues when types
+     * are only reachable through fields that get deleted, as those types won't be visited and transformed.
+     * <p>
+     * This method ensures all types in the schema are visited by adding them to the schema's additional types
+     * before transformation. This guarantees that even types only reachable through deleted fields will be
+     * properly visited and transformed.
+     * <p>
+     * Use this method instead of {@link #transformSchema(GraphQLSchema, GraphQLTypeVisitor, Consumer)} when your
+     * visitor deletes fields or types that may reference other types via circular references.
+     *
+     * @param schema             the schema to transform
+     * @param visitor            the visitor call back
+     * @param postTransformation a callback that can be used as a final step to the schema (can be null)
+     *
+     * @return a new GraphQLSchema instance.
+     *
+     * @see GraphQLTypeVisitor#deleteNode(TraverserContext)
+     */
+    public static GraphQLSchema transformSchemaWithDeletes(GraphQLSchema schema, GraphQLTypeVisitor visitor, Consumer<GraphQLSchema.Builder> postTransformation) {
+        // Add all types to additionalTypes to ensure they are all visited during transformation.
+        // This is necessary because when a node is deleted, its children are not traversed.
+        // Types that are only reachable through deleted fields would otherwise not be visited.
+        GraphQLSchema schemaWithAllTypes = schema.transform(builder -> {
+            for (GraphQLNamedType type : schema.getTypeMap().values()) {
+                if (!isRootType(schema, type) && !Introspection.isIntrospectionTypes(type)) {
+                    builder.additionalType(type);
+                }
+            }
+        });
+        return transformSchema(schemaWithAllTypes, visitor, postTransformation);
+    }
+
+    private static boolean isRootType(GraphQLSchema schema, GraphQLNamedType type) {
+        return type == schema.getQueryType()
+               || type == schema.getMutationType()
+               || type == schema.getSubscriptionType();
     }
 
     /**

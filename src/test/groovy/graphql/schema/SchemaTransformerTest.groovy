@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.AssertException
 import graphql.GraphQL
 import graphql.Scalars
 import graphql.TestUtil
@@ -1056,14 +1057,6 @@ type Query {
         """
 
         def schema = TestUtil.schema(sdl)
-        schema = schema.transform { builder ->
-            for (def type : schema.getTypeMap().values()) {
-                if (type != schema.getQueryType() && type != schema.getMutationType() && type != schema.getSubscriptionType()) {
-                    builder.additionalType(type)
-                }
-            }
-        }
-
 
         def visitor = new GraphQLTypeVisitorStub() {
 
@@ -1085,7 +1078,134 @@ type Query {
             }
         }
         when:
-        def newSchema = SchemaTransformer.transformSchema(schema, visitor)
+        def newSchema = SchemaTransformer.transformSchemaWithDeletes(schema, visitor)
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        def newSdl = printer.print(newSchema)
+
+        then:
+        newSdl.trim() == """type Customer {
+  rental: Rental
+}
+
+type Query {
+  customer: Customer
+}
+
+type Rental {
+  id: ID
+}""".trim()
+    }
+
+    def "issue 4133 simplified reproduction - demonstrates the bug"() {
+        def sdl = """
+            directive @remove on FIELD_DEFINITION
+            
+            type Query {
+              rental: Rental @remove
+              customer: Customer
+            }
+            
+            type Customer {
+              rental: Rental
+              payment: Payment @remove
+            }
+            
+            type Rental {
+              id: ID
+              customer: Customer @remove
+            }
+            
+            type Payment {
+              inventory: Inventory @remove
+            }
+            
+            type Inventory {
+              payment: Payment @remove
+            }
+        """
+
+        def schema = TestUtil.schema(sdl)
+        // NO WORKAROUND - this should fail with regular transformSchema
+
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.hasAppliedDirective("remove")) {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getFields().stream().allMatch(field -> field.hasAppliedDirective("remove"))) {
+                    return deleteNode(context)
+                }
+
+                return TraversalControl.CONTINUE
+            }
+        }
+        when:
+        SchemaTransformer.transformSchema(schema, visitor)
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("not found in schema")
+    }
+
+    def "issue 4133 simplified - fixed with transformSchemaWithDeletes"() {
+        def sdl = """
+            directive @remove on FIELD_DEFINITION
+            
+            type Query {
+              rental: Rental @remove
+              customer: Customer
+            }
+            
+            type Customer {
+              rental: Rental
+              payment: Payment @remove
+            }
+            
+            type Rental {
+              id: ID
+              customer: Customer @remove
+            }
+            
+            type Payment {
+              inventory: Inventory @remove
+            }
+            
+            type Inventory {
+              payment: Payment @remove
+            }
+        """
+
+        def schema = TestUtil.schema(sdl)
+
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.hasAppliedDirective("remove")) {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getFields().stream().allMatch(field -> field.hasAppliedDirective("remove"))) {
+                    return deleteNode(context)
+                }
+
+                return TraversalControl.CONTINUE
+            }
+        }
+        when:
+        // Use the new transformSchemaWithDeletes method - this should work!
+        def newSchema = SchemaTransformer.transformSchemaWithDeletes(schema, visitor)
         def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
         def newSdl = printer.print(newSchema)
 
