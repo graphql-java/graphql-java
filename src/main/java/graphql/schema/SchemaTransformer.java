@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
+import graphql.schema.idl.ScalarInfo;
 import graphql.util.Breadcrumb;
 import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
@@ -650,7 +651,7 @@ public class SchemaTransformer {
                     if (additionalTypes.contains(typeMap.get(typeName))) {
                         continue;
                     }
-                    if (typeMap.get(typeName) instanceof GraphQLScalarType) {
+                    if (ScalarInfo.isGraphqlSpecifiedScalar(typeName)) {
                         continue;
                     }
                     extraTypes.add(typeMap.get(typeName));
