@@ -4,6 +4,7 @@ import graphql.Internal;
 import graphql.language.OperationTypeDefinition;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -72,7 +73,7 @@ public class FastSchemaGenerator {
         schemaGeneratorHelper.buildOperations(buildCtx, tempBuilder);
 
         // Build all additional types
-        Set<GraphQLType> additionalTypes = schemaGeneratorHelper.buildAdditionalTypes(buildCtx);
+        Set<GraphQLNamedType> additionalTypes = schemaGeneratorHelper.buildAdditionalTypes(buildCtx);
 
         // Set field visibility on code registry
         buildCtx.getCodeRegistry().fieldVisibility(buildCtx.getWiring().getFieldVisibility());
