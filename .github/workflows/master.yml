@@ -30,6 +30,18 @@ jobs:
             **/build/test-results/test/TEST-*.xml
             **/build/test-results/testWithJava11/TEST-*.xml
             **/build/test-results/testWithJava17/TEST-*.xml
+  javadoc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: gradle/actions/wrapper-validation@v5
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+      - name: Verify Javadoc
+        run: ./gradlew javadoc --info --stacktrace
   publishToMavenCentral:
     needs: buildAndTest
     runs-on: ubuntu-latest

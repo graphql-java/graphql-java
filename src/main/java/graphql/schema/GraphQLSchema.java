@@ -227,7 +227,7 @@ public class GraphQLSchema {
      *     <li>Root operation types (Query, Mutation, Subscription)</li>
      *     <li>Directive argument types</li>
      *     <li>Introspection types</li>
-     *     <li>Types explicitly added via {@link Builder#additionalType(GraphQLType)}</li>
+     *     <li>Types explicitly added via {@link Builder#additionalType(GraphQLNamedType)}</li>
      * </ul>
      * <p>
      * Additional types are types that are not reachable via any of the automatic traversal paths
