@@ -1,7 +1,5 @@
 package graphql.execution.instrumentation
 
-import java.util.concurrent.CompletableFuture
-
 class TestingInstrumentContext<T> implements InstrumentationContext<T> {
     def op
     def start = System.currentTimeMillis()

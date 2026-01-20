@@ -4,11 +4,11 @@ import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -24,6 +24,7 @@ import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.schema.SchemaTransformer.transformSchema;
+import static graphql.schema.SchemaTransformer.transformSchemaWithDeletes;
 
 /**
  * Transforms a schema by applying a visibility predicate to every field.
@@ -45,7 +47,9 @@ public class FieldVisibilitySchemaTransformation {
     private final Runnable afterTransformationHook;
 
     public FieldVisibilitySchemaTransformation(VisibleFieldPredicate visibleFieldPredicate) {
-        this(visibleFieldPredicate, () -> {}, () -> {});
+        this(visibleFieldPredicate, () -> {
+        }, () -> {
+        });
     }
 
     public FieldVisibilitySchemaTransformation(VisibleFieldPredicate visibleFieldPredicate,
@@ -57,8 +61,8 @@ public class FieldVisibilitySchemaTransformation {
     }
 
     public final GraphQLSchema apply(GraphQLSchema schema) {
-        Set<GraphQLType> observedBeforeTransform = new HashSet<>();
-        Set<GraphQLType> observedAfterTransform = new HashSet<>();
+        Set<String> observedBeforeTransform = new LinkedHashSet<>();
+        Set<String> observedAfterTransform = new LinkedHashSet<>();
         Set<GraphQLType> markedForRemovalTypes = new HashSet<>();
 
         // query, mutation, and subscription types should not be removed
@@ -72,7 +76,7 @@ public class FieldVisibilitySchemaTransformation {
         new SchemaTraverser(getChildrenFn(schema)).depthFirst(new TypeObservingVisitor(observedBeforeTransform), getRootTypes(schema));
 
         // remove fields
-        GraphQLSchema interimSchema = transformSchema(schema,
+        GraphQLSchema interimSchema = transformSchemaWithDeletes(schema,
                 new FieldRemovalVisitor(visibleFieldPredicate, markedForRemovalTypes));
 
         new SchemaTraverser(getChildrenFn(interimSchema)).depthFirst(new TypeObservingVisitor(observedAfterTransform), getRootTypes(interimSchema));
@@ -109,7 +113,7 @@ public class FieldVisibilitySchemaTransformation {
 
     private GraphQLSchema removeUnreferencedTypes(Set<GraphQLType> markedForRemovalTypes, GraphQLSchema connectedSchema) {
         GraphQLSchema withoutAdditionalTypes = connectedSchema.transform(builder -> {
-            Set<GraphQLType> additionalTypes = new HashSet<>(connectedSchema.getAdditionalTypes());
+            Set<GraphQLNamedType> additionalTypes = new HashSet<>(connectedSchema.getAdditionalTypes());
             additionalTypes.removeAll(markedForRemovalTypes);
             builder.clearAdditionalTypes();
             builder.additionalTypes(additionalTypes);
@@ -132,18 +136,22 @@ public class FieldVisibilitySchemaTransformation {
 
     private static class TypeObservingVisitor extends GraphQLTypeVisitorStub {
 
-        private final Set<GraphQLType> observedTypes;
+        private final Set<String> observedTypes;
 
 
-        private TypeObservingVisitor(Set<GraphQLType> observedTypes) {
+        private TypeObservingVisitor(Set<String> observedTypes) {
             this.observedTypes = observedTypes;
         }
 
         @Override
         protected TraversalControl visitGraphQLType(GraphQLSchemaElement node,
                                                     TraverserContext<GraphQLSchemaElement> context) {
-            if (node instanceof GraphQLType) {
-                observedTypes.add((GraphQLType) node);
+            if (node instanceof GraphQLObjectType ||
+                node instanceof GraphQLEnumType ||
+                node instanceof GraphQLInputObjectType ||
+                node instanceof GraphQLInterfaceType ||
+                node instanceof GraphQLUnionType) {
+                observedTypes.add(((GraphQLNamedType) node).getName());
             }
 
             return TraversalControl.CONTINUE;
@@ -155,6 +163,9 @@ public class FieldVisibilitySchemaTransformation {
         private final VisibleFieldPredicate visibilityPredicate;
         private final Set<GraphQLType> removedTypes;
 
+        private final Set<GraphQLFieldDefinition> fieldDefinitionsToActuallyRemove = new LinkedHashSet<>();
+        private final Set<GraphQLInputObjectField> inputObjectFieldsToDelete = new LinkedHashSet<>();
+
         private FieldRemovalVisitor(VisibleFieldPredicate visibilityPredicate,
                                     Set<GraphQLType> removedTypes) {
             this.visibilityPredicate = visibilityPredicate;
@@ -162,45 +173,87 @@ public class FieldVisibilitySchemaTransformation {
         }
 
         @Override
+        public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
+            return visitFieldsContainer(objectType, context);
+        }
+
+        @Override
+        public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType objectType, TraverserContext<GraphQLSchemaElement> context) {
+            return visitFieldsContainer(objectType, context);
+        }
+
+        private TraversalControl visitFieldsContainer(GraphQLFieldsContainer fieldsContainer, TraverserContext<GraphQLSchemaElement> context) {
+            boolean allFieldsDeleted = true;
+            for (GraphQLFieldDefinition fieldDefinition : fieldsContainer.getFieldDefinitions()) {
+                VisibleFieldPredicateEnvironment environment = new VisibleFieldPredicateEnvironmentImpl(
+                        fieldDefinition, fieldsContainer);
+                if (!visibilityPredicate.isVisible(environment)) {
+                    fieldDefinitionsToActuallyRemove.add(fieldDefinition);
+                    removedTypes.add(fieldDefinition.getType());
+                } else {
+                    allFieldsDeleted = false;
+                }
+            }
+            if (allFieldsDeleted) {
+                // we are deleting the whole interface type because all fields are supposed to be deleted
+                return deleteNode(context);
+            } else {
+                return TraversalControl.CONTINUE;
+            }
+        }
+
+        @Override
+        public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType inputObjectType, TraverserContext<GraphQLSchemaElement> context) {
+            boolean allFieldsDeleted = true;
+            for (GraphQLInputObjectField inputField : inputObjectType.getFieldDefinitions()) {
+                VisibleFieldPredicateEnvironment environment = new VisibleFieldPredicateEnvironmentImpl(
+                        inputField, inputObjectType);
+                if (!visibilityPredicate.isVisible(environment)) {
+                    inputObjectFieldsToDelete.add(inputField);
+                    removedTypes.add(inputField.getType());
+                } else {
+                    allFieldsDeleted = false;
+                }
+            }
+            if (allFieldsDeleted) {
+                // we are deleting the whole input object type because all fields are supposed to be deleted
+                return deleteNode(context);
+            } else {
+                return TraversalControl.CONTINUE;
+            }
+
+        }
+
+        @Override
         public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition definition,
                                                             TraverserContext<GraphQLSchemaElement> context) {
-            return visitField(definition, context);
+            if (fieldDefinitionsToActuallyRemove.contains(definition)) {
+                return deleteNode(context);
+            } else {
+                return TraversalControl.CONTINUE;
+            }
         }
 
         @Override
         public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField definition,
                                                              TraverserContext<GraphQLSchemaElement> context) {
-            return visitField(definition, context);
-        }
-
-        private TraversalControl visitField(GraphQLNamedSchemaElement element,
-                                            TraverserContext<GraphQLSchemaElement> context) {
-
-            VisibleFieldPredicateEnvironment environment = new VisibleFieldPredicateEnvironmentImpl(
-                    element, context.getParentNode());
-            if (!visibilityPredicate.isVisible(environment)) {
-                deleteNode(context);
-
-                if (element instanceof GraphQLFieldDefinition) {
-                    removedTypes.add(((GraphQLFieldDefinition) element).getType());
-                } else if (element instanceof GraphQLInputObjectField) {
-                    removedTypes.add(((GraphQLInputObjectField) element).getType());
-                }
+            if (inputObjectFieldsToDelete.contains(definition)) {
+                return deleteNode(context);
+            } else {
+                return TraversalControl.CONTINUE;
             }
-
-            return TraversalControl.CONTINUE;
         }
     }
 
     private static class TypeVisibilityVisitor extends GraphQLTypeVisitorStub {
 
         private final Set<String> protectedTypeNames;
-        private final Set<GraphQLType> observedBeforeTransform;
-        private final Set<GraphQLType> observedAfterTransform;
+        private final Set<String> observedBeforeTransform;
+        private final Set<String> observedAfterTransform;
 
         private TypeVisibilityVisitor(Set<String> protectedTypeNames,
-                                      Set<GraphQLType> observedTypes,
-                                      Set<GraphQLType> observedAfterTransform) {
+                                      Set<String> observedTypes,
+                                      Set<String> observedAfterTransform) {
             this.protectedTypeNames = protectedTypeNames;
             this.observedBeforeTransform = observedTypes;
             this.observedAfterTransform = observedAfterTransform;
@@ -215,17 +268,19 @@ public class FieldVisibilitySchemaTransformation {
         @Override
         public TraversalControl visitGraphQLType(GraphQLSchemaElement node,
                                                  TraverserContext<GraphQLSchemaElement> context) {
-            if (observedBeforeTransform.contains(node) &&
-                    !observedAfterTransform.contains(node) &&
-                    (node instanceof GraphQLObjectType ||
-                            node instanceof GraphQLEnumType ||
-                            node instanceof GraphQLInputObjectType ||
-                            node instanceof GraphQLInterfaceType ||
-                            node instanceof GraphQLUnionType)) {
-
-                return deleteNode(context);
+            if (node instanceof GraphQLObjectType ||
+                node instanceof GraphQLEnumType ||
+                node instanceof GraphQLInputObjectType ||
+                node instanceof GraphQLInterfaceType ||
+                node instanceof GraphQLUnionType) {
+                String name = ((GraphQLNamedType) node).getName();
+                if (observedBeforeTransform.contains(name) &&
+                    !observedAfterTransform.contains(name)
+                    && !protectedTypeNames.contains(name)
+                ) {
+                    return deleteNode(context);
+                }
             }
-
             return TraversalControl.CONTINUE;
         }
     }

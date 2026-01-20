@@ -1,5 +1,6 @@
 package graphql.schema
 
+
 import graphql.GraphQL
 import graphql.Scalars
 import graphql.TestUtil
@@ -1056,14 +1057,6 @@ type Query {
         """
 
         def schema = TestUtil.schema(sdl)
-        schema = schema.transform { builder ->
-            for (def type : schema.getTypeMap().values()) {
-                if (type != schema.getQueryType() && type != schema.getMutationType() && type != schema.getSubscriptionType()) {
-                    builder.additionalType(type)
-                }
-            }
-        }
-
 
         def visitor = new GraphQLTypeVisitorStub() {
 
@@ -1085,7 +1078,108 @@ type Query {
             }
         }
         when:
-        def newSchema = SchemaTransformer.transformSchema(schema, visitor)
+        def newSchema = SchemaTransformer.transformSchemaWithDeletes(schema, visitor)
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        def newSdl = printer.print(newSchema)
+
+        then:
+        newSdl.trim() == """type Customer {
+  rental: Rental
+}
+
+type Query {
+  customer: Customer
+}
+
+type Rental {
+  id: ID
+}""".trim()
+    }
+
+    /**
+     * This test verifies the fix for issue 4133: deleting nodes with circular references.
+     * <p>
+     * <h3>The Problem (Fixed)</h3>
+     * When a node is deleted via {@code deleteNode(context)}, the traversal does NOT continue to visit
+     * the children of that deleted node (see {@code TraverserState.pushAll()}). This was problematic
+     * when combined with how GraphQL-Java handles circular type references using {@code GraphQLTypeReference}.
+     * <p>
+     * <h3>How GraphQLTypeReference Creates Asymmetry</h3>
+     * In circular references, one direction uses the actual type object, while the other uses a
+     * {@code GraphQLTypeReference} (a placeholder resolved during schema building):
+     * <ul>
+     *   <li>{@code Customer.rental} → {@code GraphQLTypeReference("Rental")} (placeholder)</li>
+     *   <li>{@code Rental.customer} → {@code Customer} (actual object reference)</li>
+     * </ul>
+     * <p>
+     * <h3>Traversal in This Test</h3>
+     * <ol>
+     *   <li>{@code Query.rental} field is visited → has @remove → DELETED → children NOT traversed</li>
+     *   <li>{@code Rental} type is NOT visited via this path (it's a child of the deleted field)</li>
+     *   <li>{@code Query.customer} field is visited → {@code Customer} type IS visited</li>
+     *   <li>{@code Customer.rental} field is visited → but its type is {@code GraphQLTypeReference("Rental")}</li>
+     *   <li>The actual {@code Rental} GraphQLObjectType would NOT be visited (only referenced by name)</li>
+     *   <li>{@code Customer.payment} field is visited → has @remove → DELETED → {@code Payment} NOT visited</li>
+     *   <li>{@code Inventory} would NOT be visited (only reachable through Payment)</li>
+     * </ol>
+     * <p>
+     * <h3>The Fix</h3>
+     * {@code SchemaTransformer.transformSchemaWithDeletes()} ensures all types are visited by temporarily
+     * adding them as extra root types during transformation. Types that are modified are then included
+     * in the rebuilt schema's additionalTypes, ensuring type references are properly resolved.
+     */
+    def "issue 4133 - circular references with deletes - fixed with transformSchemaWithDeletes"() {
+        def sdl = """
+            directive @remove on FIELD_DEFINITION
+            
+            type Query {
+              rental: Rental @remove
+              customer: Customer
+            }
+            
+            type Customer {
+              rental: Rental
+              payment: Payment @remove
+            }
+            
+            type Rental {
+              id: ID
+              customer: Customer @remove
+            }
+            
+            type Payment {
+              inventory: Inventory @remove
+            }
+            
+            type Inventory {
+              payment: Payment @remove
+            }
+        """
+
+        def schema = TestUtil.schema(sdl)
+
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.hasAppliedDirective("remove")) {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getFields().stream().allMatch(field -> field.hasAppliedDirective("remove"))) {
+                    return deleteNode(context)
+                }
+
+                return TraversalControl.CONTINUE
+            }
+        }
+        when:
+        // Use the new transformSchemaWithDeletes method - this should work!
+        def newSchema = SchemaTransformer.transformSchemaWithDeletes(schema, visitor)
         def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
         def newSdl = printer.print(newSchema)
 

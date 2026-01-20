@@ -9,7 +9,6 @@ import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.TypeResolver
-import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -973,7 +972,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .build()
         when:
 
-        System.out.println((new SchemaPrinter()).print(schema))
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
         then:
@@ -1022,7 +1020,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .build()
         when:
 
-        System.out.println((new SchemaPrinter()).print(schema))
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
         then:
@@ -1057,7 +1054,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .build()
         when:
 
-        System.out.println((new SchemaPrinter()).print(schema))
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
         then:
@@ -1073,7 +1069,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
             def directives = (environment.schemaElement as GraphQLDirectiveContainer).appliedDirectives
             return directives.find({ directive -> directive.name == "private" }) == null
-        }, { -> callbacks << "before" }, { -> callbacks << "after"} )
+        }, { -> callbacks << "before" }, { -> callbacks << "after" })
 
         GraphQLSchema schema = TestUtil.schema("""
 
@@ -1245,5 +1241,179 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
+
     }
+
+    def "remove all fields from a type which is referenced via additional types"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION
+        type Query {
+         foo: Foo
+        }
+        type Foo {
+         foo: String
+         toDelete: ToDelete @private
+        } 
+        type ToDelete {
+         toDelete:String @private
+        }
+        """)
+
+        when:
+        schema.typeMap
+        def patchedSchema = schema.transform { builder ->
+            schema.typeMap.each { entry ->
+                def type = entry.value
+                if (type != schema.queryType && type != schema.mutationType && type != schema.subscriptionType) {
+                    builder.additionalType(type)
+                }
+            }
+        }
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(patchedSchema)
+        then:
+        (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("toDelete") == null
+    }
+
+    def "remove field from a type which is referenced via additional types and an additional not reachable child is deleted"() {
+        given:
+        /*
+        the test case here is that ToDelete is changed, because ToDelete.toDelete is deleted
+        and additionally Indirect needs to be deleted because it is not reachable via the
+        Query type anymore.
+        We had a bug where ToDeleted was not deleted correctly, but because Indirect was, it resulted
+        in an invalid schema and exception.
+        */
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION
+        type Query {
+         foo: String
+         toDelete: ToDelete @private
+        }
+        type ToDelete {
+         bare: String @private
+         toDelete:[Indirect!] 
+        }
+        type Indirect {
+          foo: String
+        }
+        """)
+
+        when:
+        schema.typeMap
+        def patchedSchema = schema.transform { builder ->
+            schema.typeMap.each { entry ->
+                def type = entry.value
+                if (type != schema.queryType && type != schema.mutationType && type != schema.subscriptionType) {
+                    builder.additionalType(type)
+                }
+            }
+        }
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(patchedSchema)
+        then:
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("toDelete") == null
+    }
+
+
+    def "remove all fields from an input type which is referenced via additional types"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+        type Query {
+         foo(input: Input): String
+        }
+        input Input {
+         foo: String
+         toDelete:ToDelete @private
+        }
+        input ToDelete {
+         toDelete:String @private
+        }
+        """)
+
+        when:
+        schema.typeMap
+        def patchedSchema = schema.transform { builder ->
+            schema.typeMap.each { entry ->
+                def type = entry.value
+                if (type != schema.queryType && type != schema.mutationType && type != schema.subscriptionType) {
+                    builder.additionalType(type)
+                }
+            }
+        }
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(patchedSchema)
+        then:
+        (restrictedSchema.getType("Input") as GraphQLInputObjectType).getFieldDefinition("toDelete") == null
+    }
+
+    /**
+     * This test verifies the fix for issue 4133 with FieldVisibilitySchemaTransformation.
+     * <p>
+     * <h3>The Problem (Fixed)</h3>
+     * When a field is marked @private and deleted, the traversal doesn't continue to children of 
+     * deleted nodes. Types only reachable through deleted fields were not being visited, and those
+     * unvisited types with circular references using GraphQLTypeReference would cause errors during
+     * schema rebuild.
+     * <p>
+     * <h3>Schema Structure</h3>
+     * <ul>
+     *   <li>{@code Query.rental @private} → Rental (would not be visited because parent field deleted)</li>
+     *   <li>{@code Query.customer} → Customer (visited)</li>
+     *   <li>{@code Customer.rental} → TypeReference("Rental") (placeholder, doesn't cause Rental to be visited)</li>
+     *   <li>{@code Rental.customer} → Customer (actual object reference)</li>
+     *   <li>{@code Customer.payment @private} → Payment (deleted, Payment would not be visited)</li>
+     *   <li>{@code Payment.inventory} → TypeReference("Inventory")</li>
+     * </ul>
+     * <p>
+     * <h3>The Fix</h3>
+     * {@code FieldVisibilitySchemaTransformation} now uses {@code SchemaTransformer.transformSchemaWithDeletes()}
+     * which ensures all types are visited by temporarily adding them as extra root types during transformation.
+     */
+    def "issue 4133 - circular references with private fields - fixed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            rental: Rental @private
+            customer: Customer
+        }
+        
+        type Customer {
+            rental: Rental
+            payment: Payment @private
+        }
+        
+        type Rental {
+            id: ID
+            customer: Customer @private
+        }
+        
+        type Payment {
+            inventory: Inventory @private
+        }
+        
+        type Inventory {
+            payment: Payment @private
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        // Query should only have customer field (rental is private)
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("rental") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("customer") != null
+
+        // Customer should only have rental field (payment is private)
+        (restrictedSchema.getType("Customer") as GraphQLObjectType).getFieldDefinition("rental") != null
+        (restrictedSchema.getType("Customer") as GraphQLObjectType).getFieldDefinition("payment") == null
+
+        // Rental should only have id field (customer is private)
+        (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("id") != null
+        (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("customer") == null
+    }
+
 }
