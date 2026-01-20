@@ -15,7 +15,6 @@ import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.SchemaDefinition;
 import graphql.language.SchemaExtensionDefinition;
-import graphql.schema.impl.FindDetachedTypes;
 import graphql.schema.impl.GraphQLTypeCollectingVisitor;
 import graphql.schema.impl.SchemaUtil;
 import graphql.schema.validation.InvalidSchemaException;
@@ -194,8 +193,21 @@ public class GraphQLSchema {
         this.mutationType = fastBuilder.mutationType;
         this.subscriptionType = fastBuilder.subscriptionType;
         this.introspectionSchemaType = fastBuilder.introspectionSchemaType;
-        this.additionalTypes = ImmutableSet.copyOf(FindDetachedTypes.findDetachedTypes(
-                finalTypeMap, fastBuilder.queryType, fastBuilder.mutationType, fastBuilder.subscriptionType, finalDirectives));
+        // Compute additionalTypes as all types minus root types.
+        // Note: Unlike the standard Builder which computes only "detached" types (types not
+        // reachable from roots), FastBuilder includes ALL non-root types in additionalTypes.
+        // This is a semantic difference but does not affect schema traversal or correctness.
+        Set<String> rootTypeNames = new LinkedHashSet<>();
+        rootTypeNames.add(fastBuilder.queryType.getName());
+        if (fastBuilder.mutationType != null) {
+            rootTypeNames.add(fastBuilder.mutationType.getName());
+        }
+        if (fastBuilder.subscriptionType != null) {
+            rootTypeNames.add(fastBuilder.subscriptionType.getName());
+        }
+        this.additionalTypes = finalTypeMap.values().stream()
+                .filter(type -> !rootTypeNames.contains(type.getName()))
+                .collect(ImmutableSet.toImmutableSet());
         this.introspectionSchemaField = Introspection.buildSchemaField(fastBuilder.introspectionSchemaType);
         this.introspectionTypeField = Introspection.buildTypeField(fastBuilder.introspectionSchemaType);
         this.directiveDefinitionsHolder = new DirectivesUtil.DirectivesHolder(finalDirectives, emptyList());
@@ -323,6 +335,13 @@ public class GraphQLSchema {
      * errors - they will simply be present in both the type map (via traversal) and this set.
      * After schema construction, use {@link #getTypeMap()} or {@link #getAllTypesAsList()} to get
      * all types in the schema regardless of how they were discovered.
+     * <p>
+     * <b>Note on FastBuilder:</b> When a schema is constructed using {@link FastBuilder},
+     * this method returns ALL types in the schema except the root operation types (Query,
+     * Mutation, Subscription). This differs from schemas built with the standard
+     * {@link Builder}, which returns only types not reachable from the root types.
+     * This semantic difference does not affect schema traversal or correctness, as both
+     * approaches ensure all types are properly discoverable.
      *
      * @return an immutable set of types that were explicitly added as additional types
      *

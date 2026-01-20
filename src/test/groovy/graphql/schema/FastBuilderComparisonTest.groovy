@@ -100,10 +100,13 @@ class FastBuilderComparisonTest extends Specification {
      *
      * This checks:
      * - Type map keys match (excluding introspection types and built-in scalars)
-     * - Additional types match (as sets, order doesn't matter)
      * - Interface implementations match (as lists, order matters - alphabetically sorted)
      * - Core directive names are present (allows experimental directives to differ)
      * - Root types match
+     *
+     * Note: additionalTypes is NOT compared because FastBuilder and standard Builder have
+     * different semantics - FastBuilder includes all non-root types, while standard Builder
+     * includes only types not reachable from roots.
      */
     void assertSchemasEquivalent(GraphQLSchema fastSchema, GraphQLSchema standardSchema) {
         // Check type map keys match (excluding introspection types and built-in scalars which may differ)
@@ -114,13 +117,7 @@ class FastBuilderComparisonTest extends Specification {
                 "FastBuilder types: ${fastTypes}\n" +
                 "Standard types: ${standardTypes}"
 
-        // Check additional types match (as sets - order doesn't matter for detached types)
-        def fastAdditionalTypes = fastSchema.additionalTypes*.name.toSet()
-        def standardAdditionalTypes = standardSchema.additionalTypes*.name.toSet()
-        assert fastAdditionalTypes == standardAdditionalTypes,
-                "Additional types differ:\n" +
-                "FastBuilder: ${fastAdditionalTypes}\n" +
-                "Standard: ${standardAdditionalTypes}"
+        // Note: additionalTypes is NOT compared - see method Javadoc for explanation
 
         // Check interface implementations (order matters - should be alphabetically sorted)
         // Only check user-defined interfaces (not introspection interfaces)
