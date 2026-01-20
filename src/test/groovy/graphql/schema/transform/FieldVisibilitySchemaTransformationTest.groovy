@@ -1346,5 +1346,74 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Input") as GraphQLInputObjectType).getFieldDefinition("toDelete") == null
     }
 
+    /**
+     * This test verifies the fix for issue 4133 with FieldVisibilitySchemaTransformation.
+     * <p>
+     * <h3>The Problem (Fixed)</h3>
+     * When a field is marked @private and deleted, the traversal doesn't continue to children of 
+     * deleted nodes. Types only reachable through deleted fields were not being visited, and those
+     * unvisited types with circular references using GraphQLTypeReference would cause errors during
+     * schema rebuild.
+     * <p>
+     * <h3>Schema Structure</h3>
+     * <ul>
+     *   <li>{@code Query.rental @private} → Rental (would not be visited because parent field deleted)</li>
+     *   <li>{@code Query.customer} → Customer (visited)</li>
+     *   <li>{@code Customer.rental} → TypeReference("Rental") (placeholder, doesn't cause Rental to be visited)</li>
+     *   <li>{@code Rental.customer} → Customer (actual object reference)</li>
+     *   <li>{@code Customer.payment @private} → Payment (deleted, Payment would not be visited)</li>
+     *   <li>{@code Payment.inventory} → TypeReference("Inventory")</li>
+     * </ul>
+     * <p>
+     * <h3>The Fix</h3>
+     * {@code FieldVisibilitySchemaTransformation} now uses {@code SchemaTransformer.transformSchemaWithDeletes()}
+     * which ensures all types are visited by temporarily adding them as extra root types during transformation.
+     */
+    def "issue 4133 - circular references with private fields - fixed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            rental: Rental @private
+            customer: Customer
+        }
+        
+        type Customer {
+            rental: Rental
+            payment: Payment @private
+        }
+        
+        type Rental {
+            id: ID
+            customer: Customer @private
+        }
+        
+        type Payment {
+            inventory: Inventory @private
+        }
+        
+        type Inventory {
+            payment: Payment @private
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        // Query should only have customer field (rental is private)
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("rental") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("customer") != null
+
+        // Customer should only have rental field (payment is private)
+        (restrictedSchema.getType("Customer") as GraphQLObjectType).getFieldDefinition("rental") != null
+        (restrictedSchema.getType("Customer") as GraphQLObjectType).getFieldDefinition("payment") == null
+
+        // Rental should only have id field (customer is private)
+        (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("id") != null
+        (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("customer") == null
+    }
 
 }

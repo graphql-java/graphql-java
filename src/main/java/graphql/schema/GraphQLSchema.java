@@ -52,7 +52,7 @@ public class GraphQLSchema {
     private final GraphQLObjectType mutationType;
     private final GraphQLObjectType subscriptionType;
     private final GraphQLObjectType introspectionSchemaType;
-    private final ImmutableSet<GraphQLType> additionalTypes;
+    private final ImmutableSet<GraphQLNamedType> additionalTypes;
     private final GraphQLFieldDefinition introspectionSchemaField;
     private final GraphQLFieldDefinition introspectionTypeField;
     // we don't allow modification of "__typename" - it's a scalar
@@ -275,10 +275,10 @@ public class GraphQLSchema {
      *
      * @return an immutable set of types that were explicitly added as additional types
      *
-     * @see Builder#additionalType(GraphQLType)
+     * @see Builder#additionalType(GraphQLNamedType)
      * @see Builder#additionalTypes(Set)
      */
-    public Set<GraphQLType> getAdditionalTypes() {
+    public Set<GraphQLNamedType> getAdditionalTypes() {
         return additionalTypes;
     }
 
@@ -745,7 +745,7 @@ public class GraphQLSchema {
         private final Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
                 asList(Directives.IncludeDirective, Directives.SkipDirective)
         );
-        private final Set<GraphQLType> additionalTypes = new LinkedHashSet<>();
+        private final Set<GraphQLNamedType> additionalTypes = new LinkedHashSet<>();
         private final List<GraphQLDirective> schemaDirectives = new ArrayList<>();
         private final List<GraphQLAppliedDirective> schemaAppliedDirectives = new ArrayList<>();
 
@@ -808,7 +808,7 @@ public class GraphQLSchema {
          *
          * @see GraphQLSchema#getAdditionalTypes()
          */
-        public Builder additionalTypes(Set<GraphQLType> additionalTypes) {
+        public Builder additionalTypes(Set<? extends GraphQLNamedType> additionalTypes) {
             this.additionalTypes.addAll(additionalTypes);
             return this;
         }
@@ -831,7 +831,7 @@ public class GraphQLSchema {
          * @see GraphQLSchema#getAdditionalTypes()
          * @see #additionalTypes(Set)
          */
-        public Builder additionalType(GraphQLType additionalType) {
+        public Builder additionalType(GraphQLNamedType additionalType) {
             this.additionalTypes.add(additionalType);
             return this;
         }
@@ -844,7 +844,7 @@ public class GraphQLSchema {
          *
          * @return this builder
          *
-         * @see #additionalType(GraphQLType)
+         * @see #additionalType(GraphQLNamedType)
          * @see #additionalTypes(Set)
          */
         public Builder clearAdditionalTypes() {
