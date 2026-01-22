@@ -9,6 +9,7 @@ import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.TypeResolver
+import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -22,6 +23,20 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def directives = (environment.schemaElement as GraphQLDirectiveContainer).appliedDirectives
         return directives.find({ directive -> directive.name == "private" }) == null
     })
+
+    /**
+     * Helper method to validate that a schema is valid by printing it and re-parsing it.
+     * This ensures the transformation always produces a valid schema.
+     */
+    void assertSchemaIsValid(GraphQLSchema schema) {
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions()
+                .includeDirectives(true)
+                .includeScalarTypes(true))
+        def printedSchema = printer.print(schema)
+        // Parse the printed schema to verify it's valid
+        def reparsedSchema = TestUtil.schema(printedSchema)
+        assert reparsedSchema != null: "Re-parsed schema should not be null"
+    }
 
     def "can remove a private field"() {
         given:
@@ -49,6 +64,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "can remove a type associated with a private field"() {
@@ -84,6 +100,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         restrictedSchema.getType("BillingStatus") == null
         restrictedSchema.getType("SuperSecretCustomerData") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "removes concrete types referenced only by interface"() {
@@ -122,6 +139,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         and: "After the private field is removed, they become unreachable and are removed"
         restrictedSchema.getType("BillingStatus") == null
         restrictedSchema.getType("SuperSecretCustomerData") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "interface and its implementations that have both private and public reference is retained"() {
@@ -160,6 +178,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         restrictedSchema.getType("SuperSecretCustomerData") != null
         restrictedSchema.getType("BillingStatus") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
 
@@ -207,6 +226,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("X") != null
         restrictedSchema.getType("Foo") != null
         restrictedSchema.getType("X2") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "union types"() {
@@ -246,6 +266,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("FooOrBar") == null
         restrictedSchema.getType("Bar") == null
         restrictedSchema.getType("Foo") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "union type with reference by private interface removed"() {
@@ -293,6 +314,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("Baz") == null
         restrictedSchema.getType("Bing") == null
         restrictedSchema.getType("FooOrBar") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
 
@@ -329,6 +351,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         restrictedSchema.getType("BillingStatus") != null
         restrictedSchema.getType("SuperSecretCustomerData") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "leaves interface types referenced only by concrete types"() {
@@ -400,6 +423,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         restrictedSchema.getType("BillingStatus") == null
         restrictedSchema.getType("SuperSecretCustomerData") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "leaves interface type if has private and public reference"() {
@@ -442,6 +466,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
         restrictedSchema.getType("SuperSecretCustomerData") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "leaves concrete type if has public and private"() {
@@ -478,6 +503,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("publicBillingStatus") != null
         restrictedSchema.getType("BillingStatus") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "removes interface type if only private reference with multiple interfaces"() {
@@ -524,6 +550,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("SuperSecretCustomerData") == null
         restrictedSchema.getType("Billable") == null
         restrictedSchema.getType("PublicView") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "primitive types are retained"() {
@@ -546,6 +573,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         restrictedSchema.getType("String") != null
         restrictedSchema.getType("Boolean") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "root types with different names are supported"() {
@@ -577,6 +605,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "fields and types are removed from subscriptions and mutations"() {
@@ -620,6 +649,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         restrictedSchema.getType("Foo") == null
         restrictedSchema.getType("Bar") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "type with both private and public transitive references is retained"() {
@@ -653,6 +683,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("baz") == null
         restrictedSchema.getType("Baz") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "type with multiple private parent references is removed"() {
@@ -688,6 +719,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("baz") == null
         (restrictedSchema.getType("Bar") as GraphQLObjectType).getFieldDefinition("baz") == null
         restrictedSchema.getType("Baz") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "type with multiple private grandparent references is removed"() {
@@ -722,6 +754,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("Foo") == null
         restrictedSchema.getType("Bar") == null
         restrictedSchema.getType("Baz") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "type with circular reference can be traversed"() {
@@ -746,6 +779,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("foo2") == null
         restrictedSchema.getType("Foo") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "input types can have private fields"() {
@@ -784,6 +818,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("FooInput") as GraphQLInputObjectType).getFieldDefinition("foo") == null
         restrictedSchema.getType("FooInput") != null
         restrictedSchema.getType("BarInput") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "enum types can be removed"() {
@@ -831,6 +866,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("FooInput") != null
         restrictedSchema.getType("BarEnum") == null
         restrictedSchema.getType("FooEnum") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "unreferenced types can have fields removed, and the referenced types must be removed as well if they are not used"() {
@@ -868,6 +904,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "Bing is also an additional type not reachable from roots, so it is preserved"
         restrictedSchema.getType("Bing") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "unreferenced types can have fields removed, and referenced type must not be removed if used elsewhere in the connected graph"() {
@@ -906,6 +943,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "since Bing is used in the connected graph, it MUST not be removed"
         restrictedSchema.getType("Bing") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "unreferenced types can have fields removed, and referenced type must not be removed if used elsewhere"() {
@@ -945,6 +983,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         and: "since Bing is used elsewhere (Bar.foo), it SHOULD not be removed"
         restrictedSchema.getType("Bing") != null
     }
+
     def "use type references - private field declared with interface type removes both concrete and interface"() {
         given:
         def query = newObject()
@@ -1041,6 +1080,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
         restrictedSchema.getType("SuperSecretCustomerData") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "use type references - unreferenced types are removed"() {
@@ -1074,6 +1114,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "before and after transformation hooks are run"() {
@@ -1148,6 +1189,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "handles types that become visible via types reachable by interface that implements interface"() {
@@ -1193,6 +1235,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "can remove a field with a directive containing enum argument"() {
@@ -1225,6 +1268,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "can remove a field with a directive containing type argument"() {
@@ -1256,7 +1300,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") == null
-
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "remove all fields from a type which is referenced via additional types"() {
@@ -1288,6 +1332,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(patchedSchema)
         then:
         (restrictedSchema.getType("Foo") as GraphQLObjectType).getFieldDefinition("toDelete") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "remove field from a type which is referenced via additional types and an additional not reachable child is deleted"() {
@@ -1429,6 +1474,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         // Rental should only have id field (customer is private)
         (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("id") != null
         (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("customer") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "originally unused type subgraph is fully preserved with private field removal"() {
@@ -1489,6 +1535,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "PrivateOnlyType is also an additional type not reachable from roots, so it is preserved"
         restrictedSchema.getType("PrivateOnlyType") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "multiple originally unused type subgraphs are all preserved"() {
@@ -1536,6 +1583,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         and: "Second unused subgraph is fully preserved"
         restrictedSchema.getType("UnusedB") != null
         restrictedSchema.getType("UnusedBChild") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "findRootUnusedTypes considers interface implementations as reachable from roots"() {
@@ -1576,6 +1624,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "TrulyUnused is an additional type not reachable from roots, so it is preserved as root unused type"
         restrictedSchema.getType("TrulyUnused") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "findRootUnusedTypes ignores special introspection types starting with underscore"() {
@@ -1613,6 +1662,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         and: "Special introspection types starting with _ should be preserved"
         restrictedSchema.getType("_AppliedDirective") != null
         restrictedSchema.getType("_DirectiveArgument") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "custom scalar types are removed when only referenced by private fields"() {
@@ -1643,6 +1693,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "SecretToken scalar is only used by private field, so it should be removed"
         restrictedSchema.getType("SecretToken") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "originally unused enum types are preserved"() {
@@ -1674,6 +1725,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "UnusedEnum is an additional type not reachable from roots, so it is preserved"
         restrictedSchema.getType("UnusedEnum") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "originally unused scalar types are preserved"() {
@@ -1697,6 +1749,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "UnusedScalar is an additional type not reachable from roots, so it is preserved"
         restrictedSchema.getType("UnusedScalar") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "enum and scalar types only reachable via private fields are removed"() {
@@ -1731,6 +1784,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         and: "SecretScalar and SecretEnum are only reachable via private fields, so they should be removed"
         restrictedSchema.getType("SecretScalar") == null
         restrictedSchema.getType("SecretEnum") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "input object type only reachable via private field is removed along with nested inputs"() {
@@ -1766,6 +1820,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         and: "SecretInput and NestedSecretInput should be removed as they're only reachable via private field"
         restrictedSchema.getType("SecretInput") == null
         restrictedSchema.getType("NestedSecretInput") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "nested input types are removed when parent input field is private"() {
@@ -1807,6 +1862,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         and: "SecretDataInput and DeepSecretInput should be removed as they're only reachable via private field"
         restrictedSchema.getType("SecretDataInput") == null
         restrictedSchema.getType("DeepSecretInput") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "originally unused input types are preserved"() {
@@ -1836,6 +1892,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "UnusedInput is an additional type not reachable from roots, so it is preserved"
         restrictedSchema.getType("UnusedInput") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "input types only reachable via private input fields are removed"() {
@@ -1871,6 +1928,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "PrivateRefInput should be removed as it's only reachable via private input field"
         restrictedSchema.getType("PrivateRefInput") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "input type used by both public and private fields is preserved"() {
@@ -1903,6 +1961,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         and: "SharedInput should be preserved because it's still used by publicAction"
         restrictedSchema.getType("SharedInput") != null
+        assertSchemaIsValid(restrictedSchema)
     }
 
     def "input field with nested input referencing enum and scalar"() {
@@ -1948,6 +2007,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("SecretConfigInput") == null
         restrictedSchema.getType("SecretToken") == null
         restrictedSchema.getType("SecretLevel") == null
+        assertSchemaIsValid(restrictedSchema)
     }
 
 }
