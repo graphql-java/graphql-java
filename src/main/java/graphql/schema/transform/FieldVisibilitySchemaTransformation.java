@@ -6,7 +6,6 @@ import graphql.introspection.Introspection;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
-import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
@@ -18,7 +17,6 @@ import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTraverser;
-import graphql.schema.impl.SchemaUtil;
 import graphql.schema.transform.VisibleFieldPredicateEnvironment.VisibleFieldPredicateEnvironmentImpl;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -26,7 +24,6 @@ import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
@@ -63,7 +60,7 @@ public class FieldVisibilitySchemaTransformation {
 
         beforeTransformationHook.run();
 
-        // Step 1: Find root unused types BEFORE transformation
+        // Find root unused types BEFORE transformation
         // These are types that exist in the schema but are NOT reachable from operation types + directives
         Set<String> rootUnusedTypes = findRootUnusedTypes(schema);
 
@@ -75,23 +72,14 @@ public class FieldVisibilitySchemaTransformation {
 
         // cleanup schema
         // now we want to remove all types which are not reachable via root types, directives and the interface implements relationship
-        SchemaTraverser schemaTraverser = new SchemaTraverser((element) -> {
-            if (element instanceof GraphQLInterfaceType) {
-                GraphQLInterfaceType interfaceType = (GraphQLInterfaceType) element;
-                List<GraphQLSchemaElement> children = interfaceType.getChildren();
-                children.addAll(interimSchema.getImplementations(interfaceType));
-                return children;
-            } else {
-                return element.getChildren();
-            }
-        });
+        SchemaTraverser schemaTraverser = new SchemaTraverser(childrenWithInterfaceImplementations(interimSchema));
 
         // first we observe all types we don't want to delete
         Set<String> observedTypes = new LinkedHashSet<>();
         TypeObservingVisitor typeObservingVisitor = new TypeObservingVisitor(observedTypes);
         schemaTraverser.depthFirst(typeObservingVisitor, getRootTypes(interimSchema));
 
-        // Step 2: Traverse from root unused types that still exist after transformation
+        // Traverse from root unused types that still exist after transformation
         // This preserves originally unused types and their dependencies
         List<GraphQLSchemaElement> existingRootUnusedTypes = rootUnusedTypes.stream()
                 .map(interimSchema::getType)
@@ -121,37 +109,43 @@ public class FieldVisibilitySchemaTransformation {
         // Collect all types reachable from operation roots + directives
         // Use a traverser that includes interface implementations
         Set<String> typesReachableFromRoots = new LinkedHashSet<>();
-        SchemaTraverser traverser = new SchemaTraverser(getChildrenFn(schema));
+        SchemaTraverser traverser = new SchemaTraverser(childrenWithInterfaceImplementations(schema));
         TypeObservingVisitor visitor = new TypeObservingVisitor(typesReachableFromRoots);
         traverser.depthFirst(visitor, getRootTypes(schema));
 
         // Root unused types are additional types that are NOT reachable from roots
-        // Also ignore special introspection types starting with "_" (like _AppliedDirective)
         Set<String> rootUnusedTypes = new LinkedHashSet<>();
         for (GraphQLNamedType type : schema.getAdditionalTypes()) {
             String typeName = type.getName();
-            if (!typesReachableFromRoots.contains(typeName)
-                && !Introspection.isIntrospectionTypes(typeName)
-                && !typeName.startsWith("_")) {
+            if (!typesReachableFromRoots.contains(typeName) && !isIntrospectionType(typeName)) {
                 rootUnusedTypes.add(typeName);
             }
         }
         return rootUnusedTypes;
     }
 
-    // Creates a getChildrenFn that includes interface
-    private Function<GraphQLSchemaElement, List<GraphQLSchemaElement>> getChildrenFn(GraphQLSchema schema) {
-        Map<String, List<GraphQLImplementingType>> interfaceImplementations = new SchemaUtil().groupImplementationsForInterfacesAndObjects(schema);
+    /**
+     * Checks if a type is an introspection type that should be protected from removal.
+     * This includes standard introspection types (starting with "__") and special types
+     * like _AppliedDirective (starting with "_") added by IntrospectionWithDirectivesSupport.
+     */
+    private static boolean isIntrospectionType(String typeName) {
+        return Introspection.isIntrospectionTypes(typeName) || typeName.startsWith("_");
+    }
 
-        return graphQLSchemaElement -> {
-            if (!(graphQLSchemaElement instanceof GraphQLInterfaceType)) {
-                return graphQLSchemaElement.getChildren();
+    /**
+     * Creates a function that returns children of a schema element, including interface implementations.
+     * This ensures that when traversing from an interface, we also visit all types that implement it.
+     */
+    private Function<GraphQLSchemaElement, List<GraphQLSchemaElement>> childrenWithInterfaceImplementations(GraphQLSchema schema) {
+
+        return schemaElement -> {
+            if (!(schemaElement instanceof GraphQLInterfaceType)) {
+                return schemaElement.getChildren();
             }
-            ArrayList<GraphQLSchemaElement> children = new ArrayList<>(graphQLSchemaElement.getChildren());
-            List<GraphQLImplementingType> implementations = interfaceImplementations.get(((GraphQLInterfaceType) graphQLSchemaElement).getName());
-            if (implementations != null) {
-                children.addAll(implementations);
-            }
+            ArrayList<GraphQLSchemaElement> children = new ArrayList<>(schemaElement.getChildren());
+            List<GraphQLObjectType> implementations = schema.getImplementations((GraphQLInterfaceType) schemaElement);
+            children.addAll(implementations);
             return children;
         };
     }
@@ -276,9 +270,7 @@ public class FieldVisibilitySchemaTransformation {
                                                  TraverserContext<GraphQLSchemaElement> context) {
             if (node instanceof GraphQLNamedType) {
                 String name = ((GraphQLNamedType) node).getName();
-                // we have a special feature that allows to _AppliedDirective etc introspection
-                // types to be added to the schema, hence we need to also check for types starting with "_" to not be deleted
-                if (Introspection.isIntrospectionTypes(name) || name.startsWith("_")) {
+                if (isIntrospectionType(name)) {
                     return TraversalControl.CONTINUE;
                 }
             }

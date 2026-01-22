@@ -1615,4 +1615,339 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("_DirectiveArgument") != null
     }
 
+    def "custom scalar types are removed when only referenced by private fields"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION
+            
+            scalar CustomDate
+            scalar SecretToken
+            
+            type Query {
+                publicDate: CustomDate
+                secretToken: SecretToken @private
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "Private field should be removed"
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("secretToken") == null
+
+        and: "Public field should be preserved"
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("publicDate") != null
+
+        and: "CustomDate scalar is still used by publicDate, so it should be preserved"
+        restrictedSchema.getType("CustomDate") != null
+
+        and: "SecretToken scalar is only used by private field, so it should be removed"
+        restrictedSchema.getType("SecretToken") == null
+    }
+
+    def "originally unused enum types are preserved"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION
+            
+            type Query {
+                status: Status
+            }
+            
+            enum Status {
+                ACTIVE
+                INACTIVE
+            }
+            
+            # UnusedEnum is not connected to Query - it's an additional type
+            enum UnusedEnum {
+                VALUE_A
+                VALUE_B
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "Status enum is used by Query, so it should be preserved"
+        restrictedSchema.getType("Status") != null
+
+        and: "UnusedEnum is an additional type not reachable from roots, so it is preserved"
+        restrictedSchema.getType("UnusedEnum") != null
+    }
+
+    def "originally unused scalar types are preserved"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION
+            
+            scalar UsedScalar
+            scalar UnusedScalar
+            
+            type Query {
+                value: UsedScalar
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "UsedScalar is used by Query, so it should be preserved"
+        restrictedSchema.getType("UsedScalar") != null
+
+        and: "UnusedScalar is an additional type not reachable from roots, so it is preserved"
+        restrictedSchema.getType("UnusedScalar") != null
+    }
+
+    def "enum and scalar types only reachable via private fields are removed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION
+            
+            scalar SecretScalar
+            
+            enum SecretEnum {
+                SECRET_A
+                SECRET_B
+            }
+            
+            type Query {
+                publicField: String
+                secretScalar: SecretScalar @private
+                secretEnum: SecretEnum @private
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "Private fields should be removed"
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("secretScalar") == null
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("secretEnum") == null
+
+        and: "Public field should be preserved"
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("publicField") != null
+
+        and: "SecretScalar and SecretEnum are only reachable via private fields, so they should be removed"
+        restrictedSchema.getType("SecretScalar") == null
+        restrictedSchema.getType("SecretEnum") == null
+    }
+
+    def "input object type only reachable via private field is removed along with nested inputs"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+            
+            type Query {
+                getValue: String
+            }
+            
+            type Mutation {
+                publicAction: String
+                privateAction(input: SecretInput): String @private
+            }
+            
+            input SecretInput {
+                field1: String
+                nested: NestedSecretInput
+            }
+            
+            input NestedSecretInput {
+                deepField: String
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "privateAction should be removed"
+        (restrictedSchema.getType("Mutation") as GraphQLObjectType).getFieldDefinition("privateAction") == null
+
+        and: "SecretInput and NestedSecretInput should be removed as they're only reachable via private field"
+        restrictedSchema.getType("SecretInput") == null
+        restrictedSchema.getType("NestedSecretInput") == null
+    }
+
+    def "nested input types are removed when parent input field is private"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+            
+            type Query {
+                getValue: String
+            }
+            
+            type Mutation {
+                createItem(input: CreateItemInput): String
+            }
+            
+            input CreateItemInput {
+                name: String
+                secretData: SecretDataInput @private
+            }
+            
+            input SecretDataInput {
+                token: String
+                nested: DeepSecretInput
+            }
+            
+            input DeepSecretInput {
+                deepSecret: String
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "CreateItemInput should exist but without the secretData field"
+        restrictedSchema.getType("CreateItemInput") != null
+        (restrictedSchema.getType("CreateItemInput") as GraphQLInputObjectType).getFieldDefinition("name") != null
+        (restrictedSchema.getType("CreateItemInput") as GraphQLInputObjectType).getFieldDefinition("secretData") == null
+
+        and: "SecretDataInput and DeepSecretInput should be removed as they're only reachable via private field"
+        restrictedSchema.getType("SecretDataInput") == null
+        restrictedSchema.getType("DeepSecretInput") == null
+    }
+
+    def "originally unused input types are preserved"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+            
+            type Query {
+                getValue(input: UsedInput): String
+            }
+            
+            input UsedInput {
+                field: String
+            }
+            
+            # UnusedInput is not connected to any operation - it's an additional type
+            input UnusedInput {
+                unusedField: String
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "UsedInput is used by Query, so it should be preserved"
+        restrictedSchema.getType("UsedInput") != null
+
+        and: "UnusedInput is an additional type not reachable from roots, so it is preserved"
+        restrictedSchema.getType("UnusedInput") != null
+    }
+
+    def "input types only reachable via private input fields are removed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+            
+            type Query {
+                getValue: String
+            }
+            
+            type Mutation {
+                updateItem(input: UpdateInput): String
+            }
+            
+            input UpdateInput {
+                publicField: String
+                privateRef: PrivateRefInput @private
+            }
+            
+            input PrivateRefInput {
+                data: String
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "UpdateInput should exist but without the privateRef field"
+        restrictedSchema.getType("UpdateInput") != null
+        (restrictedSchema.getType("UpdateInput") as GraphQLInputObjectType).getFieldDefinition("publicField") != null
+        (restrictedSchema.getType("UpdateInput") as GraphQLInputObjectType).getFieldDefinition("privateRef") == null
+
+        and: "PrivateRefInput should be removed as it's only reachable via private input field"
+        restrictedSchema.getType("PrivateRefInput") == null
+    }
+
+    def "input type used by both public and private fields is preserved"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+            
+            type Query {
+                getValue: String
+            }
+            
+            type Mutation {
+                publicAction(input: SharedInput): String
+                privateAction(input: SharedInput): String @private
+            }
+            
+            input SharedInput {
+                data: String
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "privateAction should be removed"
+        (restrictedSchema.getType("Mutation") as GraphQLObjectType).getFieldDefinition("privateAction") == null
+
+        and: "publicAction should be preserved"
+        (restrictedSchema.getType("Mutation") as GraphQLObjectType).getFieldDefinition("publicAction") != null
+
+        and: "SharedInput should be preserved because it's still used by publicAction"
+        restrictedSchema.getType("SharedInput") != null
+    }
+
+    def "input field with nested input referencing enum and scalar"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+            
+            scalar SecretToken
+            
+            enum SecretLevel {
+                LOW
+                HIGH
+            }
+            
+            type Query {
+                getValue: String
+            }
+            
+            type Mutation {
+                createItem(input: ItemInput): String
+            }
+            
+            input ItemInput {
+                name: String
+                secretConfig: SecretConfigInput @private
+            }
+            
+            input SecretConfigInput {
+                token: SecretToken
+                level: SecretLevel
+            }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "ItemInput should exist but without secretConfig field"
+        restrictedSchema.getType("ItemInput") != null
+        (restrictedSchema.getType("ItemInput") as GraphQLInputObjectType).getFieldDefinition("name") != null
+        (restrictedSchema.getType("ItemInput") as GraphQLInputObjectType).getFieldDefinition("secretConfig") == null
+
+        and: "SecretConfigInput, SecretToken, and SecretLevel should all be removed"
+        restrictedSchema.getType("SecretConfigInput") == null
+        restrictedSchema.getType("SecretToken") == null
+        restrictedSchema.getType("SecretLevel") == null
+    }
+
 }
