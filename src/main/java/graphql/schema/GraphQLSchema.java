@@ -1084,7 +1084,7 @@ public class GraphQLSchema {
      * <p> Use FastBuilder when:
      * <ul>
      *   <li>Building large schemas (500+ types) where construction time and memory are measurable</li>
-     *   <li>All types are known without traversal and can be added explicitly with addAdditionalType(s)</li>
+     *   <li>All types are known without traversal and can be added explicitly with {@link #addType} or {@link #addTypes}</li>
      *   <li>There's no need to clear/reset the builder state midstream.</li>
      *   <li>The code registry builder is complete and available when FastBuilder is constructed</li>
      * </ul>
@@ -1147,8 +1147,7 @@ public class GraphQLSchema {
 
         /**
          * Adds a type to the schema. The type must be a named type (not a wrapper like List or NonNull).
-         * A type added by this method will be included in {@link GraphQLSchema#getAdditionalTypes()}
-         * only when it is not reachable from the schema root types.
+         * All non-root types added via this method will be included in {@link GraphQLSchema#getAdditionalTypes()}.
          *
          * @param type the type to add
          * @return this builder for chaining
@@ -1159,8 +1158,7 @@ public class GraphQLSchema {
             }
 
             // Unwrap to named type
-            GraphQLUnmodifiedType unwrapped = GraphQLTypeUtil.unwrapAll(type);
-            GraphQLNamedType namedType = (GraphQLNamedType) unwrapped;
+            GraphQLUnmodifiedType namedType = GraphQLTypeUtil.unwrapAll(type);
             String name = namedType.getName();
 
             // Enforce uniqueness by name
@@ -1203,8 +1201,7 @@ public class GraphQLSchema {
 
         /**
          * Adds multiple types to the schema.
-         * A type added by this method will be included in {@link GraphQLSchema#getAdditionalTypes()}
-         * only when it is not reachable from the schema root types.
+         * All non-root types added via this method will be included in {@link GraphQLSchema#getAdditionalTypes()}.
          *
          * @param types the types to add
          * @return this builder for chaining
