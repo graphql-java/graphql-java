@@ -829,7 +829,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("FooEnum") == null
     }
 
-    def "unreferenced types can have fields removed, and the referenced types must be removed as well if they are not used"() {
+    def "unreferenced types will be removed"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
 
@@ -856,83 +856,13 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         when:
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
-        then: "Bar.bing field must have been removed"
-        (restrictedSchema.getType("Bar") as GraphQLObjectType).getFieldDefinition("bing") == null
+        then: "Bar is not used anywhere, hence it should be removed"
+        restrictedSchema.getType("Bar") == null
 
         and: "since Bing is not used anywhere else, it should be removed"
         restrictedSchema.getType("Bing") == null
+
     }
-
-    def "unreferenced types can have fields removed, and referenced type must not be removed if used elsewhere in the connected graph"() {
-        given:
-        GraphQLSchema schema = TestUtil.schema("""
-
-        directive @private on FIELD_DEFINITION
-        
-        type Query {
-            foo: Foo 
-            zinc: Bing
-        }
-        
-        type Foo {
-            id: ID
-        }
-        
-        type Bar {
-            baz: String
-            bing: Bing @private
-        }
-        
-        type Bing {
-            id: ID
-        }
-        """)
-
-        when:
-        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
-
-        then: "Bar.bing field must have been removed"
-        (restrictedSchema.getType("Bar") as GraphQLObjectType).getFieldDefinition("bing") == null
-
-        and: "since Bing is used in the connected graph, it MUST not be removed"
-        restrictedSchema.getType("Bing") != null
-    }
-
-    def "unreferenced types can have fields removed, and referenced type must not be removed if used elsewhere"() {
-        given:
-        GraphQLSchema schema = TestUtil.schema("""
-
-        directive @private on FIELD_DEFINITION
-        
-        type Query {
-            foo: Foo 
-        }
-        
-        type Foo {
-            id: ID
-        }
-        
-        type Bar {
-            baz: String
-            foo: Bing
-            bing: Bing @private
-        }
-        
-        type Bing {
-            id: ID
-        }
-        """)
-
-        when:
-        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
-
-        then: "Bar.bing field must have been removed"
-        (restrictedSchema.getType("Bar") as GraphQLObjectType).getFieldDefinition("bing") == null
-
-        and: "since Bing is used elsewhere, it SHOULD not be removed"
-        restrictedSchema.getType("Bing") != null
-    }
-
     def "use type references - private field declared with interface type removes both concrete and interface"() {
         given:
         def query = newObject()
