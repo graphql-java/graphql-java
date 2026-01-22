@@ -7,10 +7,9 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
-
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
 
@@ -81,8 +80,10 @@ public class FastSchemaGenerator {
         // Build the code registry
         GraphQLCodeRegistry codeRegistry = buildCtx.getCodeRegistry().build();
 
-        // Extract operation types by name from built types
-        Set<GraphQLType> allBuiltTypes = buildCtx.getTypes();
+        // Extract operation types by name from built types (all types from buildCtx are named types)
+        Set<GraphQLNamedType> allBuiltTypes = buildCtx.getTypes().stream()
+                .map(t -> (GraphQLNamedType) t)
+                .collect(Collectors.toSet());
 
         // Get the actual type names from operationTypeDefinitions, defaulting to standard names
         String queryTypeName = getOperationTypeName(operationTypeDefinitions, "query", "Query");
@@ -136,8 +137,8 @@ public class FastSchemaGenerator {
         return defaultTypeName;
     }
 
-    private GraphQLObjectType findOperationType(Set<GraphQLType> types, String typeName) {
-        for (GraphQLType type : types) {
+    private GraphQLObjectType findOperationType(Set<GraphQLNamedType> types, String typeName) {
+        for (GraphQLNamedType type : types) {
             if (type instanceof GraphQLObjectType) {
                 GraphQLObjectType objectType = (GraphQLObjectType) type;
                 if (objectType.getName().equals(typeName)) {

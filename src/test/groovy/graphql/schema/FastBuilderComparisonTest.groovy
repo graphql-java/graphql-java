@@ -53,7 +53,7 @@ class FastBuilderComparisonTest extends Specification {
             GraphQLObjectType queryType,
             GraphQLObjectType mutationType = null,
             GraphQLObjectType subscriptionType = null,
-            List<GraphQLType> additionalTypes = [],
+            List<GraphQLNamedType> additionalTypes = [],
             List<GraphQLDirective> additionalDirectives = [],
             GraphQLCodeRegistry.Builder codeRegistry = null
     ) {
