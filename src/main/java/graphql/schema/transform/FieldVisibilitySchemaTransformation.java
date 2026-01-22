@@ -119,16 +119,20 @@ public class FieldVisibilitySchemaTransformation {
      */
     private Set<String> findRootUnusedTypes(GraphQLSchema schema) {
         // Collect all types reachable from operation roots + directives
+        // Use a traverser that includes interface implementations
         Set<String> typesReachableFromRoots = new LinkedHashSet<>();
-        SchemaTraverser traverser = new SchemaTraverser();
+        SchemaTraverser traverser = new SchemaTraverser(getChildrenFn(schema));
         TypeObservingVisitor visitor = new TypeObservingVisitor(typesReachableFromRoots);
         traverser.depthFirst(visitor, getRootTypes(schema));
 
         // Root unused types are additional types that are NOT reachable from roots
+        // Also ignore special introspection types starting with "_" (like _AppliedDirective)
         Set<String> rootUnusedTypes = new LinkedHashSet<>();
         for (GraphQLNamedType type : schema.getAdditionalTypes()) {
             String typeName = type.getName();
-            if (!typesReachableFromRoots.contains(typeName) && !Introspection.isIntrospectionTypes(typeName)) {
+            if (!typesReachableFromRoots.contains(typeName)
+                && !Introspection.isIntrospectionTypes(typeName)
+                && !typeName.startsWith("_")) {
                 rootUnusedTypes.add(typeName);
             }
         }

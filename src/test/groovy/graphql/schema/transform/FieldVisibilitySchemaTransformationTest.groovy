@@ -118,9 +118,10 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         when:
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
-        then: "BillingStatus and SuperSecretCustomerData are preserved as they are additional types not reachable from roots"
-        restrictedSchema.getType("BillingStatus") != null
-        restrictedSchema.getType("SuperSecretCustomerData") != null
+        then: "BillingStatus and SuperSecretCustomerData were originally reachable from roots (via Account.billingStatus)"
+        and: "After the private field is removed, they become unreachable and are removed"
+        restrictedSchema.getType("BillingStatus") == null
+        restrictedSchema.getType("SuperSecretCustomerData") == null
     }
 
     def "interface and its implementations that have both private and public reference is retained"() {
@@ -286,11 +287,12 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("private") == null
         restrictedSchema.getType("Bar") != null
 
-        and: "Bing is an additional type (interface implementation) and preserved along with types it references"
-        restrictedSchema.getType("Bing") != null
-        restrictedSchema.getType("Baz") != null
-        restrictedSchema.getType("FooOrBar") != null
-        restrictedSchema.getType("Foo") != null
+        and: "Baz, Bing, FooOrBar, Foo were originally reachable from roots via Query.private"
+        and: "After the private field is removed, they become unreachable and are removed"
+        restrictedSchema.getType("Foo") == null
+        restrictedSchema.getType("Baz") == null
+        restrictedSchema.getType("Bing") == null
+        restrictedSchema.getType("FooOrBar") == null
     }
 
 
@@ -987,9 +989,10 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
 
-        and: "BillingStatus and SuperSecretCustomerData are additional types not reachable from roots, so they are preserved"
-        restrictedSchema.getType("BillingStatus") != null
-        restrictedSchema.getType("SuperSecretCustomerData") != null
+        and: "BillingStatus and SuperSecretCustomerData were originally reachable via Account.billingStatus"
+        and: "After the private field is removed, they become unreachable and are removed"
+        restrictedSchema.getType("BillingStatus") == null
+        restrictedSchema.getType("SuperSecretCustomerData") == null
     }
 
 
@@ -1533,6 +1536,73 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         and: "Second unused subgraph is fully preserved"
         restrictedSchema.getType("UnusedB") != null
         restrictedSchema.getType("UnusedBChild") != null
+    }
+
+    def "findRootUnusedTypes considers interface implementations as reachable from roots"() {
+        given:
+        // This test verifies that interface implementations are correctly identified as 
+        // reachable from roots when finding root unused types, not just preserved by accident
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            node: Node
+        }
+
+        interface Node {
+            id: ID!
+        }
+
+        # NodeImpl implements Node and is reachable via interface
+        # It should be considered reachable from roots, NOT a root unused type
+        type NodeImpl implements Node {
+            id: ID!
+            data: String
+        }
+
+        # TrulyUnused is not connected to Query at all - it IS a root unused type
+        type TrulyUnused {
+            value: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "NodeImpl is reachable from Query via Node interface, so it should be preserved"
+        restrictedSchema.getType("Node") != null
+        restrictedSchema.getType("NodeImpl") != null
+
+        and: "TrulyUnused is an additional type not reachable from roots, so it is preserved as root unused type"
+        restrictedSchema.getType("TrulyUnused") != null
+    }
+
+    def "findRootUnusedTypes ignores special introspection types starting with underscore"() {
+        given:
+        // This test verifies that types starting with "_" (like _AppliedDirective) are ignored
+        // when finding root unused types, matching the behavior of TypeRemovalVisitor
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("foo").type(Scalars.GraphQLString).build())
+                .build()
+
+        // Create a special type starting with "_" (like _AppliedDirective)
+        def specialType = newObject()
+                .name("_SpecialIntrospectionType")
+                .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
+                .build()
+
+        def schema = GraphQLSchema.newSchema()
+                .query(query)
+                .additionalType(specialType)
+                .build()
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "Special introspection type starting with _ should be preserved and not treated as root unused type"
+        restrictedSchema.getType("_SpecialIntrospectionType") != null
     }
 
 }
