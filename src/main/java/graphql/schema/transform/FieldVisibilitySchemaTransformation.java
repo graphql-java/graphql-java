@@ -63,6 +63,10 @@ public class FieldVisibilitySchemaTransformation {
 
         beforeTransformationHook.run();
 
+        // Step 1: Find root unused types BEFORE transformation
+        // These are types that exist in the schema but are NOT reachable from operation types + directives
+        Set<String> rootUnusedTypes = findRootUnusedTypes(schema);
+
         // we delete all fields that should be deleted
         // this assumes the field remove itself is semantically valid
         GraphQLSchema interimSchema = transformSchemaWithDeletes(schema,
@@ -87,6 +91,18 @@ public class FieldVisibilitySchemaTransformation {
         TypeObservingVisitor typeObservingVisitor = new TypeObservingVisitor(observedTypes);
         schemaTraverser.depthFirst(typeObservingVisitor, getRootTypes(interimSchema));
 
+        // Step 2: Traverse from root unused types that still exist after transformation
+        // This preserves originally unused types and their dependencies
+        List<GraphQLSchemaElement> existingRootUnusedTypes = rootUnusedTypes.stream()
+                .map(interimSchema::getType)
+                .filter(Objects::nonNull)
+                .map(type -> (GraphQLSchemaElement) type)
+                .collect(Collectors.toList());
+
+        if (!existingRootUnusedTypes.isEmpty()) {
+            schemaTraverser.depthFirst(typeObservingVisitor, existingRootUnusedTypes);
+        }
+
         // then we delete all the types which are not used anymore
         GraphQLSchema finalSchema = transformSchemaWithDeletes(interimSchema,
                 new TypeRemovalVisitor(observedTypes));
@@ -95,6 +111,28 @@ public class FieldVisibilitySchemaTransformation {
         afterTransformationHook.run();
 
         return finalSchema;
+    }
+
+    /**
+     * Finds root unused types - types that exist in additional types but are NOT reachable
+     * from operation types (Query, Mutation, Subscription) and directives.
+     */
+    private Set<String> findRootUnusedTypes(GraphQLSchema schema) {
+        // Collect all types reachable from operation roots + directives
+        Set<String> typesReachableFromRoots = new LinkedHashSet<>();
+        SchemaTraverser traverser = new SchemaTraverser();
+        TypeObservingVisitor visitor = new TypeObservingVisitor(typesReachableFromRoots);
+        traverser.depthFirst(visitor, getRootTypes(schema));
+
+        // Root unused types are additional types that are NOT reachable from roots
+        Set<String> rootUnusedTypes = new LinkedHashSet<>();
+        for (GraphQLNamedType type : schema.getAdditionalTypes()) {
+            String typeName = type.getName();
+            if (!typesReachableFromRoots.contains(typeName) && !Introspection.isIntrospectionTypes(typeName)) {
+                rootUnusedTypes.add(typeName);
+            }
+        }
+        return rootUnusedTypes;
     }
 
     // Creates a getChildrenFn that includes interface

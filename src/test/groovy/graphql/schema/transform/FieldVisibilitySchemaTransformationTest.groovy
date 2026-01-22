@@ -118,9 +118,9 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         when:
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
-        then:
-        restrictedSchema.getType("BillingStatus") == null
-        restrictedSchema.getType("SuperSecretCustomerData") == null
+        then: "BillingStatus and SuperSecretCustomerData are preserved as they are additional types not reachable from roots"
+        restrictedSchema.getType("BillingStatus") != null
+        restrictedSchema.getType("SuperSecretCustomerData") != null
     }
 
     def "interface and its implementations that have both private and public reference is retained"() {
@@ -284,11 +284,13 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         then:
         (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("private") == null
-        restrictedSchema.getType("Foo") == null
         restrictedSchema.getType("Bar") != null
-        restrictedSchema.getType("Baz") == null
-        restrictedSchema.getType("Bing") == null
-        restrictedSchema.getType("FooOrBar") == null
+
+        and: "Bing is an additional type (interface implementation) and preserved along with types it references"
+        restrictedSchema.getType("Bing") != null
+        restrictedSchema.getType("Baz") != null
+        restrictedSchema.getType("FooOrBar") != null
+        restrictedSchema.getType("Foo") != null
     }
 
 
@@ -829,7 +831,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("FooEnum") == null
     }
 
-    def "unreferenced types will be removed"() {
+    def "unreferenced types can have fields removed, and the referenced types must be removed as well if they are not used"() {
         given:
         GraphQLSchema schema = TestUtil.schema("""
 
@@ -856,12 +858,90 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         when:
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
-        then: "Bar is not used anywhere, hence it should be removed"
-        restrictedSchema.getType("Bar") == null
+        then: "Bar is preserved as a root unused type (additional type not reachable from roots)"
+        restrictedSchema.getType("Bar") != null
 
-        and: "since Bing is not used anywhere else, it should be removed"
-        restrictedSchema.getType("Bing") == null
+        and: "Bar.bing field must have been removed"
+        (restrictedSchema.getType("Bar") as GraphQLObjectType).getFieldDefinition("bing") == null
 
+        and: "Bing is also an additional type not reachable from roots, so it is preserved"
+        restrictedSchema.getType("Bing") != null
+    }
+
+    def "unreferenced types can have fields removed, and referenced type must not be removed if used elsewhere in the connected graph"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        type Query {
+            foo: Foo 
+            zinc: Bing
+        }
+        
+        type Foo {
+            id: ID
+        }
+        
+        type Bar {
+            baz: String
+            bing: Bing @private
+        }
+        
+        type Bing {
+            id: ID
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "Bar is preserved as a root unused type"
+        restrictedSchema.getType("Bar") != null
+
+        and: "Bar.bing field must have been removed"
+        (restrictedSchema.getType("Bar") as GraphQLObjectType).getFieldDefinition("bing") == null
+
+        and: "since Bing is used in the connected graph, it MUST not be removed"
+        restrictedSchema.getType("Bing") != null
+    }
+
+    def "unreferenced types can have fields removed, and referenced type must not be removed if used elsewhere"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+        
+        type Query {
+            foo: Foo 
+        }
+        
+        type Foo {
+            id: ID
+        }
+        
+        type Bar {
+            baz: String
+            foo: Bing
+            bing: Bing @private
+        }
+        
+        type Bing {
+            id: ID
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "Bar is preserved as a root unused type"
+        restrictedSchema.getType("Bar") != null
+
+        and: "Bar.bing field must have been removed"
+        (restrictedSchema.getType("Bar") as GraphQLObjectType).getFieldDefinition("bing") == null
+
+        and: "since Bing is used elsewhere (Bar.foo), it SHOULD not be removed"
+        restrictedSchema.getType("Bing") != null
     }
     def "use type references - private field declared with interface type removes both concrete and interface"() {
         given:
@@ -906,8 +986,10 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
 
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
-        restrictedSchema.getType("BillingStatus") == null
-        restrictedSchema.getType("SuperSecretCustomerData") == null
+
+        and: "BillingStatus and SuperSecretCustomerData are additional types not reachable from roots, so they are preserved"
+        restrictedSchema.getType("BillingStatus") != null
+        restrictedSchema.getType("SuperSecretCustomerData") != null
     }
 
 
@@ -1344,6 +1426,113 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         // Rental should only have id field (customer is private)
         (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("id") != null
         (restrictedSchema.getType("Rental") as GraphQLObjectType).getFieldDefinition("customer") == null
+    }
+
+    def "originally unused type subgraph is fully preserved with private field removal"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            account: Account
+        }
+        
+        type Account {
+            name: String
+        }
+        
+        # This is an originally unused subgraph - not reachable from Query
+        type UnusedRoot {
+            id: ID
+            child: UnusedChild
+            privateField: PrivateOnlyType @private
+        }
+        
+        type UnusedChild {
+            value: String
+            grandchild: UnusedGrandchild
+        }
+        
+        type UnusedGrandchild {
+            data: Int
+        }
+        
+        type PrivateOnlyType {
+            secret: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "Query and Account are preserved as normal"
+        restrictedSchema.getType("Query") != null
+        restrictedSchema.getType("Account") != null
+
+        and: "Originally unused root type is preserved"
+        restrictedSchema.getType("UnusedRoot") != null
+
+        and: "Private field on unused root is removed"
+        (restrictedSchema.getType("UnusedRoot") as GraphQLObjectType).getFieldDefinition("privateField") == null
+
+        and: "Non-private fields on unused root are preserved"
+        (restrictedSchema.getType("UnusedRoot") as GraphQLObjectType).getFieldDefinition("id") != null
+        (restrictedSchema.getType("UnusedRoot") as GraphQLObjectType).getFieldDefinition("child") != null
+
+        and: "Types reachable from preserved unused root are preserved"
+        restrictedSchema.getType("UnusedChild") != null
+        restrictedSchema.getType("UnusedGrandchild") != null
+
+        and: "PrivateOnlyType is also an additional type not reachable from roots, so it is preserved"
+        restrictedSchema.getType("PrivateOnlyType") != null
+    }
+
+    def "multiple originally unused type subgraphs are all preserved"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            main: MainType
+        }
+        
+        type MainType {
+            id: ID
+        }
+        
+        # First unused subgraph
+        type UnusedA {
+            aValue: String
+            aChild: UnusedAChild
+        }
+        
+        type UnusedAChild {
+            aChildValue: Int
+        }
+        
+        # Second unused subgraph
+        type UnusedB {
+            bValue: String
+            bChild: UnusedBChild
+        }
+        
+        type UnusedBChild {
+            bChildValue: Int
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "First unused subgraph is fully preserved"
+        restrictedSchema.getType("UnusedA") != null
+        restrictedSchema.getType("UnusedAChild") != null
+
+        and: "Second unused subgraph is fully preserved"
+        restrictedSchema.getType("UnusedB") != null
+        restrictedSchema.getType("UnusedBChild") != null
     }
 
 }
