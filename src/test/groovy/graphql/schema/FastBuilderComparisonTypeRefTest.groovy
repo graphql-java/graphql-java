@@ -29,8 +29,6 @@ import static graphql.schema.GraphQLTypeReference.typeRef
  */
 class FastBuilderComparisonTypeRefTest extends FastBuilderComparisonTest {
 
-    // ==================== Object Type with Type Reference Fields ====================
-
     def "object type with type reference field resolves correctly"() {
         given: "SDL with object type referencing another object"
         def sdl = """
@@ -205,8 +203,6 @@ class FastBuilderComparisonTypeRefTest extends FastBuilderComparisonTest {
         searchField.getArgument("filter").getType() == filterInput
     }
 
-    // ==================== Interface Type with Type Reference Fields ====================
-
     def "interface type with type reference field resolves correctly"() {
         given: "SDL with interface referencing object type"
         def sdl = """
@@ -316,8 +312,6 @@ class FastBuilderComparisonTypeRefTest extends FastBuilderComparisonTest {
         resolvedInterface.getFieldDefinition("search").getArgument("filter").getType() == filterInput
     }
 
-    // ==================== Union Type with Type Reference Members ====================
-
     def "union type with type reference members resolves correctly"() {
         given: "SDL with union of object types"
         def sdl = """
@@ -380,8 +374,6 @@ class FastBuilderComparisonTypeRefTest extends FastBuilderComparisonTest {
         resolvedPet.types[0] in [catType, dogType]
         resolvedPet.types[1] in [catType, dogType]
     }
-
-    // ==================== Input Object with Type Reference Fields ====================
 
     def "input object with type reference field resolves correctly"() {
         given: "SDL with input object referencing custom scalar"
@@ -496,8 +488,6 @@ class FastBuilderComparisonTypeRefTest extends FastBuilderComparisonTest {
         def resolvedUser = fastSchema.getType("UserInput") as GraphQLInputObjectType
         resolvedUser.getField("address").getType() == addressInput
     }
-
-    // ==================== Directive Arguments with Type References ====================
 
     def "directive argument with type reference resolves correctly"() {
         given: "SDL with directive referencing custom scalar"
@@ -646,8 +636,6 @@ class FastBuilderComparisonTypeRefTest extends FastBuilderComparisonTest {
         def resolvedDirective = fastSchema.getDirective("config")
         resolvedDirective.getArgument("settings").getType() == configInput
     }
-
-    // ==================== Applied Directives with Type References ====================
 
     def "schema applied directive with type reference argument resolves correctly"() {
         given: "SDL with schema-level applied directive"
@@ -809,8 +797,6 @@ class FastBuilderComparisonTypeRefTest extends FastBuilderComparisonTest {
         resolvedApplied.getArgument("info").getType() == GraphQLString
     }
 
-    // ==================== Nested Type References ====================
-
     def "nested type references with NonNull and List resolve correctly"() {
         given: "SDL with deeply nested type wrappers"
         def sdl = """
@@ -909,8 +895,6 @@ class FastBuilderComparisonTypeRefTest extends FastBuilderComparisonTest {
         def resolvedPerson = fastSchema.getType("Person") as GraphQLObjectType
         resolvedPerson.getFieldDefinition("friend").getType() == personType
     }
-
-    // ==================== Complex Schema with Multiple Type References ====================
 
     def "complex schema with multiple type references resolves correctly"() {
         given: "SDL with many interconnected types"

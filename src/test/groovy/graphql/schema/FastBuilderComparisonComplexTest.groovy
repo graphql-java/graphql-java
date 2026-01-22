@@ -27,8 +27,6 @@ import static graphql.schema.GraphQLUnionType.newUnionType
  */
 class FastBuilderComparisonComplexTest extends FastBuilderComparisonTest {
 
-    // ==================== Complex Schemas ====================
-
     def "schema with all GraphQL type kinds matches between FastBuilder and standard builder"() {
         given: "SDL with all type kinds"
         def sdl = """
@@ -409,8 +407,6 @@ class FastBuilderComparisonComplexTest extends FastBuilderComparisonTest {
         then: "schemas are equivalent"
         assertSchemasEquivalent(fastSchema, standardSchema)
     }
-
-    // ==================== Directives ====================
 
     def "schema with custom directives matches between FastBuilder and standard builder"() {
         given: "SDL with custom directives"

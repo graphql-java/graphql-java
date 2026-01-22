@@ -157,8 +157,6 @@ class FastBuilderTest extends Specification {
         schema.getType("Scalar2") != null
     }
 
-    // ==================== Phase 2: Directives with Scalar Arguments ====================
-
     def "directive with type reference argument resolves correctly"() {
         given: "a custom scalar"
         def customScalar = newScalar()
@@ -415,8 +413,6 @@ class FastBuilderTest extends Specification {
         resolvedDirective.getArgument("msg").getType() == GraphQLString
     }
 
-    // ==================== Phase 3: Enumeration Types ====================
-
     def "enum type can be added to schema"() {
         given: "an enum type"
         def statusEnum = newEnum()
@@ -487,8 +483,6 @@ class FastBuilderTest extends Specification {
         def resolvedDirective = schema.getDirective("log")
         resolvedDirective.getArgument("level").getType() == levelEnum
     }
-
-    // ==================== Phase 4: Input Object Types ====================
 
     def "input object type can be added to schema"() {
         given: "an input object type"
@@ -735,8 +729,6 @@ class FastBuilderTest extends Specification {
         resolvedDirective.getArgument("settings").getType() == configInput
     }
 
-    // ==================== Phase 5: Applied Directives ====================
-
     def "schema applied directive with type reference argument resolves correctly"() {
         given: "a custom scalar for directive argument"
         def configScalar = newScalar()
@@ -924,8 +916,6 @@ class FastBuilderTest extends Specification {
         schema.getSchemaAppliedDirective("dir1") != null
         schema.getSchemaAppliedDirective("dir2") != null
     }
-
-    // ==================== Phase 6: Object Types ====================
 
     def "object type field with type reference resolves correctly"() {
         given: "a custom object type"
@@ -1245,8 +1235,6 @@ class FastBuilderTest extends Specification {
         thrown(AssertException)
     }
 
-    // ==================== Phase 7: Interface Types ====================
-
     def "interface type can be added to schema"() {
         given: "an interface type"
         def nodeInterface = GraphQLInterfaceType.newInterface()
@@ -1530,8 +1518,6 @@ class FastBuilderTest extends Specification {
         resolvedApplied.getArgument("info").getType() == metaScalar
     }
 
-    // ==================== Phase 8: Union Types ====================
-
     def "union type can be added to schema"() {
         given: "possible types for union"
         def catType = newObject()
@@ -1760,8 +1746,6 @@ class FastBuilderTest extends Specification {
         def resolvedApplied = resolvedUnion.getAppliedDirective("unionMeta")
         resolvedApplied.getArgument("info").getType() == metaScalar
     }
-
-    // ==================== Phase 9: Validation and Edge Cases ====================
 
     def "withValidation(false) allows schema without type resolver"() {
         given: "an interface without type resolver"

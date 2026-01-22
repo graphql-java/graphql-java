@@ -15,8 +15,6 @@ import static graphql.schema.GraphQLScalarType.newScalar
  */
 class FastBuilderComparisonMigratedTest extends FastBuilderComparisonTest {
 
-    // ==================== Migrated Tests ====================
-
     def "scalar type schema matches standard builder"() {
         given: "SDL for a schema with custom scalar"
         def sdl = """

@@ -25,8 +25,6 @@ import static graphql.schema.GraphQLObjectType.newObject
  */
 class FastBuilderComparisonTest extends Specification {
 
-    // ==================== Helper Functions ====================
-
     /**
      * Builds a schema from SDL using the standard path:
      * SDL → SchemaParser → SchemaGenerator → standard Builder
@@ -77,8 +75,6 @@ class FastBuilderComparisonTest extends Specification {
 
         return builder.build()
     }
-
-    // ==================== Assertion Helpers ====================
 
     /**
      * Built-in scalar type names that may differ between FastBuilder and standard Builder.
@@ -163,8 +159,6 @@ class FastBuilderComparisonTest extends Specification {
                     "Subscription types differ: ${fastSchema.subscriptionType?.name} vs ${standardSchema.subscriptionType?.name}"
         }
     }
-
-    // ==================== Smoke Test ====================
 
     def "trivial schema with one String field matches between FastBuilder and standard builder"() {
         given: "SDL for a trivial schema"
