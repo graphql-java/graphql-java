@@ -18,10 +18,13 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.SchemaTraverser;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
@@ -175,17 +178,42 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
      * <p>
      * The fix: During traversal, we also capture types directly from fields/arguments/inputs
      * (in {@link #indirectStrongReferences}). After traversal, we merge any types that were captured
-     * this way but weren't found through normal traversal.
+     * this way but weren't found through normal traversal. Additionally, we traverse each newly
+     * discovered indirect strong reference to collect any types it references, recursively handling
+     * cases where indirect strong references are nested within other indirect strong references.
+     * <p>
+     * We reuse the same visitor instance to ensure duplicate type detection works correctly
+     * across all traversals.
      *
      * @param visitedTypes the types collected through normal traversal
      *
      * @return the fixed map including any dangling replaced types
      */
     private Map<String, GraphQLNamedType> fixDanglingReplacedTypes(Map<String, GraphQLNamedType> visitedTypes) {
+        // Collect indirect strong references that are not yet in the visited types
+        List<GraphQLNamedType> newlyDiscoveredTypes = new ArrayList<>();
         for (GraphQLNamedType indirectStrongReference : indirectStrongReferences.values()) {
             String typeName = indirectStrongReference.getName();
-            visitedTypes.putIfAbsent(typeName, indirectStrongReference);
+            if (!visitedTypes.containsKey(typeName)) {
+                visitedTypes.put(typeName, indirectStrongReference);
+                newlyDiscoveredTypes.add(indirectStrongReference);
+            }
         }
+
+        // For each newly discovered type, traverse it to collect any types it references
+        // We reuse this visitor instance to ensure duplicate type detection works correctly
+        if (!newlyDiscoveredTypes.isEmpty()) {
+            // Clear indirect strong references before traversing to capture new ones
+            indirectStrongReferences.clear();
+
+            SchemaTraverser traverser = new SchemaTraverser(
+                    schemaElement -> schemaElement.getChildrenWithTypeReferences().getChildrenAsList());
+            traverser.depthFirst(this, newlyDiscoveredTypes);
+
+            // Recursively fix any newly discovered indirect strong references
+            fixDanglingReplacedTypes(visitedTypes);
+        }
+
         return visitedTypes;
     }
 }
