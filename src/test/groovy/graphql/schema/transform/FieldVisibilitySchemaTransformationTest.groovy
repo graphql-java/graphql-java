@@ -1582,27 +1582,37 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         given:
         // This test verifies that types starting with "_" (like _AppliedDirective) are ignored
         // when finding root unused types, matching the behavior of TypeRemovalVisitor
-        def query = newObject()
-                .name("Query")
-                .field(newFieldDefinition().name("foo").type(Scalars.GraphQLString).build())
-                .build()
+        // We use IntrospectionWithDirectivesSupport which adds real "_" types to the schema
+        def baseSchema = TestUtil.schema("""
+            directive @private on FIELD_DEFINITION
+            directive @example on FIELD_DEFINITION
+            
+            type Query {
+                publicField: String @example
+                privateField: SecretData @private
+            }
+            
+            type SecretData {
+                secret: String
+            }
+        """)
 
-        // Create a special type starting with "_" (like _AppliedDirective)
-        def specialType = newObject()
-                .name("_SpecialIntrospectionType")
-                .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .build()
-
-        def schema = GraphQLSchema.newSchema()
-                .query(query)
-                .additionalType(specialType)
-                .build()
+        // Apply IntrospectionWithDirectivesSupport which adds _AppliedDirective and _DirectiveArgument types
+        def schema = new graphql.introspection.IntrospectionWithDirectivesSupport().apply(baseSchema)
 
         when:
         GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
 
-        then: "Special introspection type starting with _ should be preserved and not treated as root unused type"
-        restrictedSchema.getType("_SpecialIntrospectionType") != null
+        then: "Private field and its type should be removed"
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("privateField") == null
+        restrictedSchema.getType("SecretData") == null
+
+        and: "Public field should be preserved"
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("publicField") != null
+
+        and: "Special introspection types starting with _ should be preserved"
+        restrictedSchema.getType("_AppliedDirective") != null
+        restrictedSchema.getType("_DirectiveArgument") != null
     }
 
 }
