@@ -1,5 +1,7 @@
 package graphql.schema
 
+
+import graphql.AssertException
 import graphql.GraphQL
 import graphql.Scalars
 import graphql.TestUtil
@@ -1056,14 +1058,6 @@ type Query {
         """
 
         def schema = TestUtil.schema(sdl)
-        schema = schema.transform { builder ->
-            for (def type : schema.getTypeMap().values()) {
-                if (type != schema.getQueryType() && type != schema.getMutationType() && type != schema.getSubscriptionType()) {
-                    builder.additionalType(type)
-                }
-            }
-        }
-
 
         def visitor = new GraphQLTypeVisitorStub() {
 
@@ -1085,7 +1079,7 @@ type Query {
             }
         }
         when:
-        def newSchema = SchemaTransformer.transformSchema(schema, visitor)
+        def newSchema = SchemaTransformer.transformSchemaWithDeletes(schema, visitor)
         def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
         def newSdl = printer.print(newSchema)
 
@@ -1101,5 +1095,373 @@ type Query {
 type Rental {
   id: ID
 }""".trim()
+    }
+
+    /**
+     * This test verifies the fix for issue 4133: deleting nodes with circular references.
+     * <p>
+     * <h3>The Problem (Fixed)</h3>
+     * When a node is deleted via {@code deleteNode(context)}, the traversal does NOT continue to visit
+     * the children of that deleted node (see {@code TraverserState.pushAll()}). This was problematic
+     * when combined with how GraphQL-Java handles circular type references using {@code GraphQLTypeReference}.
+     * <p>
+     * <h3>How GraphQLTypeReference Creates Asymmetry</h3>
+     * In circular references, one direction uses the actual type object, while the other uses a
+     * {@code GraphQLTypeReference} (a placeholder resolved during schema building):
+     * <ul>
+     *   <li>{@code Customer.rental} → {@code GraphQLTypeReference("Rental")} (placeholder)</li>
+     *   <li>{@code Rental.customer} → {@code Customer} (actual object reference)</li>
+     * </ul>
+     * <p>
+     * <h3>Traversal in This Test</h3>
+     * <ol>
+     *   <li>{@code Query.rental} field is visited → has @remove → DELETED → children NOT traversed</li>
+     *   <li>{@code Rental} type is NOT visited via this path (it's a child of the deleted field)</li>
+     *   <li>{@code Query.customer} field is visited → {@code Customer} type IS visited</li>
+     *   <li>{@code Customer.rental} field is visited → but its type is {@code GraphQLTypeReference("Rental")}</li>
+     *   <li>The actual {@code Rental} GraphQLObjectType would NOT be visited (only referenced by name)</li>
+     *   <li>{@code Customer.payment} field is visited → has @remove → DELETED → {@code Payment} NOT visited</li>
+     *   <li>{@code Inventory} would NOT be visited (only reachable through Payment)</li>
+     * </ol>
+     * <p>
+     * <h3>The Fix</h3>
+     * {@code SchemaTransformer.transformSchemaWithDeletes()} ensures all types are visited by temporarily
+     * adding them as extra root types during transformation. Types that are modified are then included
+     * in the rebuilt schema's additionalTypes, ensuring type references are properly resolved.
+     */
+    def "issue 4133 - circular references with deletes - fixed with transformSchemaWithDeletes"() {
+        def sdl = """
+            directive @remove on FIELD_DEFINITION
+            
+            type Query {
+              rental: Rental @remove
+              customer: Customer
+            }
+            
+            type Customer {
+              rental: Rental
+              payment: Payment @remove
+            }
+            
+            type Rental {
+              id: ID
+              customer: Customer @remove
+            }
+            
+            type Payment {
+              inventory: Inventory @remove
+            }
+            
+            type Inventory {
+              payment: Payment @remove
+            }
+        """
+
+        def schema = TestUtil.schema(sdl)
+
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.hasAppliedDirective("remove")) {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getFields().stream().allMatch(field -> field.hasAppliedDirective("remove"))) {
+                    return deleteNode(context)
+                }
+
+                return TraversalControl.CONTINUE
+            }
+        }
+        when:
+        // Use the new transformSchemaWithDeletes method - this should work!
+        def newSchema = SchemaTransformer.transformSchemaWithDeletes(schema, visitor)
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
+        def newSdl = printer.print(newSchema)
+
+        then:
+        newSdl.trim() == """type Customer {
+  rental: Rental
+}
+
+type Query {
+  customer: Customer
+}
+
+type Rental {
+  id: ID
+}""".trim()
+    }
+
+    def "indirect type references should have their children collected"() {
+        given:
+        // Bar is referenced by Foo.bar directly
+        def bar = newObject()
+                .name("Bar")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(Scalars.GraphQLID)
+                        .build())
+                .build()
+
+        // Foo references Bar directly via Foo.bar field
+        def foo = newObject()
+                .name("Foo")
+                .field(newFieldDefinition()
+                        .name("bar")
+                        .type(bar)  // Direct reference to Bar
+                        .build())
+                .build()
+
+        // Query.foo1 references Foo via type reference (indirect)
+        // Query.foo2 references Foo directly (strong reference)
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("foo1")
+                        .type(typeRef("Foo"))  // Indirect reference via typeRef
+                        .build())
+                .field(newFieldDefinition()
+                        .name("foo2")
+                        .type(foo)  // Direct reference to Foo
+                        .build())
+                .build()
+
+        def schema = newSchema()
+                .query(query)
+                .build()
+
+        // Visitor that removes Query.foo2
+        def visitor = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.name == "foo2") {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchemaWithDeletes(schema, visitor)
+
+        then: "Query.foo2 should be removed"
+        (newSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("foo2") == null
+
+        and: "Query.foo1 should still exist"
+        (newSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("foo1") != null
+
+        and: "Foo should still exist (reachable via Query.foo1)"
+        newSchema.getType("Foo") != null
+
+        and: "Bar should still exist (reachable via Query.foo1 -> Foo -> bar)"
+        newSchema.getType("Bar") != null
+    }
+
+    def "nested indirect type references requiring multiple traversals should have their children collected"() {
+        given:
+        // Create a deeply nested structure where each level has indirect references:
+        // Query.level1 -> Level1 (via typeRef) -> Level2 (direct) -> Level3 (via typeRef) -> Level4 (direct) -> Leaf (direct)
+        // Query.directRef -> Level1 (direct) - this is the only direct path
+        // When we remove Query.directRef, the nested traversals should still find all types
+
+        def leaf = newObject()
+                .name("Leaf")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(Scalars.GraphQLString)
+                        .build())
+                .build()
+
+        def level4 = newObject()
+                .name("Level4")
+                .field(newFieldDefinition()
+                        .name("leaf")
+                        .type(leaf)  // Direct reference to Leaf
+                        .build())
+                .build()
+
+        def level3 = newObject()
+                .name("Level3")
+                .field(newFieldDefinition()
+                        .name("level4")
+                        .type(level4)  // Direct reference to Level4
+                        .build())
+                .build()
+
+        def level2 = newObject()
+                .name("Level2")
+                .field(newFieldDefinition()
+                        .name("level3")
+                        .type(typeRef("Level3"))  // Indirect reference via typeRef
+                        .build())
+                .field(newFieldDefinition()
+                        .name("level3Direct")
+                        .type(level3)  // Direct reference to Level3 (needed for schema build)
+                        .build())
+                .build()
+
+        def level1 = newObject()
+                .name("Level1")
+                .field(newFieldDefinition()
+                        .name("level2")
+                        .type(level2)  // Direct reference to Level2
+                        .build())
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("level1Indirect")
+                        .type(typeRef("Level1"))  // Indirect reference via typeRef
+                        .build())
+                .field(newFieldDefinition()
+                        .name("level1Direct")
+                        .type(level1)  // Direct reference to Level1
+                        .build())
+                .build()
+
+        def schema = newSchema()
+                .query(query)
+                .build()
+
+        // Visitor that removes Query.level1Direct and Level2.level3Direct
+        // This leaves only indirect paths: Query.level1Indirect -> Level1 -> Level2.level3 -> Level3 -> Level4 -> Leaf
+        def visitor = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.name == "level1Direct" || node.name == "level3Direct") {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchemaWithDeletes(schema, visitor)
+
+        then: "Direct fields should be removed"
+        (newSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("level1Direct") == null
+        (newSchema.getType("Level2") as GraphQLObjectType).getFieldDefinition("level3Direct") == null
+
+        and: "Indirect fields should still exist"
+        (newSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("level1Indirect") != null
+        (newSchema.getType("Level2") as GraphQLObjectType).getFieldDefinition("level3") != null
+
+        and: "All types in the chain should still exist (discovered through nested indirect reference traversal)"
+        newSchema.getType("Level1") != null
+        newSchema.getType("Level2") != null
+        newSchema.getType("Level3") != null
+        newSchema.getType("Level4") != null
+        newSchema.getType("Leaf") != null
+    }
+
+    def "redefined types are caught when introduced during transformation and discovered through indirect references"() {
+        given:
+        // Build a valid schema where:
+        // - Query.fooIndirect -> Foo (via typeRef)
+        // - Query.fooDirect -> Foo (direct) - will be removed during transformation
+        // - Foo.targetType -> TargetType (direct) - will be REPLACED during transformation
+        // - Query.existingType -> ExistingType (direct) - already in schema
+        //
+        // During transformation, we will:
+        // 1. Remove Query.fooDirect (so Foo is only reachable via indirect reference)
+        // 2. Replace TargetType with a NEW object also named "ExistingType" (introduces duplicate)
+        //
+        // When fixDanglingReplacedTypes traverses from Foo (indirect reference),
+        // it should discover the replaced type and detect the duplicate with ExistingType
+
+        def targetType = newObject()
+                .name("TargetType")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(Scalars.GraphQLID)
+                        .build())
+                .build()
+
+        def existingType = newObject()
+                .name("ExistingType")
+                .field(newFieldDefinition()
+                        .name("name")
+                        .type(Scalars.GraphQLString)
+                        .build())
+                .build()
+
+        def foo = newObject()
+                .name("Foo")
+                .field(newFieldDefinition()
+                        .name("targetType")
+                        .type(targetType)
+                        .build())
+                .build()
+
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("fooIndirect")
+                        .type(typeRef("Foo"))  // Indirect reference
+                        .build())
+                .field(newFieldDefinition()
+                        .name("fooDirect")
+                        .type(foo)  // Direct reference - will be removed
+                        .build())
+                .field(newFieldDefinition()
+                        .name("existingType")
+                        .type(existingType)  // Direct reference to ExistingType
+                        .build())
+                .build()
+
+        def schema = newSchema()
+                .query(query)
+                .build()
+
+        // Create a duplicate type with the same name as ExistingType but different instance
+        def duplicateExistingType = newObject()
+                .name("ExistingType")
+                .field(newFieldDefinition()
+                        .name("differentField")  // Different field makes it a different object
+                        .type(Scalars.GraphQLInt)
+                        .build())
+                .build()
+
+        // Visitor that:
+        // 1. Removes Query.fooDirect (so Foo is only reachable via indirect reference)
+        // 2. Replaces TargetType with duplicateExistingType (introduces a duplicate "ExistingType")
+        def visitor = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.name == "fooDirect") {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.name == "TargetType") {
+                    // Replace TargetType with a type named "ExistingType" (duplicate!)
+                    return changeNode(context, duplicateExistingType)
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        // This should fail because:
+        // 1. After removing fooDirect, Foo is only reachable via fooIndirect (typeRef)
+        // 2. fixDanglingReplacedTypes traverses from Foo
+        // 3. It discovers the replaced type (now named "ExistingType")
+        // 4. This conflicts with the already-collected ExistingType from Query.existingType
+        SchemaTransformer.transformSchemaWithDeletes(schema, visitor)
+
+        then:
+        def e = thrown(AssertException)
+        e.getMessage().contains("All types within a GraphQL schema must have unique names")
+        e.getMessage().contains("ExistingType")
     }
 }

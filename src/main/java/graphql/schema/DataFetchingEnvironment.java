@@ -238,7 +238,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
     @Nullable
-    <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+    <K, V extends @Nullable Object> DataLoader<K, V> getDataLoader(String dataLoaderName);
 
 
     /**

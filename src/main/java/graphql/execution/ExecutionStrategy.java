@@ -489,12 +489,17 @@ public abstract class ExecutionStrategy {
 
             CompletableFuture<CompletableFuture<Object>> handleCF = engineRunningState.handle(fetchedValue, (result, exception) -> {
                 // because we added an artificial CF, we need to unwrap the exception
-                fetchCtx.onCompleted(result, exception);
-                exception = engineRunningState.possibleCancellation(exception);
+                Throwable possibleWrappedException = engineRunningState.possibleCancellation(exception);
 
-                if (exception != null) {
-                    return handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
+                if (possibleWrappedException != null) {
+                    CompletableFuture<DataFetcherResult<Object>> handledExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, possibleWrappedException);
+                    return handledExceptionResult.thenApply( handledResult -> {
+                        fetchCtx.onExceptionHandled(handledResult);
+                        fetchCtx.onCompleted(result, exception);
+                        return handledResult;
+                    });
                 } else {
+                    fetchCtx.onCompleted(result, exception);
                     // we can simply return the fetched value CF and avoid a allocation
                     return fetchedValue;
                 }
@@ -578,7 +583,7 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    protected <T> CompletableFuture<T> handleFetchingException(
+    protected <T> CompletableFuture<DataFetcherResult<T>> handleFetchingException(
             DataFetchingEnvironment environment,
             ExecutionStrategyParameters parameters,
             Throwable e
@@ -599,10 +604,10 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters) {
+    private <T> CompletableFuture<DataFetcherResult<T>> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters) {
         //noinspection unchecked
         return handler.handleException(handlerParameters).thenApply(
-                handlerResult -> (T) DataFetcherResult.newResult().errors(handlerResult.getErrors()).build()
+                handlerResult -> (DataFetcherResult<T>) DataFetcherResult.newResult().errors(handlerResult.getErrors()).build()
         );
     }
 

@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        gradle-argument: [ 'assemble && ./gradlew check -x test','testWithJava11', 'testWithJava17', 'test -x testWithJava11 -x testWithJava17' ]
+        gradle-argument: [ 'assemble && ./gradlew check -x test','testWithJava11', 'testWithJava17','testWithJava21', 'test -x testWithJava11 -x testWithJava17 -x testWithJava21' ]
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v5
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'corretto'
       - name: build and test
         run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
@@ -30,6 +30,19 @@ jobs:
             **/build/test-results/test/TEST-*.xml
             **/build/test-results/testWithJava11/TEST-*.xml
             **/build/test-results/testWithJava17/TEST-*.xml
+            **/build/test-results/testWithJava21/TEST-*.xml
+  javadoc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: gradle/actions/wrapper-validation@v5
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'corretto'
+      - name: Verify Javadoc
+        run: ./gradlew javadoc --info --stacktrace
   publishToMavenCentral:
     needs: buildAndTest
     runs-on: ubuntu-latest
@@ -43,10 +56,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v5
         with:
-          java-version: '21'
+          java-version: '25'
           distribution: 'corretto'
       - name: publishToMavenCentral
         run: ./gradlew assemble && ./gradlew check -x test -x testng --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace

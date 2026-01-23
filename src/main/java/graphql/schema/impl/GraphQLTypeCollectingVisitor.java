@@ -18,10 +18,13 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.SchemaTraverser;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
@@ -30,6 +33,23 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.util.TraversalControl.CONTINUE;
 import static java.lang.String.format;
 
+/**
+ * A visitor that collects all {@link GraphQLNamedType}s during schema traversal.
+ * <p>
+ * This visitor must be used with a traverser that calls {@code getChildrenWithTypeReferences()}
+ * to get children (see {@link SchemaUtil#visitPartiallySchema}). This means that when a field,
+ * argument, or input field references a type via {@link GraphQLTypeReference}, the traverser
+ * will see the type reference as a child, not the actual type it points to. Type references
+ * themselves are not collected - only concrete type instances are stored in the result map.
+ * <p>
+ * Because type references are not followed, this visitor also tracks "indirect strong references"
+ * - types that are directly referenced (not via type reference) by fields, arguments, and input
+ * fields. This handles edge cases where schema transformations replace type references with
+ * actual types, which would otherwise be missed during traversal.
+ *
+ * @see SchemaUtil#visitPartiallySchema
+ * @see #fixDanglingReplacedTypes
+ */
 @Internal
 public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
@@ -55,31 +75,22 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-        if (isNotTypeReference(node.getName())) {
-            assertTypeUniqueness(node, result);
-        } else {
-            save(node.getName(), node);
-        }
+        assertTypeUniqueness(node, result);
+        save(node.getName(), node);
         return CONTINUE;
     }
 
     @Override
     public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-        if (isNotTypeReference(node.getName())) {
-            assertTypeUniqueness(node, result);
-        } else {
-            save(node.getName(), node);
-        }
+        assertTypeUniqueness(node, result);
+        save(node.getName(), node);
         return CONTINUE;
     }
 
     @Override
     public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
-        if (isNotTypeReference(node.getName())) {
-            assertTypeUniqueness(node, result);
-        } else {
-            save(node.getName(), node);
-        }
+        assertTypeUniqueness(node, result);
+        save(node.getName(), node);
         return CONTINUE;
     }
 
@@ -114,43 +125,25 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
         return CONTINUE;
     }
 
-    private <T> void saveIndirectStrongReference(Supplier<GraphQLType> typeSupplier) {
+    private void saveIndirectStrongReference(Supplier<GraphQLType> typeSupplier) {
         GraphQLNamedType type = unwrapAllAs(typeSupplier.get());
         if (!(type instanceof GraphQLTypeReference)) {
             indirectStrongReferences.put(type.getName(), type);
         }
     }
 
-
-    private boolean isNotTypeReference(String name) {
-        return result.containsKey(name) && !(result.get(name) instanceof GraphQLTypeReference);
-    }
-
     private void save(String name, GraphQLNamedType type) {
         result.put(name, type);
     }
 
-
-    /*
-        From https://spec.graphql.org/October2021/#sec-Type-System
-
-           All types within a GraphQL schema must have unique names. No two provided types may have the same name.
-           No provided type may have a name which conflicts with any built in types (including Scalar and Introspection types).
-
-        Enforcing this helps avoid problems later down the track fo example https://github.com/graphql-java/graphql-java/issues/373
-    */
     private void assertTypeUniqueness(GraphQLNamedType type, Map<String, GraphQLNamedType> result) {
-        GraphQLType existingType = result.get(type.getName());
-        // do we have an existing definition
+        GraphQLNamedType existingType = result.get(type.getName());
         if (existingType != null) {
-            // type references are ok
-            if (!(existingType instanceof GraphQLTypeReference || type instanceof GraphQLTypeReference)) {
-                assertUniqueTypeObjects(type, existingType);
-            }
+            assertUniqueTypeObjects(type, existingType);
         }
     }
 
-    private void assertUniqueTypeObjects(GraphQLNamedType type, GraphQLType existingType) {
+    private void assertUniqueTypeObjects(GraphQLNamedType type, GraphQLNamedType existingType) {
         // object comparison here is deliberate
         if (existingType != type) {
             throw new AssertException(format("All types within a GraphQL schema must have unique names. No two provided types may have the same name.\n" +
@@ -166,21 +159,61 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     }
 
     /**
-     * It's possible for certain schema edits to create a situation where a field / arg / input field had a type reference, then
-     * it got replaced with an actual strong reference and then the schema gets edited such that the only reference
-     * to that type is the replaced strong reference.  This edge case means that the replaced reference can be
-     * missed if it's the only way to get to that type because this visitor asks for the children as original type,
-     * e.g. the type reference and not the replaced reference.
+     * Fixes an edge case where types might be missed during traversal due to replaced type references.
+     * <p>
+     * The problem: During schema construction or transformation, a field's type might initially
+     * be a {@link GraphQLTypeReference} (a placeholder). Later, this reference gets replaced with the
+     * actual type instance. However, the schema traverser uses {@code getChildrenWithTypeReferences()}
+     * to discover children, which returns the original type references, not the replaced strong references.
+     * <p>
+     * The scenario:
+     * <ol>
+     *   <li>Field {@code foo} has type reference to {@code Bar}</li>
+     *   <li>During schema editing, the reference is replaced with the actual {@code Bar} type</li>
+     *   <li>Further edits remove all other paths to {@code Bar}</li>
+     *   <li>Now the only way to reach {@code Bar} is via the replaced reference in {@code foo}</li>
+     *   <li>But the traverser still sees the original type reference as the child, so {@code Bar}
+     *       is never visited as a child node</li>
+     * </ol>
+     * <p>
+     * The fix: During traversal, we also capture types directly from fields/arguments/inputs
+     * (in {@link #indirectStrongReferences}). After traversal, we merge any types that were captured
+     * this way but weren't found through normal traversal. Additionally, we traverse each newly
+     * discovered indirect strong reference to collect any types it references, recursively handling
+     * cases where indirect strong references are nested within other indirect strong references.
+     * <p>
+     * We reuse the same visitor instance to ensure duplicate type detection works correctly
+     * across all traversals.
      *
-     * @param visitedTypes the types collected by this visitor
+     * @param visitedTypes the types collected through normal traversal
      *
-     * @return a fixed up map where the only
+     * @return the fixed map including any dangling replaced types
      */
     private Map<String, GraphQLNamedType> fixDanglingReplacedTypes(Map<String, GraphQLNamedType> visitedTypes) {
+        // Collect indirect strong references that are not yet in the visited types
+        List<GraphQLNamedType> newlyDiscoveredTypes = new ArrayList<>();
         for (GraphQLNamedType indirectStrongReference : indirectStrongReferences.values()) {
             String typeName = indirectStrongReference.getName();
-            visitedTypes.putIfAbsent(typeName, indirectStrongReference);
+            if (!visitedTypes.containsKey(typeName)) {
+                visitedTypes.put(typeName, indirectStrongReference);
+                newlyDiscoveredTypes.add(indirectStrongReference);
+            }
         }
+
+        // For each newly discovered type, traverse it to collect any types it references
+        // We reuse this visitor instance to ensure duplicate type detection works correctly
+        if (!newlyDiscoveredTypes.isEmpty()) {
+            // Clear indirect strong references before traversing to capture new ones
+            indirectStrongReferences.clear();
+
+            SchemaTraverser traverser = new SchemaTraverser(
+                    schemaElement -> schemaElement.getChildrenWithTypeReferences().getChildrenAsList());
+            traverser.depthFirst(this, newlyDiscoveredTypes);
+
+            // Recursively fix any newly discovered indirect strong references
+            fixDanglingReplacedTypes(visitedTypes);
+        }
+
         return visitedTypes;
     }
 }
