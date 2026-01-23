@@ -73,12 +73,13 @@ public class NodeUtil {
                 fragmentsByName.put(fragmentDefinition.getName(), fragmentDefinition);
             }
         }
-        if (operationName == null && operationsByName.size() > 1) {
+        boolean operationNameProvided = operationName != null && !operationName.isEmpty();
+        if (!operationNameProvided && operationsByName.size() > 1) {
             throw new UnknownOperationException("Must provide operation name if query contains multiple operations.");
         }
         OperationDefinition operation;
 
-        if (operationName == null || operationName.isEmpty()) {
+        if (!operationNameProvided) {
             operation = operationsByName.values().iterator().next();
         } else {
             operation = operationsByName.get(operationName);
