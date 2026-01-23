@@ -7,6 +7,7 @@ import graphql.collect.ImmutableMapWithNullValues;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.jspecify.annotations.NullUnmarked;
 
@@ -18,6 +19,7 @@ import java.util.function.Supplier;
  * but for legacy reasons was not.  So it acts as the builder of {@link TypeResolutionEnvironment} objects
  */
 @Internal
+@NullMarked
 public class TypeResolutionParameters {
 
     private final MergedField field;
