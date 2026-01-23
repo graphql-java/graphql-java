@@ -23,7 +23,7 @@ import java.util.function.Supplier;
 @NullMarked
 public class TypeResolutionEnvironment {
 
-    private final Object object;
+    private final @Nullable Object object;
     private final Supplier<ImmutableMapWithNullValues<String, Object>> arguments;
     private final MergedField field;
     private final GraphQLType fieldType;
