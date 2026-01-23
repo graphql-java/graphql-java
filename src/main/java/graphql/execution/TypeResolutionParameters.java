@@ -7,6 +7,8 @@ import graphql.collect.ImmutableMapWithNullValues;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -20,7 +22,7 @@ public class TypeResolutionParameters {
 
     private final MergedField field;
     private final GraphQLType fieldType;
-    private final Object value;
+    private final @Nullable Object value;
     private final Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
     private final GraphQLSchema schema;
     private final Object context;
@@ -48,7 +50,7 @@ public class TypeResolutionParameters {
         return fieldType;
     }
 
-    public Object getValue() {
+    public @Nullable Object getValue() {
         return value;
     }
 
@@ -86,6 +88,7 @@ public class TypeResolutionParameters {
         return localContext;
     }
 
+    @NullUnmarked
     public static class Builder {
 
         private MergedField field;
