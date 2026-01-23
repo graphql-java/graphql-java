@@ -26,6 +26,10 @@ Finally, please check all this works by running the NullAway compile check.
 
 If you find NullAway errors, try and make the smallest possible change to fix them. If you must, you can use assertNotNull. Make sure to include a message as well.
 
+## Formatting Guidelines
+
+Do not make spacing or formatting changes. Avoid adjusting whitespace, line breaks, or other formatting when editing code. These changes make diffs messy and harder to review. Only make the minimal changes necessary to accomplish the task.
+
 ## Cleaning up
 Finally, can you remove this class from the JSpecifyAnnotationsCheck as an exemption
 
