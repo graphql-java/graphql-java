@@ -32,3 +32,26 @@ Finally, can you remove this class from the JSpecifyAnnotationsCheck as an exemp
 You do not need to run the JSpecifyAnnotationsCheck. Removing the completed class is enough.
 
 Remember to delete all unused imports when you're done from the class you've just annotated.
+
+## Generics Annotations
+
+When annotating generic types and methods, follow these JSpecify rules:
+
+### Type Parameter Bounds
+
+The bound on a type parameter determines whether nullable type arguments are allowed:
+
+| Declaration | Allows `@Nullable` type argument? |
+|-------------|----------------------------------|
+| `<T>` | ❌ No — `Box<@Nullable String>` is illegal |
+| `<T extends @Nullable Object>` | ✅ Yes — `Box<@Nullable String>` is legal |
+
+**When to use `<T extends @Nullable Object>`:**
+- When callers genuinely need to parameterize with nullable types
+- Example: `DataFetcherResult<T extends @Nullable Object>` — data fetchers may return nullable types
+
+**When to keep `<T>`:**
+- When the type parameter represents a concrete non-null object
+- Even if some methods return `@Nullable T` (meaning "can be null even if T is non-null")
+- Example: `Edge<T>` with `@Nullable T getNode()` — node may be null, but T represents the object type
+
