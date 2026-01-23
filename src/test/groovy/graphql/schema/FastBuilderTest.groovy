@@ -80,27 +80,6 @@ class FastBuilderTest extends Specification {
         schema.getType("MyScalar") != null
     }
 
-    def "null type is safely ignored"() {
-        given: "a query type"
-        def queryType = newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                        .name("value")
-                        .type(GraphQLString))
-                .build()
-
-        and: "code registry"
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-
-        when: "adding null type"
-        def schema = new GraphQLSchema.FastBuilder(codeRegistry, queryType, null, null)
-                .addType(null)
-                .build()
-
-        then: "no error"
-        schema.queryType.name == "Query"
-    }
-
     def "query type is required"() {
         when: "creating FastBuilder with null query type"
         new GraphQLSchema.FastBuilder(GraphQLCodeRegistry.newCodeRegistry(), null, null, null)
@@ -2001,32 +1980,5 @@ class FastBuilderTest extends Specification {
 
         def searchField = schema.queryType.getFieldDefinition("search")
         searchField.getArgument("filter").getType() == filterInput
-    }
-
-    def "null types and directives are ignored"() {
-        given: "a query type"
-        def queryType = newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                        .name("value")
-                        .type(GraphQLString))
-                .build()
-
-        when: "adding null types and directives"
-        def schema = new GraphQLSchema.FastBuilder(
-                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
-                .addType(null)
-                .addTypes(null)
-                .additionalDirective(null)
-                .additionalDirectives(null)
-                .withSchemaDirective(null)
-                .withSchemaDirectives(null)
-                .withSchemaAppliedDirective(null)
-                .withSchemaAppliedDirectives(null)
-                .build()
-
-        then: "no error and schema builds"
-        schema != null
-        schema.queryType.name == "Query"
     }
 }

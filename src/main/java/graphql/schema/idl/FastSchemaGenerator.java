@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.language.OperationTypeDefinition;
 import graphql.schema.GraphQLCodeRegistry;
@@ -7,6 +8,8 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.idl.errors.SchemaProblem;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -20,6 +23,7 @@ import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
 @Internal
 public class FastSchemaGenerator {
 
+    private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();
     private final SchemaGeneratorHelper schemaGeneratorHelper = new SchemaGeneratorHelper();
 
     /**
@@ -50,6 +54,12 @@ public class FastSchemaGenerator {
 
         // Use immutable registry for faster operations
         ImmutableTypeDefinitionRegistry fasterImmutableRegistry = typeRegistryCopy.readOnly();
+
+        // Check type registry for errors
+        List<GraphQLError> errors = typeChecker.checkTypeRegistry(fasterImmutableRegistry, wiring);
+        if (!errors.isEmpty()) {
+            throw new SchemaProblem(errors);
+        }
 
         Map<String, OperationTypeDefinition> operationTypeDefinitions = SchemaExtensionsChecker.gatherOperationDefs(fasterImmutableRegistry);
 

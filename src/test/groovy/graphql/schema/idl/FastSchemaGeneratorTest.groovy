@@ -1,6 +1,7 @@
 package graphql.schema.idl
 
 import graphql.schema.GraphQLSchema
+import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
 
 class FastSchemaGeneratorTest extends Specification {
@@ -133,5 +134,147 @@ class FastSchemaGeneratorTest extends Specification {
         schema.getType("SearchResult") != null
         schema.getType("User") != null
         schema.getType("Post") != null
+    }
+
+    // Regression tests to ensure FastSchemaGenerator behaves like SchemaGenerator
+
+    def "should throw SchemaProblem for missing type reference"() {
+        given:
+        def sdl = '''
+            type Query {
+                user: UnknownType
+            }
+        '''
+
+        when:
+        new FastSchemaGenerator().makeExecutableSchema(
+                new SchemaParser().parse(sdl),
+                RuntimeWiring.MOCKED_WIRING
+        )
+
+        then:
+        thrown(SchemaProblem)
+    }
+
+    def "should throw SchemaProblem for duplicate field definitions"() {
+        given:
+        def sdl = '''
+            type Query {
+                hello: String
+                hello: Int
+            }
+        '''
+
+        when:
+        new FastSchemaGenerator().makeExecutableSchema(
+                new SchemaParser().parse(sdl),
+                RuntimeWiring.MOCKED_WIRING
+        )
+
+        then:
+        thrown(SchemaProblem)
+    }
+
+    def "should throw SchemaProblem for invalid interface implementation"() {
+        given:
+        def sdl = '''
+            type Query {
+                node: Node
+            }
+
+            interface Node {
+                id: ID!
+            }
+
+            type User implements Node {
+                name: String
+            }
+        '''
+
+        when:
+        new FastSchemaGenerator().makeExecutableSchema(
+                new SchemaParser().parse(sdl),
+                RuntimeWiring.MOCKED_WIRING
+        )
+
+        then:
+        // User claims to implement Node but doesn't have the required 'id' field
+        thrown(SchemaProblem)
+    }
+
+    def "should include introspection types in getAllTypesAsList"() {
+        given:
+        def sdl = '''
+            type Query {
+                hello: String
+            }
+        '''
+
+        when:
+        def schema = new FastSchemaGenerator().makeExecutableSchema(
+                new SchemaParser().parse(sdl),
+                RuntimeWiring.MOCKED_WIRING
+        )
+        def allTypeNames = schema.getAllTypesAsList().collect { it.name } as Set
+
+        then:
+        // Introspection types must be present for introspection queries to work
+        allTypeNames.contains("__Schema")
+        allTypeNames.contains("__Type")
+        allTypeNames.contains("__Field")
+        allTypeNames.contains("__InputValue")
+        allTypeNames.contains("__EnumValue")
+        allTypeNames.contains("__Directive")
+        allTypeNames.contains("__TypeKind")
+        allTypeNames.contains("__DirectiveLocation")
+    }
+
+    def "should include String and Boolean scalars in getAllTypesAsList"() {
+        given:
+        def sdl = '''
+            type Query {
+                id: ID
+            }
+        '''
+
+        when:
+        def schema = new FastSchemaGenerator().makeExecutableSchema(
+                new SchemaParser().parse(sdl),
+                RuntimeWiring.MOCKED_WIRING
+        )
+        def allTypeNames = schema.getAllTypesAsList().collect { it.name } as Set
+
+        then:
+        // String and Boolean are required by introspection types
+        // (__Type.name, __Field.name, etc. return String; __Field.isDeprecated returns Boolean)
+        allTypeNames.contains("String")
+        allTypeNames.contains("Boolean")
+    }
+
+    def "introspection types should match standard SchemaGenerator"() {
+        given:
+        def sdl = '''
+            type Query {
+                hello: String
+            }
+        '''
+        def registry = new SchemaParser().parse(sdl)
+
+        when:
+        def standardSchema = new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+        def fastSchema = new FastSchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+
+        def standardTypeNames = standardSchema.getAllTypesAsList().collect { it.name } as Set
+        def fastTypeNames = fastSchema.getAllTypesAsList().collect { it.name } as Set
+
+        then:
+        // FastBuilder should include all introspection types that standard builder includes
+        standardTypeNames.findAll { it.startsWith("__") }.each { introspectionType ->
+            assert fastTypeNames.contains(introspectionType) : "Missing introspection type: $introspectionType"
+        }
+        // FastBuilder should not contain introspection types not in standard builder
+        fastTypeNames.findAll { it.startsWith("__") }.each { introspectionType ->
+            assert standardTypeNames.contains(introspectionType) : "Extra introspection type: $introspectionType"
+        }
     }
 }

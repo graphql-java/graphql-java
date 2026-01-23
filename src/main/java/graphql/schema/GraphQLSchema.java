@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
 import graphql.AssertException;
 import graphql.Directives;
+import graphql.Scalars;
 import graphql.DirectivesUtil;
 import graphql.ExperimentalApi;
 import graphql.Internal;
@@ -1134,6 +1135,22 @@ public class GraphQLSchema {
 
             // Add introspection code to the registry
             Introspection.addCodeForIntrospectionTypes(codeRegistryBuilder);
+
+            // Add introspection types to the type map
+            // These must be present for introspection queries to work correctly
+            addType(Introspection.__Schema);
+            addType(Introspection.__Type);
+            addType(Introspection.__Field);
+            addType(Introspection.__InputValue);
+            addType(Introspection.__EnumValue);
+            addType(Introspection.__Directive);
+            addType(Introspection.__TypeKind);
+            addType(Introspection.__DirectiveLocation);
+
+            // Add String and Boolean scalars required by introspection types
+            // (e.g., __Type.name returns String, __Field.isDeprecated returns Boolean)
+            addType(Scalars.GraphQLString);
+            addType(Scalars.GraphQLBoolean);
 
             // Add root types
             addType(queryType);
