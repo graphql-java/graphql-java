@@ -28,8 +28,8 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 @NullMarked
 public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition>, NamedNode<FragmentDefinition> {
 
-    private final String name;
-    private final TypeName typeCondition;
+    private final @Nullable String name;
+    private final @Nullable TypeName typeCondition;
     private final NodeUtil.DirectivesHolder directives;
     private final @Nullable SelectionSet selectionSet;
 
@@ -38,8 +38,8 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
-    protected FragmentDefinition(String name,
-                                 TypeName typeCondition,
+    protected FragmentDefinition(@Nullable String name,
+                                 @Nullable TypeName typeCondition,
                                  List<Directive> directives,
                                  @Nullable SelectionSet selectionSet,
                                  @Nullable SourceLocation sourceLocation,
@@ -55,12 +55,12 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     @Override
     public String getName() {
-        return name;
+        return assertNotNull(name, () -> "name cannot be null");
     }
 
 
     public TypeName getTypeCondition() {
-        return typeCondition;
+        return assertNotNull(typeCondition, () -> "typeCondition cannot be null");
     }
 
     @Override
@@ -111,7 +111,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     @Override
     public FragmentDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .typeCondition(assertNotNull(newChildren.getChildOrNull(CHILD_TYPE_CONDITION)))
+                .typeCondition(newChildren.getChildOrNull(CHILD_TYPE_CONDITION))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
                 .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
         );
@@ -134,7 +134,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     @Override
     public FragmentDefinition deepCopy() {
         return new FragmentDefinition(name,
-                assertNotNull(deepCopy(typeCondition)),
+                deepCopy(typeCondition),
                 assertNotNull(deepCopy(directives.getDirectives())),
                 deepCopy(selectionSet),
                 getSourceLocation(),
@@ -209,7 +209,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             return this;
         }
 
-        public Builder typeCondition(TypeName typeCondition) {
+        public Builder typeCondition(@Nullable TypeName typeCondition) {
             this.typeCondition = typeCondition;
             return this;
         }
@@ -247,7 +247,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
 
         public FragmentDefinition build() {
-            return new FragmentDefinition(assertNotNull(name, () -> "name is required"), assertNotNull(typeCondition, () -> "typeCondition is required"), directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
+            return new FragmentDefinition(name, typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

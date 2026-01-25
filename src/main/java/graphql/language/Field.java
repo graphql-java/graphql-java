@@ -32,7 +32,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 @NullMarked
 public class Field extends AbstractNode<Field> implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field>, NamedNode<Field> {
 
-    private final String name;
+    private final @Nullable String name;
     private final @Nullable String alias;
     private final ImmutableList<Argument> arguments;
     private final NodeUtil.DirectivesHolder directives;
@@ -44,7 +44,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
 
     @Internal
-    protected Field(String name,
+    protected Field(@Nullable String name,
                     @Nullable String alias,
                     List<Argument> arguments,
                     List<Directive> directives,
@@ -133,7 +133,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
     @Override
     public String getName() {
-        return name;
+        return assertNotNull(name, () -> "name cannot be null");
     }
 
     public @Nullable String getAlias() {
@@ -141,7 +141,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
     public String getResultKey() {
-        return alias != null ? alias : name;
+        return alias != null ? alias : assertNotNull(name, () -> "name cannot be null");
     }
 
     public List<Argument> getArguments() {
@@ -190,7 +190,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
     @Override
     public Field deepCopy() {
-        return new Field(assertNotNull(name, () -> "name cannot be null"),
+        return new Field(name,
                 alias,
                 assertNotNull(deepCopy(arguments)),
                 assertNotNull(deepCopy(directives.getDirectives())),
@@ -321,7 +321,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
 
         public Field build() {
-            return new Field(assertNotNull(name, () -> "name is required"), alias, arguments, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
+            return new Field(name, alias, arguments, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

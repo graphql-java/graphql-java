@@ -24,10 +24,10 @@ import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 @PublicApi
 @NullMarked
 public class DirectiveLocation extends AbstractNode<DirectiveLocation> implements NamedNode<DirectiveLocation> {
-    private final String name;
+    private final @Nullable String name;
 
     @Internal
-    protected DirectiveLocation(String name, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected DirectiveLocation(@Nullable String name, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
     }
@@ -43,7 +43,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
     @Override
     public String getName() {
-        return name;
+        return assertNotNull(name, () -> "name cannot be null");
     }
 
     @Override
@@ -151,7 +151,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         }
 
         public DirectiveLocation build() {
-            return new DirectiveLocation(assertNotNull(name, () -> "name is required"), sourceLocation, comments, ignoredChars, additionalData);
+            return new DirectiveLocation(name, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

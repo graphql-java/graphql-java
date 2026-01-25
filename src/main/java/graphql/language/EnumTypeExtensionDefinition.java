@@ -20,7 +20,7 @@ import static graphql.collect.ImmutableKit.emptyList;
 public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
-    protected EnumTypeExtensionDefinition(String name,
+    protected EnumTypeExtensionDefinition(@Nullable String name,
                                           List<EnumValueDefinition> enumValueDefinitions,
                                           List<Directive> directives,
                                           @Nullable Description description,
@@ -147,7 +147,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
 
 
         public EnumTypeExtensionDefinition build() {
-            return new EnumTypeExtensionDefinition(assertNotNull(name, () -> "name is required"),
+            return new EnumTypeExtensionDefinition(name,
                     enumValueDefinitions,
                     directives,
                     description,

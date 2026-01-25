@@ -25,8 +25,8 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 @PublicApi
 @NullMarked
 public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
-    private final String name;
-    private final Type type;
+    private final @Nullable String name;
+    private final @Nullable Type type;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;
     private final NodeUtil.DirectivesHolder directives;
 
@@ -35,8 +35,8 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected FieldDefinition(String name,
-                              Type type,
+    protected FieldDefinition(@Nullable String name,
+                              @Nullable Type type,
                               List<InputValueDefinition> inputValueDefinitions,
                               List<Directive> directives,
                               @Nullable Description description,
@@ -57,12 +57,12 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     }
 
     public Type getType() {
-        return type;
+        return assertNotNull(type, () -> "type cannot be null");
     }
 
     @Override
     public String getName() {
-        return name;
+        return assertNotNull(name, () -> "name cannot be null");
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
@@ -110,7 +110,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     @Override
     public FieldDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .type(assertNotNull(newChildren.getChildOrNull(CHILD_TYPE)))
+                .type(newChildren.getChildOrNull(CHILD_TYPE))
                 .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITION))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
         );
@@ -133,7 +133,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     @Override
     public FieldDefinition deepCopy() {
         return new FieldDefinition(name,
-                assertNotNull(deepCopy(type)),
+                deepCopy(type),
                 assertNotNull(deepCopy(inputValueDefinitions)),
                 assertNotNull(deepCopy(directives.getDirectives())),
                 description,
@@ -210,7 +210,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
             return this;
         }
 
-        public Builder type(Type type) {
+        public Builder type(@Nullable Type type) {
             this.type = type;
             return this;
         }
@@ -259,7 +259,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
 
 
         public FieldDefinition build() {
-            return new FieldDefinition(assertNotNull(name, () -> "name is required"), assertNotNull(type, () -> "type is required"), inputValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
+            return new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

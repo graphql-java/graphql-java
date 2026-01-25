@@ -24,7 +24,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 @PublicApi
 @NullMarked
 public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition>, NamedNode<EnumTypeDefinition> {
-    private final String name;
+    private final @Nullable String name;
     private final ImmutableList<EnumValueDefinition> enumValueDefinitions;
     private final NodeUtil.DirectivesHolder directives;
 
@@ -32,7 +32,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected EnumTypeDefinition(String name,
+    protected EnumTypeDefinition(@Nullable String name,
                                  List<EnumValueDefinition> enumValueDefinitions,
                                  List<Directive> directives,
                                  @Nullable Description description,
@@ -80,7 +80,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
 
     @Override
     public String getName() {
-        return name;
+        return assertNotNull(name, () -> "name cannot be null");
     }
 
     @Override
@@ -239,7 +239,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
 
 
         public EnumTypeDefinition build() {
-            return new EnumTypeDefinition(assertNotNull(name, () -> "name is required"), enumValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
+            return new EnumTypeDefinition(name, enumValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

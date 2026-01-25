@@ -25,13 +25,13 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 @NullMarked
 public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread>, NamedNode<FragmentSpread> {
 
-    private final String name;
+    private final @Nullable String name;
     private final NodeUtil.DirectivesHolder directives;
 
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected FragmentSpread(String name, List<Directive> directives, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected FragmentSpread(@Nullable String name, List<Directive> directives, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.directives = NodeUtil.DirectivesHolder.of(directives);
@@ -48,7 +48,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public String getName() {
-        return name;
+        return assertNotNull(name, () -> "name cannot be null");
     }
 
     @Override
@@ -201,7 +201,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         }
 
         public FragmentSpread build() {
-            return new FragmentSpread(assertNotNull(name, () -> "name is required"), directives, sourceLocation, comments, ignoredChars, additionalData);
+            return new FragmentSpread(name, directives, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

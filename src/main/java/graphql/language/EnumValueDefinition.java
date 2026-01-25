@@ -24,13 +24,13 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 @PublicApi
 @NullMarked
 public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefinition> implements DirectivesContainer<EnumValueDefinition>, NamedNode<EnumValueDefinition> {
-    private final String name;
+    private final @Nullable String name;
     private final NodeUtil.DirectivesHolder directives;
 
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected EnumValueDefinition(String name,
+    protected EnumValueDefinition(@Nullable String name,
                                   List<Directive> directives,
                                   @Nullable Description description,
                                   @Nullable SourceLocation sourceLocation,
@@ -62,7 +62,7 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
 
     @Override
     public String getName() {
-        return name;
+        return assertNotNull(name, () -> "name cannot be null");
     }
 
     @Override
@@ -217,7 +217,7 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
 
 
         public EnumValueDefinition build() {
-            return new EnumValueDefinition(assertNotNull(name, () -> "name is required"), directives, description, sourceLocation, comments, ignoredChars, additionalData);
+            return new EnumValueDefinition(name, directives, description, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
