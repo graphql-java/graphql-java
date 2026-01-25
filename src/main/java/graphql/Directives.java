@@ -7,6 +7,7 @@ import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static graphql.Scalars.GraphQLBoolean;
@@ -248,6 +249,35 @@ public class Directives {
             .validLocations(QUERY, MUTATION, SUBSCRIPTION)
             .definition(EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION)
             .build();
+
+    /**
+     * Returns the directives that are included in a schema by default but can be removed
+     * by calling {@code clearDirectives()} on the builder.
+     *
+     * @return an unmodifiable list of default directives (include, skip)
+     */
+    @Internal
+    public static List<GraphQLDirective> getDefaultDirectives() {
+        return List.of(IncludeDirective, SkipDirective);
+    }
+
+    /**
+     * Returns the directives that are mandatory and will always be added to a schema,
+     * even after {@code clearDirectives()} is called on the builder.
+     * These are inherently part of the GraphQL spec.
+     *
+     * @return an unmodifiable list of mandatory directives
+     */
+    @Internal
+    public static List<GraphQLDirective> getMandatoryDirectives() {
+        return List.of(
+                DeprecatedDirective,
+                SpecifiedByDirective,
+                OneOfDirective,
+                DeferDirective,
+                ExperimentalDisableErrorPropagationDirective
+        );
+    }
 
     private static Description createDescription(String s) {
         return new Description(s, null, false);

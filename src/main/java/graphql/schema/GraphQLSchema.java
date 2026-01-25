@@ -42,7 +42,6 @@ import static graphql.collect.ImmutableKit.map;
 import static graphql.collect.ImmutableKit.nonNullCopyOf;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -812,9 +811,10 @@ public class GraphQLSchema {
         private List<SchemaExtensionDefinition> extensionDefinitions;
         private String description;
 
-        // we default these in
+        // We initially add these default directives (e.g., include and skip), but these can be
+        // cleared by the user (unlike mandatory ones which are always re-added in buildImpl)
         private final Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
-                asList(Directives.IncludeDirective, Directives.SkipDirective)
+                Directives.getDefaultDirectives()
         );
         private final Set<GraphQLNamedType> additionalTypes = new LinkedHashSet<>();
         private final List<GraphQLDirective> schemaDirectives = new ArrayList<>();
@@ -1031,13 +1031,8 @@ public class GraphQLSchema {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
 
-            // schemas built via the schema generator have the deprecated directive BUT we want it present for hand built
-            // schemas - it's inherently part of the spec!
-            addBuiltInDirective(Directives.DeprecatedDirective, additionalDirectives);
-            addBuiltInDirective(Directives.SpecifiedByDirective, additionalDirectives);
-            addBuiltInDirective(Directives.OneOfDirective, additionalDirectives);
-            addBuiltInDirective(Directives.DeferDirective, additionalDirectives);
-            addBuiltInDirective(Directives.ExperimentalDisableErrorPropagationDirective, additionalDirectives);
+            // Mandatory directives are always added, even after clearDirectives() - they're part of the spec
+            Directives.getMandatoryDirectives().forEach(d -> addBuiltInDirective(d, additionalDirectives));
 
             // quick build - no traversing
             final GraphQLSchema partiallyBuiltSchema = new GraphQLSchema(this);
@@ -1060,18 +1055,18 @@ public class GraphQLSchema {
             return validateSchema(finalSchema);
         }
 
-        private void addBuiltInDirective(GraphQLDirective qlDirective, Set<GraphQLDirective> additionalDirectives1) {
-            if (additionalDirectives1.stream().noneMatch(d -> d.getName().equals(qlDirective.getName()))) {
-                additionalDirectives1.add(qlDirective);
-            }
-        }
-
         private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema) {
             Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
             if (!errors.isEmpty()) {
                 throw new InvalidSchemaException(errors);
             }
             return graphQLSchema;
+        }
+
+        private void addBuiltInDirective(GraphQLDirective qlDirective, Set<GraphQLDirective> additionalDirectives1) {
+            if (additionalDirectives1.stream().noneMatch(d -> d.getName().equals(qlDirective.getName()))) {
+                additionalDirectives1.add(qlDirective);
+            }
         }
     }
 
@@ -1383,12 +1378,8 @@ public class GraphQLSchema {
         }
 
         private void addBuiltInDirectivesIfMissing() {
-            addDirectiveIfMissing(Directives.IncludeDirective);
-            addDirectiveIfMissing(Directives.SkipDirective);
-            addDirectiveIfMissing(Directives.DeprecatedDirective);
-            addDirectiveIfMissing(Directives.SpecifiedByDirective);
-            addDirectiveIfMissing(Directives.OneOfDirective);
-            addDirectiveIfMissing(Directives.DeferDirective);
+            Directives.getDefaultDirectives().forEach(this::addDirectiveIfMissing);
+            Directives.getMandatoryDirectives().forEach(this::addDirectiveIfMissing);
         }
 
         private void addDirectiveIfMissing(GraphQLDirective directive) {
