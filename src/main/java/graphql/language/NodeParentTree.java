@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -21,10 +23,11 @@ import static graphql.Assert.assertTrue;
  * on an ObjectTypeDefinition.
  */
 @PublicApi
+@NullMarked
 public class NodeParentTree<T extends Node> {
 
     private final T node;
-    private final NodeParentTree<T> parent;
+    private final @Nullable NodeParentTree<T> parent;
     private final ImmutableList<String> path;
 
     @Internal
