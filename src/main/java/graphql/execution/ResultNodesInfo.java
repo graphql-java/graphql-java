@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.Internal;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -14,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * </p>
  */
 @PublicApi
+@NullMarked
 public class ResultNodesInfo {
 
     public static final String MAX_RESULT_NODES = "__MAX_RESULT_NODES";

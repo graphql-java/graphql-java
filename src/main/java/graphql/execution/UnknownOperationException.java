@@ -6,6 +6,8 @@ import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -15,13 +17,14 @@ import java.util.List;
  * contained in the GraphQL query.
  */
 @PublicApi
+@NullMarked
 public class UnknownOperationException extends GraphQLException implements GraphQLError {
     public UnknownOperationException(String message) {
         super(message);
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return null;
     }
 
