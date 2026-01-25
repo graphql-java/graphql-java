@@ -7,6 +7,9 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -20,6 +23,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class SelectionSet extends AbstractNode<SelectionSet> {
 
     private final ImmutableList<Selection> selections;
@@ -27,7 +31,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     public static final String CHILD_SELECTIONS = "selections";
 
     @Internal
-    protected SelectionSet(Collection<? extends Selection> selections, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected SelectionSet(Collection<? extends Selection> selections, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.selections = ImmutableList.copyOf(selections);
     }
@@ -79,7 +83,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -92,7 +96,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     @Override
     public SelectionSet deepCopy() {
-        return new SelectionSet(deepCopy(selections), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new SelectionSet(assertNotNull(deepCopy(selections)), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -121,6 +125,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
 
         private ImmutableList<Selection> selections = emptyList();
