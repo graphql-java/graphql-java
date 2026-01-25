@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 
@@ -12,6 +13,7 @@ import java.util.List;
  * and therefore part of the public despite never used in a method signature.
  */
 @PublicApi
+@NullMarked
 public class FetchedValue {
     private final Object fetchedValue;
     private final Object localContext;

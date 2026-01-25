@@ -3,7 +3,9 @@ package graphql.execution;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.incremental.AlternativeCallContext;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.function.Consumer;
 
@@ -13,6 +15,7 @@ import static graphql.Assert.assertNotNull;
  * The parameters that are passed to execution strategies
  */
 @PublicApi
+@NullMarked
 public class ExecutionStrategyParameters {
     private final ExecutionStepInfo executionStepInfo;
     private final Object source;
@@ -212,6 +215,7 @@ public class ExecutionStrategyParameters {
         return new Builder(oldParameters);
     }
 
+    @NullUnmarked
     public static class Builder {
         ExecutionStepInfo executionStepInfo;
         Object source;
