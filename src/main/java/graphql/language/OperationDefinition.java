@@ -26,7 +26,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition>, NamedNode<OperationDefinition> {
+public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition> {
 
     public enum Operation {
         QUERY, MUTATION, SUBSCRIPTION
@@ -97,8 +97,8 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         );
     }
 
-    public String getName() {
-        return name != null ? name : "";
+    public @Nullable String getName() {
+        return name;
     }
 
     public @Nullable Operation getOperation() {
