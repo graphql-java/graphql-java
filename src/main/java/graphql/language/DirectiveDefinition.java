@@ -7,6 +7,9 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,6 +24,7 @@ import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefinition> implements SDLNamedDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
     private final boolean repeatable;
@@ -33,10 +37,10 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     @Internal
     protected DirectiveDefinition(String name,
                                   boolean repeatable,
-                                  Description description,
+                                  @Nullable Description description,
                                   List<InputValueDefinition> inputValueDefinitions,
                                   List<DirectiveLocation> directiveLocations,
-                                  SourceLocation sourceLocation,
+                                  @Nullable SourceLocation sourceLocation,
                                   List<Comment> comments,
                                   IgnoredChars ignoredChars,
                                   Map<String, String> additionalData) {
@@ -104,7 +108,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -122,8 +126,8 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         return new DirectiveDefinition(name,
                 repeatable,
                 description,
-                deepCopy(inputValueDefinitions),
-                deepCopy(directiveLocations),
+                assertNotNull(deepCopy(inputValueDefinitions), "inputValueDefinitions cannot be null"),
+                assertNotNull(deepCopy(directiveLocations), "directiveLocations cannot be null"),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -154,6 +158,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();

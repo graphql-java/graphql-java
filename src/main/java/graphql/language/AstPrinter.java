@@ -2,6 +2,8 @@ package graphql.language;
 
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -20,6 +22,7 @@ import static graphql.util.EscapeUtil.escapeJsonStringTo;
  */
 @SuppressWarnings("UnnecessaryLocalVariable")
 @PublicApi
+@NullMarked
 public class AstPrinter {
 
     /**
@@ -566,13 +569,13 @@ public class AstPrinter {
         node(out, node, null);
     }
 
-    private String node(Node<?> node, Class<?> startClass) {
+    private String node(Node<?> node, @Nullable Class<?> startClass) {
         StringBuilder builder = new StringBuilder();
         node(builder, node, startClass);
         return builder.toString();
     }
 
-    private void node(StringBuilder out, Node<?> node, Class<?> startClass) {
+    private void node(StringBuilder out, Node<?> node, @Nullable Class<?> startClass) {
         if (startClass != null) {
             assertTrue(startClass.isInstance(node), "The starting class must be in the inherit tree");
         }
@@ -585,7 +588,7 @@ public class AstPrinter {
         return _findPrinter(node, null);
     }
 
-    <T extends Node> NodePrinter<T> _findPrinter(Node node, Class startClass) {
+    <T extends Node> NodePrinter<T> _findPrinter(Node node, @Nullable Class<?> startClass) {
         if (node == null) {
             return (out, type) -> {
             };
