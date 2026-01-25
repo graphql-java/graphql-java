@@ -7,6 +7,8 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,6 +22,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread>, NamedNode<FragmentSpread> {
 
     private final String name;
@@ -28,7 +31,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected FragmentSpread(String name, List<Directive> directives, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.directives = NodeUtil.DirectivesHolder.of(directives);
@@ -69,7 +72,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -104,7 +107,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
     @Override
     public FragmentSpread deepCopy() {
-        return new FragmentSpread(name, deepCopy(directives.getDirectives()), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new FragmentSpread(name, assertNotNull(deepCopy(directives.getDirectives())), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -136,9 +139,9 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     }
 
     public static final class Builder implements NodeDirectivesBuilder {
-        private SourceLocation sourceLocation;
+        private @Nullable SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
-        private String name;
+        private @Nullable String name;
         private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -155,7 +158,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(SourceLocation sourceLocation) {
+        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
@@ -198,7 +201,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         }
 
         public FragmentSpread build() {
-            return new FragmentSpread(name, directives, sourceLocation, comments, ignoredChars, additionalData);
+            return new FragmentSpread(assertNotNull(name, () -> "name is required"), directives, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

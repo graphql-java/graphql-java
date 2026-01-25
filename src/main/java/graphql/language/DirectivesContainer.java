@@ -2,6 +2,7 @@ package graphql.language;
 
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.Map;
  * @see DirectiveDefinition#isRepeatable()
  */
 @PublicApi
+@NullMarked
 public interface DirectivesContainer<T extends DirectivesContainer> extends Node<T> {
 
     /**
