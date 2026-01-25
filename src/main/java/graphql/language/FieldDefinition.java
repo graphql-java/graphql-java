@@ -7,6 +7,8 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,9 +23,10 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
-    private final String name;
-    private final Type type;
+    private final @Nullable String name;
+    private final @Nullable Type type;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;
     private final NodeUtil.DirectivesHolder directives;
 
@@ -32,12 +35,12 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected FieldDefinition(String name,
-                              Type type,
+    protected FieldDefinition(@Nullable String name,
+                              @Nullable Type type,
                               List<InputValueDefinition> inputValueDefinitions,
                               List<Directive> directives,
-                              Description description,
-                              SourceLocation sourceLocation,
+                              @Nullable Description description,
+                              @Nullable SourceLocation sourceLocation,
                               List<Comment> comments,
                               IgnoredChars ignoredChars,
                               Map<String, String> additionalData) {
@@ -54,12 +57,12 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     }
 
     public Type getType() {
-        return type;
+        return assertNotNull(type, () -> "type cannot be null");
     }
 
     @Override
     public String getName() {
-        return name;
+        return assertNotNull(name, () -> "name cannot be null");
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
@@ -114,7 +117,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -131,8 +134,8 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     public FieldDefinition deepCopy() {
         return new FieldDefinition(name,
                 deepCopy(type),
-                deepCopy(inputValueDefinitions),
-                deepCopy(directives.getDirectives()),
+                assertNotNull(deepCopy(inputValueDefinitions)),
+                assertNotNull(deepCopy(directives.getDirectives())),
                 description,
                 getSourceLocation(),
                 getComments(),
@@ -166,11 +169,11 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     }
 
     public static final class Builder implements NodeDirectivesBuilder {
-        private SourceLocation sourceLocation;
-        private String name;
+        private @Nullable SourceLocation sourceLocation;
+        private @Nullable String name;
         private ImmutableList<Comment> comments = emptyList();
-        private Type type;
-        private Description description;
+        private @Nullable Type type;
+        private @Nullable Description description;
         private ImmutableList<InputValueDefinition> inputValueDefinitions = emptyList();
         private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -192,7 +195,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         }
 
 
-        public Builder sourceLocation(SourceLocation sourceLocation) {
+        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
@@ -207,12 +210,12 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
             return this;
         }
 
-        public Builder type(Type type) {
+        public Builder type(@Nullable Type type) {
             this.type = type;
             return this;
         }
 
-        public Builder description(Description description) {
+        public Builder description(@Nullable Description description) {
             this.description = description;
             return this;
         }

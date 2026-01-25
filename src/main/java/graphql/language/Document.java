@@ -8,6 +8,8 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +23,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class Document extends AbstractNode<Document> {
 
     private final ImmutableList<Definition> definitions;
@@ -28,7 +31,7 @@ public class Document extends AbstractNode<Document> {
     public static final String CHILD_DEFINITIONS = "definitions";
 
     @Internal
-    protected Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected Document(List<Definition> definitions, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.definitions = ImmutableList.copyOf(definitions);
     }
@@ -114,7 +117,7 @@ public class Document extends AbstractNode<Document> {
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -127,7 +130,7 @@ public class Document extends AbstractNode<Document> {
 
     @Override
     public Document deepCopy() {
-        return new Document(deepCopy(definitions), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new Document(assertNotNull(deepCopy(definitions)), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -154,7 +157,7 @@ public class Document extends AbstractNode<Document> {
 
     public static final class Builder implements NodeBuilder {
         private ImmutableList<Definition> definitions = emptyList();
-        private SourceLocation sourceLocation;
+        private @Nullable SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -180,7 +183,7 @@ public class Document extends AbstractNode<Document> {
             return this;
         }
 
-        public Builder sourceLocation(SourceLocation sourceLocation) {
+        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }

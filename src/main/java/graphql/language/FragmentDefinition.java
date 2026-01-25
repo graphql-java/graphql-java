@@ -7,6 +7,8 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,23 +25,24 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
  * Provided to the DataFetcher, therefore public API
  */
 @PublicApi
+@NullMarked
 public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition>, NamedNode<FragmentDefinition> {
 
-    private final String name;
-    private final TypeName typeCondition;
+    private final @Nullable String name;
+    private final @Nullable TypeName typeCondition;
     private final NodeUtil.DirectivesHolder directives;
-    private final SelectionSet selectionSet;
+    private final @Nullable SelectionSet selectionSet;
 
     public static final String CHILD_TYPE_CONDITION = "typeCondition";
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
-    protected FragmentDefinition(String name,
-                                 TypeName typeCondition,
+    protected FragmentDefinition(@Nullable String name,
+                                 @Nullable TypeName typeCondition,
                                  List<Directive> directives,
-                                 SelectionSet selectionSet,
-                                 SourceLocation sourceLocation,
+                                 @Nullable SelectionSet selectionSet,
+                                 @Nullable SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars,
                                  Map<String, String> additionalData) {
@@ -52,12 +55,12 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
     @Override
     public String getName() {
-        return name;
+        return assertNotNull(name, () -> "name cannot be null");
     }
 
 
     public TypeName getTypeCondition() {
-        return typeCondition;
+        return assertNotNull(typeCondition, () -> "typeCondition cannot be null");
     }
 
     @Override
@@ -81,7 +84,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     }
 
     @Override
-    public SelectionSet getSelectionSet() {
+    public @Nullable SelectionSet getSelectionSet() {
         return selectionSet;
     }
 
@@ -90,7 +93,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         List<Node> result = new ArrayList<>();
         result.add(typeCondition);
         result.addAll(directives.getDirectives());
-        result.add(selectionSet);
+        if (selectionSet != null) {
+            result.add(selectionSet);
+        }
         return result;
     }
 
@@ -113,7 +118,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -130,7 +135,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     public FragmentDefinition deepCopy() {
         return new FragmentDefinition(name,
                 deepCopy(typeCondition),
-                deepCopy(directives.getDirectives()),
+                assertNotNull(deepCopy(directives.getDirectives())),
                 deepCopy(selectionSet),
                 getSourceLocation(),
                 getComments(),
@@ -164,13 +169,13 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     }
 
     public static final class Builder implements NodeDirectivesBuilder {
-        private SourceLocation sourceLocation;
+        private @Nullable SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
 
-        private String name;
-        private TypeName typeCondition;
+        private @Nullable String name;
+        private @Nullable TypeName typeCondition;
         private ImmutableList<Directive> directives = emptyList();
-        private SelectionSet selectionSet;
+        private @Nullable SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -189,7 +194,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         }
 
 
-        public Builder sourceLocation(SourceLocation sourceLocation) {
+        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
@@ -204,7 +209,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             return this;
         }
 
-        public Builder typeCondition(TypeName typeCondition) {
+        public Builder typeCondition(@Nullable TypeName typeCondition) {
             this.typeCondition = typeCondition;
             return this;
         }
@@ -220,7 +225,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             return this;
         }
 
-        public Builder selectionSet(SelectionSet selectionSet) {
+        public Builder selectionSet(@Nullable SelectionSet selectionSet) {
             this.selectionSet = selectionSet;
             return this;
         }
