@@ -2,6 +2,8 @@ package graphql.execution.instrumentation;
 
 import graphql.PublicApi;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.BiConsumer;
 
@@ -9,6 +11,7 @@ import java.util.function.BiConsumer;
  * A simple implementation of {@link InstrumentationContext}
  */
 @PublicApi
+@NullMarked
 public class SimpleInstrumentationContext<T> implements InstrumentationContext<T> {
 
     private static final InstrumentationContext<Object> NO_OP = new InstrumentationContext<Object>() {
@@ -17,7 +20,7 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
         }
 
         @Override
-        public void onCompleted(Object result, Throwable t) {
+        public void onCompleted(@Nullable Object result, @Nullable Throwable t) {
         }
     };
 
@@ -42,18 +45,18 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
      * @return a non null {@link InstrumentationContext} that maybe a no-op
      */
     @NonNull
-    public static <T> InstrumentationContext<T> nonNullCtx(InstrumentationContext<T> nullableContext) {
+    public static <T> InstrumentationContext<T> nonNullCtx(@Nullable InstrumentationContext<T> nullableContext) {
         return nullableContext == null ? noOp() : nullableContext;
     }
 
-    private final BiConsumer<T, Throwable> codeToRunOnComplete;
-    private final Runnable codeToRunOnDispatch;
+    private final @Nullable BiConsumer<T, Throwable> codeToRunOnComplete;
+    private final @Nullable Runnable codeToRunOnDispatch;
 
     public SimpleInstrumentationContext() {
         this(null, null);
     }
 
-    private SimpleInstrumentationContext(Runnable codeToRunOnDispatch, BiConsumer<T, Throwable> codeToRunOnComplete) {
+    private SimpleInstrumentationContext(@Nullable Runnable codeToRunOnDispatch, @Nullable BiConsumer<T, Throwable> codeToRunOnComplete) {
         this.codeToRunOnComplete = codeToRunOnComplete;
         this.codeToRunOnDispatch = codeToRunOnDispatch;
     }
@@ -66,7 +69,7 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
     }
 
     @Override
-    public void onCompleted(T result, Throwable t) {
+    public void onCompleted(@Nullable T result, @Nullable Throwable t) {
         if (codeToRunOnComplete != null) {
             codeToRunOnComplete.accept(result, t);
         }

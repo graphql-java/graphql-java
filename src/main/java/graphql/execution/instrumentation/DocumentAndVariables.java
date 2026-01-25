@@ -3,6 +3,8 @@ package graphql.execution.instrumentation;
 import graphql.PublicApi;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.language.Document;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -10,6 +12,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 
 @PublicApi
+@NullMarked
 public class DocumentAndVariables {
     private final Document document;
     private final ImmutableMapWithNullValues<String, Object> variables;
@@ -37,6 +40,7 @@ public class DocumentAndVariables {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         private Document document;
         private Map<String, Object> variables;

@@ -5,6 +5,7 @@ import graphql.execution.ResultPath;
 import graphql.language.Field;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Map;
 
@@ -12,6 +13,7 @@ import java.util.Map;
  * This represents a field and its arguments that may be validated.
  */
 @PublicApi
+@NullMarked
 public interface FieldAndArguments {
 
     /**
