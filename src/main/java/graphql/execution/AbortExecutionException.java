@@ -7,6 +7,8 @@ import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +21,7 @@ import static graphql.collect.ImmutableKit.emptyList;
  * This Exception indicates that the current execution should be aborted.
  */
 @PublicApi
+@NullMarked
 public class AbortExecutionException extends GraphQLException implements GraphQLError {
 
     private final List<GraphQLError> underlyingErrors;
@@ -47,7 +50,7 @@ public class AbortExecutionException extends GraphQLException implements GraphQL
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return null;
     }
 

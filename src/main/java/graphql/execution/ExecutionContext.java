@@ -24,6 +24,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
@@ -35,8 +36,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static graphql.Assert.assertNotNull;
+
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
+@NullMarked
 public class ExecutionContext {
 
     private final GraphQLSchema graphQLSchema;
@@ -176,7 +180,7 @@ public class ExecutionContext {
         return (T) root;
     }
 
-    public FragmentDefinition getFragment(String name) {
+    public @Nullable FragmentDefinition getFragment(String name) {
         return fragmentsByName.get(name);
     }
 
@@ -248,7 +252,7 @@ public class ExecutionContext {
             if (!errorPaths.add(fieldPath)) {
                 return;
             }
-            this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
+            this.errors.set(ImmutableKit.addToList(assertNotNull(this.errors.get()), error));
         });
     }
 
@@ -267,7 +271,7 @@ public class ExecutionContext {
                 ResultPath path = ResultPath.fromList(error.getPath());
                 this.errorPaths.add(path);
             }
-            this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
+            this.errors.set(ImmutableKit.addToList(assertNotNull(this.errors.get()), error));
         });
     }
 
@@ -295,7 +299,7 @@ public class ExecutionContext {
                 }
             }
             this.errorPaths.addAll(newErrorPaths);
-            this.errors.set(ImmutableKit.concatLists(this.errors.get(), errors));
+            this.errors.set(ImmutableKit.concatLists(assertNotNull(this.errors.get()), errors));
         });
     }
 
@@ -308,7 +312,7 @@ public class ExecutionContext {
      * @return the total list of errors for this execution context
      */
     public List<GraphQLError> getErrors() {
-        return errors.get();
+        return assertNotNull(errors.get());
     }
 
     public ExecutionStrategy getQueryStrategy() {

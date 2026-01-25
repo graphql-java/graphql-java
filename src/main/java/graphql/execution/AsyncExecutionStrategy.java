@@ -7,6 +7,7 @@ import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.introspection.Introspection;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,7 @@ import java.util.function.BiConsumer;
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
  */
 @PublicApi
+@NullMarked
 public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     /**
