@@ -19,6 +19,8 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLTypeUtil;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,13 +48,14 @@ import static graphql.analysis.values.ValueVisitor.ABSENCE_SENTINEL;
  * null values for non-nullable types say, so you need to be careful.
  */
 @PublicApi
+@NullMarked
 public class ValueTraverser {
 
     private static class InputElements implements ValueVisitor.InputElements {
 
         private final ImmutableList<GraphQLInputSchemaElement> inputElements;
         private final List<GraphQLInputSchemaElement> unwrappedInputElements;
-        private final GraphQLInputValueDefinition lastElement;
+        private final @Nullable GraphQLInputValueDefinition lastElement;
 
         private InputElements(GraphQLInputSchemaElement startElement) {
             this.inputElements = ImmutableList.of(startElement);
@@ -88,7 +91,7 @@ public class ValueTraverser {
         }
 
         @Override
-        public GraphQLInputValueDefinition getLastInputValueDefinition() {
+        public @Nullable GraphQLInputValueDefinition getLastInputValueDefinition() {
             return lastElement;
         }
     }
@@ -161,9 +164,9 @@ public class ValueTraverser {
      *
      * @return the same value if nothing changes or a new value if the visitor changes anything
      */
-    public static Object visitPreOrder(Object coercedArgumentValue, GraphQLArgument argument, ValueVisitor visitor) {
+    public static @Nullable Object visitPreOrder(@Nullable Object coercedArgumentValue, GraphQLArgument argument, ValueVisitor visitor) {
         InputElements inputElements = new InputElements(argument);
-        Object newValue = visitor.visitArgumentValue(coercedArgumentValue, argument, inputElements);
+        @Nullable Object newValue = visitor.visitArgumentValue(coercedArgumentValue, argument, inputElements);
         if (newValue == ABSENCE_SENTINEL) {
             assertShouldNeverHappen("It makes no sense to return the ABSENCE_SENTINEL during the visitPreOrder GraphQLArgument method");
         }
@@ -185,9 +188,9 @@ public class ValueTraverser {
      *
      * @return the same value if nothing changes or a new value if the visitor changes anything
      */
-    public static Object visitPreOrder(Object coercedArgumentValue, GraphQLAppliedDirectiveArgument argument, ValueVisitor visitor) {
+    public static @Nullable Object visitPreOrder(@Nullable Object coercedArgumentValue, GraphQLAppliedDirectiveArgument argument, ValueVisitor visitor) {
         InputElements inputElements = new InputElements(argument);
-        Object newValue = visitor.visitAppliedDirectiveArgumentValue(coercedArgumentValue, argument, inputElements);
+        @Nullable Object newValue = visitor.visitAppliedDirectiveArgumentValue(coercedArgumentValue, argument, inputElements);
         if (newValue == ABSENCE_SENTINEL) {
             assertShouldNeverHappen("It makes no sense to return the ABSENCE_SENTINEL during the visitPreOrder GraphQLAppliedDirectiveArgument method");
         }
@@ -198,7 +201,7 @@ public class ValueTraverser {
         return newValue;
     }
 
-    private static Object visitPreOrderImpl(Object coercedValue, GraphQLInputType startingInputType, InputElements containingElements, ValueVisitor visitor) {
+    private static @Nullable Object visitPreOrderImpl(@Nullable Object coercedValue, GraphQLInputType startingInputType, InputElements containingElements, ValueVisitor visitor) {
         if (startingInputType instanceof GraphQLNonNull) {
             containingElements = containingElements.push(startingInputType);
         }
@@ -218,7 +221,7 @@ public class ValueTraverser {
         }
     }
 
-    private static Object visitObjectValue(Object coercedValue, GraphQLInputObjectType inputObjectType, InputElements containingElements, ValueVisitor visitor) {
+    private static @Nullable Object visitObjectValue(@Nullable Object coercedValue, GraphQLInputObjectType inputObjectType, InputElements containingElements, ValueVisitor visitor) {
         if (coercedValue != null) {
             assertTrue(coercedValue instanceof Map, "A input object type MUST have an Map<String,Object> value");
         }
@@ -263,7 +266,7 @@ public class ValueTraverser {
         }
     }
 
-    private static Object visitListValue(Object coercedValue, GraphQLList listInputType, InputElements containingElements, ValueVisitor visitor) {
+    private static @Nullable Object visitListValue(@Nullable Object coercedValue, GraphQLList listInputType, InputElements containingElements, ValueVisitor visitor) {
         if (coercedValue != null) {
             assertTrue(coercedValue instanceof List, "A list type MUST have an List value");
         }
@@ -278,9 +281,10 @@ public class ValueTraverser {
             ImmutableList.Builder<Object> copiedList = null;
             int i = 0;
             for (Object subValue : newList) {
-                Object newValue = visitPreOrderImpl(subValue, inputType, containingElements, visitor);
+                @Nullable Object newValue = visitPreOrderImpl(subValue, inputType, containingElements, visitor);
                 if (copiedList != null) {
-                    if (newValue != ABSENCE_SENTINEL) {
+                    // ImmutableList doesn't support null values. We only add non-null and non-ABSENCE values
+                    if (newValue != ABSENCE_SENTINEL && newValue != null) {
                         copiedList.add(newValue);
                     }
                 } else if (hasChanged(newValue, subValue)) {
@@ -290,7 +294,8 @@ public class ValueTraverser {
                     for (int j = 0; j < i; j++) {
                         copiedList.add(newList.get(j));
                     }
-                    if (newValue != ABSENCE_SENTINEL) {
+                    // ImmutableList doesn't support null values. We only add non-null and non-ABSENCE values
+                    if (newValue != ABSENCE_SENTINEL && newValue != null) {
                         copiedList.add(newValue);
                     }
                 }
@@ -306,11 +311,11 @@ public class ValueTraverser {
         }
     }
 
-    private static boolean hasChanged(Object newValue, Object oldValue) {
+    private static boolean hasChanged(@Nullable Object newValue, @Nullable Object oldValue) {
         return newValue != oldValue || newValue == ABSENCE_SENTINEL;
     }
 
-    private static void setNewValue(Map<String, Object> newMap, String key, Object newValue) {
+    private static void setNewValue(Map<String, Object> newMap, String key, @Nullable Object newValue) {
         if (newValue == ABSENCE_SENTINEL) {
             newMap.remove(key);
         } else {

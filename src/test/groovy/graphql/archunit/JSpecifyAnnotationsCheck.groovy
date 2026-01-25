@@ -11,23 +11,6 @@ import spock.lang.Specification
 class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
-            "graphql.analysis.QueryComplexityCalculator",
-            "graphql.analysis.QueryComplexityInfo",
-            "graphql.analysis.QueryDepthInfo",
-            "graphql.analysis.QueryReducer",
-            "graphql.analysis.QueryTransformer",
-            "graphql.analysis.QueryTraversalOptions",
-            "graphql.analysis.QueryTraverser",
-            "graphql.analysis.QueryVisitor",
-            "graphql.analysis.QueryVisitorFieldArgumentEnvironment",
-            "graphql.analysis.QueryVisitorFieldArgumentInputValue",
-            "graphql.analysis.QueryVisitorFieldArgumentValueEnvironment",
-            "graphql.analysis.QueryVisitorFieldEnvironment",
-            "graphql.analysis.QueryVisitorFragmentDefinitionEnvironment",
-            "graphql.analysis.QueryVisitorFragmentSpreadEnvironment",
-            "graphql.analysis.QueryVisitorInlineFragmentEnvironment",
-            "graphql.analysis.QueryVisitorStub",
-            "graphql.analysis.values.ValueTraverser",
             "graphql.execution.AbortExecutionException",
             "graphql.execution.AsyncExecutionStrategy",
             "graphql.execution.AsyncSerialExecutionStrategy",

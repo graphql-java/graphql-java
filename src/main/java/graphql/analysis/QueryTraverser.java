@@ -16,6 +16,9 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -23,7 +26,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -42,6 +44,7 @@ import static java.util.Collections.singletonList;
  * visitField calls.
  */
 @PublicApi
+@NullMarked
 public class QueryTraverser {
 
     private final Collection<? extends Node> roots;
@@ -186,7 +189,7 @@ public class QueryTraverser {
         return singletonList(fragmentsByName.get(fragmentSpread.getName()));
     }
 
-    private Object visitImpl(QueryVisitor visitFieldCallback, Boolean preOrder) {
+    private Object visitImpl(QueryVisitor visitFieldCallback, @Nullable Boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null, GraphQLContext.getDefault()));
 
