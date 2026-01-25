@@ -7,6 +7,9 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,6 +23,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefinition> implements TypeDefinition<ScalarTypeDefinition>, DirectivesContainer<ScalarTypeDefinition>, NamedNode<ScalarTypeDefinition> {
 
     private final String name;
@@ -30,8 +34,8 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
     @Internal
     protected ScalarTypeDefinition(String name,
                                    List<Directive> directives,
-                                   Description description,
-                                   SourceLocation sourceLocation,
+                                   @Nullable Description description,
+                                   @Nullable SourceLocation sourceLocation,
                                    List<Comment> comments,
                                    IgnoredChars ignoredChars,
                                    Map<String, String> additionalData) {
@@ -94,7 +98,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -109,7 +113,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
 
     @Override
     public ScalarTypeDefinition deepCopy() {
-        return new ScalarTypeDefinition(name, deepCopy(directives.getDirectives()), description, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new ScalarTypeDefinition(name, assertNotNull(deepCopy(directives.getDirectives())), description, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -135,6 +139,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();

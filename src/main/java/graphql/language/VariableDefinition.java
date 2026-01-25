@@ -7,6 +7,9 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,11 +24,12 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class VariableDefinition extends AbstractNode<VariableDefinition> implements DirectivesContainer<VariableDefinition>, NamedNode<VariableDefinition> {
 
     private final String name;
     private final Type type;
-    private final Value defaultValue;
+    private final @Nullable Value defaultValue;
     private final NodeUtil.DirectivesHolder directives;
 
     public static final String CHILD_TYPE = "type";
@@ -35,9 +39,9 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     @Internal
     protected VariableDefinition(String name,
                                  Type type,
-                                 Value defaultValue,
+                                 @Nullable Value defaultValue,
                                  List<Directive> directives,
-                                 SourceLocation sourceLocation,
+                                 @Nullable SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars,
                                  Map<String, String> additionalData) {
@@ -57,7 +61,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
      */
     public VariableDefinition(String name,
                               Type type,
-                              Value defaultValue) {
+                              @Nullable Value defaultValue) {
         this(name, type, defaultValue, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
@@ -72,7 +76,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         this(name, type, null, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
-    public Value getDefaultValue() {
+    public @Nullable Value getDefaultValue() {
         return defaultValue;
     }
 
@@ -134,7 +138,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -151,9 +155,9 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     @Override
     public VariableDefinition deepCopy() {
         return new VariableDefinition(name,
-                deepCopy(type),
+                assertNotNull(deepCopy(type)),
                 deepCopy(defaultValue),
-                deepCopy(directives.getDirectives()),
+                assertNotNull(deepCopy(directives.getDirectives())),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -188,7 +192,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return new Builder().name(name).type(type);
     }
 
-    public static Builder newVariableDefinition(String name, Type type, Value defaultValue) {
+    public static Builder newVariableDefinition(String name, Type type, @Nullable Value defaultValue) {
         return new Builder().name(name).type(type).defaultValue(defaultValue);
     }
 
@@ -198,6 +202,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private String name;

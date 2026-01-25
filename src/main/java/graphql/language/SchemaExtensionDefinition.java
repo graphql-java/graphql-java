@@ -3,6 +3,9 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,11 +16,12 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
+@NullMarked
 public class SchemaExtensionDefinition extends SchemaDefinition implements SDLExtensionDefinition {
 
     protected SchemaExtensionDefinition(List<Directive> directives,
                                         List<OperationTypeDefinition> operationTypeDefinitions,
-                                        SourceLocation sourceLocation,
+                                        @Nullable SourceLocation sourceLocation,
                                         List<Comment> comments,
                                         IgnoredChars ignoredChars,
                                         Map<String, String> additionalData) {
@@ -34,7 +38,7 @@ public class SchemaExtensionDefinition extends SchemaDefinition implements SDLEx
 
     @Override
     public SchemaExtensionDefinition deepCopy() {
-        return new SchemaExtensionDefinition(deepCopy(getDirectives()), deepCopy(getOperationTypeDefinitions()), getSourceLocation(), getComments(),
+        return new SchemaExtensionDefinition(assertNotNull(deepCopy(getDirectives())), assertNotNull(deepCopy(getOperationTypeDefinitions())), getSourceLocation(), getComments(),
                 getIgnoredChars(), getAdditionalData());
     }
 
@@ -56,6 +60,7 @@ public class SchemaExtensionDefinition extends SchemaDefinition implements SDLEx
         return new Builder();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
