@@ -1,11 +1,13 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This options object controls how {@link QueryTraverser} works
  */
 @PublicApi
+@NullMarked
 public class QueryTraversalOptions {
 
     private final boolean coerceFieldArguments;

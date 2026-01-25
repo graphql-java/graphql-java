@@ -9,6 +9,7 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Function;
 
@@ -84,7 +85,7 @@ public class MaxQueryDepthInstrumentation extends SimplePerformantInstrumentatio
                 .build();
     }
 
-    private int getPathLength(QueryVisitorFieldEnvironment path) {
+    private int getPathLength(@Nullable QueryVisitorFieldEnvironment path) {
         int length = 1;
         while (path != null) {
             path = path.getParentEnvironment();

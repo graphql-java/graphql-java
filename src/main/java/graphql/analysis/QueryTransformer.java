@@ -10,10 +10,11 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 import graphql.util.TreeTransformer;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
@@ -31,6 +32,7 @@ import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
  * visitField calls.
  */
 @PublicApi
+@NullMarked
 public class QueryTransformer {
 
     private final Node root;
