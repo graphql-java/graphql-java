@@ -31,7 +31,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     private final String name;
     private final TypeName typeCondition;
     private final NodeUtil.DirectivesHolder directives;
-    private final SelectionSet selectionSet;
+    private final @Nullable SelectionSet selectionSet;
 
     public static final String CHILD_TYPE_CONDITION = "typeCondition";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -41,7 +41,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     protected FragmentDefinition(String name,
                                  TypeName typeCondition,
                                  List<Directive> directives,
-                                 SelectionSet selectionSet,
+                                 @Nullable SelectionSet selectionSet,
                                  @Nullable SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars,
@@ -84,7 +84,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     }
 
     @Override
-    public SelectionSet getSelectionSet() {
+    public @Nullable SelectionSet getSelectionSet() {
         return selectionSet;
     }
 
@@ -93,7 +93,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         List<Node> result = new ArrayList<>();
         result.add(typeCondition);
         result.addAll(directives.getDirectives());
-        result.add(selectionSet);
+        if (selectionSet != null) {
+            result.add(selectionSet);
+        }
         return result;
     }
 
@@ -111,7 +113,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         return transform(builder -> builder
                 .typeCondition(assertNotNull(newChildren.getChildOrNull(CHILD_TYPE_CONDITION)))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-                .selectionSet(assertNotNull(newChildren.getChildOrNull(CHILD_SELECTION_SET)))
+                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
         );
     }
 
@@ -134,7 +136,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         return new FragmentDefinition(name,
                 assertNotNull(deepCopy(typeCondition)),
                 assertNotNull(deepCopy(directives.getDirectives())),
-                assertNotNull(deepCopy(selectionSet)),
+                deepCopy(selectionSet),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -223,7 +225,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             return this;
         }
 
-        public Builder selectionSet(SelectionSet selectionSet) {
+        public Builder selectionSet(@Nullable SelectionSet selectionSet) {
             this.selectionSet = selectionSet;
             return this;
         }
@@ -245,7 +247,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
 
         public FragmentDefinition build() {
-            return new FragmentDefinition(assertNotNull(name, () -> "name is required"), assertNotNull(typeCondition, () -> "typeCondition is required"), directives, assertNotNull(selectionSet, () -> "selectionSet is required"), sourceLocation, comments, ignoredChars, additionalData);
+            return new FragmentDefinition(assertNotNull(name, () -> "name is required"), assertNotNull(typeCondition, () -> "typeCondition is required"), directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
