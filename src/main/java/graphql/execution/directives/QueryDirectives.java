@@ -9,6 +9,8 @@ import graphql.language.Field;
 import graphql.normalized.NormalizedInputValue;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.List;
 import java.util.Locale;
@@ -31,6 +33,7 @@ import java.util.function.Supplier;
  * @see graphql.execution.MergedField
  */
 @PublicApi
+@NullMarked
 public interface QueryDirectives {
 
     /**
@@ -111,6 +114,7 @@ public interface QueryDirectives {
         return new QueryDirectivesBuilder();
     }
 
+    @NullUnmarked
     interface Builder {
 
         Builder schema(GraphQLSchema schema);

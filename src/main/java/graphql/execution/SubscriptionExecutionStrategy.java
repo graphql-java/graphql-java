@@ -17,6 +17,8 @@ import graphql.execution.reactive.SubscriptionPublisher;
 import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
@@ -40,6 +42,7 @@ import static java.util.Collections.singletonMap;
  * See <a href="https://www.reactive-streams.org/">https://www.reactive-streams.org/</a>
  */
 @PublicApi
+@NullMarked
 public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     /**
@@ -132,7 +135,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      * @return a reactive streams {@link Publisher} always
      */
     @SuppressWarnings("unchecked")
-    private static Publisher<Object> mkReactivePublisher(Object publisherObj) {
+    private static @Nullable Publisher<Object> mkReactivePublisher(@Nullable Object publisherObj) {
         if (publisherObj != null) {
             if (publisherObj instanceof Publisher) {
                 return (Publisher<Object>) publisherObj;
@@ -182,7 +185,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         executionContext.getDataLoaderDispatcherStrategy().subscriptionEventCompletionDone(newParameters.getDeferredCallContext());
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
-                .thenApply(val -> new ExecutionResultImpl(val, newParameters.getDeferredCallContext().getErrors()))
+                .thenApply(val -> new ExecutionResultImpl(val, Assert.assertNotNull(newParameters.getDeferredCallContext(), "deferredCallContext should not be null").getErrors()))
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
 
         // dispatch instrumentation so they can know about each subscription event
