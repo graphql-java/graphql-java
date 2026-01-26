@@ -361,6 +361,11 @@ tasks.register('testWithJava21', Test) {
     javaLauncher = javaToolchains.launcherFor {
         languageVersion = JavaLanguageVersion.of(21)
     }
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    classpath += sourceSets.jmh.output
+    dependsOn "jmhClasses"
+    dependsOn tasks.named('testClasses')
 }
 
 tasks.register('testWithJava17', Test) {
