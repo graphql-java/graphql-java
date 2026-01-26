@@ -25,6 +25,7 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
         def context = GraphQLContext.getDefault()
         validationContext.getGraphQLContext() >> context
         validationContext.getI18n() >> i18n
+        validationContext.i18n(_, _) >> "test error message"
         i18n.getLocale() >> Locale.ENGLISH
     }
 

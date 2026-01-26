@@ -16,6 +16,10 @@ class KnownFragmentNamesTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     KnownFragmentNames knownFragmentNames = new KnownFragmentNames(validationContext, errorCollector)
 
+    def setup() {
+        validationContext.i18n(_, _) >> "test error message"
+    }
+
     def "unknown fragment reference in fragment spread"() {
         given:
         FragmentSpread fragmentSpread = FragmentSpread.newFragmentSpread("fragment").build()

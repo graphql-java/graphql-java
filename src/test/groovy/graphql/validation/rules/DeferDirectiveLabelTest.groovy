@@ -30,6 +30,7 @@ class DeferDirectiveLabelTest extends Specification {
                 ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true
         ).build();
         validationContext.getTraversalContext() >> traversalContext
+        validationContext.i18n(_, _) >> "test error message"
     }
 
     def "Allow unique label directive"() {

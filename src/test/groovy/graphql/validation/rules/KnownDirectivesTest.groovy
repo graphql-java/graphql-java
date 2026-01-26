@@ -23,6 +23,7 @@ class KnownDirectivesTest extends Specification {
         def traversalContext = Mock(TraversalContext)
         validationContext.getSchema() >> StarWarsSchema.starWarsSchema
         validationContext.getTraversalContext() >> traversalContext
+        validationContext.i18n(_, _) >> "test error message"
     }
 
 
