@@ -27,13 +27,14 @@ class ValidationErrorToString extends Specification {
         validationError.toString() == "ValidationError{validationErrorType=UnknownType, queryPath=[home, address], message=Validation Error (UnknownType), locations=[SourceLocation{line=5, column=0}, SourceLocation{line=10, column=1}], description='Validation Error (UnknownType)', extensions=[extension1=first, extension2=true, extension3=2]}"
     }
 
-    def 'toString prints correctly ValidationError object when all fields are empty'() {
+    def 'toString prints correctly ValidationError object when optional fields are empty'() {
        when:
         def validationError = ValidationError
                 .newValidationError()
+                .description("Test error")
                 .build()
 
         then:
-        validationError.toString() == "ValidationError{validationErrorType=null, queryPath=[], message=null, locations=[], description='null', extensions=[]}"
+        validationError.toString() == "ValidationError{validationErrorType=null, queryPath=[], message=Test error, locations=[], description='Test error', extensions=[]}"
     }
 }
