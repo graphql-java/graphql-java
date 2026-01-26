@@ -1,12 +1,14 @@
 package graphql.validation;
 
-
 import com.google.common.collect.ImmutableMap;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -14,18 +16,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
+
 @PublicApi
+@NullMarked
 public class ValidationError implements GraphQLError {
 
     private final List<SourceLocation> locations = new ArrayList<>();
     private final String description;
-    private final ValidationErrorClassification validationErrorType;
+    private final @Nullable ValidationErrorClassification validationErrorType;
     private final List<String> queryPath = new ArrayList<>();
     private final ImmutableMap<String, Object> extensions;
 
     private ValidationError(Builder builder) {
         this.validationErrorType = builder.validationErrorType;
-        this.description = builder.description;
+        this.description = assertNotNull(builder.description, "description is required");
         if (builder.sourceLocations != null) {
             this.locations.addAll(builder.sourceLocations);
         }
@@ -37,7 +42,7 @@ public class ValidationError implements GraphQLError {
         this.extensions = (builder.extensions != null) ? ImmutableMap.copyOf(builder.extensions) : ImmutableMap.of();
     }
 
-    public ValidationErrorClassification getValidationErrorType() {
+    public @Nullable ValidationErrorClassification getValidationErrorType() {
         return validationErrorType;
     }
 
@@ -102,18 +107,17 @@ public class ValidationError implements GraphQLError {
         return GraphqlErrorHelper.hashCode(this);
     }
 
-
     public static Builder newValidationError() {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         private List<SourceLocation> sourceLocations;
         private Map<String, Object> extensions;
         private String description;
         private ValidationErrorClassification validationErrorType;
         private List<String> queryPath;
-
 
         public Builder validationErrorType(ValidationErrorClassification validationErrorType) {
             this.validationErrorType = validationErrorType;

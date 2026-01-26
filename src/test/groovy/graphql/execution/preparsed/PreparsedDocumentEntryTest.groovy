@@ -33,7 +33,7 @@ class PreparsedDocumentEntryTest extends Specification {
     def "Ensure a non-null errors returns"() {
         given:
         def errors = [new InvalidSyntaxError(new SourceLocation(0, 0), "bang"),
-                      ValidationError.newValidationError().validationErrorType(ValidationErrorType.InvalidSyntax).build()]
+                      ValidationError.newValidationError().validationErrorType(ValidationErrorType.InvalidSyntax).description("Invalid syntax in document").build()]
 
         when:
         def docEntry = new PreparsedDocumentEntry(errors)

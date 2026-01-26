@@ -7,27 +7,30 @@ import graphql.execution.TypeResolutionParameters;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
  * This is passed to a {@link graphql.schema.TypeResolver} to help with object type resolution.
- *
+ * <p>
  * See {@link graphql.schema.TypeResolver#getType} for how this is used
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
+@NullMarked
 public class TypeResolutionEnvironment {
 
-    private final Object object;
+    private final @Nullable Object object;
     private final Supplier<ImmutableMapWithNullValues<String, Object>> arguments;
     private final MergedField field;
     private final GraphQLType fieldType;
     private final GraphQLSchema schema;
-    private final Object context;
+    private final @Nullable Object context;
     private final GraphQLContext graphQLContext;
-    private final Object localContext;
+    private final @Nullable Object localContext;
     private final DataFetchingFieldSelectionSet fieldSelectionSet;
 
     @Internal
@@ -52,7 +55,7 @@ public class TypeResolutionEnvironment {
      * @return the object that needs to be resolved into a specific graphql object type
      */
     @SuppressWarnings("unchecked")
-    public <T> T getObject() {
+    public @Nullable <T> T getObject() {
         return (T) object;
     }
 
@@ -95,7 +98,7 @@ public class TypeResolutionEnvironment {
      * @deprecated use {@link #getGraphQLContext()} instead
      */
     @Deprecated(since = "2021-12-27")
-    public <T> T getContext() {
+    public @Nullable <T> T getContext() {
         //noinspection unchecked
         return (T) context;
     }
@@ -114,7 +117,7 @@ public class TypeResolutionEnvironment {
      *
      * @return the local context object
      */
-    public <T> T getLocalContext() {
+    public @Nullable <T> T getLocalContext() {
         //noinspection unchecked
         return (T) localContext;
     }

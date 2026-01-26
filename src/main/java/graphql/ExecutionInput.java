@@ -25,9 +25,9 @@ import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegist
 public class ExecutionInput {
     private final String query;
     private final String operationName;
-    private final Object context;
+    private final @Nullable Object context;
     private final GraphQLContext graphQLContext;
-    private final Object localContext;
+    private final @Nullable Object localContext;
     private final Object root;
     private final RawVariables rawVariables;
     private final Map<String, Object> extensions;

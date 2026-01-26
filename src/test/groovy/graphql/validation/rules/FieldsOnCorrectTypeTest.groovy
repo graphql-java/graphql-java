@@ -18,6 +18,10 @@ class FieldsOnCorrectTypeTest extends Specification {
     ValidationContext validationContext = Mock(ValidationContext)
     FieldsOnCorrectType fieldsOnCorrectType = new FieldsOnCorrectType(validationContext, errorCollector)
 
+    def setup() {
+        validationContext.i18n(_, _) >> "test error message"
+    }
+
 
     def "should add error to collector when field definition is null"() {
         given:

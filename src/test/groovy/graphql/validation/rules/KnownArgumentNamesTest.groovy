@@ -25,6 +25,10 @@ class KnownArgumentNamesTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     KnownArgumentNames knownArgumentNames = new KnownArgumentNames(validationContext, errorCollector)
 
+    def setup() {
+        validationContext.i18n(_, _) >> "test error message"
+    }
+
     def "unknown field argument"() {
         given:
         Argument argument = Argument.newArgument("unknownArg", StringValue.newStringValue("value").build()).build()

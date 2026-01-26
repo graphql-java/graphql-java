@@ -17,6 +17,10 @@ class KnownTypeNamesTest extends Specification {
     ValidationContext validationContext = Mock(ValidationContext)
     KnownTypeNames knownTypeNames = new KnownTypeNames(validationContext, errorCollector)
 
+    def setup() {
+        validationContext.i18n(_, _) >> "test error message"
+    }
+
     def "unknown types is an error"() {
         given:
         knownTypeNames.validationContext.getSchema() >> StarWarsSchema.starWarsSchema

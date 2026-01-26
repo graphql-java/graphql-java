@@ -18,7 +18,8 @@ import graphql.schema.impl.SchemaUtil;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import static java.util.Arrays.asList;
  * See <a href="https://graphql.org/learn/schema/#type-language">https://graphql.org/learn/schema/#type-language</a> for more details
  */
 @PublicApi
+@NullMarked
 public class GraphQLSchema {
 
     private final GraphQLObjectType queryType;
@@ -63,7 +65,7 @@ public class GraphQLSchema {
     private final SchemaDefinition definition;
     private final ImmutableList<SchemaExtensionDefinition> extensionDefinitions;
     private final String description;
-    private final GraphQLCodeRegistry codeRegistry;
+    private final @Nullable GraphQLCodeRegistry codeRegistry;
 
     private final ImmutableMap<String, GraphQLNamedType> typeMap;
     private final ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes;
@@ -190,7 +192,7 @@ public class GraphQLSchema {
         return map.build();
     }
 
-    public GraphQLCodeRegistry getCodeRegistry() {
+    public @Nullable GraphQLCodeRegistry getCodeRegistry() {
         return codeRegistry;
     }
 
@@ -289,7 +291,7 @@ public class GraphQLSchema {
      *
      * @return the type
      */
-    public @Nullable GraphQLType getType(@NonNull String typeName) {
+    public @Nullable GraphQLType getType(String typeName) {
         return typeMap.get(typeName);
     }
 
@@ -321,7 +323,7 @@ public class GraphQLSchema {
      *
      * @return the type cast to the target type.
      */
-    public <T extends GraphQLType> T getTypeAs(String typeName) {
+    public <T extends GraphQLType> @Nullable T getTypeAs(String typeName) {
         //noinspection unchecked
         return (T) typeMap.get(typeName);
     }
@@ -346,7 +348,7 @@ public class GraphQLSchema {
      *
      * @throws graphql.GraphQLException if the type is NOT an object type
      */
-    public GraphQLObjectType getObjectType(String typeName) {
+    public @Nullable GraphQLObjectType getObjectType(String typeName) {
         GraphQLType graphQLType = typeMap.get(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLObjectType,
@@ -363,7 +365,7 @@ public class GraphQLSchema {
      *
      * @return the field or null if it does not exist
      */
-    public GraphQLFieldDefinition getFieldDefinition(FieldCoordinates fieldCoordinates) {
+    public @Nullable GraphQLFieldDefinition getFieldDefinition(FieldCoordinates fieldCoordinates) {
         String fieldName = fieldCoordinates.getFieldName();
         if (fieldCoordinates.isSystemCoordinates()) {
             if (fieldName.equals(this.getIntrospectionSchemaFieldDefinition().getName())) {
@@ -424,7 +426,7 @@ public class GraphQLSchema {
      *
      * @return list of types implementing provided interface
      */
-    public List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
+    public @Nullable List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
         return interfaceNameToObjectTypes.getOrDefault(type.getName(), emptyList());
     }
 
@@ -701,6 +703,7 @@ public class GraphQLSchema {
                 .description(existingSchema.getDescription());
     }
 
+    @NullUnmarked
     public static class BuilderWithoutTypes {
         private GraphQLCodeRegistry codeRegistry;
         private String description;
@@ -731,6 +734,7 @@ public class GraphQLSchema {
         }
     }
 
+    @NullUnmarked
     public static class Builder {
         private GraphQLObjectType queryType;
         private GraphQLObjectType mutationType;
@@ -866,7 +870,6 @@ public class GraphQLSchema {
             this.additionalDirectives.clear();
             return this;
         }
-
 
         public Builder withSchemaDirectives(GraphQLDirective... directives) {
             for (GraphQLDirective directive : directives) {

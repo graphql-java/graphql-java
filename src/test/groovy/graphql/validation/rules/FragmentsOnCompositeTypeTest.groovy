@@ -19,6 +19,10 @@ class FragmentsOnCompositeTypeTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     FragmentsOnCompositeType fragmentsOnCompositeType = new FragmentsOnCompositeType(validationContext, errorCollector)
 
+    def setup() {
+        validationContext.i18n(_, _) >> "test error message"
+    }
+
     def "inline fragment type condition must refer to a composite type"() {
         given:
         InlineFragment inlineFragment = InlineFragment.newInlineFragment().typeCondition(TypeName.newTypeName("String").build()).build()

@@ -22,6 +22,7 @@ class NoUnusedFragmentsTest extends Specification {
     def setup() {
         def traversalContext = Mock(TraversalContext)
         validationContext.getTraversalContext() >> traversalContext
+        validationContext.i18n(_, _) >> "test error message"
     }
 
     def "all fragment names are used"() {
