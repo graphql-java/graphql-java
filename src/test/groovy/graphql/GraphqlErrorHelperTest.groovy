@@ -55,7 +55,7 @@ class GraphqlErrorHelperTest extends Specification {
 
         @Override
         ErrorClassification getErrorType() {
-            return null
+            return ErrorType.DataFetchingException
         }
 
         @Override
