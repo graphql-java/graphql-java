@@ -1,6 +1,5 @@
 package graphql.validation;
 
-
 import com.google.common.collect.ImmutableMap;
 import graphql.ErrorType;
 import graphql.GraphQLError;
@@ -17,6 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
+
 @PublicApi
 @NullMarked
 public class ValidationError implements GraphQLError {
@@ -29,7 +30,7 @@ public class ValidationError implements GraphQLError {
 
     private ValidationError(Builder builder) {
         this.validationErrorType = builder.validationErrorType;
-        this.description = builder.description;
+        this.description = assertNotNull(builder.description, "description is required");
         if (builder.sourceLocations != null) {
             this.locations.addAll(builder.sourceLocations);
         }
@@ -106,7 +107,6 @@ public class ValidationError implements GraphQLError {
         return GraphqlErrorHelper.hashCode(this);
     }
 
-
     public static Builder newValidationError() {
         return new Builder();
     }
@@ -118,7 +118,6 @@ public class ValidationError implements GraphQLError {
         private String description;
         private ValidationErrorClassification validationErrorType;
         private List<String> queryPath;
-
 
         public Builder validationErrorType(ValidationErrorClassification validationErrorType) {
             this.validationErrorType = validationErrorType;
