@@ -27,6 +27,10 @@ class ProvidedNonNullArgumentsTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     ProvidedNonNullArguments providedNonNullArguments = new ProvidedNonNullArguments(validationContext, errorCollector)
 
+    def setup() {
+        validationContext.i18n(_, _) >> "test error message"
+    }
+
     def "not provided and not defaulted non null field argument"() {
         given:
         def fieldArg = GraphQLArgument.newArgument().name("arg")
