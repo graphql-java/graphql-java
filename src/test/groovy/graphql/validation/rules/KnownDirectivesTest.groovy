@@ -2,11 +2,12 @@ package graphql.validation.rules
 
 import graphql.StarWarsSchema
 import graphql.TestUtil
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
-import graphql.validation.TraversalContext
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
@@ -15,14 +16,16 @@ import spock.lang.Specification
 
 class KnownDirectivesTest extends Specification {
 
-    ValidationContext validationContext = Mock(ValidationContext)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    KnownDirectives knownDirectives = new KnownDirectives(validationContext, errorCollector)
 
-    def setup() {
-        def traversalContext = Mock(TraversalContext)
-        validationContext.getSchema() >> StarWarsSchema.starWarsSchema
-        validationContext.getTraversalContext() >> traversalContext
+    def traverse(String query) {
+        Document document = new Parser().parseDocument(query)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(StarWarsSchema.starWarsSchema, document, i18n)
+        OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
+                { r -> r == OperationValidationRule.KNOWN_DIRECTIVES })
+        LanguageTraversal languageTraversal = new LanguageTraversal()
+        languageTraversal.traverse(document, operationValidator)
     }
 
 
@@ -34,11 +37,8 @@ class KnownDirectivesTest extends Specification {
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
@@ -53,11 +53,8 @@ class KnownDirectivesTest extends Specification {
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -72,11 +69,8 @@ class KnownDirectivesTest extends Specification {
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -92,11 +86,8 @@ class KnownDirectivesTest extends Specification {
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
@@ -113,11 +104,8 @@ class KnownDirectivesTest extends Specification {
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnknownDirective)
@@ -129,18 +117,15 @@ class KnownDirectivesTest extends Specification {
         given:
         def query = """
           fragment getName on Foo @include(if: true) {
-            name  
+            name
           }
           query Foo {
                 ...getName
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
@@ -161,11 +146,8 @@ class KnownDirectivesTest extends Specification {
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -182,11 +164,8 @@ class KnownDirectivesTest extends Specification {
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -203,11 +182,8 @@ class KnownDirectivesTest extends Specification {
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -225,11 +201,8 @@ class KnownDirectivesTest extends Specification {
               }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [knownDirectives]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -237,19 +210,19 @@ class KnownDirectivesTest extends Specification {
     }
 
     def sdl = '''
-        
-        directive @queryDirective on QUERY 
-        
+
+        directive @queryDirective on QUERY
+
         directive @subDirective on SUBSCRIPTION
- 
+
         type Query {
             field: String
         }
-        
+
         type Subscription {
             field: String
         }
-        
+
     '''
 
     def schema = TestUtil.schema(sdl)
@@ -257,7 +230,7 @@ class KnownDirectivesTest extends Specification {
     def "invalid directive on SUBSCRIPTION"() {
         def spec = '''
             subscription sub @queryDirective{
-                field 
+                field
             }
         '''
 
@@ -275,7 +248,7 @@ class KnownDirectivesTest extends Specification {
     def "unknown directive on SUBSCRIPTION"() {
         def spec = '''
             subscription sub @unknownDirective{
-                field 
+                field
             }
         '''
 
@@ -293,7 +266,7 @@ class KnownDirectivesTest extends Specification {
     def "valid directive on SUBSCRIPTION"() {
         def spec = '''
             subscription sub @subDirective{
-                field 
+                field
             }
         '''
 

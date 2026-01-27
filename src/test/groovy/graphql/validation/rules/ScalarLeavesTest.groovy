@@ -1,35 +1,30 @@
 package graphql.validation.rules
 
-import graphql.Scalars
-import graphql.language.Field
-import graphql.language.SelectionSet
 import graphql.parser.Parser
-import graphql.schema.GraphQLObjectType
 import graphql.validation.SpecValidationSchema
-import graphql.validation.ValidationContext
 import graphql.validation.ValidationError
-import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
-import static graphql.language.Field.newField
-
 class ScalarLeavesTest extends Specification {
 
-    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    ValidationContext validationContext = Mock(ValidationContext)
-    ScalarLeaves scalarLeaves = new ScalarLeaves(validationContext, errorCollector)
-
     def "subselection not allowed"() {
-        given:
-        Field field = newField("hello", SelectionSet.newSelectionSet([newField("world").build()]).build()).build()
-        validationContext.getOutputType() >> Scalars.GraphQLString
+        def query = """
+            {
+              dog {
+                name {
+                  something
+                }
+              }
+            }
+        """
         when:
-        scalarLeaves.checkField(field)
+        def validationErrors = validate(query)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.SubselectionNotAllowed)
+        !validationErrors.empty
+        validationErrors.any { it.validationErrorType == ValidationErrorType.SubselectionNotAllowed }
     }
 
     def "subselection not allowed with error message"() {
@@ -53,14 +48,17 @@ class ScalarLeavesTest extends Specification {
     }
 
     def "subselection required"() {
-        given:
-        Field field = newField("hello").build()
-        validationContext.getOutputType() >> GraphQLObjectType.newObject().name("objectType").build()
+        def query = """
+            {
+              dog
+            }
+        """
         when:
-        scalarLeaves.checkField(field)
+        def validationErrors = validate(query)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.SubselectionRequired)
+        !validationErrors.empty
+        validationErrors.any { it.validationErrorType == ValidationErrorType.SubselectionRequired }
     }
 
     def "subselection required with error message"() {

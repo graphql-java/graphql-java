@@ -1,63 +1,35 @@
 package graphql.validation.rules
 
-import graphql.language.Field
 import graphql.parser.Parser
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLObjectType
 import graphql.validation.SpecValidationSchema
-import graphql.validation.ValidationContext
 import graphql.validation.ValidationError
-import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
 class FieldsOnCorrectTypeTest extends Specification {
 
-    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    ValidationContext validationContext = Mock(ValidationContext)
-    FieldsOnCorrectType fieldsOnCorrectType = new FieldsOnCorrectType(validationContext, errorCollector)
-
-
-    def "should add error to collector when field definition is null"() {
-        given:
-        def parentType = GraphQLObjectType.newObject().name("parentType").build()
-        validationContext.getParentType() >> parentType
-        validationContext.getFieldDef() >> null
-        def field = new Field("name")
-
+    def "should add error when field is undefined on type"() {
+        def query = """
+            { dog { unknownField } }
+        """
         when:
-        fieldsOnCorrectType.checkField(field)
+        def validationErrors = validate(query)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.FieldUndefined)
-        errorCollector.errors.size() == 1
+        !validationErrors.empty
+        validationErrors.any { it.validationErrorType == ValidationErrorType.FieldUndefined }
     }
 
-    def "should results in no error when field definition is filled"() {
-        given:
-        def parentType = GraphQLObjectType.newObject().name("parentType").build()
-        validationContext.getParentType() >> parentType
-        validationContext.getFieldDef() >> Mock(GraphQLFieldDefinition)
-        def field = new Field("name")
-
+    def "should result in no error when field is defined"() {
+        def query = """
+            { dog { name } }
+        """
         when:
-        fieldsOnCorrectType.checkField(field)
+        def validationErrors = validate(query)
 
         then:
-        errorCollector.errors.isEmpty()
-    }
-
-    def "should results in no error when parent type is null"() {
-        given:
-        validationContext.getParentType() >> null
-        def field = new Field("name")
-
-        when:
-        fieldsOnCorrectType.checkField(field)
-
-        then:
-        errorCollector.errors.isEmpty()
+        validationErrors.empty
     }
 
     def '5.2.1 Field Selections on ... fieldNotDefined'() {

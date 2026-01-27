@@ -5,7 +5,8 @@ import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
@@ -20,10 +21,11 @@ class NoUnusedVariablesTest extends Specification {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
-        NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, errorCollector)
+        OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
+                { r -> r == OperationValidationRule.NO_UNUSED_VARIABLES })
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedVariables]))
+        languageTraversal.traverse(document, operationValidator)
     }
 
     def "uses all variables in fragments"() {
@@ -124,7 +126,7 @@ class NoUnusedVariablesTest extends Specification {
                 query getDogName($arg1: String, $unusedArg: Int) {
                   dog(arg1: $arg1) {
                       name
-                  }           
+                  }
                 }
             '''
         when:

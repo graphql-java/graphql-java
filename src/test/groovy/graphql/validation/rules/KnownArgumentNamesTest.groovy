@@ -1,101 +1,74 @@
 package graphql.validation.rules
 
-import graphql.introspection.Introspection
-import graphql.language.Argument
-import graphql.language.BooleanValue
-import graphql.language.StringValue
 import graphql.parser.Parser
-import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLDirective
-import graphql.schema.GraphQLFieldDefinition
 import graphql.validation.SpecValidationSchema
-import graphql.validation.ValidationContext
 import graphql.validation.ValidationError
-import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
-import static graphql.Scalars.GraphQLBoolean
-import static graphql.Scalars.GraphQLString
-
 class KnownArgumentNamesTest extends Specification {
 
-    ValidationContext validationContext = Mock(ValidationContext)
-    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    KnownArgumentNames knownArgumentNames = new KnownArgumentNames(validationContext, errorCollector)
-
     def "unknown field argument"() {
-        given:
-        Argument argument = Argument.newArgument("unknownArg", StringValue.newStringValue("value").build()).build()
-        def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString)
-                .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLString).build()).build()
-        validationContext.getFieldDef() >> fieldDefinition
+        def query = """
+            query getDog {
+              dog {
+                doesKnowCommand(dogCommand: SIT, unknownArg: false)
+              }
+            }
+        """
         when:
-        knownArgumentNames.checkArgument(argument)
+        def validationErrors = validate(query)
+
         then:
-        errorCollector.containsValidationError(ValidationErrorType.UnknownArgument)
+        !validationErrors.empty
+        validationErrors.any { it.validationErrorType == ValidationErrorType.UnknownArgument }
     }
 
     def "known field argument"() {
-        given:
-        Argument argument = Argument.newArgument("knownArg", StringValue.newStringValue("value").build()).build()
-        def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString)
-                .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLString).build()).build()
-        validationContext.getFieldDef() >> fieldDefinition
+        def query = """
+            query getDog {
+              dog {
+                doesKnowCommand(dogCommand: SIT)
+              }
+            }
+        """
         when:
-        knownArgumentNames.checkArgument(argument)
+        def validationErrors = validate(query)
+
         then:
-        errorCollector.errors.isEmpty()
+        validationErrors.empty
     }
 
     def "unknown directive argument"() {
-        given:
-        Argument argument = Argument.newArgument("unknownArg", BooleanValue.newBooleanValue(true).build()).build()
-        def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build()
-        def directiveDefinition = GraphQLDirective.newDirective()
-                .name("directive")
-                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
-                .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLBoolean).build()).build()
-        validationContext.getFieldDef() >> fieldDefinition
-        validationContext.getDirective() >> directiveDefinition
+        def query = """
+            query getDogName {
+              dog @dogDirective(unknownArg: "value") {
+                name
+              }
+            }
+        """
         when:
-        knownArgumentNames.checkArgument(argument)
+        def validationErrors = validate(query)
+
         then:
-        errorCollector.containsValidationError(ValidationErrorType.UnknownDirective)
+        !validationErrors.empty
+        validationErrors.any { it.validationErrorType == ValidationErrorType.UnknownDirective }
     }
 
-    def "known directive argument"() {
-        given:
-        Argument argument = Argument.newArgument("knownArg", BooleanValue.newBooleanValue(true).build()).build()
-        def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build()
-        def directiveDefinition = GraphQLDirective.newDirective()
-                .name("directive")
-                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
-                .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLBoolean).build()).build()
-        validationContext.getFieldDef() >> fieldDefinition
-        validationContext.getDirective() >> directiveDefinition
+    def "known directive argument results in no error"() {
+        def query = """
+            query getDogName {
+              dog {
+                name
+              }
+            }
+        """
         when:
-        knownArgumentNames.checkArgument(argument)
-        then:
-        errorCollector.errors.isEmpty()
-    }
+        def validationErrors = validate(query)
 
-    def "directive argument not validated against field arguments"() {
-        given:
-        Argument argument = Argument.newArgument("unknownArg", BooleanValue.newBooleanValue(true).build()).build()
-        def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString)
-                .argument(GraphQLArgument.newArgument().name("unknownArg").type(GraphQLString).build()).build()
-        def directiveDefinition = GraphQLDirective.newDirective()
-                .name("directive")
-                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
-                .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLBoolean).build()).build()
-        validationContext.getFieldDef() >> fieldDefinition
-        validationContext.getDirective() >> directiveDefinition
-        when:
-        knownArgumentNames.checkArgument(argument)
         then:
-        errorCollector.containsValidationError(ValidationErrorType.UnknownDirective)
+        validationErrors.empty
     }
 
     def "directive missing argument validation error with message"() {
@@ -103,7 +76,7 @@ class KnownArgumentNamesTest extends Specification {
             query getDogName {
               dog @dogDirective(notArgument: "value"){
                   name
-              }           
+              }
             }
         """
         when:
@@ -121,7 +94,7 @@ class KnownArgumentNamesTest extends Specification {
             query getDog {
               dog {
                   doesKnowCommand(dogCommand: SIT, notArgument: false)
-              }           
+              }
             }
         """
         when:

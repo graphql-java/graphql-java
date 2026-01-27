@@ -5,7 +5,8 @@ import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
@@ -18,10 +19,11 @@ class NoUndefinedVariablesTest extends Specification {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
-        NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, errorCollector)
+        OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
+                { r -> r == OperationValidationRule.NO_UNDEFINED_VARIABLES })
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUndefinedVariables]))
+        languageTraversal.traverse(document, operationValidator)
     }
 
     def "undefined variable"() {
@@ -131,8 +133,8 @@ class NoUndefinedVariablesTest extends Specification {
         def query = """
         query Foo(\$a: String) { ...A }
         query Bar(\$a: String) { ...A }
-        
-        fragment A on Type { 
+
+        fragment A on Type {
             field(a: \$a)
         }
         """
@@ -149,8 +151,8 @@ class NoUndefinedVariablesTest extends Specification {
         def query = """
         query Foo(\$a: String) { ...A }
         query Bar { ...A }
-        
-        fragment A on Type { 
+
+        fragment A on Type {
             field(a: \$a)
         }
         """
@@ -168,8 +170,8 @@ class NoUndefinedVariablesTest extends Specification {
         def query = """
         query Foo { ...A }
         query Bar { ...A }
-        
-        fragment A on Type { 
+
+        fragment A on Type {
             field(a: \$a)
         }
         """

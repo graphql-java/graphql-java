@@ -4,7 +4,8 @@ import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import spock.lang.Specification
@@ -18,10 +19,10 @@ class PossibleFragmentSpreadsTest extends Specification {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(Harness.Schema, document, i18n)
-        PossibleFragmentSpreads possibleFragmentSpreads = new PossibleFragmentSpreads(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [possibleFragmentSpreads]))
+        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.POSSIBLE_FRAGMENT_SPREADS }))
     }
 
     def 'of the same object'() {
@@ -307,7 +308,7 @@ class PossibleFragmentSpreadsTest extends Specification {
              ...LeashInputFragment
             }
            }
-           
+
            fragment LeashInputFragment on LeashInput {
             id
            }
@@ -325,10 +326,10 @@ class PossibleFragmentSpreadsTest extends Specification {
            query {
             dogWithInput {
              ...on LeashInput {
-              id 
+              id
              }
             }
-           }           
+           }
         """
         when:
         traverse(query)

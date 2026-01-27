@@ -1,43 +1,36 @@
 package graphql.validation.rules
 
-import graphql.GraphQLContext
 import graphql.TestUtil
-import graphql.i18n.I18n
-import graphql.language.BooleanValue
-import graphql.language.TypeName
-import graphql.language.VariableDefinition
-import graphql.validation.ValidationContext
-import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
-import static graphql.Scalars.GraphQLString
-
 class VariableDefaultValuesOfCorrectTypeTest extends Specification {
 
-    ValidationContext validationContext = Mock(ValidationContext)
-    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    VariableDefaultValuesOfCorrectType defaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, errorCollector)
-    I18n i18n = Mock(I18n)
-
-    void setup() {
-        def context = GraphQLContext.getDefault()
-        validationContext.getGraphQLContext() >> context
-        validationContext.getI18n() >> i18n
-        i18n.getLocale() >> Locale.ENGLISH
-    }
-
     def "default value has wrong type"() {
-        given:
-        BooleanValue defaultValue = BooleanValue.newBooleanValue(false).build()
-        VariableDefinition variableDefinition = VariableDefinition.newVariableDefinition("var", TypeName.newTypeName("String").build(), defaultValue).build()
-        validationContext.getInputType() >> GraphQLString
+        setup:
+        def schema = '''
+            type Query {
+                field(arg: String) : String
+            }
+        '''
+
+        def query = '''
+            query($arg: String = false) {
+                field(arg: $arg)
+            }
+        '''
+
+        def graphQlSchema = TestUtil.schema(schema)
+        def document = TestUtil.parseQuery(query)
+        def validator = new Validator()
+
         when:
-        defaultValuesOfCorrectType.checkVariableDefinition(variableDefinition)
+        def validationErrors = validator.validateDocument(graphQlSchema, document, Locale.ENGLISH)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.BadValueForDefaultArg)
+        !validationErrors.empty
+        validationErrors.any { it.validationErrorType == ValidationErrorType.BadValueForDefaultArg }
     }
 
     def "default value has wrong type with error message"() {
@@ -46,7 +39,7 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
             type User {
                 id: String
             }
-            
+
             type Query {
                 getUsers(howMany: Int) : [User]
             }
@@ -56,7 +49,7 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
             query($howMany: Int = "NotANumber") {
                 getUsers(howMany: $howMany) {
                     id
-                } 
+                }
             }
         '''
 
@@ -80,7 +73,7 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
             type User {
                 id: String
             }
-            
+
             type Query {
                 getUsers(howMany: Int) : [User]
             }
@@ -90,7 +83,7 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
             query($howMany: Int = "NotANumber") {
                 getUsers(howMany: $howMany) {
                     id
-                } 
+                }
             }
         '''
 

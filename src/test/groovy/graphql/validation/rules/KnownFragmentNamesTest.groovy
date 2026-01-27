@@ -1,30 +1,28 @@
 package graphql.validation.rules
 
-import graphql.language.FragmentSpread
 import graphql.parser.Parser
 import graphql.validation.SpecValidationSchema
-import graphql.validation.ValidationContext
 import graphql.validation.ValidationError
-import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
 class KnownFragmentNamesTest extends Specification {
 
-    ValidationContext validationContext = Mock(ValidationContext)
-    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    KnownFragmentNames knownFragmentNames = new KnownFragmentNames(validationContext, errorCollector)
-
     def "unknown fragment reference in fragment spread"() {
-        given:
-        FragmentSpread fragmentSpread = FragmentSpread.newFragmentSpread("fragment").build()
-        knownFragmentNames.validationContext.getFragment("fragment") >> null
+        def query = """
+            {
+              dog {
+                ...unknownFragment
+              }
+            }
+        """
         when:
-        knownFragmentNames.checkFragmentSpread(fragmentSpread)
+        def validationErrors = validate(query)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.UndefinedFragment)
+        !validationErrors.empty
+        validationErrors.any { it.validationErrorType == ValidationErrorType.UndefinedFragment }
     }
 
     def '5.4.2.1 Fragment spread target defined '() {
@@ -32,7 +30,7 @@ class KnownFragmentNamesTest extends Specification {
             query getDogName {
               dog {
                 ... FragmentDoesNotExist
-              }           
+              }
             }
         """
         when:

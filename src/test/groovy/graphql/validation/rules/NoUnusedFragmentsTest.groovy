@@ -1,11 +1,13 @@
 package graphql.validation.rules
 
+import graphql.TestUtil
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.SpecValidationSchema
-import graphql.validation.TraversalContext
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorCollector
@@ -15,13 +17,16 @@ import spock.lang.Specification
 
 class NoUnusedFragmentsTest extends Specification {
 
-    ValidationContext validationContext = Mock(ValidationContext)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    NoUnusedFragments noUnusedFragments = new NoUnusedFragments(validationContext, errorCollector)
 
-    def setup() {
-        def traversalContext = Mock(TraversalContext)
-        validationContext.getTraversalContext() >> traversalContext
+    def traverse(String query) {
+        Document document = new Parser().parseDocument(query)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
+        OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
+                { r -> r == OperationValidationRule.NO_UNUSED_FRAGMENTS })
+        LanguageTraversal languageTraversal = new LanguageTraversal()
+        languageTraversal.traverse(document, operationValidator)
     }
 
     def "all fragment names are used"() {
@@ -47,17 +52,15 @@ class NoUnusedFragmentsTest extends Specification {
                 }
                 """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
+        traverse(query)
 
         then:
         errorCollector.getErrors().isEmpty()
     }
 
     def "all fragment names are used by multiple operations"() {
+        given:
         def query = """
             query Foo {
                 human(id: 4) {
@@ -81,11 +84,8 @@ class NoUnusedFragmentsTest extends Specification {
             }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
+        traverse(query)
 
         then:
         errorCollector.getErrors().isEmpty()
@@ -93,6 +93,7 @@ class NoUnusedFragmentsTest extends Specification {
 
 
     def "contains unknown fragments"() {
+        given:
         def query = """
                 query Foo {
                     human(id: 4) {
@@ -122,11 +123,8 @@ class NoUnusedFragmentsTest extends Specification {
                 }
                 """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
+        traverse(query)
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedFragment)
@@ -167,11 +165,8 @@ class NoUnusedFragmentsTest extends Specification {
         }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedFragments]))
+        traverse(query)
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedFragment)
@@ -183,7 +178,7 @@ class NoUnusedFragmentsTest extends Specification {
             query getDogName {
               dog {
                   name
-              }           
+              }
             }
             fragment dogFragment on Dog { barkVolume }
         """.stripIndent()

@@ -2,94 +2,101 @@ package graphql.validation.rules
 
 import graphql.ExecutionInput
 import graphql.GraphQL
-import graphql.StarWarsSchema
 import graphql.TestUtil
-import graphql.language.FragmentDefinition
-import graphql.language.InlineFragment
-import graphql.language.TypeName
-import graphql.validation.ValidationContext
+import graphql.parser.Parser
+import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationError
-import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
+import graphql.validation.Validator
 import spock.lang.Specification
 
 class FragmentsOnCompositeTypeTest extends Specification {
 
-    ValidationContext validationContext = Mock(ValidationContext)
-    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    FragmentsOnCompositeType fragmentsOnCompositeType = new FragmentsOnCompositeType(validationContext, errorCollector)
-
     def "inline fragment type condition must refer to a composite type"() {
-        given:
-        InlineFragment inlineFragment = InlineFragment.newInlineFragment().typeCondition(TypeName.newTypeName("String").build()).build()
-        validationContext.getSchema() >> StarWarsSchema.starWarsSchema
-
+        def query = """
+            {
+              dog {
+                ... on String {
+                  name
+                }
+              }
+            }
+        """
         when:
-        fragmentsOnCompositeType.checkInlineFragment(inlineFragment)
+        def validationErrors = validate(query)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid)
-        errorCollector.errors.size() == 1
+        validationErrors.any { it.validationErrorType == ValidationErrorType.InlineFragmentTypeConditionInvalid }
     }
 
-    def "should results in no error"(InlineFragment inlineFragment) {
-        given:
-        validationContext.getSchema() >> StarWarsSchema.starWarsSchema
-
+    def "should result in no error for inline fragment without type condition"() {
+        def query = """
+            {
+              dog {
+                ... {
+                  name
+                }
+              }
+            }
+        """
         when:
-        fragmentsOnCompositeType.checkInlineFragment(inlineFragment)
+        def validationErrors = validate(query)
 
         then:
-        errorCollector.errors.isEmpty()
-
-        where:
-        inlineFragment << [
-                getInlineFragmentWithTypeConditionNull(),
-                getInlineFragmentWithConditionWithStrangeType(),
-                getInlineFragmentWithConditionWithRightType()
-        ]
+        validationErrors.empty
     }
 
-    private InlineFragment getInlineFragmentWithTypeConditionNull() {
-        InlineFragment.newInlineFragment().build()
-    }
+    def "should result in no error for inline fragment with composite type condition"() {
+        def query = """
+            {
+              dog {
+                ... on Pet {
+                  name
+                }
+              }
+            }
+        """
+        when:
+        def validationErrors = validate(query)
 
-    private InlineFragment getInlineFragmentWithConditionWithStrangeType() {
-        InlineFragment.newInlineFragment().typeCondition(TypeName.newTypeName("StrangeType").build()).build()
-    }
-
-    private InlineFragment getInlineFragmentWithConditionWithRightType() {
-        InlineFragment.newInlineFragment().typeCondition(TypeName.newTypeName("Character").build()).build()
+        then:
+        validationErrors.empty
     }
 
     def "fragment type condition must refer to a composite type"() {
-        given:
-        FragmentDefinition fragmentDefinition = FragmentDefinition.newFragmentDefinition().name("fragment").typeCondition(TypeName.newTypeName("String").build()).build()
-        validationContext.getSchema() >> StarWarsSchema.starWarsSchema
-
+        def query = """
+            {
+              dog {
+                ...frag
+              }
+            }
+            fragment frag on String {
+              length
+            }
+        """
         when:
-        fragmentsOnCompositeType.checkFragmentDefinition(fragmentDefinition)
+        def validationErrors = validate(query)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.FragmentTypeConditionInvalid)
+        validationErrors.any { it.validationErrorType == ValidationErrorType.FragmentTypeConditionInvalid }
     }
 
     def schema = TestUtil.schema("""
             type Query {
                 nothing: String
             }
-            
+
             type Mutation {
                 updateUDI(input: UDIInput!): UDIOutput
             }
-            
+
             type UDIOutput {
                 device: String
                 version: String
             }
-            
+
             input UDIInput {
-                device: String 
+                device: String
                 version: String
             }
         """)
@@ -100,21 +107,21 @@ class FragmentsOnCompositeTypeTest extends Specification {
     def "#1440 when fragment type condition is input type it should return validation error - not classCastException"() {
         when:
         def executionInput = ExecutionInput.newExecutionInput()
-                .query('''                    
-                    mutation UpdateUDI($input: UDIInput!) { 
-                        updateUDI(input: $input) { 
-                            ...fragOnInputType 
-                            __typename 
-                        } 
+                .query('''
+                    mutation UpdateUDI($input: UDIInput!) {
+                        updateUDI(input: $input) {
+                            ...fragOnInputType
+                            __typename
+                        }
                     }
-                    
+
                     # fragment should only target composite types
-                    fragment fragOnInputType on UDIInput { 
+                    fragment fragOnInputType on UDIInput {
                         device
-                        version 
-                        __typename 
-                    } 
-                    
+                        version
+                        __typename
+                    }
+
                     ''')
                 .variables([input: [device: 'device', version: 'version'] ])
                 .build()
@@ -132,17 +139,17 @@ class FragmentsOnCompositeTypeTest extends Specification {
     def "#1440 when inline fragment type condition is input type it should return validation error - not classCastException"() {
         when:
         def executionInput = ExecutionInput.newExecutionInput()
-                .query('''                    
-                    mutation UpdateUDI($input: UDIInput!) { 
-                        updateUDI(input: $input) { 
+                .query('''
+                    mutation UpdateUDI($input: UDIInput!) {
+                        updateUDI(input: $input) {
                             # fragment should only target composite types
-                            ... on UDIInput { 
+                            ... on UDIInput {
                                 device
-                                version 
-                                __typename 
-                            }  
-                            __typename 
-                        } 
+                                version
+                                __typename
+                            }
+                            __typename
+                        }
                     }
                     ''')
                 .variables([input: [device: 'device', version: 'version'] ])
@@ -158,4 +165,8 @@ class FragmentsOnCompositeTypeTest extends Specification {
         (executionResult.errors[0] as ValidationError).message == "Validation error (InlineFragmentTypeConditionInvalid@[updateUDI]) : Inline fragment type condition is invalid, must be on Object/Interface/Union"
     }
 
+    static List<ValidationError> validate(String query) {
+        def document = new Parser().parseDocument(query)
+        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
+    }
 }

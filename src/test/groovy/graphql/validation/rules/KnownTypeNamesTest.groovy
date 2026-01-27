@@ -1,31 +1,30 @@
 package graphql.validation.rules
 
-import graphql.StarWarsSchema
-import graphql.language.TypeName
 import graphql.parser.Parser
 import graphql.validation.SpecValidationSchema
-import graphql.validation.ValidationContext
 import graphql.validation.ValidationError
-import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
 class KnownTypeNamesTest extends Specification {
 
-    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-    ValidationContext validationContext = Mock(ValidationContext)
-    KnownTypeNames knownTypeNames = new KnownTypeNames(validationContext, errorCollector)
-
     def "unknown types is an error"() {
-        given:
-        knownTypeNames.validationContext.getSchema() >> StarWarsSchema.starWarsSchema
-
+        def query = """
+            {
+              dog {
+                ... on Simpson {
+                  name
+                }
+              }
+            }
+        """
         when:
-        knownTypeNames.checkTypeName(TypeName.newTypeName("Simpson").build())
+        def validationErrors = validate(query)
 
         then:
-        errorCollector.containsValidationError(ValidationErrorType.UnknownType)
+        !validationErrors.empty
+        validationErrors.any { it.validationErrorType == ValidationErrorType.UnknownType }
     }
 
     def '5.7.3 Variables Are Input Types - unknown type'() {

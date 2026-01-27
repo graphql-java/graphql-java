@@ -7,7 +7,8 @@ import graphql.parser.Parser
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLSchema
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import spock.lang.Specification
@@ -38,10 +39,11 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(schema, document, i18n)
-        OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, errorCollector)
+        OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
+                { r -> r == OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED })
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [overlappingFieldsCanBeMerged]))
+        languageTraversal.traverse(document, operationValidator)
     }
 
     def "identical fields are ok"() {
@@ -401,7 +403,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
             }
          """
         def schema = schema('''
-        type Query {    
+        type Query {
             cat: Cat! # non null parent type
         }
         type Cat {
@@ -486,7 +488,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
             c: String
         }
         schema {
-           query: Type 
+           query: Type
         }
         ''')
         when:
@@ -636,7 +638,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
             d: String
         }
         type Field {
-            deepField: Type 
+            deepField: Type
         }
         type Query {
             field: Field
@@ -677,7 +679,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
             d: String
         }
         type Field {
-            deepField: Type 
+            deepField: Type
         }
         type Query {
             field: Field
@@ -840,7 +842,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
        }
     }
     ... on Pet {
-      friends { 
+      friends {
         name
        }
     }
@@ -894,9 +896,9 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                }
             }
             ... on Cat {
-             friends { 
+             friends {
                 ... on Cat {
-                  conflict: height 
+                  conflict: height
                 }
                }
             }
@@ -950,7 +952,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
                }
             }
             ... on Cat {
-             friends { 
+             friends {
                   breed
                }
             }

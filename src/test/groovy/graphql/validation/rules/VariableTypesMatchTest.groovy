@@ -7,7 +7,8 @@ import graphql.i18n.I18n
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
@@ -20,17 +21,17 @@ class VariableTypesMatchTest extends Specification {
         def document = Parser.parse(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         def validationContext = new ValidationContext(schema, document, i18n)
-        def variableTypesMatchRule = new VariableTypesMatch(validationContext, errorCollector)
         def languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [variableTypesMatchRule]))
+        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.VARIABLE_TYPES_MATCH }))
     }
 
     def "valid variables"() {
         given:
         def query = """
             query Q(\$id: String!) {
-                human(id: \$id) { 
-                    __typename 
+                human(id: \$id) {
+                    __typename
                 }
             }
         """
@@ -46,8 +47,8 @@ class VariableTypesMatchTest extends Specification {
         given:
         def query = """
             query Q(\$id: String) {
-                human(id: \$id) { 
-                    __typename 
+                human(id: \$id) {
+                    __typename
                 }
             }
         """
@@ -69,7 +70,7 @@ class VariableTypesMatchTest extends Specification {
                   __typename
                 }
             }
-            
+
             query Invalid(\$xid: String) {
                 ...QueryType
             }
@@ -91,11 +92,11 @@ class VariableTypesMatchTest extends Specification {
                   __typename
                 }
             }
-            
+
             query Valid(\$id: String!) {
                 ... QueryType
             }
-            
+
             query Invalid(\$id: String) {
                 ... QueryType
             }
@@ -117,11 +118,11 @@ class VariableTypesMatchTest extends Specification {
                   __typename
                 }
             }
-            
+
             query Invalid(\$id: String) {
                 ... QueryType
             }
-            
+
             query Valid(\$id: String!) {
                 ... QueryType
             }
@@ -143,11 +144,11 @@ class VariableTypesMatchTest extends Specification {
                   __typename
                 }
             }
-            
+
             query Invalid1(\$id: String) {
                 ... QueryType
             }
-            
+
             query Invalid2(\$id: Boolean) {
                 ... QueryType
             }
@@ -185,7 +186,7 @@ class VariableTypesMatchTest extends Specification {
         def query = '''
             query Items( $limit: Int, $offset: Int) {
                  items(
-                    pagination: {limit: $limit, offset: $offset} 
+                    pagination: {limit: $limit, offset: $offset}
                 )
             }
         '''
@@ -214,7 +215,7 @@ class VariableTypesMatchTest extends Specification {
         def query = '''
             query Items( $var : Pagination) {
                  items(
-                    pagination: $var 
+                    pagination: $var
                 )
             }
         '''
@@ -242,7 +243,7 @@ class VariableTypesMatchTest extends Specification {
         def query = '''
             query Items( $var : Pagination = {limit: 1, offset: 1}) {
                  items(
-                    pagination: $var 
+                    pagination: $var
                 )
             }
         '''

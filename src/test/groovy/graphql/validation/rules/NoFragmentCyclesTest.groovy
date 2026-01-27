@@ -5,11 +5,11 @@ import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
-import graphql.validation.Validator
 import spock.lang.Specification
 
 class NoFragmentCyclesTest extends Specification {
@@ -20,9 +20,10 @@ class NoFragmentCyclesTest extends Specification {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
-        NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, errorCollector)
+        OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
+                { r -> r == OperationValidationRule.NO_FRAGMENT_CYCLES })
         LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [noFragmentCycles]))
+        languageTraversal.traverse(document, operationValidator)
     }
 
     def 'single reference is valid'() {
@@ -227,10 +228,11 @@ class NoFragmentCyclesTest extends Specification {
 
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         def validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
-        def rules = new Validator().createRules(validationContext, errorCollector)
+        def operationValidator = new OperationValidator(validationContext, errorCollector,
+                { r -> r == OperationValidationRule.NO_FRAGMENT_CYCLES })
         when:
         LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, rules))
+        languageTraversal.traverse(document, operationValidator)
 
         then:
 

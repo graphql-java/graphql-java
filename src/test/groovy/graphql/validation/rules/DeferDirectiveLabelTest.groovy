@@ -1,13 +1,13 @@
 package graphql.validation.rules
 
 import graphql.ExperimentalApi
-import graphql.GraphQLContext
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.SpecValidationSchema
-import graphql.validation.TraversalContext
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorCollector
@@ -17,19 +17,16 @@ import spock.lang.Specification
 
 class DeferDirectiveLabelTest extends Specification {
 
-    ValidationContext validationContext = Mock(ValidationContext)
-
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
-    DeferDirectiveLabel deferDirectiveLabel = new DeferDirectiveLabel(validationContext, errorCollector)
-
-    def setup() {
-        def traversalContext = Mock(TraversalContext)
-        validationContext.getSchema() >> SpecValidationSchema.specValidationSchema
-        validationContext.getGraphQLContext() >> GraphQLContext.newContext().of(
-                ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true
-        ).build();
-        validationContext.getTraversalContext() >> traversalContext
+    def traverse(String query) {
+        Document document = new Parser().parseDocument(query)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(SpecValidationSchema.specValidationSchema, document, i18n)
+        validationContext.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
+        LanguageTraversal languageTraversal = new LanguageTraversal()
+        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_LABEL }))
     }
 
     def "Allow unique label directive"() {
@@ -43,11 +40,9 @@ class DeferDirectiveLabelTest extends Specification {
               }
           }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveLabel]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -60,23 +55,20 @@ class DeferDirectiveLabelTest extends Specification {
             query defer_query {
                 dog {
                     ... @defer(label: "name") {
-                        name 
+                        name
                     }
                 }
                 alien {
                     ... @defer(label: "name") {
-                        name 
+                        name
                    }
                 }
-        
+
             }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveLabel]))
+        traverse(query)
 
         then:
         !errorCollector.errors.isEmpty()
@@ -89,19 +81,17 @@ class DeferDirectiveLabelTest extends Specification {
             query defer_query {
                 dog {
                     ... @defer {
-                        name 
+                        name
                     }
                     ... @defer {
-                        name 
+                        name
                     }
                 }
             }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveLabel]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -113,19 +103,17 @@ class DeferDirectiveLabelTest extends Specification {
             query defer_query {
                 dog {
                     ... @defer(label: "name") {
-                        name 
+                        name
                     }
                     ... @defer(label: "nameAgain") {
-                        name 
+                        name
                     }
                 }
             }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveLabel]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -144,11 +132,8 @@ class DeferDirectiveLabelTest extends Specification {
             }
         """
 
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveLabel]))
+        traverse(query)
 
         then:
         !errorCollector.errors.isEmpty()
@@ -162,16 +147,14 @@ class DeferDirectiveLabelTest extends Specification {
           query defer_query {
             dog {
                 ... @defer(label: 1) {
-                    name 
+                    name
                 }
             }
          }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveLabel]))
+        traverse(query)
 
         then:
         !errorCollector.errors.isEmpty()
@@ -194,11 +177,9 @@ class DeferDirectiveLabelTest extends Specification {
                 }
             }
         '''
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveLabel]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -210,4 +191,3 @@ class DeferDirectiveLabelTest extends Specification {
         return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
     }
 }
-

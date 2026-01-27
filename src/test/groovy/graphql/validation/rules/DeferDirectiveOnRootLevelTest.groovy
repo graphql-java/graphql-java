@@ -5,7 +5,8 @@ import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
@@ -25,7 +26,8 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         validationContext.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
 
         LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [new DeferDirectiveOnRootLevel(validationContext, errorCollector)]))
+        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_ON_ROOT_LEVEL }))
     }
 
 
@@ -35,9 +37,9 @@ class DeferDirectiveOnRootLevelTest extends Specification {
             subscription pets {
                 ... @defer {
                     dog {
-                        name 
+                        name
                     }
-                }             
+                }
             }
         """
 
@@ -80,7 +82,7 @@ class DeferDirectiveOnRootLevelTest extends Specification {
           query defer_query {
             ... @defer {
                 dog {
-                    name 
+                    name
                 }
             }
          }
@@ -102,8 +104,8 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                             name
                         }
                     }
-                    
-                }       
+
+                }
             }
         """
         when:
@@ -120,15 +122,15 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         given:
         def query = """
             subscription pets {
-                ...{ 
+                ...{
                     ...{
                         ... @defer {
                             dog {
-                                name 
+                                name
                             }
                         }
                    }
-               }             
+               }
             }
         """
         when:
@@ -149,20 +151,20 @@ class DeferDirectiveOnRootLevelTest extends Specification {
             fragment doggo on PetMutationType {
                 ... {
                      ... @defer {
-                        createDog(id: "1") {    
+                        createDog(id: "1") {
                                 id
                             }
                         }
-                }       
+                }
             }
-            
+
             mutation doggoMutation {
                 ...{
                     ...doggo
                 }
            }
 
-            
+
         """
         when:
         traverse(query)
@@ -183,11 +185,9 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                    ... @defer {
                         name
                     }
-                }       
+                }
             }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
         traverse(query)
@@ -212,7 +212,7 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                     id
                 }
             }
-            
+
         """
         when:
         traverse(query)
@@ -226,7 +226,7 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         given:
         def query = """
             mutation doggo {
-              ...doggoCreate 
+              ...doggoCreate
            }
 
             fragment doggoCreate on PetMutationType {
@@ -240,7 +240,7 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                     id
                 }
             }
-            
+
         """
         when:
         traverse(query)
@@ -255,26 +255,24 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         given:
         def query = """
             subscription pets {
-                dog {                   
-                    name                     
-                }             
+                dog {
+                    name
+                }
             }
             subscription dog {
                 ... @defer {
                     dog {
-                         name 
+                         name
                     }
                 }
             }
-            
+
             subscription morePets {
-                cat {                   
-                    name                     
-                }             
+                cat {
+                    name
+                }
             }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
         traverse(query)
@@ -294,11 +292,11 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                     ...createDoggo
                 }
             }
-                    
+
            mutation createDoggoRootOp {
               ...createDoggoRoot
             }
-            
+
             fragment createDoggo on PetMutationType {
                 ... {
                     ... @defer {
@@ -306,9 +304,9 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                             name
                         }
                     }
-                }             
+                }
             }
-            
+
         """
 
         when:
@@ -331,13 +329,13 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                     ... {
                         ...createDoggoLevel2
                     }
-                }             
-            }                
-            
+                }
+            }
+
             fragment createDoggoLevel2 on PetMutationType {
                 ...createDoggo
-            }   
-            
+            }
+
             fragment createDoggo on PetMutationType {
                 ... {
                     ... @defer {
@@ -345,21 +343,21 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                             name
                         }
                     }
-                }             
-            }          
-            
+                }
+            }
+
             query pets1 {
                 ... @defer {
                     dog {
-                        name 
-                    }             
-                }                 
-            }              
+                        name
+                    }
+                }
+            }
 
            mutation createDoggo {
               ...createDoggoLevel1
            }
-            
+
         """
 
         when:
@@ -380,15 +378,13 @@ class DeferDirectiveOnRootLevelTest extends Specification {
             subscription pets{
                 ... @defer(if:false) {
                     dog {
-                
-                        name 
+
+                        name
                     }
                     nickname
-                }             
+                }
             }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()\
 
         when:
         traverse(query)
@@ -407,11 +403,11 @@ class DeferDirectiveOnRootLevelTest extends Specification {
             subscription pets{
                 ... @defer(if:true) {
                     dog {
-                                    
+
                         name
                         }
                     nickname
-                }             
+                }
             }
         """
 
@@ -430,11 +426,11 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         def query = """
             mutation pets(\$ifVar:Boolean){
                 ... @defer(if:\$ifVar) {
-                    createDog(input: {id: "1"}) {                                    
+                    createDog(input: {id: "1"}) {
                        name
                     }
-                }             
-            
+                }
+
             }
         """
 
@@ -452,10 +448,10 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         def query = """
             mutation pets{
                 ... @defer(if:true) {
-                    createDog(input: {id: "1"}) {                                    
+                    createDog(input: {id: "1"}) {
                        name
                     }
-                }             
+                }
             }
         """
 
@@ -470,4 +466,3 @@ class DeferDirectiveOnRootLevelTest extends Specification {
     }
 
 }
-

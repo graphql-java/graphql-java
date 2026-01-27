@@ -5,7 +5,8 @@ import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
-import graphql.validation.RulesVisitor
+import graphql.validation.OperationValidationRule
+import graphql.validation.OperationValidator
 import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
@@ -21,7 +22,8 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         ValidationContext validationContext = new ValidationContext(SpecValidationSchema.specValidationSchema, document, i18n)
         validationContext.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
         LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [new DeferDirectiveOnValidOperation(validationContext, errorCollector)]))
+        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_ON_VALID_OPERATION }))
     }
 
     def "Allow simple defer on query with fragment definition"() {
@@ -31,7 +33,7 @@ class DeferDirectiveOnValidOperationTest extends Specification {
                     ... DogFields @defer
                 }
             }
-            
+
             fragment DogFields on Dog {
                 name
             }
@@ -51,7 +53,7 @@ class DeferDirectiveOnValidOperationTest extends Specification {
                     ... DogFields @defer
                 }
             }
-            
+
             fragment DogFields on Dog {
                 name
             }
@@ -69,11 +71,11 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         def query = """
             subscription pets {
                 dog {
-                    ... @defer {                
-                        name 
+                    ... @defer {
+                        name
                     }
                     nickname
-                }             
+                }
             }
         """
 
@@ -93,11 +95,11 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         def query = """
             subscription pets {
                 dog {
-                    ... @defer(if:false) {                
-                        name 
+                    ... @defer(if:false) {
+                        name
                     }
                     nickname
-                }             
+                }
             }
         """
 
@@ -117,7 +119,7 @@ class DeferDirectiveOnValidOperationTest extends Specification {
                     ... DogFields @defer
                 }
             }
-            
+
             fragment DogFields on Dog {
                 name
             }
@@ -136,23 +138,23 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         given:
         def query = """
             fragment doggo on PetMutationType {
-                ... { 
-                    dog {    
+                ... {
+                    dog {
                         ... @defer {
                             id
                         }
                         nickname
                     }
-                    
-                }       
+
+                }
             }
-            
+
             subscription doggoMutation {
                 ...{
                     ...doggo
                 }
            }
-            
+
 
         """
         when:
@@ -168,23 +170,23 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         given:
         def query = """
             fragment doggo on PetMutationType {
-                ... { 
-                    dog {    
+                ... {
+                    dog {
                         ... @defer(if:false) {
                             id
                         }
                         nickname
                     }
-                    
-                }       
+
+                }
             }
-            
+
             subscription doggoMutation {
                 ...{
                     ...doggo
                 }
            }
-            
+
 
         """
         when:
@@ -200,34 +202,34 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         def query = """
 
           fragment doggoSubscription on SubscriptionRoot {
-                ... { 
+                ... {
                     dog {
                         ...doggo
                     }
-                }          
+                }
             }
-            
+
             query pets {
                 ... @defer {
                     dog {
-                        name 
-                    }             
-                }     
+                        name
+                    }
+                }
             }
-            
+
             subscription pets2 {
-                   ...doggoSubscription        
-            }  
-            
+                   ...doggoSubscription
+            }
+
             query pets3 {
                 dog {
-                    name 
-                }             
-            }     
-            
-            fragment doggo on Dog{           
+                    name
+                }
+            }
+
+            fragment doggo on Dog{
                 ... @defer {
-                    name 
+                    name
                 }
             }
         """
@@ -250,20 +252,20 @@ class DeferDirectiveOnValidOperationTest extends Specification {
             query pets {
                 ... @defer {
                     dog {
-                        name 
-                    }             
-                }     
+                        name
+                    }
+                }
             }
-            
+
             subscription pets2 {
                 dog {
                     ... @defer {
-                        name 
+                        name
                     }
-                }             
-            }  
-            
-         
+                }
+            }
+
+
         """
 
         when:
@@ -283,9 +285,9 @@ class DeferDirectiveOnValidOperationTest extends Specification {
             mutation pets {
                 dog {
                     ... @defer {
-                        name 
+                        name
                     }
-                }             
+                }
             }
         """
         when:
@@ -301,11 +303,11 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         def query = """
             subscription pets{
                 dog {
-                    ... @defer(if:false) {                
-                        name 
+                    ... @defer(if:false) {
+                        name
                     }
                     nickname
-                }             
+                }
             }
         """
 
@@ -322,11 +324,11 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         def query = """
             subscription pets{
                 dog {
-                    ... @defer(if:true) {                
+                    ... @defer(if:true) {
                         name
                         }
                     nickname
-                }             
+                }
             }
         """
 
@@ -346,11 +348,11 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         def query = """
             subscription pets(\$ifVar:Boolean){
                 dog {
-                    ... @defer(if:\$ifVar) {                
-                        name 
+                    ... @defer(if:\$ifVar) {
+                        name
                     }
                     nickname
-                }             
+                }
             }
         """
 

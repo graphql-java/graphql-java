@@ -7,19 +7,15 @@ import graphql.parser.Parser
 import spock.lang.Specification
 
 class RulesVisitorTest extends Specification {
-    AbstractRule simpleRule = Mock()
-    AbstractRule visitsSpreadsRule = Mock()
 
-    def setup() {
-        visitsSpreadsRule.isVisitFragmentSpreads() >> true
-    }
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
         LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [simpleRule, visitsSpreadsRule]))
+        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector, { rule -> true }))
     }
 
     def "RulesVisitor does not repeatedly spread directly recursive fragments leading to a stackoverflow"() {
@@ -73,25 +69,4 @@ class RulesVisitorTest extends Specification {
         then:
         notThrown(StackOverflowError)
     }
-
-    def "RulesVisitor visits fragment definition with isVisitFragmentSpread rules once per operation"() {
-        given:
-        def query = """
-        fragment A on A { __typename }
-        fragment B on B { ...A }
-        fragment C on C { ...A ...B }
-        
-        query Q1 { ...A ...B ...C }
-        query Q2 { ...A ...B ...C }
-        """
-
-        when:
-        traverse(query)
-
-        then:
-        2 * visitsSpreadsRule.checkFragmentDefinition({it.name == "A"})
-        2 * visitsSpreadsRule.checkFragmentDefinition({it.name == "B"})
-        2 * visitsSpreadsRule.checkFragmentDefinition({it.name == "C"})
-    }
 }
-
