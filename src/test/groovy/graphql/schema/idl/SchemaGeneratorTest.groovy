@@ -2541,4 +2541,58 @@ class SchemaGeneratorTest extends Specification {
         inputObjectType.isOneOf()
         inputObjectType.hasAppliedDirective("oneOf")
     }
+
+    def "mutually referencing directives (two-way cycle) throws SchemaProblem instead of StackOverflowError"() {
+        given:
+        def sdl = '''
+            directive @foo(x: Int @bar(y: 1)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            directive @bar(y: Int @foo(x: 2)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+            type Query { field: String @foo(x: 10) @bar(y: 20) }
+        '''
+
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
+
+        then:
+        def ex = thrown(SchemaProblem)
+        ex.message.contains("forms a directive cycle via:")
+    }
+
+    def "three-way directive cycle throws SchemaProblem instead of StackOverflowError"() {
+        given:
+        def sdl = '''
+            directive @dirA(x: Int @dirB(y: 1)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            directive @dirB(y: Int @dirC(z: 2)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            directive @dirC(z: Int @dirA(x: 3)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+            type Query { field: String @dirA(x: 10) @dirB(y: 20) @dirC(z: 30) }
+        '''
+
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
+
+        then:
+        def ex = thrown(SchemaProblem)
+        ex.message.contains("forms a directive cycle via:")
+    }
+
+    def "directive self-reference still correctly throws SchemaProblem"() {
+        given:
+        def sdl = '''
+            directive @recursive(depth: Int @recursive(depth: 0)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+            type Query { field: String @recursive(depth: 5) }
+        '''
+
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
+
+        then:
+        def ex = thrown(SchemaProblem)
+        ex.message.contains("must not reference itself")
+    }
 }
