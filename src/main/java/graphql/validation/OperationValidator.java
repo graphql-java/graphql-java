@@ -56,7 +56,6 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.InputValueWithState;
-import graphql.validation.rules.VariablesTypesMatcher;
 import graphql.util.StringKit;
 
 import java.util.ArrayList;

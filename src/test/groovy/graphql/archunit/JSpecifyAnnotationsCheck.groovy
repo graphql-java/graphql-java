@@ -325,10 +325,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.util.TreeTransformerUtil",
             "graphql.validation.ValidationError",
             "graphql.validation.ValidationErrorClassification",
-            "graphql.validation.ValidationErrorType",
-            "graphql.validation.rules.DeferDirectiveLabel",
-            "graphql.validation.rules.DeferDirectiveOnRootLevel",
-            "graphql.validation.rules.DeferDirectiveOnValidOperation"
+            "graphql.validation.ValidationErrorType"
     ] as Set
 
     def "ensure all public API and experimental API classes have @NullMarked annotation"() {
