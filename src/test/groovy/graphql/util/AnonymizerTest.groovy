@@ -2,7 +2,7 @@ package graphql.util
 
 import graphql.AssertException
 import graphql.TestUtil
-import graphql.schema.idl.DirectiveInfo
+import graphql.Directives
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
@@ -718,7 +718,7 @@ type Object1 {
         when:
         def result = Anonymizer.anonymizeSchema(schema)
         def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions()
-                .includeDirectives({!DirectiveInfo.isGraphqlSpecifiedDirective(it) || it == "deprecated"}))
+                .includeDirectives({!Directives.isBuiltInDirective(it) || it == "deprecated"}))
                 .print(result)
 
         then:

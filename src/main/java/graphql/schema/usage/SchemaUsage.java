@@ -11,7 +11,7 @@ import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.idl.DirectiveInfo;
+import graphql.Directives;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.HashSet;
@@ -180,7 +180,7 @@ public class SchemaUsage {
         GraphQLDirective directive = schema.getDirective(elementName);
         if (directive != null) {
             String directiveName = directive.getName();
-            if (DirectiveInfo.isGraphqlSpecifiedDirective(directiveName)) {
+            if (Directives.isBuiltInDirective(directiveName)) {
                 return true;
             }
             if (isNamedElementReferenced(schema, directiveName, pathSoFar)) {

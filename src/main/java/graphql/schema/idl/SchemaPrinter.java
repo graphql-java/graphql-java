@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
@@ -81,7 +82,7 @@ public class SchemaPrinter {
      * This predicate excludes all directives which are specified by the GraphQL Specification.
      * Printing these directives is optional.
      */
-    public static final Predicate<String> ExcludeGraphQLSpecifiedDirectivesPredicate = d -> !DirectiveInfo.isGraphqlSpecifiedDirective(d);
+    public static final Predicate<String> ExcludeGraphQLSpecifiedDirectivesPredicate = d -> !Directives.isBuiltInDirective(d);
 
     /**
      * Options to use when printing a schema
