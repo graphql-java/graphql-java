@@ -37,8 +37,12 @@ public class Validator {
     }
 
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<OperationValidationRule> rulePredicate, Locale locale) {
+        return validateDocument(schema, document, rulePredicate, locale, null);
+    }
+
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<OperationValidationRule> rulePredicate, Locale locale, QueryComplexityLimits limits) {
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, locale);
-        ValidationContext validationContext = new ValidationContext(schema, document, i18n);
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n, limits);
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector(MAX_VALIDATION_ERRORS);
         OperationValidator operationValidator = new OperationValidator(validationContext, validationErrorCollector, rulePredicate);
@@ -47,6 +51,12 @@ public class Validator {
             languageTraversal.traverse(document, operationValidator);
         } catch (ValidationErrorCollector.MaxValidationErrorsReached ignored) {
             // if we have generated enough errors, then we can shortcut out
+        } catch (QueryComplexityLimitsExceeded e) {
+            String message = i18n.msg(e.getErrorType().name() + ".message", e.getLimit(), e.getActual());
+            validationErrorCollector.addError(ValidationError.newValidationError()
+                    .validationErrorType(e.getErrorType())
+                    .description(message)
+                    .build());
         }
 
         return validationErrorCollector.getErrors();

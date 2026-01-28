@@ -189,6 +189,16 @@ public class OperationValidator implements DocumentVisitor {
     // --- State: SubscriptionUniqueRootField ---
     private final FieldCollector fieldCollector = new FieldCollector();
 
+    // --- State: Query Complexity Limits ---
+    private int fieldCount = 0;
+    private int currentFieldDepth = 0;
+    private int maxFieldDepthSeen = 0;
+    private final QueryComplexityLimits complexityLimits;
+    // Fragment complexity calculated lazily during first spread
+    private final Map<String, FragmentComplexityInfo> fragmentComplexityMap = new HashMap<>();
+    // Max depth seen during current fragment traversal (for calculating fragment's internal depth)
+    private int fragmentTraversalMaxDepth = 0;
+
     // --- Track whether we're in a context where fragment spread rules should run ---
     // fragmentSpreadVisitDepth == 0 means we're NOT inside a manually-traversed fragment => run non-fragment-spread checks
     // operationScope means we're inside an operation => can trigger fragment traversal
@@ -198,6 +208,7 @@ public class OperationValidator implements DocumentVisitor {
         this.errorCollector = errorCollector;
         this.validationUtil = new ValidationUtil();
         this.rulePredicate = rulePredicate;
+        this.complexityLimits = validationContext.getQueryComplexityLimits();
         prepareFragmentSpreadsMap();
     }
 
@@ -205,21 +216,35 @@ public class OperationValidator implements DocumentVisitor {
         return rulePredicate.test(rule);
     }
 
-    /**
-     * True when we are NOT inside a manually-traversed fragment definition.
-     * Non-fragment-spread rules run in this context.
-     */
-    private boolean shouldRunNonFragmentSpreadChecks() {
-        return fragmentSpreadVisitDepth == 0;
+    // ==================== Query Complexity Limit Helpers ====================
+
+    private void checkFieldCountLimit() {
+        if (fieldCount > complexityLimits.getMaxFieldsCount()) {
+            throw new QueryComplexityLimitsExceeded(
+                    ValidationErrorType.MaxQueryFieldsExceeded,
+                    complexityLimits.getMaxFieldsCount(),
+                    fieldCount);
+        }
+    }
+
+    private void checkDepthLimit(int depth) {
+        if (depth > maxFieldDepthSeen) {
+            maxFieldDepthSeen = depth;
+            if (maxFieldDepthSeen > complexityLimits.getMaxDepth()) {
+                throw new QueryComplexityLimitsExceeded(
+                        ValidationErrorType.MaxQueryDepthExceeded,
+                        complexityLimits.getMaxDepth(),
+                        maxFieldDepthSeen);
+            }
+        }
     }
 
     /**
-     * True when we are inside an operation scope (including manual fragment traversal).
-     * Fragment-spread-visiting rules (NoUndefinedVariables, NoUnusedVariables, VariableTypesMatch,
-     * DeferDirectiveOnRootLevel, DeferDirectiveOnValidOperation) run in this context.
+     * True when we are NOT inside a manually-traversed fragment definition.
+     * Structural validation rules (that should only run once per node) use this check.
      */
-    private boolean shouldRunFragmentSpreadChecks() {
-        return operationScope;
+    private boolean shouldRunNonFragmentSpreadChecks() {
+        return fragmentSpreadVisitDepth == 0;
     }
 
     // ==================== DocumentVisitor ====================
@@ -237,6 +262,17 @@ public class OperationValidator implements DocumentVisitor {
         } else if (node instanceof VariableDefinition) {
             checkVariableDefinition((VariableDefinition) node);
         } else if (node instanceof Field) {
+            // Track complexity only during operation scope
+            if (operationScope) {
+                fieldCount++;
+                currentFieldDepth++;
+                checkFieldCountLimit();
+                checkDepthLimit(currentFieldDepth);
+                // Track max depth during fragment traversal for storing later
+                if (fragmentSpreadVisitDepth > 0 && currentFieldDepth > fragmentTraversalMaxDepth) {
+                    fragmentTraversalMaxDepth = currentFieldDepth;
+                }
+            }
             checkField((Field) node);
         } else if (node instanceof InlineFragment) {
             checkInlineFragment((InlineFragment) node);
@@ -269,6 +305,10 @@ public class OperationValidator implements DocumentVisitor {
             leaveSelectionSet((SelectionSet) node);
         } else if (node instanceof FragmentDefinition) {
             leaveFragmentDefinition();
+        } else if (node instanceof Field) {
+            if (operationScope) {
+                currentFieldDepth--;
+            }
         }
     }
 
@@ -350,7 +390,7 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
         // Fragment spread visiting rules that check arguments - none currently
-        if (shouldRunFragmentSpreadChecks()) {
+        if (operationScope) {
             // ArgumentsOfCorrectType also needs to run during fragment spread traversal
             if (isRuleEnabled(OperationValidationRule.ARGUMENTS_OF_CORRECT_TYPE)) {
                 // Only run if we're in the fragment spread depth (these are the fragment-spread-visiting rules)
@@ -445,7 +485,7 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
         // Fragment-spread-visiting rules for directives
-        if (shouldRunFragmentSpreadChecks()) {
+        if (operationScope) {
             if (isRuleEnabled(OperationValidationRule.DEFER_DIRECTIVE_ON_ROOT_LEVEL)) {
                 validateDeferDirectiveOnRootLevel(directive);
             }
@@ -472,14 +512,50 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
 
-        // Manually traverse into fragment definition during operation scope
+        // Handle complexity tracking and fragment traversal
         if (operationScope) {
-            FragmentDefinition fragment = validationContext.getFragment(node.getName());
-            if (fragment != null && !visitedFragmentSpreads.contains(node.getName())) {
-                visitedFragmentSpreads.add(node.getName());
+            String fragmentName = node.getName();
+            FragmentDefinition fragment = validationContext.getFragment(fragmentName);
+
+            if (visitedFragmentSpreads.contains(fragmentName)) {
+                // Subsequent spread - add stored complexity (don't traverse again)
+                FragmentComplexityInfo info = fragmentComplexityMap.get(fragmentName);
+                if (info != null) {
+                    fieldCount += info.getFieldCount();
+                    checkFieldCountLimit();
+                    int potentialDepth = currentFieldDepth + info.getMaxDepth();
+                    checkDepthLimit(potentialDepth);
+                    // Update max depth if we're inside a fragment traversal
+                    if (fragmentSpreadVisitDepth > 0 && potentialDepth > fragmentTraversalMaxDepth) {
+                        fragmentTraversalMaxDepth = potentialDepth;
+                    }
+                }
+            } else if (fragment != null) {
+                // First spread - traverse and track complexity
+                visitedFragmentSpreads.add(fragmentName);
+
+                int fieldCountBefore = fieldCount;
+                int depthAtEntry = currentFieldDepth;
+                int previousFragmentMaxDepth = fragmentTraversalMaxDepth;
+
+                // Initialize max depth tracking for this fragment
+                fragmentTraversalMaxDepth = currentFieldDepth;
+
                 fragmentSpreadVisitDepth++;
                 new LanguageTraversal(ancestors).traverse(fragment, this);
                 fragmentSpreadVisitDepth--;
+
+                // Calculate and store fragment complexity
+                int fragmentFieldCount = fieldCount - fieldCountBefore;
+                int fragmentMaxInternalDepth = fragmentTraversalMaxDepth - depthAtEntry;
+
+                fragmentComplexityMap.put(fragmentName,
+                        new FragmentComplexityInfo(fragmentFieldCount, fragmentMaxInternalDepth));
+
+                // Restore max depth for outer fragment (if nested)
+                if (fragmentSpreadVisitDepth > 0 && previousFragmentMaxDepth > fragmentTraversalMaxDepth) {
+                    fragmentTraversalMaxDepth = previousFragmentMaxDepth;
+                }
             }
         }
     }
@@ -552,7 +628,7 @@ public class OperationValidator implements DocumentVisitor {
 
     private void checkVariable(VariableReference variableReference) {
         // Fragment-spread-visiting rules
-        if (shouldRunFragmentSpreadChecks()) {
+        if (operationScope) {
             if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
                 validateNoUndefinedVariables(variableReference);
             }
@@ -561,7 +637,7 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
         // NoUnusedVariables also visits fragment spreads
-        if (shouldRunFragmentSpreadChecks()) {
+        if (operationScope) {
             if (isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
                 unusedVars_usedVariables.add(variableReference.getName());
             }
@@ -596,6 +672,12 @@ public class OperationValidator implements DocumentVisitor {
                 }
             }
         }
+
+        // Reset complexity counters for next operation
+        fieldCount = 0;
+        currentFieldDepth = 0;
+        maxFieldDepthSeen = 0;
+        fragmentTraversalMaxDepth = 0;
     }
 
     private void leaveSelectionSet(SelectionSet selectionSet) {
