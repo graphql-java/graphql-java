@@ -223,6 +223,15 @@ tasks.named('jmhJar') {
     }
 }
 
+jmh {
+    if (project.hasProperty('jmhInclude')) {
+        includes = [project.property('jmhInclude')]
+    }
+    if (project.hasProperty('jmhProfilers')) {
+        profilers = [project.property('jmhProfilers')]
+    }
+}
+
 
 task extractWithoutGuava(type: Copy) {
     from({ zipTree({ "build/libs/graphql-java-${project.version}.jar" }) }) {
