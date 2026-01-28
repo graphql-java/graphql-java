@@ -896,6 +896,60 @@ class FastBuilderTest extends Specification {
         schema.getSchemaAppliedDirective("dir2") != null
     }
 
+    def "batch schema applied directives with type reference arguments resolve correctly"() {
+        given: "a custom scalar for directive arguments"
+        def configScalar = newScalar()
+                .name("ConfigValue")
+                .coercing(GraphQLString.getCoercing())
+                .build()
+
+        and: "a directive definition"
+        def directive = newDirective()
+                .name("config")
+                .validLocation(Introspection.DirectiveLocation.SCHEMA)
+                .argument(newArgument()
+                        .name("value")
+                        .type(configScalar))
+                .build()
+
+        and: "applied directives with type references added via batch method"
+        def applied1 = newAppliedDirective()
+                .name("config")
+                .argument(newAppliedArgument()
+                        .name("value")
+                        .type(typeRef("ConfigValue"))
+                        .valueProgrammatic("test1"))
+                .build()
+        def applied2 = newAppliedDirective()
+                .name("config")
+                .argument(newAppliedArgument()
+                        .name("value")
+                        .type(typeRef("ConfigValue"))
+                        .valueProgrammatic("test2"))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder using batch withSchemaAppliedDirectives"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(configScalar)
+                .additionalDirective(directive)
+                .withSchemaAppliedDirectives([applied1, applied2])
+                .build()
+
+        then: "both applied directive argument types are resolved"
+        def resolvedDirectives = schema.getSchemaAppliedDirectives("config")
+        resolvedDirectives.size() == 2
+        resolvedDirectives.every { it.getArgument("value").getType() == configScalar }
+    }
+
     def "object type field with type reference resolves correctly"() {
         given: "a custom object type"
         def personType = newObject()

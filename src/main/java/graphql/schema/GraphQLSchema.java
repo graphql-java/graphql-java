@@ -1292,7 +1292,9 @@ public class GraphQLSchema {
          * @return this builder for chaining
          */
         public FastBuilder withSchemaAppliedDirectives(Collection<? extends GraphQLAppliedDirective> appliedList) {
-            schemaAppliedDirectives.addAll(appliedList);
+            for (GraphQLAppliedDirective applied : appliedList) {
+                withSchemaAppliedDirective(applied);
+            }
             return this;
         }
 
