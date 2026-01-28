@@ -692,7 +692,6 @@ public class GraphQLSchema {
                 .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
                 .codeRegistry(existingSchema.getCodeRegistry())
                 .clearAdditionalTypes()
-                .clearDirectives()
                 .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
                 .clearSchemaDirectives()
                 .withSchemaDirectives(schemaDirectivesArray(existingSchema))
@@ -861,12 +860,6 @@ public class GraphQLSchema {
             this.additionalDirectives.add(additionalDirective);
             return this;
         }
-
-        public Builder clearDirectives() {
-            this.additionalDirectives.clear();
-            return this;
-        }
-
 
         public Builder withSchemaDirectives(GraphQLDirective... directives) {
             for (GraphQLDirective directive : directives) {
