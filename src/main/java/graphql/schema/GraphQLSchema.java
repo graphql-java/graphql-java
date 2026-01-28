@@ -37,7 +37,7 @@ import static graphql.collect.ImmutableKit.map;
 import static graphql.collect.ImmutableKit.nonNullCopyOf;
 import static graphql.schema.GraphqlTypeComparators.byNameAsc;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
-import static java.util.Arrays.asList;
+
 
 /**
  * The schema represents the combined type system of the graphql engine.  This is how the engine knows
@@ -692,7 +692,6 @@ public class GraphQLSchema {
                 .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
                 .codeRegistry(existingSchema.getCodeRegistry())
                 .clearAdditionalTypes()
-                .clearDirectives()
                 .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
                 .clearSchemaDirectives()
                 .withSchemaDirectives(schemaDirectivesArray(existingSchema))
@@ -741,10 +740,7 @@ public class GraphQLSchema {
         private List<SchemaExtensionDefinition> extensionDefinitions;
         private String description;
 
-        // we default these in
-        private final Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
-                asList(Directives.IncludeDirective, Directives.SkipDirective)
-        );
+        private final Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>();
         private final Set<GraphQLNamedType> additionalTypes = new LinkedHashSet<>();
         private final List<GraphQLDirective> schemaDirectives = new ArrayList<>();
         private final List<GraphQLAppliedDirective> schemaAppliedDirectives = new ArrayList<>();
@@ -862,12 +858,6 @@ public class GraphQLSchema {
             return this;
         }
 
-        public Builder clearDirectives() {
-            this.additionalDirectives.clear();
-            return this;
-        }
-
-
         public Builder withSchemaDirectives(GraphQLDirective... directives) {
             for (GraphQLDirective directive : directives) {
                 withSchemaDirective(directive);
@@ -960,13 +950,8 @@ public class GraphQLSchema {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
 
-            // schemas built via the schema generator have the deprecated directive BUT we want it present for hand built
-            // schemas - it's inherently part of the spec!
-            addBuiltInDirective(Directives.DeprecatedDirective, additionalDirectives);
-            addBuiltInDirective(Directives.SpecifiedByDirective, additionalDirectives);
-            addBuiltInDirective(Directives.OneOfDirective, additionalDirectives);
-            addBuiltInDirective(Directives.DeferDirective, additionalDirectives);
-            addBuiltInDirective(Directives.ExperimentalDisableErrorPropagationDirective, additionalDirectives);
+            // built-in directives are always present in a schema and come first
+            ensureBuiltInDirectives();
 
             // quick build - no traversing
             final GraphQLSchema partiallyBuiltSchema = new GraphQLSchema(this);
@@ -989,10 +974,21 @@ public class GraphQLSchema {
             return validateSchema(finalSchema);
         }
 
-        private void addBuiltInDirective(GraphQLDirective qlDirective, Set<GraphQLDirective> additionalDirectives1) {
-            if (additionalDirectives1.stream().noneMatch(d -> d.getName().equals(qlDirective.getName()))) {
-                additionalDirectives1.add(qlDirective);
+        private void ensureBuiltInDirectives() {
+            // put built-in directives first, preserving user-supplied overrides by name
+            Set<String> userDirectiveNames = new LinkedHashSet<>();
+            for (GraphQLDirective d : additionalDirectives) {
+                userDirectiveNames.add(d.getName());
             }
+            LinkedHashSet<GraphQLDirective> ordered = new LinkedHashSet<>();
+            for (GraphQLDirective builtIn : Directives.BUILT_IN_DIRECTIVES) {
+                if (!userDirectiveNames.contains(builtIn.getName())) {
+                    ordered.add(builtIn);
+                }
+            }
+            ordered.addAll(additionalDirectives);
+            additionalDirectives.clear();
+            additionalDirectives.addAll(ordered);
         }
 
         private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema) {

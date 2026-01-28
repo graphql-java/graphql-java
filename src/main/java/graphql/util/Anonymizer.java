@@ -71,7 +71,6 @@ import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTransformer;
 import graphql.schema.TypeResolver;
-import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
 import graphql.schema.idl.TypeUtil;
 import graphql.schema.impl.SchemaUtil;
@@ -259,7 +258,7 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLDirective(GraphQLDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
-                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective.getName())) {
+                if (Directives.isBuiltInDirective(graphQLDirective.getName())) {
                     return TraversalControl.ABORT;
                 }
                 String newName = assertNotNull(newNameMap.get(graphQLDirective));
@@ -282,7 +281,7 @@ public class Anonymizer {
                     changeNode(context, newElement);
                     return TraversalControl.ABORT;
                 }
-                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective.getName())) {
+                if (Directives.isBuiltInDirective(graphQLDirective.getName())) {
                     return TraversalControl.ABORT;
                 }
                 String newName = assertNotNull(newNameMap.get(graphQLDirective));
@@ -516,7 +515,7 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLDirective(GraphQLDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
-                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective)) {
+                if (Directives.isBuiltInDirective(graphQLDirective)) {
                     return TraversalControl.ABORT;
                 }
                 recordDirectiveName.accept(graphQLDirective);
@@ -525,7 +524,7 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective graphQLAppliedDirective, TraverserContext<GraphQLSchemaElement> context) {
-                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLAppliedDirective.getName())) {
+                if (Directives.isBuiltInDirective(graphQLAppliedDirective.getName())) {
                     return TraversalControl.ABORT;
                 }
                 recordDirectiveName.accept(graphQLAppliedDirective);

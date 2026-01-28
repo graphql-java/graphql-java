@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
@@ -64,6 +65,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Directives.DeprecatedDirective;
+import static graphql.Directives.SpecifiedByDirective;
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static graphql.util.EscapeUtil.escapeJsonString;
@@ -80,7 +82,7 @@ public class SchemaPrinter {
      * This predicate excludes all directives which are specified by the GraphQL Specification.
      * Printing these directives is optional.
      */
-    public static final Predicate<String> ExcludeGraphQLSpecifiedDirectivesPredicate = d -> !DirectiveInfo.isGraphqlSpecifiedDirective(d);
+    public static final Predicate<String> ExcludeGraphQLSpecifiedDirectivesPredicate = d -> !Directives.isBuiltInDirective(d);
 
     /**
      * Options to use when printing a schema
@@ -559,7 +561,12 @@ public class SchemaPrinter {
                     printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
                 } else {
                     printComments(out, type, "");
-                    out.format("scalar %s%s\n\n", type.getName(), directivesString(GraphQLScalarType.class, type));
+                    List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(type).stream()
+                            .filter(d -> !d.getName().equals(SpecifiedByDirective.getName()))
+                            .collect(toList());
+                    out.format("scalar %s%s%s\n\n", type.getName(),
+                            directivesString(GraphQLScalarType.class, directives),
+                            specifiedByUrlString(type));
                 }
             }
         };
@@ -1101,6 +1108,14 @@ public class SchemaPrinter {
         } else {
             return Assert.assertShouldNeverHappen();
         }
+    }
+
+    private String specifiedByUrlString(GraphQLScalarType scalarType) {
+        String url = scalarType.getSpecifiedByUrl();
+        if (url == null || !options.getIncludeDirective().test(SpecifiedByDirective.getName())) {
+            return "";
+        }
+        return " @specifiedBy(url : \"" + escapeJsonString(url) + "\")";
     }
 
     private String directiveDefinition(GraphQLDirective directive) {
