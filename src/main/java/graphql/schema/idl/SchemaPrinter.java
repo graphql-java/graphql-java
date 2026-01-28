@@ -561,8 +561,12 @@ public class SchemaPrinter {
                     printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
                 } else {
                     printComments(out, type, "");
-                    List<GraphQLAppliedDirective> directives = addOrUpdateSpecifiedByDirectiveIfNeeded(type);
-                    out.format("scalar %s%s\n\n", type.getName(), directivesString(GraphQLScalarType.class, directives));
+                    List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(type).stream()
+                            .filter(d -> !d.getName().equals(SpecifiedByDirective.getName()))
+                            .collect(toList());
+                    out.format("scalar %s%s%s\n\n", type.getName(),
+                            directivesString(GraphQLScalarType.class, directives),
+                            specifiedByUrlString(type));
                 }
             }
         };
@@ -1106,63 +1110,12 @@ public class SchemaPrinter {
         }
     }
 
-    private boolean isSpecifiedByDirectiveAllowed() {
-        return options.getIncludeDirective().test(SpecifiedByDirective.getName());
-    }
-
-    private boolean isSpecifiedByDirective(GraphQLAppliedDirective directive) {
-        return directive.getName().equals(SpecifiedByDirective.getName());
-    }
-
-    private boolean hasSpecifiedByDirective(List<GraphQLAppliedDirective> directives) {
-        return directives.stream().anyMatch(this::isSpecifiedByDirective);
-    }
-
-    private List<GraphQLAppliedDirective> addOrUpdateSpecifiedByDirectiveIfNeeded(GraphQLScalarType scalarType) {
-        List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(scalarType);
+    private String specifiedByUrlString(GraphQLScalarType scalarType) {
         String url = scalarType.getSpecifiedByUrl();
-
-        if (url == null) {
-            // first-class property is not set - remove any @specifiedBy applied directive
-            return directives.stream()
-                    .filter(d -> !isSpecifiedByDirective(d))
-                    .collect(toList());
+        if (url == null || !options.getIncludeDirective().test(SpecifiedByDirective.getName())) {
+            return "";
         }
-        if (!hasSpecifiedByDirective(directives) && isSpecifiedByDirectiveAllowed()) {
-            directives = new ArrayList<>(directives);
-            directives.add(createSpecifiedByDirective(url));
-        } else if (hasSpecifiedByDirective(directives) && isSpecifiedByDirectiveAllowed()) {
-            // Update URL in case modified by schema transform
-            directives = updateSpecifiedByDirective(directives, url);
-        }
-        return directives;
-    }
-
-    private GraphQLAppliedDirective createSpecifiedByDirective(String url) {
-        GraphQLAppliedDirectiveArgument arg = GraphQLAppliedDirectiveArgument.newArgument()
-                .name("url")
-                .valueProgrammatic(url)
-                .type(GraphQLString)
-                .build();
-        return GraphQLAppliedDirective.newDirective()
-                .name("specifiedBy")
-                .argument(arg)
-                .build();
-    }
-
-    private List<GraphQLAppliedDirective> updateSpecifiedByDirective(List<GraphQLAppliedDirective> directives, String url) {
-        GraphQLAppliedDirectiveArgument newArg = GraphQLAppliedDirectiveArgument.newArgument()
-                .name("url")
-                .valueProgrammatic(url)
-                .type(GraphQLString)
-                .build();
-
-        return directives.stream().map(d -> {
-            if (isSpecifiedByDirective(d)) {
-                return d.transform(builder -> builder.argument(newArg));
-            }
-            return d;
-        }).collect(toList());
+        return " @specifiedBy(url : \"" + escapeJsonString(url) + "\")";
     }
 
     private String directiveDefinition(GraphQLDirective directive) {
