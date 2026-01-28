@@ -107,6 +107,20 @@ class KnownArgumentNamesTest extends Specification {
         validationErrors.get(0).message == "Validation error (UnknownArgument@[dog/doesKnowCommand]) : Unknown field argument 'notArgument'"
     }
 
+    def "directive argument not validated against field arguments"() {
+        def query = """
+            query getDog {
+              dog {
+                doesKnowCommand(dogCommand: SIT) @dogDirective(dogCommand: SIT)
+              }
+            }
+        """
+        when:
+        def validationErrors = validate(query)
+        then:
+        validationErrors.any { it.validationErrorType == ValidationErrorType.UnknownDirective }
+    }
+
     static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
         return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)

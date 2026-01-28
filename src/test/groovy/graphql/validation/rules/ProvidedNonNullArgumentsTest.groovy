@@ -1,11 +1,20 @@
 package graphql.validation.rules
 
 import graphql.parser.Parser
+import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLDirective
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
 import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
+
+import static graphql.Scalars.GraphQLString
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class ProvidedNonNullArgumentsTest extends Specification {
 
@@ -139,6 +148,51 @@ class ProvidedNonNullArgumentsTest extends Specification {
         validationErrors.size() == 2
         validationErrors[0].validationErrorType == ValidationErrorType.NullValueForNonNullArgument
         validationErrors[0].message == "Validation error (NullValueForNonNullArgument@[dog/doesKnowCommand]) : Null value for non-null field argument 'dogCommand'"
+    }
+
+    def "not provided but defaulted non null field argument is not an error"() {
+        def schema = GraphQLSchema.newSchema()
+            .query(GraphQLObjectType.newObject()
+                .name("Query")
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                    .name("field")
+                    .type(GraphQLString)
+                    .argument(GraphQLArgument.newArgument()
+                        .name("arg")
+                        .type(nonNull(GraphQLString))
+                        .defaultValueProgrammatic("defaultVal")))
+                .build())
+            .build()
+        def document = new Parser().parseDocument('{ field }')
+        when:
+        def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
+        then:
+        !errors.any { it.validationErrorType == ValidationErrorType.MissingFieldArgument }
+    }
+
+    def "not provided but defaulted directive argument is not an error"() {
+        def directive = GraphQLDirective.newDirective()
+            .name("myDirective")
+            .validLocation(FIELD)
+            .argument(GraphQLArgument.newArgument()
+                .name("arg")
+                .type(nonNull(GraphQLString))
+                .defaultValueProgrammatic("defaultVal"))
+            .build()
+        def schema = GraphQLSchema.newSchema()
+            .query(GraphQLObjectType.newObject()
+                .name("Query")
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                    .name("field")
+                    .type(GraphQLString))
+                .build())
+            .additionalDirective(directive)
+            .build()
+        def document = new Parser().parseDocument('{ field @myDirective }')
+        when:
+        def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
+        then:
+        !errors.any { it.validationErrorType == ValidationErrorType.MissingDirectiveArgument }
     }
 
     static List<ValidationError> validate(String query) {

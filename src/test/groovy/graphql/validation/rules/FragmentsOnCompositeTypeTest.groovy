@@ -165,6 +165,23 @@ class FragmentsOnCompositeTypeTest extends Specification {
         (executionResult.errors[0] as ValidationError).message == "Validation error (InlineFragmentTypeConditionInvalid@[updateUDI]) : Inline fragment type condition is invalid, must be on Object/Interface/Union"
     }
 
+    def "unknown type on inline fragment should not trigger composite type error"() {
+        def query = """
+            {
+              dog {
+                ... on StrangeType {
+                  __typename
+                }
+              }
+            }
+        """
+        when:
+        def validationErrors = validate(query)
+        then:
+        // Should have KnownTypeNames error, but NOT InlineFragmentTypeConditionInvalid
+        !validationErrors.any { it.validationErrorType == ValidationErrorType.InlineFragmentTypeConditionInvalid }
+    }
+
     static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
         return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)

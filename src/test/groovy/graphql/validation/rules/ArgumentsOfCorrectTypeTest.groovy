@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.TestUtil
 import graphql.parser.Parser
 import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationError
@@ -196,6 +197,67 @@ class ArgumentsOfCorrectTypeTest extends Specification {
               oneOfField(oneOfArg : { a : "x", b : "y" })
             }
         '''                                               | _
+    }
+
+    def "invalid input object field type results in error"() {
+        def schema = TestUtil.schema("""
+            type Query { field(arg: TestInput): String }
+            input TestInput { flag: Boolean }
+        """)
+        def document = new Parser().parseDocument('{ field(arg: { flag: "notABoolean" }) }')
+        when:
+        def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
+        then:
+        errors.any { it.validationErrorType == ValidationErrorType.WrongType }
+    }
+
+    def "invalid list of input objects results in error"() {
+        def schema = TestUtil.schema("""
+            type Query { field(arg: [TestInput]): String }
+            input TestInput { flag: Boolean }
+        """)
+        def document = new Parser().parseDocument('{ field(arg: [{ flag: true }, { flag: "wrong" }]) }')
+        when:
+        def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
+        then:
+        errors.any { it.validationErrorType == ValidationErrorType.WrongType }
+    }
+
+    def "invalid nested list inside input object results in error"() {
+        def schema = TestUtil.schema("""
+            type Query { field(arg: [TestInput]): String }
+            input TestInput { flags: [Boolean] }
+        """)
+        def document = new Parser().parseDocument('{ field(arg: [{ flags: [true, "wrong"] }]) }')
+        when:
+        def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
+        then:
+        errors.any { it.validationErrorType == ValidationErrorType.WrongType }
+    }
+
+    def "invalid simple list type results in error"() {
+        def schema = TestUtil.schema("""
+            type Query { field(arg: [Boolean]): String }
+        """)
+        def document = new Parser().parseDocument('{ field(arg: [true, "wrong"]) }')
+        when:
+        def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
+        then:
+        errors.any { it.validationErrorType == ValidationErrorType.WrongType }
+    }
+
+    def "null value for non-null field in input object results in error"() {
+        def query = """
+            query getDog {
+              dog @objectArgumentDirective(myObject: { id: "1", name: null }) {
+                name
+              }
+            }
+        """
+        when:
+        def validationErrors = validate(query)
+        then:
+        validationErrors.any { it.validationErrorType == ValidationErrorType.WrongType }
     }
 
     static List<ValidationError> validate(String query) {
