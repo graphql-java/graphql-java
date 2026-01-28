@@ -26,6 +26,7 @@ import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.OperationValidationRule;
+import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationError;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
@@ -600,8 +601,9 @@ public class GraphQL {
         validationCtx.onDispatched();
 
         Predicate<OperationValidationRule> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
-        Locale locale = executionInput.getLocale();
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale);
+        Locale locale = executionInput.getLocale() != null ? executionInput.getLocale() : Locale.getDefault();
+        QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale, limits);
 
         validationCtx.onCompleted(validationErrors, null);
         return validationErrors;
