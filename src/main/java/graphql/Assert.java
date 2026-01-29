@@ -5,7 +5,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 import static java.lang.String.format;
 

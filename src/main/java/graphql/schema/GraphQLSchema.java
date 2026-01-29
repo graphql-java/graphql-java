@@ -1077,23 +1077,63 @@ public class GraphQLSchema {
     }
 
     /**
-     * A high-performance schema builder that avoids all full-schema traversals performed by
-     * {@link GraphQLSchema.Builder#build()}. This builder is both significantly faster and
-     * allocates significantly less memory than the standard GraphQLSchema.Builder - however
-     * it's subject to limitations listed below.  It is intended for constructing large
-     * schemas, especially deeply nested ones.
+     * A high-performance schema builder that avoids full-schema traversals performed by
+     * {@link GraphQLSchema.Builder#build()}. This builder is significantly faster (5x+) and
+     * allocates significantly less memory than the standard Builder. It is intended for
+     * constructing large schemas (500+ types), especially deeply nested ones.
      *
-     * <p> Use FastBuilder when:
+     * <h2>When to use FastBuilder</h2>
      * <ul>
-     *   <li>Building large schemas (500+ types) where construction time and memory are measurable</li>
-     *   <li>All types are known without traversal and can be added explicitly with {@link #addType} or {@link #addTypes}</li>
-     *   <li>There's no need to clear/reset the builder state midstream.</li>
-     *   <li>The code registry builder is complete and available when FastBuilder is constructed</li>
+     *   <li>Building large schemas where construction time and memory are measurable concerns</li>
+     *   <li>All types are known upfront and can be added explicitly via {@link #addType} or {@link #addTypes}</li>
+     *   <li>The code registry is complete and available when FastBuilder is constructed</li>
+     *   <li>Schema has been previously validated (e.g., in a build pipeline) and validation can be skipped</li>
      * </ul>
-     * FastBuilder also can optionally skip schema validation, which can save time and
-     * memory for large schemas that have been previously validated (eg, in build tool chains).
      *
-     * @see GraphQLSchema.Builder for standard schema construction
+     * <h2>When NOT to use FastBuilder</h2>
+     * <ul>
+     *   <li><b>Type discovery required:</b> If you rely on automatic type discovery by traversing from
+     *       root types (Query/Mutation/Subscription), use the standard {@link Builder} instead.
+     *       FastBuilder requires ALL types to be explicitly added.</li>
+     *   <li><b>Type reuse across schemas:</b> FastBuilder mutates type objects during {@link #build()}
+     *       to resolve {@link GraphQLTypeReference}s. The same type instances cannot be used to build
+     *       multiple schemas. Create fresh type instances for each schema if needed.</li>
+     *   <li><b>Dynamic schema construction:</b> FastBuilder does not support clearing or resetting
+     *       state. Each FastBuilder instance should be used exactly once.</li>
+     *   <li><b>Schema transformation:</b> For transforming existing schemas, use
+     *       {@link GraphQLSchema#transform(Consumer)} or {@link Builder} instead.</li>
+     * </ul>
+     *
+     * <h2>Key differences from standard Builder</h2>
+     * <ul>
+     *   <li><b>No automatic type discovery:</b> You must add ALL types explicitly, including
+     *       interface implementations that would normally be discovered via traversal.</li>
+     *   <li><b>Type mutation:</b> {@link GraphQLTypeReference} instances in added types are replaced
+     *       in-place with actual types during build. This mutates the original type objects.</li>
+     *   <li><b>additionalTypes semantic:</b> {@link GraphQLSchema#getAdditionalTypes()} returns ALL
+     *       non-root types (not just "detached" types as with standard Builder).</li>
+     *   <li><b>Validation off by default:</b> Enable with {@link #withValidation(boolean)} if needed.</li>
+     * </ul>
+     *
+     * <h2>Example usage</h2>
+     * <pre>{@code
+     * GraphQLObjectType queryType = ...;
+     * GraphQLObjectType mutationType = ...;
+     * Set<GraphQLNamedType> allTypes = ...;  // All types including interface implementations
+     * Set<GraphQLDirective> directives = ...;
+     *
+     * GraphQLSchema schema = new GraphQLSchema.FastBuilder(
+     *         GraphQLCodeRegistry.newCodeRegistry(),
+     *         queryType,
+     *         mutationType,
+     *         null)  // no subscription
+     *     .addTypes(allTypes)
+     *     .additionalDirectives(directives)
+     *     .withValidation(true)  // optional, off by default
+     *     .build();
+     * }</pre>
+     *
+     * @see GraphQLSchema.Builder for standard schema construction with automatic type discovery
      */
     @ExperimentalApi
     @NullMarked
@@ -1166,6 +1206,10 @@ public class GraphQLSchema {
         /**
          * Adds a named type to the schema.
          * All non-root types added via this method will be included in {@link GraphQLSchema#getAdditionalTypes()}.
+         * <p>
+         * <b>Warning:</b> The type object will be mutated during {@link #build()} if it contains
+         * {@link GraphQLTypeReference} instances. Do not reuse the same type instance across
+         * multiple FastBuilder instances.
          *
          * @param type the named type to add
          * @return this builder for chaining
@@ -1361,8 +1405,15 @@ public class GraphQLSchema {
 
         /**
          * Builds the GraphQL schema.
+         * <p>
+         * <b>Warning:</b> This method mutates the type and directive objects that were added to this
+         * builder. Any {@link GraphQLTypeReference} instances within those objects are replaced
+         * in-place with the actual resolved types. After calling this method, the added types
+         * should not be reused with another FastBuilder.
          *
          * @return the built schema
+         * @throws InvalidSchemaException if validation is enabled and the schema is invalid
+         * @throws AssertException if a type reference cannot be resolved
          */
         public GraphQLSchema build() {
             // Step 1: Replace type references

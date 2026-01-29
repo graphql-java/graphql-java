@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.AssertException;
 import graphql.Internal;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -18,6 +19,7 @@ import java.util.TreeSet;
  * Also tracks interface-to-implementation relationships.
  */
 @Internal
+@NullMarked
 public class ShallowTypeRefCollector {
 
     // Replacement targets - no common supertype exists for the replacement-target classes,
@@ -214,6 +216,12 @@ public class ShallowTypeRefCollector {
     /**
      * Replace all collected type references with actual types from typeMap.
      * After this call, no GraphQLTypeReference should remain in the schema.
+     * <p>
+     * <b>Important:</b> This method mutates the type objects that were scanned via
+     * {@link #handleTypeDef(GraphQLNamedType)} and {@link #handleDirective(GraphQLDirective)}.
+     * The same type instances cannot be reused to build another schema after this method
+     * has been called. If you need to build multiple schemas with the same types, you must
+     * create new type instances for each schema.
      *
      * @param typeMap the map of type names to actual types
      * @throws graphql.AssertException if a referenced type is not found in typeMap
