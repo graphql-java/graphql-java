@@ -1371,9 +1371,6 @@ public class GraphQLSchema {
             // Step 2: Add built-in directives if missing
             Directives.BUILT_IN_DIRECTIVES.forEach(this::addDirectiveIfMissing);
 
-
-            addBuiltInDirectivesIfMissing();
-
             // Step 3: Create schema via private constructor
             GraphQLSchema schema = new GraphQLSchema(this);
 
