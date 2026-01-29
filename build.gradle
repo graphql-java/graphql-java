@@ -223,6 +223,20 @@ tasks.named('jmhJar') {
     }
 }
 
+// JMH configuration - use -Pjmh.include=<regex> to filter benchmarks
+jmh {
+    if (project.hasProperty('jmh.include')) {
+        includes = [project.property('jmh.include')]
+    }
+    if (project.hasProperty('jmh.profilers')) {
+        profilers = [project.property('jmh.profilers')]
+    }
+    warmupIterations = 2
+    iterations = 3
+    fork = 1
+    // resultFormat = 'JSON'
+}
+
 
 task extractWithoutGuava(type: Copy) {
     from({ zipTree({ "build/libs/graphql-java-${project.version}.jar" }) }) {
