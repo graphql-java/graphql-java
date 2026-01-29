@@ -231,11 +231,11 @@ public class Assert {
      *
      * @return the name if valid, or AssertException if invalid.
      */
-    public static String assertValidName(String name) {
-        if (name != null && !name.isEmpty() && isValidName(name)) {
+    public static String assertValidName(@Nullable String name) {
+        if (name != null && isValidName(name)) {
             return name;
         }
-        return throwAssert(invalidNameErrorMessage, name);
+        return throwAssert(invalidNameErrorMessage, String.valueOf(name));
     }
 
     /**
