@@ -4,22 +4,25 @@ import graphql.TestUtil
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
+import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
-class RulesVisitorTest extends Specification {
-    AbstractRule simpleRule = Mock()
-    AbstractRule visitsSpreadsRule = Mock()
+import java.util.function.Predicate
 
-    def setup() {
-        visitsSpreadsRule.isVisitFragmentSpreads() >> true
-    }
+class RulesVisitorTest extends Specification {
+
+    ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
     def traverse(String query) {
+        traverse(query, TestUtil.dummySchema, { rule -> true })
+    }
+
+    def traverse(String query, GraphQLSchema schema, Predicate<OperationValidationRule> rulePredicate) {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n)
         LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [simpleRule, visitsSpreadsRule]))
+        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector, rulePredicate))
     }
 
     def "RulesVisitor does not repeatedly spread directly recursive fragments leading to a stackoverflow"() {
@@ -74,24 +77,19 @@ class RulesVisitorTest extends Specification {
         notThrown(StackOverflowError)
     }
 
-    def "RulesVisitor visits fragment definition with isVisitFragmentSpread rules once per operation"() {
+    def "OperationValidator visits fragment definitions per-operation for fragment-spread rules"() {
         given:
         def query = """
-        fragment A on A { __typename }
-        fragment B on B { ...A }
-        fragment C on C { ...A ...B }
-        
-        query Q1 { ...A ...B ...C }
-        query Q2 { ...A ...B ...C }
+        fragment HumanFields on __Type { fields(includeDeprecated: \$inc) { name } }
+
+        query Q1(\$inc: Boolean!) { __schema { queryType { ...HumanFields } } }
+        query Q2 { __schema { queryType { ...HumanFields } } }
         """
-
         when:
-        traverse(query)
-
+        traverse(query, TestUtil.dummySchema, { r -> r == OperationValidationRule.NO_UNDEFINED_VARIABLES })
         then:
-        2 * visitsSpreadsRule.checkFragmentDefinition({it.name == "A"})
-        2 * visitsSpreadsRule.checkFragmentDefinition({it.name == "B"})
-        2 * visitsSpreadsRule.checkFragmentDefinition({it.name == "C"})
+        // Q2 has undefined variable $inc -> exactly 1 error
+        errorCollector.errors.size() == 1
+        errorCollector.errors[0].validationErrorType == ValidationErrorType.UndefinedVariable
     }
 }
-
