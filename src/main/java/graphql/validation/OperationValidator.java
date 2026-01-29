@@ -57,6 +57,8 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.InputValueWithState;
 import graphql.util.StringKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -262,6 +264,7 @@ import static graphql.validation.ValidationErrorType.UniqueObjectFieldName;
  * @see OperationValidationRule
  */
 @Internal
+@NullMarked
 @SuppressWarnings("rawtypes")
 public class OperationValidator implements DocumentVisitor {
 
@@ -297,7 +300,7 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- State: VariableTypesMatch ---
     private final VariablesTypesMatcher variablesTypesMatcher = new VariablesTypesMatcher();
-    private Map<String, VariableDefinition> variableDefinitionMap;
+    private @Nullable Map<String, VariableDefinition> variableDefinitionMap;
 
     // --- State: OverlappingFieldsCanBeMerged ---
     private final Set<Set<FieldAndType>> sameResponseShapeChecked = new LinkedHashSet<>();
@@ -427,7 +430,7 @@ public class OperationValidator implements DocumentVisitor {
                 .description(description));
     }
 
-    private void addError(ValidationErrorType validationErrorType, SourceLocation location, String description) {
+    private void addError(ValidationErrorType validationErrorType, @Nullable SourceLocation location, String description) {
         addError(newValidationError()
                 .validationErrorType(validationErrorType)
                 .sourceLocation(location)
@@ -438,7 +441,7 @@ public class OperationValidator implements DocumentVisitor {
         errorCollector.addError(validationError.queryPath(getQueryPath()).build());
     }
 
-    private List<String> getQueryPath() {
+    private @Nullable List<String> getQueryPath() {
         return validationContext.getQueryPath();
     }
 
@@ -985,7 +988,7 @@ public class OperationValidator implements DocumentVisitor {
         overlappingFieldsImpl(operationDefinition.getSelectionSet(), validationContext.getOutputType());
     }
 
-    private void overlappingFieldsImpl(SelectionSet selectionSet, GraphQLOutputType graphQLOutputType) {
+    private void overlappingFieldsImpl(SelectionSet selectionSet, @Nullable GraphQLOutputType graphQLOutputType) {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>();
         Set<String> visitedFragments = new LinkedHashSet<>();
         overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments);
@@ -999,7 +1002,7 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
-    private void overlappingFields_collectFields(Map<String, Set<FieldAndType>> fieldMap, SelectionSet selectionSet, GraphQLType parentType, Set<String> visitedFragments) {
+    private void overlappingFields_collectFields(Map<String, Set<FieldAndType>> fieldMap, SelectionSet selectionSet, @Nullable GraphQLType parentType, Set<String> visitedFragments) {
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 overlappingFields_collectFieldsForField(fieldMap, parentType, (Field) selection);
@@ -1020,7 +1023,7 @@ public class OperationValidator implements DocumentVisitor {
         overlappingFields_collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragments);
     }
 
-    private void overlappingFields_collectFieldsForInlineFragment(Map<String, Set<FieldAndType>> fieldMap, Set<String> visitedFragments, GraphQLType parentType, InlineFragment inlineFragment) {
+    private void overlappingFields_collectFieldsForInlineFragment(Map<String, Set<FieldAndType>> fieldMap, Set<String> visitedFragments, @Nullable GraphQLType parentType, InlineFragment inlineFragment) {
         GraphQLType graphQLType;
         if (inlineFragment.getTypeCondition() == null) {
             graphQLType = parentType;
@@ -1030,7 +1033,7 @@ public class OperationValidator implements DocumentVisitor {
         overlappingFields_collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragments);
     }
 
-    private void overlappingFields_collectFieldsForField(Map<String, Set<FieldAndType>> fieldMap, GraphQLType parentType, Field field) {
+    private void overlappingFields_collectFieldsForField(Map<String, Set<FieldAndType>> fieldMap, @Nullable GraphQLType parentType, Field field) {
         String responseName = field.getResultKey();
         if (!fieldMap.containsKey(responseName)) {
             fieldMap.put(responseName, new LinkedHashSet<>());
@@ -1120,7 +1123,7 @@ public class OperationValidator implements DocumentVisitor {
         return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType;
     }
 
-    private Conflict requireSameNameAndArguments(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
+    private @Nullable Conflict requireSameNameAndArguments(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -1151,8 +1154,8 @@ public class OperationValidator implements DocumentVisitor {
         return String.join("/", path);
     }
 
-    private boolean sameArguments(List<Argument> arguments1, List<Argument> arguments2) {
-        if (arguments1.size() != arguments2.size()) {
+    private boolean sameArguments(List<Argument> arguments1, @Nullable List<Argument> arguments2) {
+        if (arguments2 == null || arguments1.size() != arguments2.size()) {
             return false;
         }
         for (Argument argument : arguments1) {
@@ -1167,7 +1170,7 @@ public class OperationValidator implements DocumentVisitor {
         return true;
     }
 
-    private Argument findArgumentByName(String name, List<Argument> arguments) {
+    private @Nullable Argument findArgumentByName(String name, List<Argument> arguments) {
         for (Argument argument : arguments) {
             if (argument.getName().equals(name)) {
                 return argument;
@@ -1176,7 +1179,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private Conflict requireSameOutputTypeShape(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
+    private @Nullable Conflict requireSameOutputTypeShape(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -1223,14 +1226,14 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private Conflict mkNotSameTypeError(ImmutableList<String> path, List<Field> fields, GraphQLType typeA, GraphQLType typeB) {
+    private Conflict mkNotSameTypeError(ImmutableList<String> path, List<Field> fields, @Nullable GraphQLType typeA, @Nullable GraphQLType typeB) {
         String name1 = typeA != null ? simplePrint(typeA) : "null";
         String name2 = typeB != null ? simplePrint(typeB) : "null";
         String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentReturnTypes", pathToString(path), name1, name2);
         return new Conflict(reason, fields);
     }
 
-    private boolean sameType(GraphQLType type1, GraphQLType type2) {
+    private boolean sameType(@Nullable GraphQLType type1, @Nullable GraphQLType type2) {
         if (type1 == null || type2 == null) {
             return true;
         }
@@ -1239,10 +1242,10 @@ public class OperationValidator implements DocumentVisitor {
 
     private static class FieldAndType {
         final Field field;
-        final GraphQLType graphQLType;
+        final @Nullable GraphQLType graphQLType;
         final GraphQLType parentType;
 
-        public FieldAndType(Field field, GraphQLType graphQLType, GraphQLType parentType) {
+        public FieldAndType(Field field, @Nullable GraphQLType graphQLType, GraphQLType parentType) {
             this.field = field;
             this.graphQLType = graphQLType;
             this.parentType = parentType;
