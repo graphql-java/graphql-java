@@ -471,8 +471,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkDocument(Document document) {
-        // ExecutableDefinitions
-        if (shouldRunDocumentLevelRules() && isRuleEnabled(OperationValidationRule.EXECUTABLE_DEFINITIONS)) {
+        if (isRuleEnabled(OperationValidationRule.EXECUTABLE_DEFINITIONS)) {
             validateExecutableDefinitions(document);
         }
     }
@@ -497,18 +496,16 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkVariableDefinition(VariableDefinition variableDefinition) {
-        if (shouldRunDocumentLevelRules()) {
-            if (isRuleEnabled(OperationValidationRule.VARIABLE_DEFAULT_VALUES_OF_CORRECT_TYPE)) {
-                validateVariableDefaultValuesOfCorrectType(variableDefinition);
-            }
-            if (isRuleEnabled(OperationValidationRule.VARIABLES_ARE_INPUT_TYPES)) {
-                validateVariablesAreInputTypes(variableDefinition);
-            }
+        if (isRuleEnabled(OperationValidationRule.VARIABLE_DEFAULT_VALUES_OF_CORRECT_TYPE)) {
+            validateVariableDefaultValuesOfCorrectType(variableDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.VARIABLES_ARE_INPUT_TYPES)) {
+            validateVariablesAreInputTypes(variableDefinition);
         }
         if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
             definedVariableNames.add(variableDefinition.getName());
         }
-        if (shouldRunDocumentLevelRules() && isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
+        if (isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
             unusedVars_variableDefinitions.add(variableDefinition);
         }
         if (isRuleEnabled(OperationValidationRule.VARIABLE_TYPES_MATCH)) {
@@ -630,35 +627,31 @@ public class OperationValidator implements DocumentVisitor {
     private void checkOperationDefinition(OperationDefinition operationDefinition) {
         operationScope = true;
 
-        if (shouldRunDocumentLevelRules()) {
-            if (isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
-                validateOverlappingFieldsCanBeMerged(operationDefinition);
-            }
-            if (isRuleEnabled(OperationValidationRule.LONE_ANONYMOUS_OPERATION)) {
-                validateLoneAnonymousOperation(operationDefinition);
-            }
-            if (isRuleEnabled(OperationValidationRule.UNIQUE_OPERATION_NAMES)) {
-                validateUniqueOperationNames(operationDefinition);
-            }
-            if (isRuleEnabled(OperationValidationRule.UNIQUE_VARIABLE_NAMES)) {
-                validateUniqueVariableNames(operationDefinition);
-            }
-            if (isRuleEnabled(OperationValidationRule.SUBSCRIPTION_UNIQUE_ROOT_FIELD)) {
-                validateSubscriptionUniqueRootField(operationDefinition);
-            }
-            if (isRuleEnabled(OperationValidationRule.UNIQUE_DIRECTIVE_NAMES_PER_LOCATION)) {
-                validateUniqueDirectiveNamesPerLocation(operationDefinition, operationDefinition.getDirectives());
-            }
-            if (isRuleEnabled(OperationValidationRule.KNOWN_OPERATION_TYPES)) {
-                validateKnownOperationTypes(operationDefinition);
-            }
-            if (isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
-                unusedFragTracking_usedFragments = new ArrayList<>();
-                fragmentsUsedDirectlyInOperation.add(unusedFragTracking_usedFragments);
-            }
+        if (isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
+            validateOverlappingFieldsCanBeMerged(operationDefinition);
         }
-
-        // Reset operation-scoped rule state
+        if (isRuleEnabled(OperationValidationRule.LONE_ANONYMOUS_OPERATION)) {
+            validateLoneAnonymousOperation(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.UNIQUE_OPERATION_NAMES)) {
+            validateUniqueOperationNames(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.UNIQUE_VARIABLE_NAMES)) {
+            validateUniqueVariableNames(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.SUBSCRIPTION_UNIQUE_ROOT_FIELD)) {
+            validateSubscriptionUniqueRootField(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.UNIQUE_DIRECTIVE_NAMES_PER_LOCATION)) {
+            validateUniqueDirectiveNamesPerLocation(operationDefinition, operationDefinition.getDirectives());
+        }
+        if (isRuleEnabled(OperationValidationRule.KNOWN_OPERATION_TYPES)) {
+            validateKnownOperationTypes(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
+            unusedFragTracking_usedFragments = new ArrayList<>();
+            fragmentsUsedDirectlyInOperation.add(unusedFragTracking_usedFragments);
+        }
         if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
             definedVariableNames.clear();
         }
@@ -722,10 +715,9 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void documentFinished(Document document) {
-        if (shouldRunDocumentLevelRules() && isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
+        if (isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
             validateNoUnusedFragments();
         }
-        // LoneAnonymousOperation cleanup
         if (isRuleEnabled(OperationValidationRule.LONE_ANONYMOUS_OPERATION)) {
             hasAnonymousOp = false;
         }
