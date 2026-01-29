@@ -132,6 +132,134 @@ import static graphql.validation.ValidationErrorType.UniqueObjectFieldName;
  * Consolidated operation validator that implements all GraphQL validation rules
  * from the specification. Replaces the former 31 separate rule classes and the
  * RulesVisitor dispatch layer.
+ *
+ * <h2>Traversal Model</h2>
+ *
+ * <p>This validator tracks two independent state variables during traversal:
+ *
+ * <ul>
+ *   <li><b>{@code fragmentRetraversalDepth}</b> - Tracks whether we are in the primary document
+ *       traversal ({@code == 0}) or inside a manual re-traversal of a fragment via a spread
+ *       ({@code > 0}).</li>
+ *   <li><b>{@code operationScope}</b> - Tracks whether we are currently inside an operation
+ *       definition ({@code true}) or outside of any operation ({@code false}).</li>
+ * </ul>
+ *
+ * <h2>Traversal States</h2>
+ *
+ * <p>These two variables create four possible states, but only three actually occur:
+ *
+ * <pre>
+ * ┌────────────────────────────────────────┬────────────────────────────────────────────────┐
+ * │ State                                  │ Description                                    │
+ * ├────────────────────────────────────────┼────────────────────────────────────────────────┤
+ * │ depth=0, operationScope=false          │ PRIMARY TRAVERSAL, OUTSIDE OPERATION           │
+ * │                                        │ Visiting document root or fragment definitions │
+ * │                                        │ after all operations have been processed.      │
+ * │                                        │ Example: FragmentDefinition at document level  │
+ * ├────────────────────────────────────────┼────────────────────────────────────────────────┤
+ * │ depth=0, operationScope=true           │ PRIMARY TRAVERSAL, INSIDE OPERATION            │
+ * │                                        │ Visiting nodes directly within an operation.   │
+ * │                                        │ Example: Field, InlineFragment in operation    │
+ * ├────────────────────────────────────────┼────────────────────────────────────────────────┤
+ * │ depth>0, operationScope=true           │ FRAGMENT RETRAVERSAL, INSIDE OPERATION         │
+ * │                                        │ Manually traversing into a fragment via spread.│
+ * │                                        │ Example: Nodes reached via ...FragmentName     │
+ * ├────────────────────────────────────────┼────────────────────────────────────────────────┤
+ * │ depth>0, operationScope=false          │ NEVER OCCURS                                   │
+ * │                                        │ Retraversal only happens within an operation.  │
+ * └────────────────────────────────────────┴────────────────────────────────────────────────┘
+ * </pre>
+ *
+ * <h2>Rule Categories</h2>
+ *
+ * <p>Rules are categorized by which states they should run in:
+ *
+ * <pre>
+ * ┌──────────────────────┬──────────────────────┬─────────────────────┬─────────────────────┐
+ * │ Rule Category        │ depth=0              │ depth=0             │ depth>0             │
+ * │                      │ operationScope=false │ operationScope=true │ operationScope=true │
+ * ├──────────────────────┼──────────────────────┼─────────────────────┼─────────────────────┤
+ * │ Document-Level Rules │         RUN          │        RUN          │        SKIP         │
+ * ├──────────────────────┼──────────────────────┼─────────────────────┼─────────────────────┤
+ * │ Operation-Scoped     │        SKIP          │        RUN          │        RUN          │
+ * │ Rules                │                      │                     │                     │
+ * └──────────────────────┴──────────────────────┴─────────────────────┴─────────────────────┘
+ * </pre>
+ *
+ * <h3>Document-Level Rules</h3>
+ * <p>Check: {@code fragmentRetraversalDepth == 0} (via {@link #shouldRunDocumentLevelRules()})
+ * <p>Purpose: Validate each AST node exactly once. Skip during fragment retraversal to avoid
+ * duplicate errors (the fragment was already validated at document level).
+ * <p>Examples: {@code FieldsOnCorrectType}, {@code UniqueFragmentNames}, {@code ScalarLeaves}
+ *
+ * <h3>Operation-Scoped Rules</h3>
+ * <p>Check: {@code operationScope == true} (via {@link #shouldRunOperationScopedRules()})
+ * <p>Purpose: Track state across an entire operation, including all fragments it references.
+ * These rules need to "follow" fragment spreads to see variable usages, defer directives, etc.
+ * <p>Examples: {@code NoUndefinedVariables}, {@code NoUnusedVariables}, {@code VariableTypesMatch}
+ *
+ * <h2>Traversal Example</h2>
+ *
+ * <p>Consider this GraphQL document:
+ * <pre>{@code
+ * query GetUser($id: ID!) {
+ *   user(id: $id) {
+ *     ...UserFields
+ *   }
+ * }
+ *
+ * fragment UserFields on User {
+ *   name
+ *   friends {
+ *     ...UserFields   # recursive spread
+ *   }
+ * }
+ * }</pre>
+ *
+ * <p>The traversal proceeds as follows:
+ *
+ * <pre>
+ * STEP  NODE                        depth  operationScope  DOC-LEVEL  OP-SCOPED
+ * ────  ──────────────────────────  ─────  ──────────────  ─────────  ─────────
+ *  1    Document                      0        false          RUN       SKIP
+ *  2    OperationDefinition           0        true           RUN       RUN
+ *  3    ├─ VariableDefinition $id     0        true           RUN       RUN
+ *  4    ├─ Field "user"               0        true           RUN       RUN
+ *  5    │  └─ FragmentSpread          0        true           RUN       RUN
+ *       │     ...UserFields
+ *       │     ┌─────────────────────────────────────────────────────────────┐
+ *       │     │ MANUAL RETRAVERSAL INTO FRAGMENT                            │
+ *       │     └─────────────────────────────────────────────────────────────┘
+ *  6    │     FragmentDefinition      1        true          SKIP       RUN
+ *  7    │     ├─ Field "name"         1        true          SKIP       RUN
+ *  8    │     ├─ Field "friends"      1        true          SKIP       RUN
+ *  9    │     │  └─ FragmentSpread    1        true          SKIP       RUN
+ *       │     │     ...UserFields
+ *       │     │     (already visited - skip to avoid infinite loop)
+ *       │     └─────────────────────────────────────────────────────────────┘
+ * 10    └─ (leave OperationDef)       0        false      [finalize op-scoped rules]
+ * 11    FragmentDefinition            0        false          RUN       SKIP
+ *       "UserFields" (at doc level)
+ * 12    ├─ Field "name"               0        false          RUN       SKIP
+ * 13    ├─ Field "friends"            0        false          RUN       SKIP
+ * 14    │  └─ FragmentSpread          0        false          RUN       SKIP
+ * </pre>
+ *
+ * <h2>Key Observations</h2>
+ *
+ * <ul>
+ *   <li><b>Steps 6-9:</b> During retraversal, document-level rules SKIP because the fragment
+ *       will be validated at steps 11-14. This prevents duplicate "field not found" errors.</li>
+ *   <li><b>Steps 6-9:</b> Operation-scoped rules RUN to track that variables used inside
+ *       {@code UserFields} are defined in the operation.</li>
+ *   <li><b>Steps 11-14:</b> Operation-scoped rules SKIP because there's no operation context
+ *       to track variables against.</li>
+ *   <li><b>Step 9:</b> Recursive fragment spreads are tracked via {@code visitedFragmentSpreads}
+ *       to prevent infinite loops during retraversal.</li>
+ * </ul>
+ *
+ * @see OperationValidationRule
  */
 @Internal
 @SuppressWarnings("rawtypes")
@@ -143,9 +271,12 @@ public class OperationValidator implements DocumentVisitor {
     private final ValidationUtil validationUtil;
     private final Predicate<OperationValidationRule> rulePredicate;
 
-    // --- Traversal context (from RulesVisitor) ---
+    // --- Traversal context ---
+    /** True when currently processing within an operation definition. */
     private boolean operationScope = false;
-    private int fragmentSpreadVisitDepth = 0;
+    /** Depth of manual fragment traversal; 0 means primary document traversal. */
+    private int fragmentRetraversalDepth = 0;
+    /** Tracks which fragments have been traversed via spreads to avoid infinite loops. */
     private final Set<String> visitedFragmentSpreads = new HashSet<>();
 
     // --- State: NoFragmentCycles ---
@@ -190,7 +321,7 @@ public class OperationValidator implements DocumentVisitor {
     private final FieldCollector fieldCollector = new FieldCollector();
 
     // --- Track whether we're in a context where fragment spread rules should run ---
-    // fragmentSpreadVisitDepth == 0 means we're NOT inside a manually-traversed fragment => run non-fragment-spread checks
+    // fragmentRetraversalDepth == 0 means we're NOT inside a manually-traversed fragment => run non-fragment-spread checks
     // operationScope means we're inside an operation => can trigger fragment traversal
 
     public OperationValidator(ValidationContext validationContext, ValidationErrorCollector errorCollector, Predicate<OperationValidationRule> rulePredicate) {
@@ -206,23 +337,36 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     /**
-     * True when we are NOT inside a manually-traversed fragment definition.
-     * Non-fragment-spread rules run in this context.
+     * Returns true when document-level rules should run.
+     *
+     * <p>Document-level rules validate each AST node exactly once during the primary
+     * document traversal. They do NOT re-run when fragments are traversed through
+     * spreads, which prevents duplicate validation errors.
+     *
+     * <p>Examples: {@code FieldsOnCorrectType}, {@code UniqueFragmentNames},
+     * {@code ScalarLeaves}, {@code KnownDirectives}.
+     *
+     * @return true if {@code fragmentRetraversalDepth == 0} (primary traversal)
      */
-    private boolean shouldRunNonFragmentSpreadChecks() {
-        return fragmentSpreadVisitDepth == 0;
+    private boolean shouldRunDocumentLevelRules() {
+        return fragmentRetraversalDepth == 0;
     }
 
     /**
-     * True when we are inside an operation scope (including manual fragment traversal).
-     * Fragment-spread-visiting rules (NoUndefinedVariables, NoUnusedVariables, VariableTypesMatch,
-     * DeferDirectiveOnRootLevel, DeferDirectiveOnValidOperation) run in this context.
+     * Returns true when operation-scoped rules should run.
+     *
+     * <p>Operation-scoped rules must follow fragment spreads to see the complete
+     * picture of an operation. They track state across all code paths, including
+     * fragments referenced by the operation.
+     *
+     * <p>Examples: {@code NoUndefinedVariables}, {@code NoUnusedVariables},
+     * {@code VariableTypesMatch}, {@code DeferDirectiveOnRootLevel}.
+     *
+     * @return true if currently processing within an operation scope
      */
-    private boolean shouldRunFragmentSpreadChecks() {
+    private boolean shouldRunOperationScopedRules() {
         return operationScope;
     }
-
-    // ==================== DocumentVisitor ====================
 
     @Override
     public void enter(Node node, List<Node> ancestors) {
@@ -271,8 +415,6 @@ public class OperationValidator implements DocumentVisitor {
             leaveFragmentDefinition();
         }
     }
-
-    // ==================== Error Reporting (from AbstractRule) ====================
 
     private void addError(ValidationErrorType validationErrorType, Collection<? extends Node<?>> locations, String description) {
         List<SourceLocation> locationList = new ArrayList<>();
@@ -328,40 +470,26 @@ public class OperationValidator implements DocumentVisitor {
                 ((Boolean) validationContext.getGraphQLContext().get(key)));
     }
 
-    // ==================== Dispatch Methods ====================
-
     private void checkDocument(Document document) {
         // ExecutableDefinitions
-        if (shouldRunNonFragmentSpreadChecks() && isRuleEnabled(OperationValidationRule.EXECUTABLE_DEFINITIONS)) {
+        if (shouldRunDocumentLevelRules() && isRuleEnabled(OperationValidationRule.EXECUTABLE_DEFINITIONS)) {
             validateExecutableDefinitions(document);
         }
-        // UniqueDirectiveNamesPerLocation - no-op on document in original
     }
 
     private void checkArgument(Argument argument) {
-        if (shouldRunNonFragmentSpreadChecks()) {
-            // ArgumentsOfCorrectType
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.ARGUMENTS_OF_CORRECT_TYPE)) {
                 validateArgumentsOfCorrectType(argument);
             }
-            // KnownArgumentNames
             if (isRuleEnabled(OperationValidationRule.KNOWN_ARGUMENT_NAMES)) {
                 validateKnownArgumentNames(argument);
-            }
-        }
-        // Fragment spread visiting rules that check arguments - none currently
-        if (shouldRunFragmentSpreadChecks()) {
-            // ArgumentsOfCorrectType also needs to run during fragment spread traversal
-            if (isRuleEnabled(OperationValidationRule.ARGUMENTS_OF_CORRECT_TYPE)) {
-                // Only run if we're in the fragment spread depth (these are the fragment-spread-visiting rules)
-                // Actually, ArgumentsOfCorrectType is NOT a fragment spread visiting rule, so only run it
-                // when shouldRunNonFragmentSpreadChecks(). Already handled above.
             }
         }
     }
 
     private void checkTypeName(TypeName typeName) {
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.KNOWN_TYPE_NAMES)) {
                 validateKnownTypeNames(typeName);
             }
@@ -369,8 +497,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkVariableDefinition(VariableDefinition variableDefinition) {
-        // These are all non-fragment-spread rules
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.VARIABLE_DEFAULT_VALUES_OF_CORRECT_TYPE)) {
                 validateVariableDefaultValuesOfCorrectType(variableDefinition);
             }
@@ -378,15 +505,12 @@ public class OperationValidator implements DocumentVisitor {
                 validateVariablesAreInputTypes(variableDefinition);
             }
         }
-        // NoUndefinedVariables: track defined variables (fragment-spread-visiting)
         if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
             definedVariableNames.add(variableDefinition.getName());
         }
-        // NoUnusedVariables: track definitions (fragment-spread-visiting)
-        if (shouldRunNonFragmentSpreadChecks() && isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
+        if (shouldRunDocumentLevelRules() && isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
             unusedVars_variableDefinitions.add(variableDefinition);
         }
-        // VariableTypesMatch: track definitions (fragment-spread-visiting)
         if (isRuleEnabled(OperationValidationRule.VARIABLE_TYPES_MATCH)) {
             if (variableDefinitionMap != null) {
                 variableDefinitionMap.put(variableDefinition.getName(), variableDefinition);
@@ -395,7 +519,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkField(Field field) {
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.FIELDS_ON_CORRECT_TYPE)) {
                 validateFieldsOnCorrectType(field);
             }
@@ -415,7 +539,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkInlineFragment(InlineFragment inlineFragment) {
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.FRAGMENTS_ON_COMPOSITE_TYPE)) {
                 validateFragmentsOnCompositeType_inline(inlineFragment);
             }
@@ -429,8 +553,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkDirective(Directive directive, List<Node> ancestors) {
-        // Non-fragment-spread rules
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.KNOWN_DIRECTIVES)) {
                 validateKnownDirectives(directive, ancestors);
             }
@@ -444,8 +567,7 @@ public class OperationValidator implements DocumentVisitor {
                 validateDeferDirectiveLabel(directive);
             }
         }
-        // Fragment-spread-visiting rules for directives
-        if (shouldRunFragmentSpreadChecks()) {
+        if (shouldRunOperationScopedRules()) {
             if (isRuleEnabled(OperationValidationRule.DEFER_DIRECTIVE_ON_ROOT_LEVEL)) {
                 validateDeferDirectiveOnRootLevel(directive);
             }
@@ -456,8 +578,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkFragmentSpread(FragmentSpread node, List<Node> ancestors) {
-        // Non-fragment-spread checks on the spread itself
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.KNOWN_FRAGMENT_NAMES)) {
                 validateKnownFragmentNames(node);
             }
@@ -477,15 +598,15 @@ public class OperationValidator implements DocumentVisitor {
             FragmentDefinition fragment = validationContext.getFragment(node.getName());
             if (fragment != null && !visitedFragmentSpreads.contains(node.getName())) {
                 visitedFragmentSpreads.add(node.getName());
-                fragmentSpreadVisitDepth++;
+                fragmentRetraversalDepth++;
                 new LanguageTraversal(ancestors).traverse(fragment, this);
-                fragmentSpreadVisitDepth--;
+                fragmentRetraversalDepth--;
             }
         }
     }
 
     private void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.FRAGMENTS_ON_COMPOSITE_TYPE)) {
                 validateFragmentsOnCompositeType_definition(fragmentDefinition);
             }
@@ -509,7 +630,7 @@ public class OperationValidator implements DocumentVisitor {
     private void checkOperationDefinition(OperationDefinition operationDefinition) {
         operationScope = true;
 
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
                 validateOverlappingFieldsCanBeMerged(operationDefinition);
             }
@@ -537,7 +658,7 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
 
-        // Fragment-spread-visiting rules: reset per operation
+        // Reset operation-scoped rule state
         if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
             definedVariableNames.clear();
         }
@@ -551,17 +672,13 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkVariable(VariableReference variableReference) {
-        // Fragment-spread-visiting rules
-        if (shouldRunFragmentSpreadChecks()) {
+        if (shouldRunOperationScopedRules()) {
             if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
                 validateNoUndefinedVariables(variableReference);
             }
             if (isRuleEnabled(OperationValidationRule.VARIABLE_TYPES_MATCH)) {
                 validateVariableTypesMatch(variableReference);
             }
-        }
-        // NoUnusedVariables also visits fragment spreads
-        if (shouldRunFragmentSpreadChecks()) {
             if (isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
                 unusedVars_usedVariables.add(variableReference.getName());
             }
@@ -573,21 +690,18 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkObjectValue(ObjectValue objectValue) {
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.UNIQUE_OBJECT_FIELD_NAME)) {
                 validateUniqueObjectFieldName(objectValue);
             }
         }
     }
 
-    // ==================== Leave Methods ====================
-
     private void leaveOperationDefinition(OperationDefinition operationDefinition) {
         // fragments should be revisited for each operation
         visitedFragmentSpreads.clear();
         operationScope = false;
 
-        // NoUnusedVariables: check on leave
         if (isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
             for (VariableDefinition variableDefinition : unusedVars_variableDefinitions) {
                 if (!unusedVars_usedVariables.contains(variableDefinition.getName())) {
@@ -608,8 +722,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void documentFinished(Document document) {
-        // NoUnusedFragments
-        if (shouldRunNonFragmentSpreadChecks() && isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
+        if (shouldRunDocumentLevelRules() && isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
             validateNoUnusedFragments();
         }
         // LoneAnonymousOperation cleanup
@@ -617,8 +730,6 @@ public class OperationValidator implements DocumentVisitor {
             hasAnonymousOp = false;
         }
     }
-
-    // ==================== Validation Rule Implementations ====================
 
     // --- ExecutableDefinitions ---
     private void validateExecutableDefinitions(Document document) {
