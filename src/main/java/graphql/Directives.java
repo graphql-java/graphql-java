@@ -7,7 +7,11 @@ import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
 
-import java.util.List;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static graphql.Scalars.GraphQLBoolean;
@@ -251,32 +255,54 @@ public class Directives {
             .build();
 
     /**
-     * Returns the directives that are included in a schema by default but can be removed
-     * by calling {@code clearDirectives()} on the builder.
-     *
-     * @return an unmodifiable list of default directives (include, skip)
+     * The set of all built-in directives that are always present in a graphql schema.
+     * The iteration order is stable and meaningful.
      */
-    @Internal
-    public static List<GraphQLDirective> getDefaultDirectives() {
-        return List.of(IncludeDirective, SkipDirective);
+    public static final Set<GraphQLDirective> BUILT_IN_DIRECTIVES;
+
+    /**
+     * A map from directive name to directive for all built-in directives.
+     */
+    public static final Map<String, GraphQLDirective> BUILT_IN_DIRECTIVES_MAP;
+
+    static {
+        LinkedHashSet<GraphQLDirective> directives = new LinkedHashSet<>();
+        directives.add(IncludeDirective);
+        directives.add(SkipDirective);
+        directives.add(DeprecatedDirective);
+        directives.add(SpecifiedByDirective);
+        directives.add(OneOfDirective);
+        directives.add(DeferDirective);
+        directives.add(ExperimentalDisableErrorPropagationDirective);
+        BUILT_IN_DIRECTIVES = Collections.unmodifiableSet(directives);
+
+        LinkedHashMap<String, GraphQLDirective> map = new LinkedHashMap<>();
+        for (GraphQLDirective d : BUILT_IN_DIRECTIVES) {
+            map.put(d.getName(), d);
+        }
+        BUILT_IN_DIRECTIVES_MAP = Collections.unmodifiableMap(map);
     }
 
     /**
-     * Returns the directives that are mandatory and will always be added to a schema,
-     * even after {@code clearDirectives()} is called on the builder.
-     * These are inherently part of the GraphQL spec.
+     * Returns true if a directive with the provided name is a built-in directive.
      *
-     * @return an unmodifiable list of mandatory directives
+     * @param directiveName the name of the directive in question
+     *
+     * @return true if the directive is built-in, false otherwise
      */
-    @Internal
-    public static List<GraphQLDirective> getMandatoryDirectives() {
-        return List.of(
-                DeprecatedDirective,
-                SpecifiedByDirective,
-                OneOfDirective,
-                DeferDirective,
-                ExperimentalDisableErrorPropagationDirective
-        );
+    public static boolean isBuiltInDirective(String directiveName) {
+        return BUILT_IN_DIRECTIVES_MAP.containsKey(directiveName);
+    }
+
+    /**
+     * Returns true if the provided directive is a built-in directive.
+     *
+     * @param directive the directive in question
+     *
+     * @return true if the directive is built-in, false otherwise
+     */
+    public static boolean isBuiltInDirective(GraphQLDirective directive) {
+        return isBuiltInDirective(directive.getName());
     }
 
     private static Description createDescription(String s) {

@@ -762,7 +762,6 @@ public class GraphQLSchema {
                 .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
                 .codeRegistry(existingSchema.getCodeRegistry())
                 .clearAdditionalTypes()
-                .clearDirectives()
                 .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
                 .clearSchemaDirectives()
                 .withSchemaDirectives(schemaDirectivesArray(existingSchema))
@@ -811,11 +810,7 @@ public class GraphQLSchema {
         private List<SchemaExtensionDefinition> extensionDefinitions;
         private String description;
 
-        // We initially add these default directives (e.g., include and skip), but these can be
-        // cleared by the user (unlike mandatory ones which are always re-added in buildImpl)
-        private final Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>(
-                Directives.getDefaultDirectives()
-        );
+        private final Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>();
         private final Set<GraphQLNamedType> additionalTypes = new LinkedHashSet<>();
         private final List<GraphQLDirective> schemaDirectives = new ArrayList<>();
         private final List<GraphQLAppliedDirective> schemaAppliedDirectives = new ArrayList<>();
@@ -933,12 +928,6 @@ public class GraphQLSchema {
             return this;
         }
 
-        public Builder clearDirectives() {
-            this.additionalDirectives.clear();
-            return this;
-        }
-
-
         public Builder withSchemaDirectives(GraphQLDirective... directives) {
             for (GraphQLDirective directive : directives) {
                 withSchemaDirective(directive);
@@ -1031,8 +1020,8 @@ public class GraphQLSchema {
             assertNotNull(additionalTypes, "additionalTypes can't be null");
             assertNotNull(additionalDirectives, "additionalDirectives can't be null");
 
-            // Mandatory directives are always added, even after clearDirectives() - they're part of the spec
-            Directives.getMandatoryDirectives().forEach(d -> addBuiltInDirective(d, additionalDirectives));
+            // built-in directives are always present in a schema and come first
+            ensureBuiltInDirectives();
 
             // quick build - no traversing
             final GraphQLSchema partiallyBuiltSchema = new GraphQLSchema(this);
@@ -1053,6 +1042,23 @@ public class GraphQLSchema {
             final GraphQLSchema finalSchema = new GraphQLSchema(partiallyBuiltSchema, codeRegistry, allTypes, interfaceNameToObjectTypes);
             SchemaUtil.replaceTypeReferences(finalSchema);
             return validateSchema(finalSchema);
+        }
+
+        private void ensureBuiltInDirectives() {
+            // put built-in directives first, preserving user-supplied overrides by name
+            Set<String> userDirectiveNames = new LinkedHashSet<>();
+            for (GraphQLDirective d : additionalDirectives) {
+                userDirectiveNames.add(d.getName());
+            }
+            LinkedHashSet<GraphQLDirective> ordered = new LinkedHashSet<>();
+            for (GraphQLDirective builtIn : Directives.BUILT_IN_DIRECTIVES) {
+                if (!userDirectiveNames.contains(builtIn.getName())) {
+                    ordered.add(builtIn);
+                }
+            }
+            ordered.addAll(additionalDirectives);
+            additionalDirectives.clear();
+            additionalDirectives.addAll(ordered);
         }
 
         private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema) {
@@ -1363,6 +1369,9 @@ public class GraphQLSchema {
             shallowTypeRefCollector.replaceTypes(typeMap);
 
             // Step 2: Add built-in directives if missing
+            Directives.BUILT_IN_DIRECTIVES.forEach(this::addDirectiveIfMissing);
+
+
             addBuiltInDirectivesIfMissing();
 
             // Step 3: Create schema via private constructor
@@ -1377,11 +1386,6 @@ public class GraphQLSchema {
             }
 
             return schema;
-        }
-
-        private void addBuiltInDirectivesIfMissing() {
-            Directives.getDefaultDirectives().forEach(this::addDirectiveIfMissing);
-            Directives.getMandatoryDirectives().forEach(this::addDirectiveIfMissing);
         }
 
         private void addDirectiveIfMissing(GraphQLDirective directive) {

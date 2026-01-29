@@ -148,28 +148,25 @@ class GraphQLSchemaTest extends Specification {
         ((Directive) newSchema.extensionDefinitions.first().getDirectives().first()).name == "pizza"
     }
 
-    def "clear directives works as expected"() {
+    def "all built-in directives are always present"() {
         setup:
         def schemaBuilder = basicSchemaBuilder()
 
-        when: "no additional directives have been specified"
+        when: "a schema is built"
         def schema = schemaBuilder.build()
-        then:
+        then: "all 7 built-in directives are present"
         schema.directives.size() == 7
-
-        when: "clear directives is called"
-        schema = schemaBuilder.clearDirectives().build()
-        then:
-        schema.directives.size() == 5 // @deprecated and @specifiedBy and @oneOf et al is ALWAYS added if missing
-
-        when: "clear directives is called with more directives"
-        schema = schemaBuilder.clearDirectives().additionalDirective(Directives.SkipDirective).build()
-        then:
-        schema.directives.size() == 6
+        schema.getDirective("include") != null
+        schema.getDirective("skip") != null
+        schema.getDirective("deprecated") != null
+        schema.getDirective("specifiedBy") != null
+        schema.getDirective("oneOf") != null
+        schema.getDirective("defer") != null
+        schema.getDirective("experimental_disableErrorPropagation") != null
 
         when: "the schema is transformed, things are copied"
-        schema = schema.transform({ builder -> builder.additionalDirective(Directives.IncludeDirective) })
-        then:
+        schema = schema.transform({ builder -> builder })
+        then: "all 7 built-in directives are still present"
         schema.directives.size() == 7
     }
 
