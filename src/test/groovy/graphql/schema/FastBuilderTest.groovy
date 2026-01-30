@@ -1067,9 +1067,13 @@ class FastBuilderTest extends Specification {
                         .type(postType))
                 .build()
 
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Node", { env -> null })
+
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
-                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                codeRegistry, queryType, null, null)
                 .addType(nodeInterface)
                 .addType(postType)
                 .build()
@@ -1120,9 +1124,13 @@ class FastBuilderTest extends Specification {
                         .type(entityInterface))
                 .build()
 
+        and: "code registry with type resolver"
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Entity", { env -> null })
+
         when: "building with FastBuilder"
         def schema = new GraphQLSchema.FastBuilder(
-                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                codeRegistry, queryType, null, null)
                 .addType(entityInterface)
                 .addType(userType)
                 .addType(productType)
@@ -1686,6 +1694,42 @@ class FastBuilderTest extends Specification {
         schema.codeRegistry.getTypeResolver(resolvedUnion) != null
     }
 
+    def "union without type resolver throws error"() {
+        given: "a union without type resolver"
+        def catType = newObject()
+                .name("Cat")
+                .field(newFieldDefinition()
+                        .name("meow")
+                        .type(GraphQLString))
+                .build()
+
+        def petUnion = GraphQLUnionType.newUnionType()
+                .name("Pet")
+                .possibleType(catType)
+                // No type resolver!
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("pet")
+                        .type(petUnion))
+                .build()
+
+        when: "building without type resolver"
+        new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(catType)
+                .addType(petUnion)
+                .build()
+
+        then: "error is thrown"
+        def e = thrown(AssertException)
+        e.message.contains("MUST provide a type resolver")
+        e.message.contains("Pet")
+    }
+
     def "union with missing member type reference throws error"() {
         given: "a union with missing type reference"
         def petUnion = GraphQLUnionType.newUnionType()
@@ -1780,7 +1824,7 @@ class FastBuilderTest extends Specification {
         resolvedApplied.getArgument("info").getType() == metaScalar
     }
 
-    def "withValidation(false) allows schema without type resolver"() {
+    def "interface without type resolver throws error"() {
         given: "an interface without type resolver"
         def nodeInterface = GraphQLInterfaceType.newInterface()
                 .name("Node")
@@ -1798,16 +1842,45 @@ class FastBuilderTest extends Specification {
                         .type(nodeInterface))
                 .build()
 
-        when: "building with validation disabled"
-        def schema = new GraphQLSchema.FastBuilder(
+        when: "building without type resolver"
+        new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(nodeInterface)
+                .build()
+
+        then: "error is thrown"
+        def e = thrown(AssertException)
+        e.message.contains("MUST provide a type resolver")
+        e.message.contains("Node")
+    }
+
+    def "withValidation(false) still requires type resolvers"() {
+        given: "an interface without type resolver"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .field(newFieldDefinition()
+                        .name("id")
+                        .type(GraphQLString))
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .type(nodeInterface))
+                .build()
+
+        when: "building with validation disabled but no type resolver"
+        new GraphQLSchema.FastBuilder(
                 GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
                 .addType(nodeInterface)
                 .withValidation(false)
                 .build()
 
-        then: "schema builds without error"
-        schema != null
-        schema.getType("Node") instanceof GraphQLInterfaceType
+        then: "error is still thrown for missing type resolver"
+        def e = thrown(AssertException)
+        e.message.contains("MUST provide a type resolver")
     }
 
     def "withValidation(true) rejects schema with incomplete interface implementation"() {

@@ -1413,19 +1413,31 @@ public class GraphQLSchema {
          *
          * @return the built schema
          * @throws InvalidSchemaException if validation is enabled and the schema is invalid
-         * @throws AssertException if a type reference cannot be resolved
+         * @throws AssertException if a type reference cannot be resolved or if an interface/union
+         *                         type is missing a type resolver
          */
         public GraphQLSchema build() {
-            // Step 1: Replace type references
+            // Validate type resolvers for all interfaces and unions
+            for (GraphQLNamedType type : typeMap.values()) {
+                if (type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType) {
+                    String typeName = type.getName();
+                    if (!codeRegistryBuilder.hasTypeResolver(typeName)) {
+                        String typeKind = type instanceof GraphQLInterfaceType ? "interface" : "union";
+                        assertShouldNeverHappen("You MUST provide a type resolver for the %s type '%s'", typeKind, typeName);
+                    }
+                }
+            }
+
+            // Replace type references
             shallowTypeRefCollector.replaceTypes(typeMap);
 
-            // Step 2: Add built-in directives if missing
+            // Add built-in directives if missing
             Directives.BUILT_IN_DIRECTIVES.forEach(this::addDirectiveIfMissing);
 
-            // Step 3: Create schema via private constructor
+            // Create schema via private constructor
             GraphQLSchema schema = new GraphQLSchema(this);
 
-            // Step 4: Optional validation
+            // Optional GraphQL spec validation
             if (validationEnabled) {
                 Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(schema);
                 if (!errors.isEmpty()) {
