@@ -1,8 +1,10 @@
 package graphql.schema.idl;
 
+import graphql.ExperimentalApi;
 import graphql.GraphQLError;
-import graphql.Internal;
 import graphql.language.OperationTypeDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNamedType;
@@ -17,10 +19,16 @@ import java.util.stream.Collectors;
 import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
 
 /**
- * A schema generator that uses GraphQLSchema.FastBuilder for improved performance.
- * This is intended for benchmarking and performance testing purposes.
+ * A schema generator that uses {@link GraphQLSchema.FastBuilder} to construct the schema.
+ * {@link GraphQLSchema.FastBuilder} has a number of important limitations, so please read
+ * its documentation carefully to understand if you should use this instead of the standard
+ * {@link SchemaGenerator}.
+ *
+ * @see GraphQLSchema.FastBuilder
+ * @see SchemaGenerator
  */
-@Internal
+@ExperimentalApi
+@NullMarked
 public class FastSchemaGenerator {
 
     private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();
@@ -28,11 +36,10 @@ public class FastSchemaGenerator {
 
     /**
      * Creates an executable schema from a TypeDefinitionRegistry using FastBuilder.
-     * This method is optimized for performance and skips validation by default.
      *
      * @param typeRegistry the type definition registry
      * @param wiring       the runtime wiring
-     * @return an executable schema
+     * @return a validated, executable schema
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
         return makeExecutableSchema(SchemaGenerator.Options.defaultOptions(), typeRegistry, wiring);
@@ -46,7 +53,9 @@ public class FastSchemaGenerator {
      * @param wiring       the runtime wiring
      * @return an executable schema
      */
-    public GraphQLSchema makeExecutableSchema(SchemaGenerator.Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
+    public GraphQLSchema makeExecutableSchema(SchemaGenerator.Options options,
+                                              TypeDefinitionRegistry typeRegistry,
+                                              RuntimeWiring wiring) {
         // Make a copy and add default directives
         TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
         typeRegistryCopy.merge(typeRegistry);
@@ -122,17 +131,15 @@ public class FastSchemaGenerator {
         // Add all directive definitions
         fastBuilder.additionalDirectives(additionalDirectives);
 
-        // Add schema description if present
+        // Add schema description and definition if present
         typeRegistry.schemaDefinition().ifPresent(schemaDefinition -> {
             String description = buildDescription(buildCtx, schemaDefinition, schemaDefinition.getDescription());
             fastBuilder.description(description);
+            fastBuilder.definition(schemaDefinition);
         });
 
-        // Add schema definition
-        fastBuilder.definition(typeRegistry.schemaDefinition().orElse(null));
-
-        // Disable validation for performance
-        fastBuilder.withValidation(false);
+        // Configure validation
+        fastBuilder.withValidation(options.isWithValidation());
 
         return fastBuilder.build();
     }
@@ -147,7 +154,7 @@ public class FastSchemaGenerator {
         return defaultTypeName;
     }
 
-    private GraphQLObjectType findOperationType(Set<GraphQLNamedType> types, String typeName) {
+    private @Nullable GraphQLObjectType findOperationType(Set<GraphQLNamedType> types, String typeName) {
         for (GraphQLNamedType type : types) {
             if (type instanceof GraphQLObjectType) {
                 GraphQLObjectType objectType = (GraphQLObjectType) type;

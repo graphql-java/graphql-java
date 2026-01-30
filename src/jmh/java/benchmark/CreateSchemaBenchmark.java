@@ -52,7 +52,10 @@ public class CreateSchemaBenchmark {
 
     private static GraphQLSchema createSchemaFast(String sdl) {
         TypeDefinitionRegistry registry = new SchemaParser().parse(sdl);
-        return new FastSchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING);
+        return new FastSchemaGenerator().makeExecutableSchema(
+                SchemaGenerator.Options.defaultOptions().withValidation(false),
+                registry,
+                RuntimeWiring.MOCKED_WIRING);
     }
 
     @SuppressWarnings("InfiniteLoopStatement")

@@ -2,8 +2,16 @@ package graphql.schema.idl
 
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.errors.SchemaProblem
+import graphql.schema.validation.InvalidSchemaException
 import spock.lang.Specification
 
+/**
+ * Tests for {@link FastSchemaGenerator}.
+ *
+ * Note: {@link GraphQLSchema.FastBuilder} is subject to extensive testing directly.
+ * The tests in this file are intended to test {@code FastSchemaGenerator} specifically
+ * and not the underlying builder.
+ */
 class FastSchemaGeneratorTest extends Specification {
 
     def "can create simple schema using FastSchemaGenerator"() {
@@ -138,7 +146,7 @@ class FastSchemaGeneratorTest extends Specification {
 
     // Regression tests to ensure FastSchemaGenerator behaves like SchemaGenerator
 
-    def "should throw SchemaProblem for missing type reference"() {
+    def "should throw SchemaProblem for missing type reference even with validation disabled"() {
         given:
         def sdl = '''
             type Query {
@@ -148,6 +156,7 @@ class FastSchemaGeneratorTest extends Specification {
 
         when:
         new FastSchemaGenerator().makeExecutableSchema(
+                SchemaGenerator.Options.defaultOptions().withValidation(false),
                 new SchemaParser().parse(sdl),
                 RuntimeWiring.MOCKED_WIRING
         )
@@ -156,7 +165,7 @@ class FastSchemaGeneratorTest extends Specification {
         thrown(SchemaProblem)
     }
 
-    def "should throw SchemaProblem for duplicate field definitions"() {
+    def "should throw SchemaProblem for duplicate field definitions even with validation disabled"() {
         given:
         def sdl = '''
             type Query {
@@ -167,6 +176,7 @@ class FastSchemaGeneratorTest extends Specification {
 
         when:
         new FastSchemaGenerator().makeExecutableSchema(
+                SchemaGenerator.Options.defaultOptions().withValidation(false),
                 new SchemaParser().parse(sdl),
                 RuntimeWiring.MOCKED_WIRING
         )
@@ -175,7 +185,7 @@ class FastSchemaGeneratorTest extends Specification {
         thrown(SchemaProblem)
     }
 
-    def "should throw SchemaProblem for invalid interface implementation"() {
+    def "should throw SchemaProblem for invalid interface implementation even with validation disabled"() {
         given:
         def sdl = '''
             type Query {
@@ -193,12 +203,14 @@ class FastSchemaGeneratorTest extends Specification {
 
         when:
         new FastSchemaGenerator().makeExecutableSchema(
+                SchemaGenerator.Options.defaultOptions().withValidation(false),
                 new SchemaParser().parse(sdl),
                 RuntimeWiring.MOCKED_WIRING
         )
 
         then:
         // User claims to implement Node but doesn't have the required 'id' field
+        // This is caught by SchemaTypeChecker, not SchemaValidator
         thrown(SchemaProblem)
     }
 
@@ -276,5 +288,45 @@ class FastSchemaGeneratorTest extends Specification {
         fastTypeNames.findAll { it.startsWith("__") }.each { introspectionType ->
             assert standardTypeNames.contains(introspectionType) : "Extra introspection type: $introspectionType"
         }
+    }
+
+    // Validation tests - test that 2-arg method validates and 4-arg with validation=false skips validation
+
+    def "default makeExecutableSchema validates and throws InvalidSchemaException for non-null self-referencing input type"() {
+        given:
+        // Non-null self-reference in input type is impossible to satisfy
+        def sdl = '''
+            type Query { test(input: BadInput): String }
+            input BadInput { self: BadInput! }
+        '''
+
+        when:
+        new FastSchemaGenerator().makeExecutableSchema(
+                new SchemaParser().parse(sdl),
+                RuntimeWiring.MOCKED_WIRING
+        )
+
+        then:
+        thrown(InvalidSchemaException)
+    }
+
+    def "3-arg makeExecutableSchema with withValidation=false allows non-null self-referencing input type"() {
+        given:
+        // Non-null self-reference in input type - passes without validation
+        def sdl = '''
+            type Query { test(input: BadInput): String }
+            input BadInput { self: BadInput! }
+        '''
+
+        when:
+        def schema = new FastSchemaGenerator().makeExecutableSchema(
+                SchemaGenerator.Options.defaultOptions().withValidation(false),
+                new SchemaParser().parse(sdl),
+                RuntimeWiring.MOCKED_WIRING
+        )
+
+        then:
+        notThrown(InvalidSchemaException)
+        schema != null
     }
 }

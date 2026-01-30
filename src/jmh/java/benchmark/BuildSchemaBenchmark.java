@@ -1,6 +1,5 @@
 package benchmark;
 
-import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.FastSchemaGenerator;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -47,6 +46,9 @@ public class BuildSchemaBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchmarkBuildSchemaAvgTimeFast(Blackhole blackhole) {
-        blackhole.consume(new FastSchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING));
+        blackhole.consume(new FastSchemaGenerator().makeExecutableSchema(
+                SchemaGenerator.Options.defaultOptions().withValidation(false),
+                registry,
+                RuntimeWiring.MOCKED_WIRING));
     }
 }
