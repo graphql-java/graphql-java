@@ -210,6 +210,17 @@ public class SchemaGeneratorHelper {
             return directives;
         }
 
+        /**
+         * Returns all types that have been built so far (both input and output types).
+         * This is used by FastSchemaGenerator to collect types for FastBuilder.
+         */
+        public Set<GraphQLType> getTypes() {
+            Set<GraphQLType> allTypes = new LinkedHashSet<>();
+            allTypes.addAll(outputGTypes.values());
+            allTypes.addAll(inputGTypes.values());
+            return allTypes;
+        }
+
         public boolean isCaptureAstDefinitions() {
             return options.isCaptureAstDefinitions();
         }

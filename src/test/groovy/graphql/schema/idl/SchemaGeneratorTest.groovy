@@ -2525,7 +2525,7 @@ class SchemaGeneratorTest extends Specification {
             type Query {
                 f(arg : OneOfInputType) : String
             }
-            
+
             input OneOfInputType @oneOf {
                 a : String
                 b : String
@@ -2540,5 +2540,19 @@ class SchemaGeneratorTest extends Specification {
         GraphQLInputObjectType inputObjectType = schema.getTypeAs("OneOfInputType")
         inputObjectType.isOneOf()
         inputObjectType.hasAppliedDirective("oneOf")
+    }
+
+    def "should throw IllegalArgumentException when withValidation is false"() {
+        given:
+        def sdl = '''
+            type Query { hello: String }
+        '''
+        def options = SchemaGenerator.Options.defaultOptions().withValidation(false)
+
+        when:
+        new SchemaGenerator().makeExecutableSchema(options, new SchemaParser().parse(sdl), RuntimeWiring.MOCKED_WIRING)
+
+        then:
+        thrown(IllegalArgumentException)
     }
 }
