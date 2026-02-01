@@ -160,7 +160,7 @@ dependencies {
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
-    errorprone 'com.uber.nullaway:nullaway:0.12.10'
+    errorprone 'com.uber.nullaway:nullaway:0.13.1'
     errorprone 'com.google.errorprone:error_prone_core:2.44.0'
 
     // just tests - no Kotlin otherwise
