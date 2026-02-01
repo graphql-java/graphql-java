@@ -149,7 +149,7 @@ dependencies {
     testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
     
     // JUnit Platform launcher required for Gradle 9
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:6.0.2'
 
     antlr 'org.antlr:antlr4:' + antlrVersion
 
