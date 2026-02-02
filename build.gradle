@@ -131,7 +131,7 @@ dependencies {
 
     testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
     testImplementation 'net.bytebuddy:byte-buddy:1.18.1'
-    testImplementation 'org.objenesis:objenesis:3.4'
+    testImplementation 'org.objenesis:objenesis:3.5'
     testImplementation 'org.apache.groovy:groovy:4.0.28"'
     testImplementation 'org.apache.groovy:groovy-json:4.0.28'
     testImplementation 'com.google.code.gson:gson:2.13.2'
