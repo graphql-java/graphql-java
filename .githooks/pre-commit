@@ -3,8 +3,6 @@
 # Pre-commit hook to enforce Windows compatibility and file size limits
 # This hook prevents commits that would fail on Windows systems or that contain overly large files
 
-set -e
-
 # ANSI color codes for better output readability
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -49,10 +47,15 @@ LARGE_FILES=""
 if [ -n "$STAGED_FILES" ]; then
     while IFS= read -r file; do
         if [ -f "$file" ]; then
-            size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null || echo 0)
+            # Try to get file size with cross-platform compatibility
+            size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null)
+            if [ -z "$size" ]; then
+                echo -e "${YELLOW}Warning: Could not determine size of $file, skipping size check${NC}"
+                continue
+            fi
             if [ "$size" -gt "$MAX_SIZE" ]; then
-                # Format size in human-readable format
-                size_mb=$(echo "scale=2; $size / 1024 / 1024" | bc)
+                # Format size in human-readable format using awk (more portable than bc)
+                size_mb=$(awk "BEGIN {printf \"%.2f\", $size/1024/1024}")
                 LARGE_FILES="${LARGE_FILES}  - $file (${size_mb} MB)\n"
             fi
         fi
