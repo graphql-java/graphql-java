@@ -8,6 +8,11 @@ import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
 import org.jspecify.annotations.NullMarked;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static graphql.Scalars.GraphQLBoolean;
@@ -250,6 +255,57 @@ public class Directives {
             .validLocations(QUERY, MUTATION, SUBSCRIPTION)
             .definition(EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION)
             .build();
+
+    /**
+     * The set of all built-in directives that are always present in a graphql schema.
+     * The iteration order is stable and meaningful.
+     */
+    public static final Set<GraphQLDirective> BUILT_IN_DIRECTIVES;
+
+    /**
+     * A map from directive name to directive for all built-in directives.
+     */
+    public static final Map<String, GraphQLDirective> BUILT_IN_DIRECTIVES_MAP;
+
+    static {
+        LinkedHashSet<GraphQLDirective> directives = new LinkedHashSet<>();
+        directives.add(IncludeDirective);
+        directives.add(SkipDirective);
+        directives.add(DeprecatedDirective);
+        directives.add(SpecifiedByDirective);
+        directives.add(OneOfDirective);
+        directives.add(DeferDirective);
+        directives.add(ExperimentalDisableErrorPropagationDirective);
+        BUILT_IN_DIRECTIVES = Collections.unmodifiableSet(directives);
+
+        LinkedHashMap<String, GraphQLDirective> map = new LinkedHashMap<>();
+        for (GraphQLDirective d : BUILT_IN_DIRECTIVES) {
+            map.put(d.getName(), d);
+        }
+        BUILT_IN_DIRECTIVES_MAP = Collections.unmodifiableMap(map);
+    }
+
+    /**
+     * Returns true if a directive with the provided name is a built-in directive.
+     *
+     * @param directiveName the name of the directive in question
+     *
+     * @return true if the directive is built-in, false otherwise
+     */
+    public static boolean isBuiltInDirective(String directiveName) {
+        return BUILT_IN_DIRECTIVES_MAP.containsKey(directiveName);
+    }
+
+    /**
+     * Returns true if the provided directive is a built-in directive.
+     *
+     * @param directive the directive in question
+     *
+     * @return true if the directive is built-in, false otherwise
+     */
+    public static boolean isBuiltInDirective(GraphQLDirective directive) {
+        return isBuiltInDirective(directive.getName());
+    }
 
     private static Description createDescription(String s) {
         return new Description(s, null, false);
