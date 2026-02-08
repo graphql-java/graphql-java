@@ -184,7 +184,7 @@ public class GraphQLSchema {
         ImmutableMap.Builder<String, ImmutableList<GraphQLObjectType>> interfaceMapBuilder = ImmutableMap.builder();
         for (Map.Entry<String, ImmutableList<String>> entry : finalInterfaceNameMap.entrySet()) {
             ImmutableList<GraphQLObjectType> objectTypes = map(entry.getValue(),
-                    name -> (GraphQLObjectType) finalTypeMap.get(name));
+                    name -> (GraphQLObjectType) assertNotNull(finalTypeMap.get(name)));
             interfaceMapBuilder.put(entry.getKey(), objectTypes);
         }
         ImmutableMap<String, ImmutableList<GraphQLObjectType>> finalInterfaceMap = interfaceMapBuilder.build();
