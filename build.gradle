@@ -19,7 +19,7 @@ plugins {
     id "net.ltgt.errorprone" version '4.3.0'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.2.21'
+    id 'org.jetbrains.kotlin.jvm' version '2.3.0'
 }
 
 java {
