@@ -55,8 +55,8 @@ import static java.util.Collections.singletonList;
 public class GraphQLSchema {
 
     private final GraphQLObjectType queryType;
-    private final GraphQLObjectType mutationType;
-    private final GraphQLObjectType subscriptionType;
+    private final @Nullable GraphQLObjectType mutationType;
+    private final @Nullable GraphQLObjectType subscriptionType;
     private final GraphQLObjectType introspectionSchemaType;
     private final ImmutableSet<GraphQLNamedType> additionalTypes;
     private final GraphQLFieldDefinition introspectionSchemaField;
@@ -66,9 +66,9 @@ public class GraphQLSchema {
     private final DirectivesUtil.DirectivesHolder directiveDefinitionsHolder;
     private final DirectivesUtil.DirectivesHolder schemaAppliedDirectivesHolder;
 
-    private final SchemaDefinition definition;
+    private final @Nullable SchemaDefinition definition;
     private final ImmutableList<SchemaExtensionDefinition> extensionDefinitions;
-    private final String description;
+    private final @Nullable String description;
     private final @Nullable GraphQLCodeRegistry codeRegistry;
 
     private final ImmutableMap<String, GraphQLNamedType> typeMap;
@@ -530,14 +530,14 @@ public class GraphQLSchema {
     /**
      * @return the Mutation type of the schema of null if there is not one
      */
-    public GraphQLObjectType getMutationType() {
+    public @Nullable GraphQLObjectType getMutationType() {
         return mutationType;
     }
 
     /**
      * @return the Subscription type of the schema of null if there is not one
      */
-    public GraphQLObjectType getSubscriptionType() {
+    public @Nullable GraphQLObjectType getSubscriptionType() {
         return subscriptionType;
     }
 
