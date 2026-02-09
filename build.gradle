@@ -16,7 +16,7 @@ plugins {
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
-    id "net.ltgt.errorprone" version '4.3.0'
+    id "net.ltgt.errorprone" version '5.0.0'
     //
     // Kotlin just for tests - not production code
     id 'org.jetbrains.kotlin.jvm' version '2.3.0'
