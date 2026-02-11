@@ -1,8 +1,10 @@
 name: Validate Files
 
 # This workflow validates that all files in the repository comply with:
-# 1. Windows filename compatibility (no reserved characters: < > : " | ? * \)
-# 2. File size limits (no files larger than 10MB)
+# 1. Windows filename compatibility — no reserved characters (< > : " | ? * \)
+#    so the repo can be cloned on Windows systems.
+# 2. File size limits — no files larger than 10 MB. Many enterprise users mirror
+#    graphql-java into internal repositories that enforce file size limits.
 
 on:
   push:

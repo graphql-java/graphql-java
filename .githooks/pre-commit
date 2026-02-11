@@ -1,7 +1,11 @@
 #!/bin/bash
 
 # Pre-commit hook to enforce Windows compatibility and file size limits
-# This hook prevents commits that would fail on Windows systems or that contain overly large files
+#
+# 1. Windows filenames: prevents characters that are reserved on Windows (< > : " | ? * \)
+#    so the repo can be cloned on Windows systems.
+# 2. File size: rejects files larger than 10 MB. Many enterprise users mirror graphql-java
+#    into internal repositories that enforce file size limits.
 
 # ANSI color codes for better output readability
 RED='\033[0;31m'
