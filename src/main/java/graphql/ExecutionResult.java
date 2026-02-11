@@ -1,6 +1,10 @@
 package graphql;
 
 
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -9,6 +13,7 @@ import java.util.function.Consumer;
  * This simple value class represents the result of performing a graphql query.
  */
 @PublicApi
+@NullMarked
 @SuppressWarnings("TypeParameterUnusedInFormals")
 public interface ExecutionResult {
 
@@ -22,16 +27,16 @@ public interface ExecutionResult {
      *
      * @return the data in the result or null if there is none
      */
-    <T> T getData();
+    <T> @Nullable T getData();
 
     /**
      * The graphql specification specifies:
-     *
+     * <p>
      * "If an error was encountered before execution begins, the data entry should not be present in the result.
      * If an error was encountered during the execution that prevented a valid response, the data entry in the response should be null."
-     *
+     * <p>
      * This allows to distinguish between the cases where {@link #getData()} returns null.
-     *
+     * <p>
      * See : <a href="https://graphql.github.io/graphql-spec/June2018/#sec-Data">https://graphql.github.io/graphql-spec/June2018/#sec-Data</a>
      *
      * @return <code>true</code> if the entry "data" should be present in the result
@@ -42,14 +47,14 @@ public interface ExecutionResult {
     /**
      * @return a map of extensions or null if there are none
      */
-    Map<Object, Object> getExtensions();
+    @Nullable Map<Object, Object> getExtensions();
 
 
     /**
      * The graphql specification says that result of a call should be a map that follows certain rules on what items
      * should be present.  Certain JSON serializers may or may interpret {@link ExecutionResult} to spec, so this method
      * is provided to produce a map that strictly follows the specification.
-     *
+     * <p>
      * See : <a href="https://spec.graphql.org/October2021/#sec-Response-Format">https://spec.graphql.org/October2021/#sec-Response-Format</a>
      *
      * @return a map of the result that strictly follows the spec
@@ -88,6 +93,7 @@ public interface ExecutionResult {
         return ExecutionResultImpl.newExecutionResult();
     }
 
+    @NullUnmarked
     interface Builder<B extends Builder<B>> {
 
         /**

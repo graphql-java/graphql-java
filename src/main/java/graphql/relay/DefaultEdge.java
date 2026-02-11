@@ -1,25 +1,27 @@
 package graphql.relay;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
 import static graphql.Assert.assertNotNull;
 
 @PublicApi
+@NullMarked
 public class DefaultEdge<T> implements Edge<T> {
 
-    private final T node;
+    private final @Nullable T node;
     private final ConnectionCursor cursor;
 
-    public DefaultEdge(T node, ConnectionCursor cursor) {
+    public DefaultEdge(@Nullable T node, ConnectionCursor cursor) {
         this.cursor = assertNotNull(cursor, "cursor cannot be null");
         this.node = node;
     }
 
-
     @Override
-    public T getNode() {
+    public @Nullable T getNode() {
         return node;
     }
 
@@ -29,7 +31,7 @@ public class DefaultEdge<T> implements Edge<T> {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }
