@@ -88,8 +88,7 @@ jobs:
               echo ""
               echo "Please consider one of these options:"
               echo "  1. Split the file into smaller parts with suffixes .part1, .part2, etc."
-              echo "  2. Use Git Large File Storage (Git LFS): https://git-lfs.github.com/"
-              echo "  3. Remove unnecessary content from the file"
+              echo "  2. Remove unnecessary content from the file"
               exit 1
           else
               echo "✓ All files are within the 10MB size limit"

@@ -67,8 +67,7 @@ if [ -n "$LARGE_FILES" ]; then
     echo -e "$LARGE_FILES"
     echo -e "${YELLOW}Please consider one of these options:${NC}"
     echo -e "${YELLOW}  1. Split the file into smaller parts with suffixes .part1, .part2, etc.${NC}"
-    echo -e "${YELLOW}  2. Use Git Large File Storage (Git LFS): https://git-lfs.github.com/${NC}"
-    echo -e "${YELLOW}  3. Remove unnecessary content from the file${NC}"
+    echo -e "${YELLOW}  2. Remove unnecessary content from the file${NC}"
     ERRORS_FOUND=1
 fi
 

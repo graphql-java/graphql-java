@@ -38,7 +38,6 @@ The pre-commit hook will automatically check for:
 
 - **Large files**: Files larger than 10MB will be rejected. If you need to commit large files, consider:
   - Splitting them into smaller parts (`.part1`, `.part2`, etc.)
-  - Using [Git Large File Storage (LFS)](https://git-lfs.github.com/)
   - Reducing the file size
 
 To bypass the hooks temporarily (not recommended), use `git commit --no-verify`.
