@@ -43,6 +43,7 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
@@ -466,11 +467,12 @@ public class OperationValidator implements DocumentVisitor {
         return sb.toString();
     }
 
-    private Boolean isExperimentalApiKeyEnabled(String key) {
-        return (validationContext != null &&
-                validationContext.getGraphQLContext() != null ||
-                validationContext.getGraphQLContext().get(key) != null ||
-                ((Boolean) validationContext.getGraphQLContext().get(key)));
+    private boolean isExperimentalApiKeyEnabled(String key) {
+        if (validationContext == null || validationContext.getGraphQLContext() == null) {
+            return false;
+        }
+        Object value = validationContext.getGraphQLContext().get(key);
+        return value instanceof Boolean && (Boolean) value;
     }
 
     private void checkDocument(Document document) {
@@ -1039,11 +1041,14 @@ public class OperationValidator implements DocumentVisitor {
             fieldMap.put(responseName, new LinkedHashSet<>());
         }
         GraphQLOutputType fieldType = null;
-        GraphQLUnmodifiedType unwrappedParent = unwrapAll(parentType);
+        GraphQLUnmodifiedType unwrappedParent = parentType != null ? unwrapAll(parentType) : null;
         if (unwrappedParent instanceof GraphQLFieldsContainer) {
             GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) unwrappedParent;
-            GraphQLFieldDefinition fieldDefinition = validationContext.getSchema().getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
-            fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
+            GraphQLCodeRegistry codeRegistry = validationContext.getSchema().getCodeRegistry();
+            if (codeRegistry != null) {
+                GraphQLFieldDefinition fieldDefinition = codeRegistry.getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
+                fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
+            }
         }
         fieldMap.get(responseName).add(new FieldAndType(field, fieldType, unwrappedParent));
     }
@@ -1119,7 +1124,7 @@ public class OperationValidator implements DocumentVisitor {
         return result;
     }
 
-    private boolean isInterfaceOrUnion(GraphQLType type) {
+    private boolean isInterfaceOrUnion(@Nullable GraphQLType type) {
         return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType;
     }
 
@@ -1193,6 +1198,12 @@ public class OperationValidator implements DocumentVisitor {
             }
             GraphQLType typeA = typeAOriginal;
             GraphQLType typeB = fieldAndType.graphQLType;
+            if (typeA == null || typeB == null) {
+                if (typeA != typeB) {
+                    return mkNotSameTypeError(path, fields, typeA, typeB);
+                }
+                continue;
+            }
             while (true) {
                 if (isNonNull(typeA) || isNonNull(typeB)) {
                     if (isNullable(typeA) || isNullable(typeB)) {
@@ -1243,9 +1254,9 @@ public class OperationValidator implements DocumentVisitor {
     private static class FieldAndType {
         final Field field;
         final @Nullable GraphQLType graphQLType;
-        final GraphQLType parentType;
+        final @Nullable GraphQLType parentType;
 
-        public FieldAndType(Field field, @Nullable GraphQLType graphQLType, GraphQLType parentType) {
+        public FieldAndType(Field field, @Nullable GraphQLType graphQLType, @Nullable GraphQLType parentType) {
             this.field = field;
             this.graphQLType = graphQLType;
             this.parentType = parentType;
@@ -1320,7 +1331,8 @@ public class OperationValidator implements DocumentVisitor {
         if (type instanceof GraphQLObjectType) {
             return Collections.singletonList(type);
         } else if (type instanceof GraphQLInterfaceType) {
-            return validationContext.getSchema().getImplementations((GraphQLInterfaceType) type);
+            List<GraphQLObjectType> implementations = validationContext.getSchema().getImplementations((GraphQLInterfaceType) type);
+            return implementations != null ? implementations : Collections.emptyList();
         } else if (type instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) type).getTypes();
         } else {

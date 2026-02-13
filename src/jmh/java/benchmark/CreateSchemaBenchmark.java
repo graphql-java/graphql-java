@@ -1,6 +1,7 @@
 package benchmark;
 
 import graphql.schema.GraphQLSchema;
+import graphql.schema.idl.FastSchemaGenerator;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(2)
 public class CreateSchemaBenchmark {
 
-    static String largeSDL = BenchmarkUtils.loadResource("large-schema-3.graphqls");
+    static String largeSDL = BenchmarkUtils.loadResource("large-schema-4.graphqls");
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
@@ -37,9 +38,24 @@ public class CreateSchemaBenchmark {
         blackhole.consume(createSchema(largeSDL));
     }
 
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public void benchmarkLargeSchemaCreateAvgTimeFast(Blackhole blackhole) {
+        blackhole.consume(createSchemaFast(largeSDL));
+    }
+
     private static GraphQLSchema createSchema(String sdl) {
         TypeDefinitionRegistry registry = new SchemaParser().parse(sdl);
         return new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING);
+    }
+
+    private static GraphQLSchema createSchemaFast(String sdl) {
+        TypeDefinitionRegistry registry = new SchemaParser().parse(sdl);
+        return new FastSchemaGenerator().makeExecutableSchema(
+                SchemaGenerator.Options.defaultOptions().withValidation(false),
+                registry,
+                RuntimeWiring.MOCKED_WIRING);
     }
 
     @SuppressWarnings("InfiniteLoopStatement")

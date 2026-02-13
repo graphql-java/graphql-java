@@ -3,8 +3,9 @@ package graphql.relay;
 import graphql.PublicApi;
 import graphql.TrivialDataFetcher;
 import graphql.collect.ImmutableKit;
-import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -18,7 +19,8 @@ import static java.util.Base64.getDecoder;
 import static java.util.Base64.getEncoder;
 
 @PublicApi
-public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, TrivialDataFetcher<Connection<T>> {
+@NullMarked
+public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>> {
 
     static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
     private final String prefix;
@@ -26,7 +28,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
 
     public SimpleListConnection(List<T> data, String prefix) {
         this.data = assertNotNull(data, " data cannot be null");
-        assertTrue(prefix != null && !prefix.isEmpty(), "prefix cannot be null or empty");
+        assertTrue(!prefix.isEmpty(), "prefix cannot be empty");
         this.prefix = prefix;
     }
 
@@ -120,7 +122,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
      *
      * @return a connection cursor
      */
-    public ConnectionCursor cursorForObjectInConnection(T object) {
+    public @Nullable ConnectionCursor cursorForObjectInConnection(T object) {
         int index = data.indexOf(object);
         if (index == -1) {
             return null;
@@ -129,7 +131,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
         return new DefaultConnectionCursor(cursor);
     }
 
-    private int getOffsetFromCursor(String cursor, int defaultValue) {
+    private int getOffsetFromCursor(@Nullable String cursor, int defaultValue) {
         if (cursor == null) {
             return defaultValue;
         }

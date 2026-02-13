@@ -10,11 +10,13 @@ import graphql.validation.OperationValidationRule;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Predicate;
 
+import static graphql.Assert.assertNotNull;
 import static java.util.Optional.ofNullable;
 
 /**
@@ -23,6 +25,7 @@ import static java.util.Optional.ofNullable;
  * and the provided schema.
  */
 @PublicApi
+@NullMarked
 public class ParseAndValidate {
 
     /**
@@ -46,7 +49,7 @@ public class ParseAndValidate {
     public static ParseAndValidateResult parseAndValidate(@NonNull GraphQLSchema graphQLSchema, @NonNull ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
-            List<ValidationError> errors = validate(graphQLSchema, result.getDocument(), executionInput.getLocale());
+            List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"), executionInput.getLocale());
             return result.transform(builder -> builder.validationErrors(errors));
         }
         return result;

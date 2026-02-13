@@ -4,19 +4,22 @@ import graphql.PublicApi;
 import graphql.language.Field;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Objects;
 
 @PublicApi
+@NullMarked
 public class FieldComplexityEnvironment {
     private final Field field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLCompositeType parentType;
-    private final FieldComplexityEnvironment parentEnvironment;
+    private final @Nullable FieldComplexityEnvironment parentEnvironment;
     private final Map<String, Object> arguments;
 
-    public FieldComplexityEnvironment(Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, Map<String, Object> arguments, FieldComplexityEnvironment parentEnvironment) {
+    public FieldComplexityEnvironment(Field field, GraphQLFieldDefinition fieldDefinition, GraphQLCompositeType parentType, Map<String, Object> arguments, @Nullable FieldComplexityEnvironment parentEnvironment) {
         this.field = field;
         this.fieldDefinition = fieldDefinition;
         this.parentType = parentType;
@@ -36,7 +39,7 @@ public class FieldComplexityEnvironment {
         return parentType;
     }
 
-    public FieldComplexityEnvironment getParentEnvironment() {
+    public @Nullable FieldComplexityEnvironment getParentEnvironment() {
         return parentEnvironment;
     }
 
@@ -55,7 +58,7 @@ public class FieldComplexityEnvironment {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 

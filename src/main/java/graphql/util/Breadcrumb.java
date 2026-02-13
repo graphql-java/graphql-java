@@ -1,6 +1,8 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.StringJoiner;
@@ -14,6 +16,7 @@ import java.util.StringJoiner;
  * @param <T> the generic type of object
  */
 @PublicApi
+@NullMarked
 public class Breadcrumb<T> {
 
     private final T node;
@@ -33,7 +36,7 @@ public class Breadcrumb<T> {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }
