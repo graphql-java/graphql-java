@@ -123,6 +123,7 @@ public class QueryComplexityLimits {
      * Builder for QueryComplexityLimits.
      */
     @PublicApi
+    @NullMarked
     public static class Builder {
         private int maxDepth = Integer.MAX_VALUE;
         private int maxFieldsCount = Integer.MAX_VALUE;
