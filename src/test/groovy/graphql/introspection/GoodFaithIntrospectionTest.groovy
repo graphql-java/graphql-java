@@ -6,7 +6,6 @@ import graphql.TestUtil
 import graphql.execution.CoercedVariables
 import graphql.language.Document
 import graphql.normalized.ExecutableNormalizedOperationFactory
-import graphql.validation.QueryComplexityLimits
 import spock.lang.Specification
 
 class GoodFaithIntrospectionTest extends Specification {
@@ -15,13 +14,10 @@ class GoodFaithIntrospectionTest extends Specification {
 
     def setup() {
         GoodFaithIntrospection.enabledJvmWide(true)
-        // Disable validation complexity limits so GoodFaithIntrospection can be tested
-        QueryComplexityLimits.setDefaultLimits(QueryComplexityLimits.NONE)
     }
 
     def cleanup() {
         GoodFaithIntrospection.enabledJvmWide(true)
-        QueryComplexityLimits.setDefaultLimits(QueryComplexityLimits.DEFAULT)
     }
 
     def "standard introspection query is inside limits just in general"() {

@@ -116,7 +116,6 @@ public class Introspection {
     public static Optional<ExecutionResult> isIntrospectionSensible(MergedSelectionSet mergedSelectionSet, ExecutionContext executionContext) {
         GraphQLContext graphQLContext = executionContext.getGraphQLContext();
 
-        boolean isIntrospection = false;
         for (String key : mergedSelectionSet.getKeys()) {
             String fieldName = mergedSelectionSet.getSubField(key).getName();
             if (fieldName.equals(SchemaMetaFieldDef.getName())
@@ -124,12 +123,8 @@ public class Introspection {
                 if (!isIntrospectionEnabled(graphQLContext)) {
                     return mkDisabledError(mergedSelectionSet.getSubField(key));
                 }
-                isIntrospection = true;
                 break;
             }
-        }
-        if (isIntrospection) {
-            return GoodFaithIntrospection.checkIntrospection(executionContext);
         }
         return Optional.empty();
     }

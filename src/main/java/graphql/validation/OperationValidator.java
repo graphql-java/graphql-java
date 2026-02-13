@@ -199,6 +199,9 @@ public class OperationValidator implements DocumentVisitor {
     // Max depth seen during current fragment traversal (for calculating fragment's internal depth)
     private int fragmentTraversalMaxDepth = 0;
 
+    // --- State: Good Faith Introspection ---
+    private final Map<String, Integer> introspectionFieldCounts = new HashMap<>();
+
     // --- Track whether we're in a context where fragment spread rules should run ---
     // fragmentSpreadVisitDepth == 0 means we're NOT inside a manually-traversed fragment => run non-fragment-spread checks
     // operationScope means we're inside an operation => can trigger fragment traversal
@@ -452,6 +455,49 @@ public class OperationValidator implements DocumentVisitor {
                 validateUniqueDirectiveNamesPerLocation(field, field.getDirectives());
             }
         }
+        // Good Faith Introspection: runs during fragment spread traversal too (operationScope)
+        if (operationScope && isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
+            checkGoodFaithIntrospection(field);
+        }
+    }
+
+    // --- GoodFaithIntrospection ---
+    private void checkGoodFaithIntrospection(Field field) {
+        GraphQLCompositeType parentType = validationContext.getParentType();
+        if (parentType == null) {
+            return;
+        }
+        String fieldName = field.getName();
+        String key = null;
+
+        // Check query-level introspection fields (__schema, __type).
+        // Only counted at the structural level (not during fragment traversal) to match ENO merging
+        // behavior where the same field from a direct selection and a fragment spread merge into one.
+        if (shouldRunNonFragmentSpreadChecks()) {
+            GraphQLObjectType queryType = validationContext.getSchema().getQueryType();
+            if (queryType != null && parentType.getName().equals(queryType.getName())) {
+                if ("__schema".equals(fieldName) || "__type".equals(fieldName)) {
+                    key = parentType.getName() + "." + fieldName;
+                }
+            }
+        }
+
+        // Check __Type fields that can form cycles.
+        // Counted during ALL traversals (including fragment spreads) because each occurrence
+        // at a different depth represents a separate cycle risk.
+        if ("__Type".equals(parentType.getName())) {
+            if ("fields".equals(fieldName) || "inputFields".equals(fieldName)
+                    || "interfaces".equals(fieldName) || "possibleTypes".equals(fieldName)) {
+                key = "__Type." + fieldName;
+            }
+        }
+
+        if (key != null) {
+            int count = introspectionFieldCounts.merge(key, 1, Integer::sum);
+            if (count > 1) {
+                throw GoodFaithIntrospectionExceeded.tooManyFields(key);
+            }
+        }
     }
 
     private void checkInlineFragment(InlineFragment inlineFragment) {
@@ -678,6 +724,7 @@ public class OperationValidator implements DocumentVisitor {
         currentFieldDepth = 0;
         maxFieldDepthSeen = 0;
         fragmentTraversalMaxDepth = 0;
+        introspectionFieldCounts.clear();
     }
 
     private void leaveSelectionSet(SelectionSet selectionSet) {

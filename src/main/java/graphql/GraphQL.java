@@ -23,11 +23,14 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.introspection.GoodFaithIntrospection;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
+import graphql.validation.GoodFaithIntrospectionExceeded;
 import graphql.validation.OperationValidationRule;
 import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationError;
+import graphql.validation.ValidationErrorType;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 
@@ -568,7 +571,12 @@ public class GraphQL {
             executionInput = executionInput.transform(builder -> builder.variables(parseResult.getVariables()));
             executionInputRef.set(executionInput);
 
-            final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
+            final List<ValidationError> errors;
+            try {
+                errors = validate(executionInput, document, graphQLSchema, instrumentationState);
+            } catch (GoodFaithIntrospectionExceeded e) {
+                return new PreparsedDocumentEntry(document, List.of(e.toBadFaithError()));
+            }
             if (!errors.isEmpty()) {
                 return new PreparsedDocumentEntry(document, errors);
             }
@@ -603,7 +611,29 @@ public class GraphQL {
         Predicate<OperationValidationRule> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
         Locale locale = executionInput.getLocale() != null ? executionInput.getLocale() : Locale.getDefault();
         QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
+
+        // Good Faith Introspection: apply tighter limits and enable the rule for introspection queries
+        boolean goodFaithActive = GoodFaithIntrospection.isEnabled(executionInput.getGraphQLContext())
+                && GoodFaithIntrospection.containsIntrospectionFields(document);
+        if (goodFaithActive) {
+            limits = GoodFaithIntrospection.goodFaithLimits(limits);
+        } else {
+            Predicate<OperationValidationRule> existing = validationRulePredicate;
+            validationRulePredicate = rule -> rule != OperationValidationRule.GOOD_FAITH_INTROSPECTION && existing.test(rule);
+        }
+
         List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale, limits);
+
+        // If good faith is active and a complexity limit error was produced, convert it to a bad faith error
+        if (goodFaithActive) {
+            for (ValidationError error : validationErrors) {
+                if (error.getValidationErrorType() == ValidationErrorType.MaxQueryFieldsExceeded
+                        || error.getValidationErrorType() == ValidationErrorType.MaxQueryDepthExceeded) {
+                    validationCtx.onCompleted(null, null);
+                    throw GoodFaithIntrospectionExceeded.tooBigOperation(error.getDescription());
+                }
+            }
+        }
 
         validationCtx.onCompleted(validationErrors, null);
         return validationErrors;
