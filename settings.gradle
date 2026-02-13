@@ -17,3 +17,5 @@ plugins {
 }
 
 rootProject.name = 'graphql-java'
+
+include 'high-performance'
