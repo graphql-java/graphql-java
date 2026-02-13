@@ -4,6 +4,8 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -26,6 +28,7 @@ import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FI
  * removed the type system objects will be able have proper hashCode/equals methods and be checked for proper equality.
  */
 @PublicApi
+@NullMarked
 public class GraphQLCodeRegistry {
 
     private final Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap;
@@ -191,6 +194,7 @@ public class GraphQLCodeRegistry {
         return new Builder(existingCodeRegistry);
     }
 
+    @NullUnmarked
     public static class Builder {
         private final Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap = new LinkedHashMap<>();
         private final Map<String, DataFetcherFactory<?>> systemDataFetcherMap = new LinkedHashMap<>();

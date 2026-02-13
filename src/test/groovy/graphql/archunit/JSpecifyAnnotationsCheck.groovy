@@ -1,4 +1,4 @@
-package graphql
+package graphql.archunit
 
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.core.importer.ImportOption
@@ -11,28 +11,6 @@ import spock.lang.Specification
 class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
-            "graphql.AssertException",
-            "graphql.Directives",
-            "graphql.ErrorClassification",
-            "graphql.ErrorType",
-            "graphql.ExceptionWhileDataFetching",
-            "graphql.ExecutionResult",
-            "graphql.GraphQLContext",
-            "graphql.GraphQLError",
-            "graphql.GraphqlErrorBuilder",
-            "graphql.GraphqlErrorException",
-            "graphql.ParseAndValidate",
-            "graphql.ParseAndValidateResult",
-            "graphql.Scalars",
-            "graphql.SerializationError",
-            "graphql.TypeMismatchError",
-            "graphql.TypeResolutionEnvironment",
-            "graphql.UnresolvedTypeError",
-            "graphql.agent.result.ExecutionTrackingResult",
-            "graphql.analysis.FieldComplexityCalculator",
-            "graphql.analysis.FieldComplexityEnvironment",
-            "graphql.analysis.MaxQueryComplexityInstrumentation",
-            "graphql.analysis.MaxQueryDepthInstrumentation",
             "graphql.analysis.QueryComplexityCalculator",
             "graphql.analysis.QueryComplexityInfo",
             "graphql.analysis.QueryDepthInfo",
@@ -125,7 +103,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.introspection.IntrospectionWithDirectivesSupport",
             "graphql.introspection.IntrospectionWithDirectivesSupport\$DirectivePredicateEnvironment",
             "graphql.language.AbstractDescribedNode",
-            "graphql.language.Argument",
             "graphql.language.AstNodeAdapter",
             "graphql.language.AstPrinter",
             "graphql.language.AstSignature",
@@ -157,7 +134,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.language.InterfaceTypeDefinition",
             "graphql.language.InterfaceTypeExtensionDefinition",
             "graphql.language.ListType",
-            "graphql.language.NamedNode",
             "graphql.language.Node",
             "graphql.language.NodeChildrenContainer",
             "graphql.language.NodeDirectivesBuilder",
@@ -206,16 +182,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.parser.Parser",
             "graphql.parser.ParserEnvironment",
             "graphql.parser.ParserOptions",
-            "graphql.relay.Connection",
-            "graphql.relay.ConnectionCursor",
-            "graphql.relay.DefaultConnection",
-            "graphql.relay.DefaultConnectionCursor",
-            "graphql.relay.DefaultEdge",
-            "graphql.relay.DefaultPageInfo",
-            "graphql.relay.Edge",
-            "graphql.relay.PageInfo",
-            "graphql.relay.Relay",
-            "graphql.relay.SimpleListConnection",
             "graphql.schema.AsyncDataFetcher",
             "graphql.schema.CoercingParseLiteralException",
             "graphql.schema.CoercingParseValueException",
@@ -226,14 +192,11 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.DefaultGraphqlTypeComparatorRegistry",
             "graphql.schema.DelegatingDataFetchingEnvironment",
             "graphql.schema.FieldCoordinates",
-            "graphql.schema.GraphQLAppliedDirective",
             "graphql.schema.GraphQLAppliedDirectiveArgument",
             "graphql.schema.GraphQLArgument",
-            "graphql.schema.GraphQLCodeRegistry",
             "graphql.schema.GraphQLCompositeType",
             "graphql.schema.GraphQLDirective",
             "graphql.schema.GraphQLDirectiveContainer",
-            "graphql.schema.GraphQLEnumType",
             "graphql.schema.GraphQLEnumValueDefinition",
             "graphql.schema.GraphQLFieldDefinition",
             "graphql.schema.GraphQLFieldsContainer",
@@ -245,9 +208,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.GraphQLInputType",
             "graphql.schema.GraphQLInputValueDefinition",
             "graphql.schema.GraphQLInterfaceType",
-            "graphql.schema.GraphQLList",
             "graphql.schema.GraphQLModifiedType",
-            "graphql.schema.GraphQLNamedInputType",
             "graphql.schema.GraphQLNamedOutputType",
             "graphql.schema.GraphQLNamedSchemaElement",
             "graphql.schema.GraphQLNamedType",
@@ -255,21 +216,15 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.GraphQLNullableType",
             "graphql.schema.GraphQLObjectType",
             "graphql.schema.GraphQLOutputType",
-            "graphql.schema.GraphQLScalarType",
-            "graphql.schema.GraphQLSchema",
             "graphql.schema.GraphQLSchemaElement",
-            "graphql.schema.GraphQLType",
             "graphql.schema.GraphQLTypeReference",
-            "graphql.schema.GraphQLTypeUtil",
             "graphql.schema.GraphQLTypeVisitor",
             "graphql.schema.GraphQLTypeVisitorStub",
-            "graphql.schema.GraphQLUnionType",
             "graphql.schema.GraphQLUnmodifiedType",
             "graphql.schema.GraphqlElementParentTree",
             "graphql.schema.GraphqlTypeComparatorEnvironment",
             "graphql.schema.GraphqlTypeComparatorRegistry",
             "graphql.schema.InputValueWithState",
-            "graphql.schema.PropertyDataFetcher",
             "graphql.schema.SchemaElementChildrenContainer",
             "graphql.schema.SchemaTransformer",
             "graphql.schema.SchemaTraverser",
@@ -285,7 +240,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.diff.reporting.PrintStreamReporter",
             "graphql.schema.diffing.SchemaGraph",
             "graphql.schema.idl.CombinedWiringFactory",
-            "graphql.schema.idl.DirectiveInfo",
             "graphql.schema.idl.MapEnumValuesProvider",
             "graphql.schema.idl.NaturalEnumValuesProvider",
             "graphql.schema.idl.RuntimeWiring",
@@ -307,8 +261,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.visibility.GraphqlFieldVisibility",
             "graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility",
             "graphql.schema.visitor.GraphQLSchemaTraversalControl",
-            "graphql.util.Anonymizer",
-            "graphql.util.Breadcrumb",
             "graphql.util.CyclicSchemaAnalyzer",
             "graphql.util.NodeAdapter",
             "graphql.util.NodeLocation",
@@ -321,10 +273,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.util.TraversalControl",
             "graphql.util.TraverserContext",
             "graphql.util.TreeTransformer",
-            "graphql.util.TreeTransformerUtil",
-            "graphql.validation.ValidationError",
-            "graphql.validation.ValidationErrorClassification",
-            "graphql.validation.ValidationErrorType"
+            "graphql.util.TreeTransformerUtil"
     ] as Set
 
     def "ensure all public API and experimental API classes have @NullMarked annotation"() {
@@ -374,4 +323,4 @@ ${annotatedButExempted.sort().join("\n")}
 Please remove them from the exemption list in ${JSpecifyAnnotationsCheck.class.simpleName}.groovy.""")
         }
     }
-} 
+}

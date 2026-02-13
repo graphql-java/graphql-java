@@ -4,6 +4,8 @@ package graphql;
 import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
 import graphql.schema.CoercingSerializeException;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +14,7 @@ import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
 
 @PublicApi
+@NullMarked
 public class SerializationError implements GraphQLError {
 
     private final String message;
@@ -38,7 +41,7 @@ public class SerializationError implements GraphQLError {
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return exception.getLocations();
     }
 
@@ -53,7 +56,7 @@ public class SerializationError implements GraphQLError {
     }
 
     @Override
-    public Map<String, Object> getExtensions() {
+    public @Nullable Map<String, Object> getExtensions() {
         return exception.getExtensions();
     }
 

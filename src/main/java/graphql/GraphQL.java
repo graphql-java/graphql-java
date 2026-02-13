@@ -564,7 +564,7 @@ public class GraphQL {
 
         ParseAndValidateResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
-            return new PreparsedDocumentEntry(parseResult.getSyntaxException().toInvalidSyntaxError());
+            return new PreparsedDocumentEntry(assertNotNull(parseResult.getSyntaxException(), "Parse result syntax exception cannot be null when failed").toInvalidSyntaxError());
         } else {
             final Document document = parseResult.getDocument();
             // they may have changed the document and the variables via instrumentation so update the reference to it
@@ -573,7 +573,7 @@ public class GraphQL {
 
             final List<ValidationError> errors;
             try {
-                errors = validate(executionInput, document, graphQLSchema, instrumentationState);
+                errors = validate(executionInput, assertNotNull(document, "Document cannot be null when parse succeeded"), graphQLSchema, instrumentationState);
             } catch (GoodFaithIntrospectionExceeded e) {
                 return new PreparsedDocumentEntry(document, List.of(e.toBadFaithError()));
             }

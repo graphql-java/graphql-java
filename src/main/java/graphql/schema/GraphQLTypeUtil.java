@@ -3,8 +3,9 @@ package graphql.schema;
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.introspection.Introspection;
-import graphql.schema.idl.DirectiveInfo;
+import graphql.Directives;
 import graphql.schema.idl.ScalarInfo;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Stack;
 import java.util.function.Predicate;
@@ -16,6 +17,7 @@ import static graphql.Assert.assertShouldNeverHappen;
  * A utility class that helps work with {@link graphql.schema.GraphQLType}s
  */
 @PublicApi
+@NullMarked
 public class GraphQLTypeUtil {
 
     /**
@@ -293,7 +295,7 @@ public class GraphQLTypeUtil {
                 return ScalarInfo.isGraphqlSpecifiedScalar((GraphQLScalarType) schemaElement);
             }
             if (schemaElement instanceof GraphQLDirective) {
-                return DirectiveInfo.isGraphqlSpecifiedDirective((GraphQLDirective) schemaElement);
+                return Directives.isBuiltInDirective((GraphQLDirective) schemaElement);
             }
             if (schemaElement instanceof GraphQLNamedType) {
                 return Introspection.isIntrospectionTypes((GraphQLNamedType) schemaElement);

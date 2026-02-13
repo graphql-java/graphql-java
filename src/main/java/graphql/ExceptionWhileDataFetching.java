@@ -3,6 +3,8 @@ package graphql;
 
 import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -16,13 +18,14 @@ import static java.lang.String.format;
  * This graphql error will be used if a runtime exception is encountered while a data fetcher is invoked
  */
 @PublicApi
+@NullMarked
 public class ExceptionWhileDataFetching implements GraphQLError {
 
     private final String message;
     private final List<Object> path;
     private final Throwable exception;
     private final List<SourceLocation> locations;
-    private final Map<String, Object> extensions;
+    private final @Nullable Map<String, Object> extensions;
 
     public ExceptionWhileDataFetching(ResultPath path, Throwable exception, SourceLocation sourceLocation) {
         this.path = assertNotNull(path).toList();
@@ -41,7 +44,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
      * exception into the ExceptionWhileDataFetching error and hence have custom "extension attributes"
      * per error message.
      */
-    private Map<String, Object> mkExtensions(Throwable exception) {
+    private @Nullable Map<String, Object> mkExtensions(Throwable exception) {
         Map<String, Object> extensions = null;
         if (exception instanceof GraphQLError) {
             Map<String, Object> map = ((GraphQLError) exception).getExtensions();
@@ -73,7 +76,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     }
 
     @Override
-    public Map<String, Object> getExtensions() {
+    public @Nullable Map<String, Object> getExtensions() {
         return extensions;
     }
 

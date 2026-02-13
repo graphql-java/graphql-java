@@ -10,6 +10,7 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.TypeResolver;
+import org.jspecify.annotations.NullMarked;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -32,10 +33,11 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 /**
  * This can be used to compose graphql runtime types that implement
  * that Relay specification.
- *
- * See <a href="https://facebook.github.io/relay/graphql/connections.htm">https://facebook.github.io/relay/graphql/connections.htm</a>
+ * <p>
+ * See <a href="https://relay.dev/graphql/connections.htm">https://relay.dev/graphql/connections.htm</a>
  */
 @PublicApi
+@NullMarked
 public class Relay {
 
     public static final String NODE = "Node";

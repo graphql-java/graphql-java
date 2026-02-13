@@ -1,6 +1,5 @@
 package graphql.validation;
 
-
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.i18n.I18n;
@@ -15,6 +14,8 @@ import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.InputValueWithState;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 
 @Internal
+@NullMarked
 public class ValidationContext {
 
     private final GraphQLSchema schema;
@@ -37,7 +39,7 @@ public class ValidationContext {
         this(schema, document, i18n, null);
     }
 
-    public ValidationContext(GraphQLSchema schema, Document document, I18n i18n, QueryComplexityLimits limits) {
+    public ValidationContext(GraphQLSchema schema, Document document, I18n i18n, @Nullable QueryComplexityLimits limits) {
         this.schema = schema;
         this.document = document;
         this.traversalContext = new TraversalContext(schema);
@@ -69,39 +71,39 @@ public class ValidationContext {
         return document;
     }
 
-    public FragmentDefinition getFragment(String name) {
+    public @Nullable FragmentDefinition getFragment(String name) {
         return fragmentDefinitionMap.get(name);
     }
 
-    public GraphQLCompositeType getParentType() {
+    public @Nullable GraphQLCompositeType getParentType() {
         return traversalContext.getParentType();
     }
 
-    public GraphQLInputType getInputType() {
+    public @Nullable GraphQLInputType getInputType() {
         return traversalContext.getInputType();
     }
 
-    public InputValueWithState getDefaultValue() {
+    public @Nullable InputValueWithState getDefaultValue() {
         return traversalContext.getDefaultValue();
     }
 
-    public GraphQLFieldDefinition getFieldDef() {
+    public @Nullable GraphQLFieldDefinition getFieldDef() {
         return traversalContext.getFieldDef();
     }
 
-    public GraphQLDirective getDirective() {
+    public @Nullable GraphQLDirective getDirective() {
         return traversalContext.getDirective();
     }
 
-    public GraphQLArgument getArgument() {
+    public @Nullable GraphQLArgument getArgument() {
         return traversalContext.getArgument();
     }
 
-    public GraphQLOutputType getOutputType() {
+    public @Nullable GraphQLOutputType getOutputType() {
         return traversalContext.getOutputType();
     }
 
-    public List<String> getQueryPath() {
+    public @Nullable List<String> getQueryPath() {
         return traversalContext.getQueryPath();
     }
 
