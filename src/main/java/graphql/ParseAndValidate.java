@@ -7,10 +7,12 @@ import graphql.parser.ParserEnvironment;
 import graphql.parser.ParserOptions;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.OperationValidationRule;
+import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -118,8 +120,23 @@ public class ParseAndValidate {
      * @return a result object that indicates how this operation went
      */
     public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<OperationValidationRule> rulePredicate, @NonNull Locale locale) {
+        return validate(graphQLSchema, parsedDocument, rulePredicate, locale, null);
+    }
+
+    /**
+     * This can be called to validate a parsed graphql query.
+     *
+     * @param graphQLSchema  the graphql schema to validate against
+     * @param parsedDocument the previously parsed document
+     * @param rulePredicate  this predicate is used to decide what validation rules will be applied
+     * @param locale         the current locale
+     * @param limits         optional query complexity limits to enforce
+     *
+     * @return a result object that indicates how this operation went
+     */
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<OperationValidationRule> rulePredicate, @NonNull Locale locale, @Nullable QueryComplexityLimits limits) {
         Validator validator = new Validator();
-        return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale);
+        return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale, limits);
     }
 
     /**

@@ -96,7 +96,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.incremental.IncrementalExecutionResultImpl",
             "graphql.incremental.IncrementalPayload",
             "graphql.incremental.StreamPayload",
-            "graphql.introspection.GoodFaithIntrospection",
             "graphql.introspection.Introspection",
             "graphql.introspection.IntrospectionQuery",
             "graphql.introspection.IntrospectionQueryBuilder",
