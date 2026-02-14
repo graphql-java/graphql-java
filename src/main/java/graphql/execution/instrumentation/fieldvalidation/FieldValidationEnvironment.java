@@ -4,6 +4,7 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ResultPath;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,7 @@ import java.util.Map;
  * @see FieldAndArguments
  */
 @PublicApi
+@NullMarked
 public interface FieldValidationEnvironment {
 
     /**

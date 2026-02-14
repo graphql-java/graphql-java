@@ -2,6 +2,7 @@ package graphql.execution.incremental;
 
 import graphql.ExperimentalApi;
 import graphql.normalized.incremental.NormalizedDeferredExecution;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -11,6 +12,7 @@ import org.jspecify.annotations.Nullable;
  * for the normalized representation of @defer.
  */
 @ExperimentalApi
+@NullMarked
 public class DeferredExecution {
     private final String label;
 

@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExperimentalApi;
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Map;
  */
 @ExperimentalApi
 @PublicSpi
+@NullMarked
 public interface ResponseMapFactory {
 
     /**
