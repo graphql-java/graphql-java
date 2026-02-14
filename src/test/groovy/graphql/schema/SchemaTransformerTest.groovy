@@ -1464,4 +1464,53 @@ type Rental {
         e.getMessage().contains("All types within a GraphQL schema must have unique names")
         e.getMessage().contains("ExistingType")
     }
+
+    def "can modify a built-in directive via schema transformation"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+            type Query {
+                hello: String @deprecated(reason: "use goodbye")
+                goodbye: String
+            }
+        """)
+
+        when:
+        GraphQLSchema newSchema = SchemaTransformer.transformSchema(schema, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName() == "deprecated") {
+                    def changedNode = node.transform({ builder ->
+                        builder.argument(GraphQLArgument.newArgument()
+                                .name("deletionDate")
+                                .type(Scalars.GraphQLString)
+                                .description("The date when this field will be removed"))
+                    })
+                    return changeNode(context, changedNode)
+                }
+                return TraversalControl.CONTINUE
+            }
+        })
+
+        then: "the modified built-in directive has the new argument"
+        def deprecatedDirective = newSchema.getDirective("deprecated")
+        deprecatedDirective != null
+        deprecatedDirective.getArguments().size() == 2
+        deprecatedDirective.getArgument("reason") != null
+        deprecatedDirective.getArgument("deletionDate") != null
+        deprecatedDirective.getArgument("deletionDate").getType() == Scalars.GraphQLString
+
+        and: "other built-in directives remain unchanged"
+        newSchema.getDirective("include").getArguments().size() == 1
+        newSchema.getDirective("skip").getArguments().size() == 1
+
+        and: "all built-in directives are still present"
+        newSchema.getDirective("include") != null
+        newSchema.getDirective("skip") != null
+        newSchema.getDirective("deprecated") != null
+        newSchema.getDirective("specifiedBy") != null
+        newSchema.getDirective("oneOf") != null
+        newSchema.getDirective("defer") != null
+        newSchema.getDirective("experimental_disableErrorPropagation") != null
+        newSchema.getDirectives().size() == schema.getDirectives().size()
+    }
 }

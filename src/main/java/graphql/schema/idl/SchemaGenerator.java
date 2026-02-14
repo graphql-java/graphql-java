@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.language.OperationTypeDefinition;
@@ -98,6 +99,9 @@ public class SchemaGenerator {
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
+        if (!options.isWithValidation()) {
+            throw new IllegalArgumentException("SchemaGenerator does not support disabling validation. Use FastSchemaGenerator instead.");
+        }
 
         TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
         typeRegistryCopy.merge(typeRegistry);
@@ -167,11 +171,18 @@ public class SchemaGenerator {
         private final boolean useCommentsAsDescription;
         private final boolean captureAstDefinitions;
         private final boolean useAppliedDirectivesOnly;
+        private final boolean withValidation;
 
         Options(boolean useCommentsAsDescription, boolean captureAstDefinitions, boolean useAppliedDirectivesOnly) {
+            this(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, true);
+        }
+
+        @ExperimentalApi
+        Options(boolean useCommentsAsDescription, boolean captureAstDefinitions, boolean useAppliedDirectivesOnly, boolean withValidation) {
             this.useCommentsAsDescription = useCommentsAsDescription;
             this.captureAstDefinitions = captureAstDefinitions;
             this.useAppliedDirectivesOnly = useAppliedDirectivesOnly;
+            this.withValidation = withValidation;
         }
 
         public boolean isUseCommentsAsDescription() {
@@ -186,8 +197,13 @@ public class SchemaGenerator {
             return useAppliedDirectivesOnly;
         }
 
+        @ExperimentalApi
+        public boolean isWithValidation() {
+            return withValidation;
+        }
+
         public static Options defaultOptions() {
-            return new Options(true, true, false);
+            return new Options(true, true, false, true);
         }
 
         /**
@@ -200,7 +216,7 @@ public class SchemaGenerator {
          * @return a new Options object
          */
         public Options useCommentsAsDescriptions(boolean useCommentsAsDescription) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, withValidation);
         }
 
         /**
@@ -212,7 +228,7 @@ public class SchemaGenerator {
          * @return a new Options object
          */
         public Options captureAstDefinitions(boolean captureAstDefinitions) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, withValidation);
         }
 
         /**
@@ -225,7 +241,23 @@ public class SchemaGenerator {
          * @return a new Options object
          */
         public Options useAppliedDirectivesOnly(boolean useAppliedDirectivesOnly) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, withValidation);
+        }
+
+        /**
+         * Controls whether the generated schema is validated after construction.
+         * <p>
+         * <b>Note:</b> This option is only supported by {@link FastSchemaGenerator}.
+         * The standard {@link SchemaGenerator} will throw {@link IllegalArgumentException}
+         * if validation is disabled.
+         *
+         * @param withValidation true to enable validation (default), false to skip validation
+         *
+         * @return a new Options object
+         */
+        @ExperimentalApi
+        public Options withValidation(boolean withValidation) {
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, withValidation);
         }
     }
 }
