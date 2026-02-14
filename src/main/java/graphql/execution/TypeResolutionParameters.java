@@ -27,8 +27,8 @@ public class TypeResolutionParameters {
     private final @Nullable Object value;
     private final Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
     private final GraphQLSchema schema;
-    private final Object context;
-    private final Object localContext;
+    private final @Nullable Object context;
+    private final @Nullable Object localContext;
     private final GraphQLContext graphQLContext;
     private final DataFetchingFieldSelectionSet selectionSet;
 
@@ -78,7 +78,7 @@ public class TypeResolutionParameters {
      * @deprecated use {@link #getGraphQLContext()} instead
      */
     @Deprecated(since = "2021-07-05")
-    public Object getContext() {
+    public @Nullable Object getContext() {
         return context;
     }
 
@@ -86,7 +86,7 @@ public class TypeResolutionParameters {
         return graphQLContext;
     }
 
-    public Object getLocalContext() {
+    public @Nullable Object getLocalContext() {
         return localContext;
     }
 

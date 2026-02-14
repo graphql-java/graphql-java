@@ -21,6 +21,10 @@ class ScalarLeavesTest extends Specification {
     ValidationContext validationContext = Mock(ValidationContext)
     ScalarLeaves scalarLeaves = new ScalarLeaves(validationContext, errorCollector)
 
+    def setup() {
+        validationContext.i18n(_, _) >> "test error message"
+    }
+
     def "subselection not allowed"() {
         given:
         Field field = newField("hello", SelectionSet.newSelectionSet([newField("world").build()]).build()).build()

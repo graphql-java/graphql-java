@@ -20,7 +20,6 @@ import graphql.schema.impl.SchemaUtil;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
@@ -58,8 +57,8 @@ import static java.util.Collections.singletonList;
 public class GraphQLSchema {
 
     private final GraphQLObjectType queryType;
-    private final GraphQLObjectType mutationType;
-    private final GraphQLObjectType subscriptionType;
+    private final @Nullable GraphQLObjectType mutationType;
+    private final @Nullable GraphQLObjectType subscriptionType;
     private final GraphQLObjectType introspectionSchemaType;
     private final ImmutableSet<GraphQLNamedType> additionalTypes;
     private final GraphQLFieldDefinition introspectionSchemaField;
@@ -69,9 +68,9 @@ public class GraphQLSchema {
     private final DirectivesUtil.DirectivesHolder directiveDefinitionsHolder;
     private final DirectivesUtil.DirectivesHolder schemaAppliedDirectivesHolder;
 
-    private final SchemaDefinition definition;
+    private final @Nullable SchemaDefinition definition;
     private final ImmutableList<SchemaExtensionDefinition> extensionDefinitions;
-    private final String description;
+    private final @Nullable String description;
     private final @Nullable GraphQLCodeRegistry codeRegistry;
 
     private final ImmutableMap<String, GraphQLNamedType> typeMap;
@@ -192,7 +191,7 @@ public class GraphQLSchema {
         ImmutableMap.Builder<String, ImmutableList<GraphQLObjectType>> interfaceMapBuilder = ImmutableMap.builder();
         for (Map.Entry<String, ImmutableList<String>> entry : finalInterfaceNameMap.entrySet()) {
             ImmutableList<GraphQLObjectType> objectTypes = map(entry.getValue(),
-                    name -> (GraphQLObjectType) finalTypeMap.get(name));
+                    name -> (GraphQLObjectType) assertNotNull(finalTypeMap.get(name)));
             interfaceMapBuilder.put(entry.getKey(), objectTypes);
         }
         ImmutableMap<String, ImmutableList<GraphQLObjectType>> finalInterfaceMap = interfaceMapBuilder.build();
@@ -580,14 +579,14 @@ public class GraphQLSchema {
     /**
      * @return the Mutation type of the schema of null if there is not one
      */
-    public GraphQLObjectType getMutationType() {
+    public @Nullable GraphQLObjectType getMutationType() {
         return mutationType;
     }
 
     /**
      * @return the Subscription type of the schema of null if there is not one
      */
-    public GraphQLObjectType getSubscriptionType() {
+    public @Nullable GraphQLObjectType getSubscriptionType() {
         return subscriptionType;
     }
 
@@ -994,14 +993,6 @@ public class GraphQLSchema {
             return this;
         }
 
-<<<<<<< HEAD
-        public Builder clearDirectives() {
-            this.additionalDirectives.clear();
-            return this;
-        }
-
-=======
->>>>>>> master
         public Builder withSchemaDirectives(GraphQLDirective... directives) {
             for (GraphQLDirective directive : directives) {
                 withSchemaDirective(directive);

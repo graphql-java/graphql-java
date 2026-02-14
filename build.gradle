@@ -11,7 +11,7 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "9.3.0"
+    id "com.gradleup.shadow" version "9.3.1"
     id "biz.aQute.bnd.builder" version "7.1.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
@@ -19,7 +19,7 @@ plugins {
     id "net.ltgt.errorprone" version '4.3.0'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.2.21'
+    id 'org.jetbrains.kotlin.jvm' version '2.3.0'
 }
 
 java {
