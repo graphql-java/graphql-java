@@ -601,15 +601,15 @@ public class AstPrinter {
         return assertShouldNeverHappen("We have a missing printer implementation for %s : report a bug!", clazz);
     }
 
-    private static <T> boolean isEmpty(List<T> list) {
+    private static <T> boolean isEmpty(@Nullable List<T> list) {
         return list == null || list.isEmpty();
     }
 
-    private static boolean isEmpty(String s) {
+    private static boolean isEmpty(@Nullable String s) {
         return s == null || s.isBlank();
     }
 
-    private static <T> List<T> nvl(List<T> list) {
+    private static <T> List<T> nvl(@Nullable List<T> list) {
         return list != null ? list : ImmutableKit.emptyList();
     }
 
@@ -744,7 +744,7 @@ public class AstPrinter {
     }
 
     @SuppressWarnings("SameParameterValue")
-    String wrap(String start, Node maybeNode, String end) {
+    String wrap(String start, @Nullable Node maybeNode, String end) {
         if (maybeNode == null) {
             return "";
         }
