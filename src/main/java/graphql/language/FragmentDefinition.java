@@ -84,8 +84,8 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     }
 
     @Override
-    public @Nullable SelectionSet getSelectionSet() {
-        return selectionSet;
+    public SelectionSet getSelectionSet() {
+        return assertNotNull(selectionSet, () -> "selectionSet cannot be null");
     }
 
     @Override
@@ -93,9 +93,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         List<Node> result = new ArrayList<>();
         result.add(typeCondition);
         result.addAll(directives.getDirectives());
-        if (selectionSet != null) {
-            result.add(selectionSet);
-        }
+        result.add(selectionSet);
         return result;
     }
 
