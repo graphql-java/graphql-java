@@ -61,7 +61,7 @@ import static graphql.Assert.assertNotNull;
  * </pre>
  * These examples make clear that you need to consider all merged fields together to have the full picture.
  * <p>
- * The actual logic when fields can be successfully merged together is implemented in {#graphql.validation.rules.OverlappingFieldsCanBeMerged}
+ * The actual logic when fields can be successfully merged together is implemented in {#graphql.validation.OperationValidator}
  */
 @PublicApi
 @NullMarked
