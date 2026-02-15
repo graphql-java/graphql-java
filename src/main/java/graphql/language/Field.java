@@ -9,6 +9,7 @@ import graphql.util.Interning;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -230,14 +231,15 @@ public class Field extends AbstractNode<Field>
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
-        private @Nullable SourceLocation sourceLocation;
+        private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
-        private @Nullable String name;
-        private @Nullable String alias;
+        private String name;
+        private String alias;
         private ImmutableList<Argument> arguments = emptyList();
         private ImmutableList<Directive> directives = emptyList();
-        private @Nullable SelectionSet selectionSet;
+        private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private ImmutableMap<String, String> additionalData = emptyMap();
 
@@ -256,7 +258,7 @@ public class Field extends AbstractNode<Field>
             this.additionalData = copyOf(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
@@ -271,7 +273,7 @@ public class Field extends AbstractNode<Field>
             return this;
         }
 
-        public Builder alias(@Nullable String alias) {
+        public Builder alias(String alias) {
             this.alias = alias;
             return this;
         }
@@ -292,7 +294,7 @@ public class Field extends AbstractNode<Field>
             return this;
         }
 
-        public Builder selectionSet(@Nullable SelectionSet selectionSet) {
+        public Builder selectionSet(SelectionSet selectionSet) {
             this.selectionSet = selectionSet;
             return this;
         }

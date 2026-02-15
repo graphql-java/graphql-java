@@ -7,6 +7,7 @@ import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -137,10 +138,11 @@ public class FragmentSpread extends AbstractNode<FragmentSpread>
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
-        private @Nullable SourceLocation sourceLocation;
+        private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
-        private @Nullable String name;
+        private String name;
         private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -157,7 +159,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread>
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }

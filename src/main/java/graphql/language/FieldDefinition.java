@@ -7,6 +7,7 @@ import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -167,12 +168,13 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
-        private @Nullable SourceLocation sourceLocation;
-        private @Nullable String name;
+        private SourceLocation sourceLocation;
+        private String name;
         private ImmutableList<Comment> comments = emptyList();
-        private @Nullable Type type;
-        private @Nullable Description description;
+        private Type type;
+        private Description description;
         private ImmutableList<InputValueDefinition> inputValueDefinitions = emptyList();
         private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -193,7 +195,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
@@ -213,7 +215,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
             return this;
         }
 
-        public Builder description(@Nullable Description description) {
+        public Builder description(Description description) {
             this.description = description;
             return this;
         }
