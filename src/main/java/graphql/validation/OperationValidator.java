@@ -69,7 +69,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -90,8 +90,7 @@ import static graphql.schema.GraphQLTypeUtil.isScalar;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
-import static graphql.util.FpKit.filterSet;
-import static graphql.util.FpKit.groupingBy;
+
 import static graphql.validation.ValidationError.newValidationError;
 import static graphql.validation.ValidationErrorType.BadValueForDefaultArg;
 import static graphql.validation.ValidationErrorType.DuplicateArgumentNames;
@@ -328,16 +327,28 @@ public class OperationValidator implements DocumentVisitor {
     // fragmentRetraversalDepth == 0 means we're NOT inside a manually-traversed fragment => run non-fragment-spread checks
     // operationScope means we're inside an operation => can trigger fragment traversal
 
+    private final boolean allRulesEnabled;
+
     public OperationValidator(ValidationContext validationContext, ValidationErrorCollector errorCollector, Predicate<OperationValidationRule> rulePredicate) {
         this.validationContext = validationContext;
         this.errorCollector = errorCollector;
         this.validationUtil = new ValidationUtil();
         this.rulePredicate = rulePredicate;
+        this.allRulesEnabled = detectAllRulesEnabled(rulePredicate);
         prepareFragmentSpreadsMap();
     }
 
+    private static boolean detectAllRulesEnabled(Predicate<OperationValidationRule> predicate) {
+        for (OperationValidationRule rule : OperationValidationRule.values()) {
+            if (!predicate.test(rule)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private boolean isRuleEnabled(OperationValidationRule rule) {
-        return rulePredicate.test(rule);
+        return allRulesEnabled || rulePredicate.test(rule);
     }
 
     /**
@@ -909,8 +920,8 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void validateNoFragmentCycles(FragmentDefinition fragmentDefinition) {
-        LinkedList<String> path = new LinkedList<>();
-        path.add(0, fragmentDefinition.getName());
+        ArrayList<String> path = new ArrayList<>();
+        path.add(fragmentDefinition.getName());
         Map<String, Set<String>> transitiveSpreads = buildTransitiveSpreads(path, new HashMap<>());
 
         for (Map.Entry<String, Set<String>> entry : transitiveSpreads.entrySet()) {
@@ -921,8 +932,8 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
-    private Map<String, Set<String>> buildTransitiveSpreads(LinkedList<String> path, Map<String, Set<String>> transitiveSpreads) {
-        String name = path.peekFirst();
+    private Map<String, Set<String>> buildTransitiveSpreads(ArrayList<String> path, Map<String, Set<String>> transitiveSpreads) {
+        String name = path.get(path.size() - 1);
         if (transitiveSpreads.containsKey(name)) {
             return transitiveSpreads;
         }
@@ -942,8 +953,8 @@ public class OperationValidator implements DocumentVisitor {
             if (path.contains(child) || transitiveSpreads.containsKey(child)) {
                 continue;
             }
-            LinkedList<String> childPath = new LinkedList<>(path);
-            childPath.add(0, child);
+            ArrayList<String> childPath = new ArrayList<>(path);
+            childPath.add(child);
             buildTransitiveSpreads(childPath, transitiveSpreads);
         }
         return transitiveSpreads;
@@ -959,7 +970,7 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- NoUnusedFragments ---
     private void validateNoUnusedFragments() {
-        List<String> allUsedFragments = new ArrayList<>();
+        Set<String> allUsedFragments = new HashSet<>();
         for (List<String> fragmentsInOneOperation : fragmentsUsedDirectlyInOperation) {
             for (String fragment : fragmentsInOneOperation) {
                 collectUsedFragmentsInDefinition(allUsedFragments, fragment);
@@ -973,9 +984,8 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
-    private void collectUsedFragmentsInDefinition(List<String> result, String fragmentName) {
-        if (result.contains(fragmentName)) return;
-        result.add(fragmentName);
+    private void collectUsedFragmentsInDefinition(Set<String> result, String fragmentName) {
+        if (!result.add(fragmentName)) return;
         List<String> spreadList = spreadsInDefinition.get(fragmentName);
         if (spreadList == null) {
             return;
@@ -991,7 +1001,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void overlappingFieldsImpl(SelectionSet selectionSet, @Nullable GraphQLOutputType graphQLOutputType) {
-        Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>();
+        Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>(selectionSet.getSelections().size());
         Set<String> visitedFragments = new LinkedHashSet<>();
         overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments);
         List<Conflict> conflicts = findConflicts(fieldMap);
@@ -1037,9 +1047,6 @@ public class OperationValidator implements DocumentVisitor {
 
     private void overlappingFields_collectFieldsForField(Map<String, Set<FieldAndType>> fieldMap, @Nullable GraphQLType parentType, Field field) {
         String responseName = field.getResultKey();
-        if (!fieldMap.containsKey(responseName)) {
-            fieldMap.put(responseName, new LinkedHashSet<>());
-        }
         GraphQLOutputType fieldType = null;
         GraphQLUnmodifiedType unwrappedParent = parentType != null ? unwrapAll(parentType) : null;
         if (unwrappedParent instanceof GraphQLFieldsContainer) {
@@ -1050,7 +1057,7 @@ public class OperationValidator implements DocumentVisitor {
                 fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
             }
         }
-        fieldMap.get(responseName).add(new FieldAndType(field, fieldType, unwrappedParent));
+        fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(new FieldAndType(field, fieldType, unwrappedParent));
     }
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
@@ -1109,17 +1116,38 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private List<Set<FieldAndType>> groupByCommonParents(Set<FieldAndType> fields) {
-        Set<FieldAndType> abstractTypes = filterSet(fields, fieldAndType -> isInterfaceOrUnion(fieldAndType.parentType));
-        Set<FieldAndType> concreteTypes = filterSet(fields, fieldAndType -> fieldAndType.parentType instanceof GraphQLObjectType);
-        if (concreteTypes.isEmpty()) {
-            return Collections.singletonList(abstractTypes);
+        // Single-pass: partition into abstract types and concrete groups simultaneously
+        List<FieldAndType> abstractTypes = null;
+        Map<GraphQLType, Set<FieldAndType>> concreteGroups = null;
+
+        for (FieldAndType fieldAndType : fields) {
+            if (isInterfaceOrUnion(fieldAndType.parentType)) {
+                if (abstractTypes == null) {
+                    abstractTypes = new ArrayList<>();
+                }
+                abstractTypes.add(fieldAndType);
+            } else if (fieldAndType.parentType instanceof GraphQLObjectType) {
+                if (concreteGroups == null) {
+                    concreteGroups = new LinkedHashMap<>();
+                }
+                concreteGroups.computeIfAbsent(fieldAndType.parentType, k -> new LinkedHashSet<>()).add(fieldAndType);
+            }
         }
-        Map<GraphQLType, ImmutableList<FieldAndType>> groupsByConcreteParent = groupingBy(concreteTypes, fieldAndType -> fieldAndType.parentType);
-        List<Set<FieldAndType>> result = new ArrayList<>();
-        for (ImmutableList<FieldAndType> concreteGroup : groupsByConcreteParent.values()) {
-            Set<FieldAndType> oneResultGroup = new LinkedHashSet<>(concreteGroup);
-            oneResultGroup.addAll(abstractTypes);
-            result.add(oneResultGroup);
+
+        if (concreteGroups == null || concreteGroups.isEmpty()) {
+            // No concrete types — return all abstract types as a single group
+            if (abstractTypes == null) {
+                return Collections.singletonList(fields);
+            }
+            return Collections.singletonList(new LinkedHashSet<>(abstractTypes));
+        }
+
+        List<Set<FieldAndType>> result = new ArrayList<>(concreteGroups.size());
+        for (Set<FieldAndType> concreteGroup : concreteGroups.values()) {
+            if (abstractTypes != null) {
+                concreteGroup.addAll(abstractTypes);
+            }
+            result.add(concreteGroup);
         }
         return result;
     }
@@ -1349,10 +1377,10 @@ public class OperationValidator implements DocumentVisitor {
     private void validateProvidedNonNullArguments_field(Field field) {
         GraphQLFieldDefinition fieldDef = validationContext.getFieldDef();
         if (fieldDef == null) return;
-        Map<String, Argument> argumentMap = argumentMap(field.getArguments());
+        List<Argument> providedArguments = field.getArguments();
 
         for (GraphQLArgument graphQLArgument : fieldDef.getArguments()) {
-            Argument argument = argumentMap.get(graphQLArgument.getName());
+            Argument argument = findArgumentByName(providedArguments, graphQLArgument.getName());
             boolean nonNullType = isNonNull(graphQLArgument.getType());
             boolean noDefaultValue = graphQLArgument.getArgumentDefaultValue().isNotSet();
             if (argument == null && nonNullType && noDefaultValue) {
@@ -1372,10 +1400,10 @@ public class OperationValidator implements DocumentVisitor {
     private void validateProvidedNonNullArguments_directive(Directive directive) {
         GraphQLDirective graphQLDirective = validationContext.getDirective();
         if (graphQLDirective == null) return;
-        Map<String, Argument> argumentMap = argumentMap(directive.getArguments());
+        List<Argument> providedArguments = directive.getArguments();
 
         for (GraphQLArgument graphQLArgument : graphQLDirective.getArguments()) {
-            Argument argument = argumentMap.get(graphQLArgument.getName());
+            Argument argument = findArgumentByName(providedArguments, graphQLArgument.getName());
             boolean nonNullType = isNonNull(graphQLArgument.getType());
             boolean noDefaultValue = graphQLArgument.getArgumentDefaultValue().isNotSet();
             if (argument == null && nonNullType && noDefaultValue) {
@@ -1385,12 +1413,14 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
-    private Map<String, Argument> argumentMap(List<Argument> arguments) {
-        Map<String, Argument> result = new LinkedHashMap<>();
-        for (Argument argument : arguments) {
-            result.put(argument.getName(), argument);
+    private static @Nullable Argument findArgumentByName(List<Argument> arguments, String name) {
+        for (int i = 0; i < arguments.size(); i++) {
+            Argument argument = arguments.get(i);
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
         }
-        return result;
+        return null;
     }
 
     // --- ScalarLeaves ---
