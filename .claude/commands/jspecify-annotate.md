@@ -2,7 +2,13 @@ The task is to annotate public API classes (marked with `@PublicAPI`) with JSpec
 
 Note that JSpecify is already used in this repository so it's already imported.
 
-If you see a builder static class, you can label it `@NullUnmarked` and not need to do anymore for this static class in terms of annotations.
+**IMPORTANT: Builder classes MUST be annotated with `@NullUnmarked`.** When you encounter a `public static final class Builder` or `public static class Builder` inside a `@NullMarked` class, you MUST:
+1. Add `@NullUnmarked` directly above the Builder class declaration
+2. Remove ALL `@Nullable` annotations from the Builder's fields (e.g., `private @Nullable SourceLocation sourceLocation;` → `private SourceLocation sourceLocation;`)
+3. Remove ALL `@Nullable` annotations from the Builder's setter parameters (e.g., `public Builder sourceLocation(@Nullable SourceLocation sourceLocation)` → `public Builder sourceLocation(SourceLocation sourceLocation)`)
+4. Add `import org.jspecify.annotations.NullUnmarked;` if not already present
+
+No further nullability annotations are needed inside the Builder after applying `@NullUnmarked`.
 
 ## Batch Size and Prioritization
 

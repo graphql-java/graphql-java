@@ -5,6 +5,7 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -69,11 +70,12 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
-        private @Nullable SourceLocation sourceLocation;
+        private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
-        private @Nullable String name;
-        private @Nullable Description description;
+        private String name;
+        private Description description;
         private ImmutableList<EnumValueDefinition> enumValueDefinitions = emptyList();
         private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -93,7 +95,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
@@ -108,7 +110,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
             return this;
         }
 
-        public Builder description(@Nullable Description description) {
+        public Builder description(Description description) {
             this.description = description;
             return this;
         }

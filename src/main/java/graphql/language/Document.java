@@ -8,6 +8,7 @@ import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -159,9 +160,10 @@ public class Document extends AbstractNode<Document> {
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private ImmutableList<Definition> definitions = emptyList();
-        private @Nullable SourceLocation sourceLocation;
+        private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -187,7 +189,7 @@ public class Document extends AbstractNode<Document> {
             return this;
         }
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }

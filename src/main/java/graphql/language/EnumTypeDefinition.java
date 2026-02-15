@@ -7,6 +7,7 @@ import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -23,7 +24,8 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition>, NamedNode<EnumTypeDefinition> {
+public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition> implements
+        TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition>, NamedNode<EnumTypeDefinition> {
     private final String name;
     private final ImmutableList<EnumValueDefinition> enumValueDefinitions;
     private final NodeUtil.DirectivesHolder directives;
@@ -33,12 +35,12 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
 
     @Internal
     protected EnumTypeDefinition(String name,
-                                 List<EnumValueDefinition> enumValueDefinitions,
-                                 List<Directive> directives,
-                                 @Nullable Description description,
-                                 @Nullable SourceLocation sourceLocation,
-                                 List<Comment> comments,
-                                 IgnoredChars ignoredChars, Map<String, String> additionalData) {
+            List<EnumValueDefinition> enumValueDefinitions,
+            List<Directive> directives,
+            @Nullable Description description,
+            @Nullable SourceLocation sourceLocation,
+            List<Comment> comments,
+            IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.directives = NodeUtil.DirectivesHolder.of(directives);
@@ -103,8 +105,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     public EnumTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .enumValueDefinitions(newChildren.getChildren(CHILD_ENUM_VALUE_DEFINITIONS))
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-        );
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
 
     @Override
@@ -157,11 +158,12 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
-        private @Nullable SourceLocation sourceLocation;
+        private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
-        private @Nullable String name;
-        private @Nullable Description description;
+        private String name;
+        private Description description;
         private ImmutableList<EnumValueDefinition> enumValueDefinitions = emptyList();
         private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -181,7 +183,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
@@ -196,7 +198,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
             return this;
         }
 
-        public Builder description(@Nullable Description description) {
+        public Builder description(Description description) {
             this.description = description;
             return this;
         }

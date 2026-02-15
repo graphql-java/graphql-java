@@ -7,6 +7,7 @@ import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -147,11 +148,12 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
-        private @Nullable SourceLocation sourceLocation;
+        private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
-        private @Nullable String name;
-        private @Nullable Description description;
+        private String name;
+        private Description description;
         private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -169,7 +171,7 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
+        public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
@@ -184,7 +186,7 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
             return this;
         }
 
-        public Builder description(@Nullable Description description) {
+        public Builder description(Description description) {
             this.description = description;
             return this;
         }
