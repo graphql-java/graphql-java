@@ -1,6 +1,5 @@
 package graphql.language;
 
-
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -24,10 +23,11 @@ import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 @PublicApi
 @NullMarked
 public class DirectiveLocation extends AbstractNode<DirectiveLocation> implements NamedNode<DirectiveLocation> {
-    private final @Nullable String name;
+    private final String name;
 
     @Internal
-    protected DirectiveLocation(@Nullable String name, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected DirectiveLocation(String name, @Nullable SourceLocation sourceLocation, List<Comment> comments,
+            IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
     }
@@ -43,7 +43,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
 
     @Override
     public String getName() {
-        return assertNotNull(name, () -> "name cannot be null");
+        return name;
     }
 
     @Override
@@ -151,7 +151,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         }
 
         public DirectiveLocation build() {
-            return new DirectiveLocation(name, sourceLocation, comments, ignoredChars, additionalData);
+            return new DirectiveLocation(assertNotNull(name), sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
