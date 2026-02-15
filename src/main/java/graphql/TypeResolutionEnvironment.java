@@ -28,9 +28,9 @@ public class TypeResolutionEnvironment {
     private final MergedField field;
     private final GraphQLType fieldType;
     private final GraphQLSchema schema;
-    private final Object context;
+    private final @Nullable Object context;
     private final GraphQLContext graphQLContext;
-    private final Object localContext;
+    private final @Nullable Object localContext;
     private final DataFetchingFieldSelectionSet fieldSelectionSet;
 
     @Internal

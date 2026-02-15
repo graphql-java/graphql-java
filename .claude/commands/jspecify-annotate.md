@@ -1,4 +1,4 @@
-I have already asked IntelliJ to infer nullity on this class. Can you help me make this more accurate.
+The task is to annotate public API classes (marked with `@PublicAPI`) with JSpecify nullability annotations.
 
 Note that JSpecify is already used in this repository so it's already imported.
 
@@ -19,8 +19,6 @@ Analyze this Java class and add JSpecify annotations based on:
 4. Check Javadoc @return tags mentioning "null", "optional", "if available"
 5. Method implementations that return null or check for null
 6. GraphQL specification details (see details below)
-
-IntelliJ's infer nullity code analysis isn't comprehensive so feel free to make corrections.
 
 ## Pattern Examples
 
