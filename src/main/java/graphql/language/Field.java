@@ -53,7 +53,7 @@ public class Field extends AbstractNode<Field>
             IgnoredChars ignoredChars,
             Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.name = name;
+        this.name = Interning.intern(name);
         this.alias = alias;
         this.arguments = ImmutableList.copyOf(arguments);
         this.directives = NodeUtil.DirectivesHolder.of(directives);

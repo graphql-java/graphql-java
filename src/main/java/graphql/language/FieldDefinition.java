@@ -26,7 +26,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
         implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
     private final String name;
-    private final @Nullable Type type;
+    private final Type type;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;
     private final NodeUtil.DirectivesHolder directives;
 
@@ -36,7 +36,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
 
     @Internal
     protected FieldDefinition(String name,
-            @Nullable Type type,
+            Type type,
             List<InputValueDefinition> inputValueDefinitions,
             List<Directive> directives,
             @Nullable Description description,
@@ -57,7 +57,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
     }
 
     public Type getType() {
-        return assertNotNull(type, () -> "type cannot be null");
+        return type;
     }
 
     @Override
@@ -255,7 +255,8 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
         }
 
         public FieldDefinition build() {
-            return new FieldDefinition(assertNotNull(name), type, inputValueDefinitions, directives, description,
+            return new FieldDefinition(assertNotNull(name), assertNotNull(type), inputValueDefinitions, directives,
+                    description,
                     sourceLocation, comments, ignoredChars, additionalData);
         }
     }
