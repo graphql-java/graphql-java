@@ -1,11 +1,13 @@
 package graphql.language;
 
-
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,11 +22,13 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
 @PublicApi
+@NullMarked
 public class DirectiveLocation extends AbstractNode<DirectiveLocation> implements NamedNode<DirectiveLocation> {
     private final String name;
 
     @Internal
-    protected DirectiveLocation(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected DirectiveLocation(String name, @Nullable SourceLocation sourceLocation, List<Comment> comments,
+            IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
     }
@@ -60,7 +64,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -100,6 +104,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
@@ -148,7 +153,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
         }
 
         public DirectiveLocation build() {
-            return new DirectiveLocation(name, sourceLocation, comments, ignoredChars, additionalData);
+            return new DirectiveLocation(assertNotNull(name), sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

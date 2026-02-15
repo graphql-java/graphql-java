@@ -1,12 +1,14 @@
 package graphql.language;
 
-
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,7 +22,9 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
-public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread>, NamedNode<FragmentSpread> {
+@NullMarked
+public class FragmentSpread extends AbstractNode<FragmentSpread>
+        implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread>, NamedNode<FragmentSpread> {
 
     private final String name;
     private final NodeUtil.DirectivesHolder directives;
@@ -28,7 +32,8 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected FragmentSpread(String name, List<Directive> directives, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected FragmentSpread(String name, List<Directive> directives, @Nullable SourceLocation sourceLocation,
+            List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.directives = NodeUtil.DirectivesHolder.of(directives);
@@ -69,7 +74,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -81,7 +86,6 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
 
         return Objects.equals(this.name, that.name);
     }
-
 
     @Override
     public List<Node> getChildren() {
@@ -98,13 +102,13 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
     @Override
     public FragmentSpread withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-        );
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
 
     @Override
     public FragmentSpread deepCopy() {
-        return new FragmentSpread(name, deepCopy(directives.getDirectives()), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new FragmentSpread(name, assertNotNull(deepCopy(directives.getDirectives())), getSourceLocation(),
+                getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -128,13 +132,13 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         return new Builder().name(name);
     }
 
-
     public FragmentSpread transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
@@ -181,7 +185,6 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
             return this;
         }
 
-
         public Builder ignoredChars(IgnoredChars ignoredChars) {
             this.ignoredChars = ignoredChars;
             return this;
@@ -198,7 +201,8 @@ public class FragmentSpread extends AbstractNode<FragmentSpread> implements Sele
         }
 
         public FragmentSpread build() {
-            return new FragmentSpread(name, directives, sourceLocation, comments, ignoredChars, additionalData);
+            return new FragmentSpread(assertNotNull(name), directives, sourceLocation, comments, ignoredChars,
+                    additionalData);
         }
     }
 }

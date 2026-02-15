@@ -2,7 +2,21 @@ The task is to annotate public API classes (marked with `@PublicAPI`) with JSpec
 
 Note that JSpecify is already used in this repository so it's already imported.
 
-If you see a builder static class, you can label it `@NullUnmarked` and not need to do anymore for this static class in terms of annotations.
+**IMPORTANT: Builder classes MUST be annotated with `@NullUnmarked`.** When you encounter a `public static final class Builder` or `public static class Builder` inside a `@NullMarked` class, you MUST:
+1. Add `@NullUnmarked` directly above the Builder class declaration
+2. Remove ALL `@Nullable` annotations from the Builder's fields (e.g., `private @Nullable SourceLocation sourceLocation;` → `private SourceLocation sourceLocation;`)
+3. Remove ALL `@Nullable` annotations from the Builder's setter parameters (e.g., `public Builder sourceLocation(@Nullable SourceLocation sourceLocation)` → `public Builder sourceLocation(SourceLocation sourceLocation)`)
+4. Add `import org.jspecify.annotations.NullUnmarked;` if not already present
+
+No further nullability annotations are needed inside the Builder after applying `@NullUnmarked`.
+
+## Batch Size and Prioritization
+
+Annotate approximately 10 classes per batch for optimal context management. Start with interface/simple classes first, then tackle complex classes with builders. This helps identify patterns early.
+
+## Exploration Phase
+
+Before annotating, use `grep` to search for how each class is instantiated (e.g., `grep -r "new Comment"`) to understand which parameters can be null. Check constructor calls, method returns, and field assignments to inform your nullability decisions.
 
 Analyze this Java class and add JSpecify annotations based on:
 1. Set the class to be `@NullMarked`
@@ -12,6 +26,62 @@ Analyze this Java class and add JSpecify annotations based on:
 5. Method implementations that return null or check for null
 6. GraphQL specification details (see details below)
 
+## Pattern Examples
+
+Here are concrete examples of common annotation patterns:
+
+**Interface:**
+```java
+@PublicApi
+@NullMarked
+public interface MyInterface {
+    // Methods inherit @NullMarked context
+}
+```
+
+**Class with nullable field:**
+```java
+@PublicApi
+@NullMarked
+public class Comment {
+    private final String content;
+    private final @Nullable SourceLocation sourceLocation;
+    
+    public Comment(String content, @Nullable SourceLocation sourceLocation) {
+        this.content = content;
+        this.sourceLocation = sourceLocation;
+    }
+    
+    public @Nullable SourceLocation getSourceLocation() {
+        return sourceLocation;
+    }
+}
+```
+
+**Class with nullable return type:**
+```java
+@PublicApi
+@NullMarked
+public class Container {
+    public @Nullable Node getChildOrNull(String key) {
+        // May return null
+        return children.get(key);
+    }
+}
+```
+
+**Builder with @NullUnmarked:**
+```java
+@PublicApi
+@NullMarked
+public class MyClass {
+    @NullUnmarked
+    public static class Builder {
+        // No further annotations needed in builder
+    }
+}
+```
+
 ## GraphQL Specification Compliance
 This is a GraphQL implementation. When determining nullability, consult the GraphQL specification (https://spec.graphql.org/draft/) for the relevant concept. Key principles:
 
@@ -19,7 +89,10 @@ The spec defines which elements are required (non-null) vs optional (nullable). 
 
 If a class implements or represents a GraphQL specification concept, prioritize the spec's nullability requirements over what IntelliJ inferred.
 
-## How to validate
+## Validation Strategy
+
+Run `./gradlew compileJava` after every 3-5 classes annotated, not just at the end. This catches issues early and makes debugging easier.
+
 Finally, please check all this works by running the NullAway compile check.
 
 If you find NullAway errors, try and make the smallest possible change to fix them. If you must, you can use assertNotNull. Make sure to include a message as well.
