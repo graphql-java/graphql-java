@@ -69,7 +69,7 @@ public class GraphQLSchema {
     private final @Nullable SchemaDefinition definition;
     private final ImmutableList<SchemaExtensionDefinition> extensionDefinitions;
     private final @Nullable String description;
-    private final @Nullable GraphQLCodeRegistry codeRegistry;
+    private final GraphQLCodeRegistry codeRegistry;
 
     private final ImmutableMap<String, GraphQLNamedType> typeMap;
     private final ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes;
@@ -77,7 +77,7 @@ public class GraphQLSchema {
 
     /*
      * This constructs partial GraphQL schema object which has the schema (query / mutation / subscription) trees
-     * in it but it does not have the collected types, code registry nor the type references replaced
+     * in it but it does not have the collected types, the correct code registry nor the type references replaced
      *
      * But it can be traversed to discover all that and filled out later via another constructor.
      *
@@ -102,7 +102,7 @@ public class GraphQLSchema {
         this.extensionDefinitions = nonNullCopyOf(builder.extensionDefinitions);
         this.description = builder.description;
 
-        this.codeRegistry = null;
+        this.codeRegistry = builder.codeRegistry;
         this.typeMap = ImmutableKit.emptyMap();
         this.interfaceNameToObjectTypes = ImmutableKit.emptyMap();
         this.interfaceNameToObjectTypeNames = ImmutableKit.emptyMap();
@@ -254,7 +254,7 @@ public class GraphQLSchema {
         return map.build();
     }
 
-    public @Nullable GraphQLCodeRegistry getCodeRegistry() {
+    public GraphQLCodeRegistry getCodeRegistry() {
         return codeRegistry;
     }
 
