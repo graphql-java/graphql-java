@@ -1,6 +1,5 @@
 package graphql.language;
 
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
@@ -30,9 +29,10 @@ import static graphql.collect.ImmutableKit.emptyMap;
  */
 @PublicApi
 @NullMarked
-public class Field extends AbstractNode<Field> implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field>, NamedNode<Field> {
+public class Field extends AbstractNode<Field>
+        implements Selection<Field>, SelectionSetContainer<Field>, DirectivesContainer<Field>, NamedNode<Field> {
 
-    private final @Nullable String name;
+    private final String name;
     private final @Nullable String alias;
     private final ImmutableList<Argument> arguments;
     private final NodeUtil.DirectivesHolder directives;
@@ -42,17 +42,16 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_SELECTION_SET = "selectionSet";
 
-
     @Internal
-    protected Field(@Nullable String name,
-                    @Nullable String alias,
-                    List<Argument> arguments,
-                    List<Directive> directives,
-                    @Nullable SelectionSet selectionSet,
-                    @Nullable SourceLocation sourceLocation,
-                    List<Comment> comments,
-                    IgnoredChars ignoredChars,
-                    Map<String, String> additionalData) {
+    protected Field(String name,
+            @Nullable String alias,
+            List<Argument> arguments,
+            List<Directive> directives,
+            @Nullable SelectionSet selectionSet,
+            @Nullable SourceLocation sourceLocation,
+            List<Comment> comments,
+            IgnoredChars ignoredChars,
+            Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.alias = alias;
@@ -60,7 +59,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         this.directives = NodeUtil.DirectivesHolder.of(directives);
         this.selectionSet = selectionSet;
     }
-
 
     /**
      * alternative to using a Builder for convenience
@@ -124,16 +122,14 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
 
     @Override
     public Field withNewChildren(NodeChildrenContainer newChildren) {
-        return transform(builder ->
-                builder.arguments(newChildren.getChildren(CHILD_ARGUMENTS))
-                        .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-                        .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
-        );
+        return transform(builder -> builder.arguments(newChildren.getChildren(CHILD_ARGUMENTS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET)));
     }
 
     @Override
     public String getName() {
-        return assertNotNull(name, () -> "name cannot be null");
+        return name;
     }
 
     public @Nullable String getAlias() {
@@ -141,7 +137,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
     }
 
     public String getResultKey() {
-        return alias != null ? alias : assertNotNull(name, () -> "name cannot be null");
+        return alias != null ? alias : name;
     }
 
     public List<Argument> getArguments() {
@@ -173,7 +169,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
         return selectionSet;
     }
 
-
     @Override
     public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
@@ -198,8 +193,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
-                getAdditionalData()
-        );
+                getAdditionalData());
     }
 
     @Override
@@ -262,7 +256,6 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
             this.additionalData = copyOf(existing.getAdditionalData());
         }
 
-
         public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
@@ -319,9 +312,9 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
             return this;
         }
 
-
         public Field build() {
-            return new Field(name, alias, arguments, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
+            return new Field(assertNotNull(name), alias, arguments, directives, selectionSet, sourceLocation, comments,
+                    ignoredChars, additionalData);
         }
     }
 }

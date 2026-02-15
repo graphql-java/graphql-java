@@ -1,6 +1,5 @@
 package graphql.language;
 
-
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -24,8 +23,9 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
-    private final @Nullable String name;
+public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
+        implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
+    private final String name;
     private final @Nullable Type type;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;
     private final NodeUtil.DirectivesHolder directives;
@@ -35,15 +35,15 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected FieldDefinition(@Nullable String name,
-                              @Nullable Type type,
-                              List<InputValueDefinition> inputValueDefinitions,
-                              List<Directive> directives,
-                              @Nullable Description description,
-                              @Nullable SourceLocation sourceLocation,
-                              List<Comment> comments,
-                              IgnoredChars ignoredChars,
-                              Map<String, String> additionalData) {
+    protected FieldDefinition(String name,
+            @Nullable Type type,
+            List<InputValueDefinition> inputValueDefinitions,
+            List<Directive> directives,
+            @Nullable Description description,
+            @Nullable SourceLocation sourceLocation,
+            List<Comment> comments,
+            IgnoredChars ignoredChars,
+            Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.type = type;
@@ -52,7 +52,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     }
 
     public FieldDefinition(String name,
-                           Type type) {
+            Type type) {
         this(name, type, emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
@@ -62,7 +62,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
 
     @Override
     public String getName() {
-        return assertNotNull(name, () -> "name cannot be null");
+        return name;
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
@@ -112,8 +112,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         return transform(builder -> builder
                 .type(newChildren.getChildOrNull(CHILD_TYPE))
                 .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITION))
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-        );
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
 
     @Override
@@ -194,7 +193,6 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-
         public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
@@ -230,7 +228,6 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
             return this;
         }
 
-
         @Override
         public Builder directives(List<Directive> directives) {
             this.directives = ImmutableList.copyOf(directives);
@@ -257,9 +254,9 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
             return this;
         }
 
-
         public FieldDefinition build() {
-            return new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
+            return new FieldDefinition(assertNotNull(name), type, inputValueDefinitions, directives, description,
+                    sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
