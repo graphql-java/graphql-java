@@ -1051,11 +1051,8 @@ public class OperationValidator implements DocumentVisitor {
         GraphQLUnmodifiedType unwrappedParent = parentType != null ? unwrapAll(parentType) : null;
         if (unwrappedParent instanceof GraphQLFieldsContainer) {
             GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) unwrappedParent;
-            GraphQLCodeRegistry codeRegistry = validationContext.getSchema().getCodeRegistry();
-            if (codeRegistry != null) {
-                GraphQLFieldDefinition fieldDefinition = codeRegistry.getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
-                fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
-            }
+            GraphQLFieldDefinition fieldDefinition = validationContext.getSchema().getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
+            fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
         }
         fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(new FieldAndType(field, fieldType, unwrappedParent));
     }
