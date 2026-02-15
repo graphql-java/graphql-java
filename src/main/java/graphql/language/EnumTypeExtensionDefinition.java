@@ -20,14 +20,14 @@ import static graphql.collect.ImmutableKit.emptyList;
 public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
-    protected EnumTypeExtensionDefinition(@Nullable String name,
-                                          List<EnumValueDefinition> enumValueDefinitions,
-                                          List<Directive> directives,
-                                          @Nullable Description description,
-                                          @Nullable SourceLocation sourceLocation,
-                                          List<Comment> comments,
-                                          IgnoredChars ignoredChars,
-                                          Map<String, String> additionalData) {
+    protected EnumTypeExtensionDefinition(String name,
+            List<EnumValueDefinition> enumValueDefinitions,
+            List<Directive> directives,
+            @Nullable Description description,
+            @Nullable SourceLocation sourceLocation,
+            List<Comment> comments,
+            IgnoredChars ignoredChars,
+            Map<String, String> additionalData) {
         super(name, enumValueDefinitions, directives, description,
                 sourceLocation, comments, ignoredChars, additionalData);
     }
@@ -60,8 +60,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
     public EnumTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transformExtension(builder -> builder
                 .enumValueDefinitions(newChildren.getChildren(CHILD_ENUM_VALUE_DEFINITIONS))
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-        );
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
 
     public EnumTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
@@ -145,9 +144,8 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
             return this;
         }
 
-
         public EnumTypeExtensionDefinition build() {
-            return new EnumTypeExtensionDefinition(name,
+            return new EnumTypeExtensionDefinition(assertNotNull(name),
                     enumValueDefinitions,
                     directives,
                     description,

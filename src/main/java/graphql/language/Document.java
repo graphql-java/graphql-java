@@ -1,6 +1,5 @@
 package graphql.language;
 
-
 import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.Internal;
@@ -31,7 +30,8 @@ public class Document extends AbstractNode<Document> {
     public static final String CHILD_DEFINITIONS = "definitions";
 
     @Internal
-    protected Document(List<Definition> definitions, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected Document(List<Definition> definitions, @Nullable SourceLocation sourceLocation, List<Comment> comments,
+            IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.definitions = ImmutableList.copyOf(definitions);
     }
@@ -50,7 +50,8 @@ public class Document extends AbstractNode<Document> {
     }
 
     /**
-     * Returns a list of definitions of the specific type.  It uses {@link java.lang.Class#isAssignableFrom(Class)} for the test
+     * Returns a list of definitions of the specific type. It uses
+     * {@link java.lang.Class#isAssignableFrom(Class)} for the test
      *
      * @param definitionClass the definition class
      * @param <T>             the type of definition
@@ -64,9 +65,11 @@ public class Document extends AbstractNode<Document> {
     }
 
     /**
-     * Returns the first of the specific type.  It uses {@link java.lang.Class#isAssignableFrom(Class)} for the test.
+     * Returns the first of the specific type. It uses
+     * {@link java.lang.Class#isAssignableFrom(Class)} for the test.
      *
-     * This is useful when you have generated a document in code and KNOW there is only one definition in it
+     * This is useful when you have generated a document in code and KNOW there is
+     * only one definition in it
      *
      * @param definitionClass the definition class
      * @param <T>             the type of definition
@@ -81,7 +84,8 @@ public class Document extends AbstractNode<Document> {
     }
 
     /**
-     * This will allow you to find a {@link OperationDefinition} with the specified name
+     * This will allow you to find a {@link OperationDefinition} with the specified
+     * name
      * in the document
      *
      * @param name the name of the operation to find
@@ -112,8 +116,7 @@ public class Document extends AbstractNode<Document> {
     @Override
     public Document withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .definitions(newChildren.getChildren(CHILD_DEFINITIONS))
-        );
+                .definitions(newChildren.getChildren(CHILD_DEFINITIONS)));
     }
 
     @Override
@@ -130,7 +133,8 @@ public class Document extends AbstractNode<Document> {
 
     @Override
     public Document deepCopy() {
-        return new Document(assertNotNull(deepCopy(definitions)), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new Document(assertNotNull(deepCopy(definitions)), getSourceLocation(), getComments(), getIgnoredChars(),
+                getAdditionalData());
     }
 
     @Override
@@ -207,7 +211,6 @@ public class Document extends AbstractNode<Document> {
             this.additionalData.put(key, value);
             return this;
         }
-
 
         public Document build() {
             return new Document(definitions, sourceLocation, comments, ignoredChars, additionalData);

@@ -30,9 +30,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
         DirectivesContainer<FragmentDefinition>, NamedNode<FragmentDefinition> {
 
     private final String name;
-    private final @Nullable TypeName typeCondition;
+    private final TypeName typeCondition;
     private final NodeUtil.DirectivesHolder directives;
-    private final @Nullable SelectionSet selectionSet;
+    private final SelectionSet selectionSet;
 
     public static final String CHILD_TYPE_CONDITION = "typeCondition";
     public static final String CHILD_DIRECTIVES = "directives";
@@ -40,9 +40,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
 
     @Internal
     protected FragmentDefinition(String name,
-            @Nullable TypeName typeCondition,
+            TypeName typeCondition,
             List<Directive> directives,
-            @Nullable SelectionSet selectionSet,
+            SelectionSet selectionSet,
             @Nullable SourceLocation sourceLocation,
             List<Comment> comments,
             IgnoredChars ignoredChars,
@@ -60,7 +60,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
     }
 
     public TypeName getTypeCondition() {
-        return assertNotNull(typeCondition, () -> "typeCondition cannot be null");
+        return typeCondition;
     }
 
     @Override
@@ -85,7 +85,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
 
     @Override
     public SelectionSet getSelectionSet() {
-        return assertNotNull(selectionSet, () -> "selectionSet cannot be null");
+        return selectionSet;
     }
 
     @Override
@@ -109,9 +109,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
     @Override
     public FragmentDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .typeCondition(newChildren.getChildOrNull(CHILD_TYPE_CONDITION))
+                .typeCondition(assertNotNull(newChildren.getChildOrNull(CHILD_TYPE_CONDITION)))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET)));
+                .selectionSet(assertNotNull(newChildren.getChildOrNull(CHILD_SELECTION_SET))));
     }
 
     @Override
@@ -131,9 +131,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
     @Override
     public FragmentDefinition deepCopy() {
         return new FragmentDefinition(name,
-                deepCopy(typeCondition),
+                assertNotNull(deepCopy(typeCondition)),
                 assertNotNull(deepCopy(directives.getDirectives())),
-                deepCopy(selectionSet),
+                assertNotNull(deepCopy(selectionSet)),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -205,7 +205,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
             return this;
         }
 
-        public Builder typeCondition(@Nullable TypeName typeCondition) {
+        public Builder typeCondition(TypeName typeCondition) {
             this.typeCondition = typeCondition;
             return this;
         }
@@ -221,7 +221,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
             return this;
         }
 
-        public Builder selectionSet(@Nullable SelectionSet selectionSet) {
+        public Builder selectionSet(SelectionSet selectionSet) {
             this.selectionSet = selectionSet;
             return this;
         }
@@ -242,8 +242,8 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
         }
 
         public FragmentDefinition build() {
-            return new FragmentDefinition(assertNotNull(name), typeCondition, directives, selectionSet, sourceLocation,
-                    comments, ignoredChars, additionalData);
+            return new FragmentDefinition(assertNotNull(name), assertNotNull(typeCondition), directives,
+                    assertNotNull(selectionSet), sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

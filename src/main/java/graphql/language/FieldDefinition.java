@@ -208,7 +208,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
             return this;
         }
 
-        public Builder type(@Nullable Type type) {
+        public Builder type(Type type) {
             this.type = type;
             return this;
         }

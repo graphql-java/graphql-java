@@ -23,8 +23,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition> implements
-        TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition>, NamedNode<EnumTypeDefinition> {
+public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition>, NamedNode<EnumTypeDefinition> {
     private final String name;
     private final ImmutableList<EnumValueDefinition> enumValueDefinitions;
     private final NodeUtil.DirectivesHolder directives;
@@ -34,12 +33,12 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
 
     @Internal
     protected EnumTypeDefinition(String name,
-            List<EnumValueDefinition> enumValueDefinitions,
-            List<Directive> directives,
-            @Nullable Description description,
-            @Nullable SourceLocation sourceLocation,
-            List<Comment> comments,
-            IgnoredChars ignoredChars, Map<String, String> additionalData) {
+                                 List<EnumValueDefinition> enumValueDefinitions,
+                                 List<Directive> directives,
+                                 @Nullable Description description,
+                                 @Nullable SourceLocation sourceLocation,
+                                 List<Comment> comments,
+                                 IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.directives = NodeUtil.DirectivesHolder.of(directives);
@@ -104,7 +103,8 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     public EnumTypeDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .enumValueDefinitions(newChildren.getChildren(CHILD_ENUM_VALUE_DEFINITIONS))
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
     }
 
     @Override
