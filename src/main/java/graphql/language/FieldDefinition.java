@@ -110,7 +110,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
     @Override
     public FieldDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .type(assertNotNull(newChildren.getChildOrNull(CHILD_TYPE)))
                 .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITION))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
@@ -132,7 +132,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
     @Override
     public FieldDefinition deepCopy() {
         return new FieldDefinition(name,
-                deepCopy(type),
+                assertNotNull(deepCopy(type)),
                 assertNotNull(deepCopy(inputValueDefinitions)),
                 assertNotNull(deepCopy(directives.getDirectives())),
                 description,
