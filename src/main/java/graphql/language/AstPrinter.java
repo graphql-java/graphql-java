@@ -589,15 +589,11 @@ public class AstPrinter {
     }
 
     <T extends Node> NodePrinter<T> _findPrinter(Node node, @Nullable Class<?> startClass) {
-        if (node == null) {
-            return (out, type) -> {
-            };
-        }
         Class<?> clazz = startClass != null ? startClass : node.getClass();
         while (clazz != Object.class) {
             NodePrinter nodePrinter = printers.get(clazz);
             if (nodePrinter != null) {
-                //noinspection unchecked
+                // noinspection unchecked
                 return nodePrinter;
             }
             clazz = clazz.getSuperclass();
