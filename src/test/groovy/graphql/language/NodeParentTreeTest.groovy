@@ -7,7 +7,7 @@ class NodeParentTreeTest extends Specification {
 
     def strValue = StringValue.newStringValue("123").build()
     def argument = Argument.newArgument("arg", strValue).build()
-    def fieldDef = FieldDefinition.newFieldDefinition().name("field").build()
+    def fieldDef = FieldDefinition.newFieldDefinition().name("field").type(new TypeName("String")).build()
     def objectTypeDef = ObjectTypeDefinition.newObjectTypeDefinition().name("object").build()
 
     def "basic hierarchy"() {

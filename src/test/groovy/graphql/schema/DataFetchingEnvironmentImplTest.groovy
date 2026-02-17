@@ -11,6 +11,7 @@ import graphql.language.FragmentDefinition
 import graphql.language.OperationDefinition
 import graphql.language.StringValue
 import graphql.language.TypeName
+import graphql.language.SelectionSet
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
@@ -26,7 +27,7 @@ import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironm
 
 class DataFetchingEnvironmentImplTest extends Specification {
 
-    def frag = FragmentDefinition.newFragmentDefinition().name("frag").typeCondition(new TypeName("t")).build()
+    def frag = FragmentDefinition.newFragmentDefinition().name("frag").typeCondition(new TypeName("t")).selectionSet(SelectionSet.newSelectionSet().build()).build()
 
     def dataLoader = DataLoaderFactory.newDataLoader({ keys -> CompletableFuture.completedFuture(keys) } as BatchLoader)
     def operationDefinition = new OperationDefinition("q")
