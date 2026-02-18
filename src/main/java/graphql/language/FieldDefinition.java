@@ -1,12 +1,14 @@
 package graphql.language;
 
-
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,7 +23,9 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
-public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
+@NullMarked
+public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
+        implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
     private final String name;
     private final Type type;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;
@@ -33,14 +37,14 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
 
     @Internal
     protected FieldDefinition(String name,
-                              Type type,
-                              List<InputValueDefinition> inputValueDefinitions,
-                              List<Directive> directives,
-                              Description description,
-                              SourceLocation sourceLocation,
-                              List<Comment> comments,
-                              IgnoredChars ignoredChars,
-                              Map<String, String> additionalData) {
+            Type type,
+            List<InputValueDefinition> inputValueDefinitions,
+            List<Directive> directives,
+            @Nullable Description description,
+            @Nullable SourceLocation sourceLocation,
+            List<Comment> comments,
+            IgnoredChars ignoredChars,
+            Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.type = type;
@@ -49,7 +53,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     }
 
     public FieldDefinition(String name,
-                           Type type) {
+            Type type) {
         this(name, type, emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
@@ -107,14 +111,13 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     @Override
     public FieldDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .type(newChildren.getChildOrNull(CHILD_TYPE))
+                .type(assertNotNull(newChildren.getChildOrNull(CHILD_TYPE)))
                 .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITION))
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-        );
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -130,9 +133,9 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
     @Override
     public FieldDefinition deepCopy() {
         return new FieldDefinition(name,
-                deepCopy(type),
-                deepCopy(inputValueDefinitions),
-                deepCopy(directives.getDirectives()),
+                assertNotNull(deepCopy(type)),
+                assertNotNull(deepCopy(inputValueDefinitions)),
+                assertNotNull(deepCopy(directives.getDirectives())),
                 description,
                 getSourceLocation(),
                 getComments(),
@@ -165,6 +168,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private String name;
@@ -190,7 +194,6 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
-
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
@@ -227,7 +230,6 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
             return this;
         }
 
-
         @Override
         public Builder directives(List<Directive> directives) {
             this.directives = ImmutableList.copyOf(directives);
@@ -254,9 +256,10 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> impl
             return this;
         }
 
-
         public FieldDefinition build() {
-            return new FieldDefinition(name, type, inputValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
+            return new FieldDefinition(assertNotNull(name), assertNotNull(type), inputValueDefinitions, directives,
+                    description,
+                    sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

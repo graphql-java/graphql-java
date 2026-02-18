@@ -3,11 +3,13 @@ package graphql.language;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Used by {@link NodeTraverser} to visit {@link Node}.
  */
 @PublicApi
+@NullMarked
 public interface NodeVisitor {
     TraversalControl visitArgument(Argument node, TraverserContext<Node> data);
 

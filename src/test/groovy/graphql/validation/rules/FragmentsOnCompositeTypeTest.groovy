@@ -7,6 +7,7 @@ import graphql.TestUtil
 import graphql.language.FragmentDefinition
 import graphql.language.InlineFragment
 import graphql.language.TypeName
+import graphql.language.SelectionSet
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorCollector
@@ -68,7 +69,7 @@ class FragmentsOnCompositeTypeTest extends Specification {
 
     def "fragment type condition must refer to a composite type"() {
         given:
-        FragmentDefinition fragmentDefinition = FragmentDefinition.newFragmentDefinition().name("fragment").typeCondition(TypeName.newTypeName("String").build()).build()
+        FragmentDefinition fragmentDefinition = FragmentDefinition.newFragmentDefinition().name("fragment").typeCondition(TypeName.newTypeName("String").build()).selectionSet(SelectionSet.newSelectionSet().build()).build()
         validationContext.getSchema() >> StarWarsSchema.starWarsSchema
 
         when:

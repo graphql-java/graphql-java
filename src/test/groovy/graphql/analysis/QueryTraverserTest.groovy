@@ -1525,14 +1525,14 @@ class QueryTraverserTest extends Specification {
 
         where:
         document             | operationName | root                     | rootParentType          | fragmentsByName
-        createQuery("{foo}") | null          | Field.newField().build() | null                    | null
-        createQuery("{foo}") | "foo"         | Field.newField().build() | null                    | null
-        createQuery("{foo}") | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | null
-        createQuery("{foo}") | "foo"         | Field.newField().build() | null                    | emptyMap()
-        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | null
-        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | Field.newField().build() | null                    | emptyMap()
+        createQuery("{foo}") | null          | Field.newField().name("dummy").build() | null                    | null
+        createQuery("{foo}") | "foo"         | Field.newField().name("dummy").build() | null                    | null
+        createQuery("{foo}") | "foo"         | Field.newField().name("dummy").build() | Mock(GraphQLObjectType) | null
+        createQuery("{foo}") | "foo"         | Field.newField().name("dummy").build() | null                    | emptyMap()
+        null                 | "foo"         | Field.newField().name("dummy").build() | Mock(GraphQLObjectType) | null
+        null                 | "foo"         | Field.newField().name("dummy").build() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | Field.newField().name("dummy").build() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | Field.newField().name("dummy").build() | null                    | emptyMap()
         null                 | "foo"         | null                     | Mock(GraphQLObjectType) | emptyMap()
         null                 | "foo"         | null                     | Mock(GraphQLObjectType) | null
         null                 | "foo"         | null                     | null                    | emptyMap()
@@ -1544,7 +1544,7 @@ class QueryTraverserTest extends Specification {
         QueryTraverser.newQueryTraverser()
                 .document(createQuery("{foo}"))
                 .operationName("foo")
-                .root(Field.newField().build())
+                .root(Field.newField().name("dummy").build())
                 .rootParentType(Mock(GraphQLObjectType))
                 .fragmentsByName(emptyMap())
                 .build()
