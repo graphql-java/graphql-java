@@ -19,11 +19,13 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -91,6 +93,35 @@ public class TypeAndFieldRule extends GraphQLTypeVisitorStub {
         }
         SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
         validateInputObject((GraphQLInputObjectType) type, errorCollector);
+        
+        // OneOf validation: check if OneOf input types are inhabited
+        if (type.isOneOf()) {
+            if (!canBeProvidedAFiniteValue(type, new LinkedHashSet<>())) {
+                String message = String.format("OneOf Input Object %s must be inhabited but all fields recursively reference only other OneOf Input Objects forming an unresolvable cycle.", type.getName());
+                errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNotInhabited, message));
+            }
+        }
+        
+        return TraversalControl.CONTINUE;
+    }
+
+    @Override
+    public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField inputObjectField, TraverserContext<GraphQLSchemaElement> context) {
+        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) context.getParentNode();
+        if (!inputObjectType.isOneOf()) {
+            return TraversalControl.CONTINUE;
+        }
+        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        // OneOf validation: error messages taken from the reference implementation
+        if (inputObjectField.hasSetDefaultValue()) {
+            String message = String.format("OneOf input field %s.%s cannot have a default value.", inputObjectType.getName(), inputObjectField.getName());
+            errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.OneOfDefaultValueOnField, message));
+        }
+
+        if (GraphQLTypeUtil.isNonNull(inputObjectField.getType())) {
+            String message = String.format("OneOf input field %s.%s must be nullable.", inputObjectType.getName(), inputObjectField.getName());
+            errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNonNullableField, message));
+        }
         return TraversalControl.CONTINUE;
     }
 
@@ -119,6 +150,32 @@ public class TypeAndFieldRule extends GraphQLTypeVisitorStub {
         for (GraphQLInputObjectField inputObjectField : inputObjectFields) {
             validateInputFieldDefinition(type.getName(), inputObjectField, errorCollector);
         }
+    }
+
+    private boolean canBeProvidedAFiniteValue(GraphQLInputObjectType oneOfInputObject, Set<GraphQLInputObjectType> visited) {
+        if (visited.contains(oneOfInputObject)) {
+            return false;
+        }
+        Set<GraphQLInputObjectType> nextVisited = new LinkedHashSet<>(visited);
+        nextVisited.add(oneOfInputObject);
+        for (GraphQLInputObjectField field : oneOfInputObject.getFieldDefinitions()) {
+            GraphQLType fieldType = field.getType();
+            if (GraphQLTypeUtil.isList(fieldType)) {
+                return true;
+            }
+            GraphQLUnmodifiedType namedFieldType = GraphQLTypeUtil.unwrapAll(fieldType);
+            if (!(namedFieldType instanceof GraphQLInputObjectType)) {
+                return true;
+            }
+            GraphQLInputObjectType inputFieldType = (GraphQLInputObjectType) namedFieldType;
+            if (!inputFieldType.isOneOf()) {
+                return true;
+            }
+            if (canBeProvidedAFiniteValue(inputFieldType, nextVisited)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void validateUnion(GraphQLUnionType type, SchemaValidationErrorCollector errorCollector) {
