@@ -1,6 +1,5 @@
 package graphql.validation;
 
-
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.TypeFromAST;
@@ -33,6 +32,8 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.InputValueWithState;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +44,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 @Internal
+@NullMarked
 public class TraversalContext implements DocumentVisitor {
     private final GraphQLSchema schema;
     private final List<GraphQLOutputType> outputTypeStack = new ArrayList<>();
@@ -51,8 +53,8 @@ public class TraversalContext implements DocumentVisitor {
     private final List<InputValueWithState> defaultValueStack = new ArrayList<>();
     private final List<GraphQLFieldDefinition> fieldDefStack = new ArrayList<>();
     private final List<String> nameStack = new ArrayList<>();
-    private GraphQLDirective directive;
-    private GraphQLArgument argument;
+    private @Nullable GraphQLDirective directive;
+    private @Nullable GraphQLArgument argument;
 
 
     public TraversalContext(GraphQLSchema graphQLSchema) {
@@ -86,7 +88,8 @@ public class TraversalContext implements DocumentVisitor {
 
 
     private void enterImpl(SelectionSet selectionSet) {
-        GraphQLUnmodifiedType rawType = unwrapAll(getOutputType());
+        GraphQLOutputType outputType = getOutputType();
+        GraphQLUnmodifiedType rawType = outputType != null ? unwrapAll(outputType) : null;
         GraphQLCompositeType parentType = null;
         if (rawType instanceof GraphQLCompositeType) {
             parentType = (GraphQLCompositeType) rawType;
@@ -164,7 +167,7 @@ public class TraversalContext implements DocumentVisitor {
     private void enterImpl(ArrayValue arrayValue) {
         GraphQLNullableType nullableType = getNullableType(getInputType());
         GraphQLInputType inputType = null;
-        if (isList(nullableType)) {
+        if (nullableType != null && isList(nullableType)) {
             inputType = (GraphQLInputType) unwrapOne(nullableType);
         }
         addInputType(inputType);
@@ -173,7 +176,8 @@ public class TraversalContext implements DocumentVisitor {
     }
 
     private void enterImpl(ObjectField objectField) {
-        GraphQLUnmodifiedType objectType = unwrapAll(getInputType());
+        GraphQLInputType currentInputType = getInputType();
+        GraphQLUnmodifiedType objectType = currentInputType != null ? unwrapAll(currentInputType) : null;
         GraphQLInputType inputType = null;
         GraphQLInputObjectField inputField = null;
         if (objectType instanceof GraphQLInputObjectType) {
@@ -187,7 +191,7 @@ public class TraversalContext implements DocumentVisitor {
         addDefaultValue(inputField != null ? inputField.getInputFieldDefaultValue() : null);
     }
 
-    private GraphQLArgument find(List<GraphQLArgument> arguments, String name) {
+    private @Nullable GraphQLArgument find(List<GraphQLArgument> arguments, String name) {
         for (GraphQLArgument argument : arguments) {
             if (argument.getName().equals(name)) {
                 return argument;
@@ -245,7 +249,10 @@ public class TraversalContext implements DocumentVisitor {
         return name == null || name.isEmpty();
     }
 
-    private GraphQLNullableType getNullableType(GraphQLType type) {
+    private @Nullable GraphQLNullableType getNullableType(@Nullable GraphQLType type) {
+        if (type == null) {
+            return null;
+        }
         return (GraphQLNullableType) (isNonNull(type) ? unwrapOne(type) : type);
     }
 
@@ -253,15 +260,15 @@ public class TraversalContext implements DocumentVisitor {
      * @return can be null if current node does not have a OutputType associated: for example
      * if the current field is unknown
      */
-    public GraphQLOutputType getOutputType() {
+    public @Nullable GraphQLOutputType getOutputType() {
         return lastElement(outputTypeStack);
     }
 
-    private void addOutputType(GraphQLOutputType type) {
+    private void addOutputType(@Nullable GraphQLOutputType type) {
         outputTypeStack.add(type);
     }
 
-    private <T> T lastElement(List<T> list) {
+    private <T> @Nullable T lastElement(List<T> list) {
         if (list.isEmpty()) {
             return null;
         }
@@ -275,53 +282,54 @@ public class TraversalContext implements DocumentVisitor {
     /**
      * @return can be null if the parent is not a CompositeType
      */
-    public GraphQLCompositeType getParentType() {
+    public @Nullable GraphQLCompositeType getParentType() {
         return lastElement(parentTypeStack);
     }
 
-    private void addParentType(GraphQLCompositeType compositeType) {
+    private void addParentType(@Nullable GraphQLCompositeType compositeType) {
         parentTypeStack.add(compositeType);
     }
 
-    public GraphQLInputType getInputType() {
+    public @Nullable GraphQLInputType getInputType() {
         return lastElement(inputTypeStack);
     }
-    public InputValueWithState getDefaultValue() {
+
+    public @Nullable InputValueWithState getDefaultValue() {
         return lastElement(defaultValueStack);
     }
 
-    private void addInputType(GraphQLInputType graphQLInputType) {
+    private void addInputType(@Nullable GraphQLInputType graphQLInputType) {
         inputTypeStack.add(graphQLInputType);
     }
 
-    private void addDefaultValue(InputValueWithState defaultValue) {
+    private void addDefaultValue(@Nullable InputValueWithState defaultValue) {
         defaultValueStack.add(defaultValue);
     }
 
-    public GraphQLFieldDefinition getFieldDef() {
+    public @Nullable GraphQLFieldDefinition getFieldDef() {
         return lastElement(fieldDefStack);
     }
 
-    public List<String> getQueryPath() {
+    public @Nullable List<String> getQueryPath() {
         if (nameStack.isEmpty()) {
             return null;
         }
         return new ArrayList<>(nameStack);
     }
 
-    private void addFieldDef(GraphQLFieldDefinition fieldDefinition) {
+    private void addFieldDef(@Nullable GraphQLFieldDefinition fieldDefinition) {
         fieldDefStack.add(fieldDefinition);
     }
 
-    public GraphQLDirective getDirective() {
+    public @Nullable GraphQLDirective getDirective() {
         return directive;
     }
 
-    public GraphQLArgument getArgument() {
+    public @Nullable GraphQLArgument getArgument() {
         return argument;
     }
 
-    private GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field) {
+    private @Nullable GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLType parentType, Field field) {
         if (schema.getQueryType().equals(parentType)) {
             if (field.getName().equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
                 return schema.getIntrospectionSchemaFieldDefinition();

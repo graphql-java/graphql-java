@@ -8,11 +8,11 @@ import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.validation.LanguageTraversal;
-import graphql.validation.RulesVisitor;
+import graphql.validation.OperationValidationRule;
+import graphql.validation.OperationValidator;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.rules.OverlappingFieldsCanBeMerged;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -25,7 +25,6 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
@@ -78,9 +77,10 @@ public class OverlappingFieldValidationBenchmark {
         ValidationErrorCollector errorCollector = new ValidationErrorCollector();
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH);
         ValidationContext validationContext = new ValidationContext(schema, document, i18n);
-        OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, errorCollector);
+        OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
+                rule -> rule == OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
         LanguageTraversal languageTraversal = new LanguageTraversal();
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, Collections.singletonList(overlappingFieldsCanBeMerged)));
+        languageTraversal.traverse(document, operationValidator);
         return errorCollector.getErrors();
     }
 }
