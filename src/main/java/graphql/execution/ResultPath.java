@@ -38,27 +38,26 @@ public class ResultPath {
 
     // hash is effective immutable but lazily initialized similar to the hash code of java.lang.String
     private int hash;
-    private final String toStringValue;
+    // lazily initialized similar to hash - computed on first toString() call
+    private String toStringValue;
     private final int level;
 
     private ResultPath() {
         parent = null;
         segment = null;
         this.level = 0;
-        this.toStringValue = initString();
+        this.toStringValue = "";
     }
 
     private ResultPath(ResultPath parent, String segment) {
         this.parent = assertNotNull(parent, "Must provide a parent path");
         this.segment = assertNotNull(segment, "Must provide a sub path");
-        this.toStringValue = initString();
         this.level = parent.level + 1;
     }
 
     private ResultPath(ResultPath parent, int segment) {
         this.parent = assertNotNull(parent, "Must provide a parent path");
         this.segment = segment;
-        this.toStringValue = initString();
         this.level = parent.level;
     }
 
@@ -66,12 +65,18 @@ public class ResultPath {
         if (parent == null) {
             return "";
         }
-
-        if (ROOT_PATH.equals(parent)) {
-            return segmentToString();
+        String parentStr = parent.toString();
+        if (segment instanceof String) {
+            if (parentStr.isEmpty()) {
+                return "/" + segment;
+            }
+            return parentStr + "/" + segment;
+        } else {
+            if (parentStr.isEmpty()) {
+                return "[" + segment + "]";
+            }
+            return parentStr + "[" + segment + "]";
         }
-        return parent + segmentToString();
-
     }
 
     public int getLevel() {
@@ -306,7 +311,12 @@ public class ResultPath {
      */
     @Override
     public String toString() {
-        return toStringValue;
+        String s = toStringValue;
+        if (s == null) {
+            s = initString();
+            toStringValue = s;
+        }
+        return s;
     }
 
     public String segmentToString() {
