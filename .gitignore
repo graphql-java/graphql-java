@@ -17,3 +17,9 @@ docs/_build/
 gen
 .DS_Store
 .vscode
+
+# JMH profiling output
+benchmark.*-Throughput*/
+benchmark.*-AverageTime*/
+benchmark.*-SampleTime*/
+benchmark.*-SingleShotTime*/
