@@ -23,6 +23,10 @@ If you're looking to learn more, we (the maintainers) have written a book! [Grap
 
 Please take a look at our [list of releases](https://github.com/graphql-java/graphql-java/releases) if you want to learn more about new releases and the changelog.
 
+### Performance Profiling
+
+To run performance benchmarks with profiling support, see [PERFORMANCE-PROFILING.md](PERFORMANCE-PROFILING.md) for detailed instructions on using JMH with async-profiler.
+
 ### Code of Conduct
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md).
