@@ -600,7 +600,7 @@ public class GraphQL {
         validationCtx.onDispatched();
 
         Predicate<OperationValidationRule> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
-        Locale locale = executionInput.getLocale() != null ? executionInput.getLocale() : Locale.getDefault();
+        Locale locale = executionInput.getLocale();
         List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale);
 
         validationCtx.onCompleted(validationErrors, null);
