@@ -65,18 +65,7 @@ public class ResultPath {
         if (parent == null) {
             return "";
         }
-        String parentStr = parent.toString();
-        if (segment instanceof String) {
-            if (parentStr.isEmpty()) {
-                return "/" + segment;
-            }
-            return parentStr + "/" + segment;
-        } else {
-            if (parentStr.isEmpty()) {
-                return "[" + segment + "]";
-            }
-            return parentStr + "[" + segment + "]";
-        }
+        return parent.toString() + segmentToString();
     }
 
     public int getLevel() {
