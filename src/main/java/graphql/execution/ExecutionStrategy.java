@@ -463,7 +463,7 @@ public abstract class ExecutionStrategy {
         });
 
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
+        DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType.getName(), fieldDef.getName(), fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 

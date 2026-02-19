@@ -36,6 +36,8 @@ public class GraphQLCodeRegistry {
     private final Map<String, TypeResolver> typeResolverMap;
     private final GraphqlFieldVisibility fieldVisibility;
     private final DataFetcherFactory<?> defaultDataFetcherFactory;
+    // Fast lookup: typeName -> fieldName -> DataFetcherFactory, avoids creating FieldCoordinates on every field fetch
+    private final Map<String, Map<String, DataFetcherFactory<?>>> dataFetcherByNames;
 
     private GraphQLCodeRegistry(Builder builder) {
         this.dataFetcherMap = builder.dataFetcherMap;
@@ -43,6 +45,17 @@ public class GraphQLCodeRegistry {
         this.typeResolverMap = builder.typeResolverMap;
         this.fieldVisibility = builder.fieldVisibility;
         this.defaultDataFetcherFactory = builder.defaultDataFetcherFactory;
+        this.dataFetcherByNames = buildDataFetcherByNames(this.dataFetcherMap);
+    }
+
+    private static Map<String, Map<String, DataFetcherFactory<?>>> buildDataFetcherByNames(Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap) {
+        Map<String, Map<String, DataFetcherFactory<?>>> result = new HashMap<>();
+        for (Map.Entry<FieldCoordinates, DataFetcherFactory<?>> entry : dataFetcherMap.entrySet()) {
+            FieldCoordinates coords = entry.getKey();
+            result.computeIfAbsent(coords.getTypeName(), k -> new HashMap<>())
+                    .put(coords.getFieldName(), entry.getValue());
+        }
+        return result;
     }
 
     /**
@@ -87,6 +100,26 @@ public class GraphQLCodeRegistry {
         return hasDataFetcherImpl(coordinates, dataFetcherMap, systemDataFetcherMap);
     }
 
+    /**
+     * Internal fast-path: looks up a data fetcher by type and field name strings,
+     * avoiding the creation of a throwaway {@link FieldCoordinates} object.
+     */
+    @Internal
+    @SuppressWarnings("deprecation")
+    public DataFetcher<?> getDataFetcher(String parentTypeName, String fieldName, GraphQLFieldDefinition fieldDefinition) {
+        DataFetcherFactory<?> dataFetcherFactory = systemDataFetcherMap.get(fieldName);
+        if (dataFetcherFactory == null) {
+            Map<String, DataFetcherFactory<?>> byField = dataFetcherByNames.get(parentTypeName);
+            if (byField != null) {
+                dataFetcherFactory = byField.get(fieldName);
+            }
+            if (dataFetcherFactory == null) {
+                dataFetcherFactory = defaultDataFetcherFactory;
+            }
+        }
+        return resolveDataFetcher(dataFetcherFactory, fieldDefinition);
+    }
+
     @SuppressWarnings("deprecation")
     private static DataFetcher<?> getDataFetcherImpl(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition, Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap, DataFetcherFactory<?> defaultDataFetcherFactory) {
         assertNotNull(coordinates);
@@ -99,6 +132,11 @@ public class GraphQLCodeRegistry {
                 dataFetcherFactory = defaultDataFetcherFactory;
             }
         }
+        return resolveDataFetcher(dataFetcherFactory, fieldDefinition);
+    }
+
+    @SuppressWarnings("deprecation")
+    private static DataFetcher<?> resolveDataFetcher(DataFetcherFactory<?> dataFetcherFactory, GraphQLFieldDefinition fieldDefinition) {
         // call direct from the field - cheaper to not make a new environment object
         DataFetcher<?> dataFetcher = dataFetcherFactory.get(fieldDefinition);
         if (dataFetcher == null) {
