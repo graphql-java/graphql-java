@@ -17,7 +17,7 @@ jobs:
   commitPerformanceResults:
     runs-on: ubuntu-latest
     steps:
-      - uses: aws-actions/configure-aws-credentials@v5
+      - uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: arn:aws:iam::637423498965:role/GitHubActionGrahQLJava
           aws-region: "ap-southeast-2"
