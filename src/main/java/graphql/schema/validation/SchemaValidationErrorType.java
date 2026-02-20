@@ -25,5 +25,6 @@ public enum SchemaValidationErrorType implements SchemaValidationErrorClassifica
     OneOfNotInhabited,
     RequiredInputFieldCannotBeDeprecated,
     RequiredFieldArgumentCannotBeDeprecated,
-    RequiredDirectiveArgumentCannotBeDeprecated
+    RequiredDirectiveArgumentCannotBeDeprecated,
+    DefaultValueCircularRef
 }
