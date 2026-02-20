@@ -221,7 +221,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.diff.reporting.PrintStreamReporter",
             "graphql.schema.diffing.SchemaGraph",
             "graphql.schema.idl.CombinedWiringFactory",
-            "graphql.schema.idl.DirectiveInfo",
             "graphql.schema.idl.MapEnumValuesProvider",
             "graphql.schema.idl.NaturalEnumValuesProvider",
             "graphql.schema.idl.RuntimeWiring",

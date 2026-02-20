@@ -1,4 +1,4 @@
-I have already asked IntelliJ to infer nullity on this class. Can you help me make this more accurate.
+The task is to annotate public API classes (marked with `@PublicAPI`) with JSpecify nullability annotations.
 
 Note that JSpecify is already used in this repository so it's already imported.
 
@@ -20,8 +20,6 @@ Analyze this Java class and add JSpecify annotations based on:
 5. Method implementations that return null or check for null
 6. GraphQL specification details (see details below)
 
-IntelliJ's infer nullity code analysis isn't comprehensive so feel free to make corrections.
-
 ## Pattern Examples
 
 Here are concrete examples of common annotation patterns:
@@ -42,12 +40,12 @@ public interface MyInterface {
 public class Comment {
     private final String content;
     private final @Nullable SourceLocation sourceLocation;
-    
+
     public Comment(String content, @Nullable SourceLocation sourceLocation) {
         this.content = content;
         this.sourceLocation = sourceLocation;
     }
-    
+
     public @Nullable SourceLocation getSourceLocation() {
         return sourceLocation;
     }
@@ -77,6 +75,7 @@ public class MyClass {
     }
 }
 ```
+
 
 ## GraphQL Specification Compliance
 This is a GraphQL implementation. When determining nullability, consult the GraphQL specification (https://spec.graphql.org/draft/) for the relevant concept. Key principles:

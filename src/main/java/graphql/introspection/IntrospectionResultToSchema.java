@@ -41,7 +41,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.collect.ImmutableKit.map;
-import static graphql.schema.idl.DirectiveInfo.isGraphqlSpecifiedDirective;
+import static graphql.Directives.isBuiltInDirective;
 
 @SuppressWarnings("unchecked")
 @PublicApi
@@ -131,7 +131,7 @@ public class IntrospectionResultToSchema {
 
     private DirectiveDefinition createDirective(Map<String, Object> input) {
         String directiveName = (String) input.get("name");
-        if (isGraphqlSpecifiedDirective(directiveName)) {
+        if (isBuiltInDirective(directiveName)) {
             return null;
         }
 
