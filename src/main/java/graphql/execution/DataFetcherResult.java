@@ -175,6 +175,19 @@ public class DataFetcherResult<T extends @Nullable Object> {
         return new Builder<>();
     }
 
+    /**
+     * Creates a new data fetcher result builder with associated data.
+     * <p>Data may later be overwritten using {@link Builder#data(Object)}.
+     *
+     * @param data the data
+     * @param <T> the type of the result
+     *
+     * @return a new builder
+     */
+    public static <T> Builder<@Nullable T> newResult(@Nullable T data) {
+        return new Builder<>(data);
+    }
+
     public static class Builder<T extends @Nullable Object> {
         private @Nullable T data;
         private @Nullable Object localContext;
