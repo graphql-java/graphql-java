@@ -3,7 +3,7 @@ package graphql.schema;
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.introspection.Introspection;
-import graphql.schema.idl.DirectiveInfo;
+import graphql.Directives;
 import graphql.schema.idl.ScalarInfo;
 import org.jspecify.annotations.NullMarked;
 
@@ -295,7 +295,7 @@ public class GraphQLTypeUtil {
                 return ScalarInfo.isGraphqlSpecifiedScalar((GraphQLScalarType) schemaElement);
             }
             if (schemaElement instanceof GraphQLDirective) {
-                return DirectiveInfo.isGraphqlSpecifiedDirective((GraphQLDirective) schemaElement);
+                return Directives.isBuiltInDirective((GraphQLDirective) schemaElement);
             }
             if (schemaElement instanceof GraphQLNamedType) {
                 return Introspection.isIntrospectionTypes((GraphQLNamedType) schemaElement);

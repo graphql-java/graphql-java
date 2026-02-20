@@ -6,7 +6,7 @@ import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.AstPrinter;
 import graphql.schema.*;
-import graphql.schema.idl.DirectiveInfo;
+import graphql.Directives;
 import graphql.schema.idl.ScalarInfo;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
@@ -390,7 +390,7 @@ public class SchemaGraphFactory {
         directiveVertex.add("name", directive.getName());
         directiveVertex.add("repeatable", directive.isRepeatable());
         directiveVertex.add("locations", directive.validLocations());
-        boolean graphqlSpecified = DirectiveInfo.isGraphqlSpecifiedDirective(directive.getName());
+        boolean graphqlSpecified = Directives.isBuiltInDirective(directive.getName());
         directiveVertex.setBuiltInType(graphqlSpecified);
         directiveVertex.add("description", desc(directive.getDescription()));
         for (GraphQLArgument argument : directive.getArguments()) {
