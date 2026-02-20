@@ -156,6 +156,7 @@ dependencies {
     // this is needed for the idea jmh plugin to work correctly
     jmh 'org.openjdk.jmh:jmh-core:1.37'
     jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+    jmh 'me.bechberger:ap-loader-all:4.0-10'
 
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
@@ -228,7 +229,38 @@ jmh {
         includes = [project.property('jmhInclude')]
     }
     if (project.hasProperty('jmhProfilers')) {
-        profilers = [project.property('jmhProfilers')]
+        def profStr = project.property('jmhProfilers') as String
+        if (profStr.startsWith('async')) {
+            // Resolve native lib from ap-loader JAR on the jmh classpath
+            def apJar = configurations.jmh.files.find { it.name.contains('ap-loader') }
+            if (apJar) {
+                def proc = ['java', '-jar', apJar.absolutePath, 'agentpath'].execute()
+                proc.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)
+                def libPath = proc.text.trim()
+                if (libPath && new File(libPath).exists()) {
+                    if (profStr == 'async') {
+                        profilers = ["async:libPath=${libPath}"]
+                    } else {
+                        profilers = [profStr.replaceFirst('async:', "async:libPath=${libPath};")]
+                    }
+                } else {
+                    profilers = [profStr]
+                }
+            } else {
+                profilers = [profStr]
+            }
+        } else {
+            profilers = [profStr]
+        }
+    }
+    if (project.hasProperty('jmhFork')) {
+        fork = project.property('jmhFork') as int
+    }
+    if (project.hasProperty('jmhIterations')) {
+        iterations = project.property('jmhIterations') as int
+    }
+    if (project.hasProperty('jmhWarmupIterations')) {
+        warmupIterations = project.property('jmhWarmupIterations') as int
     }
 }
 
