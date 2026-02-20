@@ -36,7 +36,7 @@ class AbortExecutionExceptionTest extends Specification {
 
         @Override
         ErrorType getErrorType() {
-            return null
+            return ErrorType.DataFetchingException
         }
     }
 
