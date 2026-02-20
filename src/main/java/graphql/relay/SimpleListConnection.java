@@ -28,7 +28,7 @@ public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>
 
     public SimpleListConnection(List<T> data, String prefix) {
         this.data = assertNotNull(data, " data cannot be null");
-        assertTrue(!prefix.isEmpty(), "prefix cannot be null or empty");
+        assertTrue(!prefix.isEmpty(), "prefix cannot be empty");
         this.prefix = prefix;
     }
 
