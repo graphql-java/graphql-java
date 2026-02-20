@@ -18,7 +18,7 @@ class ExecutionStrategyExceptionHandlingEquivalenceTest extends Specification {
 
         @Override
         InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
-            throw new AbortExecutionException([ValidationError.newValidationError().validationErrorType(ValidationErrorType.UnknownType).build()])
+            throw new AbortExecutionException([ValidationError.newValidationError().validationErrorType(ValidationErrorType.UnknownType).description("Unknown type encountered").build()])
         }
     }
 

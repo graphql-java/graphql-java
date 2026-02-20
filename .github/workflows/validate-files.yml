@@ -1,0 +1,97 @@
+name: Validate Files
+
+# This workflow validates that all files in the repository comply with:
+# 1. Windows filename compatibility — no reserved characters (< > : " | ? * \)
+#    so the repo can be cloned on Windows systems.
+# 2. File size limits — no files larger than 10 MB. Many enterprise users mirror
+#    graphql-java into internal repositories that enforce file size limits.
+
+on:
+  push:
+    branches:
+      - master
+      - '**'
+  pull_request:
+    branches:
+      - master
+      - 23.x
+      - 22.x
+      - 21.x
+      - 20.x
+      - 19.x
+
+jobs:
+  validate-filenames-and-size:
+    runs-on: ubuntu-latest
+    name: Validate Windows Compatibility and File Sizes
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # Fetch all history to check all files
+      
+      - name: Check for Windows-incompatible filenames
+        run: |
+          echo "Checking for Windows-incompatible filenames..."
+          
+          # Windows reserved characters: < > : " | ? * \
+          INVALID_CHARS='[<>:"|?*\\]'
+          
+          # Get all files in the repository (excluding .git directory)
+          ALL_FILES=$(git ls-files)
+          
+          # Check each file for invalid characters
+          INVALID_FILES=$(echo "$ALL_FILES" | grep -E "$INVALID_CHARS" || true)
+          
+          if [ -n "$INVALID_FILES" ]; then
+              echo "::error::The following files have Windows-incompatible characters in their names:"
+              echo "$INVALID_FILES" | while read -r file; do
+                  echo "::error file=${file}::File contains Windows-incompatible characters"
+                  echo "  - $file"
+              done
+              echo ""
+              echo "Please rename these files to remove characters: < > : \" | ? * \\"
+              echo "For ISO timestamps, replace colons with hyphens (e.g., 08:40:24 -> 08-40-24)"
+              exit 1
+          else
+              echo "✓ All filenames are Windows-compatible"
+          fi
+      
+      - name: Check for files larger than 10MB
+        run: |
+          echo "Checking for files larger than 10MB..."
+          
+          MAX_SIZE=$((10 * 1024 * 1024))  # 10 MB in bytes
+          LARGE_FILES=""
+          
+          # Get all files in the repository (excluding .git directory)
+          ALL_FILES=$(git ls-files)
+          
+          # Check each file's size
+          while IFS= read -r file; do
+              if [ -f "$file" ]; then
+                  size=$(stat -c%s "$file" 2>/dev/null || stat -f%z "$file" 2>/dev/null)
+                  if [ -z "$size" ]; then
+                      echo "::warning file=${file}::Could not determine size of file"
+                      continue
+                  fi
+                  if [ "$size" -gt "$MAX_SIZE" ]; then
+                      size_mb=$(awk "BEGIN {printf \"%.2f\", $size/1024/1024}")
+                      echo "::error file=${file}::File size (${size_mb} MB) exceeds 10MB limit"
+                      LARGE_FILES="${LARGE_FILES}${file} (${size_mb} MB)\n"
+                  fi
+              fi
+          done <<< "$ALL_FILES"
+          
+          if [ -n "$LARGE_FILES" ]; then
+              echo ""
+              echo "The following files exceed 10MB:"
+              echo -e "$LARGE_FILES"
+              echo ""
+              echo "Please consider one of these options:"
+              echo "  1. Split the file into smaller parts with suffixes .part1, .part2, etc."
+              echo "  2. Remove unnecessary content from the file"
+              exit 1
+          else
+              echo "✓ All files are within the 10MB size limit"
+          fi

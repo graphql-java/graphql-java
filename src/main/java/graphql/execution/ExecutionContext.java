@@ -1,6 +1,5 @@
 package graphql.execution;
 
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.EngineRunningState;
@@ -55,9 +54,9 @@ public class ExecutionContext {
     private final CoercedVariables coercedVariables;
     private final Supplier<NormalizedVariables> normalizedVariables;
     private final Object root;
-    private final Object context;
+    private final @Nullable Object context;
     private final GraphQLContext graphQLContext;
-    private final Object localContext;
+    private final @Nullable Object localContext;
     private final Instrumentation instrumentation;
     private final AtomicReference<ImmutableList<GraphQLError>> errors = new AtomicReference<>(ImmutableKit.emptyList());
     private final LockKit.ReentrantLock errorsLock = new LockKit.ReentrantLock();
@@ -161,8 +160,8 @@ public class ExecutionContext {
      * @deprecated use {@link #getGraphQLContext()} instead
      */
     @Deprecated(since = "2021-07-05")
-    @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
-    public <T> T getContext() {
+    @SuppressWarnings({ "unchecked", "TypeParameterUnusedInFormals" })
+    public @Nullable <T> T getContext() {
         return (T) context;
     }
 
@@ -171,7 +170,7 @@ public class ExecutionContext {
     }
 
     @SuppressWarnings("unchecked")
-    public <T> T getLocalContext() {
+    public @Nullable <T> T getLocalContext() {
         return (T) localContext;
     }
 

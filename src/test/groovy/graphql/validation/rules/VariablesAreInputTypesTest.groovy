@@ -18,6 +18,10 @@ class VariablesAreInputTypesTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariablesAreInputTypes variablesAreInputTypes = new VariablesAreInputTypes(validationContext, errorCollector)
 
+    def setup() {
+        validationContext.i18n(_, _) >> "test error message"
+    }
+
     def "the unmodified ast type is not a schema input type"() {
         given:
         def astType = new NonNullType(new ListType(new TypeName(StarWarsSchema.droidType.getName())))
