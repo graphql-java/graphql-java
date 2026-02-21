@@ -6,9 +6,9 @@ import graphql.parser.InvalidSyntaxException
 import graphql.parser.Parser
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.UnExecutableSchemaGenerator
+import graphql.validation.OperationValidationRule
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
-import graphql.validation.rules.NoUnusedFragments
 import spock.lang.Specification
 
 import java.util.function.Predicate
@@ -123,10 +123,10 @@ class ParseAndValidateTest extends Specification {
         def sdl = '''type Query { foo : ID } '''
         def graphQL = TestUtil.graphQL(sdl).build()
 
-        Predicate<Class<?>> predicate = new Predicate<Class<?>>() {
+        Predicate<OperationValidationRule> predicate = new Predicate<OperationValidationRule>() {
             @Override
-            boolean test(Class<?> aClass) {
-                if (aClass == NoUnusedFragments.class) {
+            boolean test(OperationValidationRule rule) {
+                if (rule == OperationValidationRule.NO_UNUSED_FRAGMENTS) {
                     return false
                 }
                 return true
@@ -135,7 +135,7 @@ class ParseAndValidateTest extends Specification {
 
         def query = '''
             query { foo }
-            
+
             fragment UnusedFrag on Query {
                 foo
             }

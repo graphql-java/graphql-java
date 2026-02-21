@@ -16,7 +16,7 @@ plugins {
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
-    id "net.ltgt.errorprone" version '4.3.0'
+    id "net.ltgt.errorprone" version '5.0.0'
     //
     // Kotlin just for tests - not production code
     id 'org.jetbrains.kotlin.jvm' version '2.3.0'
@@ -136,7 +136,7 @@ dependencies {
     testImplementation 'org.apache.groovy:groovy-json:5.0.4'
     testImplementation 'com.google.code.gson:gson:2.13.2'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.26'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.20.1'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.21.0'
     testImplementation 'org.awaitility:awaitility-groovy:4.3.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
@@ -144,7 +144,7 @@ dependencies {
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
     testImplementation "io.projectreactor:reactor-core:3.8.0"
 
-    testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
+    testImplementation 'org.testng:testng:7.12.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
     testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
     
@@ -156,6 +156,7 @@ dependencies {
     // this is needed for the idea jmh plugin to work correctly
     jmh 'org.openjdk.jmh:jmh-core:1.37'
     jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+    jmh 'me.bechberger:ap-loader-all:4.0-10'
 
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
@@ -228,7 +229,38 @@ jmh {
         includes = [project.property('jmhInclude')]
     }
     if (project.hasProperty('jmhProfilers')) {
-        profilers = [project.property('jmhProfilers')]
+        def profStr = project.property('jmhProfilers') as String
+        if (profStr.startsWith('async')) {
+            // Resolve native lib from ap-loader JAR on the jmh classpath
+            def apJar = configurations.jmh.files.find { it.name.contains('ap-loader') }
+            if (apJar) {
+                def proc = ['java', '-jar', apJar.absolutePath, 'agentpath'].execute()
+                proc.waitFor(10, java.util.concurrent.TimeUnit.SECONDS)
+                def libPath = proc.text.trim()
+                if (libPath && new File(libPath).exists()) {
+                    if (profStr == 'async') {
+                        profilers = ["async:libPath=${libPath}"]
+                    } else {
+                        profilers = [profStr.replaceFirst('async:', "async:libPath=${libPath};")]
+                    }
+                } else {
+                    profilers = [profStr]
+                }
+            } else {
+                profilers = [profStr]
+            }
+        } else {
+            profilers = [profStr]
+        }
+    }
+    if (project.hasProperty('jmhFork')) {
+        fork = project.property('jmhFork') as int
+    }
+    if (project.hasProperty('jmhIterations')) {
+        iterations = project.property('jmhIterations') as int
+    }
+    if (project.hasProperty('jmhWarmupIterations')) {
+        warmupIterations = project.property('jmhWarmupIterations') as int
     }
 }
 
