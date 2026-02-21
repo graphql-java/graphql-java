@@ -1011,7 +1011,11 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- OverlappingFieldsCanBeMerged ---
     private void validateOverlappingFieldsCanBeMerged(OperationDefinition operationDefinition) {
-        overlappingFieldsImpl(operationDefinition.getSelectionSet(), validationContext.getOutputType());
+        SelectionSet selectionSet = operationDefinition.getSelectionSet();
+        if (selectionSet == null) {
+            return;
+        }
+        overlappingFieldsImpl(selectionSet, validationContext.getOutputType());
     }
 
     private void overlappingFieldsImpl(SelectionSet selectionSet, @Nullable GraphQLOutputType graphQLOutputType) {
@@ -1557,7 +1561,7 @@ public class OperationValidator implements DocumentVisitor {
             return;
         }
         if (operationNames.contains(name)) {
-            String message = i18n(DuplicateOperationName, "UniqueOperationNames.oneOperation", operationDefinition.getName());
+            String message = i18n(DuplicateOperationName, "UniqueOperationNames.oneOperation", name);
             addError(DuplicateOperationName, operationDefinition.getSourceLocation(), message);
         } else {
             operationNames.add(name);
@@ -1646,14 +1650,19 @@ public class OperationValidator implements DocumentVisitor {
                     .objectType(subscriptionType)
                     .graphQLContext(validationContext.getGraphQLContext())
                     .build();
-            MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDef.getSelectionSet());
+            SelectionSet selectionSet = operationDef.getSelectionSet();
+            if (selectionSet == null) {
+                return;
+            }
+            String opName = operationDef.getName() != null ? operationDef.getName() : "";
+            MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, selectionSet);
             if (fields.size() > 1) {
-                String message = i18n(SubscriptionMultipleRootFields, "SubscriptionUniqueRootField.multipleRootFields", operationDef.getName());
+                String message = i18n(SubscriptionMultipleRootFields, "SubscriptionUniqueRootField.multipleRootFields", opName);
                 addError(SubscriptionMultipleRootFields, operationDef.getSourceLocation(), message);
             } else {
                 MergedField mergedField = fields.getSubFieldsList().get(0);
                 if (isIntrospectionField(mergedField)) {
-                    String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootField", operationDef.getName(), mergedField.getName());
+                    String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootField", opName, mergedField.getName());
                     addError(SubscriptionIntrospectionRootField, mergedField.getSingleField().getSourceLocation(), message);
                 }
             }
