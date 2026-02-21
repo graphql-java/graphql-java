@@ -1,5 +1,6 @@
 name: Breaking API Change Detection
 # Detects breaking changes in @PublicApi annotated classes and labels PRs accordingly.
+# Uses git diff to find removed public members — no extra tooling required.
 on:
   pull_request:
     branches:
@@ -16,75 +17,99 @@ permissions:
   pull-requests: write
   issues: write
 
-env:
-  JAPICMP_VERSION: '0.21.2'
-
 jobs:
   detect-breaking-changes:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR branch
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
         with:
-          path: pr
-
-      - name: Checkout base branch
-        uses: actions/checkout@v6
-        with:
-          ref: ${{ github.base_ref }}
-          path: base
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v5
-        with:
-          java-version: '21'
-          distribution: 'corretto'
-
-      - name: Build base branch JAR
-        working-directory: base
-        run: ./gradlew jar -x test -x testWithJava11 -x testWithJava17 -x testWithJava21 --no-daemon
-
-      - name: Build PR branch JAR
-        working-directory: pr
-        run: ./gradlew jar -x test -x testWithJava11 -x testWithJava17 -x testWithJava21 --no-daemon
-
-      - name: Download japicmp
-        run: |
-          curl -sL \
-            "https://github.com/siom79/japicmp/releases/download/japicmp-${{ env.JAPICMP_VERSION }}/japicmp-${{ env.JAPICMP_VERSION }}-jar-with-dependencies.jar" \
-            -o japicmp.jar
+          fetch-depth: 0
 
       - name: Detect breaking API changes in @PublicApi classes
         id: detect
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
-          BASE_JAR=$(find base/build/libs -name "*.jar" \
-            ! -name "*-all.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -1)
-          PR_JAR=$(find pr/build/libs -name "*.jar" \
-            ! -name "*-all.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -1)
+          git fetch origin "$BASE_REF" --no-tags
 
-          echo "Base JAR: $BASE_JAR"
-          echo "PR JAR:   $PR_JAR"
+          python3 - << 'PYEOF'
+          import subprocess, re, os, sys
 
-          # Run japicmp:
-          #   --only-incompatible  : report only binary-breaking changes (callers perspective)
-          #   --include-annotations: restrict analysis to @PublicApi annotated types/members
-          java -jar japicmp.jar \
-            --old "$BASE_JAR" \
-            --new "$PR_JAR" \
-            --only-incompatible \
-            --include-annotations "graphql.PublicApi" \
-            --xml-file api-diff.xml \
-            --html-file api-diff.html \
-            2>&1 | tee japicmp-output.txt || true
+          base_ref = os.environ['BASE_REF']
 
-          # With --only-incompatible, any <class element in the XML means a breaking change.
-          if grep -q '<class ' api-diff.xml 2>/dev/null; then
-            echo "has_breaking_changes=true" >> $GITHUB_OUTPUT
-            echo "Breaking API changes detected in @PublicApi classes."
-          else
-            echo "has_breaking_changes=false" >> $GITHUB_OUTPUT
-            echo "No breaking API changes detected in @PublicApi classes."
-          fi
+          # Files that were modified or deleted relative to the base branch.
+          # Deleted files cover entire @PublicApi class removals; modified files
+          # cover removed/changed members within an existing class.
+          result = subprocess.run(
+              ['git', 'diff', f'origin/{base_ref}...HEAD',
+               '--name-only', '--diff-filter=MD', '--', '*.java'],
+              capture_output=True, text=True, check=True,
+          )
+          changed_files = [f for f in result.stdout.splitlines() if f.endswith('.java')]
+
+          # Matches a removed line that declares a public member (method, field,
+          # constructor).  We exclude class/interface/enum declarations because
+          # those are caught by whole-file deletion, and annotations (@) because
+          # they are not callable members.
+          PUBLIC_MEMBER_RE = re.compile(
+              r'^\s*public\s+'
+              r'(?!class\b|interface\b|enum\b|@interface\b)',
+          )
+          COMMENT_RE = re.compile(r'^\s*(?://|/?\*)')
+
+          breaking = {}  # filepath -> [removed signatures]
+
+          for filepath in changed_files:
+              diff = subprocess.run(
+                  ['git', 'diff', f'origin/{base_ref}...HEAD', '--', filepath],
+                  capture_output=True, text=True,
+              ).stdout
+
+              removed_lines = [
+                  l[1:] for l in diff.splitlines()
+                  if l.startswith('-') and not l.startswith('---')
+              ]
+
+              # Is this a @PublicApi type?  Check the current version on disk
+              # (for modified files) or the removed content (for deleted files).
+              is_public_api = False
+              try:
+                  with open(filepath) as f:
+                      is_public_api = '@PublicApi' in f.read()
+              except FileNotFoundError:
+                  pass
+              if not is_public_api:
+                  is_public_api = any('@PublicApi' in l for l in removed_lines)
+
+              if not is_public_api:
+                  continue
+
+              # Collect removed public member signatures from the diff.
+              for line in removed_lines:
+                  stripped = line.strip()
+                  if not stripped or COMMENT_RE.match(stripped) or stripped.startswith('@'):
+                      continue
+                  if PUBLIC_MEMBER_RE.match(line):
+                      breaking.setdefault(filepath, []).append(stripped)
+
+          if breaking:
+              print('Breaking API changes found in @PublicApi classes:')
+              lines = []
+              for filepath, sigs in breaking.items():
+                  for sig in sigs:
+                      entry = f'{filepath}: {sig}'
+                      print(f'  {entry}')
+                      lines.append(entry)
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  summary = '\n'.join(lines)
+                  f.write('has_breaking_changes=true\n')
+                  f.write(f'summary<<SUMMARY_EOF\n{summary}\nSUMMARY_EOF\n')
+          else:
+              print('No breaking API changes detected in @PublicApi classes.')
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+                  f.write('has_breaking_changes=false\n')
+                  f.write('summary=\n')
+          PYEOF
 
       - name: Add 'breaking change' label to PR
         if: steps.detect.outputs.has_breaking_changes == 'true'
@@ -97,7 +122,6 @@ jobs:
               issue_number: context.issue.number,
               labels: ['breaking change'],
             });
-            console.log(`Added 'breaking change' label to PR #${context.issue.number}`);
 
       - name: Remove 'breaking change' label if no longer applicable
         if: steps.detect.outputs.has_breaking_changes == 'false'
@@ -111,57 +135,33 @@ jobs:
                 issue_number: context.issue.number,
                 name: 'breaking change',
               });
-              console.log(`Removed 'breaking change' label from PR #${context.issue.number}`);
             } catch (e) {
-              if (e.status === 404) {
-                console.log("Label 'breaking change' was not present; nothing to remove.");
-              } else {
-                throw e;
-              }
+              if (e.status !== 404) throw e;
             }
-
-      - name: Upload API diff report as artifact
-        if: steps.detect.outputs.has_breaking_changes == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: api-diff-report
-          path: |
-            api-diff.xml
-            api-diff.html
-          retention-days: 30
 
       - name: Post breaking-changes summary comment on PR
         if: steps.detect.outputs.has_breaking_changes == 'true'
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const rawOutput = fs.readFileSync('japicmp-output.txt', 'utf8').trim();
-            const output = rawOutput.length > 3000
-              ? rawOutput.substring(0, 3000) + '\n... (truncated, see artifact for full report)'
-              : rawOutput;
-
+            const summary = `${{ steps.detect.outputs.summary }}`;
             const commentMarker = '<!-- breaking-api-change-bot -->';
-            const artifactUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
 
             const body = `${commentMarker}
-## Breaking API Changes Detected
+            ## Breaking API Changes Detected
 
-This PR introduces breaking changes to one or more \`@PublicApi\` annotated classes or members.
-It has been automatically labeled as **breaking change**.
+            This PR removes or changes public members of \`@PublicApi\` annotated classes.
+            It has been automatically labeled as **breaking change**.
 
-The full HTML and XML diff reports are available as a [workflow artifact](${artifactUrl}).
+            <details>
+            <summary>Affected signatures</summary>
 
-<details>
-<summary>japicmp output</summary>
+            \`\`\`
+            ${summary}
+            \`\`\`
 
-\`\`\`
-${output}
-\`\`\`
+            </details>`;
 
-</details>`;
-
-            // Update existing bot comment instead of creating a new one on each push.
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
