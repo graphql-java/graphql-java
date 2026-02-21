@@ -1,5 +1,6 @@
 package benchmark;
 
+import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -42,6 +43,8 @@ public class SchemaTransformerBenchmark {
 
         GraphQLDirective infoDirective = GraphQLDirective.newDirective()
                 .name("Info")
+                .validLocation(DirectiveLocation.FIELD_DEFINITION)
+                .validLocation(DirectiveLocation.OBJECT)
                 .build();
         GraphQLTypeVisitor directiveAdder = new GraphQLTypeVisitorStub() {
             @Override
@@ -94,6 +97,8 @@ public class SchemaTransformerBenchmark {
             try {
                 String schemaString = BenchmarkUtils.loadResource("large-schema-3.graphqls");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
+                // Declare the Info directive on the schema so validation passes after transformation
+                schema = schema.transform(builder -> builder.additionalDirective(infoDirective));
                 txSchema = SchemaTransformer.transformSchema(schema, directiveAdder);
             } catch (Exception e) {
                 throw new RuntimeException(e);
