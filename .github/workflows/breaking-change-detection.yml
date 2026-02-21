@@ -1,0 +1,186 @@
+name: Breaking API Change Detection
+# Detects breaking changes in @PublicApi annotated classes and labels PRs accordingly.
+on:
+  pull_request:
+    branches:
+      - master
+      - 23.x
+      - 22.x
+      - 21.x
+      - 20.x
+      - 19.x
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+env:
+  JAPICMP_VERSION: '0.21.2'
+
+jobs:
+  detect-breaking-changes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v6
+        with:
+          path: pr
+
+      - name: Checkout base branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'corretto'
+
+      - name: Build base branch JAR
+        working-directory: base
+        run: ./gradlew jar -x test -x testWithJava11 -x testWithJava17 -x testWithJava21 --no-daemon
+
+      - name: Build PR branch JAR
+        working-directory: pr
+        run: ./gradlew jar -x test -x testWithJava11 -x testWithJava17 -x testWithJava21 --no-daemon
+
+      - name: Download japicmp
+        run: |
+          curl -sL \
+            "https://github.com/siom79/japicmp/releases/download/japicmp-${{ env.JAPICMP_VERSION }}/japicmp-${{ env.JAPICMP_VERSION }}-jar-with-dependencies.jar" \
+            -o japicmp.jar
+
+      - name: Detect breaking API changes in @PublicApi classes
+        id: detect
+        run: |
+          BASE_JAR=$(find base/build/libs -name "*.jar" \
+            ! -name "*-all.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -1)
+          PR_JAR=$(find pr/build/libs -name "*.jar" \
+            ! -name "*-all.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -1)
+
+          echo "Base JAR: $BASE_JAR"
+          echo "PR JAR:   $PR_JAR"
+
+          # Run japicmp:
+          #   --only-incompatible  : report only binary-breaking changes (callers perspective)
+          #   --include-annotations: restrict analysis to @PublicApi annotated types/members
+          java -jar japicmp.jar \
+            --old "$BASE_JAR" \
+            --new "$PR_JAR" \
+            --only-incompatible \
+            --include-annotations "graphql.PublicApi" \
+            --xml-file api-diff.xml \
+            --html-file api-diff.html \
+            2>&1 | tee japicmp-output.txt || true
+
+          # With --only-incompatible, any <class element in the XML means a breaking change.
+          if grep -q '<class ' api-diff.xml 2>/dev/null; then
+            echo "has_breaking_changes=true" >> $GITHUB_OUTPUT
+            echo "Breaking API changes detected in @PublicApi classes."
+          else
+            echo "has_breaking_changes=false" >> $GITHUB_OUTPUT
+            echo "No breaking API changes detected in @PublicApi classes."
+          fi
+
+      - name: Add 'breaking change' label to PR
+        if: steps.detect.outputs.has_breaking_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              labels: ['breaking change'],
+            });
+            console.log(`Added 'breaking change' label to PR #${context.issue.number}`);
+
+      - name: Remove 'breaking change' label if no longer applicable
+        if: steps.detect.outputs.has_breaking_changes == 'false'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                name: 'breaking change',
+              });
+              console.log(`Removed 'breaking change' label from PR #${context.issue.number}`);
+            } catch (e) {
+              if (e.status === 404) {
+                console.log("Label 'breaking change' was not present; nothing to remove.");
+              } else {
+                throw e;
+              }
+            }
+
+      - name: Upload API diff report as artifact
+        if: steps.detect.outputs.has_breaking_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-diff-report
+          path: |
+            api-diff.xml
+            api-diff.html
+          retention-days: 30
+
+      - name: Post breaking-changes summary comment on PR
+        if: steps.detect.outputs.has_breaking_changes == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const rawOutput = fs.readFileSync('japicmp-output.txt', 'utf8').trim();
+            const output = rawOutput.length > 3000
+              ? rawOutput.substring(0, 3000) + '\n... (truncated, see artifact for full report)'
+              : rawOutput;
+
+            const commentMarker = '<!-- breaking-api-change-bot -->';
+            const artifactUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+
+            const body = `${commentMarker}
+## Breaking API Changes Detected
+
+This PR introduces breaking changes to one or more \`@PublicApi\` annotated classes or members.
+It has been automatically labeled as **breaking change**.
+
+The full HTML and XML diff reports are available as a [workflow artifact](${artifactUrl}).
+
+<details>
+<summary>japicmp output</summary>
+
+\`\`\`
+${output}
+\`\`\`
+
+</details>`;
+
+            // Update existing bot comment instead of creating a new one on each push.
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(commentMarker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
