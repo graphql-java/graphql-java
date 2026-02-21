@@ -4,6 +4,9 @@ import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,6 +17,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
+@NullMarked
 public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
@@ -21,8 +25,8 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition im
                                                List<Type> implementz,
                                                List<FieldDefinition> definitions,
                                                List<Directive> directives,
-                                               Description description,
-                                               SourceLocation sourceLocation,
+                                               @Nullable Description description,
+                                               @Nullable SourceLocation sourceLocation,
                                                List<Comment> comments,
                                                IgnoredChars ignoredChars,
                                                Map<String, String> additionalData) {
@@ -33,8 +37,8 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition im
     public InterfaceTypeExtensionDefinition deepCopy() {
         return new InterfaceTypeExtensionDefinition(getName(),
                 getImplements(),
-                deepCopy(getFieldDefinitions()),
-                deepCopy(getDirectives()),
+                assertNotNull(deepCopy(getFieldDefinitions()), "fieldDefinitions cannot be null"),
+                assertNotNull(deepCopy(getDirectives()), "directives cannot be null"),
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
@@ -70,6 +74,7 @@ public class InterfaceTypeExtensionDefinition extends InterfaceTypeDefinition im
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
