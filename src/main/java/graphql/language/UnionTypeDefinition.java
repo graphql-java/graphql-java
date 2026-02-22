@@ -8,6 +8,9 @@ import graphql.collect.ImmutableKit;
 import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +24,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefinition> implements TypeDefinition<UnionTypeDefinition>, DirectivesContainer<UnionTypeDefinition>, NamedNode<UnionTypeDefinition> {
 
     private final String name;
@@ -34,8 +38,8 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
     protected UnionTypeDefinition(String name,
                                   List<Directive> directives,
                                   List<Type> memberTypes,
-                                  Description description,
-                                  SourceLocation sourceLocation,
+                                  @Nullable Description description,
+                                  @Nullable SourceLocation sourceLocation,
                                   List<Comment> comments,
                                   IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
@@ -115,7 +119,7 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -131,8 +135,8 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
     @Override
     public UnionTypeDefinition deepCopy() {
         return new UnionTypeDefinition(name,
-                deepCopy(directives.getDirectives()),
-                deepCopy(memberTypes),
+                assertNotNull(deepCopy(directives.getDirectives())),
+                assertNotNull(deepCopy(memberTypes)),
                 description,
                 getSourceLocation(),
                 getComments(),
@@ -164,6 +168,7 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();

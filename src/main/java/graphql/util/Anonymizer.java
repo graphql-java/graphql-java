@@ -864,14 +864,14 @@ public class Anonymizer {
             public TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> context) {
                 String newName = assertNotNull(astNodeToNewName.get(node));
                 GraphQLType currentCondition = assertNotNull(schema.getType(node.getTypeCondition().getName()));
-                String newCondition = newNames.get(currentCondition);
+                String newCondition = assertNotNull(newNames.get(currentCondition));
                 return changeNode(context, node.transform(builder -> builder.name(newName).typeCondition(new TypeName(newCondition))));
             }
 
             @Override
             public TraversalControl visitInlineFragment(InlineFragment node, TraverserContext<Node> context) {
                 GraphQLType currentCondition = assertNotNull(schema.getType(node.getTypeCondition().getName()));
-                String newCondition = newNames.get(currentCondition);
+                String newCondition = assertNotNull(newNames.get(currentCondition));
                 return changeNode(context, node.transform(builder -> builder.typeCondition(new TypeName(newCondition))));
             }
 

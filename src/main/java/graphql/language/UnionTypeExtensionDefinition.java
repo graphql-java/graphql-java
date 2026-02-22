@@ -4,6 +4,9 @@ import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,14 +17,15 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
+@NullMarked
 public class UnionTypeExtensionDefinition extends UnionTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
     protected UnionTypeExtensionDefinition(String name,
                                            List<Directive> directives,
                                            List<Type> memberTypes,
-                                           Description description,
-                                           SourceLocation sourceLocation,
+                                           @Nullable Description description,
+                                           @Nullable SourceLocation sourceLocation,
                                            List<Comment> comments,
                                            IgnoredChars ignoredChars,
                                            Map<String, String> additionalData) {
@@ -38,8 +42,8 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition implements
     @Override
     public UnionTypeExtensionDefinition deepCopy() {
         return new UnionTypeExtensionDefinition(getName(),
-                deepCopy(getDirectives()),
-                deepCopy(getMemberTypes()),
+                assertNotNull(deepCopy(getDirectives())),
+                assertNotNull(deepCopy(getMemberTypes())),
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
@@ -73,6 +77,7 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition implements
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();

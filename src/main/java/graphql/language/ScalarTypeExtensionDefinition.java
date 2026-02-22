@@ -4,6 +4,9 @@ import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,13 +17,14 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
+@NullMarked
 public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
     protected ScalarTypeExtensionDefinition(String name,
                                             List<Directive> directives,
-                                            Description description,
-                                            SourceLocation sourceLocation,
+                                            @Nullable Description description,
+                                            @Nullable SourceLocation sourceLocation,
                                             List<Comment> comments,
                                             IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(name, directives, description, sourceLocation, comments, ignoredChars, additionalData);
@@ -28,7 +32,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition implemen
 
     @Override
     public ScalarTypeExtensionDefinition deepCopy() {
-        return new ScalarTypeExtensionDefinition(getName(), deepCopy(getDirectives()), getDescription(), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new ScalarTypeExtensionDefinition(getName(), assertNotNull(deepCopy(getDirectives())), getDescription(), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -57,6 +61,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition implemen
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
