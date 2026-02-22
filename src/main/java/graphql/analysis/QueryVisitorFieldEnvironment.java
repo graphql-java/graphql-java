@@ -9,10 +9,13 @@ import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
 @PublicApi
+@NullMarked
 public interface QueryVisitorFieldEnvironment {
 
     /**
@@ -46,7 +49,7 @@ public interface QueryVisitorFieldEnvironment {
      */
     GraphQLFieldsContainer getFieldsContainer();
 
-    QueryVisitorFieldEnvironment getParentEnvironment();
+    @Nullable QueryVisitorFieldEnvironment getParentEnvironment();
 
     Map<String, Object> getArguments();
 

@@ -4,6 +4,8 @@ import graphql.PublicApi;
 import graphql.language.Value;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInputValueDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This describes the tree structure that forms from a argument input type,
@@ -11,9 +13,10 @@ import graphql.schema.GraphQLInputValueDefinition;
  * types and hence form a tree of values.
  */
 @PublicApi
+@NullMarked
 public interface QueryVisitorFieldArgumentInputValue {
 
-    QueryVisitorFieldArgumentInputValue getParent();
+    @Nullable QueryVisitorFieldArgumentInputValue getParent();
 
     GraphQLInputValueDefinition getInputValueDefinition();
 
@@ -21,5 +24,5 @@ public interface QueryVisitorFieldArgumentInputValue {
 
     GraphQLInputType getInputType();
 
-    Value getValue();
+    @Nullable Value getValue();
 }

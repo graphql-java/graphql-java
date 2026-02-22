@@ -6,10 +6,12 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLSchema;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Map;
 
 @PublicApi
+@NullMarked
 public interface QueryVisitorFieldArgumentValueEnvironment {
 
     GraphQLSchema getSchema();
