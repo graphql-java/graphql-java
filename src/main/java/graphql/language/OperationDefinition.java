@@ -8,6 +8,9 @@ import graphql.collect.ImmutableKit;
 import graphql.language.NodeUtil.DirectivesHolder;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,15 +25,16 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition>, NamedNode<OperationDefinition> {
 
     public enum Operation {
         QUERY, MUTATION, SUBSCRIPTION
     }
 
-    private final String name;
+    private final @Nullable String name;
 
-    private final Operation operation;
+    private final @Nullable Operation operation;
     private final ImmutableList<VariableDefinition> variableDefinitions;
     private final DirectivesHolder directives;
     private final SelectionSet selectionSet;
@@ -40,12 +44,12 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
-    protected OperationDefinition(String name,
-                                  Operation operation,
+    protected OperationDefinition(@Nullable String name,
+                                  @Nullable Operation operation,
                                   List<VariableDefinition> variableDefinitions,
                                   List<Directive> directives,
                                   SelectionSet selectionSet,
-                                  SourceLocation sourceLocation,
+                                  @Nullable SourceLocation sourceLocation,
                                   List<Comment> comments,
                                   IgnoredChars ignoredChars,
                                   Map<String, String> additionalData) {
@@ -55,15 +59,6 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         this.variableDefinitions = ImmutableList.copyOf(variableDefinitions);
         this.directives = DirectivesHolder.of(directives);
         this.selectionSet = selectionSet;
-    }
-
-    public OperationDefinition(String name,
-                               Operation operation) {
-        this(name, operation, emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
-    }
-
-    public OperationDefinition(String name) {
-        this(name, null, emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
@@ -93,11 +88,12 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         );
     }
 
-    public String getName() {
+    @Override
+    public @Nullable String getName() {
         return name;
     }
 
-    public Operation getOperation() {
+    public @Nullable Operation getOperation() {
         return operation;
     }
 
@@ -130,7 +126,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -148,9 +144,9 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
     public OperationDefinition deepCopy() {
         return new OperationDefinition(name,
                 operation,
-                deepCopy(variableDefinitions),
-                deepCopy(directives.getDirectives()),
-                deepCopy(selectionSet),
+                assertNotNull(deepCopy(variableDefinitions), "variableDefinitions deepCopy should not return null"),
+                assertNotNull(deepCopy(directives.getDirectives()), "directives deepCopy should not return null"),
+                assertNotNull(deepCopy(selectionSet), "selectionSet deepCopy should not return null"),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -183,6 +179,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
