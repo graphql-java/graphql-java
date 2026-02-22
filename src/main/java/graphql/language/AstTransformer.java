@@ -7,6 +7,8 @@ import graphql.util.TraverserVisitor;
 import graphql.util.TraverserVisitorStub;
 import graphql.util.TreeParallelTransformer;
 import graphql.util.TreeTransformer;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;
@@ -19,6 +21,7 @@ import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
  * containing the changed nodes while everything else is the same.
  */
 @PublicApi
+@NullMarked
 public class AstTransformer {
 
     /**
@@ -46,7 +49,7 @@ public class AstTransformer {
      *                 can be retrieved within the visitor by calling context.getVarFromParents().
      * @return the transformed tree.
      */
-    public Node transform(Node root, NodeVisitor nodeVisitor, Map<Class<?>, Object> rootVars) {
+    public Node transform(Node root, NodeVisitor nodeVisitor, @Nullable Map<Class<?>, Object> rootVars) {
         assertNotNull(root);
         assertNotNull(nodeVisitor);
 

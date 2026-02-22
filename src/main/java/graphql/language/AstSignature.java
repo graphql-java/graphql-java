@@ -4,6 +4,8 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -18,6 +20,7 @@ import static graphql.util.TreeTransformerUtil.changeNode;
  * This will produce signature and privacy safe query documents that can be used for query categorisation and logging.
  */
 @PublicApi
+@NullMarked
 public class AstSignature {
 
     /**
@@ -34,7 +37,7 @@ public class AstSignature {
      *
      * @return the signature query in document form
      */
-    public Document signatureQuery(Document document, String operationName) {
+    public Document signatureQuery(Document document, @Nullable String operationName) {
         return sortAST(
                 removeAliases(
                         hideLiterals(true,
@@ -57,7 +60,7 @@ public class AstSignature {
      *
      * @return the privacy safe query in document form
      */
-    public Document privacySafeQuery(Document document, String operationName) {
+    public Document privacySafeQuery(Document document, @Nullable String operationName) {
         return sortAST(
                 removeAliases(
                         hideLiterals(false,
@@ -144,7 +147,7 @@ public class AstSignature {
         return new AstSorter().sort(document);
     }
 
-    private Document dropUnusedQueryDefinitions(Document document, final String operationName) {
+    private Document dropUnusedQueryDefinitions(Document document, final @Nullable String operationName) {
         NodeVisitorStub visitor = new NodeVisitorStub() {
             @Override
             public TraversalControl visitDocument(Document node, TraverserContext<Node> context) {
@@ -167,7 +170,7 @@ public class AstSignature {
         return transformDoc(document, visitor);
     }
 
-    private boolean isThisOperation(OperationDefinition operationDefinition, String operationName) {
+    private boolean isThisOperation(OperationDefinition operationDefinition, @Nullable String operationName) {
         String name = operationDefinition.getName();
         if (operationName == null) {
             return name == null;
