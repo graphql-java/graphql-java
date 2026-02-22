@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import graphql.AssertException;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -21,6 +23,7 @@ import static java.lang.String.format;
  * class represents that path as a series of segments.
  */
 @PublicApi
+@NullMarked
 public class ResultPath {
     private static final ResultPath ROOT_PATH = new ResultPath();
 
@@ -33,8 +36,8 @@ public class ResultPath {
         return ROOT_PATH;
     }
 
-    private final ResultPath parent;
-    private final Object segment;
+    private final @Nullable ResultPath parent;
+    private final @Nullable Object segment;
 
     // hash is effective immutable but lazily initialized similar to the hash code of java.lang.String
     private int hash;
@@ -79,7 +82,7 @@ public class ResultPath {
         if (segment instanceof String) {
             return this;
         }
-        return parent;
+        return assertNotNull(parent, "parent should not be null for non-root path");
     }
 
     /**
@@ -98,18 +101,18 @@ public class ResultPath {
 
 
     public String getSegmentName() {
-        return (String) segment;
+        return (String) assertNotNull(segment, "segment should not be null");
     }
 
     public int getSegmentIndex() {
-        return (int) segment;
+        return (int) assertNotNull(segment, "segment should not be null");
     }
 
     public Object getSegmentValue() {
-        return segment;
+        return assertNotNull(segment, "segment should not be null");
     }
 
-    public ResultPath getParent() {
+    public @Nullable ResultPath getParent() {
         return parent;
     }
 
@@ -195,7 +198,7 @@ public class ResultPath {
      *
      * @return a new path with the last segment dropped off
      */
-    public ResultPath dropSegment() {
+    public @Nullable ResultPath dropSegment() {
         if (this == rootPath()) {
             return null;
         }
@@ -212,7 +215,7 @@ public class ResultPath {
      */
     public ResultPath replaceSegment(int segment) {
         assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-        return new ResultPath(parent, segment);
+        return new ResultPath(assertNotNull(parent, "parent should not be null"), segment);
     }
 
     /**
@@ -225,7 +228,7 @@ public class ResultPath {
      */
     public ResultPath replaceSegment(String segment) {
         assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-        return new ResultPath(parent, segment);
+        return new ResultPath(assertNotNull(parent, "parent should not be null"), segment);
     }
 
 
@@ -252,12 +255,12 @@ public class ResultPath {
 
     public ResultPath sibling(String siblingField) {
         assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-        return new ResultPath(this.parent, siblingField);
+        return new ResultPath(assertNotNull(this.parent, "parent should not be null"), siblingField);
     }
 
     public ResultPath sibling(int siblingField) {
         assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-        return new ResultPath(this.parent, siblingField);
+        return new ResultPath(assertNotNull(this.parent, "parent should not be null"), siblingField);
     }
 
     /**
@@ -269,7 +272,7 @@ public class ResultPath {
         }
         LinkedList<Object> list = new LinkedList<>();
         ResultPath p = this;
-        while (p.segment != null) {
+        while (p != null && p.segment != null) {
             list.addFirst(p.segment);
             p = p.parent;
         }
@@ -285,7 +288,7 @@ public class ResultPath {
         }
         LinkedList<String> list = new LinkedList<>();
         ResultPath p = this;
-        while (p.segment != null) {
+        while (p != null && p.segment != null) {
             if (p.segment instanceof String) {
                 list.addFirst((String) p.segment);
             }
@@ -327,7 +330,7 @@ public class ResultPath {
 
         ResultPath self = this;
         ResultPath that = (ResultPath) o;
-        while (self.segment != null && that.segment != null) {
+        while (self != null && self.segment != null && that != null && that.segment != null) {
             if (!Objects.equals(self.segment, that.segment)) {
                 return false;
             }
@@ -335,7 +338,7 @@ public class ResultPath {
             that = that.parent;
         }
 
-        return self.isRootPath() && that.isRootPath();
+        return (self == null || self.isRootPath()) && (that == null || that.isRootPath());
     }
 
     @Override

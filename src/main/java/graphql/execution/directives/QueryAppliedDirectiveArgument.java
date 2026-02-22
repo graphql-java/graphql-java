@@ -10,7 +10,8 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphqlTypeBuilder;
 import graphql.schema.InputValueWithState;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
@@ -26,19 +27,20 @@ import static graphql.execution.ValuesResolver.getInputValueImpl;
  * You can think of them as 'instances' of {@link GraphQLArgument}, when applied to a directive on a query element
  */
 @PublicApi
+@NullMarked
 public class QueryAppliedDirectiveArgument {
 
     private final String name;
     private final InputValueWithState value;
     private final GraphQLInputType originalType;
 
-    private final Argument definition;
+    private final @Nullable Argument definition;
 
 
     private QueryAppliedDirectiveArgument(String name,
                                           InputValueWithState value,
                                           GraphQLInputType type,
-                                          Argument definition
+                                          @Nullable Argument definition
     ) {
         assertValidName(name);
         this.name = name;
@@ -47,12 +49,10 @@ public class QueryAppliedDirectiveArgument {
         this.definition = definition;
     }
 
-    @NonNull
     public String getName() {
         return name;
     }
 
-    @NonNull
     public GraphQLInputType getType() {
         return originalType;
     }
@@ -64,7 +64,7 @@ public class QueryAppliedDirectiveArgument {
     /**
      * @return an input value with state for an applied directive argument
      */
-    public @NonNull InputValueWithState getArgumentValue() {
+    public InputValueWithState getArgumentValue() {
         return value;
     }
 
@@ -83,8 +83,7 @@ public class QueryAppliedDirectiveArgument {
      *
      * @return a value of type T which is the java value of the argument
      */
-    @Nullable
-    public <T> T getValue() {
+    public @Nullable <T> T getValue() {
         return getInputValueImpl(getType(), value, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
@@ -97,8 +96,7 @@ public class QueryAppliedDirectiveArgument {
         return null;
     }
 
-    @Nullable
-    public Argument getDefinition() {
+    public @Nullable Argument getDefinition() {
         return definition;
     }
 
@@ -134,6 +132,7 @@ public class QueryAppliedDirectiveArgument {
                 '}';
     }
 
+    @NullUnmarked
     public static class Builder extends GraphqlTypeBuilder<Builder> {
 
         private InputValueWithState value = InputValueWithState.NOT_SET;
@@ -166,7 +165,7 @@ public class QueryAppliedDirectiveArgument {
          *
          * @return this builder
          */
-        public Builder valueLiteral(@NonNull Value<?> value) {
+        public Builder valueLiteral(Value<?> value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
         }
@@ -181,7 +180,7 @@ public class QueryAppliedDirectiveArgument {
             return this;
         }
 
-        public Builder inputValueWithState(@NonNull InputValueWithState value) {
+        public Builder inputValueWithState(InputValueWithState value) {
             this.value = Assert.assertNotNull(value);
             return this;
         }

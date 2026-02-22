@@ -7,7 +7,8 @@ import graphql.language.Directive;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphqlTypeBuilder;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
@@ -33,13 +34,14 @@ import static graphql.util.FpKit.getByName;
  * See <a href="https://graphql.org/learn/queries/#directives">https://graphql.org/learn/queries/#directives</a> for more details on the concept.
  */
 @PublicApi
+@NullMarked
 public class QueryAppliedDirective {
 
     private final String name;
     private final ImmutableList<QueryAppliedDirectiveArgument> arguments;
-    private final Directive definition;
+    private final @Nullable Directive definition;
 
-    private QueryAppliedDirective(String name, Directive definition, Collection<QueryAppliedDirectiveArgument> arguments) {
+    private QueryAppliedDirective(String name, @Nullable Directive definition, Collection<QueryAppliedDirectiveArgument> arguments) {
         assertValidName(name);
         assertNotNull(arguments, "arguments can't be null");
         this.name = name;
@@ -47,13 +49,11 @@ public class QueryAppliedDirective {
         this.definition = definition;
     }
 
-    @NonNull
     public String getName() {
         return name;
     }
 
-    @Nullable
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return null;
     }
 
@@ -61,8 +61,7 @@ public class QueryAppliedDirective {
         return arguments;
     }
 
-    @Nullable
-    public QueryAppliedDirectiveArgument getArgument(String name) {
+    public @Nullable QueryAppliedDirectiveArgument getArgument(String name) {
         for (QueryAppliedDirectiveArgument argument : arguments) {
             if (argument.getName().equals(name)) {
                 return argument;
@@ -71,8 +70,7 @@ public class QueryAppliedDirective {
         return null;
     }
 
-    @Nullable
-    public Directive getDefinition() {
+    public @Nullable Directive getDefinition() {
         return definition;
     }
 
@@ -107,6 +105,7 @@ public class QueryAppliedDirective {
         return new Builder(existing);
     }
 
+    @NullUnmarked
     public static class Builder extends GraphqlTypeBuilder<Builder> {
 
         private final Map<String, QueryAppliedDirectiveArgument> arguments = new LinkedHashMap<>();
