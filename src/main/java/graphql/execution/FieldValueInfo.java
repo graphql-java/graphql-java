@@ -2,6 +2,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -19,6 +20,7 @@ import static graphql.Assert.assertNotNull;
  * values might need a call to a database or other systems will tend to be {@link CompletableFuture} promises.
  */
 @PublicApi
+@NullMarked
 public class FieldValueInfo {
 
     public enum CompleteValueType {
