@@ -17,6 +17,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -38,6 +39,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  */
 @SuppressWarnings("deprecation")
 @PublicApi
+@NullMarked
 public class SimplePerformantInstrumentation implements Instrumentation {
 
     /**

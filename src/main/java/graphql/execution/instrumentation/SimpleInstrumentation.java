@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * An implementation of {@link graphql.execution.instrumentation.Instrumentation} that does nothing.  It can be used
@@ -11,6 +12,7 @@ import graphql.PublicApi;
  * @deprecated use {@link SimplePerformantInstrumentation} instead as a base class.
  */
 @PublicApi
+@NullMarked
 @Deprecated(since = "2022-10-05")
 public class SimpleInstrumentation implements Instrumentation {
 

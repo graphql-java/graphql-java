@@ -1,6 +1,5 @@
 package graphql.schema;
 
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -45,10 +44,13 @@ import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static java.util.Collections.singletonList;
 
 /**
- * The schema represents the combined type system of the graphql engine.  This is how the engine knows
+ * The schema represents the combined type system of the graphql engine. This is
+ * how the engine knows
  * what graphql queries represent what data.
  * <p>
- * See <a href="https://graphql.org/learn/schema/#type-language">https://graphql.org/learn/schema/#type-language</a> for more details
+ * See <a href=
+ * "https://graphql.org/learn/schema/#type-language">https://graphql.org/learn/schema/#type-language</a>
+ * for more details
  */
 @PublicApi
 @NullMarked
@@ -79,7 +81,8 @@ public class GraphQLSchema {
      * This constructs partial GraphQL schema object which has the schema (query / mutation / subscription) trees
      * in it but it does not have the collected types, the correct code registry nor the type references replaced
      *
-     * But it can be traversed to discover all that and filled out later via another constructor.
+     * But it can be traversed to discover all that and filled out later via another
+     * constructor.
      *
      */
     @Internal
@@ -96,8 +99,10 @@ public class GraphQLSchema {
         this.introspectionSchemaType = builder.introspectionSchemaType;
         this.introspectionSchemaField = Introspection.buildSchemaField(builder.introspectionSchemaType);
         this.introspectionTypeField = Introspection.buildTypeField(builder.introspectionSchemaType);
-        this.directiveDefinitionsHolder = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives, emptyList());
-        this.schemaAppliedDirectivesHolder = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives, builder.schemaAppliedDirectives);
+        this.directiveDefinitionsHolder = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives,
+                emptyList());
+        this.schemaAppliedDirectivesHolder = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives,
+                builder.schemaAppliedDirectives);
         this.definition = builder.definition;
         this.extensionDefinitions = nonNullCopyOf(builder.extensionDefinitions);
         this.description = builder.description;
@@ -109,15 +114,15 @@ public class GraphQLSchema {
     }
 
     /*
-     * This constructs a fully fledged graphql schema object that has not yet had its type references replaced
+     * This constructs a fully fledged graphql schema object that has not yet had
+     * its type references replaced
      * but it's otherwise complete
      */
     @Internal
     public GraphQLSchema(GraphQLSchema existingSchema,
-                         GraphQLCodeRegistry codeRegistry,
-                         ImmutableMap<String, GraphQLNamedType> typeMap,
-                         ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes
-    ) {
+            GraphQLCodeRegistry codeRegistry,
+            ImmutableMap<String, GraphQLNamedType> typeMap,
+            ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes) {
         assertNotNull(codeRegistry, "codeRegistry can't be null");
 
         this.queryType = existingSchema.queryType;
@@ -177,8 +182,8 @@ public class GraphQLSchema {
         ImmutableList<GraphQLDirective> finalDirectives = ImmutableList.copyOf(fastBuilder.directiveMap.values());
 
         // Get interface-to-object-type-names map from collector (already sorted)
-        ImmutableMap<String, ImmutableList<String>> finalInterfaceNameMap =
-                fastBuilder.shallowTypeRefCollector.getInterfaceNameToObjectTypeNames();
+        ImmutableMap<String, ImmutableList<String>> finalInterfaceNameMap = fastBuilder.shallowTypeRefCollector
+                .getInterfaceNameToObjectTypeNames();
 
         // Build interface-to-object-types map by looking up types in typeMap
         ImmutableMap.Builder<String, ImmutableList<GraphQLObjectType>> interfaceMapBuilder = ImmutableMap.builder();
@@ -195,9 +200,12 @@ public class GraphQLSchema {
         this.subscriptionType = fastBuilder.subscriptionType;
         this.introspectionSchemaType = fastBuilder.introspectionSchemaType;
         // Compute additionalTypes as all types minus root types.
-        // Note: Unlike the standard Builder which computes only "detached" types (types not
-        // reachable from roots), FastBuilder includes ALL non-root types in additionalTypes.
-        // This is a semantic difference but does not affect schema traversal or correctness.
+        // Note: Unlike the standard Builder which computes only "detached" types (types
+        // not
+        // reachable from roots), FastBuilder includes ALL non-root types in
+        // additionalTypes.
+        // This is a semantic difference but does not affect schema traversal or
+        // correctness.
         Set<String> rootTypeNames = new LinkedHashSet<>();
         rootTypeNames.add(fastBuilder.queryType.getName());
         if (fastBuilder.mutationType != null) {
@@ -229,23 +237,27 @@ public class GraphQLSchema {
     }
 
     private static GraphQLAppliedDirective[] schemaAppliedDirectivesArray(GraphQLSchema existingSchema) {
-        return existingSchema.schemaAppliedDirectivesHolder.getAppliedDirectives().toArray(new GraphQLAppliedDirective[0]);
+        return existingSchema.schemaAppliedDirectivesHolder.getAppliedDirectives()
+                .toArray(new GraphQLAppliedDirective[0]);
     }
 
     private static List<GraphQLNamedType> getAllTypesAsList(ImmutableMap<String, GraphQLNamedType> typeMap) {
         return sortTypes(byNameAsc(), typeMap.values());
     }
 
-    private static ImmutableMap<String, ImmutableList<GraphQLObjectType>> buildInterfacesToObjectTypes(Map<String, List<GraphQLObjectType>> groupImplementations) {
+    private static ImmutableMap<String, ImmutableList<GraphQLObjectType>> buildInterfacesToObjectTypes(
+            Map<String, List<GraphQLObjectType>> groupImplementations) {
         ImmutableMap.Builder<String, ImmutableList<GraphQLObjectType>> map = ImmutableMap.builder();
         for (Map.Entry<String, List<GraphQLObjectType>> e : groupImplementations.entrySet()) {
-            ImmutableList<GraphQLObjectType> sortedObjectTypes = ImmutableList.copyOf(sortTypes(byNameAsc(), e.getValue()));
+            ImmutableList<GraphQLObjectType> sortedObjectTypes = ImmutableList
+                    .copyOf(sortTypes(byNameAsc(), e.getValue()));
             map.put(e.getKey(), sortedObjectTypes);
         }
         return map.build();
     }
 
-    private static ImmutableMap<String, ImmutableList<String>> buildInterfacesToObjectName(ImmutableMap<String, ImmutableList<GraphQLObjectType>> byInterface) {
+    private static ImmutableMap<String, ImmutableList<String>> buildInterfacesToObjectName(
+            ImmutableMap<String, ImmutableList<GraphQLObjectType>> byInterface) {
         ImmutableMap.Builder<String, ImmutableList<String>> map = ImmutableMap.builder();
         for (Map.Entry<String, ImmutableList<GraphQLObjectType>> e : byInterface.entrySet()) {
             ImmutableList<String> objectTypeNames = map(e.getValue(), GraphQLObjectType::getName);
@@ -284,40 +296,54 @@ public class GraphQLSchema {
     }
 
     /**
-     * Returns the set of "additional types" that were provided when building the schema.
+     * Returns the set of "additional types" that were provided when building the
+     * schema.
      * <p>
-     * During schema construction, types are discovered by traversing the schema from multiple roots:
+     * During schema construction, types are discovered by traversing the schema
+     * from multiple roots:
      * <ul>
-     *     <li>Root operation types (Query, Mutation, Subscription)</li>
-     *     <li>Directive argument types</li>
-     *     <li>Introspection types</li>
-     *     <li>Types explicitly added via {@link Builder#additionalType(GraphQLNamedType)}</li>
+     * <li>Root operation types (Query, Mutation, Subscription)</li>
+     * <li>Directive argument types</li>
+     * <li>Introspection types</li>
+     * <li>Types explicitly added via
+     * {@link Builder#additionalType(GraphQLNamedType)}</li>
      * </ul>
      * <p>
-     * Additional types are types that are not reachable via any of the automatic traversal paths
-     * but still need to be part of the schema. The most common use case is for interface
+     * Additional types are types that are not reachable via any of the automatic
+     * traversal paths
+     * but still need to be part of the schema. The most common use case is for
+     * interface
      * implementations that are not directly referenced elsewhere.
      * <p>
      * <b>Types that do NOT need to be added as additional types:</b>
      * <ul>
-     *     <li>Types reachable from Query, Mutation, or Subscription fields</li>
-     *     <li>Types used as directive arguments (these are discovered via directive traversal)</li>
+     * <li>Types reachable from Query, Mutation, or Subscription fields</li>
+     * <li>Types used as directive arguments (these are discovered via directive
+     * traversal)</li>
      * </ul>
      * <p>
      * <b>When additional types ARE typically needed:</b>
      * <ul>
-     *     <li><b>Interface implementations:</b> When an interface is used as a field's return type,
-     *     implementing object types are not automatically discovered because interfaces do not
-     *     reference their implementors. These need to be added so they can be resolved at runtime
-     *     and appear in introspection.</li>
-     *     <li><b>SDL-defined schemas:</b> When building from SDL, the {@link graphql.schema.idl.SchemaGenerator}
-     *     automatically detects types not connected to any root and adds them as additional types.</li>
-     *     <li><b>Programmatic schemas with type references:</b> When using {@link GraphQLTypeReference}
-     *     to break circular dependencies, the actual type implementations may need to be provided
-     *     as additional types.</li>
+     * <li><b>Interface implementations:</b> When an interface is used as a field's
+     * return type,
+     * implementing object types are not automatically discovered because interfaces
+     * do not
+     * reference their implementors. These need to be added so they can be resolved
+     * at runtime
+     * and appear in introspection.</li>
+     * <li><b>SDL-defined schemas:</b> When building from SDL, the
+     * {@link graphql.schema.idl.SchemaGenerator}
+     * automatically detects types not connected to any root and adds them as
+     * additional types.</li>
+     * <li><b>Programmatic schemas with type references:</b> When using
+     * {@link GraphQLTypeReference}
+     * to break circular dependencies, the actual type implementations may need to
+     * be provided
+     * as additional types.</li>
      * </ul>
      * <p>
      * <b>Example - Interface implementation not directly referenced:</b>
+     * 
      * <pre>{@code
      * // Given this schema:
      * // type Query { node: Node }
@@ -331,20 +357,28 @@ public class GraphQLSchema {
      *     .build();
      * }</pre>
      * <p>
-     * <b>Note:</b> There are no restrictions on what types can be added via this mechanism.
-     * Types that are already reachable from other roots can also be added without causing
-     * errors - they will simply be present in both the type map (via traversal) and this set.
-     * After schema construction, use {@link #getTypeMap()} or {@link #getAllTypesAsList()} to get
+     * <b>Note:</b> There are no restrictions on what types can be added via this
+     * mechanism.
+     * Types that are already reachable from other roots can also be added without
+     * causing
+     * errors - they will simply be present in both the type map (via traversal) and
+     * this set.
+     * After schema construction, use {@link #getTypeMap()} or
+     * {@link #getAllTypesAsList()} to get
      * all types in the schema regardless of how they were discovered.
      * <p>
-     * <b>Note on FastBuilder:</b> When a schema is constructed using {@link FastBuilder},
-     * this method returns ALL types in the schema except the root operation types (Query,
+     * <b>Note on FastBuilder:</b> When a schema is constructed using
+     * {@link FastBuilder},
+     * this method returns ALL types in the schema except the root operation types
+     * (Query,
      * Mutation, Subscription). This differs from schemas built with the standard
      * {@link Builder}, which returns only types not reachable from the root types.
-     * This semantic difference does not affect schema traversal or correctness, as both
+     * This semantic difference does not affect schema traversal or correctness, as
+     * both
      * approaches ensure all types are properly discoverable.
      *
-     * @return an immutable set of types that were explicitly added as additional types
+     * @return an immutable set of types that were explicitly added as additional
+     *         types
      *
      * @see Builder#additionalType(GraphQLNamedType)
      * @see Builder#additionalTypes(Set)
@@ -385,7 +419,8 @@ public class GraphQLSchema {
     /**
      * Gets the named type from the schema or null if it's not present.
      * <p>
-     * Warning - you are inviting class cast errors if the types are not what you expect.
+     * Warning - you are inviting class cast errors if the types are not what you
+     * expect.
      *
      * @param typeName the name of the type to retrieve
      * @param <T>      for two
@@ -393,7 +428,7 @@ public class GraphQLSchema {
      * @return the type cast to the target type.
      */
     public <T extends GraphQLType> @Nullable T getTypeAs(String typeName) {
-        //noinspection unchecked
+        // noinspection unchecked
         return (T) typeMap.get(typeName);
     }
 
@@ -409,7 +444,8 @@ public class GraphQLSchema {
     }
 
     /**
-     * Called to return a named {@link graphql.schema.GraphQLObjectType} from the schema
+     * Called to return a named {@link graphql.schema.GraphQLObjectType} from the
+     * schema
      *
      * @param typeName the name of the type
      *
@@ -421,13 +457,15 @@ public class GraphQLSchema {
         GraphQLType graphQLType = typeMap.get(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLObjectType,
-                    "You have asked for named object type '%s' but it's not an object type but rather a '%s'", typeName, graphQLType.getClass().getName());
+                    "You have asked for named object type '%s' but it's not an object type but rather a '%s'", typeName,
+                    graphQLType.getClass().getName());
         }
         return (GraphQLObjectType) graphQLType;
     }
 
     /**
-     * Returns a {@link GraphQLFieldDefinition} as the specified co-ordinates or null
+     * Returns a {@link GraphQLFieldDefinition} as the specified co-ordinates or
+     * null
      * if it does not exist
      *
      * @param fieldCoordinates the field co-ordinates
@@ -452,7 +490,8 @@ public class GraphQLSchema {
         GraphQLType graphQLType = getType(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLFieldsContainer,
-                    "You have asked for named type '%s' but it's not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName());
+                    "You have asked for named type '%s' but it's not GraphQLFieldsContainer but rather a '%s'",
+                    typeName, graphQLType.getClass().getName());
             return ((GraphQLFieldsContainer) graphQLType).getFieldDefinition(fieldName);
         }
         return null;
@@ -475,10 +514,12 @@ public class GraphQLSchema {
     }
 
     /**
-     * This returns all the top level {@link GraphQLNamedSchemaElement} named types and directives
+     * This returns all the top level {@link GraphQLNamedSchemaElement} named types
+     * and directives
      * in the schema
      *
-     * @return all the top level {@link GraphQLNamedSchemaElement} types and directives in the schema
+     * @return all the top level {@link GraphQLNamedSchemaElement} types and
+     *         directives in the schema
      */
     public List<GraphQLNamedSchemaElement> getAllElementsAsList() {
         List<GraphQLNamedSchemaElement> list = new ArrayList<>();
@@ -488,7 +529,8 @@ public class GraphQLSchema {
     }
 
     /**
-     * This will return the list of {@link graphql.schema.GraphQLObjectType} types that implement the given
+     * This will return the list of {@link graphql.schema.GraphQLObjectType} types
+     * that implement the given
      * interface type.
      *
      * @param type interface type to obtain implementations of.
@@ -500,9 +542,11 @@ public class GraphQLSchema {
     }
 
     /**
-     * Returns true if a specified concrete type is a possible type of a provided abstract type.
+     * Returns true if a specified concrete type is a possible type of a provided
+     * abstract type.
      * If the provided abstract type is:
-     * - an interface, it checks whether the concrete type is one of its implementations.
+     * - an interface, it checks whether the concrete type is one of its
+     * implementations.
      * - a union, it checks whether the concrete type is one of its possible types.
      *
      * @param abstractType abstract type either interface or union
@@ -512,12 +556,15 @@ public class GraphQLSchema {
      */
     public boolean isPossibleType(GraphQLNamedType abstractType, GraphQLObjectType concreteType) {
         if (abstractType instanceof GraphQLInterfaceType) {
-            ImmutableList<String> objectNames = this.interfaceNameToObjectTypeNames.getOrDefault(abstractType.getName(), emptyList());
+            ImmutableList<String> objectNames = this.interfaceNameToObjectTypeNames.getOrDefault(abstractType.getName(),
+                    emptyList());
             return objectNames.contains(concreteType.getName());
         } else if (abstractType instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) abstractType).isPossibleType(concreteType);
         }
-        return assertShouldNeverHappen("Unsupported abstract type %s. Abstract types supported are Union and Interface.", abstractType.getName());
+        return assertShouldNeverHappen(
+                "Unsupported abstract type %s. Abstract types supported are Union and Interface.",
+                abstractType.getName());
     }
 
     /**
@@ -542,7 +589,8 @@ public class GraphQLSchema {
     }
 
     /**
-     * This returns the list of directives definitions that are associated with this schema object including
+     * This returns the list of directives definitions that are associated with this
+     * schema object including
      * built in ones.
      *
      * @return a list of directives
@@ -559,7 +607,8 @@ public class GraphQLSchema {
     }
 
     /**
-     * Returns a named directive that (for legacy reasons) will be only in the set of non-repeatable directives
+     * Returns a named directive that (for legacy reasons) will be only in the set
+     * of non-repeatable directives
      *
      * @param directiveName the name of the directive to retrieve
      *
@@ -569,10 +618,9 @@ public class GraphQLSchema {
         return directiveDefinitionsHolder.getDirective(directiveName);
     }
 
-
     /**
      * This returns the list of directives that have been explicitly applied to the
-     * schema object.  Note that {@link #getDirectives()} will return
+     * schema object. Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
@@ -586,8 +634,9 @@ public class GraphQLSchema {
     }
 
     /**
-     * This returns a map of non-repeatable directives that have been explicitly applied to the
-     * schema object.  Note that {@link #getDirectives()} will return
+     * This returns a map of non-repeatable directives that have been explicitly
+     * applied to the
+     * schema object. Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
@@ -601,12 +650,13 @@ public class GraphQLSchema {
     }
 
     /**
-     * This returns a map of non-repeatable and repeatable directives that have been explicitly applied to the
-     * schema object.  Note that {@link #getDirectives()} will return
+     * This returns a map of non-repeatable and repeatable directives that have been
+     * explicitly applied to the
+     * schema object. Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
-     * @return a map  of directives
+     * @return a map of directives
      *
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
@@ -617,7 +667,9 @@ public class GraphQLSchema {
 
     /**
      * This returns the named directive that have been explicitly applied to the
-     * schema object.  Note that {@link graphql.schema.GraphQLDirectiveContainer#getDirective(String)} will return
+     * schema object. Note that
+     * {@link graphql.schema.GraphQLDirectiveContainer#getDirective(String)} will
+     * return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
@@ -649,7 +701,7 @@ public class GraphQLSchema {
 
     /**
      * This returns the list of directives that have been explicitly applied to the
-     * schema object.  Note that {@link #getDirectives()} will return
+     * schema object. Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
@@ -660,8 +712,9 @@ public class GraphQLSchema {
     }
 
     /**
-     * This returns a map of non-repeatable and repeatable directives that have been explicitly applied to the
-     * schema object.  Note that {@link #getDirectives()} will return
+     * This returns a map of non-repeatable and repeatable directives that have been
+     * explicitly applied to the
+     * schema object. Note that {@link #getDirectives()} will return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
@@ -673,7 +726,9 @@ public class GraphQLSchema {
 
     /**
      * This returns the named directive that have been explicitly applied to the
-     * schema object.  Note that {@link graphql.schema.GraphQLDirectiveContainer#getDirective(String)} will return
+     * schema object. Note that
+     * {@link graphql.schema.GraphQLDirectiveContainer#getDirective(String)} will
+     * return
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
@@ -712,10 +767,12 @@ public class GraphQLSchema {
     }
 
     /**
-     * This helps you transform the current GraphQLSchema object into another one by starting a builder with all
+     * This helps you transform the current GraphQLSchema object into another one by
+     * starting a builder with all
      * the current values and allows you to transform it how you want.
      *
-     * @param builderConsumer the consumer code that will be given a builder to transform
+     * @param builderConsumer the consumer code that will be given a builder to
+     *                        transform
      *
      * @return a new GraphQLSchema object based on calling built on that builder
      */
@@ -726,10 +783,12 @@ public class GraphQLSchema {
     }
 
     /**
-     * This helps you transform the current GraphQLSchema object into another one by using a builder that only allows you to change
+     * This helps you transform the current GraphQLSchema object into another one by
+     * using a builder that only allows you to change
      * simple values and does not involve changing the complex schema type graph.
      *
-     * @param builderConsumer the consumer code that will be given a builder to transform
+     * @param builderConsumer the consumer code that will be given a builder to
+     *                        transform
      *
      * @return a new GraphQLSchema object based on calling built on that builder
      */
@@ -747,7 +806,8 @@ public class GraphQLSchema {
     }
 
     /**
-     * This allows you to build a schema from an existing schema.  It copies everything from the existing
+     * This allows you to build a schema from an existing schema. It copies
+     * everything from the existing
      * schema and then allows you to replace them.
      *
      * @param existingSchema the existing schema
@@ -1080,45 +1140,64 @@ public class GraphQLSchema {
     }
 
     /**
-     * A high-performance schema builder that avoids full-schema traversals performed by
-     * {@link GraphQLSchema.Builder#build()}. This builder is significantly faster (5x+) and
-     * allocates significantly less memory than the standard Builder. It is intended for
+     * A high-performance schema builder that avoids full-schema traversals
+     * performed by
+     * {@link GraphQLSchema.Builder#build()}. This builder is significantly faster
+     * (5x+) and
+     * allocates significantly less memory than the standard Builder. It is intended
+     * for
      * constructing large schemas (500+ types), especially deeply nested ones.
      *
      * <h2>When to use FastBuilder</h2>
      * <ul>
-     *   <li>Building large schemas where construction time and memory are measurable concerns</li>
-     *   <li>All types are known upfront and can be added explicitly via {@link #addType} or {@link #addTypes}</li>
-     *   <li>The code registry is complete and available when FastBuilder is constructed</li>
-     *   <li>Schema has been previously validated (e.g., in a build pipeline) and validation can be skipped</li>
+     * <li>Building large schemas where construction time and memory are measurable
+     * concerns</li>
+     * <li>All types are known upfront and can be added explicitly via
+     * {@link #addType} or {@link #addTypes}</li>
+     * <li>The code registry is complete and available when FastBuilder is
+     * constructed</li>
+     * <li>Schema has been previously validated (e.g., in a build pipeline) and
+     * validation can be skipped</li>
      * </ul>
      *
      * <h2>When NOT to use FastBuilder</h2>
      * <ul>
-     *   <li><b>Type discovery required:</b> If you rely on automatic type discovery by traversing from
-     *       root types (Query/Mutation/Subscription), use the standard {@link Builder} instead.
-     *       FastBuilder requires ALL types to be explicitly added.</li>
-     *   <li><b>Type reuse across schemas:</b> FastBuilder mutates type objects during {@link #build()}
-     *       to resolve {@link GraphQLTypeReference}s. The same type instances cannot be used to build
-     *       multiple schemas. Create fresh type instances for each schema if needed.</li>
-     *   <li><b>Dynamic schema construction:</b> FastBuilder does not support clearing or resetting
-     *       state. Each FastBuilder instance should be used exactly once.</li>
-     *   <li><b>Schema transformation:</b> For transforming existing schemas, use
-     *       {@link GraphQLSchema#transform(Consumer)} or {@link Builder} instead.</li>
+     * <li><b>Type discovery required:</b> If you rely on automatic type discovery
+     * by traversing from
+     * root types (Query/Mutation/Subscription), use the standard {@link Builder}
+     * instead.
+     * FastBuilder requires ALL types to be explicitly added.</li>
+     * <li><b>Type reuse across schemas:</b> FastBuilder mutates type objects during
+     * {@link #build()}
+     * to resolve {@link GraphQLTypeReference}s. The same type instances cannot be
+     * used to build
+     * multiple schemas. Create fresh type instances for each schema if needed.</li>
+     * <li><b>Dynamic schema construction:</b> FastBuilder does not support clearing
+     * or resetting
+     * state. Each FastBuilder instance should be used exactly once.</li>
+     * <li><b>Schema transformation:</b> For transforming existing schemas, use
+     * {@link GraphQLSchema#transform(Consumer)} or {@link Builder} instead.</li>
      * </ul>
      *
      * <h2>Key differences from standard Builder</h2>
      * <ul>
-     *   <li><b>No automatic type discovery:</b> You must add ALL types explicitly, including
-     *       interface implementations that would normally be discovered via traversal.</li>
-     *   <li><b>Type mutation:</b> {@link GraphQLTypeReference} instances in added types are replaced
-     *       in-place with actual types during build. This mutates the original type objects.</li>
-     *   <li><b>additionalTypes semantic:</b> {@link GraphQLSchema#getAdditionalTypes()} returns ALL
-     *       non-root types (not just "detached" types as with standard Builder).</li>
-     *   <li><b>Validation off by default:</b> Enable with {@link #withValidation(boolean)} if needed.</li>
+     * <li><b>No automatic type discovery:</b> You must add ALL types explicitly,
+     * including
+     * interface implementations that would normally be discovered via
+     * traversal.</li>
+     * <li><b>Type mutation:</b> {@link GraphQLTypeReference} instances in added
+     * types are replaced
+     * in-place with actual types during build. This mutates the original type
+     * objects.</li>
+     * <li><b>additionalTypes semantic:</b>
+     * {@link GraphQLSchema#getAdditionalTypes()} returns ALL
+     * non-root types (not just "detached" types as with standard Builder).</li>
+     * <li><b>Validation off by default:</b> Enable with
+     * {@link #withValidation(boolean)} if needed.</li>
      * </ul>
      *
      * <h2>Example usage</h2>
+     * 
      * <pre>{@code
      * GraphQLObjectType queryType = ...;
      * GraphQLObjectType mutationType = ...;
@@ -1136,7 +1215,8 @@ public class GraphQLSchema {
      *     .build();
      * }</pre>
      *
-     * @see GraphQLSchema.Builder for standard schema construction with automatic type discovery
+     * @see GraphQLSchema.Builder for standard schema construction with automatic
+     *      type discovery
      */
     @ExperimentalApi
     @NullMarked
@@ -1160,7 +1240,8 @@ public class GraphQLSchema {
         private boolean validationEnabled = false;
 
         /**
-         * Creates a new FastBuilder with the given code registry builder and root types.
+         * Creates a new FastBuilder with the given code registry builder and root
+         * types.
          *
          * @param codeRegistryBuilder the code registry builder (required)
          * @param queryType           the query type (required)
@@ -1168,9 +1249,9 @@ public class GraphQLSchema {
          * @param subscriptionType    the subscription type (optional, may be null)
          */
         public FastBuilder(GraphQLCodeRegistry.Builder codeRegistryBuilder,
-                           GraphQLObjectType queryType,
-                           @Nullable GraphQLObjectType mutationType,
-                           @Nullable GraphQLObjectType subscriptionType) {
+                GraphQLObjectType queryType,
+                @Nullable GraphQLObjectType mutationType,
+                @Nullable GraphQLObjectType subscriptionType) {
             this.codeRegistryBuilder = assertNotNull(codeRegistryBuilder, () -> "codeRegistryBuilder can't be null");
             this.queryType = assertNotNull(queryType, () -> "queryType can't be null");
             this.mutationType = mutationType;
@@ -1208,10 +1289,13 @@ public class GraphQLSchema {
 
         /**
          * Adds a named type to the schema.
-         * All non-root types added via this method will be included in {@link GraphQLSchema#getAdditionalTypes()}.
+         * All non-root types added via this method will be included in
+         * {@link GraphQLSchema#getAdditionalTypes()}.
          * <p>
-         * <b>Warning:</b> The type object will be mutated during {@link #build()} if it contains
-         * {@link GraphQLTypeReference} instances. Do not reuse the same type instance across
+         * <b>Warning:</b> The type object will be mutated during {@link #build()} if it
+         * contains
+         * {@link GraphQLTypeReference} instances. Do not reuse the same type instance
+         * across
          * multiple FastBuilder instances.
          *
          * @param type the named type to add
@@ -1236,7 +1320,8 @@ public class GraphQLSchema {
             // Insert into typeMap
             typeMap.put(name, type);
 
-            // Shallow scan via ShallowTypeRefCollector (also tracks interface implementations)
+            // Shallow scan via ShallowTypeRefCollector (also tracks interface
+            // implementations)
             shallowTypeRefCollector.handleTypeDef(type);
 
             // For interface types, wire type resolver if present
@@ -1262,7 +1347,8 @@ public class GraphQLSchema {
 
         /**
          * Adds multiple named types to the schema.
-         * All non-root types added via this method will be included in {@link GraphQLSchema#getAdditionalTypes()}.
+         * All non-root types added via this method will be included in
+         * {@link GraphQLSchema#getAdditionalTypes()}.
          *
          * @param types the named types to add
          *
@@ -1284,7 +1370,8 @@ public class GraphQLSchema {
             String name = directive.getName();
             GraphQLDirective existing = directiveMap.get(name);
             if (existing != null && existing != directive) {
-                throw new AssertException(String.format("Directive '%s' already exists with a different instance", name));
+                throw new AssertException(
+                        String.format("Directive '%s' already exists with a different instance", name));
             }
 
             if (existing == null) {
@@ -1422,9 +1509,12 @@ public class GraphQLSchema {
         /**
          * Builds the GraphQL schema.
          * <p>
-         * <b>Warning:</b> This method mutates the type and directive objects that were added to this
-         * builder. Any {@link GraphQLTypeReference} instances within those objects are replaced
-         * in-place with the actual resolved types. After calling this method, the added types
+         * <b>Warning:</b> This method mutates the type and directive objects that were
+         * added to this
+         * builder. Any {@link GraphQLTypeReference} instances within those objects are
+         * replaced
+         * in-place with the actual resolved types. After calling this method, the added
+         * types
          * should not be reused with another FastBuilder.
          *
          * @return the built schema
@@ -1440,7 +1530,8 @@ public class GraphQLSchema {
                     String typeName = type.getName();
                     if (!codeRegistryBuilder.hasTypeResolver(typeName)) {
                         String typeKind = type instanceof GraphQLInterfaceType ? "interface" : "union";
-                        assertShouldNeverHappen("You MUST provide a type resolver for the %s type '%s'", typeKind, typeName);
+                        assertShouldNeverHappen("You MUST provide a type resolver for the %s type '%s'", typeKind,
+                                typeName);
                     }
                 }
             }
