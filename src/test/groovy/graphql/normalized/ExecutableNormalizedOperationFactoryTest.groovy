@@ -20,6 +20,7 @@ import graphql.util.TraversalControl
 import graphql.util.Traverser
 import graphql.util.TraverserContext
 import graphql.util.TraverserVisitorStub
+import graphql.validation.QueryComplexityLimits
 import spock.lang.Specification
 
 import java.util.stream.Collectors
@@ -33,6 +34,14 @@ import static graphql.schema.FieldCoordinates.coordinates
 class ExecutableNormalizedOperationFactoryTest extends Specification {
     static boolean deferSupport
 
+    def setup() {
+        // Disable validation complexity limits so ENO limits can be tested
+        QueryComplexityLimits.setDefaultLimits(QueryComplexityLimits.NONE)
+    }
+
+    def cleanup() {
+        QueryComplexityLimits.setDefaultLimits(QueryComplexityLimits.DEFAULT)
+    }
 
     def "test"() {
         String schema = """
