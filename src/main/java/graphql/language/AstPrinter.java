@@ -365,10 +365,11 @@ public class AstPrinter {
             // Anonymous queries with no directives or variable definitions can use
             // the query short form.
             if (isEmpty(name) && isEmpty(node.getDirectives()) && isEmpty(node.getVariableDefinitions())
-                    && node.getOperation() == OperationDefinition.Operation.QUERY) {
+                    && (node.getOperation() == null || node.getOperation() == OperationDefinition.Operation.QUERY)) {
                 node(out, node.getSelectionSet());
             } else {
-                out.append(node.getOperation().toString().toLowerCase());
+                OperationDefinition.Operation op = node.getOperation();
+                out.append(op != null ? op.toString().toLowerCase() : "query");
                 if (!isEmpty(name)) {
                     out.append(' ');
                     out.append(name);
