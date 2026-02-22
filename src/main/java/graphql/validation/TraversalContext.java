@@ -180,7 +180,7 @@ public class TraversalContext implements DocumentVisitor {
         GraphQLUnmodifiedType objectType = currentInputType != null ? unwrapAll(currentInputType) : null;
         GraphQLInputType inputType = null;
         GraphQLInputObjectField inputField = null;
-        if (objectType instanceof GraphQLInputObjectType && schema.getCodeRegistry() != null) {
+        if (objectType instanceof GraphQLInputObjectType) {
             GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) objectType;
             inputField = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(inputObjectType, objectField.getName());
             if (inputField != null) {
@@ -344,7 +344,7 @@ public class TraversalContext implements DocumentVisitor {
                 parentType instanceof GraphQLUnionType)) {
             return schema.getIntrospectionTypenameFieldDefinition();
         }
-        if (parentType instanceof GraphQLFieldsContainer && schema.getCodeRegistry() != null) {
+        if (parentType instanceof GraphQLFieldsContainer) {
             return schema.getCodeRegistry().getFieldVisibility().getFieldDefinition((GraphQLFieldsContainer) parentType, field.getName());
         }
         return null;

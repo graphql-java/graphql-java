@@ -609,7 +609,7 @@ public class GraphQL {
         validationCtx.onDispatched();
 
         Predicate<OperationValidationRule> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
-        Locale locale = executionInput.getLocale() != null ? executionInput.getLocale() : Locale.getDefault();
+        Locale locale = executionInput.getLocale();
         QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
 
         // Good Faith Introspection: apply tighter limits and enable the rule for introspection queries
