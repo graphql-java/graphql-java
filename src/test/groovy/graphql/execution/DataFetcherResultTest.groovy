@@ -21,6 +21,27 @@ class DataFetcherResultTest extends Specification {
         result.getErrors() == [error1, error2]
     }
 
+    def "building with generics"() {
+        when:
+        DataFetcherResult<String> result = DataFetcherResult.newResult("hello")
+                .error(error1).errors([error2]).localContext("world").build()
+        then:
+        result.getData() == "hello"
+        result.getLocalContext() == "world"
+        result.getErrors() == [error1, error2]
+    }
+
+    def "building with generics data can be overwritten in builder"() {
+        when:
+        DataFetcherResult<String> result = DataFetcherResult.newResult("someText")
+                .data("hello")
+                .error(error1).errors([error2]).localContext("world").build()
+        then:
+        result.getData() == "hello"
+        result.getLocalContext() == "world"
+        result.getErrors() == [error1, error2]
+    }
+
     def "hasErrors can be called"() {
         when:
         def builder = DataFetcherResult.newResult()
