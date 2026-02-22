@@ -2,6 +2,8 @@ package graphql.execution;
 
 import graphql.GraphQLError;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +14,7 @@ import static graphql.Assert.assertNotNull;
  * The result object for {@link graphql.execution.DataFetcherExceptionHandler}s
  */
 @PublicApi
+@NullMarked
 public class DataFetcherExceptionHandlerResult {
 
     private final List<GraphQLError> errors;
@@ -32,6 +35,7 @@ public class DataFetcherExceptionHandlerResult {
         return new Builder().error(error);
     }
 
+    @NullUnmarked
     public static class Builder {
 
         private final List<GraphQLError> errors = new ArrayList<>();

@@ -7,6 +7,7 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.introspection.Introspection;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
  * See {@link AsyncExecutionStrategy} for a non-serial (parallel) execution of every field.
  */
 @PublicApi
+@NullMarked
 public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     public AsyncSerialExecutionStrategy() {
