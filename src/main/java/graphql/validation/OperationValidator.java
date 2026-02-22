@@ -1557,7 +1557,7 @@ public class OperationValidator implements DocumentVisitor {
             return;
         }
         if (operationNames.contains(name)) {
-            String message = i18n(DuplicateOperationName, "UniqueOperationNames.oneOperation", operationDefinition.getName());
+            String message = i18n(DuplicateOperationName, "UniqueOperationNames.oneOperation", name);
             addError(DuplicateOperationName, operationDefinition.getSourceLocation(), message);
         } else {
             operationNames.add(name);
@@ -1648,12 +1648,12 @@ public class OperationValidator implements DocumentVisitor {
                     .build();
             MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDef.getSelectionSet());
             if (fields.size() > 1) {
-                String message = i18n(SubscriptionMultipleRootFields, "SubscriptionUniqueRootField.multipleRootFields", operationDef.getName());
+                String message = i18n(SubscriptionMultipleRootFields, "SubscriptionUniqueRootField.multipleRootFields", Objects.toString(operationDef.getName(), ""));
                 addError(SubscriptionMultipleRootFields, operationDef.getSourceLocation(), message);
             } else {
                 MergedField mergedField = fields.getSubFieldsList().get(0);
                 if (isIntrospectionField(mergedField)) {
-                    String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootField", operationDef.getName(), mergedField.getName());
+                    String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootField", Objects.toString(operationDef.getName(), ""), mergedField.getName());
                     addError(SubscriptionIntrospectionRootField, mergedField.getSingleField().getSourceLocation(), message);
                 }
             }
