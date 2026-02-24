@@ -6,7 +6,6 @@ description: |
   and workflow configuration to help diagnose and resolve CI issues efficiently.
 
 on:
-  workflow_dispatch:
   workflow_run:
     workflows: ["Master Build and Publish", "Pull Request Build"]
     types:
