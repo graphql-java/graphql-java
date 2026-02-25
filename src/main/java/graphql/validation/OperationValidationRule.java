@@ -69,6 +69,7 @@ import org.jspecify.annotations.NullMarked;
  *   <li>{@link #UNIQUE_OBJECT_FIELD_NAME} - input object fields are unique</li>
  *   <li>{@link #DEFER_DIRECTIVE_LABEL} - defer labels are unique strings</li>
  *   <li>{@link #KNOWN_OPERATION_TYPES} - schema supports the operation type</li>
+ *   <li>{@link #VARIABLES_NOT_ALLOWED_IN_DIRECTIVES_ON_VARIABLE_DEFINITIONS} - variable references not allowed in constant directive positions</li>
  * </ul>
  *
  * <h3>Operation-Scoped Rules</h3>
@@ -169,6 +170,9 @@ public enum OperationValidationRule {
 
     /** The schema must support the operation type (query/mutation/subscription). */
     KNOWN_OPERATION_TYPES,
+
+    /** Variable references must not appear in directive arguments on variable definitions (constant context). */
+    VARIABLES_NOT_ALLOWED_IN_DIRECTIVES_ON_VARIABLE_DEFINITIONS,
 
     /** All variable references must be defined in the operation. Requires fragment traversal. */
     NO_UNDEFINED_VARIABLES,
