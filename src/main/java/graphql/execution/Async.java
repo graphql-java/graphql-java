@@ -262,13 +262,9 @@ public class Async {
         }
 
         @NonNull
+        @SuppressWarnings("unchecked")
         private List<T> materialisedList(Object[] array) {
-            List<T> results = new ArrayList<>(array.length);
-            for (Object object : array) {
-                //noinspection unchecked
-                results.add((T) object);
-            }
-            return results;
+            return (List<T>) Arrays.asList(array);
         }
 
         private void commonSizeAssert() {

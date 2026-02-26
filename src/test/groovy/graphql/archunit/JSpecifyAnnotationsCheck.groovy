@@ -274,11 +274,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.util.TraversalControl",
             "graphql.util.TraverserContext",
             "graphql.util.TreeTransformer",
-            "graphql.util.TreeTransformerUtil",
-            // These classes will not be public API later, exempt here while marked as experimental
-            "graphql.validation.rules.DeferDirectiveLabel",
-            "graphql.validation.rules.DeferDirectiveOnRootLevel",
-            "graphql.validation.rules.DeferDirectiveOnValidOperation"
+            "graphql.util.TreeTransformerUtil"
     ] as Set
 
     def "ensure all public API and experimental API classes have @NullMarked annotation"() {
@@ -328,4 +324,4 @@ ${annotatedButExempted.sort().join("\n")}
 Please remove them from the exemption list in ${JSpecifyAnnotationsCheck.class.simpleName}.groovy.""")
         }
     }
-} 
+}
