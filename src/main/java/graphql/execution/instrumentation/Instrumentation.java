@@ -175,6 +175,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @ExperimentalApi
+    @Nullable
     default InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return noOp();
     }
