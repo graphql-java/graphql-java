@@ -10,6 +10,8 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,9 +22,10 @@ import static java.lang.String.format;
  * This is thrown if a non nullable value is coerced to a null value
  */
 @PublicApi
+@NullMarked
 public class NonNullableValueCoercedAsNullException extends GraphQLException implements GraphQLError {
-    private List<SourceLocation> sourceLocations;
-    private List<Object> path;
+    private @Nullable List<SourceLocation> sourceLocations;
+    private @Nullable List<Object> path;
 
     public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, GraphQLType graphQLType) {
         super(format("Variable '%s' has coerced Null value for NonNull type '%s'",
@@ -74,12 +77,12 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return sourceLocations;
     }
 
     @Override
-    public List<Object> getPath() {
+    public @Nullable List<Object> getPath() {
         return path;
     }
 
