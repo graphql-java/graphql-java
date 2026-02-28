@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
+import org.jspecify.annotations.NullMarked;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.introspection.Introspection;
@@ -19,6 +20,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
  * See {@link AsyncExecutionStrategy} for a non-serial (parallel) execution of every field.
  */
 @PublicApi
+@NullMarked
 public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     public AsyncSerialExecutionStrategy() {
