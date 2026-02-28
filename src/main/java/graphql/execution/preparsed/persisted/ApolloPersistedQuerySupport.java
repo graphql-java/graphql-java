@@ -2,6 +2,7 @@ package graphql.execution.preparsed.persisted;
 
 import graphql.ExecutionInput;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +34,7 @@ import java.util.Optional;
  *
  * @see graphql.ExecutionInput#getExtensions()
  */
+@NullMarked
 @PublicApi
 public class ApolloPersistedQuerySupport extends PersistedQuerySupport {
 
