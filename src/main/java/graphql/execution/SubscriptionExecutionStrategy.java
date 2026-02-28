@@ -5,6 +5,8 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.execution.incremental.AlternativeCallContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
@@ -40,6 +42,7 @@ import static java.util.Collections.singletonMap;
  * See <a href="https://www.reactive-streams.org/">https://www.reactive-streams.org/</a>
  */
 @PublicApi
+@NullMarked
 public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     /**
@@ -132,7 +135,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      * @return a reactive streams {@link Publisher} always
      */
     @SuppressWarnings("unchecked")
-    private static Publisher<Object> mkReactivePublisher(Object publisherObj) {
+    private static @Nullable Publisher<Object> mkReactivePublisher(@Nullable Object publisherObj) {
         if (publisherObj != null) {
             if (publisherObj instanceof Publisher) {
                 return (Publisher<Object>) publisherObj;
