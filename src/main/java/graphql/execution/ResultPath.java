@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import graphql.AssertException;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -21,6 +23,7 @@ import static java.lang.String.format;
  * class represents that path as a series of segments.
  */
 @PublicApi
+@NullMarked
 public class ResultPath {
     private static final ResultPath ROOT_PATH = new ResultPath();
 
@@ -33,13 +36,13 @@ public class ResultPath {
         return ROOT_PATH;
     }
 
-    private final ResultPath parent;
-    private final Object segment;
+    private final @Nullable ResultPath parent;
+    private final @Nullable Object segment;
 
     // hash is effective immutable but lazily initialized similar to the hash code of java.lang.String
     private int hash;
     // lazily initialized similar to hash - computed on first toString() call
-    private String toStringValue;
+    private @Nullable String toStringValue;
     private final int level;
 
     private ResultPath() {
@@ -72,7 +75,7 @@ public class ResultPath {
         return level;
     }
 
-    public ResultPath getPathWithoutListEnd() {
+    public @Nullable ResultPath getPathWithoutListEnd() {
         if (ROOT_PATH.equals(this)) {
             return ROOT_PATH;
         }
@@ -105,11 +108,11 @@ public class ResultPath {
         return (int) segment;
     }
 
-    public Object getSegmentValue() {
+    public @Nullable Object getSegmentValue() {
         return segment;
     }
 
-    public ResultPath getParent() {
+    public @Nullable ResultPath getParent() {
         return parent;
     }
 
@@ -120,7 +123,7 @@ public class ResultPath {
      *
      * @return a parsed execution path
      */
-    public static ResultPath parse(String pathString) {
+    public static ResultPath parse(@Nullable String pathString) {
         pathString = pathString == null ? "" : pathString;
         String finalPathString = pathString.trim();
         StringTokenizer st = new StringTokenizer(finalPathString, "/[]", true);
@@ -195,7 +198,7 @@ public class ResultPath {
      *
      * @return a new path with the last segment dropped off
      */
-    public ResultPath dropSegment() {
+    public @Nullable ResultPath dropSegment() {
         if (this == rootPath()) {
             return null;
         }
