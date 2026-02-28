@@ -5,20 +5,23 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
 
 /**
  * Parameters sent to {@link graphql.execution.instrumentation.Instrumentation} methods
  */
+@NullMarked
 @PublicApi
 public class InstrumentationFieldCompleteParameters {
     private final ExecutionContext executionContext;
     private final Supplier<ExecutionStepInfo> executionStepInfo;
-    private final Object fetchedValue;
+    private final @Nullable Object fetchedValue;
     private final ExecutionStrategyParameters executionStrategyParameters;
 
-    public InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, Supplier<ExecutionStepInfo> executionStepInfo, Object fetchedValue) {
+    public InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, Supplier<ExecutionStepInfo> executionStepInfo, @Nullable Object fetchedValue) {
         this.executionContext = executionContext;
         this.executionStrategyParameters = executionStrategyParameters;
         this.executionStepInfo = executionStepInfo;
@@ -54,6 +57,7 @@ public class InstrumentationFieldCompleteParameters {
      *
      * @return the object was fetched, ready to be completed as a value.
      */
+    @Nullable
     public Object getFetchedObject() {
         return fetchedValue;
     }
