@@ -1,6 +1,7 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Used by {@link QueryTraverser} to reduce the fields of a Document (or part of it) to a single value.
@@ -10,6 +11,7 @@ import graphql.PublicApi;
  * See {@link QueryTraverser#reducePostOrder(QueryReducer, Object)} and {@link QueryTraverser#reducePreOrder(QueryReducer, Object)}
  */
 @PublicApi
+@NullMarked
 @FunctionalInterface
 public interface QueryReducer<T> {
 
