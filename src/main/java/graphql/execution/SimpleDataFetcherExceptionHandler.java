@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.ExceptionWhileDataFetching;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -12,6 +13,7 @@ import java.util.concurrent.CompletionException;
  * into the error collection
  */
 @PublicApi
+@NullMarked
 public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHandler {
 
     static final SimpleDataFetcherExceptionHandler defaultImpl = new SimpleDataFetcherExceptionHandler();
