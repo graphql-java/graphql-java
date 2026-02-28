@@ -8,6 +8,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -23,6 +24,7 @@ import static graphql.Assert.assertNotNull;
  *
  * @see FieldValidation
  */
+@NullMarked
 @PublicApi
 public class FieldValidationInstrumentation extends SimplePerformantInstrumentation {
 
