@@ -1,10 +1,12 @@
 package graphql.execution.preparsed.persisted;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+@NullMarked
 @PublicApi
 public class PersistedQueryIdInvalid extends PersistedQueryError {
     private final Object persistedQueryId;
