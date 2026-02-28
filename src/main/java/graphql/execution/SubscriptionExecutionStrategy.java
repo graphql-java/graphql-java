@@ -27,6 +27,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static java.util.Collections.singletonMap;
 
@@ -185,7 +186,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         executionContext.getDataLoaderDispatcherStrategy().subscriptionEventCompletionDone(newParameters.getDeferredCallContext());
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
-                .thenApply(val -> new ExecutionResultImpl(val, newParameters.getDeferredCallContext().getErrors()))
+                .thenApply(val -> new ExecutionResultImpl(val, assertNotNull(newParameters.getDeferredCallContext(), "deferredCallContext must not be null").getErrors()))
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
 
         // dispatch instrumentation so they can know about each subscription event
@@ -209,7 +210,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     }
 
     private String getRootFieldName(ExecutionStrategyParameters parameters) {
-        Field rootField = parameters.getField().getSingleField();
+        Field rootField = assertNotNull(parameters.getField(), "field must not be null").getSingleField();
         return rootField.getResultKey();
     }
 
@@ -217,7 +218,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                                                                           ExecutionStrategyParameters parameters,
                                                                           boolean newCallContext) {
         MergedSelectionSet fields = parameters.getFields();
-        MergedField firstField = fields.getSubField(fields.getKeys().get(0));
+        MergedField firstField = assertNotNull(fields.getSubField(fields.getKeys().get(0)), "firstField must not be null");
 
         ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField.getSingleField()));
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext);
@@ -237,7 +238,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     private ExecutionStepInfo createSubscribedFieldStepInfo(ExecutionContext
                                                                     executionContext, ExecutionStrategyParameters parameters) {
-        Field field = parameters.getField().getSingleField();
+        Field field = assertNotNull(parameters.getField(), "field must not be null").getSingleField();
         GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
         return createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);

@@ -10,6 +10,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.function.Supplier;
 
+import static graphql.Assert.assertNotNull;
+
 /**
  * Parameters sent to {@link graphql.execution.instrumentation.Instrumentation} methods
  */
@@ -39,7 +41,7 @@ public class InstrumentationFieldCompleteParameters {
     }
 
     public GraphQLFieldDefinition getField() {
-        return getExecutionStepInfo().getFieldDefinition();
+        return assertNotNull(getExecutionStepInfo().getFieldDefinition(), "fieldDefinition must not be null");
     }
 
     @Deprecated(since = "2020-09-08")

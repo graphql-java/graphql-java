@@ -101,11 +101,11 @@ public class ResultPath {
 
 
     public String getSegmentName() {
-        return (String) segment;
+        return (String) assertNotNull(segment);
     }
 
     public int getSegmentIndex() {
-        return (int) segment;
+        return (int) assertNotNull(segment);
     }
 
     public @Nullable Object getSegmentValue() {
@@ -215,7 +215,7 @@ public class ResultPath {
      */
     public ResultPath replaceSegment(int segment) {
         assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-        return new ResultPath(parent, segment);
+        return new ResultPath(assertNotNull(parent, "parent must not be null for non-root path"), segment);
     }
 
     /**
@@ -228,7 +228,7 @@ public class ResultPath {
      */
     public ResultPath replaceSegment(String segment) {
         assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-        return new ResultPath(parent, segment);
+        return new ResultPath(assertNotNull(parent, "parent must not be null for non-root path"), segment);
     }
 
 
@@ -255,12 +255,12 @@ public class ResultPath {
 
     public ResultPath sibling(String siblingField) {
         assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-        return new ResultPath(this.parent, siblingField);
+        return new ResultPath(assertNotNull(this.parent, "parent must not be null for non-root path"), siblingField);
     }
 
     public ResultPath sibling(int siblingField) {
         assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
-        return new ResultPath(this.parent, siblingField);
+        return new ResultPath(assertNotNull(this.parent, "parent must not be null for non-root path"), siblingField);
     }
 
     /**
@@ -274,7 +274,7 @@ public class ResultPath {
         ResultPath p = this;
         while (p.segment != null) {
             list.addFirst(p.segment);
-            p = p.parent;
+            p = assertNotNull(p.parent, "non-root ResultPath must have a non-null parent");
         }
         return ImmutableList.copyOf(list);
     }
@@ -292,7 +292,7 @@ public class ResultPath {
             if (p.segment instanceof String) {
                 list.addFirst((String) p.segment);
             }
-            p = p.parent;
+            p = assertNotNull(p.parent, "non-root ResultPath must have a non-null parent");
         }
         return list;
     }
@@ -334,8 +334,8 @@ public class ResultPath {
             if (!Objects.equals(self.segment, that.segment)) {
                 return false;
             }
-            self = self.parent;
-            that = that.parent;
+            self = assertNotNull(self.parent, "non-root ResultPath must have a non-null parent");
+            that = assertNotNull(that.parent, "non-root ResultPath must have a non-null parent");
         }
 
         return self.isRootPath() && that.isRootPath();

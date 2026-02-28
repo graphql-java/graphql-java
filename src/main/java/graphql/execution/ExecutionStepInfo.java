@@ -268,7 +268,7 @@ public class ExecutionStepInfo {
     }
 
     public String getResultKey() {
-        return field.getResultKey();
+        return assertNotNull(field, "field must not be null").getResultKey();
     }
 
     /**

@@ -9,6 +9,8 @@ import org.jspecify.annotations.NullMarked;
 
 import java.util.function.Supplier;
 
+import static graphql.Assert.assertNotNull;
+
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
@@ -26,7 +28,7 @@ public class InstrumentationFieldParameters {
     }
 
     public GraphQLFieldDefinition getField() {
-        return executionStepInfo.get().getFieldDefinition();
+        return assertNotNull(executionStepInfo.get().getFieldDefinition(), "fieldDefinition must not be null");
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {

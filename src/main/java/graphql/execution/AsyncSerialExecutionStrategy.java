@@ -5,6 +5,7 @@ import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.introspection.Introspection;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 
 /**
@@ -52,7 +54,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         }
 
         CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
-            MergedField currentField = fields.getSubField(fieldName);
+            MergedField currentField = assertNotNull(fields.getSubField(fieldName), "currentField must not be null");
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters.transform(currentField, fieldPath);
 
@@ -67,7 +69,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         return overallResult;
     }
 
-    private Object resolveSerialField(ExecutionContext executionContext,
+    private @Nullable Object resolveSerialField(ExecutionContext executionContext,
                                       DataLoaderDispatchStrategy dataLoaderDispatcherStrategy,
                                       ExecutionStrategyParameters newParameters) {
         dataLoaderDispatcherStrategy.executionSerialStrategy(executionContext, newParameters);

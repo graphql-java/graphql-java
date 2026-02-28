@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.analysis.values.ValueVisitor.ABSENCE_SENTINEL;
@@ -284,7 +285,7 @@ public class ValueTraverser {
                 Object newValue = visitPreOrderImpl(subValue, inputType, containingElements, visitor);
                 if (copiedList != null) {
                     if (newValue != ABSENCE_SENTINEL) {
-                        copiedList.add(newValue);
+                        copiedList.add(assertNotNull(newValue, "list element must not be null"));
                     }
                 } else if (hasChanged(newValue, subValue)) {
                     // go into copy mode because something has changed
@@ -294,7 +295,7 @@ public class ValueTraverser {
                         copiedList.add(newList.get(j));
                     }
                     if (newValue != ABSENCE_SENTINEL) {
-                        copiedList.add(newValue);
+                        copiedList.add(assertNotNull(newValue, "list element must not be null"));
                     }
                 }
                 i++;

@@ -167,7 +167,7 @@ public class QueryAppliedDirectiveArgument {
          *
          * @return this builder
          */
-        public Builder valueLiteral(@NonNull Value<?> value) {
+        public Builder valueLiteral(Value<?> value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
         }
@@ -182,7 +182,7 @@ public class QueryAppliedDirectiveArgument {
             return this;
         }
 
-        public Builder inputValueWithState(@NonNull InputValueWithState value) {
+        public Builder inputValueWithState(InputValueWithState value) {
             this.value = Assert.assertNotNull(value);
             return this;
         }

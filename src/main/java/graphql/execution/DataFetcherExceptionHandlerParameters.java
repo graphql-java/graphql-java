@@ -6,6 +6,7 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLFieldDefinition;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -48,7 +49,7 @@ public class DataFetcherExceptionHandlerParameters {
         return dataFetchingEnvironment.getArguments();
     }
 
-    public SourceLocation getSourceLocation() {
+    public @Nullable SourceLocation getSourceLocation() {
         return getField().getSingleField().getSourceLocation();
     }
 

@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static graphql.Assert.assertNotNull;
+
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
 @NullMarked
@@ -249,7 +251,7 @@ public class ExecutionContext {
             if (!errorPaths.add(fieldPath)) {
                 return;
             }
-            this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
+            this.errors.set(ImmutableKit.addToList(assertNotNull(this.errors.get(), "errors list must not be null"), error));
         });
     }
 
@@ -268,7 +270,7 @@ public class ExecutionContext {
                 ResultPath path = ResultPath.fromList(error.getPath());
                 this.errorPaths.add(path);
             }
-            this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
+            this.errors.set(ImmutableKit.addToList(assertNotNull(this.errors.get(), "errors list must not be null"), error));
         });
     }
 
@@ -296,7 +298,7 @@ public class ExecutionContext {
                 }
             }
             this.errorPaths.addAll(newErrorPaths);
-            this.errors.set(ImmutableKit.concatLists(this.errors.get(), errors));
+            this.errors.set(ImmutableKit.concatLists(assertNotNull(this.errors.get(), "errors list must not be null"), errors));
         });
     }
 
@@ -309,7 +311,7 @@ public class ExecutionContext {
      * @return the total list of errors for this execution context
      */
     public List<GraphQLError> getErrors() {
-        return errors.get();
+        return assertNotNull(errors.get(), "errors list must not be null");
     }
 
     public ExecutionStrategy getQueryStrategy() {
