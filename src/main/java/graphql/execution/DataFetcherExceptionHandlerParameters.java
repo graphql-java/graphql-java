@@ -4,6 +4,8 @@ import graphql.PublicApi;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.Map;
 
@@ -11,6 +13,7 @@ import java.util.Map;
  * The parameters available to {@link DataFetcherExceptionHandler}s
  */
 @PublicApi
+@NullMarked
 public class DataFetcherExceptionHandlerParameters {
 
     private final DataFetchingEnvironment dataFetchingEnvironment;
@@ -53,6 +56,7 @@ public class DataFetcherExceptionHandlerParameters {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         DataFetchingEnvironment dataFetchingEnvironment;
         Throwable exception;
