@@ -5,12 +5,14 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.function.Supplier;
 
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
+@NullMarked
 @PublicApi
 public class InstrumentationFieldParameters {
     private final ExecutionContext executionContext;
