@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.DataFetchingEnvironment;
+import org.jspecify.annotations.NullMarked;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -22,6 +23,7 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
  * calls.  It has been made a separate class so that you can compose this into existing
  * instrumentation code.
  */
+@NullMarked
 @PublicApi
 public class TracingSupport implements InstrumentationState {
 
