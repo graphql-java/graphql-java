@@ -23,6 +23,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
@@ -36,6 +37,7 @@ import java.util.function.Supplier;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
+@NullMarked
 public class ExecutionContext {
 
     private final GraphQLSchema graphQLSchema;
@@ -175,7 +177,7 @@ public class ExecutionContext {
         return (T) root;
     }
 
-    public FragmentDefinition getFragment(String name) {
+    public @Nullable FragmentDefinition getFragment(String name) {
         return fragmentsByName.get(name);
     }
 
