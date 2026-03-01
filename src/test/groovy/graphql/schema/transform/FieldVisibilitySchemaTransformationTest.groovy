@@ -2010,4 +2010,82 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         assertSchemaIsValid(restrictedSchema)
     }
 
+    def "union member type remains valid after its only private path is removed"() {
+        given: "a schema where PizzaTopping is reachable via a private creation payload and is also a union member"
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            dummy: String
+            createPizzaTopping(
+                name: String!
+            ): PizzaToppingCreationPayload @private
+            toBeRemoved: PizzaNoReference @private
+        }
+
+        union PizzaPolicy =
+            | PizzaTopping
+            | PizzaCrust
+            | PizzaDiscount
+            | PizzaAllergen
+
+        interface Payload {
+            success: Boolean!
+        }
+
+        type PizzaToppingCreationPayload implements Payload {
+            topping: PizzaTopping
+            success: Boolean!
+        }
+
+        type PizzaTopping {
+            id: ID
+            name: String
+        }
+
+        type PizzaCrust {
+            id: ID
+            name: String
+        }
+
+        type PizzaDiscount {
+            id: ID
+            percentage: Float
+        }
+
+        type PizzaAllergen {
+            id: ID
+            allergen: String
+        }
+        
+        type PizzaNoReference {
+            id: ID
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "the private field is removed from Query"
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("createPizzaTopping") == null
+
+        and: "the creation payload type is removed as it is only reachable via the private field"
+        restrictedSchema.getType("PizzaToppingCreationPayload") == null
+
+        and: "PizzaTopping is still present because it is reachable as a union member of the public PizzaPolicy"
+        restrictedSchema.getType("PizzaTopping") != null
+
+        and: "the union and all its members remain intact"
+        restrictedSchema.getType("PizzaPolicy") != null
+        restrictedSchema.getType("PizzaCrust") != null
+        restrictedSchema.getType("PizzaDiscount") != null
+        restrictedSchema.getType("PizzaAllergen") != null
+
+        restrictedSchema.getType("PizzaNoReference") == null
+
+        and: "the resulting schema is valid - previously this would produce an invalid schema"
+        assertSchemaIsValid(restrictedSchema)
+    }
+
 }
