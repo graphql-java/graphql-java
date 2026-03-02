@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.21.1'
+}
+
+tasks.register('generatePerformancePage', JavaExec) {
+    description = 'Generates the performance results HTML page'
+    group = 'reporting'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'graphql.performance.page.Main'
+    args = [
+            file("${rootProject.projectDir}/performance-results").absolutePath,
+            file("${project.projectDir}/build/site").absolutePath
+    ]
+}
