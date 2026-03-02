@@ -2,6 +2,8 @@ package graphql.language;
 
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -20,6 +22,7 @@ import static graphql.util.EscapeUtil.escapeJsonStringTo;
  */
 @SuppressWarnings("UnnecessaryLocalVariable")
 @PublicApi
+@NullMarked
 public class AstPrinter {
 
     /**
@@ -566,13 +569,13 @@ public class AstPrinter {
         node(out, node, null);
     }
 
-    private String node(Node<?> node, Class<?> startClass) {
+    private String node(Node<?> node, @Nullable Class<?> startClass) {
         StringBuilder builder = new StringBuilder();
         node(builder, node, startClass);
         return builder.toString();
     }
 
-    private void node(StringBuilder out, Node<?> node, Class<?> startClass) {
+    private void node(StringBuilder out, Node<?> node, @Nullable Class<?> startClass) {
         if (startClass != null) {
             assertTrue(startClass.isInstance(node), "The starting class must be in the inherit tree");
         }
@@ -585,16 +588,12 @@ public class AstPrinter {
         return _findPrinter(node, null);
     }
 
-    <T extends Node> NodePrinter<T> _findPrinter(Node node, Class startClass) {
-        if (node == null) {
-            return (out, type) -> {
-            };
-        }
+    <T extends Node> NodePrinter<T> _findPrinter(Node node, @Nullable Class<?> startClass) {
         Class<?> clazz = startClass != null ? startClass : node.getClass();
         while (clazz != Object.class) {
             NodePrinter nodePrinter = printers.get(clazz);
             if (nodePrinter != null) {
-                //noinspection unchecked
+                // noinspection unchecked
                 return nodePrinter;
             }
             clazz = clazz.getSuperclass();
@@ -602,15 +601,15 @@ public class AstPrinter {
         return assertShouldNeverHappen("We have a missing printer implementation for %s : report a bug!", clazz);
     }
 
-    private static <T> boolean isEmpty(List<T> list) {
+    private static <T> boolean isEmpty(@Nullable List<T> list) {
         return list == null || list.isEmpty();
     }
 
-    private static boolean isEmpty(String s) {
+    private static boolean isEmpty(@Nullable String s) {
         return s == null || s.isBlank();
     }
 
-    private static <T> List<T> nvl(List<T> list) {
+    private static <T> List<T> nvl(@Nullable List<T> list) {
         return list != null ? list : ImmutableKit.emptyList();
     }
 
@@ -745,7 +744,7 @@ public class AstPrinter {
     }
 
     @SuppressWarnings("SameParameterValue")
-    String wrap(String start, Node maybeNode, String end) {
+    String wrap(String start, @Nullable Node maybeNode, String end) {
         if (maybeNode == null) {
             return "";
         }
