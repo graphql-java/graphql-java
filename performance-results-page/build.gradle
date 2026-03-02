@@ -23,6 +23,6 @@ tasks.register('generatePerformancePage', JavaExec) {
     mainClass = 'graphql.performance.page.Main'
     args = [
             file("${rootProject.projectDir}/performance-results").absolutePath,
-            file("${rootProject.projectDir}/pages").absolutePath
+            file("${project.projectDir}/build/site").absolutePath
     ]
 }
