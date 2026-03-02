@@ -788,6 +788,53 @@ class PropertyDataFetcherTest extends Specification {
 
     class OtherObject extends BaseObject {}
 
+    def "fetch via public interface method on non-public class - issue 4278"() {
+        given:
+        // TreeMap.Entry is a package-private class implementing the public Map.Entry interface
+        // On Java 16+, setAccessible fails on JDK internal classes, so the only way to invoke
+        // getValue() is by finding it through the public Map.Entry interface
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def treeMap = new TreeMap<String, String>()
+        treeMap.put("testKey", "testValue")
+        def entry = treeMap.entrySet().iterator().next()
+        def environment = env("value", entry)
+
+        when:
+        def result = fetcher.get(environment)
+
+        then:
+        result == "testValue"
+
+        where:
+        fetcher                                  | _
+        new PropertyDataFetcher("value")         | _
+        SingletonPropertyDataFetcher.singleton() | _
+    }
+
+    def "fetch via public interface method on non-public class for key - issue 4278"() {
+        given:
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def treeMap = new TreeMap<String, String>()
+        treeMap.put("testKey", "testValue")
+        def entry = treeMap.entrySet().iterator().next()
+        def environment = env("key", entry)
+
+        when:
+        def result = fetcher.get(environment)
+
+        then:
+        result == "testKey"
+
+        where:
+        fetcher                                  | _
+        new PropertyDataFetcher("key")           | _
+        SingletonPropertyDataFetcher.singleton() | _
+    }
+
     def "Can access private property from base class that starts with i in Turkish"() {
         // see https://github.com/graphql-java/graphql-java/issues/3385
         given:
