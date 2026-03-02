@@ -9,7 +9,9 @@ import graphql.performance.page.parser.ResultFileParser;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -63,8 +65,11 @@ public class Main {
             System.out.println("  " + entry.getKey() + ": " + entry.getValue().size() + " series, " + totalPoints + " data points");
         }
 
+        Instant earliest = resultFiles.stream().map(ResultFile::getTimestamp).min(Comparator.naturalOrder()).orElse(Instant.now());
+        Instant latest = resultFiles.stream().map(ResultFile::getTimestamp).max(Comparator.naturalOrder()).orElse(Instant.now());
+
         HtmlGenerator generator = new HtmlGenerator();
-        generator.generate(grouped, outputDir, jsonFiles.length);
+        generator.generate(grouped, outputDir, jsonFiles.length, earliest, latest);
 
         System.out.println("Generated " + outputDir.resolve("index.html"));
     }
