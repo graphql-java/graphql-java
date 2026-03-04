@@ -78,7 +78,7 @@ def getDevelopmentVersion() {
     def gitRevParseError = new StringBuilder()
     def gitRevParse = ["git", "-C", projectDir.toString(), "rev-parse", "--abbrev-ref", "HEAD"].execute()
     gitRevParse.waitForProcessOutput(gitRevParseOutput, gitRevParseError)
-    def branchName = gitRevParseOutput.toString().trim()
+    def branchName = gitRevParseOutput.toString().trim().replaceAll('[/\\\\]', '-')
 
     return makeDevelopmentVersion(["0.0.0", branchName, "SNAPSHOT"])
 }
@@ -372,6 +372,7 @@ long testTime = 0L
 
 tasks.withType(Test) {
     useJUnitPlatform()
+    maxHeapSize = "1g"
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
