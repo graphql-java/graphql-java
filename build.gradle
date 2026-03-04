@@ -17,6 +17,7 @@ plugins {
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
     id "net.ltgt.errorprone" version '5.0.0'
+    id 'jacoco'
     //
     // Kotlin just for tests - not production code
     id 'org.jetbrains.kotlin.jvm' version '2.3.0'
@@ -440,6 +441,30 @@ tasks.register('testWithJava11', Test) {
 test.dependsOn testWithJava21
 test.dependsOn testWithJava17
 test.dependsOn testWithJava11
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+
+    // Exclude generated ANTLR code from coverage
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    'graphql/parser/antlr/**',
+                    'graphql/com/google/**',
+                    'graphql/org/antlr/**'
+            ])
+        }))
+    }
+}
 
 
 /*
