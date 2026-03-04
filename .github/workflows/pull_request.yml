@@ -31,18 +31,103 @@ jobs:
           distribution: 'corretto'
       - name: build and test
         run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
-      - name: Publish Coverage Report
-        uses: Madrapps/jacoco-report@50d3aff4548aa991e6753342d9ba291084e63848 # v1.7.2
+      - name: Upload Coverage HTML Report
+        uses: actions/upload-artifact@v4
+        if: >
+          always() &&
+          contains(matrix.gradle-argument, 'jacocoTestReport')
+        with:
+          name: jacoco-html-report
+          path: build/reports/jacoco/test/html/
+          retention-days: 14
+      - name: Publish Per-Package Coverage Comment
         if: >
           always() &&
           github.event_name == 'pull_request' &&
           contains(matrix.gradle-argument, 'jacocoTestReport')
+        uses: actions/github-script@v7
         with:
-          paths: ${{ github.workspace }}/build/reports/jacoco/test/jacocoTestReport.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 0
-          min-coverage-changed-files: 0
-          update-comment: true
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const xmlFile = path.join(process.env.GITHUB_WORKSPACE, 'build/reports/jacoco/test/jacocoTestReport.xml');
+            if (!fs.existsSync(xmlFile)) {
+              core.warning('JaCoCo XML report not found');
+              return;
+            }
+            const xml = fs.readFileSync(xmlFile, 'utf8');
+
+            function extractCounters(element) {
+              const counters = {};
+              const re = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
+              let m;
+              while ((m = re.exec(element)) !== null) {
+                counters[m[1]] = { missed: parseInt(m[2]), covered: parseInt(m[3]) };
+              }
+              return counters;
+            }
+
+            function pct(c) {
+              if (!c) return 'N/A';
+              const total = c.missed + c.covered;
+              return total === 0 ? 'N/A' : (c.covered / total * 100).toFixed(1) + '%';
+            }
+
+            // Parse overall counters (last set of <counter> tags at report level)
+            const reportMatch = xml.match(/<report[^>]*>([\s\S]*)<\/report>/);
+            const reportBody = reportMatch ? reportMatch[1] : xml;
+
+            // Extract packages
+            const pkgRegex = /<package name="([^"]*)">([\s\S]*?)<\/package>/g;
+            const packages = [];
+            let pm;
+            while ((pm = pkgRegex.exec(reportBody)) !== null) {
+              const name = pm[1].replace(/\//g, '.');
+              const counters = extractCounters(pm[2]);
+              packages.push({ name, counters });
+            }
+
+            // Sort by package name
+            packages.sort((a, b) => a.name.localeCompare(b.name));
+
+            // Overall counters (direct children of <report>, after all packages)
+            const overallCounters = extractCounters(reportBody.replace(/<package[\s\S]*?<\/package>/g, ''));
+
+            let body = '## JaCoCo Coverage Report\n\n';
+            body += '| Package | Line | Branch | Method |\n';
+            body += '|:--------|-----:|-------:|-------:|\n';
+
+            for (const pkg of packages) {
+              const c = pkg.counters;
+              body += `| \`${pkg.name}\` | ${pct(c.LINE)} | ${pct(c.BRANCH)} | ${pct(c.METHOD)} |\n`;
+            }
+
+            body += `| **Overall** | **${pct(overallCounters.LINE)}** | **${pct(overallCounters.BRANCH)}** | **${pct(overallCounters.METHOD)}** |\n`;
+            body += '\n> Full HTML report available as build artifact `jacoco-html-report`\n';
+
+            // Find and update or create the comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const marker = '## JaCoCo Coverage Report';
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2.23.0
         if: always()
