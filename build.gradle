@@ -373,6 +373,7 @@ long testTime = 0L
 
 tasks.withType(Test) {
     useJUnitPlatform()
+    maxHeapSize = "1g"
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
