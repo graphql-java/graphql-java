@@ -12,7 +12,8 @@ on:
       - 21.x
       - 20.x
       - 19.x
-permissions: # For test comment bot
+permissions:
+  contents: write
   checks: write
   pull-requests: write
 jobs:
@@ -20,7 +21,21 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        gradle-argument: [ 'assemble && ./gradlew check -x test','testWithJava11', 'testWithJava17','testWithJava21', 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 jacocoTestReport' ]
+        include:
+          - gradle-argument: 'assemble && ./gradlew check -x test'
+            label: 'check'
+          - gradle-argument: 'testWithJava11'
+            label: 'java11'
+            test-results-dir: 'testWithJava11'
+          - gradle-argument: 'testWithJava17'
+            label: 'java17'
+            test-results-dir: 'testWithJava17'
+          - gradle-argument: 'testWithJava21'
+            label: 'java21'
+            test-results-dir: 'testWithJava21'
+          - gradle-argument: 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 jacocoTestReport'
+            label: 'java25'
+            test-results-dir: 'test'
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
@@ -33,9 +48,7 @@ jobs:
         run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
       - name: Upload Coverage HTML Report
         uses: actions/upload-artifact@v4
-        if: >
-          always() &&
-          contains(matrix.gradle-argument, 'jacocoTestReport')
+        if: always() && matrix.label == 'java25'
         with:
           name: jacoco-html-report
           path: build/reports/jacoco/test/html/
@@ -44,7 +57,7 @@ jobs:
         if: >
           always() &&
           github.event_name == 'pull_request' &&
-          contains(matrix.gradle-argument, 'jacocoTestReport')
+          matrix.label == 'java25'
         uses: actions/github-script@v7
         with:
           script: |
@@ -128,15 +141,155 @@ jobs:
                 body,
               });
             }
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
-        if: always()
+      - name: Parse Test Results
+        if: always() && matrix.label != 'check'
+        run: |
+          dir="build/test-results/${{ matrix.test-results-dir }}"
+          total=0; failures=0; errors=0; skipped=0
+          for f in "$dir"/TEST-*.xml; do
+            [ -f "$f" ] || continue
+            t=$(grep -o 'tests="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+            fl=$(grep -o 'failures="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+            e=$(grep -o 'errors="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+            s=$(grep -o 'skipped="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+            total=$((total + ${t:-0}))
+            failures=$((failures + ${fl:-0}))
+            errors=$((errors + ${e:-0}))
+            skipped=$((skipped + ${s:-0}))
+          done
+          passed=$((total - failures - errors - skipped))
+          mkdir -p /tmp/test-stats
+          echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failures,\"errors\":$errors,\"skipped\":$skipped}" \
+            > "/tmp/test-stats/${{ matrix.label }}.json"
+      - name: Upload Test Stats
+        if: always() && matrix.label != 'check'
+        uses: actions/upload-artifact@v4
         with:
-          files: |
-            **/build/test-results/test/TEST-*.xml
-            **/build/test-results/testWithJava11/TEST-*.xml
-            **/build/test-results/testWithJava17/TEST-*.xml
-            **/build/test-results/testWithJava21/TEST-*.xml
+          name: test-stats-${{ matrix.label }}
+          path: /tmp/test-stats/${{ matrix.label }}.json
+  test-summary:
+    needs: buildAndTest
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.head_ref }}
+      - name: Download Test Stats
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-stats-*
+          merge-multiple: true
+          path: test-stats/
+      - name: Generate Test Summary and Update Baseline
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const versions = ['java11', 'java17', 'java21', 'java25'];
+            const zero = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
+
+            // Read current stats from artifacts
+            const current = {};
+            for (const v of versions) {
+              const file = path.join('test-stats', `${v}.json`);
+              if (fs.existsSync(file)) {
+                current[v] = JSON.parse(fs.readFileSync(file, 'utf8'));
+              } else {
+                current[v] = null;
+              }
+            }
+
+            // Read baseline from repo
+            const baselineFile = 'test-stats-baseline.json';
+            let baseline = {};
+            if (fs.existsSync(baselineFile)) {
+              baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
+            }
+
+            function delta(curr, prev) {
+              const d = curr - prev;
+              if (d === 0) return '\u00b10';
+              return d > 0 ? `+${d}` : `${d}`;
+            }
+
+            function fmtCell(curr, prev) {
+              return `${curr} (${delta(curr, prev)})`;
+            }
+
+            let body = '## Test Results\n\n';
+            body += '| Java Version | Total | Passed | Failed | Errors | Skipped |\n';
+            body += '|:-------------|------:|-------:|-------:|-------:|--------:|\n';
+
+            for (const v of versions) {
+              const c = current[v] || zero;
+              const b = baseline[v] || zero;
+              const label = v.replace('java', 'Java ');
+              if (!current[v]) {
+                body += `| ${label} | - | - | - | - | - |\n`;
+              } else {
+                body += `| ${label} | ${fmtCell(c.total, b.total)} | ${fmtCell(c.passed, b.passed)} | ${fmtCell(c.failed, b.failed)} | ${fmtCell(c.errors, b.errors)} | ${fmtCell(c.skipped, b.skipped)} |\n`;
+              }
+            }
+
+            // Totals row
+            const totalCurr = { ...zero };
+            const totalBase = { ...zero };
+            let hasAny = false;
+            for (const v of versions) {
+              if (current[v]) {
+                hasAny = true;
+                for (const k of Object.keys(zero)) {
+                  totalCurr[k] += current[v][k];
+                  totalBase[k] += (baseline[v] || zero)[k];
+                }
+              }
+            }
+            if (hasAny) {
+              body += `| **Total** | **${fmtCell(totalCurr.total, totalBase.total)}** | **${fmtCell(totalCurr.passed, totalBase.passed)}** | **${fmtCell(totalCurr.failed, totalBase.failed)}** | **${fmtCell(totalCurr.errors, totalBase.errors)}** | **${fmtCell(totalCurr.skipped, totalBase.skipped)}** |\n`;
+            }
+
+            // Post or update comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const marker = '## Test Results';
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+            // Write updated baseline for commit
+            const updated = {};
+            for (const v of versions) {
+              updated[v] = current[v] || baseline[v] || zero;
+            }
+            fs.writeFileSync(baselineFile, JSON.stringify(updated, null, 2) + '\n');
+      - name: Commit Updated Baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add test-stats-baseline.json
+          git diff --cached --quiet || {
+            git commit -m "Update test stats baseline [skip ci]"
+            git push
+          }
   javadoc:
     runs-on: ubuntu-latest
     steps:
