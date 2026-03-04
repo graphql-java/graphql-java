@@ -968,22 +968,36 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors().size() == 0
     }
 
-    def "fields with null types from unresolvable parent should not produce spurious conflicts"() {
+    def "mixed null and non-null field types from unresolvable fragments should not conflict"() {
         given:
         // Regression test for commit 072165b which changed the null-handling in requireSameOutputTypeShape.
-        // When multiple fields have null graphQLType (e.g. from fragments on unknown types), both typeA
-        // and typeB are null. The old code (072165b) unconditionally reported a conflict when typeB was
-        // null, even if typeA was also null. The fix correctly treats both-null as compatible.
+        // This reproduces the benchmarkDeepAbstractConcrete JMH benchmark scenario: the fragment spreads
+        // on "Whatever" (which doesn't exist in the schema), so the outer "field" has null graphQLType.
+        // After mergeSubSelections, the inner field set contains both null-typed entries (from the
+        // unresolvable parent) and Abstract-typed entries (from the interface inline fragments).
+        // A null type means the parent was unresolvable, so we should skip the comparison rather than
+        // report a spurious conflict.
         def schema = SchemaGenerator.createdMockedSchema('''
-            type Query { field: String }
+            type Query { viewer: Viewer }
+            interface Abstract { field: Abstract leaf: Int }
+            interface Abstract1 { field: Abstract leaf: Int }
+            interface Abstract2 { field: Abstract leaf: Int }
+            type Concrete1 implements Abstract1 { field: Abstract leaf: Int }
+            type Concrete2 implements Abstract2 { field: Abstract leaf: Int }
+            type Viewer { xingId: XingId }
+            type XingId { firstName: String! lastName: String! }
         ''')
-        // Both fragments spread on "Unknown" which doesn't exist in the schema, so all field
-        // types resolve to null. The overlapping "id" fields should be treated as compatible
-        // since both have null type.
         def query = '''
-        query Test {
-            ... on Unknown { id }
-            ... on Unknown { id }
+        fragment multiply on Whatever {
+            field {
+                ... on Abstract1 { field { leaf } }
+                ... on Abstract2 { field { leaf } }
+                ... on Concrete1 { field { leaf } }
+                ... on Concrete2 { field { leaf } }
+            }
+        }
+        query DeepAbstractConcrete {
+            field { ...multiply field { ...multiply } }
         }
         '''
         when:

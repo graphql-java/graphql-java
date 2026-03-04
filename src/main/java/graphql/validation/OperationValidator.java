@@ -1242,9 +1242,6 @@ public class OperationValidator implements DocumentVisitor {
             GraphQLType typeA = typeAOriginal;
             GraphQLType typeB = fieldAndType.graphQLType;
             if (typeA == null || typeB == null) {
-                if (typeA != typeB) {
-                    return mkNotSameTypeError(path, fields, typeA, typeB);
-                }
                 continue;
             }
             while (true) {
