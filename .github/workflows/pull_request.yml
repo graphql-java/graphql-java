@@ -13,7 +13,7 @@ on:
       - 20.x
       - 19.x
 permissions:
-  contents: write
+  contents: read
   checks: write
   pull-requests: write
 jobs:
@@ -53,94 +53,13 @@ jobs:
           name: jacoco-html-report
           path: build/reports/jacoco/test/html/
           retention-days: 14
-      - name: Publish Per-Package Coverage Comment
-        if: >
-          always() &&
-          github.event_name == 'pull_request' &&
-          matrix.label == 'java25'
-        uses: actions/github-script@v7
+      - name: Upload Coverage XML Report
+        uses: actions/upload-artifact@v4
+        if: always() && matrix.label == 'java25'
         with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            const xmlFile = path.join(process.env.GITHUB_WORKSPACE, 'build/reports/jacoco/test/jacocoTestReport.xml');
-            if (!fs.existsSync(xmlFile)) {
-              core.warning('JaCoCo XML report not found');
-              return;
-            }
-            const xml = fs.readFileSync(xmlFile, 'utf8');
-
-            function extractCounters(element) {
-              const counters = {};
-              const re = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
-              let m;
-              while ((m = re.exec(element)) !== null) {
-                counters[m[1]] = { missed: parseInt(m[2]), covered: parseInt(m[3]) };
-              }
-              return counters;
-            }
-
-            function pct(c) {
-              if (!c) return 'N/A';
-              const total = c.missed + c.covered;
-              return total === 0 ? 'N/A' : (c.covered / total * 100).toFixed(1) + '%';
-            }
-
-            // Parse overall counters (last set of <counter> tags at report level)
-            const reportMatch = xml.match(/<report[^>]*>([\s\S]*)<\/report>/);
-            const reportBody = reportMatch ? reportMatch[1] : xml;
-
-            // Extract packages
-            const pkgRegex = /<package name="([^"]*)">([\s\S]*?)<\/package>/g;
-            const packages = [];
-            let pm;
-            while ((pm = pkgRegex.exec(reportBody)) !== null) {
-              const name = pm[1].replace(/\//g, '.');
-              const counters = extractCounters(pm[2]);
-              packages.push({ name, counters });
-            }
-
-            // Sort by package name
-            packages.sort((a, b) => a.name.localeCompare(b.name));
-
-            // Overall counters (direct children of <report>, after all packages)
-            const overallCounters = extractCounters(reportBody.replace(/<package[\s\S]*?<\/package>/g, ''));
-
-            let body = '## JaCoCo Coverage Report\n\n';
-            body += '| Package | Line | Branch | Method |\n';
-            body += '|:--------|-----:|-------:|-------:|\n';
-
-            for (const pkg of packages) {
-              const c = pkg.counters;
-              body += `| \`${pkg.name}\` | ${pct(c.LINE)} | ${pct(c.BRANCH)} | ${pct(c.METHOD)} |\n`;
-            }
-
-            body += `| **Overall** | **${pct(overallCounters.LINE)}** | **${pct(overallCounters.BRANCH)}** | **${pct(overallCounters.METHOD)}** |\n`;
-            body += '\n> Full HTML report available as build artifact `jacoco-html-report`\n';
-
-            // Find and update or create the comment
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const marker = '## JaCoCo Coverage Report';
-            const existing = comments.find(c => c.body && c.body.startsWith(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
+          name: coverage-report
+          path: build/reports/jacoco/test/jacocoTestReport.xml
+          retention-days: 1
       - name: Parse Test Results
         if: always() && matrix.label != 'check'
         run: |
@@ -173,15 +92,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.head_ref }}
       - name: Download Test Stats
         uses: actions/download-artifact@v4
         with:
           pattern: test-stats-*
           merge-multiple: true
           path: test-stats/
-      - name: Generate Test Summary and Update Baseline
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: coverage-report
+          path: coverage/
+      - name: Generate Unified Test Report Comment
         uses: actions/github-script@v7
         with:
           script: |
@@ -189,9 +112,10 @@ jobs:
             const path = require('path');
 
             const versions = ['java11', 'java17', 'java21', 'java25'];
-            const zero = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
+            const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
+            const zeroCov = { covered: 0, missed: 0 };
 
-            // Read current stats from artifacts
+            // --- Read current test stats from artifacts ---
             const current = {};
             for (const v of versions) {
               const file = path.join('test-stats', `${v}.json`);
@@ -202,16 +126,36 @@ jobs:
               }
             }
 
-            // Read baseline from repo
-            const baselineFile = 'test-stats-baseline.json';
-            let baseline = {};
+            // --- Read baseline from repo (read-only) ---
+            const baselineFile = 'test-baseline.json';
+            let baseline = { tests: {}, coverage: {} };
             if (fs.existsSync(baselineFile)) {
               baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
             }
+            const baseTests = baseline.tests || {};
+            const baseCov = baseline.coverage || {};
 
+            // --- Parse JaCoCo XML for coverage ---
+            let covLine = null, covBranch = null, covMethod = null;
+            const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
+            if (fs.existsSync(jacocoFile)) {
+              const xml = fs.readFileSync(jacocoFile, 'utf8');
+              // Extract top-level counters (direct children of <report>, outside <package> tags)
+              const stripped = xml.replace(/<package[\s\S]*?<\/package>/g, '');
+              const re = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
+              let m;
+              while ((m = re.exec(stripped)) !== null) {
+                const entry = { covered: parseInt(m[3]), missed: parseInt(m[2]) };
+                if (m[1] === 'LINE') covLine = entry;
+                else if (m[1] === 'BRANCH') covBranch = entry;
+                else if (m[1] === 'METHOD') covMethod = entry;
+              }
+            }
+
+            // --- Helpers ---
             function delta(curr, prev) {
               const d = curr - prev;
-              if (d === 0) return '\u00b10';
+              if (d === 0) return '±0';
               return d > 0 ? `+${d}` : `${d}`;
             }
 
@@ -219,13 +163,30 @@ jobs:
               return `${curr} (${delta(curr, prev)})`;
             }
 
-            let body = '## Test Results\n\n';
+            function pct(covered, missed) {
+              const total = covered + missed;
+              return total === 0 ? 0 : (covered / total * 100);
+            }
+
+            function fmtPct(value) {
+              return value.toFixed(1) + '%';
+            }
+
+            function fmtPctDelta(curr, prev) {
+              const d = curr - prev;
+              if (Math.abs(d) < 0.05) return '±0.0%';
+              return d > 0 ? `+${d.toFixed(1)}%` : `${d.toFixed(1)}%`;
+            }
+
+            // --- Build Test Results table ---
+            let body = '<!-- test-report -->\n## Test Report\n\n';
+            body += '### Test Results\n';
             body += '| Java Version | Total | Passed | Failed | Errors | Skipped |\n';
             body += '|:-------------|------:|-------:|-------:|-------:|--------:|\n';
 
             for (const v of versions) {
-              const c = current[v] || zero;
-              const b = baseline[v] || zero;
+              const c = current[v] || zeroTest;
+              const b = baseTests[v] || zeroTest;
               const label = v.replace('java', 'Java ');
               if (!current[v]) {
                 body += `| ${label} | - | - | - | - | - |\n`;
@@ -235,15 +196,15 @@ jobs:
             }
 
             // Totals row
-            const totalCurr = { ...zero };
-            const totalBase = { ...zero };
+            const totalCurr = { ...zeroTest };
+            const totalBase = { ...zeroTest };
             let hasAny = false;
             for (const v of versions) {
               if (current[v]) {
                 hasAny = true;
-                for (const k of Object.keys(zero)) {
+                for (const k of Object.keys(zeroTest)) {
                   totalCurr[k] += current[v][k];
-                  totalBase[k] += (baseline[v] || zero)[k];
+                  totalBase[k] += (baseTests[v] || zeroTest)[k];
                 }
               }
             }
@@ -251,13 +212,40 @@ jobs:
               body += `| **Total** | **${fmtCell(totalCurr.total, totalBase.total)}** | **${fmtCell(totalCurr.passed, totalBase.passed)}** | **${fmtCell(totalCurr.failed, totalBase.failed)}** | **${fmtCell(totalCurr.errors, totalBase.errors)}** | **${fmtCell(totalCurr.skipped, totalBase.skipped)}** |\n`;
             }
 
-            // Post or update comment
+            // --- Build Coverage table ---
+            if (covLine || covBranch || covMethod) {
+              body += '\n### Code Coverage (Java 25)\n';
+              body += '| Metric   | Covered | Missed | Coverage | vs Master |\n';
+              body += '|:---------|--------:|-------:|---------:|----------:|\n';
+
+              const metrics = [
+                { name: 'Lines', curr: covLine, baseKey: 'line' },
+                { name: 'Branches', curr: covBranch, baseKey: 'branch' },
+                { name: 'Methods', curr: covMethod, baseKey: 'method' },
+              ];
+
+              for (const { name, curr, baseKey } of metrics) {
+                if (!curr) continue;
+                const b = baseCov[baseKey] || zeroCov;
+                const currPct = pct(curr.covered, curr.missed);
+                const basePct = pct(b.covered, b.missed);
+                body += `| ${name} | ${curr.covered} | ${curr.missed} | ${fmtPct(currPct)} | ${fmtPctDelta(currPct, basePct)} |\n`;
+              }
+
+              body += '\n> Full HTML report: build artifact `jacoco-html-report`\n';
+            }
+
+            // Timestamp
+            const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+            body += `\n> *Updated: ${now}*\n`;
+
+            // --- Post or update single comment ---
             const { data: comments } = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
             });
-            const marker = '## Test Results';
+            const marker = '<!-- test-report -->';
             const existing = comments.find(c => c.body && c.body.startsWith(marker));
             if (existing) {
               await github.rest.issues.updateComment({
@@ -274,22 +262,6 @@ jobs:
                 body,
               });
             }
-
-            // Write updated baseline for commit
-            const updated = {};
-            for (const v of versions) {
-              updated[v] = current[v] || baseline[v] || zero;
-            }
-            fs.writeFileSync(baselineFile, JSON.stringify(updated, null, 2) + '\n');
-      - name: Commit Updated Baseline
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add test-stats-baseline.json
-          git diff --cached --quiet || {
-            git commit -m "Update test stats baseline [skip ci]"
-            git push
-          }
   javadoc:
     runs-on: ubuntu-latest
     steps:
