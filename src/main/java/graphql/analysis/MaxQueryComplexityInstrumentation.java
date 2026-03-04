@@ -26,7 +26,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  * Prevents execution if the query complexity is greater than the specified maxComplexity.
  * <p>
  * Use the {@code Function<QueryComplexityInfo, Boolean>} parameter to supply a function to perform a custom action when the max complexity
- * is exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
+ * is exceeded. If the function returns {@code true} an {@link AbortExecutionException} is thrown.
  */
 @PublicApi
 @NullMarked
