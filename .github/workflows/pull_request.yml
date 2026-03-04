@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        gradle-argument: [ 'assemble && ./gradlew check -x test','testWithJava11', 'testWithJava17','testWithJava21', 'test -x testWithJava11 -x testWithJava17 -x testWithJava21' ]
+        gradle-argument: [ 'assemble && ./gradlew check -x test','testWithJava11', 'testWithJava17','testWithJava21', 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 jacocoTestReport' ]
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
@@ -31,6 +31,18 @@ jobs:
           distribution: 'corretto'
       - name: build and test
         run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
+      - name: Publish Coverage Report
+        uses: Madrapps/jacoco-report@50d3aff4548aa991e6753342d9ba291084e63848 # v1.7.2
+        if: >
+          always() &&
+          github.event_name == 'pull_request' &&
+          contains(matrix.gradle-argument, 'jacocoTestReport')
+        with:
+          paths: ${{ github.workspace }}/build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 0
+          min-coverage-changed-files: 0
+          update-comment: true
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2.23.0
         if: always()
