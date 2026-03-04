@@ -133,10 +133,12 @@ jobs:
               baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
             }
             const baseTests = baseline.tests || {};
-            const baseCov = baseline.coverage || {};
+            const baseCov = (baseline.coverage || {}).overall || {};
+            const baseClasses = (baseline.coverage || {}).classes || {};
 
             // --- Parse JaCoCo XML for coverage ---
             let covLine = null, covBranch = null, covMethod = null;
+            const classCounters = {};
             const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
             if (fs.existsSync(jacocoFile)) {
               const xml = fs.readFileSync(jacocoFile, 'utf8');
@@ -149,6 +151,30 @@ jobs:
                 if (m[1] === 'LINE') covLine = entry;
                 else if (m[1] === 'BRANCH') covBranch = entry;
                 else if (m[1] === 'METHOD') covMethod = entry;
+              }
+
+              // Extract per-class counters from <package>/<class> elements
+              const pkgRe = /<package\s+name="([^"]+)">([\s\S]*?)<\/package>/g;
+              let pkgMatch;
+              while ((pkgMatch = pkgRe.exec(xml)) !== null) {
+                const pkgName = pkgMatch[1].replace(/\//g, '.');
+                const pkgBody = pkgMatch[2];
+                const classRe = /<class\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/class>/g;
+                let classMatch;
+                while ((classMatch = classRe.exec(pkgBody)) !== null) {
+                  const className = classMatch[1].replace(/\//g, '.');
+                  const classBody = classMatch[2];
+                  const counters = { line: { ...zeroCov }, branch: { ...zeroCov }, method: { ...zeroCov } };
+                  const cntRe = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
+                  let cntMatch;
+                  while ((cntMatch = cntRe.exec(classBody)) !== null) {
+                    const entry = { covered: parseInt(cntMatch[3]), missed: parseInt(cntMatch[2]) };
+                    if (cntMatch[1] === 'LINE') counters.line = entry;
+                    else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
+                    else if (cntMatch[1] === 'METHOD') counters.method = entry;
+                  }
+                  classCounters[className] = counters;
+                }
               }
             }
 
@@ -230,6 +256,66 @@ jobs:
                 const currPct = pct(curr.covered, curr.missed);
                 const basePct = pct(b.covered, b.missed);
                 body += `| ${name} | ${curr.covered} | ${curr.missed} | ${fmtPct(currPct)} | ${fmtPctDelta(currPct, basePct)} |\n`;
+              }
+
+              body += '\n';
+
+              // --- Per-class coverage deltas ---
+              const changedClasses = [];
+              for (const [cls, curr] of Object.entries(classCounters)) {
+                const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
+                const currLinePct = pct(curr.line.covered, curr.line.missed);
+                const baseLinePct = pct(base.line.covered, base.line.missed);
+                const currBranchPct = pct(curr.branch.covered, curr.branch.missed);
+                const baseBranchPct = pct(base.branch.covered, base.branch.missed);
+                const currMethodPct = pct(curr.method.covered, curr.method.missed);
+                const baseMethodPct = pct(base.method.covered, base.method.missed);
+                if (Math.abs(currLinePct - baseLinePct) >= 0.05 ||
+                    Math.abs(currBranchPct - baseBranchPct) >= 0.05 ||
+                    Math.abs(currMethodPct - baseMethodPct) >= 0.05) {
+                  changedClasses.push({
+                    name: cls,
+                    linePct: currLinePct, lineDelta: currLinePct - baseLinePct,
+                    branchPct: currBranchPct, branchDelta: currBranchPct - baseBranchPct,
+                    methodPct: currMethodPct, methodDelta: currMethodPct - baseMethodPct,
+                  });
+                }
+              }
+              // Also detect classes removed (in baseline but not in current)
+              for (const cls of Object.keys(baseClasses)) {
+                if (!classCounters[cls]) {
+                  changedClasses.push({
+                    name: cls,
+                    linePct: 0, lineDelta: -pct(baseClasses[cls].line.covered, baseClasses[cls].line.missed),
+                    branchPct: 0, branchDelta: -pct(baseClasses[cls].branch.covered, baseClasses[cls].branch.missed),
+                    methodPct: 0, methodDelta: -pct(baseClasses[cls].method.covered, baseClasses[cls].method.missed),
+                    removed: true,
+                  });
+                }
+              }
+
+              changedClasses.sort((a, b) => a.name.localeCompare(b.name));
+
+              function fmtClassPct(val, delta) {
+                const pctStr = fmtPct(val);
+                const deltaStr = fmtPctDelta(val, val - delta);
+                return `${pctStr} (${deltaStr})`;
+              }
+
+              if (changedClasses.length > 0) {
+                body += `<details><summary>Changed Class Coverage (${changedClasses.length} ${changedClasses.length === 1 ? 'class' : 'classes'})</summary>\n\n`;
+                body += '| Class | Line | Branch | Method |\n';
+                body += '|:------|-----:|-------:|-------:|\n';
+                for (const c of changedClasses) {
+                  if (c.removed) {
+                    body += `| \`${c.name}\` | *removed* | *removed* | *removed* |\n`;
+                  } else {
+                    body += `| \`${c.name}\` | ${fmtClassPct(c.linePct, c.lineDelta)} | ${fmtClassPct(c.branchPct, c.branchDelta)} | ${fmtClassPct(c.methodPct, c.methodDelta)} |\n`;
+                  }
+                }
+                body += '\n</details>\n';
+              } else {
+                body += '> No per-class coverage changes detected.\n';
               }
 
               body += '\n> Full HTML report: build artifact `jacoco-html-report`\n';
