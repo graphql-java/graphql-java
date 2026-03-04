@@ -78,7 +78,7 @@ def getDevelopmentVersion() {
     def gitRevParseError = new StringBuilder()
     def gitRevParse = ["git", "-C", projectDir.toString(), "rev-parse", "--abbrev-ref", "HEAD"].execute()
     gitRevParse.waitForProcessOutput(gitRevParseOutput, gitRevParseError)
-    def branchName = gitRevParseOutput.toString().trim()
+    def branchName = gitRevParseOutput.toString().trim().replaceAll('[/\\\\]', '-')
 
     return makeDevelopmentVersion(["0.0.0", branchName, "SNAPSHOT"])
 }
@@ -162,7 +162,7 @@ dependencies {
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
     errorprone 'com.uber.nullaway:nullaway:0.12.10'
-    errorprone 'com.google.errorprone:error_prone_core:2.44.0'
+    errorprone 'com.google.errorprone:error_prone_core:2.47.0'
 
     // just tests - no Kotlin otherwise
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
@@ -372,6 +372,7 @@ long testTime = 0L
 
 tasks.withType(Test) {
     useJUnitPlatform()
+    maxHeapSize = "1g"
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
