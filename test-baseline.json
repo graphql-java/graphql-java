@@ -2,10 +2,10 @@
   "tests": {
     "java11": {
       "total": 5669,
-      "passed": 5608,
+      "passed": 5609,
       "failed": 0,
       "errors": 0,
-      "skipped": 61
+      "skipped": 60
     },
     "java17": {
       "total": 5669,
@@ -23,25 +23,25 @@
     },
     "java25": {
       "total": 5669,
-      "passed": 5608,
+      "passed": 5607,
       "failed": 0,
       "errors": 0,
-      "skipped": 61
+      "skipped": 62
     }
   },
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8502,
-        "missed": 1696
+        "covered": 8501,
+        "missed": 1697
       },
       "line": {
-        "covered": 28936,
-        "missed": 3263
+        "covered": 28937,
+        "missed": 3262
       },
       "method": {
-        "covered": 7764,
-        "missed": 1262
+        "covered": 7765,
+        "missed": 1261
       }
     },
     "classes": {
@@ -4149,12 +4149,12 @@
       },
       "graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 124,
-          "missed": 10
+          "covered": 125,
+          "missed": 9
         },
         "branch": {
-          "covered": 46,
-          "missed": 4
+          "covered": 47,
+          "missed": 3
         },
         "method": {
           "covered": 21,
@@ -4163,12 +4163,12 @@
       },
       "graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 81,
-          "missed": 0
+          "covered": 80,
+          "missed": 1
         },
         "branch": {
-          "covered": 26,
-          "missed": 0
+          "covered": 24,
+          "missed": 2
         },
         "method": {
           "covered": 17,
@@ -10897,16 +10897,16 @@
       },
       "graphql.schema.GraphQLInputObjectField": {
         "line": {
-          "covered": 57,
-          "missed": 2
+          "covered": 58,
+          "missed": 1
         },
         "branch": {
           "covered": 6,
           "missed": 0
         },
         "method": {
-          "covered": 29,
-          "missed": 2
+          "covered": 30,
+          "missed": 1
         }
       },
       "graphql.schema.PropertyFetchingImpl$CacheKey": {
