@@ -302,15 +302,17 @@ jobs:
               changedClasses.sort((a, b) => a.name.localeCompare(b.name));
 
               function shortenClass(name) {
-                const mainPart = name.replace(/\$.*$/, '');
+                const dollarIdx = name.indexOf('$');
+                const mainPart = dollarIdx >= 0 ? name.substring(0, dollarIdx) : name;
+                const suffix = dollarIdx >= 0 ? name.substring(dollarIdx) : '';
                 const parts = mainPart.split('.');
                 const shortened = parts.map((p, i) => i < parts.length - 1 ? p[0] : p);
-                return shortened.join('.');
+                const result = shortened.join('.') + suffix;
+                return result.replace(/\$/g, '<br>\\$');
               }
 
               function fmtClassDelta(delta) {
-                if (Math.abs(delta) < 0.05) return '±0.0%';
-                return delta > 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`;
+                return fmtPctDelta(delta, 0);
               }
 
               if (changedClasses.length > 0) {
@@ -319,9 +321,9 @@ jobs:
                 body += '|:------|-----:|-------:|-------:|\n';
                 for (const c of changedClasses) {
                   if (c.removed) {
-                    body += `| \`${shortenClass(c.name)}\` | *removed* | *removed* | *removed* |\n`;
+                    body += `| ${shortenClass(c.name)} | *removed* | *removed* | *removed* |\n`;
                   } else {
-                    body += `| \`${shortenClass(c.name)}\` | ${fmtClassDelta(c.lineDelta)} | ${fmtClassDelta(c.branchDelta)} | ${fmtClassDelta(c.methodDelta)} |\n`;
+                    body += `| ${shortenClass(c.name)} | ${fmtClassDelta(c.lineDelta)} | ${fmtClassDelta(c.branchDelta)} | ${fmtClassDelta(c.methodDelta)} |\n`;
                   }
                 }
                 body += '\n';
