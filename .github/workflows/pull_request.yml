@@ -310,10 +310,8 @@ jobs:
                 return shortened.join('.') + suffix;
               }
 
-              function fmtClassPct(val, delta) {
-                const pctStr = fmtPct(val);
-                const deltaStr = fmtPctDelta(val, val - delta);
-                return `${pctStr} (${deltaStr})`;
+              function fmtClassDelta(delta) {
+                return fmtPctDelta(delta, 0);
               }
 
               if (changedClasses.length > 0) {
@@ -324,7 +322,7 @@ jobs:
                   if (c.removed) {
                     body += `| \`${shortenClass(c.name)}\` | *removed* | *removed* | *removed* |\n`;
                   } else {
-                    body += `| \`${shortenClass(c.name)}\` | ${fmtClassPct(c.linePct, c.lineDelta)} | ${fmtClassPct(c.branchPct, c.branchDelta)} | ${fmtClassPct(c.methodPct, c.methodDelta)} |\n`;
+                    body += `| \`${shortenClass(c.name)}\` | ${fmtClassDelta(c.lineDelta)} | ${fmtClassDelta(c.branchDelta)} | ${fmtClassDelta(c.methodDelta)} |\n`;
                   }
                 }
                 body += '\n';
