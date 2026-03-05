@@ -308,7 +308,7 @@ jobs:
               }
 
               if (changedClasses.length > 0) {
-                body += `<details><summary>Changed Class Coverage (${changedClasses.length} ${changedClasses.length === 1 ? 'class' : 'classes'})</summary>\n\n`;
+                body += `**Changed Class Coverage** (${changedClasses.length} ${changedClasses.length === 1 ? 'class' : 'classes'})\n\n`;
                 body += '| Class | Line | Branch | Method |\n';
                 body += '|:------|-----:|-------:|-------:|\n';
                 for (const c of changedClasses) {
@@ -318,7 +318,7 @@ jobs:
                     body += `| \`${c.name}\` | ${fmtClassPct(c.linePct, c.lineDelta)} | ${fmtClassPct(c.branchPct, c.branchDelta)} | ${fmtClassPct(c.methodPct, c.methodDelta)} |\n`;
                   }
                 }
-                body += '\n</details>\n';
+                body += '\n';
               } else {
                 body += '> No per-class coverage changes detected.\n';
               }
