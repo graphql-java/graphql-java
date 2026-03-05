@@ -301,6 +301,15 @@ jobs:
 
               changedClasses.sort((a, b) => a.name.localeCompare(b.name));
 
+              function shortenClass(name) {
+                const dollarIdx = name.indexOf('$');
+                const mainPart = dollarIdx >= 0 ? name.substring(0, dollarIdx) : name;
+                const suffix = dollarIdx >= 0 ? name.substring(dollarIdx) : '';
+                const parts = mainPart.split('.');
+                const shortened = parts.map((p, i) => i < parts.length - 1 ? p[0] : p);
+                return shortened.join('.') + suffix;
+              }
+
               function fmtClassPct(val, delta) {
                 const pctStr = fmtPct(val);
                 const deltaStr = fmtPctDelta(val, val - delta);
@@ -313,9 +322,9 @@ jobs:
                 body += '|:------|-----:|-------:|-------:|\n';
                 for (const c of changedClasses) {
                   if (c.removed) {
-                    body += `| \`${c.name}\` | *removed* | *removed* | *removed* |\n`;
+                    body += `| \`${shortenClass(c.name)}\` | *removed* | *removed* | *removed* |\n`;
                   } else {
-                    body += `| \`${c.name}\` | ${fmtClassPct(c.linePct, c.lineDelta)} | ${fmtClassPct(c.branchPct, c.branchDelta)} | ${fmtClassPct(c.methodPct, c.methodDelta)} |\n`;
+                    body += `| \`${shortenClass(c.name)}\` | ${fmtClassPct(c.linePct, c.lineDelta)} | ${fmtClassPct(c.branchPct, c.branchDelta)} | ${fmtClassPct(c.methodPct, c.methodDelta)} |\n`;
                   }
                 }
                 body += '\n';
