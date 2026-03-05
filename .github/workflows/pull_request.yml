@@ -302,16 +302,15 @@ jobs:
               changedClasses.sort((a, b) => a.name.localeCompare(b.name));
 
               function shortenClass(name) {
-                const dollarIdx = name.indexOf('$');
-                const mainPart = dollarIdx >= 0 ? name.substring(0, dollarIdx) : name;
-                const suffix = dollarIdx >= 0 ? name.substring(dollarIdx) : '';
+                const mainPart = name.replace(/\$.*$/, '');
                 const parts = mainPart.split('.');
                 const shortened = parts.map((p, i) => i < parts.length - 1 ? p[0] : p);
-                return shortened.join('.') + suffix;
+                return shortened.join('.');
               }
 
               function fmtClassDelta(delta) {
-                return fmtPctDelta(delta, 0);
+                if (Math.abs(delta) < 0.05) return '±0.0%';
+                return delta > 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`;
               }
 
               if (changedClasses.length > 0) {
