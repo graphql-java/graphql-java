@@ -363,6 +363,27 @@ jobs:
                 body,
               });
             }
+
+            // --- Coverage gate: fail if any metric drops ---
+            if (covLine || covBranch || covMethod) {
+              const drops = [];
+              for (const { name, curr, baseKey } of [
+                { name: 'Line', curr: covLine, baseKey: 'line' },
+                { name: 'Branch', curr: covBranch, baseKey: 'branch' },
+                { name: 'Method', curr: covMethod, baseKey: 'method' },
+              ]) {
+                if (!curr) continue;
+                const b = baseCov[baseKey] || zeroCov;
+                const currPct = pct(curr.covered, curr.missed);
+                const basePct = pct(b.covered, b.missed);
+                if (currPct < basePct - 0.05) {
+                  drops.push(`${name}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%)`);
+                }
+              }
+              if (drops.length > 0) {
+                core.setFailed(`Coverage decreased:\n${drops.join('\n')}`);
+              }
+            }
   javadoc:
     runs-on: ubuntu-latest
     steps:
