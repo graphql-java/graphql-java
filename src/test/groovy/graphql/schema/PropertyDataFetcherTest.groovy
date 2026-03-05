@@ -7,6 +7,7 @@ import graphql.schema.fetching.ConfusedPojo
 import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.ClassWithInterfaces
 import graphql.schema.somepackage.ClassWithInteritanceAndInterfaces
+import graphql.schema.somepackage.InterfaceInheritanceHolder
 import graphql.schema.somepackage.RecordLikeClass
 import graphql.schema.somepackage.RecordLikeTwoClassesDown
 import graphql.schema.somepackage.TestClass
@@ -833,6 +834,42 @@ class PropertyDataFetcherTest extends Specification {
         fetcher                                  | _
         new PropertyDataFetcher("key")           | _
         SingletonPropertyDataFetcher.singleton() | _
+    }
+
+    def "fetch method from public interface through package-private interface chain"() {
+        given:
+        // PackagePrivateChainImpl (package-private) implements PackagePrivateMiddleInterface (package-private)
+        // which extends PublicBaseInterface (public) — defines getBaseValue()
+        // The recursive interface search must traverse through the package-private middle interface
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def obj = InterfaceInheritanceHolder.createChainImpl()
+        def environment = env("baseValue", obj)
+
+        when:
+        def result = new PropertyDataFetcher("baseValue").get(environment)
+
+        then:
+        result == "baseValue"
+    }
+
+    def "fetch method through diamond interface inheritance"() {
+        given:
+        // DiamondImpl (package-private) implements both PackagePrivateBranchA and PackagePrivateBranchB
+        // Both are package-private interfaces extending PublicBaseInterface (public) — defines getBaseValue()
+        // The search must find getBaseValue() through either branch
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def obj = InterfaceInheritanceHolder.createDiamondImpl()
+
+        expect:
+        new PropertyDataFetcher(property).get(env(property, obj)) == expected
+
+        where:
+        property    | expected
+        "baseValue" | "diamondBaseValue"
     }
 
     def "Can access private property from base class that starts with i in Turkish"() {
