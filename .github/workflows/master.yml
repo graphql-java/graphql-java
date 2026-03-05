@@ -4,14 +4,29 @@ on:
   push:
     branches:
       - master
-permissions: # For test summary bot
+permissions:
+  contents: write
   checks: write
 jobs:
   buildAndTest:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        gradle-argument: [ 'assemble && ./gradlew check -x test','testWithJava11', 'testWithJava17','testWithJava21', 'test -x testWithJava11 -x testWithJava17 -x testWithJava21' ]
+        include:
+          - gradle-argument: 'assemble && ./gradlew check -x test -x testng -x testngWithJava11 -x testngWithJava17 -x testngWithJava21'
+            label: 'check'
+          - gradle-argument: 'testWithJava11 testngWithJava11'
+            label: 'java11'
+            test-results-dirs: 'testWithJava11 testngWithJava11'
+          - gradle-argument: 'testWithJava17 testngWithJava17'
+            label: 'java17'
+            test-results-dirs: 'testWithJava17 testngWithJava17'
+          - gradle-argument: 'testWithJava21 testngWithJava21'
+            label: 'java21'
+            test-results-dirs: 'testWithJava21 testngWithJava21'
+          - gradle-argument: 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 testng jacocoTestReport'
+            label: 'java25'
+            test-results-dirs: 'test testng'
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
@@ -24,13 +39,143 @@ jobs:
         run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2.23.0
-        if: always()
+        if: always() && matrix.label != 'check'
         with:
           files: |
-            **/build/test-results/test/TEST-*.xml
-            **/build/test-results/testWithJava11/TEST-*.xml
-            **/build/test-results/testWithJava17/TEST-*.xml
-            **/build/test-results/testWithJava21/TEST-*.xml
+            **/build/test-results/*/TEST-*.xml
+      - name: Upload Coverage XML Report
+        uses: actions/upload-artifact@v4
+        if: always() && matrix.label == 'java25'
+        with:
+          name: coverage-report
+          path: build/reports/jacoco/test/jacocoTestReport.xml
+          retention-days: 1
+      - name: Parse Test Results
+        if: always() && matrix.label != 'check'
+        run: |
+          total=0; failures=0; errors=0; skipped=0
+          for dir_name in ${{ matrix.test-results-dirs }}; do
+            dir="build/test-results/$dir_name"
+            for f in "$dir"/TEST-*.xml; do
+              [ -f "$f" ] || continue
+              t=$(grep -o 'tests="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              fl=$(grep -o 'failures="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              e=$(grep -o 'errors="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              s=$(grep -o 'skipped="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              total=$((total + ${t:-0}))
+              failures=$((failures + ${fl:-0}))
+              errors=$((errors + ${e:-0}))
+              skipped=$((skipped + ${s:-0}))
+            done
+          done
+          passed=$((total - failures - errors - skipped))
+          mkdir -p /tmp/test-stats
+          echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failures,\"errors\":$errors,\"skipped\":$skipped}" \
+            > "/tmp/test-stats/${{ matrix.label }}.json"
+      - name: Upload Test Stats
+        if: always() && matrix.label != 'check'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-stats-${{ matrix.label }}
+          path: /tmp/test-stats/${{ matrix.label }}.json
+  update-baseline:
+    needs: buildAndTest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download Test Stats
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-stats-*
+          merge-multiple: true
+          path: test-stats/
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: coverage-report
+          path: coverage/
+      - name: Update Baseline
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const versions = ['java11', 'java17', 'java21', 'java25'];
+            const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
+            const zeroCov = { covered: 0, missed: 0 };
+
+            // Read current baseline
+            const baselineFile = 'test-baseline.json';
+            let baseline = { tests: {}, coverage: {} };
+            if (fs.existsSync(baselineFile)) {
+              baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
+            }
+
+            // Update test stats from artifacts
+            const tests = baseline.tests || {};
+            for (const v of versions) {
+              const file = path.join('test-stats', `${v}.json`);
+              if (fs.existsSync(file)) {
+                tests[v] = JSON.parse(fs.readFileSync(file, 'utf8'));
+              } else {
+                tests[v] = tests[v] || zeroTest;
+              }
+            }
+
+            // Update coverage from JaCoCo XML
+            let coverage = { overall: {}, classes: {} };
+            const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
+            if (fs.existsSync(jacocoFile)) {
+              const xml = fs.readFileSync(jacocoFile, 'utf8');
+
+              // Overall counters (outside <package> tags)
+              const stripped = xml.replace(/<package[\s\S]*?<\/package>/g, '');
+              const re = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
+              let m;
+              while ((m = re.exec(stripped)) !== null) {
+                if (m[1] === 'LINE') coverage.overall.line = { covered: parseInt(m[3]), missed: parseInt(m[2]) };
+                else if (m[1] === 'BRANCH') coverage.overall.branch = { covered: parseInt(m[3]), missed: parseInt(m[2]) };
+                else if (m[1] === 'METHOD') coverage.overall.method = { covered: parseInt(m[3]), missed: parseInt(m[2]) };
+              }
+
+              // Per-class counters from <package>/<class> elements
+              const pkgRe = /<package\s+name="([^"]+)">([\s\S]*?)<\/package>/g;
+              let pkgMatch;
+              while ((pkgMatch = pkgRe.exec(xml)) !== null) {
+                const pkgName = pkgMatch[1].replace(/\//g, '.');
+                const pkgBody = pkgMatch[2];
+                const classRe = /<class\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/class>/g;
+                let classMatch;
+                while ((classMatch = classRe.exec(pkgBody)) !== null) {
+                  const className = classMatch[1].replace(/\//g, '.');
+                  const classBody = classMatch[2];
+                  const counters = { line: { ...zeroCov }, branch: { ...zeroCov }, method: { ...zeroCov } };
+                  const cntRe = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
+                  let cntMatch;
+                  while ((cntMatch = cntRe.exec(classBody)) !== null) {
+                    const entry = { covered: parseInt(cntMatch[3]), missed: parseInt(cntMatch[2]) };
+                    if (cntMatch[1] === 'LINE') counters.line = entry;
+                    else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
+                    else if (cntMatch[1] === 'METHOD') counters.method = entry;
+                  }
+                  coverage.classes[className] = counters;
+                }
+              }
+            }
+
+            const updated = { tests, coverage };
+            fs.writeFileSync(baselineFile, JSON.stringify(updated, null, 2) + '\n');
+      - name: Commit Updated Baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add test-baseline.json
+          git diff --cached --quiet || {
+            git commit -m "Update test baseline [skip ci]"
+            git push
+          }
   javadoc:
     runs-on: ubuntu-latest
     steps:
@@ -62,4 +207,4 @@ jobs:
           java-version: '25'
           distribution: 'corretto'
       - name: publishToMavenCentral
-        run: ./gradlew assemble && ./gradlew check -x test -x testng --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
+        run: ./gradlew assemble && ./gradlew check -x test -x testng -x testngWithJava11 -x testngWithJava17 -x testngWithJava21 --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace

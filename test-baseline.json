@@ -1,0 +1,16 @@
+{
+  "tests": {
+    "java11": { "total": 0, "passed": 0, "failed": 0, "errors": 0, "skipped": 0 },
+    "java17": { "total": 0, "passed": 0, "failed": 0, "errors": 0, "skipped": 0 },
+    "java21": { "total": 0, "passed": 0, "failed": 0, "errors": 0, "skipped": 0 },
+    "java25": { "total": 0, "passed": 0, "failed": 0, "errors": 0, "skipped": 0 }
+  },
+  "coverage": {
+    "overall": {
+      "line": { "covered": 0, "missed": 0 },
+      "branch": { "covered": 0, "missed": 0 },
+      "method": { "covered": 0, "missed": 0 }
+    },
+    "classes": {}
+  }
+}

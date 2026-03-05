@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 /**
@@ -57,7 +58,7 @@ public class CompletionStageMappingPublisherRandomCompleteTckVerificationTest ex
                 throw new RuntimeException(e);
             }
             return i + "!";
-        });
+        }, Executors.newSingleThreadExecutor());
     }
 
     static Random rn = new Random();
