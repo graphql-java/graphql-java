@@ -296,6 +296,9 @@ shadowJar.finalizedBy extractWithoutGuava, buildNewJar
 
 task testng(type: Test) {
     useTestNG()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    dependsOn tasks.named('testClasses')
 }
 check.dependsOn testng
 
@@ -372,7 +375,9 @@ int testCount = 0
 long testTime = 0L
 
 tasks.withType(Test) {
-    useJUnitPlatform()
+    if (!name.startsWith('testng')) {
+        useJUnitPlatform()
+    }
     maxHeapSize = "1g"
     testLogging {
         events "FAILED", "SKIPPED"
@@ -437,6 +442,18 @@ tasks.register('testWithJava11', Test) {
     classpath += sourceSets.jmh.output
     dependsOn "jmhClasses"
 
+}
+
+['11', '17', '21'].each { ver ->
+    tasks.register("testngWithJava${ver}", Test) {
+        useTestNG()
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(ver)
+        }
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        dependsOn tasks.named('testClasses')
+    }
 }
 
 test.dependsOn testWithJava21

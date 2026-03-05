@@ -13,20 +13,20 @@ jobs:
     strategy:
       matrix:
         include:
-          - gradle-argument: 'assemble && ./gradlew check -x test'
+          - gradle-argument: 'assemble && ./gradlew check -x test -x testng -x testngWithJava11 -x testngWithJava17 -x testngWithJava21'
             label: 'check'
-          - gradle-argument: 'testWithJava11'
+          - gradle-argument: 'testWithJava11 testngWithJava11'
             label: 'java11'
-            test-results-dir: 'testWithJava11'
-          - gradle-argument: 'testWithJava17'
+            test-results-dirs: 'testWithJava11 testngWithJava11'
+          - gradle-argument: 'testWithJava17 testngWithJava17'
             label: 'java17'
-            test-results-dir: 'testWithJava17'
-          - gradle-argument: 'testWithJava21'
+            test-results-dirs: 'testWithJava17 testngWithJava17'
+          - gradle-argument: 'testWithJava21 testngWithJava21'
             label: 'java21'
-            test-results-dir: 'testWithJava21'
-          - gradle-argument: 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 jacocoTestReport'
+            test-results-dirs: 'testWithJava21 testngWithJava21'
+          - gradle-argument: 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 testng jacocoTestReport'
             label: 'java25'
-            test-results-dir: 'test'
+            test-results-dirs: 'test testng'
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
@@ -42,7 +42,7 @@ jobs:
         if: always() && matrix.label != 'check'
         with:
           files: |
-            **/build/test-results/${{ matrix.test-results-dir }}/TEST-*.xml
+            **/build/test-results/*/TEST-*.xml
       - name: Upload Coverage XML Report
         uses: actions/upload-artifact@v4
         if: always() && matrix.label == 'java25'
@@ -53,18 +53,20 @@ jobs:
       - name: Parse Test Results
         if: always() && matrix.label != 'check'
         run: |
-          dir="build/test-results/${{ matrix.test-results-dir }}"
           total=0; failures=0; errors=0; skipped=0
-          for f in "$dir"/TEST-*.xml; do
-            [ -f "$f" ] || continue
-            t=$(grep -o 'tests="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
-            fl=$(grep -o 'failures="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
-            e=$(grep -o 'errors="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
-            s=$(grep -o 'skipped="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
-            total=$((total + ${t:-0}))
-            failures=$((failures + ${fl:-0}))
-            errors=$((errors + ${e:-0}))
-            skipped=$((skipped + ${s:-0}))
+          for dir_name in ${{ matrix.test-results-dirs }}; do
+            dir="build/test-results/$dir_name"
+            for f in "$dir"/TEST-*.xml; do
+              [ -f "$f" ] || continue
+              t=$(grep -o 'tests="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              fl=$(grep -o 'failures="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              e=$(grep -o 'errors="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              s=$(grep -o 'skipped="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              total=$((total + ${t:-0}))
+              failures=$((failures + ${fl:-0}))
+              errors=$((errors + ${e:-0}))
+              skipped=$((skipped + ${s:-0}))
+            done
           done
           passed=$((total - failures - errors - skipped))
           mkdir -p /tmp/test-stats
@@ -205,4 +207,4 @@ jobs:
           java-version: '25'
           distribution: 'corretto'
       - name: publishToMavenCentral
-        run: ./gradlew assemble && ./gradlew check -x test -x testng --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
+        run: ./gradlew assemble && ./gradlew check -x test -x testng -x testngWithJava11 -x testngWithJava17 -x testngWithJava21 --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
