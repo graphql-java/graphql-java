@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Directives;
 import graphql.EngineRunningState;
 import graphql.ExecutionInput;
@@ -110,7 +111,7 @@ public class Execution {
         ResponseMapFactory responseMapFactory = GraphQL.unusualConfiguration(graphQLContext)
                 .responseMapFactory().getOr(ResponseMapFactory.DEFAULT);
 
-        Map<OperationDefinition, List<QueryAppliedDirective>> opDirectivesMap = operationDirectivesResolver.resolveDirectives(document, graphQLSchema, coercedVariables, graphQLContext, locale);
+        Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> opDirectivesMap = operationDirectivesResolver.resolveDirectives(document, graphQLSchema, coercedVariables, graphQLContext, locale);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)

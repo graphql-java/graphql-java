@@ -3,6 +3,7 @@ package graphql.execution.directives;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableList;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
@@ -63,7 +64,7 @@ public class DirectivesResolver {
         });
     }
 
-    public List<QueryAppliedDirective> toAppliedDirectives(List<Directive> directives, GraphQLSchema schema, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
+    public ImmutableList<QueryAppliedDirective> toAppliedDirectives(List<Directive> directives, GraphQLSchema schema, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
         BiMap<GraphQLDirective, Directive> directivesMap = resolveDirectives(directives, schema, variables, graphQLContext, locale);
         return ImmutableKit.map(directivesMap.keySet(), this::toAppliedDirective);
     }

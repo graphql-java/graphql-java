@@ -1,5 +1,6 @@
 package graphql.normalized;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import graphql.Assert;
 import graphql.PublicApi;
@@ -26,7 +27,7 @@ import java.util.Map;
 @PublicApi
 public class ExecutableNormalizedOperation {
     private final OperationDefinition.Operation operation;
-    private final Map<String, List<QueryAppliedDirective>> operationDirectives;
+    private final Map<String, ImmutableList<QueryAppliedDirective>> operationDirectives;
     private final String operationName;
     private final List<ExecutableNormalizedField> topLevelFields;
     private final ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField;
@@ -39,7 +40,7 @@ public class ExecutableNormalizedOperation {
     public ExecutableNormalizedOperation(
             OperationDefinition.Operation operation,
             String operationName,
-            Map<String, List<QueryAppliedDirective>> operationDirectives,
+            Map<String, ImmutableList<QueryAppliedDirective>> operationDirectives,
             List<ExecutableNormalizedField> topLevelFields,
             ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField,
             Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
@@ -83,7 +84,7 @@ public class ExecutableNormalizedOperation {
      *
      * @return the directives that are on this operation itself.
      */
-    public Map<String, List<QueryAppliedDirective>> getOperationDirectives() {
+    public Map<String, ImmutableList<QueryAppliedDirective>> getOperationDirectives() {
         return operationDirectives;
     }
 

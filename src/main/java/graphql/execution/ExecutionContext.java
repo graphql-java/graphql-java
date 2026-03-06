@@ -75,7 +75,7 @@ public class ExecutionContext {
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
     private final EngineRunningState engineRunningState;
 
-    private final Map<OperationDefinition, List<QueryAppliedDirective>> opDirectivesMap;
+    private final Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> opDirectivesMap;
     private final Profiler profiler;
 
     ExecutionContext(ExecutionContextBuilder builder) {
@@ -144,7 +144,7 @@ public class ExecutionContext {
     /**
      * @return the map of {@link QueryAppliedDirective}s by name that were on this executing operation
      */
-    public Map<String, List<QueryAppliedDirective>> getOperationDirectives() {
+    public Map<String, ImmutableList<QueryAppliedDirective>> getOperationDirectives() {
         List<QueryAppliedDirective> list = opDirectivesMap.get(getOperationDefinition());
         return OperationDirectivesResolver.toAppliedDirectivesByName(list);
     }
@@ -153,7 +153,7 @@ public class ExecutionContext {
      * @return the map of all the  {@link QueryAppliedDirective}s that were on the {@link Document} including
      * {@link OperationDefinition}s that are not currently executing.
      */
-    public Map<OperationDefinition, List<QueryAppliedDirective>> getAllOperationDirectives() {
+    public Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> getAllOperationDirectives() {
         return opDirectivesMap;
     }
 

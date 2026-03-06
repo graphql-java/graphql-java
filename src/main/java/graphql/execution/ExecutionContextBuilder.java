@@ -58,7 +58,7 @@ public class ExecutionContextBuilder {
     EngineRunningState engineRunningState;
     ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
     Profiler profiler;
-    Map<OperationDefinition, List<QueryAppliedDirective>> opDirectivesMap = Collections.emptyMap();
+    Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> opDirectivesMap = Collections.emptyMap();
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -261,7 +261,7 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContextBuilder operationDirectives(Map<OperationDefinition, List<QueryAppliedDirective>> opDirectivesMap) {
+    public ExecutionContextBuilder operationDirectives(Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> opDirectivesMap) {
         this.opDirectivesMap = opDirectivesMap;
         return this;
     }

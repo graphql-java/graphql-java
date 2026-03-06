@@ -1,5 +1,6 @@
 package graphql.execution.directives
 
+import com.google.common.collect.ImmutableList
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.GraphQLContext
@@ -57,7 +58,7 @@ class OperationDirectivesResolverTest extends Specification {
         """)
 
         when:
-        Map<OperationDefinition, List<QueryAppliedDirective>> resolveDirectives = new OperationDirectivesResolver()
+        def resolveDirectives = new OperationDirectivesResolver()
                 .resolveDirectives(document, schema, CoercedVariables.emptyVariables(), GraphQLContext.getDefault(), Locale.getDefault())
 
         def data = resolveDirectives.collectEntries { operation, directives ->
@@ -82,7 +83,7 @@ class OperationDirectivesResolverTest extends Specification {
         def operationDefinition = extractOp(document)
 
         when:
-        Map<String, List<QueryAppliedDirective>> resolveDirectives = new OperationDirectivesResolver()
+        def resolveDirectives = new OperationDirectivesResolver()
                 .resolveDirectivesByName(operationDefinition, schema, CoercedVariables.emptyVariables(), GraphQLContext.getDefault(), Locale.getDefault())
 
         then:
@@ -102,7 +103,7 @@ class OperationDirectivesResolverTest extends Specification {
         def operationDefinition = extractOp(document)
 
         when:
-        Map<String, List<QueryAppliedDirective>> resolveDirectives = new OperationDirectivesResolver()
+        def resolveDirectives = new OperationDirectivesResolver()
                 .resolveDirectivesByName(operationDefinition, schema, CoercedVariables.emptyVariables(), GraphQLContext.getDefault(), Locale.getDefault())
 
         then:
@@ -116,11 +117,11 @@ class OperationDirectivesResolverTest extends Specification {
 
 
     private static boolean timeoutAsserts(QueryAppliedDirective directive, Integer value) {
-        directive.name == "timeout"
-        directive.arguments.size() == 1
-        directive.arguments[0].name == "ms"
-        (directive.arguments[0].type as GraphQLScalarType).name == "Int"
-        directive.arguments[0].value == value
+        assert directive.name == "timeout"
+        assert directive.arguments.size() == 1
+        assert directive.arguments[0].name == "ms"
+        assert (directive.arguments[0].type as GraphQLScalarType).name == "Int"
+        assert directive.arguments[0].value == value
         true
     }
 
@@ -145,7 +146,7 @@ class OperationDirectivesResolverTest extends Specification {
         """)
 
         then:
-        Map<String, List<QueryAppliedDirective>> resolveDirectives = executionContext.getOperationDirectives()
+        def resolveDirectives = executionContext.getOperationDirectives()
 
         commonIntegrationAsserts(resolveDirectives)
 
@@ -158,7 +159,7 @@ class OperationDirectivesResolverTest extends Specification {
 
     }
 
-    private static boolean commonIntegrationAsserts(Map<String, List<QueryAppliedDirective>> resolveDirectives) {
+    private static boolean commonIntegrationAsserts(Map<String, ImmutableList<QueryAppliedDirective>> resolveDirectives) {
         assert resolveDirectives.size() == 4
         def directives = resolveDirectives["timeout"]
         assert directives.size() == 1
