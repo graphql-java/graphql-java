@@ -36,6 +36,8 @@ jobs:
           - gradle-argument: 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 testng jacocoTestReport'
             label: 'java25'
             test-results-dirs: 'test testng'
+          - gradle-argument: 'jcstress'
+            label: 'jcstress'
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
@@ -45,7 +47,14 @@ jobs:
           java-version: '25'
           distribution: 'corretto'
       - name: build and test
-        run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
+        run: |
+          if [ "${{ matrix.label }}" = "jcstress" ]; then
+            set -o pipefail
+            mkdir -p build
+            ./gradlew ${{matrix.gradle-argument}} --info --stacktrace 2>&1 | tee build/jcstress-output.txt
+          else
+            ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
+          fi
       - name: Upload Coverage HTML Report
         uses: actions/upload-artifact@v4
         if: always() && matrix.label == 'java25'
@@ -61,7 +70,7 @@ jobs:
           path: build/reports/jacoco/test/jacocoTestReport.xml
           retention-days: 1
       - name: Parse Test Results
-        if: always() && matrix.label != 'check'
+        if: always() && matrix.label != 'check' && matrix.label != 'jcstress'
         run: |
           total=0; failures=0; errors=0; skipped=0
           for dir_name in ${{ matrix.test-results-dirs }}; do
@@ -82,6 +91,24 @@ jobs:
           mkdir -p /tmp/test-stats
           echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failures,\"errors\":$errors,\"skipped\":$skipped}" \
             > "/tmp/test-stats/${{ matrix.label }}.json"
+      - name: Parse jcstress Results
+        if: always() && matrix.label == 'jcstress'
+        run: |
+          total=0; passed=0; failed=0; errors=0; skipped=0
+          if [ -f build/jcstress-output.txt ]; then
+            line=$(grep 'Results:.*planned.*passed.*failed' build/jcstress-output.txt | tail -1)
+            if [ -n "$line" ]; then
+              total=$(echo "$line" | sed 's/.*Results: \([0-9]*\) planned.*/\1/')
+              passed=$(echo "$line" | sed 's/.*; \([0-9]*\) passed.*/\1/')
+              failed=$(echo "$line" | sed 's/.*passed, \([0-9]*\) failed.*/\1/')
+              soft=$(echo "$line" | sed 's/.*failed, \([0-9]*\) soft.*/\1/')
+              hard=$(echo "$line" | sed 's/.*soft errs, \([0-9]*\) hard.*/\1/')
+              errors=$((soft + hard))
+            fi
+          fi
+          mkdir -p /tmp/test-stats
+          echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failed,\"errors\":$errors,\"skipped\":$skipped}" \
+            > "/tmp/test-stats/${{ matrix.label }}.json"
       - name: Upload Test Stats
         if: always() && matrix.label != 'check'
         uses: actions/upload-artifact@v4
@@ -89,6 +116,7 @@ jobs:
           name: test-stats-${{ matrix.label }}
           path: /tmp/test-stats/${{ matrix.label }}.json
   test-summary:
+    name: "Test Report & Per-Class Coverage Gate"
     needs: buildAndTest
     if: always() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -106,14 +134,14 @@ jobs:
         with:
           name: coverage-report
           path: coverage/
-      - name: Generate Unified Test Report Comment
+      - name: Post Test Report and Enforce Per-Class Coverage Gate
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
 
-            const versions = ['java11', 'java17', 'java21', 'java25'];
+            const versions = ['java11', 'java17', 'java21', 'java25', 'jcstress'];
             const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
             const zeroCov = { covered: 0, missed: 0 };
 
@@ -270,6 +298,9 @@ jobs:
               // --- Per-class coverage deltas ---
               const changedClasses = [];
               for (const [cls, curr] of Object.entries(classCounters)) {
+                // Skip classes with 0 total lines (interfaces, annotations, abstract classes)
+                const totalLines = curr.line.covered + curr.line.missed;
+                if (totalLines === 0) continue;
                 const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
                 const currLinePct = pct(curr.line.covered, curr.line.missed);
                 const baseLinePct = pct(base.line.covered, base.line.missed);
@@ -290,6 +321,9 @@ jobs:
               }
               // Also detect classes removed (in baseline but not in current)
               for (const cls of Object.keys(baseClasses)) {
+                // Skip baseline classes with 0 total lines (interfaces, annotations)
+                const baseTotalLines = baseClasses[cls].line.covered + baseClasses[cls].line.missed;
+                if (baseTotalLines === 0) continue;
                 if (!classCounters[cls]) {
                   changedClasses.push({
                     name: cls,
@@ -364,25 +398,23 @@ jobs:
               });
             }
 
-            // --- Coverage gate: fail if any metric drops ---
-            if (covLine || covBranch || covMethod) {
-              const drops = [];
-              for (const { name, curr, baseKey } of [
-                { name: 'Line', curr: covLine, baseKey: 'line' },
-                { name: 'Branch', curr: covBranch, baseKey: 'branch' },
-                { name: 'Method', curr: covMethod, baseKey: 'method' },
-              ]) {
-                if (!curr) continue;
-                const b = baseCov[baseKey] || zeroCov;
-                const currPct = pct(curr.covered, curr.missed);
-                const basePct = pct(b.covered, b.missed);
+            // --- Coverage gate: fail if any class regresses on any metric ---
+            const regressions = [];
+            for (const [cls, curr] of Object.entries(classCounters)) {
+              // Skip classes with 0 total lines (interfaces, annotations, abstract classes)
+              const totalLines = curr.line.covered + curr.line.missed;
+              if (totalLines === 0) continue;
+              const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
+              for (const [metric, key] of [['Line', 'line'], ['Branch', 'branch'], ['Method', 'method']]) {
+                const currPct = pct(curr[key].covered, curr[key].missed);
+                const basePct = pct(base[key].covered, base[key].missed);
                 if (currPct < basePct - 0.05) {
-                  drops.push(`${name}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%)`);
+                  regressions.push(`  ${cls} ${metric}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%)`);
                 }
               }
-              if (drops.length > 0) {
-                core.setFailed(`Coverage decreased:\n${drops.join('\n')}`);
-              }
+            }
+            if (regressions.length > 0) {
+              core.setFailed(`Per-class coverage regressions detected:\n${regressions.join('\n')}\n\nUpdate test-baseline.json if these changes are intentional.`);
             }
   javadoc:
     runs-on: ubuntu-latest
@@ -411,7 +443,7 @@ jobs:
             exit 1
           fi
           if [ "${{ needs.test-summary.result }}" != "success" ] && [ "${{ needs.test-summary.result }}" != "skipped" ]; then
-            echo "test-summary failed with result: ${{ needs.test-summary.result }}"
+            echo "Test Report & Per-Class Coverage Gate failed with result: ${{ needs.test-summary.result }}"
             exit 1
           fi
           if [ "${{ needs.javadoc.result }}" != "success" ]; then
