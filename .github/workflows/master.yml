@@ -187,7 +187,10 @@ jobs:
                     else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
                     else if (cntMatch[1] === 'METHOD') counters.method = entry;
                   }
-                  coverage.classes[className] = counters;
+                  // Skip classes with 0 total lines (interfaces, annotations, abstract classes)
+                  if (counters.line.covered + counters.line.missed > 0) {
+                    coverage.classes[className] = counters;
+                  }
                 }
               }
             }

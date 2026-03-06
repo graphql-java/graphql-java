@@ -297,6 +297,9 @@ jobs:
               // --- Per-class coverage deltas ---
               const changedClasses = [];
               for (const [cls, curr] of Object.entries(classCounters)) {
+                // Skip classes with 0 total lines (interfaces, annotations, abstract classes)
+                const totalLines = curr.line.covered + curr.line.missed;
+                if (totalLines === 0) continue;
                 const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
                 const currLinePct = pct(curr.line.covered, curr.line.missed);
                 const baseLinePct = pct(base.line.covered, base.line.missed);
@@ -317,6 +320,9 @@ jobs:
               }
               // Also detect classes removed (in baseline but not in current)
               for (const cls of Object.keys(baseClasses)) {
+                // Skip baseline classes with 0 total lines (interfaces, annotations)
+                const baseTotalLines = baseClasses[cls].line.covered + baseClasses[cls].line.missed;
+                if (baseTotalLines === 0) continue;
                 if (!classCounters[cls]) {
                   changedClasses.push({
                     name: cls,
@@ -394,6 +400,9 @@ jobs:
             // --- Coverage gate: fail if any class regresses on any metric ---
             const regressions = [];
             for (const [cls, curr] of Object.entries(classCounters)) {
+              // Skip classes with 0 total lines (interfaces, annotations, abstract classes)
+              const totalLines = curr.line.covered + curr.line.missed;
+              if (totalLines === 0) continue;
               const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
               for (const [metric, key] of [['Line', 'line'], ['Branch', 'branch'], ['Method', 'method']]) {
                 const currPct = pct(curr[key].covered, curr[key].missed);
