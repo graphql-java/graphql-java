@@ -3,9 +3,9 @@ package graphql.execution.directives;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
-import com.google.common.collect.ImmutableList;
 import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.execution.CoercedVariables;
 import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
@@ -14,7 +14,6 @@ import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -66,13 +65,16 @@ public class DirectivesResolver {
 
     public List<QueryAppliedDirective> toAppliedDirectives(List<Directive> directives, GraphQLSchema schema, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
         BiMap<GraphQLDirective, Directive> directivesMap = resolveDirectives(directives, schema, variables, graphQLContext, locale);
-        return toAppliedDirectives(directivesMap.keySet());
+        return ImmutableKit.map(directivesMap.keySet(), this::toAppliedDirective);
     }
 
-    public List<QueryAppliedDirective> toAppliedDirectives(Collection<GraphQLDirective> directives) {
-        return directives.stream().map(this::toAppliedDirective).collect(ImmutableList.toImmutableList());
-    }
-
+    /**
+     * This helps us remodel the applied GraphQLDirective back to the better modelled and named {@link QueryAppliedDirective}
+     *
+     * @param directive the directive to remodel
+     *
+     * @return a QueryAppliedDirective
+     */
     public QueryAppliedDirective toAppliedDirective(GraphQLDirective directive) {
         QueryAppliedDirective.Builder builder = QueryAppliedDirective.newDirective();
         builder.name(directive.getName());
