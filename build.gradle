@@ -304,11 +304,99 @@ buildNewJar.dependsOn extractWithoutGuava
 shadowJar.finalizedBy extractWithoutGuava, buildNewJar
 
 
+// --- TestNG TCK skip verification ---
+// The Reactive Streams TCK PublisherVerification base class silently converts optional test
+// failures to skips. We verify the exact set of 49 expected skips after each testng run so
+// that a newly-silenced failure (or a newly-passing test) is caught immediately.
+
+def buildExpectedTestngSkips() {
+    def pkg = 'graphql.execution.reactive.tck.'
+    def allClasses = [
+            'CompletionStageMappingOrderedPublisherTckVerificationTest',
+            'CompletionStageMappingOrderedPublisherRandomCompleteTckVerificationTest',
+            'CompletionStageMappingPublisherTckVerificationTest',
+            'CompletionStageMappingPublisherRandomCompleteTckVerificationTest',
+            'SingleSubscriberPublisherTckVerificationTest',
+    ]
+    def multiSubscriberClasses = allClasses - ['SingleSubscriberPublisherTckVerificationTest']
+
+    // 8 methods skipped by all 5 classes (required_spec317 + 7 untested) = 40
+    def commonSkippedMethods = [
+            'required_spec317_mustNotSignalOnErrorWhenPendingAboveLongMaxValue',
+            'untested_spec106_mustConsiderSubscriptionCancelledAfterOnErrorOrOnCompleteHasBeenCalled',
+            'untested_spec107_mustNotEmitFurtherSignalsOnceOnErrorHasBeenSignalled',
+            'untested_spec108_possiblyCanceledSubscriptionShouldNotReceiveOnErrorOrOnCompleteSignals',
+            'untested_spec109_subscribeShouldNotThrowNonFatalThrowable',
+            'untested_spec110_rejectASubscriptionRequestIfTheSameSubscriberSubscribesTwice',
+            'untested_spec304_requestShouldNotPerformHeavyComputations',
+            'untested_spec305_cancelMustNotSynchronouslyPerformHeavyComputation',
+    ]
+
+    // 1 method skipped by 4 multi-subscriber classes = 4
+    def multiSubscriberSkippedMethods = [
+            'stochastic_spec103_mustSignalOnMethodsSequentially',
+    ]
+
+    // 5 methods skipped by SingleSubscriber only = 5
+    def singleSubscriberSkippedMethods = [
+            'optional_spec111_maySupportMultiSubscribe',
+            'optional_spec111_multicast_mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingManyUpfront',
+            'optional_spec111_multicast_mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingManyUpfrontAndCompleteAsExpected',
+            'optional_spec111_multicast_mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingOneByOne',
+            'optional_spec111_registeredSubscribersMustReceiveOnNextOrOnCompleteSignals',
+    ]
+
+    def expected = [] as Set<String>
+    allClasses.each { cls ->
+        commonSkippedMethods.each { method -> expected.add(pkg + cls + '.' + method) }
+    }
+    multiSubscriberClasses.each { cls ->
+        multiSubscriberSkippedMethods.each { method -> expected.add(pkg + cls + '.' + method) }
+    }
+    singleSubscriberSkippedMethods.each { method ->
+        expected.add(pkg + 'SingleSubscriberPublisherTckVerificationTest.' + method)
+    }
+    return expected  // 40 + 4 + 5 = 49
+}
+
+def verifyTestngSkips(Task task, Set<String> expected) {
+    def xmlDir = task.reports.junitXml.outputLocation.asFile.get()
+    def actualSkips = [] as Set<String>
+    xmlDir.eachFileMatch(~/TEST-.*\.xml/) { file ->
+        def testsuite = new groovy.xml.XmlSlurper().parse(file)
+        testsuite.testcase.each { tc ->
+            if (tc.skipped.size() > 0) {
+                actualSkips.add(tc.@classname.toString() + '.' + tc.@name.toString())
+            }
+        }
+    }
+
+    def unexpected = actualSkips - expected
+    def missing = expected - actualSkips
+    if (unexpected || missing) {
+        def msg = new StringBuilder("TestNG TCK skip verification failed!\n")
+        if (unexpected) {
+            msg.append("\nUnexpected skips (tests that should pass but were skipped):\n")
+            unexpected.toSorted().each { msg.append("  + ${it}\n") }
+        }
+        if (missing) {
+            msg.append("\nMissing skips (tests that should be skipped but were not):\n")
+            missing.toSorted().each { msg.append("  - ${it}\n") }
+        }
+        msg.append("\nUpdate buildExpectedTestngSkips() in build.gradle if these changes are intentional.")
+        throw new GradleException(msg.toString())
+    }
+    logger.lifecycle("TestNG TCK skip verification passed: ${actualSkips.size()} skips match expected set.")
+}
+
+def expectedTestngSkips = buildExpectedTestngSkips()
+
 task testng(type: Test) {
     useTestNG()
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
     dependsOn tasks.named('testClasses')
+    doLast { verifyTestngSkips(it, expectedTestngSkips) }
 }
 check.dependsOn testng
 
@@ -463,6 +551,7 @@ tasks.register('testWithJava11', Test) {
         testClassesDirs = sourceSets.test.output.classesDirs
         classpath = sourceSets.test.runtimeClasspath
         dependsOn tasks.named('testClasses')
+        doLast { verifyTestngSkips(it, expectedTestngSkips) }
     }
 }
 
