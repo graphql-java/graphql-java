@@ -15,7 +15,6 @@ on:
 permissions:
   contents: read
   checks: write
-  pull-requests: write
 jobs:
   buildAndTest:
     runs-on: ubuntu-latest
@@ -116,110 +115,63 @@ jobs:
           name: test-stats-${{ matrix.label }}
           path: /tmp/test-stats/${{ matrix.label }}.json
   test-summary:
-    name: "Test Report & Per-Class Coverage Gate"
+    name: "Per-Class Coverage Gate"
     needs: buildAndTest
     if: always() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - name: Download Test Stats
-        uses: actions/download-artifact@v4
-        with:
-          pattern: test-stats-*
-          merge-multiple: true
-          path: test-stats/
       - name: Download Coverage Report
         uses: actions/download-artifact@v4
         continue-on-error: true
         with:
           name: coverage-report
           path: coverage/
-      - name: Post Test Report and Enforce Per-Class Coverage Gate
+      - name: Enforce Per-Class Coverage Gate
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
 
-            const versions = ['java11', 'java17', 'java21', 'java25', 'jcstress'];
-            const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
             const zeroCov = { covered: 0, missed: 0 };
 
-            // --- Read current test stats from artifacts ---
-            const current = {};
-            for (const v of versions) {
-              const file = path.join('test-stats', `${v}.json`);
-              if (fs.existsSync(file)) {
-                current[v] = JSON.parse(fs.readFileSync(file, 'utf8'));
-              } else {
-                current[v] = null;
-              }
-            }
-
-            // --- Read baseline from repo (read-only) ---
+            // --- Read baseline from repo ---
             const baselineFile = 'test-baseline.json';
             let baseline = { tests: {}, coverage: {} };
             if (fs.existsSync(baselineFile)) {
               baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
             }
-            const baseTests = baseline.tests || {};
-            const baseCov = (baseline.coverage || {}).overall || {};
             const baseClasses = (baseline.coverage || {}).classes || {};
 
-            // --- Parse JaCoCo XML for coverage ---
-            let covLine = null, covBranch = null, covMethod = null;
+            // --- Parse JaCoCo XML for per-class coverage ---
             const classCounters = {};
             const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
-            if (fs.existsSync(jacocoFile)) {
-              const xml = fs.readFileSync(jacocoFile, 'utf8');
-              // Extract top-level counters (direct children of <report>, outside <package> tags)
-              const stripped = xml.replace(/<package[\s\S]*?<\/package>/g, '');
-              const re = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
-              let m;
-              while ((m = re.exec(stripped)) !== null) {
-                const entry = { covered: parseInt(m[3]), missed: parseInt(m[2]) };
-                if (m[1] === 'LINE') covLine = entry;
-                else if (m[1] === 'BRANCH') covBranch = entry;
-                else if (m[1] === 'METHOD') covMethod = entry;
-              }
-
-              // Extract per-class counters from <package>/<class> elements
-              const pkgRe = /<package\s+name="([^"]+)">([\s\S]*?)<\/package>/g;
-              let pkgMatch;
-              while ((pkgMatch = pkgRe.exec(xml)) !== null) {
-                const pkgName = pkgMatch[1].replace(/\//g, '.');
-                const pkgBody = pkgMatch[2];
-                const classRe = /<class\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/class>/g;
-                let classMatch;
-                while ((classMatch = classRe.exec(pkgBody)) !== null) {
-                  const className = classMatch[1].replace(/\//g, '.');
-                  const classBody = classMatch[2];
-                  const counters = { line: { ...zeroCov }, branch: { ...zeroCov }, method: { ...zeroCov } };
-                  const cntRe = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
-                  let cntMatch;
-                  while ((cntMatch = cntRe.exec(classBody)) !== null) {
-                    const entry = { covered: parseInt(cntMatch[3]), missed: parseInt(cntMatch[2]) };
-                    if (cntMatch[1] === 'LINE') counters.line = entry;
-                    else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
-                    else if (cntMatch[1] === 'METHOD') counters.method = entry;
-                  }
-                  classCounters[className] = counters;
+            if (!fs.existsSync(jacocoFile)) {
+              console.log('No JaCoCo report found, skipping coverage gate.');
+              return;
+            }
+            const xml = fs.readFileSync(jacocoFile, 'utf8');
+            const pkgRe = /<package\s+name="([^"]+)">([\s\S]*?)<\/package>/g;
+            let pkgMatch;
+            while ((pkgMatch = pkgRe.exec(xml)) !== null) {
+              const pkgBody = pkgMatch[2];
+              const classRe = /<class\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/class>/g;
+              let classMatch;
+              while ((classMatch = classRe.exec(pkgBody)) !== null) {
+                const className = classMatch[1].replace(/\//g, '.');
+                const classBody = classMatch[2];
+                const counters = { line: { ...zeroCov }, branch: { ...zeroCov }, method: { ...zeroCov } };
+                const cntRe = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
+                let cntMatch;
+                while ((cntMatch = cntRe.exec(classBody)) !== null) {
+                  const entry = { covered: parseInt(cntMatch[3]), missed: parseInt(cntMatch[2]) };
+                  if (cntMatch[1] === 'LINE') counters.line = entry;
+                  else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
+                  else if (cntMatch[1] === 'METHOD') counters.method = entry;
                 }
+                classCounters[className] = counters;
               }
-            }
-
-            // --- Helpers ---
-            function delta(curr, prev, positiveIsGood) {
-              const d = curr - prev;
-              if (d === 0) return '±0';
-              const str = d > 0 ? `+${d}` : `${d}`;
-              if (positiveIsGood === undefined) return str;
-              const icon = (positiveIsGood ? d > 0 : d < 0) ? ' 🟢' : ' 🔴';
-              return str + icon;
-            }
-
-            function fmtCell(curr, prev, positiveIsGood) {
-              return `${curr} (${delta(curr, prev, positiveIsGood)})`;
             }
 
             function pct(covered, missed) {
@@ -227,181 +179,9 @@ jobs:
               return total === 0 ? 0 : (covered / total * 100);
             }
 
-            function fmtPct(value) {
-              return value.toFixed(1) + '%';
-            }
-
-            function fmtPctDelta(curr, prev) {
-              const d = curr - prev;
-              if (Math.abs(d) < 0.05) return '±0.0%';
-              const str = d > 0 ? `+${d.toFixed(1)}%` : `${d.toFixed(1)}%`;
-              const icon = d > 0 ? ' 🟢' : ' 🔴';
-              return str + icon;
-            }
-
-            // --- Build Test Results table ---
-            let body = '<!-- test-report -->\n## Test Report\n\n';
-            body += '### Test Results\n';
-            body += '| Java Version | Total | Passed | Failed | Errors | Skipped |\n';
-            body += '|:-------------|------:|-------:|-------:|-------:|--------:|\n';
-
-            for (const v of versions) {
-              const c = current[v] || zeroTest;
-              const b = baseTests[v] || zeroTest;
-              const label = v.replace('java', 'Java ');
-              if (!current[v]) {
-                body += `| ${label} | - | - | - | - | - |\n`;
-              } else {
-                body += `| ${label} | ${fmtCell(c.total, b.total, true)} | ${fmtCell(c.passed, b.passed, true)} | ${fmtCell(c.failed, b.failed, false)} | ${fmtCell(c.errors, b.errors, false)} | ${fmtCell(c.skipped, b.skipped)} |\n`;
-              }
-            }
-
-            // Totals row
-            const totalCurr = { ...zeroTest };
-            const totalBase = { ...zeroTest };
-            let hasAny = false;
-            for (const v of versions) {
-              if (current[v]) {
-                hasAny = true;
-                for (const k of Object.keys(zeroTest)) {
-                  totalCurr[k] += current[v][k];
-                  totalBase[k] += (baseTests[v] || zeroTest)[k];
-                }
-              }
-            }
-            if (hasAny) {
-              body += `| **Total** | **${fmtCell(totalCurr.total, totalBase.total, true)}** | **${fmtCell(totalCurr.passed, totalBase.passed, true)}** | **${fmtCell(totalCurr.failed, totalBase.failed, false)}** | **${fmtCell(totalCurr.errors, totalBase.errors, false)}** | **${fmtCell(totalCurr.skipped, totalBase.skipped)}** |\n`;
-            }
-
-            // --- Build Coverage table ---
-            if (covLine || covBranch || covMethod) {
-              body += '\n### Code Coverage (Java 25)\n';
-              body += '| Metric   | Covered | Missed | Coverage | vs Master |\n';
-              body += '|:---------|--------:|-------:|---------:|----------:|\n';
-
-              const metrics = [
-                { name: 'Lines', curr: covLine, baseKey: 'line' },
-                { name: 'Branches', curr: covBranch, baseKey: 'branch' },
-                { name: 'Methods', curr: covMethod, baseKey: 'method' },
-              ];
-
-              for (const { name, curr, baseKey } of metrics) {
-                if (!curr) continue;
-                const b = baseCov[baseKey] || zeroCov;
-                const currPct = pct(curr.covered, curr.missed);
-                const basePct = pct(b.covered, b.missed);
-                body += `| ${name} | ${curr.covered} | ${curr.missed} | ${fmtPct(currPct)} | ${fmtPctDelta(currPct, basePct)} |\n`;
-              }
-
-              body += '\n';
-
-              // --- Per-class coverage deltas ---
-              const changedClasses = [];
-              for (const [cls, curr] of Object.entries(classCounters)) {
-                // Skip classes with 0 total lines (interfaces, annotations, abstract classes)
-                const totalLines = curr.line.covered + curr.line.missed;
-                if (totalLines === 0) continue;
-                const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
-                const currLinePct = pct(curr.line.covered, curr.line.missed);
-                const baseLinePct = pct(base.line.covered, base.line.missed);
-                const currBranchPct = pct(curr.branch.covered, curr.branch.missed);
-                const baseBranchPct = pct(base.branch.covered, base.branch.missed);
-                const currMethodPct = pct(curr.method.covered, curr.method.missed);
-                const baseMethodPct = pct(base.method.covered, base.method.missed);
-                if (Math.abs(currLinePct - baseLinePct) >= 0.05 ||
-                    Math.abs(currBranchPct - baseBranchPct) >= 0.05 ||
-                    Math.abs(currMethodPct - baseMethodPct) >= 0.05) {
-                  changedClasses.push({
-                    name: cls,
-                    linePct: currLinePct, lineDelta: currLinePct - baseLinePct,
-                    branchPct: currBranchPct, branchDelta: currBranchPct - baseBranchPct,
-                    methodPct: currMethodPct, methodDelta: currMethodPct - baseMethodPct,
-                  });
-                }
-              }
-              // Also detect classes removed (in baseline but not in current)
-              for (const cls of Object.keys(baseClasses)) {
-                // Skip baseline classes with 0 total lines (interfaces, annotations)
-                const baseTotalLines = baseClasses[cls].line.covered + baseClasses[cls].line.missed;
-                if (baseTotalLines === 0) continue;
-                if (!classCounters[cls]) {
-                  changedClasses.push({
-                    name: cls,
-                    linePct: 0, lineDelta: -pct(baseClasses[cls].line.covered, baseClasses[cls].line.missed),
-                    branchPct: 0, branchDelta: -pct(baseClasses[cls].branch.covered, baseClasses[cls].branch.missed),
-                    methodPct: 0, methodDelta: -pct(baseClasses[cls].method.covered, baseClasses[cls].method.missed),
-                    removed: true,
-                  });
-                }
-              }
-
-              changedClasses.sort((a, b) => a.name.localeCompare(b.name));
-
-              function shortenClass(name) {
-                const dollarIdx = name.indexOf('$');
-                const mainPart = dollarIdx >= 0 ? name.substring(0, dollarIdx) : name;
-                const suffix = dollarIdx >= 0 ? name.substring(dollarIdx) : '';
-                const parts = mainPart.split('.');
-                const shortened = parts.map((p, i) => i < parts.length - 1 ? p[0] : p);
-                const result = shortened.join('.') + suffix;
-                return result.replace(/\$/g, '<br>\\$');
-              }
-
-              function fmtClassDelta(delta) {
-                return fmtPctDelta(delta, 0);
-              }
-
-              if (changedClasses.length > 0) {
-                body += `**Changed Class Coverage** (${changedClasses.length} ${changedClasses.length === 1 ? 'class' : 'classes'})\n\n`;
-                body += '| Class | Line | Branch | Method |\n';
-                body += '|:------|-----:|-------:|-------:|\n';
-                for (const c of changedClasses) {
-                  if (c.removed) {
-                    body += `| ${shortenClass(c.name)} | *removed* | *removed* | *removed* |\n`;
-                  } else {
-                    body += `| ${shortenClass(c.name)} | ${fmtClassDelta(c.lineDelta)} | ${fmtClassDelta(c.branchDelta)} | ${fmtClassDelta(c.methodDelta)} |\n`;
-                  }
-                }
-                body += '\n';
-              } else {
-                body += '> No per-class coverage changes detected.\n';
-              }
-
-              body += '\n> Full HTML report: build artifact `jacoco-html-report`\n';
-            }
-
-            // Timestamp
-            const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
-            body += `\n> *Updated: ${now}*\n`;
-
-            // --- Post or update single comment ---
-            const { data: comments } = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-            const marker = '<!-- test-report -->';
-            const existing = comments.find(c => c.body && c.body.startsWith(marker));
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
-
             // --- Coverage gate: fail if any class regresses on any metric ---
             const regressions = [];
             for (const [cls, curr] of Object.entries(classCounters)) {
-              // Skip classes with 0 total lines (interfaces, annotations, abstract classes)
               const totalLines = curr.line.covered + curr.line.missed;
               if (totalLines === 0) continue;
               const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
@@ -443,7 +223,7 @@ jobs:
             exit 1
           fi
           if [ "${{ needs.test-summary.result }}" != "success" ] && [ "${{ needs.test-summary.result }}" != "skipped" ]; then
-            echo "Test Report & Per-Class Coverage Gate failed with result: ${{ needs.test-summary.result }}"
+            echo "Per-Class Coverage Gate failed with result: ${{ needs.test-summary.result }}"
             exit 1
           fi
           if [ "${{ needs.javadoc.result }}" != "success" ]; then
