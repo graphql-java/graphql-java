@@ -6,7 +6,6 @@ on:
       - master
 permissions:
   contents: write
-  checks: write
 jobs:
   buildAndTest:
     runs-on: ubuntu-latest

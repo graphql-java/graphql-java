@@ -14,7 +14,6 @@ on:
       - 19.x
 permissions:
   contents: read
-  checks: write
 jobs:
   buildAndTest:
     runs-on: ubuntu-latest
