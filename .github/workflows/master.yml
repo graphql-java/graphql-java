@@ -110,6 +110,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.ADMIN_PAT }}
       - name: Download Test Stats
         uses: actions/download-artifact@v4
         with:

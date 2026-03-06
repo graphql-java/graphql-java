@@ -1,47 +1,54 @@
 {
   "tests": {
     "java11": {
-      "total": 5669,
-      "passed": 5609,
+      "total": 5671,
+      "passed": 5614,
       "failed": 0,
       "errors": 0,
-      "skipped": 60
+      "skipped": 57
     },
     "java17": {
-      "total": 5669,
-      "passed": 5608,
+      "total": 5671,
+      "passed": 5613,
       "failed": 0,
       "errors": 0,
-      "skipped": 61
+      "skipped": 58
     },
     "java21": {
-      "total": 5669,
-      "passed": 5608,
+      "total": 5671,
+      "passed": 5613,
       "failed": 0,
       "errors": 0,
-      "skipped": 61
+      "skipped": 58
     },
     "java25": {
-      "total": 5669,
-      "passed": 5607,
+      "total": 5671,
+      "passed": 5613,
       "failed": 0,
       "errors": 0,
-      "skipped": 62
+      "skipped": 58
+    },
+    "jcstress": {
+      "total": 32,
+      "passed": 32,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0
     }
   },
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8501,
-        "missed": 1697
+        "covered": 8331,
+        "missed": 1511
       },
       "line": {
-        "covered": 28937,
-        "missed": 3262
+        "covered": 28698,
+        "missed": 3126
       },
       "method": {
-        "covered": 7765,
-        "missed": 1261
+        "covered": 7681,
+        "missed": 1224
       }
     },
     "classes": {
@@ -453,15 +460,15 @@
       },
       "graphql.language.SourceLocation": {
         "line": {
-          "covered": 30,
-          "missed": 4
+          "covered": 18,
+          "missed": 1
         },
         "branch": {
-          "covered": 11,
-          "missed": 7
+          "covered": 5,
+          "missed": 3
         },
         "method": {
-          "covered": 10,
+          "covered": 8,
           "missed": 0
         }
       },
@@ -691,16 +698,16 @@
       },
       "graphql.language.IgnoredChar": {
         "line": {
-          "covered": 10,
-          "missed": 11
+          "covered": 5,
+          "missed": 4
         },
         "branch": {
-          "covered": 6,
-          "missed": 6
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 2,
-          "missed": 5
+          "covered": 1,
+          "missed": 4
         }
       },
       "graphql.language.Description": {
@@ -2161,15 +2168,15 @@
       },
       "graphql.schema.idl.TypeInfo": {
         "line": {
-          "covered": 62,
+          "covered": 51,
           "missed": 4
         },
         "branch": {
-          "covered": 36,
-          "missed": 8
+          "covered": 27,
+          "missed": 5
         },
         "method": {
-          "covered": 16,
+          "covered": 14,
           "missed": 2
         }
       },
@@ -2539,15 +2546,15 @@
       },
       "graphql.schema.validation.SchemaValidationError": {
         "line": {
-          "covered": 16,
-          "missed": 6
-        },
-        "branch": {
-          "covered": 4,
+          "covered": 8,
           "missed": 4
         },
+        "branch": {
+          "covered": 0,
+          "missed": 0
+        },
         "method": {
-          "covered": 5,
+          "covered": 3,
           "missed": 1
         }
       },
@@ -4360,15 +4367,15 @@
       "graphql.schema.diffing.EditOperation": {
         "line": {
           "covered": 20,
-          "missed": 7
+          "missed": 0
         },
         "branch": {
           "covered": 0,
-          "missed": 18
+          "missed": 0
         },
         "method": {
           "covered": 13,
-          "missed": 2
+          "missed": 0
         }
       },
       "graphql.schema.diffing.Util": {
@@ -5074,15 +5081,15 @@
       "graphql.schema.diffing.Vertex$VertexData": {
         "line": {
           "covered": 0,
-          "missed": 11
+          "missed": 4
         },
         "branch": {
           "covered": 0,
-          "missed": 10
+          "missed": 0
         },
         "method": {
           "covered": 0,
-          "missed": 3
+          "missed": 1
         }
       },
       "graphql.schema.diffing.SchemaGraphFactory": {
@@ -5704,7 +5711,7 @@
       "graphql.collect.ImmutableMapWithNullValues": {
         "line": {
           "covered": 21,
-          "missed": 19
+          "missed": 17
         },
         "branch": {
           "covered": 4,
@@ -5712,7 +5719,7 @@
         },
         "method": {
           "covered": 13,
-          "missed": 18
+          "missed": 16
         }
       },
       "graphql.schema.fetching.LambdaFetchingSupport": {
@@ -5843,16 +5850,16 @@
       },
       "graphql.execution.reactive.CompletionStageOrderedSubscriber": {
         "line": {
-          "covered": 21,
-          "missed": 6
+          "covered": 26,
+          "missed": 0
         },
         "branch": {
-          "covered": 7,
-          "missed": 5
+          "covered": 11,
+          "missed": 1
         },
         "method": {
-          "covered": 4,
-          "missed": 1
+          "covered": 5,
+          "missed": 0
         }
       },
       "graphql.execution.reactive.ReactiveSupport": {
@@ -5871,15 +5878,15 @@
       },
       "graphql.execution.reactive.CompletionStageSubscriber": {
         "line": {
-          "covered": 69,
+          "covered": 73,
           "missed": 2
         },
         "branch": {
-          "covered": 17,
+          "covered": 19,
           "missed": 5
         },
         "method": {
-          "covered": 20,
+          "covered": 21,
           "missed": 1
         }
       },
@@ -6613,7 +6620,7 @@
       },
       "graphql.execution.incremental.DeferredExecution": {
         "line": {
-          "covered": 6,
+          "covered": 4,
           "missed": 0
         },
         "branch": {
@@ -6621,7 +6628,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 4,
+          "covered": 2,
           "missed": 0
         }
       },
@@ -6782,7 +6789,7 @@
       "graphql.TypeMismatchError": {
         "line": {
           "covered": 12,
-          "missed": 2
+          "missed": 0
         },
         "branch": {
           "covered": 0,
@@ -6790,7 +6797,7 @@
         },
         "method": {
           "covered": 7,
-          "missed": 2
+          "missed": 0
         }
       },
       "graphql.ParseAndValidateResult": {
@@ -6837,7 +6844,7 @@
       },
       "graphql.InvalidSyntaxError": {
         "line": {
-          "covered": 18,
+          "covered": 16,
           "missed": 2
         },
         "branch": {
@@ -6845,14 +6852,14 @@
           "missed": 0
         },
         "method": {
-          "covered": 9,
+          "covered": 7,
           "missed": 2
         }
       },
       "graphql.UnresolvedTypeError": {
         "line": {
           "covered": 14,
-          "missed": 4
+          "missed": 2
         },
         "branch": {
           "covered": 0,
@@ -6860,7 +6867,7 @@
         },
         "method": {
           "covered": 6,
-          "missed": 4
+          "missed": 2
         }
       },
       "graphql.GraphQLUnusualConfiguration$GoodFaithIntrospectionConfig": {
@@ -6921,15 +6928,15 @@
       },
       "graphql.VisibleForTesting": {
         "line": {
-          "covered": 27,
+          "covered": 13,
           "missed": 0
         },
         "branch": {
-          "covered": 12,
-          "missed": 2
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 9,
+          "covered": 7,
           "missed": 0
         }
       },
@@ -6949,7 +6956,7 @@
       },
       "graphql.TypeMismatchError$GraphQLTypeToTypeKindMapping$1": {
         "line": {
-          "covered": 10,
+          "covered": 9,
           "missed": 0
         },
         "branch": {
@@ -7356,15 +7363,15 @@
       "graphql.GraphQLContext": {
         "line": {
           "covered": 42,
-          "missed": 7
+          "missed": 0
         },
         "branch": {
           "covered": 2,
-          "missed": 6
+          "missed": 0
         },
         "method": {
           "covered": 24,
-          "missed": 2
+          "missed": 0
         }
       },
       "graphql.ProfilerResult$DataFetcherType": {
@@ -7383,7 +7390,7 @@
       },
       "graphql.ExceptionWhileDataFetching": {
         "line": {
-          "covered": 23,
+          "covered": 21,
           "missed": 0
         },
         "branch": {
@@ -7391,7 +7398,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 12,
+          "covered": 10,
           "missed": 0
         }
       },
@@ -7412,7 +7419,7 @@
       "graphql.GraphQLError$Builder": {
         "line": {
           "covered": 11,
-          "missed": 4
+          "missed": 2
         },
         "branch": {
           "covered": 0,
@@ -7420,7 +7427,7 @@
         },
         "method": {
           "covered": 7,
-          "missed": 4
+          "missed": 2
         }
       },
       "graphql.DirectivesUtil$DirectivesHolder": {
@@ -7762,15 +7769,15 @@
       "graphql.analysis.FieldComplexityEnvironment": {
         "line": {
           "covered": 8,
-          "missed": 20
+          "missed": 5
         },
         "branch": {
           "covered": 0,
-          "missed": 16
+          "missed": 0
         },
         "method": {
           "covered": 2,
-          "missed": 7
+          "missed": 5
         }
       },
       "graphql.analysis.QueryTraverser$2": {
@@ -7804,15 +7811,15 @@
       "graphql.analysis.QueryVisitorFragmentDefinitionEnvironmentImpl": {
         "line": {
           "covered": 7,
-          "missed": 9
+          "missed": 2
         },
         "branch": {
           "covered": 0,
-          "missed": 6
+          "missed": 0
         },
         "method": {
           "covered": 3,
-          "missed": 4
+          "missed": 2
         }
       },
       "graphql.analysis.QueryComplexityCalculator": {
@@ -7901,15 +7908,15 @@
       },
       "graphql.analysis.QueryVisitorFieldEnvironmentImpl": {
         "line": {
-          "covered": 44,
+          "covered": 23,
           "missed": 2
         },
         "branch": {
-          "covered": 13,
-          "missed": 11
+          "covered": 2,
+          "missed": 0
         },
         "method": {
-          "covered": 12,
+          "covered": 10,
           "missed": 2
         }
       },
@@ -7958,15 +7965,15 @@
       "graphql.analysis.QueryVisitorInlineFragmentEnvironmentImpl": {
         "line": {
           "covered": 7,
-          "missed": 7
+          "missed": 2
         },
         "branch": {
           "covered": 0,
-          "missed": 6
+          "missed": 0
         },
         "method": {
           "covered": 3,
-          "missed": 4
+          "missed": 2
         }
       },
       "graphql.analysis.QueryDepthInfo$Builder": {
@@ -7986,15 +7993,15 @@
       "graphql.analysis.QueryVisitorFragmentSpreadEnvironment": {
         "line": {
           "covered": 9,
-          "missed": 6
+          "missed": 1
         },
         "branch": {
           "covered": 0,
-          "missed": 6
+          "missed": 0
         },
         "method": {
           "covered": 4,
-          "missed": 3
+          "missed": 1
         }
       },
       "graphql.analysis.QueryComplexityInfo": {
@@ -8168,7 +8175,7 @@
       "graphql.schema.idl.errors.BaseError": {
         "line": {
           "covered": 7,
-          "missed": 4
+          "missed": 2
         },
         "branch": {
           "covered": 2,
@@ -8176,7 +8183,7 @@
         },
         "method": {
           "covered": 4,
-          "missed": 4
+          "missed": 2
         }
       },
       "graphql.schema.idl.errors.UnionTypeError": {
@@ -8839,16 +8846,16 @@
       },
       "graphql.util.NodeLocation": {
         "line": {
-          "covered": 11,
-          "missed": 7
+          "covered": 6,
+          "missed": 1
         },
         "branch": {
-          "covered": 5,
-          "missed": 5
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 4,
-          "missed": 2
+          "covered": 3,
+          "missed": 1
         }
       },
       "graphql.util.TreeParallelTraverser": {
@@ -8980,15 +8987,15 @@
       "graphql.util.Breadcrumb": {
         "line": {
           "covered": 6,
-          "missed": 15
+          "missed": 4
         },
         "branch": {
           "covered": 0,
-          "missed": 10
+          "missed": 0
         },
         "method": {
           "covered": 3,
-          "missed": 3
+          "missed": 1
         }
       },
       "graphql.util.TraverserState$EndList": {
@@ -9427,29 +9434,29 @@
       },
       "graphql.incremental.IncrementalExecutionResult": {
         "line": {
-          "covered": 28,
-          "missed": 6
+          "covered": 20,
+          "missed": 4
         },
         "branch": {
-          "covered": 18,
-          "missed": 6
+          "covered": 9,
+          "missed": 1
         },
         "method": {
-          "covered": 5,
+          "covered": 3,
           "missed": 4
         }
       },
       "graphql.incremental.StreamPayload": {
         "line": {
-          "covered": 13,
+          "covered": 7,
           "missed": 1
         },
         "branch": {
-          "covered": 5,
-          "missed": 3
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 5,
+          "covered": 3,
           "missed": 1
         }
       },
@@ -9483,15 +9490,15 @@
       },
       "graphql.incremental.DeferPayload": {
         "line": {
-          "covered": 14,
+          "covered": 8,
           "missed": 0
         },
         "branch": {
-          "covered": 5,
-          "missed": 3
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 6,
+          "covered": 4,
           "missed": 0
         }
       },
@@ -9553,7 +9560,7 @@
       },
       "graphql.schema.GraphQLInputObjectType": {
         "line": {
-          "covered": 54,
+          "covered": 52,
           "missed": 3
         },
         "branch": {
@@ -9561,7 +9568,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 31,
+          "covered": 29,
           "missed": 3
         }
       },
@@ -9581,7 +9588,7 @@
       },
       "graphql.schema.GraphQLAppliedDirective": {
         "line": {
-          "covered": 28,
+          "covered": 26,
           "missed": 8
         },
         "branch": {
@@ -9589,7 +9596,7 @@
           "missed": 1
         },
         "method": {
-          "covered": 15,
+          "covered": 13,
           "missed": 3
         }
       },
@@ -9637,15 +9644,15 @@
       },
       "graphql.schema.FieldCoordinates": {
         "line": {
-          "covered": 29,
-          "missed": 2
+          "covered": 20,
+          "missed": 0
         },
         "branch": {
-          "covered": 13,
-          "missed": 3
+          "covered": 6,
+          "missed": 0
         },
         "method": {
-          "covered": 13,
+          "covered": 11,
           "missed": 0
         }
       },
@@ -9735,15 +9742,15 @@
       },
       "graphql.schema.GraphQLNamedType": {
         "line": {
-          "covered": 19,
-          "missed": 2
+          "covered": 11,
+          "missed": 0
         },
         "branch": {
-          "covered": 6,
-          "missed": 4
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 8,
+          "covered": 6,
           "missed": 0
         }
       },
@@ -9763,7 +9770,7 @@
       },
       "graphql.schema.GraphQLUnionType": {
         "line": {
-          "covered": 56,
+          "covered": 54,
           "missed": 2
         },
         "branch": {
@@ -9771,7 +9778,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 26,
+          "covered": 24,
           "missed": 2
         }
       },
@@ -9819,7 +9826,7 @@
       },
       "graphql.schema.GraphQLNonNull": {
         "line": {
-          "covered": 30,
+          "covered": 28,
           "missed": 3
         },
         "branch": {
@@ -9827,7 +9834,7 @@
           "missed": 3
         },
         "method": {
-          "covered": 15,
+          "covered": 13,
           "missed": 1
         }
       },
@@ -10029,7 +10036,7 @@
       },
       "graphql.schema.GraphQLModifiedType": {
         "line": {
-          "covered": 57,
+          "covered": 55,
           "missed": 5
         },
         "branch": {
@@ -10037,13 +10044,13 @@
           "missed": 0
         },
         "method": {
-          "covered": 27,
+          "covered": 25,
           "missed": 3
         }
       },
       "graphql.schema.GraphQLEnumType": {
         "line": {
-          "covered": 78,
+          "covered": 76,
           "missed": 10
         },
         "branch": {
@@ -10051,13 +10058,13 @@
           "missed": 4
         },
         "method": {
-          "covered": 32,
+          "covered": 30,
           "missed": 7
         }
       },
       "graphql.schema.GraphQLFieldDefinition": {
         "line": {
-          "covered": 65,
+          "covered": 63,
           "missed": 2
         },
         "branch": {
@@ -10065,7 +10072,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 29,
+          "covered": 27,
           "missed": 1
         }
       },
@@ -10309,7 +10316,7 @@
       },
       "graphql.schema.GraphQLUnmodifiedType": {
         "line": {
-          "covered": 60,
+          "covered": 58,
           "missed": 3
         },
         "branch": {
@@ -10317,7 +10324,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 32,
+          "covered": 30,
           "missed": 2
         }
       },
@@ -10379,15 +10386,15 @@
       },
       "graphql.schema.GraphQLInputFieldsContainer": {
         "line": {
-          "covered": 30,
-          "missed": 7
+          "covered": 24,
+          "missed": 6
         },
         "branch": {
-          "covered": 6,
-          "missed": 4
+          "covered": 2,
+          "missed": 2
         },
         "method": {
-          "covered": 16,
+          "covered": 14,
           "missed": 5
         }
       },
@@ -10407,7 +10414,7 @@
       },
       "graphql.schema.PropertyFetchingImpl$MethodFinder": {
         "line": {
-          "covered": 58,
+          "covered": 56,
           "missed": 5
         },
         "branch": {
@@ -10415,7 +10422,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 27,
+          "covered": 25,
           "missed": 4
         }
       },
@@ -10575,7 +10582,7 @@
       },
       "graphql.schema.GraphQLAppliedDirectiveArgument": {
         "line": {
-          "covered": 30,
+          "covered": 28,
           "missed": 5
         },
         "branch": {
@@ -10583,7 +10590,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 17,
+          "covered": 15,
           "missed": 4
         }
       },
@@ -10617,7 +10624,7 @@
       },
       "graphql.schema.GraphQLImplementingType": {
         "line": {
-          "covered": 41,
+          "covered": 39,
           "missed": 4
         },
         "branch": {
@@ -10625,7 +10632,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 23,
+          "covered": 21,
           "missed": 3
         }
       },
@@ -10645,7 +10652,7 @@
       },
       "graphql.schema.GraphQLDirective": {
         "line": {
-          "covered": 43,
+          "covered": 41,
           "missed": 2
         },
         "branch": {
@@ -10653,7 +10660,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 20,
+          "covered": 18,
           "missed": 2
         }
       },
@@ -10827,7 +10834,7 @@
       },
       "graphql.schema.GraphQLList": {
         "line": {
-          "covered": 25,
+          "covered": 23,
           "missed": 3
         },
         "branch": {
@@ -10835,7 +10842,7 @@
           "missed": 3
         },
         "method": {
-          "covered": 13,
+          "covered": 11,
           "missed": 1
         }
       },
@@ -10897,7 +10904,7 @@
       },
       "graphql.schema.GraphQLInputObjectField": {
         "line": {
-          "covered": 58,
+          "covered": 56,
           "missed": 1
         },
         "branch": {
@@ -10905,21 +10912,21 @@
           "missed": 0
         },
         "method": {
-          "covered": 30,
+          "covered": 28,
           "missed": 1
         }
       },
       "graphql.schema.PropertyFetchingImpl$CacheKey": {
         "line": {
-          "covered": 15,
-          "missed": 2
+          "covered": 6,
+          "missed": 0
         },
         "branch": {
-          "covered": 5,
-          "missed": 5
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 4,
+          "covered": 2,
           "missed": 0
         }
       },
@@ -11023,7 +11030,7 @@
       },
       "graphql.schema.GraphQLEnumValueDefinition": {
         "line": {
-          "covered": 42,
+          "covered": 40,
           "missed": 2
         },
         "branch": {
@@ -11031,7 +11038,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 24,
+          "covered": 22,
           "missed": 2
         }
       },
@@ -11653,64 +11660,64 @@
       },
       "graphql.relay.Connection": {
         "line": {
-          "covered": 11,
-          "missed": 3
+          "covered": 6,
+          "missed": 1
         },
         "branch": {
-          "covered": 7,
-          "missed": 3
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 5,
+          "covered": 3,
           "missed": 1
         }
       },
       "graphql.relay.DefaultConnectionCursor": {
         "line": {
-          "covered": 11,
-          "missed": 2
+          "covered": 5,
+          "missed": 1
         },
         "branch": {
-          "covered": 5,
-          "missed": 3
+          "covered": 1,
+          "missed": 1
         },
         "method": {
-          "covered": 4,
+          "covered": 2,
           "missed": 1
         }
       },
       "graphql.relay.DefaultPageInfo": {
         "line": {
-          "covered": 14,
-          "missed": 7
+          "covered": 6,
+          "missed": 5
         },
         "branch": {
-          "covered": 11,
-          "missed": 3
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 3,
+          "covered": 1,
           "missed": 5
         }
       },
       "graphql.relay.DefaultConnection": {
         "line": {
-          "covered": 10,
-          "missed": 4
+          "covered": 5,
+          "missed": 2
         },
         "branch": {
-          "covered": 7,
-          "missed": 3
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 4,
+          "covered": 2,
           "missed": 2
         }
       },
       "graphql.relay.ConnectionCursor": {
         "line": {
           "covered": 0,
-          "missed": 8
+          "missed": 6
         },
         "branch": {
           "covered": 0,
@@ -11718,7 +11725,7 @@
         },
         "method": {
           "covered": 0,
-          "missed": 6
+          "missed": 4
         }
       },
       "graphql.relay.Relay$ResolvedGlobalId": {
@@ -11752,7 +11759,7 @@
       "graphql.relay.InvalidCursorException": {
         "line": {
           "covered": 4,
-          "missed": 4
+          "missed": 2
         },
         "branch": {
           "covered": 0,
@@ -11760,7 +11767,7 @@
         },
         "method": {
           "covered": 2,
-          "missed": 4
+          "missed": 2
         }
       },
       "graphql.schema.diff.SchemaDiff$Options": {
@@ -12031,15 +12038,15 @@
       },
       "graphql.normalized.ExecutableNormalizedOperationToAstCompiler$ExecutionFragmentDetails": {
         "line": {
-          "covered": 9,
-          "missed": 2
+          "covered": 4,
+          "missed": 0
         },
         "branch": {
-          "covered": 5,
-          "missed": 5
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 3,
+          "covered": 1,
           "missed": 0
         }
       },
@@ -12185,16 +12192,16 @@
       },
       "graphql.normalized.NormalizedInputValue": {
         "line": {
-          "covered": 35,
-          "missed": 4
+          "covered": 29,
+          "missed": 1
         },
         "branch": {
-          "covered": 29,
-          "missed": 9
+          "covered": 19,
+          "missed": 1
         },
         "method": {
-          "covered": 14,
-          "missed": 1
+          "covered": 13,
+          "missed": 0
         }
       },
       "graphql.normalized.ExecutableNormalizedOperationFactory$Options": {
@@ -12633,15 +12640,15 @@
       },
       "graphql.execution.DataFetcherResult": {
         "line": {
-          "covered": 28,
-          "missed": 2
+          "covered": 21,
+          "missed": 1
         },
         "branch": {
-          "covered": 12,
-          "missed": 2
+          "covered": 2,
+          "missed": 0
         },
         "method": {
-          "covered": 12,
+          "covered": 10,
           "missed": 1
         }
       },
@@ -12717,15 +12724,15 @@
       },
       "graphql.execution.MergedField": {
         "line": {
-          "covered": 32,
-          "missed": 6
+          "covered": 26,
+          "missed": 5
         },
         "branch": {
-          "covered": 10,
-          "missed": 4
+          "covered": 6,
+          "missed": 2
         },
         "method": {
-          "covered": 19,
+          "covered": 17,
           "missed": 3
         }
       },
@@ -12773,15 +12780,15 @@
       },
       "graphql.execution.MergedField$MultiMergedField": {
         "line": {
-          "covered": 18,
-          "missed": 6
+          "covered": 15,
+          "missed": 2
         },
         "branch": {
-          "covered": 5,
-          "missed": 7
+          "covered": 4,
+          "missed": 2
         },
         "method": {
-          "covered": 9,
+          "covered": 7,
           "missed": 1
         }
       },
@@ -12801,15 +12808,15 @@
       },
       "graphql.execution.ResultPath": {
         "line": {
-          "covered": 112,
-          "missed": 16
+          "covered": 91,
+          "missed": 14
         },
         "branch": {
-          "covered": 57,
-          "missed": 15
+          "covered": 40,
+          "missed": 10
         },
         "method": {
-          "covered": 24,
+          "covered": 22,
           "missed": 8
         }
       },
@@ -12858,7 +12865,7 @@
       "graphql.execution.NonNullableFieldWasNullError": {
         "line": {
           "covered": 9,
-          "missed": 2
+          "missed": 0
         },
         "branch": {
           "covered": 0,
@@ -12866,7 +12873,7 @@
         },
         "method": {
           "covered": 6,
-          "missed": 2
+          "missed": 0
         }
       },
       "graphql.execution.CoercedVariables": {
@@ -13403,16 +13410,16 @@
       },
       "graphql.execution.ExecutionId": {
         "line": {
-          "covered": 11,
-          "missed": 1
+          "covered": 7,
+          "missed": 0
         },
         "branch": {
-          "covered": 3,
-          "missed": 3
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 5,
-          "missed": 1
+          "covered": 4,
+          "missed": 0
         }
       },
       "graphql.execution.MergedField$Builder": {
@@ -13571,7 +13578,7 @@
       },
       "graphql.validation.ValidationError": {
         "line": {
-          "covered": 29,
+          "covered": 27,
           "missed": 0
         },
         "branch": {
@@ -13579,7 +13586,7 @@
           "missed": 0
         },
         "method": {
-          "covered": 13,
+          "covered": 11,
           "missed": 0
         }
       },
@@ -13641,15 +13648,15 @@
       },
       "graphql.validation.OperationValidator$FieldAndType": {
         "line": {
-          "covered": 10,
-          "missed": 3
+          "covered": 5,
+          "missed": 1
         },
         "branch": {
-          "covered": 3,
-          "missed": 3
+          "covered": 0,
+          "missed": 0
         },
         "method": {
-          "covered": 3,
+          "covered": 1,
           "missed": 1
         }
       },
