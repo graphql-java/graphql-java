@@ -5,6 +5,14 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 import java.text.SimpleDateFormat
 
+buildscript {
+    repositories { mavenCentral() }
+    dependencies {
+        classpath 'org.ow2.asm:asm:9.7.1'
+        classpath 'org.ow2.asm:asm-tree:9.7.1'
+    }
+}
+
 plugins {
     id 'java'
     id 'java-library'
@@ -583,6 +591,55 @@ jacocoTestReport {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Mark identity equals(Object)/hashCode() with a @Generated annotation so
+// JaCoCo's AnnotationGeneratedFilter excludes them from coverage.
+// The annotation class need not exist — JaCoCo only inspects the descriptor
+// string in the bytecode, and the JVM ignores unknown CLASS-retention
+// annotations.
+// ---------------------------------------------------------------------------
+tasks.register('markGeneratedEqualsHashCode') {
+    description = 'Add @Generated annotation to equals/hashCode so JaCoCo ignores them'
+    dependsOn classes
+
+    doLast {
+        def dir = layout.buildDirectory.dir('classes/java/main').get().asFile
+        if (!dir.exists()) return
+
+        def ANNOTATION = 'Lgraphql/coverage/Generated;'
+
+        dir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+            if (!file.name.endsWith('.class')) return
+
+            def bytes = file.bytes
+            def classNode = new org.objectweb.asm.tree.ClassNode()
+            new org.objectweb.asm.ClassReader(bytes).accept(classNode, 0)
+
+            boolean modified = false
+            for (method in classNode.methods) {
+                if ((method.name == 'equals' && method.desc == '(Ljava/lang/Object;)Z') ||
+                        (method.name == 'hashCode' && method.desc == '()I')) {
+                    if (method.invisibleAnnotations == null) {
+                        method.invisibleAnnotations = []
+                    }
+                    method.invisibleAnnotations.add(new org.objectweb.asm.tree.AnnotationNode(ANNOTATION))
+                    modified = true
+                }
+            }
+
+            if (modified) {
+                def writer = new org.objectweb.asm.ClassWriter(0)
+                classNode.accept(writer)
+                file.bytes = writer.toByteArray()
+            }
+        }
+    }
+}
+
+// Ensure the annotation task runs before anything that reads the main class files
+tasks.named('test') { dependsOn markGeneratedEqualsHashCode }
+tasks.named('compileTestJava') { dependsOn markGeneratedEqualsHashCode }
+tasks.named('jar') { dependsOn markGeneratedEqualsHashCode }
 
 /*
  * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7

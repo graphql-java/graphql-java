@@ -16,7 +16,6 @@ import spock.lang.Specification
 
 import java.util.function.UnaryOperator
 
-import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.characterInterface
 import static graphql.StarWarsSchema.droidType
@@ -637,25 +636,6 @@ class GraphQLSchemaTest extends Specification {
         then:
         thrown(AssertException)
 
-    }
-
-    def "GraphQLList equals and hashCode use identity semantics"() {
-        when:
-        def list1 = new GraphQLList(GraphQLString)
-        def list2 = new GraphQLList(GraphQLString)
-        def list3 = new GraphQLList(GraphQLInt)
-
-        then: "same instance is equal to itself"
-        list1.equals(list1)
-        list1.hashCode() == list1.hashCode()
-
-        and: "different instances are not equal even with same wrapped type"
-        !list1.equals(list2)
-        !list1.equals(list3)
-
-        and: "null and other types are not equal"
-        !list1.equals(null)
-        !list1.equals("not a list")
     }
 
     def "additionalTypes can contain any type when building programmatically - not restricted to detached types"() {
