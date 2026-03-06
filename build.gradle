@@ -17,6 +17,7 @@ plugins {
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
     id "net.ltgt.errorprone" version '5.0.0'
+    id 'jacoco'
     //
     // Kotlin just for tests - not production code
     id 'org.jetbrains.kotlin.jvm' version '2.3.0'
@@ -295,6 +296,9 @@ shadowJar.finalizedBy extractWithoutGuava, buildNewJar
 
 task testng(type: Test) {
     useTestNG()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    dependsOn tasks.named('testClasses')
 }
 check.dependsOn testng
 
@@ -371,7 +375,9 @@ int testCount = 0
 long testTime = 0L
 
 tasks.withType(Test) {
-    useJUnitPlatform()
+    if (!name.startsWith('testng')) {
+        useJUnitPlatform()
+    }
     maxHeapSize = "1g"
     testLogging {
         events "FAILED", "SKIPPED"
@@ -438,9 +444,45 @@ tasks.register('testWithJava11', Test) {
 
 }
 
+['11', '17', '21'].each { ver ->
+    tasks.register("testngWithJava${ver}", Test) {
+        useTestNG()
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(ver)
+        }
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        dependsOn tasks.named('testClasses')
+    }
+}
+
 test.dependsOn testWithJava21
 test.dependsOn testWithJava17
 test.dependsOn testWithJava11
+
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+
+    // Exclude generated ANTLR code from coverage
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    'graphql/parser/antlr/**',
+                    'graphql/com/google/**',
+                    'graphql/org/antlr/**'
+            ])
+        }))
+    }
+}
 
 
 /*

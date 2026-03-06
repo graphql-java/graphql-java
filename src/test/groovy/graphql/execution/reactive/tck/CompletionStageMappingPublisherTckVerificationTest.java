@@ -39,7 +39,7 @@ public class CompletionStageMappingPublisherTckVerificationTest extends Publishe
     @Override
     public Publisher<String> createFailedPublisher() {
         Publisher<Integer> publisher = Flowable.error(() -> new RuntimeException("Bang"));
-        Function<Integer, CompletionStage<String>> mapper = i -> CompletableFuture.supplyAsync(() -> i + "!");
+        Function<Integer, CompletionStage<String>> mapper = i -> CompletableFuture.supplyAsync(() -> i + "!", Executors.newSingleThreadExecutor());
         return new CompletionStageMappingPublisher<>(publisher, mapper);
     }
 
