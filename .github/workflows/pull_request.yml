@@ -396,3 +396,26 @@ jobs:
           distribution: 'corretto'
       - name: Verify Javadoc
         run: ./gradlew javadoc --info --stacktrace
+  allBuildAndTestSuccessful:
+    if: always()
+    needs:
+      - buildAndTest
+      - test-summary
+      - javadoc
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all jobs passed
+        run: |
+          if [ "${{ needs.buildAndTest.result }}" != "success" ]; then
+            echo "buildAndTest failed with result: ${{ needs.buildAndTest.result }}"
+            exit 1
+          fi
+          if [ "${{ needs.test-summary.result }}" != "success" ] && [ "${{ needs.test-summary.result }}" != "skipped" ]; then
+            echo "test-summary failed with result: ${{ needs.test-summary.result }}"
+            exit 1
+          fi
+          if [ "${{ needs.javadoc.result }}" != "success" ]; then
+            echo "javadoc failed with result: ${{ needs.javadoc.result }}"
+            exit 1
+          fi
+          echo "All build and test jobs passed successfully."
