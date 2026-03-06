@@ -34,7 +34,7 @@ plugins {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21) // build on 21 - release on 11
+        languageVersion = JavaLanguageVersion.of(25) // build on 25 - release on 11
     }
 }
 
