@@ -50,6 +50,7 @@ jobs:
         run: |
           if [ "${{ matrix.label }}" = "jcstress" ]; then
             set -o pipefail
+            mkdir -p build
             ./gradlew ${{matrix.gradle-argument}} --info --stacktrace 2>&1 | tee build/jcstress-output.txt
           else
             ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
