@@ -11,6 +11,8 @@ import graphql.Internal;
 import graphql.Profiler;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.execution.directives.OperationDirectivesResolver;
+import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -73,6 +75,7 @@ public class ExecutionContext {
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
     private final EngineRunningState engineRunningState;
 
+    private final Map<OperationDefinition, List<QueryAppliedDirective>> opDirectivesMap;
     private final Profiler profiler;
 
     ExecutionContext(ExecutionContextBuilder builder) {
@@ -102,6 +105,7 @@ public class ExecutionContext {
         this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
+        this.opDirectivesMap = builder.opDirectivesMap;
         this.profiler = builder.profiler;
     }
 
@@ -137,6 +141,22 @@ public class ExecutionContext {
         return operationDefinition;
     }
 
+    /**
+     * @return the map of {@link QueryAppliedDirective}s by name that were on this executing operation
+     */
+    public Map<String, List<QueryAppliedDirective>> getOperationDirectives() {
+        List<QueryAppliedDirective> list = opDirectivesMap.get(getOperationDefinition());
+        return OperationDirectivesResolver.toAppliedDirectivesByName(list);
+    }
+
+    /**
+     * @return the map of all the  {@link QueryAppliedDirective}s that were on the {@link Document} including
+     * {@link OperationDefinition}s that are not currently executing.
+     */
+    public Map<OperationDefinition, List<QueryAppliedDirective>> getAllOperationDirectives() {
+        return opDirectivesMap;
+    }
+
     public CoercedVariables getCoercedVariables() {
         return coercedVariables;
     }
@@ -156,7 +176,7 @@ public class ExecutionContext {
      * @deprecated use {@link #getGraphQLContext()} instead
      */
     @Deprecated(since = "2021-07-05")
-    @SuppressWarnings({ "unchecked", "TypeParameterUnusedInFormals" })
+    @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
     public @Nullable <T> T getContext() {
         return (T) context;
     }

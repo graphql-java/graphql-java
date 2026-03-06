@@ -12,6 +12,8 @@ import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.Profiler;
+import graphql.execution.directives.OperationDirectivesResolver;
+import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -40,6 +42,7 @@ import org.reactivestreams.Publisher;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -55,6 +58,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 @Internal
 public class Execution {
     private final FieldCollector fieldCollector = new FieldCollector();
+    private final OperationDirectivesResolver operationDirectivesResolver = new OperationDirectivesResolver();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -100,8 +104,13 @@ public class Execution {
 
         boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
 
-        ResponseMapFactory responseMapFactory = GraphQL.unusualConfiguration(executionInput.getGraphQLContext())
+        GraphQLContext graphQLContext = executionInput.getGraphQLContext();
+        Locale locale = executionInput.getLocale();
+
+        ResponseMapFactory responseMapFactory = GraphQL.unusualConfiguration(graphQLContext)
                 .responseMapFactory().getOr(ResponseMapFactory.DEFAULT);
+
+        Map<OperationDefinition, List<QueryAppliedDirective>> opDirectivesMap = operationDirectivesResolver.resolveDirectives(document, graphQLSchema, coercedVariables, graphQLContext, locale);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -112,7 +121,7 @@ public class Execution {
                 .mutationStrategy(mutationStrategy)
                 .subscriptionStrategy(subscriptionStrategy)
                 .context(executionInput.getContext())
-                .graphQLContext(executionInput.getGraphQLContext())
+                .graphQLContext(graphQLContext)
                 .localContext(executionInput.getLocalContext())
                 .root(executionInput.getRoot())
                 .fragmentsByName(getOperationResult.fragmentsByName)
@@ -120,8 +129,9 @@ public class Execution {
                 .normalizedVariableValues(normalizedVariableValues)
                 .document(document)
                 .operationDefinition(getOperationResult.operationDefinition)
+                .operationDirectives(opDirectivesMap)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
-                .locale(executionInput.getLocale())
+                .locale(locale)
                 .valueUnboxer(valueUnboxer)
                 .responseMapFactory(responseMapFactory)
                 .executionInput(executionInput)

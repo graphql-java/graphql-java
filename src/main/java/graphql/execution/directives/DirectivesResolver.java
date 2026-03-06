@@ -3,6 +3,7 @@ package graphql.execution.directives;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableList;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.CoercedVariables;
@@ -13,6 +14,7 @@ import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -61,4 +63,31 @@ public class DirectivesResolver {
             }
         });
     }
+
+    public List<QueryAppliedDirective> toAppliedDirectives(List<Directive> directives, GraphQLSchema schema, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
+        BiMap<GraphQLDirective, Directive> directivesMap = resolveDirectives(directives, schema, variables, graphQLContext, locale);
+        return toAppliedDirectives(directivesMap.keySet());
+    }
+
+    public List<QueryAppliedDirective> toAppliedDirectives(Collection<GraphQLDirective> directives) {
+        return directives.stream().map(this::toAppliedDirective).collect(ImmutableList.toImmutableList());
+    }
+
+    public QueryAppliedDirective toAppliedDirective(GraphQLDirective directive) {
+        QueryAppliedDirective.Builder builder = QueryAppliedDirective.newDirective();
+        builder.name(directive.getName());
+        for (GraphQLArgument argument : directive.getArguments()) {
+            builder.argument(toAppliedArgument(argument));
+        }
+        return builder.build();
+    }
+
+    public QueryAppliedDirectiveArgument toAppliedArgument(GraphQLArgument argument) {
+        return QueryAppliedDirectiveArgument.newArgument()
+                .name(argument.getName())
+                .type(argument.getType())
+                .inputValueWithState(argument.getArgumentValue())
+                .build();
+    }
+
 }

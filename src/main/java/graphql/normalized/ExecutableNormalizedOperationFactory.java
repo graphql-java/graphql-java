@@ -16,6 +16,8 @@ import graphql.execution.NormalizedVariables;
 import graphql.execution.RawVariables;
 import graphql.execution.ValuesResolver;
 import graphql.execution.conditional.ConditionalNodes;
+import graphql.execution.directives.OperationDirectivesResolver;
+import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.incremental.IncrementalUtils;
@@ -449,6 +451,7 @@ public class ExecutableNormalizedOperationFactory {
         private final CoercedVariables coercedVariableValues;
         private final @Nullable NormalizedVariables normalizedVariableValues;
         private final Options options;
+        private final OperationDirectivesResolver directivesResolver = new OperationDirectivesResolver();
 
         private final List<PossibleMerger> possibleMergerList = new ArrayList<>();
 
@@ -487,9 +490,17 @@ public class ExecutableNormalizedOperationFactory {
                 List<ExecutableNormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
                 ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema, options.deferSupport);
             }
+
+            Map<String, List<QueryAppliedDirective>> operationDirectives = directivesResolver.resolveDirectiveByName(operationDefinition,
+                    graphQLSchema,
+                    coercedVariableValues,
+                    options.graphQLContext,
+                    options.locale);
+
             return new ExecutableNormalizedOperation(
                     operationDefinition.getOperation(),
                     operationDefinition.getName(),
+                    operationDirectives,
                     new ArrayList<>(rootEnfs),
                     fieldToNormalizedField.build(),
                     normalizedFieldToMergedField.build(),
