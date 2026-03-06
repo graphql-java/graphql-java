@@ -16,6 +16,7 @@ plugins {
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
+    id "io.github.reyerizo.gradle.jcstress" version "0.9.0"
     id "net.ltgt.errorprone" version '5.0.0'
     id 'jacoco'
     //
@@ -225,6 +226,15 @@ tasks.named('jmhJar') {
     }
 }
 
+jcstress {
+}
+
+tasks.named('jcstress') {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
 jmh {
     if (project.hasProperty('jmhInclude')) {
         includes = [project.property('jmhInclude')]
@@ -306,7 +316,7 @@ compileJava {
     options.compilerArgs += ["-parameters"]
     source file("build/generated-src"), sourceSets.main.java
     // Gradle 9 requires explicit task dependencies
-    mustRunAfter generateTestGrammarSource, generateJmhGrammarSource
+    mustRunAfter generateTestGrammarSource, generateJmhGrammarSource, generateJcstressGrammarSource
 }
 
 tasks.withType(GroovyCompile) {
@@ -332,7 +342,7 @@ tasks.withType(JavaCompile) {
         option("NullAway:JSpecifyMode", "true")
     }
     // Include to disable NullAway on test code
-    if (name.toLowerCase().contains("test")) {
+    if (name.toLowerCase().contains("test") || name.toLowerCase().contains("jcstress")) {
         options.errorprone {
             disable("NullAway")
         }
