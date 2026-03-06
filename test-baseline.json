@@ -39,8 +39,8 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8331,
-        "missed": 1511
+        "covered": 8332,
+        "missed": 1510
       },
       "line": {
         "covered": 28698,
@@ -4156,12 +4156,12 @@
       },
       "graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 125,
-          "missed": 9
+          "covered": 124,
+          "missed": 10
         },
         "branch": {
-          "covered": 47,
-          "missed": 3
+          "covered": 46,
+          "missed": 4
         },
         "method": {
           "covered": 21,
@@ -4170,12 +4170,12 @@
       },
       "graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 80,
-          "missed": 1
+          "covered": 81,
+          "missed": 0
         },
         "branch": {
-          "covered": 24,
-          "missed": 2
+          "covered": 26,
+          "missed": 0
         },
         "method": {
           "covered": 17,
