@@ -42,12 +42,26 @@ jobs:
             const path = require('path');
 
             // --- Find the PR number from the triggering workflow run ---
-            const prNumbers = context.payload.workflow_run.pull_requests.map(pr => pr.number);
-            if (prNumbers.length === 0) {
+            // payload.workflow_run.pull_requests is often empty, so fall back
+            // to searching by head branch + repo when needed.
+            let prNumber = (context.payload.workflow_run.pull_requests || [])[0]?.number;
+            if (!prNumber) {
+              const headBranch = context.payload.workflow_run.head_branch;
+              const headRepo = context.payload.workflow_run.head_repository.full_name;
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: `${headRepo}:${headBranch}`,
+                state: 'open',
+              });
+              if (prs.length > 0) {
+                prNumber = prs[0].number;
+              }
+            }
+            if (!prNumber) {
               console.log('No pull request associated with this workflow run, skipping.');
               return;
             }
-            const prNumber = prNumbers[0];
             console.log(`Posting report for PR #${prNumber}`);
 
             const versions = ['java11', 'java17', 'java21', 'java25', 'jcstress'];
