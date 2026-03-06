@@ -32,8 +32,7 @@ public class CompletionStageOrderedSubscriber<U, D> extends CompletionStageSubsc
                 emptyInFlightQueueIfWeCan();
             }
         } finally {
-            boolean empty = inFlightQIsEmpty();
-            finallyAfterEachPromiseFinishes(empty);
+            finallyAfterEachPromiseFinishes();
         }
     }
 
