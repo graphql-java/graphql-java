@@ -5,6 +5,14 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 import java.text.SimpleDateFormat
 
+buildscript {
+    repositories { mavenCentral() }
+    dependencies {
+        classpath 'org.ow2.asm:asm:9.7.1'
+        classpath 'org.ow2.asm:asm-tree:9.7.1'
+    }
+}
+
 plugins {
     id 'java'
     id 'java-library'
@@ -16,7 +24,9 @@ plugins {
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
+    id "io.github.reyerizo.gradle.jcstress" version "0.9.0"
     id "net.ltgt.errorprone" version '5.0.0'
+    id 'jacoco'
     //
     // Kotlin just for tests - not production code
     id 'org.jetbrains.kotlin.jvm' version '2.3.0'
@@ -24,7 +34,7 @@ plugins {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21) // build on 21 - release on 11
+        languageVersion = JavaLanguageVersion.of(25) // build on 25 - release on 11
     }
 }
 
@@ -78,7 +88,7 @@ def getDevelopmentVersion() {
     def gitRevParseError = new StringBuilder()
     def gitRevParse = ["git", "-C", projectDir.toString(), "rev-parse", "--abbrev-ref", "HEAD"].execute()
     gitRevParse.waitForProcessOutput(gitRevParseOutput, gitRevParseError)
-    def branchName = gitRevParseOutput.toString().trim()
+    def branchName = gitRevParseOutput.toString().trim().replaceAll('[/\\\\]', '-')
 
     return makeDevelopmentVersion(["0.0.0", branchName, "SNAPSHOT"])
 }
@@ -224,6 +234,15 @@ tasks.named('jmhJar') {
     }
 }
 
+jcstress {
+}
+
+tasks.named('jcstress') {
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
 jmh {
     if (project.hasProperty('jmhInclude')) {
         includes = [project.property('jmhInclude')]
@@ -293,8 +312,99 @@ buildNewJar.dependsOn extractWithoutGuava
 shadowJar.finalizedBy extractWithoutGuava, buildNewJar
 
 
+// --- TestNG TCK skip verification ---
+// The Reactive Streams TCK PublisherVerification base class silently converts optional test
+// failures to skips. We verify the exact set of 49 expected skips after each testng run so
+// that a newly-silenced failure (or a newly-passing test) is caught immediately.
+
+def buildExpectedTestngSkips() {
+    def pkg = 'graphql.execution.reactive.tck.'
+    def allClasses = [
+            'CompletionStageMappingOrderedPublisherTckVerificationTest',
+            'CompletionStageMappingOrderedPublisherRandomCompleteTckVerificationTest',
+            'CompletionStageMappingPublisherTckVerificationTest',
+            'CompletionStageMappingPublisherRandomCompleteTckVerificationTest',
+            'SingleSubscriberPublisherTckVerificationTest',
+    ]
+    def multiSubscriberClasses = allClasses - ['SingleSubscriberPublisherTckVerificationTest']
+
+    // 8 methods skipped by all 5 classes (required_spec317 + 7 untested) = 40
+    def commonSkippedMethods = [
+            'required_spec317_mustNotSignalOnErrorWhenPendingAboveLongMaxValue',
+            'untested_spec106_mustConsiderSubscriptionCancelledAfterOnErrorOrOnCompleteHasBeenCalled',
+            'untested_spec107_mustNotEmitFurtherSignalsOnceOnErrorHasBeenSignalled',
+            'untested_spec108_possiblyCanceledSubscriptionShouldNotReceiveOnErrorOrOnCompleteSignals',
+            'untested_spec109_subscribeShouldNotThrowNonFatalThrowable',
+            'untested_spec110_rejectASubscriptionRequestIfTheSameSubscriberSubscribesTwice',
+            'untested_spec304_requestShouldNotPerformHeavyComputations',
+            'untested_spec305_cancelMustNotSynchronouslyPerformHeavyComputation',
+    ]
+
+    // 1 method skipped by 4 multi-subscriber classes = 4
+    def multiSubscriberSkippedMethods = [
+            'stochastic_spec103_mustSignalOnMethodsSequentially',
+    ]
+
+    // 5 methods skipped by SingleSubscriber only = 5
+    def singleSubscriberSkippedMethods = [
+            'optional_spec111_maySupportMultiSubscribe',
+            'optional_spec111_multicast_mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingManyUpfront',
+            'optional_spec111_multicast_mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingManyUpfrontAndCompleteAsExpected',
+            'optional_spec111_multicast_mustProduceTheSameElementsInTheSameSequenceToAllOfItsSubscribersWhenRequestingOneByOne',
+            'optional_spec111_registeredSubscribersMustReceiveOnNextOrOnCompleteSignals',
+    ]
+
+    def expected = [] as Set<String>
+    allClasses.each { cls ->
+        commonSkippedMethods.each { method -> expected.add(pkg + cls + '.' + method) }
+    }
+    multiSubscriberClasses.each { cls ->
+        multiSubscriberSkippedMethods.each { method -> expected.add(pkg + cls + '.' + method) }
+    }
+    singleSubscriberSkippedMethods.each { method ->
+        expected.add(pkg + 'SingleSubscriberPublisherTckVerificationTest.' + method)
+    }
+    return expected  // 40 + 4 + 5 = 49
+}
+
+def verifyTestngSkips(Task task, Set<String> expected) {
+    def xmlDir = task.reports.junitXml.outputLocation.asFile.get()
+    def actualSkips = [] as Set<String>
+    xmlDir.eachFileMatch(~/TEST-.*\.xml/) { file ->
+        def testsuite = new groovy.xml.XmlSlurper().parse(file)
+        testsuite.testcase.each { tc ->
+            if (tc.skipped.size() > 0) {
+                actualSkips.add(tc.@classname.toString() + '.' + tc.@name.toString())
+            }
+        }
+    }
+
+    def unexpected = actualSkips - expected
+    def missing = expected - actualSkips
+    if (unexpected || missing) {
+        def msg = new StringBuilder("TestNG TCK skip verification failed!\n")
+        if (unexpected) {
+            msg.append("\nUnexpected skips (tests that should pass but were skipped):\n")
+            unexpected.toSorted().each { msg.append("  + ${it}\n") }
+        }
+        if (missing) {
+            msg.append("\nMissing skips (tests that should be skipped but were not):\n")
+            missing.toSorted().each { msg.append("  - ${it}\n") }
+        }
+        msg.append("\nUpdate buildExpectedTestngSkips() in build.gradle if these changes are intentional.")
+        throw new GradleException(msg.toString())
+    }
+    logger.lifecycle("TestNG TCK skip verification passed: ${actualSkips.size()} skips match expected set.")
+}
+
+def expectedTestngSkips = buildExpectedTestngSkips()
+
 task testng(type: Test) {
     useTestNG()
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    dependsOn tasks.named('testClasses')
+    doLast { verifyTestngSkips(it, expectedTestngSkips) }
 }
 check.dependsOn testng
 
@@ -302,7 +412,7 @@ compileJava {
     options.compilerArgs += ["-parameters"]
     source file("build/generated-src"), sourceSets.main.java
     // Gradle 9 requires explicit task dependencies
-    mustRunAfter generateTestGrammarSource, generateJmhGrammarSource
+    mustRunAfter generateTestGrammarSource, generateJmhGrammarSource, generateJcstressGrammarSource
 }
 
 tasks.withType(GroovyCompile) {
@@ -328,7 +438,7 @@ tasks.withType(JavaCompile) {
         option("NullAway:JSpecifyMode", "true")
     }
     // Include to disable NullAway on test code
-    if (name.toLowerCase().contains("test")) {
+    if (name.toLowerCase().contains("test") || name.toLowerCase().contains("jcstress")) {
         options.errorprone {
             disable("NullAway")
         }
@@ -371,7 +481,10 @@ int testCount = 0
 long testTime = 0L
 
 tasks.withType(Test) {
-    useJUnitPlatform()
+    if (!name.startsWith('testng')) {
+        useJUnitPlatform()
+    }
+    maxHeapSize = "1g"
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
@@ -437,10 +550,96 @@ tasks.register('testWithJava11', Test) {
 
 }
 
+['11', '17', '21'].each { ver ->
+    tasks.register("testngWithJava${ver}", Test) {
+        useTestNG()
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(ver)
+        }
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        dependsOn tasks.named('testClasses')
+        doLast { verifyTestngSkips(it, expectedTestngSkips) }
+    }
+}
+
 test.dependsOn testWithJava21
 test.dependsOn testWithJava17
 test.dependsOn testWithJava11
 
+jacoco {
+    toolVersion = "0.8.12"
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+
+    // Exclude generated ANTLR code from coverage
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: [
+                    'graphql/parser/antlr/**',
+                    'graphql/com/google/**',
+                    'graphql/org/antlr/**'
+            ])
+        }))
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Mark identity equals(Object)/hashCode() with a @Generated annotation so
+// JaCoCo's AnnotationGeneratedFilter excludes them from coverage.
+// The annotation class need not exist — JaCoCo only inspects the descriptor
+// string in the bytecode, and the JVM ignores unknown CLASS-retention
+// annotations.
+// ---------------------------------------------------------------------------
+tasks.register('markGeneratedEqualsHashCode') {
+    description = 'Add @Generated annotation to equals/hashCode so JaCoCo ignores them'
+    dependsOn classes
+
+    doLast {
+        def dir = layout.buildDirectory.dir('classes/java/main').get().asFile
+        if (!dir.exists()) return
+
+        def ANNOTATION = 'Lgraphql/coverage/Generated;'
+
+        dir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+            if (!file.name.endsWith('.class')) return
+
+            def bytes = file.bytes
+            def classNode = new org.objectweb.asm.tree.ClassNode()
+            new org.objectweb.asm.ClassReader(bytes).accept(classNode, 0)
+
+            boolean modified = false
+            for (method in classNode.methods) {
+                if ((method.name == 'equals' && method.desc == '(Ljava/lang/Object;)Z') ||
+                        (method.name == 'hashCode' && method.desc == '()I')) {
+                    if (method.invisibleAnnotations == null) {
+                        method.invisibleAnnotations = []
+                    }
+                    method.invisibleAnnotations.add(new org.objectweb.asm.tree.AnnotationNode(ANNOTATION))
+                    modified = true
+                }
+            }
+
+            if (modified) {
+                def writer = new org.objectweb.asm.ClassWriter(0)
+                classNode.accept(writer)
+                file.bytes = writer.toByteArray()
+            }
+        }
+    }
+}
+
+// Ensure the annotation task runs before anything that reads the main class files
+tasks.named('test') { dependsOn markGeneratedEqualsHashCode }
+tasks.named('compileTestJava') { dependsOn markGeneratedEqualsHashCode }
+tasks.named('jar') { dependsOn markGeneratedEqualsHashCode }
 
 /*
  * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7
