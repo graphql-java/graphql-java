@@ -46,12 +46,6 @@ jobs:
           else
             ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
           fi
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
-        if: always() && matrix.label != 'check' && matrix.label != 'jcstress'
-        with:
-          files: |
-            **/build/test-results/*/TEST-*.xml
       - name: Upload Coverage XML Report
         uses: actions/upload-artifact@v4
         if: always() && matrix.label == 'java25'

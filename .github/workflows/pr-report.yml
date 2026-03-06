@@ -47,11 +47,11 @@ jobs:
             let prNumber = (context.payload.workflow_run.pull_requests || [])[0]?.number;
             if (!prNumber) {
               const headBranch = context.payload.workflow_run.head_branch;
-              const headRepo = context.payload.workflow_run.head_repository.full_name;
+              const headOwner = context.payload.workflow_run.head_repository.owner.login;
               const { data: prs } = await github.rest.pulls.list({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                head: `${headRepo}:${headBranch}`,
+                head: `${headOwner}:${headBranch}`,
                 state: 'open',
               });
               if (prs.length > 0) {
