@@ -491,7 +491,7 @@ public class ExecutableNormalizedOperationFactory {
                 ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema, options.deferSupport);
             }
 
-            Map<String, List<QueryAppliedDirective>> operationDirectives = directivesResolver.resolveDirectiveByName(operationDefinition,
+            Map<String, List<QueryAppliedDirective>> operationDirectives = directivesResolver.resolveDirectivesByName(operationDefinition,
                     graphQLSchema,
                     coercedVariableValues,
                     options.graphQLContext,

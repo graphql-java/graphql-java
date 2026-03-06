@@ -40,7 +40,7 @@ public class OperationDirectivesResolver {
         );
     }
 
-    public Map<String, List<QueryAppliedDirective>> resolveDirectiveByName(OperationDefinition operationDefinition, GraphQLSchema schema, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
+    public Map<String, List<QueryAppliedDirective>> resolveDirectivesByName(OperationDefinition operationDefinition, GraphQLSchema schema, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
         List<QueryAppliedDirective> list = resolveDirectives(operationDefinition, schema, variables, graphQLContext, locale);
         return toAppliedDirectivesByName(list);
     }
