@@ -111,7 +111,8 @@ public class Execution {
         ResponseMapFactory responseMapFactory = GraphQL.unusualConfiguration(graphQLContext)
                 .responseMapFactory().getOr(ResponseMapFactory.DEFAULT);
 
-        Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> opDirectivesMap = operationDirectivesResolver.resolveDirectives(document, graphQLSchema, coercedVariables, graphQLContext, locale);
+        Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> operationDirectives = operationDirectivesResolver
+                .resolveDirectives(document, graphQLSchema, coercedVariables, graphQLContext, locale);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -130,7 +131,7 @@ public class Execution {
                 .normalizedVariableValues(normalizedVariableValues)
                 .document(document)
                 .operationDefinition(getOperationResult.operationDefinition)
-                .operationDirectives(opDirectivesMap)
+                .operationDirectives(operationDirectives)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .locale(locale)
                 .valueUnboxer(valueUnboxer)

@@ -75,7 +75,8 @@ public class ExecutionContext {
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
     private final EngineRunningState engineRunningState;
 
-    private final Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> opDirectivesMap;
+    private final Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> allOperationsDirectives;
+    private final Map<String, ImmutableList<QueryAppliedDirective>> operationDirectives;
     private final Profiler profiler;
 
     ExecutionContext(ExecutionContextBuilder builder) {
@@ -105,8 +106,10 @@ public class ExecutionContext {
         this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
-        this.opDirectivesMap = builder.opDirectivesMap;
         this.profiler = builder.profiler;
+        this.allOperationsDirectives = builder.opDirectivesMap;
+        List<QueryAppliedDirective> list = allOperationsDirectives.get(getOperationDefinition());
+        this.operationDirectives = OperationDirectivesResolver.toAppliedDirectivesByName(list);
     }
 
     public ExecutionId getExecutionId() {
@@ -145,8 +148,7 @@ public class ExecutionContext {
      * @return the map of {@link QueryAppliedDirective}s by name that were on this executing operation
      */
     public Map<String, ImmutableList<QueryAppliedDirective>> getOperationDirectives() {
-        List<QueryAppliedDirective> list = opDirectivesMap.get(getOperationDefinition());
-        return OperationDirectivesResolver.toAppliedDirectivesByName(list);
+        return operationDirectives;
     }
 
     /**
@@ -154,7 +156,7 @@ public class ExecutionContext {
      * {@link OperationDefinition}s that are not currently executing.
      */
     public Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> getAllOperationDirectives() {
-        return opDirectivesMap;
+        return allOperationsDirectives;
     }
 
     public CoercedVariables getCoercedVariables() {
