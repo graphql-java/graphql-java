@@ -116,6 +116,7 @@ jobs:
           name: test-stats-${{ matrix.label }}
           path: /tmp/test-stats/${{ matrix.label }}.json
   test-summary:
+    name: "Test Report & Per-Class Coverage Gate"
     needs: buildAndTest
     if: always() && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -133,7 +134,7 @@ jobs:
         with:
           name: coverage-report
           path: coverage/
-      - name: Generate Unified Test Report Comment
+      - name: Post Test Report and Enforce Per-Class Coverage Gate
         uses: actions/github-script@v7
         with:
           script: |
@@ -442,7 +443,7 @@ jobs:
             exit 1
           fi
           if [ "${{ needs.test-summary.result }}" != "success" ] && [ "${{ needs.test-summary.result }}" != "skipped" ]; then
-            echo "test-summary failed with result: ${{ needs.test-summary.result }}"
+            echo "Test Report & Per-Class Coverage Gate failed with result: ${{ needs.test-summary.result }}"
             exit 1
           fi
           if [ "${{ needs.javadoc.result }}" != "success" ]; then
