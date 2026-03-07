@@ -17,7 +17,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -38,13 +40,14 @@ import static graphql.util.FpKit.valuesToList;
  * See <a href="https://graphql.org/learn/schema/#interfaces">https://graphql.org/learn/schema/#interfaces</a> for more details on the concept.
  */
 @PublicApi
+@NullMarked
 public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {
 
     private final String name;
-    private final String description;
+    private final @Nullable String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName;
-    private final TypeResolver typeResolver;
-    private final InterfaceTypeDefinition definition;
+    private final @Nullable TypeResolver typeResolver;
+    private final @Nullable InterfaceTypeDefinition definition;
     private final ImmutableList<InterfaceTypeExtensionDefinition> extensionDefinitions;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
 
@@ -57,12 +60,12 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     @Internal
     private GraphQLInterfaceType(String name,
-                                 String description,
+                                 @Nullable String description,
                                  List<GraphQLFieldDefinition> fieldDefinitions,
-                                 TypeResolver typeResolver,
+                                 @Nullable TypeResolver typeResolver,
                                  List<GraphQLDirective> directives,
                                  List<GraphQLAppliedDirective> appliedDirectives,
-                                 InterfaceTypeDefinition definition,
+                                 @Nullable InterfaceTypeDefinition definition,
                                  List<InterfaceTypeExtensionDefinition> extensionDefinitions,
                                  List<GraphQLNamedOutputType> interfaces,
                                  Comparator<? super GraphQLSchemaElement> interfaceComparator) {
@@ -87,7 +90,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     }
 
     @Override
-    public GraphQLFieldDefinition getFieldDefinition(String name) {
+    public @Nullable GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }
 
@@ -101,7 +104,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         return name;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
@@ -112,7 +115,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         return typeResolver;
     }
 
-    public InterfaceTypeDefinition getDefinition() {
+    public @Nullable InterfaceTypeDefinition getDefinition() {
         return definition;
     }
 
