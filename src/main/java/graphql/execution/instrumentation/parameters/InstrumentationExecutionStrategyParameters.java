@@ -3,10 +3,12 @@ package graphql.execution.instrumentation.parameters;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Parameters sent to {@link graphql.execution.instrumentation.Instrumentation} methods
  */
+@NullMarked
 @PublicApi
 public class InstrumentationExecutionStrategyParameters {
 

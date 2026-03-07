@@ -1,6 +1,10 @@
-The task is to annotate public API classes (marked with `@PublicAPI`) with JSpecify nullability annotations.
+The task is to annotate public API classes (marked with `@PublicApi` or `@PublicSpi`) with JSpecify nullability annotations.
 
 Note that JSpecify is already used in this repository so it's already imported.
+
+## Scope: Public API only
+
+Only annotate classes marked `@PublicApi` or `@PublicSpi`. Do **not** add JSpecify annotations to `@Internal` classes — these are implementation details and are intentionally left unannotated.
 
 If you see a builder static class, you can label it `@NullUnmarked` and not need to do anymore for this static class in terms of annotations.
 
@@ -29,9 +33,11 @@ If you find NullAway errors, try and make the smallest possible change to fix th
 Do not make spacing or formatting changes. Avoid adjusting whitespace, line breaks, or other formatting when editing code. These changes make diffs messy and harder to review. Only make the minimal changes necessary to accomplish the task.
 
 ## Cleaning up
-Finally, can you remove this class from the JSpecifyAnnotationsCheck as an exemption
+Finally, remove this class from the exemption list in `JSpecifyAnnotationsCheck.groovy`.
 
-You do not need to run the JSpecifyAnnotationsCheck. Removing the completed class is enough.
+The exemption list contains fully-qualified class names. Remove **only** the class you just annotated — do not remove entries for `@Internal` classes or any other class you did not annotate.
+
+You do not need to run the JSpecifyAnnotationsCheck. Removing the completed class from the list is enough.
 
 Remember to delete all unused imports when you're done from the class you've just annotated.
 

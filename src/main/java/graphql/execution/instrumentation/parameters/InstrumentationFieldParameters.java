@@ -5,12 +5,16 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.function.Supplier;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
+@NullMarked
 @PublicApi
 public class InstrumentationFieldParameters {
     private final ExecutionContext executionContext;
@@ -24,7 +28,7 @@ public class InstrumentationFieldParameters {
     }
 
     public GraphQLFieldDefinition getField() {
-        return executionStepInfo.get().getFieldDefinition();
+        return assertNotNull(executionStepInfo.get().getFieldDefinition(), "fieldDefinition must not be null");
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {

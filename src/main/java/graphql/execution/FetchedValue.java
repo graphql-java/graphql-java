@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -12,9 +14,10 @@ import java.util.List;
  * and therefore part of the public despite never used in a method signature.
  */
 @PublicApi
+@NullMarked
 public class FetchedValue {
-    private final Object fetchedValue;
-    private final Object localContext;
+    private final @Nullable Object fetchedValue;
+    private final @Nullable Object localContext;
     private final ImmutableList<GraphQLError> errors;
 
     /**
@@ -25,7 +28,7 @@ public class FetchedValue {
      *
      * @return the {@link FetchedValue#getFetchedValue()} if its wrapped otherwise the source value itself
      */
-    public static Object getFetchedValue(Object sourceValue) {
+    public static @Nullable Object getFetchedValue(@Nullable Object sourceValue) {
         if (sourceValue instanceof FetchedValue) {
             return ((FetchedValue) sourceValue).fetchedValue;
         } else {
@@ -42,7 +45,7 @@ public class FetchedValue {
      *
      * @return the {@link FetchedValue#getFetchedValue()} if its wrapped otherwise the default local context
      */
-    public static Object getLocalContext(Object sourceValue, Object defaultLocalContext) {
+    public static @Nullable Object getLocalContext(@Nullable Object sourceValue, @Nullable Object defaultLocalContext) {
         if (sourceValue instanceof FetchedValue) {
             return ((FetchedValue) sourceValue).localContext;
         } else {
@@ -50,7 +53,7 @@ public class FetchedValue {
         }
     }
 
-    public FetchedValue(Object fetchedValue, List<GraphQLError> errors, Object localContext) {
+    public FetchedValue(@Nullable Object fetchedValue, List<GraphQLError> errors, @Nullable Object localContext) {
         this.fetchedValue = fetchedValue;
         this.errors = ImmutableList.copyOf(errors);
         this.localContext = localContext;
@@ -59,7 +62,7 @@ public class FetchedValue {
     /*
      * the unboxed value meaning not Optional, not DataFetcherResult etc
      */
-    public Object getFetchedValue() {
+    public @Nullable Object getFetchedValue() {
         return fetchedValue;
     }
 
@@ -67,7 +70,7 @@ public class FetchedValue {
         return errors;
     }
 
-    public Object getLocalContext() {
+    public @Nullable Object getLocalContext() {
         return localContext;
     }
 

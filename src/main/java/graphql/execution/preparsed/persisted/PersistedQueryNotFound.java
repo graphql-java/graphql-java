@@ -1,6 +1,7 @@
 package graphql.execution.preparsed.persisted;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -8,6 +9,7 @@ import java.util.Map;
 /**
  * An exception that indicates the query id is not valid and can be found ever in cache
  */
+@NullMarked
 @PublicApi
 public class PersistedQueryNotFound extends PersistedQueryError {
     private final Object persistedQueryId;
