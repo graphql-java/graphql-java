@@ -36,7 +36,7 @@ public class NodeMultiZipper<T> {
     /*
      * constructor without defensive copy of the zippers
      */
-    private NodeMultiZipper(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter, Object dummy) {
+    private NodeMultiZipper(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter, @Nullable Object dummy) {
         this.commonRoot = assertNotNull(commonRoot);
         this.zippers = ImmutableList.copyOf(zippers);
         this.nodeAdapter = nodeAdapter;
@@ -128,7 +128,7 @@ public class NodeMultiZipper<T> {
         Map<Integer, ImmutableList<NodeZipper<T>>> grouped = FpKit.groupingBy(zippers, astZipper -> astZipper.getBreadcrumbs().size());
 
         Integer maxLevel = Collections.max(grouped.keySet());
-        return grouped.get(maxLevel);
+        return assertNotNull(grouped.get(maxLevel), "expected grouped to contain maxLevel key");
     }
 
     private NodeZipper<T> moveUp(T parent, List<NodeZipper<T>> sameParent) {

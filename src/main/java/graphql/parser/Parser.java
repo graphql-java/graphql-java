@@ -329,7 +329,8 @@ public class Parser {
                 String preview = AntlrHelper.createPreview(multiSourceReader, line);
                 String msgKey;
                 List<Object> args;
-                if (antlerMsg == null || environment.getParserOptions().isRedactTokenParserErrorMessages()) {
+                ParserOptions opts = environment.getParserOptions();
+                if (antlerMsg == null || (opts != null && opts.isRedactTokenParserErrorMessages())) {
                     msgKey = "InvalidSyntax.noMessage";
                     args = ImmutableList.of(sourceLocation.getLine(), sourceLocation.getColumn());
                 } else {
@@ -391,7 +392,7 @@ public class Parser {
                 final Token token = node.getSymbol();
                 parsingListener.onToken(new ParsingListener.Token() {
                     @Override
-                    public String getText() {
+                    public @Nullable String getText() {
                         return token == null ? null : token.getText();
                     }
 

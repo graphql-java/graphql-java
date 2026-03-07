@@ -245,6 +245,7 @@ public class MultiSourceReader extends Reader {
         }
     }
 
+    @NullUnmarked
     private static class SourcePart {
         String sourceName;
         LineNumberReader lineReader;

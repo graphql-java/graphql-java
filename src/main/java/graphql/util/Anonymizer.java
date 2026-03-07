@@ -480,7 +480,7 @@ public class Anonymizer {
                 }
                 GraphQLFieldDefinition fieldDefinition = (GraphQLFieldDefinition) parentNode;
                 String fieldName = fieldDefinition.getName();
-                GraphQLImplementingType implementingType = (GraphQLImplementingType) context.getParentContext().getParentNode();
+                GraphQLImplementingType implementingType = (GraphQLImplementingType) assertNotNull(assertNotNull(context.getParentContext()).getParentNode());
                 Set<GraphQLFieldDefinition> matchingInterfaceFieldDefinitions = getSameFields(fieldName, implementingType.getName(), interfaceToImplementations, schema);
                 String newName;
                 if (matchingInterfaceFieldDefinitions.size() == 0) {
@@ -565,7 +565,7 @@ public class Anonymizer {
             @Override
             public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition graphQLFieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
                 String fieldName = graphQLFieldDefinition.getName();
-                GraphQLImplementingType parentNode = (GraphQLImplementingType) context.getParentNode();
+                GraphQLImplementingType parentNode = (GraphQLImplementingType) assertNotNull(context.getParentNode());
                 Set<GraphQLFieldDefinition> sameFields = getSameFields(fieldName, parentNode.getName(), interfaceToImplementations, schema);
                 String newName;
                 if (sameFields.size() == 0) {
@@ -798,7 +798,7 @@ public class Anonymizer {
             @Override
             public TraversalControl visitDirective(Directive directive, TraverserContext<Node> context) {
                 String newName = assertNotNull(astNodeToNewName.get(directive));
-                GraphQLDirective directiveDefinition = schema.getDirective(directive.getName());
+                GraphQLDirective directiveDefinition = assertNotNull(schema.getDirective(directive.getName()));
                 context.setVar(GraphQLDirective.class, directiveDefinition);
                 return changeNode(context, directive.transform(builder -> builder.name(newName)));
             }
@@ -886,7 +886,7 @@ public class Anonymizer {
                 GraphQLArgument graphQLArgumentDefinition;
                 // An argument is either from a applied query directive or from a field
                 if (context.getVarFromParents(GraphQLDirective.class) != null) {
-                    GraphQLDirective directiveDefinition = context.getVarFromParents(GraphQLDirective.class);
+                    GraphQLDirective directiveDefinition = assertNotNull(context.getVarFromParents(GraphQLDirective.class));
                     graphQLArgumentDefinition = directiveDefinition.getArgument(argument.getName());
                 } else {
                     GraphQLFieldDefinition graphQLFieldDefinition = assertNotNull(context.getVarFromParents(GraphQLFieldDefinition.class));
