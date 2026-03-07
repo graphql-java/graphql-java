@@ -5,6 +5,7 @@ import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.PublicApi;
 import graphql.introspection.IntrospectionQuery;
+import org.jspecify.annotations.NullMarked;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.Document;
 import graphql.parser.Parser;
@@ -17,6 +18,7 @@ import java.util.Map;
  * Interface used to define 2 schemas that can be diffed by the {@link SchemaDiff} operation.
  */
 @PublicApi
+@NullMarked
 public class SchemaDiffSet {
 
     private final Document oldSchemaDoc;

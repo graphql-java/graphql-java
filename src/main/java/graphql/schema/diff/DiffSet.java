@@ -5,6 +5,7 @@ import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.PublicApi;
 import graphql.introspection.IntrospectionQuery;
+import org.jspecify.annotations.NullMarked;
 import graphql.schema.GraphQLSchema;
 
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.Map;
  * {@link graphql.introspection.IntrospectionQuery}.
  */
 @PublicApi
+@NullMarked
 @Deprecated(since = "2023-10-04")
 public class DiffSet {
 
