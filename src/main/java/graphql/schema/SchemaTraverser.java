@@ -3,6 +3,7 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
@@ -20,6 +21,7 @@ import java.util.function.Function;
 import static graphql.util.TraversalControl.CONTINUE;
 
 @PublicApi
+@NullMarked
 public class SchemaTraverser {
 
 
