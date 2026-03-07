@@ -4,6 +4,8 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.introspection.Introspection;
 import graphql.schema.idl.ScalarInfo;
 import graphql.util.Breadcrumb;
@@ -76,6 +78,7 @@ import static graphql.util.TraversalControl.CONTINUE;
  * </pre>
  */
 @PublicApi
+@NullMarked
 public class SchemaTransformer {
 
     /**
@@ -152,7 +155,7 @@ public class SchemaTransformer {
      *
      * @see GraphQLTypeVisitor#deleteNode(TraverserContext)
      */
-    public static GraphQLSchema transformSchemaWithDeletes(GraphQLSchema schema, GraphQLTypeVisitor visitor, Consumer<GraphQLSchema.Builder> postTransformation) {
+    public static GraphQLSchema transformSchemaWithDeletes(GraphQLSchema schema, GraphQLTypeVisitor visitor, @Nullable Consumer<GraphQLSchema.Builder> postTransformation) {
         SchemaTransformer schemaTransformer = new SchemaTransformer();
         return (GraphQLSchema) schemaTransformer.transformImpl(schema, null, visitor, postTransformation, true);
     }
@@ -185,10 +188,10 @@ public class SchemaTransformer {
         return (T) transformImpl(null, schemaElement, visitor, null, false);
     }
 
-    private Object transformImpl(final GraphQLSchema schema,
-                                 GraphQLSchemaElement schemaElement,
+    private Object transformImpl(final @Nullable GraphQLSchema schema,
+                                 @Nullable GraphQLSchemaElement schemaElement,
                                  GraphQLTypeVisitor visitor,
-                                 Consumer<GraphQLSchema.Builder> postTransformation,
+                                 @Nullable Consumer<GraphQLSchema.Builder> postTransformation,
                                  boolean ensureAllTypesAreVisited) {
         DummyRoot dummyRoot;
         GraphQLCodeRegistry.Builder codeRegistry = null;
@@ -249,8 +252,8 @@ public class SchemaTransformer {
                                          Map<String, GraphQLNamedType> typesWhereNameIsChanged,
                                          Set<String> allChangedNamedTypes,
                                          Map<String, GraphQLTypeReference> typeReferences,
-                                         GraphQLTypeVisitor visitor, GraphQLCodeRegistry.Builder codeRegistry,
-                                         GraphQLSchema schema) {
+                                         GraphQLTypeVisitor visitor, GraphQLCodeRegistry.@Nullable Builder codeRegistry,
+                                         @Nullable GraphQLSchema schema) {
         List<NodeZipper<GraphQLSchemaElement>> zippers = new LinkedList<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByNodeAfterTraversing = new LinkedHashMap<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByOriginalNode = new LinkedHashMap<>();
