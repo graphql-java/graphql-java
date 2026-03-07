@@ -12,7 +12,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
@@ -25,23 +27,24 @@ import static graphql.Assert.assertValidName;
  * @see graphql.schema.GraphQLEnumType
  */
 @PublicApi
+@NullMarked
 public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer {
 
     private final String name;
-    private final String description;
-    private final Object value;
-    private final String deprecationReason;
+    private final @Nullable String description;
+    private final @Nullable Object value;
+    private final @Nullable String deprecationReason;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
-    private final EnumValueDefinition definition;
+    private final @Nullable EnumValueDefinition definition;
 
     @Internal
     private GraphQLEnumValueDefinition(String name,
-                                       String description,
-                                       Object value,
-                                       String deprecationReason,
+                                       @Nullable String description,
+                                       @Nullable Object value,
+                                       @Nullable String deprecationReason,
                                        List<GraphQLDirective> directives,
                                        List<GraphQLAppliedDirective> appliedDirectives,
-                                       EnumValueDefinition definition) {
+                                       @Nullable EnumValueDefinition definition) {
         assertValidName(name);
         assertNotNull(directives, "directives cannot be null");
 
@@ -58,11 +61,11 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         return name;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public Object getValue() {
+    public @Nullable Object getValue() {
         return value;
     }
 
@@ -70,7 +73,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         return deprecationReason != null;
     }
 
-    public String getDeprecationReason() {
+    public @Nullable String getDeprecationReason() {
         return deprecationReason;
     }
 
@@ -94,7 +97,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         return directivesHolder.getDirective(directiveName);
     }
 
-    public EnumValueDefinition getDefinition() {
+    public @Nullable EnumValueDefinition getDefinition() {
         return definition;
     }
 
