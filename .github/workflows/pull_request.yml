@@ -120,6 +120,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Identify changed source files
+        id: changed-files
+        run: |
+          BASE_SHA=${{ github.event.pull_request.base.sha }}
+          HEAD_SHA=${{ github.event.pull_request.head.sha }}
+          CHANGED=$(git diff --name-only "$BASE_SHA"..."$HEAD_SHA" -- 'src/main/java/**/*.java' | sed 's|src/main/java/||;s|\.java$||;s|/|.|g' || true)
+          echo "classes<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$CHANGED" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
       - name: Download Coverage Report
         uses: actions/download-artifact@v4
         continue-on-error: true
@@ -178,9 +189,24 @@ jobs:
               return total === 0 ? 0 : (covered / total * 100);
             }
 
-            // --- Coverage gate: fail if any class regresses on any metric ---
+            // --- Only gate on classes whose source files were changed in this PR ---
+            const changedFilesRaw = `${{ steps.changed-files.outputs.classes }}`.trim();
+            const changedFiles = changedFilesRaw ? changedFilesRaw.split('\n').filter(Boolean) : [];
+            if (changedFiles.length === 0) {
+              console.log('No Java source files changed in this PR, skipping coverage gate.');
+              return;
+            }
+
+            // A class matches if its fully-qualified name starts with any changed file path.
+            // This covers inner classes (Foo$Bar) and anonymous classes (Foo$1).
+            function isChangedClass(className) {
+              return changedFiles.some(f => className === f || className.startsWith(f + '$'));
+            }
+
+            // --- Coverage gate: fail if any changed class regresses on any metric ---
             const regressions = [];
             for (const [cls, curr] of Object.entries(classCounters)) {
+              if (!isChangedClass(cls)) continue;
               const totalLines = curr.line.covered + curr.line.missed;
               if (totalLines === 0) continue;
               const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
