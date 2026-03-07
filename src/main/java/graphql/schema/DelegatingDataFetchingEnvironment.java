@@ -12,7 +12,7 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -27,6 +27,7 @@ import java.util.Map;
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
+@NullMarked
 public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironment {
 
     protected final DataFetchingEnvironment delegateEnvironment;
@@ -72,7 +73,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public @NonNull GraphQLContext getGraphQlContext() {
+    public GraphQLContext getGraphQlContext() {
         return delegateEnvironment.getGraphQlContext();
     }
 
