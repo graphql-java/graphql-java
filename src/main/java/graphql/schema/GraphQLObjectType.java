@@ -17,7 +17,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -38,15 +40,16 @@ import static graphql.util.FpKit.valuesToList;
  * See <a href="https://graphql.org/learn/schema/#object-types-and-fields">https://graphql.org/learn/schema/#object-types-and-fields</a> for more details on the concept.
  */
 @PublicApi
+@NullMarked
 public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {
 
     private final String name;
-    private final String description;
+    private final @Nullable String description;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName;
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
-    private final ObjectTypeDefinition definition;
+    private final @Nullable ObjectTypeDefinition definition;
     private final ImmutableList<ObjectTypeExtensionDefinition> extensionDefinitions;
 
     private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
@@ -56,12 +59,12 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
     @Internal
     private GraphQLObjectType(String name,
-                              String description,
+                              @Nullable String description,
                               List<GraphQLFieldDefinition> fieldDefinitions,
                               List<GraphQLNamedOutputType> interfaces,
                               List<GraphQLDirective> directives,
                               List<GraphQLAppliedDirective> appliedDirectives,
-                              ObjectTypeDefinition definition,
+                              @Nullable ObjectTypeDefinition definition,
                               List<ObjectTypeExtensionDefinition> extensionDefinitions,
                               Comparator<? super GraphQLSchemaElement> interfaceComparator) {
         assertValidName(name);
@@ -122,7 +125,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     }
 
     @Override
-    public GraphQLFieldDefinition getFieldDefinition(String name) {
+    public @Nullable GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }
 
@@ -139,7 +142,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         return originalInterfaces;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
@@ -149,7 +152,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         return name;
     }
 
-    public ObjectTypeDefinition getDefinition() {
+    public @Nullable ObjectTypeDefinition getDefinition() {
         return definition;
     }
 
