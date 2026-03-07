@@ -166,7 +166,7 @@ public class Anonymizer {
             @Override
             public TraversalControl visitGraphQLTypeReference(GraphQLTypeReference graphQLTypeReference, TraverserContext<GraphQLSchemaElement> context) {
                 GraphQLNamedSchemaElement type = (GraphQLNamedSchemaElement) schema.getType(graphQLTypeReference.getName());
-                String newName = newNameMap.get(type);
+                String newName = assertNotNull(newNameMap.get(type));
                 GraphQLTypeReference newReference = GraphQLTypeReference.typeRef(newName);
                 return changeNode(context, newReference);
             }
@@ -404,7 +404,7 @@ public class Anonymizer {
             for (ObjectField objectField : objectFields) {
                 String objectFieldName = objectField.getName();
                 Value objectFieldValue = objectField.getValue();
-                GraphQLInputObjectField inputObjectTypeField = inputObjectType.getField(objectFieldName);
+                GraphQLInputObjectField inputObjectTypeField = assertNotNull(inputObjectType.getField(objectFieldName));
                 GraphQLInputType fieldType = unwrapNonNullAs(inputObjectTypeField.getType());
                 ObjectField newObjectField = objectField.transform(builder -> {
                     builder.name(newNameMap.get(inputObjectTypeField));
@@ -892,7 +892,7 @@ public class Anonymizer {
                     GraphQLFieldDefinition graphQLFieldDefinition = assertNotNull(context.getVarFromParents(GraphQLFieldDefinition.class));
                     graphQLArgumentDefinition = graphQLFieldDefinition.getArgument(argument.getName());
                 }
-                GraphQLInputType argumentType = graphQLArgumentDefinition.getType();
+                GraphQLInputType argumentType = assertNotNull(graphQLArgumentDefinition).getType();
                 String newName = assertNotNull(astNodeToNewName.get(argument));
                 Value newValue = replaceValue(argument.getValue(), argumentType, newNames, defaultStringValueCounter, defaultIntValueCounter);
                 return changeNode(context, argument.transform(builder -> builder.name(newName).value(newValue)));
