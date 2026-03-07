@@ -65,7 +65,7 @@ public class GraphqlTypeComparatorEnvironment {
         }
 
         GraphqlTypeComparatorEnvironment that = (GraphqlTypeComparatorEnvironment) o;
-        return Objects.equals(parentType, that.parentType) && elementType.equals(that.elementType);
+        return Objects.equals(parentType, that.parentType) && Objects.equals(elementType, that.elementType);
     }
 
     @Override

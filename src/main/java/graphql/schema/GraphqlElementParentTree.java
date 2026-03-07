@@ -3,6 +3,7 @@ package graphql.schema;
 import graphql.Internal;
 import graphql.PublicApi;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -23,7 +24,7 @@ import static graphql.Assert.assertTrue;
 public class GraphqlElementParentTree {
 
     private final GraphQLSchemaElement element;
-    private final GraphqlElementParentTree parent;
+    private final @Nullable GraphqlElementParentTree parent;
 
     @Internal
     public GraphqlElementParentTree(Deque<GraphQLSchemaElement> nodeStack) {

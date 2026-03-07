@@ -131,6 +131,6 @@ public class SchemaDiffSet {
         GraphQL gql = GraphQL.newGraphQL(schema).build();
         ExecutionResult result = gql.execute(IntrospectionQuery.INTROSPECTION_QUERY);
         Assert.assertTrue(result.getErrors().isEmpty(), "The schema has errors during Introspection");
-        return result.getData();
+        return Assert.assertNotNull(result.getData(), "Introspection result data should not be null");
     }
 }
