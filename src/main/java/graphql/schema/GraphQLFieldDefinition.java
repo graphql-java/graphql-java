@@ -15,7 +15,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -34,16 +36,17 @@ import static graphql.util.FpKit.getByName;
  * See <a href="https://graphql.org/learn/queries/#fields">https://graphql.org/learn/queries/#fields</a> for more details on the concept.
  */
 @PublicApi
+@NullMarked
 public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer {
 
     private final String name;
-    private final String description;
+    private final @Nullable String description;
     private final GraphQLOutputType originalType;
-    private final DataFetcherFactory dataFetcherFactory;
-    private final String deprecationReason;
+    private final @Nullable DataFetcherFactory dataFetcherFactory;
+    private final @Nullable String deprecationReason;
     private final ImmutableList<GraphQLArgument> arguments;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
-    private final FieldDefinition definition;
+    private final @Nullable FieldDefinition definition;
 
     private GraphQLOutputType replacedType;
 
@@ -52,14 +55,14 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
     @Internal
     private GraphQLFieldDefinition(String name,
-                                   String description,
+                                   @Nullable String description,
                                    GraphQLOutputType type,
-                                   DataFetcherFactory dataFetcherFactory,
+                                   @Nullable DataFetcherFactory dataFetcherFactory,
                                    List<GraphQLArgument> arguments,
-                                   String deprecationReason,
+                                   @Nullable String deprecationReason,
                                    List<GraphQLDirective> directives,
                                    List<GraphQLAppliedDirective> appliedDirectives,
-                                   FieldDefinition definition) {
+                                   @Nullable FieldDefinition definition) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
         assertNotNull(arguments, "arguments can't be null");
@@ -99,7 +102,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
                 .build());
     }
 
-    public GraphQLArgument getArgument(String name) {
+    public @Nullable GraphQLArgument getArgument(String name) {
         for (GraphQLArgument argument : arguments) {
             if (argument.getName().equals(name)) {
                 return argument;
@@ -147,15 +150,15 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         return arguments;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public FieldDefinition getDefinition() {
+    public @Nullable FieldDefinition getDefinition() {
         return definition;
     }
 
-    public String getDeprecationReason() {
+    public @Nullable String getDeprecationReason() {
         return deprecationReason;
     }
 
