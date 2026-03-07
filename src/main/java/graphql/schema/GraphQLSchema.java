@@ -931,6 +931,30 @@ public class GraphQLSchema {
             return this;
         }
 
+        /**
+         * Clears all directives from this builder, including any that were previously added
+         * via {@link #additionalDirective(GraphQLDirective)} or {@link #additionalDirectives(Set)}.
+         * Built-in directives ({@code @include}, {@code @skip}, {@code @deprecated}, etc.) will
+         * always be added back automatically at build time by {@code ensureBuiltInDirectives()}.
+         * <p>
+         * This is useful when transforming a schema to replace all non-built-in directives:
+         * <pre>{@code
+         * schema.transform(builder -> {
+         *     List<GraphQLDirective> nonBuiltIns = schema.getDirectives().stream()
+         *         .filter(d -> !Directives.isBuiltInDirective(d))
+         *         .collect(toList());
+         *     builder.clearDirectives()
+         *         .additionalDirectives(transform(nonBuiltIns));
+         * })
+         * }</pre>
+         *
+         * @return this builder
+         */
+        public Builder clearDirectives() {
+            this.additionalDirectives.clear();
+            return this;
+        }
+
         public Builder withSchemaDirectives(GraphQLDirective... directives) {
             for (GraphQLDirective directive : directives) {
                 withSchemaDirective(directive);
