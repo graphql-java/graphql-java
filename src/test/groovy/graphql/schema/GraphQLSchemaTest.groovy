@@ -3,6 +3,7 @@ package graphql.schema
 import graphql.AssertException
 import graphql.Directives
 import graphql.ExecutionInput
+import graphql.introspection.Introspection.DirectiveLocation
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.Directive
@@ -168,6 +169,83 @@ class GraphQLSchemaTest extends Specification {
         schema = schema.transform({ builder -> builder })
         then: "all 7 built-in directives are still present"
         schema.directives.size() == 7
+
+        when: "clearDirectives is called"
+        schema = basicSchemaBuilder().clearDirectives().build()
+        then: "all 7 built-in directives are still present because ensureBuiltInDirectives re-adds them"
+        schema.directives.size() == 7
+
+        when: "clearDirectives is called and additional directives are added"
+        schema = basicSchemaBuilder().clearDirectives()
+                .additionalDirective(GraphQLDirective.newDirective()
+                        .name("custom")
+                        .validLocations(DirectiveLocation.FIELD)
+                        .build())
+                .build()
+        then: "all 7 built-in directives are present plus the additional one"
+        schema.directives.size() == 8
+        schema.getDirective("custom") != null
+    }
+
+    def "clearDirectives supports replacing non-built-in directives in a schema transform"() {
+        given: "a schema with a custom directive"
+        def originalDirective = GraphQLDirective.newDirective()
+                .name("custom")
+                .description("v1")
+                .validLocations(DirectiveLocation.FIELD)
+                .build()
+        def schema = basicSchemaBuilder()
+                .additionalDirective(originalDirective)
+                .build()
+        assert schema.directives.size() == 8
+
+        when: "the schema is transformed to replace the custom directive"
+        def replacementDirective = GraphQLDirective.newDirective()
+                .name("custom")
+                .description("v2")
+                .validLocations(DirectiveLocation.FIELD)
+                .build()
+        def newSchema = schema.transform({ builder ->
+            def nonBuiltIns = schema.getDirectives().findAll { !Directives.isBuiltInDirective(it) }
+                    .collect { it.getName() == "custom" ? replacementDirective : it }
+            builder.clearDirectives()
+                    .additionalDirectives(new LinkedHashSet<>(nonBuiltIns))
+        })
+
+        then: "all 7 built-in directives are still present"
+        newSchema.directives.size() == 8
+        newSchema.getDirective("include") != null
+        newSchema.getDirective("skip") != null
+        newSchema.getDirective("deprecated") != null
+
+        and: "the custom directive has the updated description"
+        newSchema.getDirective("custom").description == "v2"
+    }
+
+    def "clearDirectives then adding directives gives expected ordering"() {
+        given: "a non-standard directive and a customized built-in directive"
+        def nonStandard = GraphQLDirective.newDirective()
+                .name("custom")
+                .validLocations(DirectiveLocation.FIELD)
+                .build()
+        def skipWithCustomDesc = Directives.SkipDirective.transform({ b ->
+            b.description("custom skip description")
+        })
+
+        when: "clearDirectives is called, then the non-standard directive is added, then the customized built-in is added after it"
+        def schema = basicSchemaBuilder()
+                .clearDirectives()
+                .additionalDirective(nonStandard)
+                .additionalDirective(skipWithCustomDesc)
+                .build()
+
+        then: "unoverridden built-ins come first (in BUILT_IN_DIRECTIVES order, skip excluded), then user-supplied in insertion order"
+        def names = schema.directives.collect { it.name }
+        names == ["include", "deprecated", "specifiedBy", "oneOf", "defer",
+                  "experimental_disableErrorPropagation", "custom", "skip"]
+
+        and: "the customized skip directive retains its custom description"
+        schema.getDirective("skip").description == "custom skip description"
     }
 
     def "clear additional types works as expected"() {
