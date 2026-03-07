@@ -2,6 +2,8 @@ package graphql.schema.visitor;
 
 import graphql.PublicApi;
 import graphql.schema.GraphQLSchemaElement;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.util.TreeTransformerUtil;
@@ -12,8 +14,9 @@ import graphql.util.TreeTransformerUtil;
  * or {@link GraphQLSchemaVisitorEnvironment#changeNode(GraphQLSchemaElement)} say
  */
 @PublicApi
+@NullMarked
 public class GraphQLSchemaTraversalControl {
-    private final GraphQLSchemaElement element;
+    private final @Nullable GraphQLSchemaElement element;
     private final Control control;
 
     enum Control {
@@ -39,12 +42,12 @@ public class GraphQLSchemaTraversalControl {
     static final GraphQLSchemaTraversalControl QUIT = new GraphQLSchemaTraversalControl(Control.QUIT, null);
     static final GraphQLSchemaTraversalControl DELETE = new GraphQLSchemaTraversalControl(Control.DELETE, null);
 
-    GraphQLSchemaTraversalControl(Control control, GraphQLSchemaElement element) {
+    GraphQLSchemaTraversalControl(Control control, @Nullable GraphQLSchemaElement element) {
         this.element = element;
         this.control = control;
     }
 
-    GraphQLSchemaElement getElement() {
+    @Nullable GraphQLSchemaElement getElement() {
         return element;
     }
 
