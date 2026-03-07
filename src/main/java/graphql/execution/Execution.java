@@ -111,8 +111,8 @@ public class Execution {
         ResponseMapFactory responseMapFactory = GraphQL.unusualConfiguration(graphQLContext)
                 .responseMapFactory().getOr(ResponseMapFactory.DEFAULT);
 
-        Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> operationDirectives = operationDirectivesResolver
-                .resolveDirectives(document, graphQLSchema, coercedVariables, graphQLContext, locale);
+        Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> operationDirectives = FpKit.interThreadMemoize(() ->
+                operationDirectivesResolver.resolveDirectives(document, graphQLSchema, coercedVariables, graphQLContext, locale));
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)

@@ -21,7 +21,6 @@ import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -58,7 +57,7 @@ public class ExecutionContextBuilder {
     EngineRunningState engineRunningState;
     ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
     Profiler profiler;
-    Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> opDirectivesMap = Collections.emptyMap();
+    Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives = Collections::emptyMap;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -261,8 +260,8 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContextBuilder operationDirectives(Map<OperationDefinition, ImmutableList<QueryAppliedDirective>> opDirectivesMap) {
-        this.opDirectivesMap = opDirectivesMap;
+    public ExecutionContextBuilder operationDirectives(Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives) {
+        this.allOperationsDirectives = allOperationsDirectives;
         return this;
     }
 
