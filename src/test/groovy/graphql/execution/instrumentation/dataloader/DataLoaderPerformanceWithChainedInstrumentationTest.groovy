@@ -3,7 +3,6 @@ package graphql.execution.instrumentation.dataloader
 import graphql.ExecutionInput
 import graphql.GraphQL
 import org.dataloader.DataLoaderRegistry
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
@@ -49,10 +48,11 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         incrementalSupport << [true, false]
     }
 
-    @Ignore("This test flakes on Travis for some reason.  Clearly this indicates some sort of problem to investigate.  However it also stop releases.")
     def "chainedInstrumentation: 970 ensure data loader is performant for multiple field with lists"() {
 
         when:
+
+        batchCompareDataFetchers.useSynchronizedFetching(2)
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
@@ -101,6 +101,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         when:
 
         batchCompareDataFetchers.useAsyncBatchLoading(true)
+        batchCompareDataFetchers.useSynchronizedFetching(2)
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
@@ -112,8 +113,8 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         then:
         result.data == expectedExpensiveData
 
-        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() <= 2
-        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
         where:
         incrementalSupport << [true, false]
