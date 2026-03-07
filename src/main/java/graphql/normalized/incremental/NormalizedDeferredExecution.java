@@ -2,6 +2,7 @@ package graphql.normalized.incremental;
 
 import graphql.ExperimentalApi;
 import graphql.schema.GraphQLObjectType;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
@@ -103,6 +104,7 @@ import java.util.Set;
  *
  */
 @ExperimentalApi
+@NullMarked
 public class NormalizedDeferredExecution {
     private final String label;
     private final Set<GraphQLObjectType> possibleTypes;

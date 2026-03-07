@@ -25,11 +25,11 @@ plugins {
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
     id "io.github.reyerizo.gradle.jcstress" version "0.9.0"
-    id "net.ltgt.errorprone" version '5.0.0'
+    id "net.ltgt.errorprone" version '5.1.0'
     id 'jacoco'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.3.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.3.10'
 }
 
 java {
@@ -140,7 +140,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.1'
 
     testImplementation 'org.spockframework:spock-core:2.4-groovy-5.0'
-    testImplementation 'net.bytebuddy:byte-buddy:1.18.5'
+    testImplementation 'net.bytebuddy:byte-buddy:1.18.7'
     testImplementation 'org.objenesis:objenesis:3.5'
     testImplementation 'org.apache.groovy:groovy:5.0.4'
     testImplementation 'org.apache.groovy:groovy-json:5.0.4'
@@ -152,7 +152,7 @@ dependencies {
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.8.0"
+    testImplementation "io.projectreactor:reactor-core:3.8.3"
 
     testImplementation 'org.testng:testng:7.12.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
