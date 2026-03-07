@@ -2,6 +2,7 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import static graphql.Assert.assertTrue;
  * which can be on a GraphqlFieldDefinition, which can be on a GraphqlObjectType.
  */
 @PublicApi
+@NullMarked
 public class GraphqlElementParentTree {
 
     private final GraphQLSchemaElement element;
