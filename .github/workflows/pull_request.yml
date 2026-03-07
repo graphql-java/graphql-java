@@ -113,6 +113,88 @@ jobs:
         with:
           name: test-stats-${{ matrix.label }}
           path: /tmp/test-stats/${{ matrix.label }}.json
+  test-summary:
+    name: "Per-Class Coverage Gate"
+    needs: buildAndTest
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: coverage-report
+          path: coverage/
+      - name: Enforce Per-Class Coverage Gate
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            const zeroCov = { covered: 0, missed: 0 };
+
+            // --- Read baseline from repo ---
+            const baselineFile = 'test-baseline.json';
+            let baseline = { tests: {}, coverage: {} };
+            if (fs.existsSync(baselineFile)) {
+              baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
+            }
+            const baseClasses = (baseline.coverage || {}).classes || {};
+
+            // --- Parse JaCoCo XML for per-class coverage ---
+            const classCounters = {};
+            const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
+            if (!fs.existsSync(jacocoFile)) {
+              console.log('No JaCoCo report found, skipping coverage gate.');
+              return;
+            }
+            const xml = fs.readFileSync(jacocoFile, 'utf8');
+            const pkgRe = /<package\s+name="([^"]+)">([\s\S]*?)<\/package>/g;
+            let pkgMatch;
+            while ((pkgMatch = pkgRe.exec(xml)) !== null) {
+              const pkgBody = pkgMatch[2];
+              const classRe = /<class\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/class>/g;
+              let classMatch;
+              while ((classMatch = classRe.exec(pkgBody)) !== null) {
+                const className = classMatch[1].replace(/\//g, '.');
+                const classBody = classMatch[2];
+                const counters = { line: { ...zeroCov }, branch: { ...zeroCov }, method: { ...zeroCov } };
+                const cntRe = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
+                let cntMatch;
+                while ((cntMatch = cntRe.exec(classBody)) !== null) {
+                  const entry = { covered: parseInt(cntMatch[3]), missed: parseInt(cntMatch[2]) };
+                  if (cntMatch[1] === 'LINE') counters.line = entry;
+                  else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
+                  else if (cntMatch[1] === 'METHOD') counters.method = entry;
+                }
+                classCounters[className] = counters;
+              }
+            }
+
+            function pct(covered, missed) {
+              const total = covered + missed;
+              return total === 0 ? 0 : (covered / total * 100);
+            }
+
+            // --- Coverage gate: fail if any class regresses on any metric ---
+            const regressions = [];
+            for (const [cls, curr] of Object.entries(classCounters)) {
+              const totalLines = curr.line.covered + curr.line.missed;
+              if (totalLines === 0) continue;
+              const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
+              for (const [metric, key] of [['Line', 'line'], ['Branch', 'branch'], ['Method', 'method']]) {
+                const currPct = pct(curr[key].covered, curr[key].missed);
+                const basePct = pct(base[key].covered, base[key].missed);
+                if (currPct < basePct - 0.05) {
+                  regressions.push(`  ${cls} ${metric}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%)`);
+                }
+              }
+            }
+            if (regressions.length > 0) {
+              core.setFailed(`Per-class coverage regressions detected:\n${regressions.join('\n')}\n\nUpdate test-baseline.json if these changes are intentional.`);
+            }
   javadoc:
     runs-on: ubuntu-latest
     steps:
@@ -129,6 +211,7 @@ jobs:
     if: always()
     needs:
       - buildAndTest
+      - test-summary
       - javadoc
     runs-on: ubuntu-latest
     steps:
@@ -136,6 +219,10 @@ jobs:
         run: |
           if [ "${{ needs.buildAndTest.result }}" != "success" ]; then
             echo "buildAndTest failed with result: ${{ needs.buildAndTest.result }}"
+            exit 1
+          fi
+          if [ "${{ needs.test-summary.result }}" != "success" ] && [ "${{ needs.test-summary.result }}" != "skipped" ]; then
+            echo "Per-Class Coverage Gate failed with result: ${{ needs.test-summary.result }}"
             exit 1
           fi
           if [ "${{ needs.javadoc.result }}" != "success" ]; then
