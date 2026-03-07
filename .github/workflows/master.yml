@@ -6,7 +6,6 @@ on:
       - master
 permissions:
   contents: write
-  checks: write
 jobs:
   buildAndTest:
     runs-on: ubuntu-latest
@@ -27,6 +26,8 @@ jobs:
           - gradle-argument: 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 testng jacocoTestReport'
             label: 'java25'
             test-results-dirs: 'test testng'
+          - gradle-argument: 'jcstress'
+            label: 'jcstress'
     steps:
       - uses: actions/checkout@v6
       - uses: gradle/actions/wrapper-validation@v5
@@ -36,13 +37,14 @@ jobs:
           java-version: '25'
           distribution: 'corretto'
       - name: build and test
-        run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
-        if: always() && matrix.label != 'check'
-        with:
-          files: |
-            **/build/test-results/*/TEST-*.xml
+        run: |
+          if [ "${{ matrix.label }}" = "jcstress" ]; then
+            set -o pipefail
+            mkdir -p build
+            ./gradlew ${{matrix.gradle-argument}} --info --stacktrace 2>&1 | tee build/jcstress-output.txt
+          else
+            ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
+          fi
       - name: Upload Coverage XML Report
         uses: actions/upload-artifact@v4
         if: always() && matrix.label == 'java25'
@@ -51,7 +53,7 @@ jobs:
           path: build/reports/jacoco/test/jacocoTestReport.xml
           retention-days: 1
       - name: Parse Test Results
-        if: always() && matrix.label != 'check'
+        if: always() && matrix.label != 'check' && matrix.label != 'jcstress'
         run: |
           total=0; failures=0; errors=0; skipped=0
           for dir_name in ${{ matrix.test-results-dirs }}; do
@@ -72,6 +74,24 @@ jobs:
           mkdir -p /tmp/test-stats
           echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failures,\"errors\":$errors,\"skipped\":$skipped}" \
             > "/tmp/test-stats/${{ matrix.label }}.json"
+      - name: Parse jcstress Results
+        if: always() && matrix.label == 'jcstress'
+        run: |
+          total=0; passed=0; failed=0; errors=0; skipped=0
+          if [ -f build/jcstress-output.txt ]; then
+            line=$(grep 'Results:.*planned.*passed.*failed' build/jcstress-output.txt | tail -1)
+            if [ -n "$line" ]; then
+              total=$(echo "$line" | sed 's/.*Results: \([0-9]*\) planned.*/\1/')
+              passed=$(echo "$line" | sed 's/.*; \([0-9]*\) passed.*/\1/')
+              failed=$(echo "$line" | sed 's/.*passed, \([0-9]*\) failed.*/\1/')
+              soft=$(echo "$line" | sed 's/.*failed, \([0-9]*\) soft.*/\1/')
+              hard=$(echo "$line" | sed 's/.*soft errs, \([0-9]*\) hard.*/\1/')
+              errors=$((soft + hard))
+            fi
+          fi
+          mkdir -p /tmp/test-stats
+          echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failed,\"errors\":$errors,\"skipped\":$skipped}" \
+            > "/tmp/test-stats/${{ matrix.label }}.json"
       - name: Upload Test Stats
         if: always() && matrix.label != 'check'
         uses: actions/upload-artifact@v4
@@ -83,6 +103,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.ADMIN_PAT }}
       - name: Download Test Stats
         uses: actions/download-artifact@v4
         with:
@@ -102,7 +124,7 @@ jobs:
             const fs = require('fs');
             const path = require('path');
 
-            const versions = ['java11', 'java17', 'java21', 'java25'];
+            const versions = ['java11', 'java17', 'java21', 'java25', 'jcstress'];
             const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
             const zeroCov = { covered: 0, missed: 0 };
 
@@ -160,7 +182,10 @@ jobs:
                     else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
                     else if (cntMatch[1] === 'METHOD') counters.method = entry;
                   }
-                  coverage.classes[className] = counters;
+                  // Skip classes with 0 total lines (interfaces, annotations, abstract classes)
+                  if (counters.line.covered + counters.line.missed > 0) {
+                    coverage.classes[className] = counters;
+                  }
                 }
               }
             }
@@ -188,6 +213,34 @@ jobs:
           distribution: 'corretto'
       - name: Verify Javadoc
         run: ./gradlew javadoc --info --stacktrace
+  allBuildAndTestSuccessful:
+    if: always()
+    needs:
+      - buildAndTest
+      - update-baseline
+      - javadoc
+      - publishToMavenCentral
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all jobs passed
+        run: |
+          if [ "${{ needs.buildAndTest.result }}" != "success" ]; then
+            echo "buildAndTest failed with result: ${{ needs.buildAndTest.result }}"
+            exit 1
+          fi
+          if [ "${{ needs.update-baseline.result }}" != "success" ]; then
+            echo "update-baseline failed with result: ${{ needs.update-baseline.result }}"
+            exit 1
+          fi
+          if [ "${{ needs.javadoc.result }}" != "success" ]; then
+            echo "javadoc failed with result: ${{ needs.javadoc.result }}"
+            exit 1
+          fi
+          if [ "${{ needs.publishToMavenCentral.result }}" != "success" ]; then
+            echo "publishToMavenCentral failed with result: ${{ needs.publishToMavenCentral.result }}"
+            exit 1
+          fi
+          echo "All build and test jobs passed successfully."
   publishToMavenCentral:
     needs: buildAndTest
     runs-on: ubuntu-latest
