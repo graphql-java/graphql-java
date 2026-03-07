@@ -10,6 +10,7 @@ import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -22,6 +23,7 @@ import static java.lang.String.format;
  * The input field must not have a default value.
  */
 @ExperimentalApi
+@NullMarked
 public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
 
     @Override
