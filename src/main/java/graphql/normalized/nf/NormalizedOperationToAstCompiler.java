@@ -18,7 +18,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -46,6 +46,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * has the same schema as the one provided.
  */
 @ExperimentalApi
+@NullMarked
 public class NormalizedOperationToAstCompiler {
 
     /**
@@ -54,9 +55,9 @@ public class NormalizedOperationToAstCompiler {
      */
     public static class CompilerResult {
         private final Document document;
-        private final Map<String, Object> variables;
+        private final @Nullable Map<String, Object> variables;
 
-        public CompilerResult(Document document, Map<String, Object> variables) {
+        public CompilerResult(Document document, @Nullable Map<String, Object> variables) {
             this.document = document;
             this.variables = variables;
         }
@@ -65,7 +66,7 @@ public class NormalizedOperationToAstCompiler {
             return document;
         }
 
-        public Map<String, Object> getVariables() {
+        public @Nullable Map<String, Object> getVariables() {
             return variables;
         }
     }
@@ -129,7 +130,7 @@ public class NormalizedOperationToAstCompiler {
 
 
     private static List<Selection<?>> subSelectionsForNormalizedFields(GraphQLSchema schema,
-                                                                       @NonNull String parentOutputType,
+                                                                       String parentOutputType,
                                                                        List<NormalizedField> normalizedFields
     ) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
@@ -223,7 +224,6 @@ public class NormalizedOperationToAstCompiler {
     }
 
 
-    @NonNull
     private static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema,
                                                              String parentType,
                                                              NormalizedField nf) {
@@ -231,8 +231,8 @@ public class NormalizedOperationToAstCompiler {
     }
 
 
-    private static GraphQLObjectType getOperationType(@NonNull GraphQLSchema schema,
-                                                      OperationDefinition.@NonNull Operation operationKind) {
+    private static GraphQLObjectType getOperationType(GraphQLSchema schema,
+                                                      OperationDefinition.Operation operationKind) {
         switch (operationKind) {
             case QUERY:
                 return schema.getQueryType();
