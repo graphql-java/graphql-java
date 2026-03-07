@@ -8,7 +8,8 @@ import graphql.language.Argument;
 import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ import static graphql.execution.ValuesResolver.getInputValueImpl;
  * You can think of them as 'instances' of {@link GraphQLArgument}, when applied to a directive on a schema element
  */
 @PublicApi
+@NullMarked
 public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElement, GraphQLInputSchemaElement {
 
     private final String name;
@@ -33,7 +35,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
     private final GraphQLInputType originalType;
     private GraphQLInputType replacedType;
 
-    private final Argument definition;
+    private final @Nullable Argument definition;
 
 
     public static final String CHILD_TYPE = "type";
@@ -41,7 +43,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
     private GraphQLAppliedDirectiveArgument(String name,
                                             InputValueWithState value,
                                             GraphQLInputType type,
-                                            Argument definition
+                                            @Nullable Argument definition
     ) {
         assertValidName(name);
         this.name = name;
@@ -70,7 +72,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
     /**
      * @return an input value with state for an applied directive argument
      */
-    public @NonNull InputValueWithState getArgumentValue() {
+    public InputValueWithState getArgumentValue() {
         return value;
     }
 
@@ -102,7 +104,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
         return null;
     }
 
-    public Argument getDefinition() {
+    public @Nullable Argument getDefinition() {
         return definition;
     }
 
@@ -186,6 +188,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
                 '}';
     }
 
+    @NullUnmarked
     public static class Builder extends GraphqlTypeBuilder<Builder> {
 
         private InputValueWithState value = InputValueWithState.NOT_SET;
