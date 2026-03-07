@@ -8,7 +8,8 @@ import graphql.language.InputValueDefinition;
 import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,15 +31,16 @@ import static graphql.execution.ValuesResolver.getInputValueImpl;
  * See <a href="https://graphql.org/learn/schema/#input-types">https://graphql.org/learn/schema/#input-types</a> for more details on the concept.
  */
 @PublicApi
+@NullMarked
 public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, GraphQLInputValueDefinition {
 
     private final String name;
-    private final String description;
+    private final @Nullable String description;
     private final GraphQLInputType originalType;
     private final InputValueWithState defaultValue;
 
-    private final String deprecationReason;
-    private final InputValueDefinition definition;
+    private final @Nullable String deprecationReason;
+    private final @Nullable InputValueDefinition definition;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
 
     private GraphQLInputType replacedType;
@@ -48,13 +50,13 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
     private GraphQLInputObjectField(
             String name,
-            String description,
+            @Nullable String description,
             GraphQLInputType type,
             InputValueWithState defaultValue,
             List<GraphQLDirective> directives,
             List<GraphQLAppliedDirective> appliedDirectives,
-            InputValueDefinition definition,
-            String deprecationReason) {
+            @Nullable InputValueDefinition definition,
+            @Nullable String deprecationReason) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
         assertNotNull(directives, "directives cannot be null");
@@ -88,7 +90,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
      *
      * @return a input value with captured state
      */
-    public @NonNull InputValueWithState getInputFieldDefaultValue() {
+    public InputValueWithState getInputFieldDefaultValue() {
         return defaultValue;
     }
 
@@ -117,11 +119,11 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         return defaultValue.isSet();
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public String getDeprecationReason() {
+    public @Nullable String getDeprecationReason() {
         return deprecationReason;
     }
 
@@ -129,7 +131,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         return deprecationReason != null;
     }
 
-    public InputValueDefinition getDefinition() {
+    public @Nullable InputValueDefinition getDefinition() {
         return definition;
     }
 
