@@ -1,6 +1,7 @@
 package graphql.execution.directives
 
 import com.google.common.collect.ImmutableList
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.GraphQLContext
@@ -14,6 +15,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperat
 import graphql.language.Document
 import graphql.language.OperationDefinition
 import graphql.schema.GraphQLScalarType
+import graphql.util.FpKit
 import spock.lang.Specification
 
 class OperationDirectivesResolverTest extends Specification {
@@ -139,11 +141,17 @@ class OperationDirectivesResolverTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
 
         when:
-        graphQL.execute("""
+        def ei = ExecutionInput.newExecutionInput("""
             query q1 @timeout(ms : 100) @foo @bar @baz @baz {
                 f
             }
-        """)
+            
+            mutation m1 @timeout(ms : 100) @foo @bar @baz @baz {
+                f
+            }
+        """).operationName("q1").build()
+        graphQL.execute(ei)
+
 
         then:
         def resolveDirectives = executionContext.getOperationDirectives()
@@ -156,6 +164,15 @@ class OperationDirectivesResolverTest extends Specification {
 
         then:
         commonIntegrationAsserts(enoResolveDirectives)
+
+        when:
+        def allOperationDirectives = executionContext.getAllOperationDirectives()
+
+        then:
+        allOperationDirectives.size() == 2
+        ImmutableList<QueryAppliedDirective> firstList = allOperationDirectives.values().iterator().next()
+        def firstResolvedDirectives = FpKit.groupingBy(firstList, { it -> it.name })
+        commonIntegrationAsserts(firstResolvedDirectives)
 
     }
 
