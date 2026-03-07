@@ -95,20 +95,19 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
                 downstreamSubscriber.onNext(d);
             }
         } finally {
-            boolean empty = removeFromInFlightQAndCheckIfEmpty(completionStage);
-            finallyAfterEachPromiseFinishes(empty);
+            removeFromInFlightQ(completionStage);
+            finallyAfterEachPromiseFinishes();
         }
     }
 
-    protected void finallyAfterEachPromiseFinishes(boolean isInFlightEmpty) {
-        //
-        // if the runOnCompleteOrErrorRun runnable is set, the upstream has
-        // called onComplete() already, but the CFs have not all completed
-        // yet, so we have to check whenever a CF completes
-        //
-        Runnable runOnCompleteOrErrorRun = onCompleteRun.get();
-        if (isInFlightEmpty && runOnCompleteOrErrorRun != null) {
-            onCompleteRun.set(null);
+    protected void finallyAfterEachPromiseFinishes() {
+        Runnable runOnCompleteOrErrorRun = lock.callLocked(() -> {
+            if (inFlightDataQ.isEmpty()) {
+                return onCompleteRun.getAndSet(null);
+            }
+            return null;
+        });
+        if (runOnCompleteOrErrorRun != null) {
             runOnCompleteOrErrorRun.run();
         }
     }
@@ -149,11 +148,15 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
     }
 
     private void onComplete(Runnable doneCodeToRun) {
-        if (inFlightQIsEmpty()) {
-            // run right now
-            doneCodeToRun.run();
-        } else {
+        boolean runNow = lock.callLocked(() -> {
+            if (inFlightDataQ.isEmpty()) {
+                return true;
+            }
             onCompleteRun.set(doneCodeToRun);
+            return false;
+        });
+        if (runNow) {
+            doneCodeToRun.run();
         }
     }
 
@@ -163,12 +166,8 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
         );
     }
 
-    private boolean removeFromInFlightQAndCheckIfEmpty(CompletionStage<?> completionStage) {
-        // uncontested locks in java are cheap - we don't expect much contention here
-        return lock.callLocked(() -> {
-            inFlightDataQ.remove(completionStage);
-            return inFlightDataQ.isEmpty();
-        });
+    private void removeFromInFlightQ(CompletionStage<?> completionStage) {
+        lock.runLocked(() -> inFlightDataQ.remove(completionStage));
     }
 
     /**
@@ -184,10 +183,6 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
                 }
             }
         });
-    }
-
-    protected boolean inFlightQIsEmpty() {
-        return lock.callLocked(inFlightDataQ::isEmpty);
     }
 
     /**
