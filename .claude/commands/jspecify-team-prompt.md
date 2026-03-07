@@ -14,21 +14,16 @@ graphql-java project.
 
 2. Group the remaining classes into batches (see batches below).
 
-3. Launch worker agents in **waves of 5** to maximize throughput.
-   After each wave completes, launch the reviewer before starting the next wave.
-   Only proceed to the next wave if the reviewer reports no NullAway errors.
+3. Launch worker agents in **waves of 2** (only 2 workers this wave).
+   After the wave completes, launch the reviewer.
 
-4. After all waves are complete, launch the validator.
+4. After the reviewer confirms no errors, launch the validator.
 
 ## Execution Flow
 
 ### Wave 1
-Launch Workers 1, 2, 3, 4, 5 in parallel. Wait for all to complete.
+Launch Workers 1, 2 in parallel. Wait for all to complete.
 Launch Reviewer for Wave 1. Wait for completion and NullAway confirmation.
-
-### Wave 2
-Launch Workers 6, 7 in parallel. Wait for all to complete.
-Launch Reviewer for Wave 2. Wait for completion and NullAway confirmation.
 
 ### Final Step
 Launch the validator to remove completed classes from
@@ -38,161 +33,7 @@ Launch the validator to remove completed classes from
 
 ## Batch Assignments
 
-### Worker 1 — graphql.language (remaining) + graphql.normalized (23 classes)
-```
-graphql.language.ScalarTypeDefinition
-graphql.language.ScalarTypeExtensionDefinition
-graphql.language.SchemaDefinition
-graphql.language.SchemaExtensionDefinition
-graphql.language.Selection
-graphql.language.SelectionSet
-graphql.language.SelectionSetContainer
-graphql.language.TypeKind
-graphql.language.TypeName
-graphql.language.UnionTypeDefinition
-graphql.language.UnionTypeExtensionDefinition
-graphql.language.VariableDefinition
-graphql.normalized.ExecutableNormalizedField
-graphql.normalized.ExecutableNormalizedOperation
-graphql.normalized.ExecutableNormalizedOperationFactory
-graphql.normalized.ExecutableNormalizedOperationToAstCompiler
-graphql.normalized.NormalizedInputValue
-graphql.normalized.incremental.NormalizedDeferredExecution
-graphql.normalized.nf.NormalizedDocument
-graphql.normalized.nf.NormalizedDocumentFactory
-graphql.normalized.nf.NormalizedField
-graphql.normalized.nf.NormalizedOperation
-graphql.normalized.nf.NormalizedOperationToAstCompiler
-```
-
-### Worker 2 — graphql.schema core types (38 classes)
-```
-graphql.schema.AsyncDataFetcher
-graphql.schema.CoercingParseLiteralException
-graphql.schema.CoercingParseValueException
-graphql.schema.CoercingSerializeException
-graphql.schema.DataFetcherFactories
-graphql.schema.DataFetcherFactoryEnvironment
-graphql.schema.DataFetchingFieldSelectionSet
-graphql.schema.DefaultGraphqlTypeComparatorRegistry
-graphql.schema.DelegatingDataFetchingEnvironment
-graphql.schema.FieldCoordinates
-graphql.schema.GraphQLAppliedDirectiveArgument
-graphql.schema.GraphQLArgument
-graphql.schema.GraphQLCompositeType
-graphql.schema.GraphQLDirective
-graphql.schema.GraphQLDirectiveContainer
-graphql.schema.GraphQLEnumValueDefinition
-graphql.schema.GraphQLFieldDefinition
-graphql.schema.GraphQLFieldsContainer
-graphql.schema.GraphQLImplementingType
-graphql.schema.GraphQLInputFieldsContainer
-graphql.schema.GraphQLInputObjectField
-graphql.schema.GraphQLInputObjectType
-graphql.schema.GraphQLInputSchemaElement
-graphql.schema.GraphQLInputType
-graphql.schema.GraphQLInputValueDefinition
-graphql.schema.GraphQLInterfaceType
-graphql.schema.GraphQLModifiedType
-graphql.schema.GraphQLNamedOutputType
-graphql.schema.GraphQLNamedSchemaElement
-graphql.schema.GraphQLNamedType
-graphql.schema.GraphQLNonNull
-graphql.schema.GraphQLNullableType
-graphql.schema.GraphQLObjectType
-graphql.schema.GraphQLOutputType
-graphql.schema.GraphQLSchemaElement
-graphql.schema.GraphQLTypeReference
-graphql.schema.GraphQLTypeVisitor
-graphql.schema.GraphQLTypeVisitorStub
-graphql.schema.GraphQLUnmodifiedType
-```
-
-### Worker 3 — graphql.schema utilities + sub-packages (41 classes)
-```
-graphql.schema.GraphqlElementParentTree
-graphql.schema.GraphqlTypeComparatorEnvironment
-graphql.schema.GraphqlTypeComparatorRegistry
-graphql.schema.InputValueWithState
-graphql.schema.SchemaElementChildrenContainer
-graphql.schema.SchemaTransformer
-graphql.schema.SchemaTraverser
-graphql.schema.SelectedField
-graphql.schema.StaticDataFetcher
-graphql.schema.diff.DiffCategory
-graphql.schema.diff.DiffEvent
-graphql.schema.diff.DiffLevel
-graphql.schema.diff.DiffSet
-graphql.schema.diff.SchemaDiffSet
-graphql.schema.diff.reporting.CapturingReporter
-graphql.schema.diff.reporting.ChainedReporter
-graphql.schema.diff.reporting.PrintStreamReporter
-graphql.schema.idl.CombinedWiringFactory
-graphql.schema.idl.MapEnumValuesProvider
-graphql.schema.idl.NaturalEnumValuesProvider
-graphql.schema.idl.RuntimeWiring
-graphql.schema.idl.SchemaDirectiveWiring
-graphql.schema.idl.SchemaDirectiveWiringEnvironment
-graphql.schema.idl.SchemaGenerator
-graphql.schema.idl.SchemaPrinter
-graphql.schema.idl.TypeRuntimeWiring
-graphql.schema.idl.errors.SchemaProblem
-graphql.schema.idl.errors.StrictModeWiringException
-graphql.schema.transform.FieldVisibilitySchemaTransformation
-graphql.schema.transform.VisibleFieldPredicateEnvironment
-graphql.schema.usage.SchemaUsage
-graphql.schema.usage.SchemaUsageSupport
-graphql.schema.validation.OneOfInputObjectRules
-graphql.schema.validation.SchemaValidationErrorClassification
-graphql.schema.visibility.BlockedFields
-graphql.schema.visibility.DefaultGraphqlFieldVisibility
-graphql.schema.visibility.GraphqlFieldVisibility
-graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility
-graphql.schema.visitor.GraphQLSchemaTraversalControl
-```
-
-### Worker 4 — graphql.extensions + graphql.incremental + graphql.introspection (15 classes)
-```
-graphql.extensions.ExtensionsBuilder
-graphql.incremental.DeferPayload
-graphql.incremental.DelayedIncrementalPartialResult
-graphql.incremental.DelayedIncrementalPartialResultImpl
-graphql.incremental.IncrementalExecutionResult
-graphql.incremental.IncrementalExecutionResultImpl
-graphql.incremental.IncrementalPayload
-graphql.incremental.StreamPayload
-graphql.introspection.GoodFaithIntrospection
-graphql.introspection.Introspection
-graphql.introspection.IntrospectionQuery
-graphql.introspection.IntrospectionQueryBuilder
-graphql.introspection.IntrospectionResultToSchema
-graphql.introspection.IntrospectionWithDirectivesSupport
-graphql.introspection.IntrospectionWithDirectivesSupport$DirectivePredicateEnvironment
-```
-
-### Worker 5 — graphql.parser + graphql.util (18 classes)
-```
-graphql.parser.InvalidSyntaxException
-graphql.parser.MultiSourceReader
-graphql.parser.Parser
-graphql.parser.ParserEnvironment
-graphql.parser.ParserOptions
-graphql.util.CyclicSchemaAnalyzer
-graphql.util.NodeAdapter
-graphql.util.NodeLocation
-graphql.util.NodeMultiZipper
-graphql.util.NodeZipper
-graphql.util.querygenerator.QueryGenerator
-graphql.util.querygenerator.QueryGeneratorOptions
-graphql.util.querygenerator.QueryGeneratorOptions$QueryGeneratorOptionsBuilder
-graphql.util.querygenerator.QueryGeneratorResult
-graphql.util.TraversalControl
-graphql.util.TraverserContext
-graphql.util.TreeTransformer
-graphql.util.TreeTransformerUtil
-```
-
-### Worker 6 — graphql.execution core (26 classes)
+### Worker 1 — graphql.execution core (26 classes)
 ```
 graphql.execution.AbortExecutionException
 graphql.execution.AsyncExecutionStrategy
@@ -222,7 +63,7 @@ graphql.execution.UnknownOperationException
 graphql.execution.UnresolvedTypeException
 ```
 
-### Worker 7 — graphql.execution sub-packages (24 classes)
+### Worker 2 — graphql.execution sub-packages (24 classes)
 ```
 graphql.execution.conditional.ConditionalNodeDecision
 graphql.execution.directives.QueryAppliedDirective
@@ -365,11 +206,11 @@ for each wave. Your job is cleanup and push only.
    from the `JSPECIFY_EXEMPTION_LIST` in `JSpecifyAnnotationsCheck.groovy`
 3. Run `./gradlew compileJava` one final time to confirm the full build passes
 4. Commit: `"Remove annotated classes from JSpecify exemption list"`
-5. Push: `git push -u origin claude/jspecify-wave4`
+5. Push: `git push -u origin claude/jspecify-wave5`
 
 ---
 
 ## Repository Details
 - Working directory: `/Users/dondonz/Development/graphql-java`
-- Branch: `claude/jspecify-wave4`
+- Branch: `claude/jspecify-wave5`
 - NullAway compile check: `./gradlew compileJava`
