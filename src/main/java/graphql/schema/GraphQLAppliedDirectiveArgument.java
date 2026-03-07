@@ -33,7 +33,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
     private final String name;
     private final InputValueWithState value;
     private final GraphQLInputType originalType;
-    private GraphQLInputType replacedType;
+    private @Nullable GraphQLInputType replacedType;
 
     private final @Nullable Argument definition;
 
@@ -91,7 +91,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
      *
      * @return a value of type T which is the java value of the argument
      */
-    public <T> T getValue() {
+    public <T> @Nullable T getValue() {
         return getInputValueImpl(getType(), value, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
@@ -221,7 +221,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
          *
          * @return this builder
          */
-        public Builder valueLiteral(@NonNull Value<?> value) {
+        public Builder valueLiteral(Value<?> value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
         }
@@ -236,7 +236,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
             return this;
         }
 
-        public Builder inputValueWithState(@NonNull InputValueWithState value) {
+        public Builder inputValueWithState(InputValueWithState value) {
             this.value = Assert.assertNotNull(value);
             return this;
         }

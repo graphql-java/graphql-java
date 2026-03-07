@@ -53,7 +53,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
-    private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
+    private @Nullable ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
     public static final String CHILD_INTERFACES = "interfaces";
@@ -111,7 +111,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     // to be removed in a future version when all code is in the code registry
     @Internal
     @Deprecated(since = "2018-12-03")
-    TypeResolver getTypeResolver() {
+    @Nullable TypeResolver getTypeResolver() {
         return typeResolver;
     }
 

@@ -43,7 +43,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
     private final @Nullable InputValueDefinition definition;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
 
-    private GraphQLInputType replacedType;
+    private @Nullable GraphQLInputType replacedType;
 
     public static final String CHILD_TYPE = "type";
 
@@ -110,7 +110,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
      *
      * @return a value of type T which is the java value of the input field default
      */
-    public static <T> T getInputFieldDefaultValue(GraphQLInputObjectField inputObjectField) {
+    public static <T> @Nullable T getInputFieldDefaultValue(GraphQLInputObjectField inputObjectField) {
         return getInputValueImpl(inputObjectField.getType(), inputObjectField.getInputFieldDefaultValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
@@ -253,7 +253,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
                 '}';
     }
 
-    private static Object inputTypeToStringAvoidingCircularReference(GraphQLInputType graphQLInputType) {
+    private static @Nullable Object inputTypeToStringAvoidingCircularReference(@Nullable GraphQLInputType graphQLInputType) {
         return (graphQLInputType instanceof GraphQLInputObjectType)
                 ? String.format("[%s]", GraphQLInputObjectType.class.getSimpleName())
                 : graphQLInputType;

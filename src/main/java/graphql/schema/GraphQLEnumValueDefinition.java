@@ -32,7 +32,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
 
     private final String name;
     private final @Nullable String description;
-    private final @Nullable Object value;
+    private final Object value;
     private final @Nullable String deprecationReason;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
     private final @Nullable EnumValueDefinition definition;
@@ -40,7 +40,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
     @Internal
     private GraphQLEnumValueDefinition(String name,
                                        @Nullable String description,
-                                       @Nullable Object value,
+                                       Object value,
                                        @Nullable String deprecationReason,
                                        List<GraphQLDirective> directives,
                                        List<GraphQLAppliedDirective> appliedDirectives,
@@ -65,7 +65,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         return description;
     }
 
-    public @Nullable Object getValue() {
+    public Object getValue() {
         return value;
     }
 

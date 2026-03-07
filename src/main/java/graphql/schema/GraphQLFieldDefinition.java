@@ -48,7 +48,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     private final DirectivesUtil.DirectivesHolder directivesHolder;
     private final @Nullable FieldDefinition definition;
 
-    private GraphQLOutputType replacedType;
+    private @Nullable GraphQLOutputType replacedType;
 
     public static final String CHILD_ARGUMENTS = "arguments";
     public static final String CHILD_TYPE = "type";
@@ -93,7 +93,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     // to be removed in a future version when all code is in the code registry
     @Internal
     @Deprecated(since = "2018-12-03")
-    DataFetcher<?> getDataFetcher() {
+    @Nullable DataFetcher<?> getDataFetcher() {
         if (dataFetcherFactory == null) {
             return null;
         }

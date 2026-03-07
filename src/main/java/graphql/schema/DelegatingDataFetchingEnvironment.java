@@ -42,7 +42,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public <T> T getSource() {
+    public <T> @Nullable T getSource() {
         return delegateEnvironment.getSource();
     }
 
@@ -57,7 +57,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public <T> T getArgument(String name) {
+    public <T> @Nullable T getArgument(String name) {
         return delegateEnvironment.getArgument(name);
     }
 
@@ -68,7 +68,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
 
     @Deprecated(since = "2022-04-17")
     @Override
-    public <T> T getContext() {
+    public <T> @Nullable T getContext() {
         return delegateEnvironment.getContext();
     }
 
@@ -83,7 +83,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public <T> T getRoot() {
+    public <T> @Nullable T getRoot() {
         return delegateEnvironment.getRoot();
     }
 

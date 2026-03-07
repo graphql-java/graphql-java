@@ -52,7 +52,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     private final @Nullable ObjectTypeDefinition definition;
     private final ImmutableList<ObjectTypeExtensionDefinition> extensionDefinitions;
 
-    private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
+    private @Nullable ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
 
     public static final String CHILD_INTERFACES = "interfaces";
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";

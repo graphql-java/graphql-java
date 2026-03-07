@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,7 +37,7 @@ public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOut
     }
 
     private final GraphQLType originalWrappedType;
-    private GraphQLType replacedWrappedType;
+    private @Nullable GraphQLType replacedWrappedType;
 
     public static final String CHILD_WRAPPED_TYPE = "wrappedType";
 

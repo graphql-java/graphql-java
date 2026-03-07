@@ -54,7 +54,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     private final @Nullable String description;
     private final @Nullable String deprecationReason;
     private final GraphQLInputType originalType;
-    private GraphQLInputType replacedType;
+    private @Nullable GraphQLInputType replacedType;
 
     private final InputValueWithState defaultValue;
     private final InputValueWithState value;
@@ -150,7 +150,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @deprecated use {@link GraphQLAppliedDirectiveArgument} instead
      */
     @Deprecated(since = "2022-02-24")
-    public static <T> T getArgumentValue(GraphQLArgument argument) {
+    public static <T> @Nullable T getArgumentValue(GraphQLArgument argument) {
         return getInputValueImpl(argument.getType(), argument.getArgumentValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
@@ -170,7 +170,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      *
      * @return a value of type T which is the java value of the argument default
      */
-    public static <T> T getArgumentDefaultValue(GraphQLArgument argument) {
+    public static <T> @Nullable T getArgumentDefaultValue(GraphQLArgument argument) {
         return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
@@ -385,7 +385,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          *
          * @return this builder
          */
-        public Builder defaultValueLiteral(@NonNull Value defaultValue) {
+        public Builder defaultValueLiteral(Value defaultValue) {
             this.defaultValue = InputValueWithState.newLiteralValue(defaultValue);
             return this;
         }
@@ -435,7 +435,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
         @Deprecated(since = "2022-02-24")
-        public Builder valueLiteral(@NonNull Value value) {
+        public Builder valueLiteral(Value value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
         }
