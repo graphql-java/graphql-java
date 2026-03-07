@@ -6,6 +6,7 @@ import graphql.DirectivesUtil;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.ValuesResolver;
+import org.jspecify.annotations.NullMarked;
 import graphql.language.AstPrinter;
 import graphql.language.Comment;
 import graphql.language.Description;
@@ -77,6 +78,7 @@ import static java.util.stream.Collectors.toList;
  * This can print an in memory GraphQL schema back to a logical schema definition
  */
 @PublicApi
+@NullMarked
 public class SchemaPrinter {
     /**
      * This predicate excludes all directives which are specified by the GraphQL Specification.
