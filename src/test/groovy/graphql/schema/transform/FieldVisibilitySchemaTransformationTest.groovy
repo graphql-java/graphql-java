@@ -2010,4 +2010,73 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         assertSchemaIsValid(restrictedSchema)
     }
 
+    def "type is not deleted if remains a union member after its only private field path is removed"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            hello: String
+            createPizzaTopping(name: String!): PizzaToppingCreationPayload @private
+            toBeRemoved: PizzaToBeRemoved @private
+        }
+
+        union PizzaPolicy =
+            | PizzaTopping
+            | PizzaCrust
+            | PizzaDiscount
+            | PizzaAllergen
+
+        interface Payload {
+            success: Boolean!
+        }
+
+        type PizzaToppingCreationPayload implements Payload {
+            topping: PizzaTopping
+            success: Boolean!
+        }
+
+        type PizzaTopping {
+            id: ID
+            name: String
+        }
+
+        type PizzaCrust {
+            id: ID
+            name: String
+        }
+
+        type PizzaDiscount {
+            id: ID
+            percentage: Float
+        }
+
+        type PizzaAllergen {
+            id: ID
+            allergen: String
+        }
+        
+        type PizzaToBeRemoved {
+            id: ID
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then: "the private field paths are removed"
+        (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("createPizzaTopping") == null
+        restrictedSchema.getType("PizzaToppingCreationPayload") == null
+
+        and: "PizzaTopping is still present because it is reachable as a union member of the public PizzaPolicy"
+        restrictedSchema.getType("PizzaTopping") != null
+
+        and: "Types with no reference at all (not a union member) is correctly removed"
+        restrictedSchema.getType("PizzaToBeRemoved") == null
+
+        and: "the resulting schema is valid - previously this would produce an invalid schema"
+        assertSchemaIsValid(restrictedSchema)
+    }
+
 }
