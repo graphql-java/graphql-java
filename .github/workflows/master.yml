@@ -6,7 +6,6 @@ on:
       - master
 permissions:
   contents: write
-  checks: write
 jobs:
   buildAndTest:
     runs-on: ubuntu-latest
@@ -46,12 +45,6 @@ jobs:
           else
             ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
           fi
-      - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.23.0
-        if: always() && matrix.label != 'check' && matrix.label != 'jcstress'
-        with:
-          files: |
-            **/build/test-results/*/TEST-*.xml
       - name: Upload Coverage XML Report
         uses: actions/upload-artifact@v4
         if: always() && matrix.label == 'java25'
@@ -130,10 +123,10 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
+            const { parseJacocoXml } = require('./.github/scripts/parse-jacoco.js');
 
             const versions = ['java11', 'java17', 'java21', 'java25', 'jcstress'];
             const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
-            const zeroCov = { covered: 0, missed: 0 };
 
             // Read current baseline
             const baselineFile = 'test-baseline.json';
@@ -154,48 +147,8 @@ jobs:
             }
 
             // Update coverage from JaCoCo XML
-            let coverage = { overall: {}, classes: {} };
             const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
-            if (fs.existsSync(jacocoFile)) {
-              const xml = fs.readFileSync(jacocoFile, 'utf8');
-
-              // Overall counters (outside <package> tags)
-              const stripped = xml.replace(/<package[\s\S]*?<\/package>/g, '');
-              const re = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
-              let m;
-              while ((m = re.exec(stripped)) !== null) {
-                if (m[1] === 'LINE') coverage.overall.line = { covered: parseInt(m[3]), missed: parseInt(m[2]) };
-                else if (m[1] === 'BRANCH') coverage.overall.branch = { covered: parseInt(m[3]), missed: parseInt(m[2]) };
-                else if (m[1] === 'METHOD') coverage.overall.method = { covered: parseInt(m[3]), missed: parseInt(m[2]) };
-              }
-
-              // Per-class counters from <package>/<class> elements
-              const pkgRe = /<package\s+name="([^"]+)">([\s\S]*?)<\/package>/g;
-              let pkgMatch;
-              while ((pkgMatch = pkgRe.exec(xml)) !== null) {
-                const pkgName = pkgMatch[1].replace(/\//g, '.');
-                const pkgBody = pkgMatch[2];
-                const classRe = /<class\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/class>/g;
-                let classMatch;
-                while ((classMatch = classRe.exec(pkgBody)) !== null) {
-                  const className = classMatch[1].replace(/\//g, '.');
-                  const classBody = classMatch[2];
-                  const counters = { line: { ...zeroCov }, branch: { ...zeroCov }, method: { ...zeroCov } };
-                  const cntRe = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
-                  let cntMatch;
-                  while ((cntMatch = cntRe.exec(classBody)) !== null) {
-                    const entry = { covered: parseInt(cntMatch[3]), missed: parseInt(cntMatch[2]) };
-                    if (cntMatch[1] === 'LINE') counters.line = entry;
-                    else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
-                    else if (cntMatch[1] === 'METHOD') counters.method = entry;
-                  }
-                  // Skip classes with 0 total lines (interfaces, annotations, abstract classes)
-                  if (counters.line.covered + counters.line.missed > 0) {
-                    coverage.classes[className] = counters;
-                  }
-                }
-              }
-            }
+            const coverage = parseJacocoXml(jacocoFile) || { overall: {}, classes: {} };
 
             const updated = { tests, coverage };
             fs.writeFileSync(baselineFile, JSON.stringify(updated, null, 2) + '\n');

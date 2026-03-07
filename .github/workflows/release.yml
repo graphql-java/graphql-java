@@ -6,7 +6,8 @@ on:
       version:
         description: 'the version to be released'
         required: true
-
+permissions:
+  contents: read
 jobs:
   buildAndPublish:
     runs-on: ubuntu-latest
