@@ -270,6 +270,7 @@ public class IntrospectionWithDirectivesSupport {
      * The parameter environment on a call to {@link DirectivePredicate}
      */
     @PublicApi
+    @NullMarked
     public interface DirectivePredicateEnvironment {
 
         /**
