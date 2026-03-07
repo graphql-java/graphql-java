@@ -20,6 +20,8 @@ import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
 import graphql.util.MutableRef;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -50,8 +52,9 @@ import static java.util.stream.Collectors.toSet;
  */
 @PublicApi
 @Mutable
+@NullMarked
 public class ExecutableNormalizedField {
-    private final String alias;
+    private final @Nullable String alias;
     private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
     private final LinkedHashMap<String, Object> resolvedArguments;
     private final ImmutableList<Argument> astArguments;
@@ -59,7 +62,7 @@ public class ExecutableNormalizedField {
     // Mutable List on purpose: it is modified after creation
     private final LinkedHashSet<String> objectTypeNames;
     private final ArrayList<ExecutableNormalizedField> children;
-    private ExecutableNormalizedField parent;
+    private @Nullable ExecutableNormalizedField parent;
 
     private final String fieldName;
     private final int level;
@@ -136,7 +139,7 @@ public class ExecutableNormalizedField {
      *
      * @return true if the field is conditional
      */
-    public boolean isConditional(@NonNull GraphQLSchema schema) {
+    public boolean isConditional(GraphQLSchema schema) {
         if (parent == null) {
             return false;
         }
@@ -320,7 +323,7 @@ public class ExecutableNormalizedField {
      * @see #getResultKey()
      * @see #getName()
      */
-    public String getAlias() {
+    public @Nullable String getAlias() {
         return alias;
     }
 
@@ -338,7 +341,7 @@ public class ExecutableNormalizedField {
      *
      * @return an argument value
      */
-    public NormalizedInputValue getNormalizedArgument(String name) {
+    public @Nullable NormalizedInputValue getNormalizedArgument(String name) {
         return normalizedArguments.get(name);
     }
 
@@ -476,7 +479,7 @@ public class ExecutableNormalizedField {
     /**
      * @return the parent of this {@link ExecutableNormalizedField} or null if it's a top level field
      */
-    public ExecutableNormalizedField getParent() {
+    public @Nullable ExecutableNormalizedField getParent() {
         return parent;
     }
 
@@ -606,6 +609,7 @@ public class ExecutableNormalizedField {
         return builder.build();
     }
 
+    @NullUnmarked
     public static class Builder {
         private LinkedHashSet<String> objectTypeNames = new LinkedHashSet<>();
         private String fieldName;

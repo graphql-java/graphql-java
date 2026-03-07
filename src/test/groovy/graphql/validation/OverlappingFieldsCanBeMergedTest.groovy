@@ -6,6 +6,7 @@ import graphql.language.SourceLocation
 import graphql.parser.Parser
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLSchema
+import graphql.schema.idl.SchemaGenerator
 import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
@@ -965,6 +966,45 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 0
+    }
+
+    def "mixed null and non-null field types from unresolvable fragments should not conflict"() {
+        given:
+        // Regression test for commit 072165b which changed the null-handling in requireSameOutputTypeShape.
+        // This reproduces the benchmarkDeepAbstractConcrete JMH benchmark scenario: the fragment spreads
+        // on "Whatever" (which doesn't exist in the schema), so the outer "field" has null graphQLType.
+        // After mergeSubSelections, the inner field set contains both null-typed entries (from the
+        // unresolvable parent) and Abstract-typed entries (from the interface inline fragments).
+        // A null type means the parent was unresolvable, so we should skip the comparison rather than
+        // report a spurious conflict.
+        def schema = SchemaGenerator.createdMockedSchema('''
+            type Query { viewer: Viewer }
+            interface Abstract { field: Abstract leaf: Int }
+            interface Abstract1 { field: Abstract leaf: Int }
+            interface Abstract2 { field: Abstract leaf: Int }
+            type Concrete1 implements Abstract1 { field: Abstract leaf: Int }
+            type Concrete2 implements Abstract2 { field: Abstract leaf: Int }
+            type Viewer { xingId: XingId }
+            type XingId { firstName: String! lastName: String! }
+        ''')
+        def query = '''
+        fragment multiply on Whatever {
+            field {
+                ... on Abstract1 { field { leaf } }
+                ... on Abstract2 { field { leaf } }
+                ... on Concrete1 { field { leaf } }
+                ... on Concrete2 { field { leaf } }
+            }
+        }
+        query DeepAbstractConcrete {
+            field { ...multiply field { ...multiply } }
+        }
+        '''
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.getErrors().isEmpty()
     }
 
     def "overlapping fields on lower level"() {

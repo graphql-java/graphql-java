@@ -43,6 +43,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.impl.SchemaUtil;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -76,6 +77,7 @@ import static java.util.stream.Collectors.toSet;
  * during a given graphql operation.
  */
 @PublicApi
+@NullMarked
 public class ExecutableNormalizedOperationFactory {
 
     public static class Options {
