@@ -8,7 +8,8 @@ import graphql.language.InputValueDefinition;
 import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -46,18 +47,19 @@ import static graphql.execution.ValuesResolver.getInputValueImpl;
  * as opposed to its schema definition itself.
  */
 @PublicApi
+@NullMarked
 public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputValueDefinition {
 
     private final String name;
-    private final String description;
-    private final String deprecationReason;
+    private final @Nullable String description;
+    private final @Nullable String deprecationReason;
     private final GraphQLInputType originalType;
     private GraphQLInputType replacedType;
 
     private final InputValueWithState defaultValue;
     private final InputValueWithState value;
 
-    private final InputValueDefinition definition;
+    private final @Nullable InputValueDefinition definition;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
 
 
@@ -65,14 +67,14 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
 
 
     private GraphQLArgument(String name,
-                            String description,
+                            @Nullable String description,
                             GraphQLInputType type,
                             InputValueWithState defaultValue,
                             InputValueWithState value,
-                            InputValueDefinition definition,
+                            @Nullable InputValueDefinition definition,
                             List<GraphQLDirective> directives,
                             List<GraphQLAppliedDirective> appliedDirectives,
-                            String deprecationReason) {
+                            @Nullable String deprecationReason) {
         assertValidName(name);
         assertNotNull(type, "type can't be null");
         this.name = name;
@@ -104,7 +106,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      *
      * @return a {@link InputValueWithState} that represents the arguments default value
      */
-    public @NonNull InputValueWithState getArgumentDefaultValue() {
+    public InputValueWithState getArgumentDefaultValue() {
         return defaultValue;
     }
 
@@ -125,7 +127,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @deprecated use {@link GraphQLAppliedDirectiveArgument} instead
      */
     @Deprecated(since = "2022-02-24")
-    public @NonNull InputValueWithState getArgumentValue() {
+    public InputValueWithState getArgumentValue() {
         return value;
     }
 
@@ -172,11 +174,11 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public String getDeprecationReason() {
+    public @Nullable String getDeprecationReason() {
         return deprecationReason;
     }
 
@@ -184,7 +186,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         return deprecationReason != null;
     }
 
-    public InputValueDefinition getDefinition() {
+    public @Nullable InputValueDefinition getDefinition() {
         return definition;
     }
 
@@ -324,6 +326,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
                 .build();
     }
 
+    @NullUnmarked
     public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
 
         private GraphQLInputType type;
