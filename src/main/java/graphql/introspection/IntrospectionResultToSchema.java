@@ -2,6 +2,8 @@ package graphql.introspection;
 
 import graphql.ExecutionResult;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.language.Argument;
 import graphql.language.Description;
 import graphql.language.Directive;
@@ -45,6 +47,7 @@ import static graphql.Directives.isBuiltInDirective;
 
 @SuppressWarnings("unchecked")
 @PublicApi
+@NullMarked
 public class IntrospectionResultToSchema {
 
     /**
@@ -54,7 +57,7 @@ public class IntrospectionResultToSchema {
      *
      * @return a IDL Document of the schema
      */
-    public Document createSchemaDefinition(ExecutionResult introspectionResult) {
+    public @Nullable Document createSchemaDefinition(ExecutionResult introspectionResult) {
         if (!introspectionResult.isDataPresent()) {
             return null;
         }
@@ -129,7 +132,7 @@ public class IntrospectionResultToSchema {
         return document.build();
     }
 
-    private DirectiveDefinition createDirective(Map<String, Object> input) {
+    private @Nullable DirectiveDefinition createDirective(Map<String, Object> input) {
         String directiveName = (String) input.get("name");
         if (isBuiltInDirective(directiveName)) {
             return null;
@@ -163,7 +166,7 @@ public class IntrospectionResultToSchema {
         return result;
     }
 
-    private TypeDefinition createTypeDefinition(Map<String, Object> type) {
+    private @Nullable TypeDefinition createTypeDefinition(Map<String, Object> type) {
         String kind = (String) type.get("kind");
         String name = (String) type.get("name");
         if (name.startsWith("__")) {
@@ -187,7 +190,7 @@ public class IntrospectionResultToSchema {
         }
     }
 
-    private TypeDefinition createScalar(Map<String, Object> input) {
+    private @Nullable TypeDefinition createScalar(Map<String, Object> input) {
         String name = (String) input.get("name");
         if (ScalarInfo.isGraphqlSpecifiedScalar(name)) {
             return null;
@@ -360,7 +363,7 @@ public class IntrospectionResultToSchema {
         }
     }
 
-    private Description toDescription(Map<String, Object> input) {
+    private @Nullable Description toDescription(Map<String, Object> input) {
         String description = (String) input.get("description");
         if (description == null) {
             return null;
