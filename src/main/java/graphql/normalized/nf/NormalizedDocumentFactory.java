@@ -34,6 +34,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.impl.SchemaUtil;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -57,6 +58,7 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
 @ExperimentalApi
+@NullMarked
 public class NormalizedDocumentFactory {
 
     public static class Options {
@@ -254,7 +256,7 @@ public class NormalizedDocumentFactory {
 
         private final Set<String> skipIncludeVariableNames = new LinkedHashSet<>();
 
-        private Map<String, Boolean> assumedSkipIncludeVariableValues;
+        private @Nullable Map<String, Boolean> assumedSkipIncludeVariableValues;
 
         private NormalizedDocumentFactoryImpl(
                 GraphQLSchema graphQLSchema,
@@ -449,7 +451,7 @@ public class NormalizedDocumentFactory {
                                Map<String, List<CollectedField>> fieldsByName,
                                ImmutableListMultimap.Builder<NormalizedField, CollectedField> normalizedFieldToAstFields,
                                int level,
-                               NormalizedField parent) {
+                               @Nullable NormalizedField parent) {
             for (String resultKey : fieldsByName.keySet()) {
                 List<CollectedField> fieldsWithSameResultKey = fieldsByName.get(resultKey);
                 List<CollectedFieldGroup> commonParentsGroups = groupByCommonParents(fieldsWithSameResultKey);
@@ -471,9 +473,9 @@ public class NormalizedDocumentFactory {
         }
 
         // new single ENF
-        private NormalizedField createNF(CollectedFieldGroup collectedFieldGroup,
+        private @Nullable NormalizedField createNF(CollectedFieldGroup collectedFieldGroup,
                                          int level,
-                                         NormalizedField parent) {
+                                         @Nullable NormalizedField parent) {
 
             this.fieldCount++;
             if (this.fieldCount > this.options.getMaxFieldsCount()) {
