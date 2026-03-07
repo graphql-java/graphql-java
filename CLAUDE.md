@@ -11,7 +11,7 @@ Java GraphQL spec implementation. Build: `./gradlew build|test|check|javadoc`. J
 - Immutable data classes w/ Builder: `newFoo()` factory, `foo(value)` setters, `transform()` method
 - Use `graphql.Assert` not `Objects.requireNonNull`
 - Use `@Public`/`@Internal` annotations — never package-private/protected
-- JSpecify nullability (`@Nullable`/`@NonNull`) on public API; NullAway enforced via ErrorProne
+- `@NullMarked` on all public API classes; use `@Nullable` for nullable params/returns; NullAway enforced via ErrorProne
 - Default collections: `ArrayList`, `LinkedHashSet`, `LinkedHashMap`
 - Public API methods take `FooEnvironment` arg objects
 - Full style guide: `coding-guidelines.md`
