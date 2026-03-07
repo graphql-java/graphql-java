@@ -7,6 +7,7 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import graphql.ExperimentalApi;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ import java.util.function.Predicate;
 import static graphql.Assert.assertTrue;
 
 @ExperimentalApi
+@NullMarked
 public class SchemaGraph {
 
     public static final String SCHEMA = "Schema";
@@ -165,7 +167,7 @@ public class SchemaGraph {
         return result;
     }
 
-    public Edge getSingleAdjacentEdge(Vertex from, Predicate<Edge> predicate) {
+    public @Nullable Edge getSingleAdjacentEdge(Vertex from, Predicate<Edge> predicate) {
         for (Edge edge : edgesByDirection.row(from).values()) {
             if (predicate.test(edge)) {
                 return edge;
@@ -204,11 +206,11 @@ public class SchemaGraph {
         directivesByName.put(name, vertex);
     }
 
-    public Vertex getType(String name) {
+    public @Nullable Vertex getType(String name) {
         return typesByName.get(name);
     }
 
-    public Vertex getDirective(String name) {
+    public @Nullable Vertex getDirective(String name) {
         return directivesByName.get(name);
     }
 

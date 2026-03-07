@@ -8,6 +8,8 @@ import graphql.schema.diffing.Edge;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.SchemaGraphFactory;
 import graphql.schema.diffing.Vertex;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
  * Cycles caused by built-in introspection types are filtered out.
  */
 @ExperimentalApi
+@NullMarked
 public class CyclicSchemaAnalyzer {
 
     public static class SchemaCycle {
@@ -128,12 +131,12 @@ public class CyclicSchemaAnalyzer {
         private ArrayDeque<Vertex> stack = null;
 
         // The state of the embedded Tarjan SCC algorithm.
-        private List<Set<Vertex>> foundSCCs = null;
+        private @Nullable List<Set<Vertex>> foundSCCs = null;
         private int index = 0;
-        private Map<Vertex, Integer> vIndex = null;
-        private Map<Vertex, Integer> vLowlink = null;
-        private ArrayDeque<Vertex> path = null;
-        private Set<Vertex> pathSet = null;
+        private @Nullable Map<Vertex, Integer> vIndex = null;
+        private @Nullable Map<Vertex, Integer> vLowlink = null;
+        private @Nullable ArrayDeque<Vertex> path = null;
+        private @Nullable Set<Vertex> pathSet = null;
 
         private List<List<Vertex>> foundCycles = new ArrayList<>();
 
@@ -176,7 +179,7 @@ public class CyclicSchemaAnalyzer {
             return this.foundCycles;
         }
 
-        private GraphAndIndex findMinSCSG(int startIndex) {
+        private @Nullable GraphAndIndex findMinSCSG(int startIndex) {
             /*
              * Per Johnson : "adjacency structure of strong component $K$ with least vertex in subgraph
              * of $G$ induced by $(s, s + 1, n)$". Or in contemporary terms: the strongly connected

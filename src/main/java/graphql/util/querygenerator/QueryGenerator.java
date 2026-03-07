@@ -11,6 +11,7 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.querygenerator.QueryGeneratorFieldSelection.FieldSelection;
 import graphql.util.querygenerator.QueryGeneratorFieldSelection.FieldSelectionResult;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.stream.Stream;
@@ -28,6 +29,7 @@ import java.util.stream.Stream;
  *
  */
 @ExperimentalApi
+@NullMarked
 public class QueryGenerator {
     private final GraphQLSchema schema;
     private final QueryGeneratorFieldSelection fieldSelectionGenerator;
