@@ -39,12 +39,12 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8333,
-        "missed": 1509
+        "covered": 8331,
+        "missed": 1511
       },
       "line": {
-        "covered": 28699,
-        "missed": 3125
+        "covered": 28698,
+        "missed": 3126
       },
       "method": {
         "covered": 7681,
@@ -4170,12 +4170,12 @@
       },
       "graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 81,
-          "missed": 0
+          "covered": 80,
+          "missed": 1
         },
         "branch": {
-          "covered": 26,
-          "missed": 0
+          "covered": 24,
+          "missed": 2
         },
         "method": {
           "covered": 17,
