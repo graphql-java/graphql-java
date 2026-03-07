@@ -37,7 +37,8 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.InputValueWithState;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -75,6 +76,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
  * to disable introspection for that request.
  */
 @PublicApi
+@NullMarked
 public class Introspection {
 
 
@@ -134,7 +136,6 @@ public class Introspection {
         return Optional.empty();
     }
 
-    @NonNull
     private static Optional<ExecutionResult> mkDisabledError(MergedField schemaField) {
         IntrospectionDisabledError error = new IntrospectionDisabledError(schemaField.getSingleField().getSourceLocation());
         return Optional.of(ExecutionResult.newExecutionResult().addError(error).build());
@@ -826,7 +827,7 @@ public class Introspection {
         return fieldDefinition;
     }
 
-    private static GraphQLFieldDefinition getSystemFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
+    private static @Nullable GraphQLFieldDefinition getSystemFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
         if (schema.getQueryType() == parentType) {
             if (fieldName.equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
                 return schema.getIntrospectionSchemaFieldDefinition();
