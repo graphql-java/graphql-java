@@ -24,7 +24,8 @@ import graphql.schema.InputValueWithState;
 import graphql.schema.SchemaTransformer;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -76,6 +77,7 @@ import static graphql.util.TraversalControl.CONTINUE;
  *  </pre>
  */
 @PublicApi
+@NullMarked
 public class IntrospectionWithDirectivesSupport {
 
     private final DirectivePredicate directivePredicate;
@@ -131,7 +133,7 @@ public class IntrospectionWithDirectivesSupport {
         GraphQLTypeVisitorStub visitor = new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
-                GraphQLCodeRegistry.Builder codeRegistry = context.getVarFromParents(GraphQLCodeRegistry.Builder.class);
+                GraphQLCodeRegistry.Builder codeRegistry = assertNotNull(context.getVarFromParents(GraphQLCodeRegistry.Builder.class), "codeRegistry should not be null");
                 // we need to change __XXX introspection types to have directive extensions
                 if (INTROSPECTION_ELEMENTS.contains(objectType.getName())) {
                     GraphQLObjectType newObjectType = addAppliedDirectives(objectType, codeRegistry, appliedDirectiveType, directiveArgumentType);
@@ -197,13 +199,13 @@ public class IntrospectionWithDirectivesSupport {
             return assertShouldNeverHappen("What directive containing element have we not considered? - %s", originalType);
         };
         DataFetcher<?> argsDF = env -> {
-            final GraphQLAppliedDirective directive = env.getSource();
+            final GraphQLAppliedDirective directive = assertNotNull(env.getSource());
             // we only show directive arguments that have values set on them
             return ImmutableKit.filter(directive.getArguments(),
                     arg -> arg.getArgumentValue().isSet());
         };
         DataFetcher<?> argValueDF = env -> {
-            final GraphQLAppliedDirectiveArgument argument = env.getSource();
+            final GraphQLAppliedDirectiveArgument argument = assertNotNull(env.getSource());
             InputValueWithState value = argument.getArgumentValue();
             Node<?> literal = ValuesResolver.valueToLiteral(value, argument.getType(), env.getGraphQlContext(), env.getLocale());
             return AstPrinter.printAst(literal);
@@ -224,7 +226,7 @@ public class IntrospectionWithDirectivesSupport {
         return objectType;
     }
 
-    private List<GraphQLDirective> filterDirectives(GraphQLSchema schema, boolean isDefinedDirective, GraphQLDirectiveContainer container, List<GraphQLDirective> directives) {
+    private List<GraphQLDirective> filterDirectives(GraphQLSchema schema, boolean isDefinedDirective, @Nullable GraphQLDirectiveContainer container, List<GraphQLDirective> directives) {
         return ImmutableKit.filter(directives,
                 directive -> {
                     DirectivePredicateEnvironment env = buildDirectivePredicateEnv(schema, isDefinedDirective, container, directive.getName());
@@ -232,7 +234,7 @@ public class IntrospectionWithDirectivesSupport {
                 });
     }
 
-    private List<GraphQLAppliedDirective> filterAppliedDirectives(GraphQLSchema schema, boolean isDefinedDirective, GraphQLDirectiveContainer container, List<GraphQLAppliedDirective> directives) {
+    private List<GraphQLAppliedDirective> filterAppliedDirectives(GraphQLSchema schema, boolean isDefinedDirective, @Nullable GraphQLDirectiveContainer container, List<GraphQLAppliedDirective> directives) {
         return ImmutableKit.filter(directives,
                 directive -> {
                     DirectivePredicateEnvironment env = buildDirectivePredicateEnv(schema, isDefinedDirective, container, directive.getName());
@@ -240,11 +242,10 @@ public class IntrospectionWithDirectivesSupport {
                 });
     }
 
-    @NonNull
-    private DirectivePredicateEnvironment buildDirectivePredicateEnv(GraphQLSchema schema, boolean isDefinedDirective, GraphQLDirectiveContainer container, String directiveName) {
+    private DirectivePredicateEnvironment buildDirectivePredicateEnv(GraphQLSchema schema, boolean isDefinedDirective, @Nullable GraphQLDirectiveContainer container, String directiveName) {
         return new DirectivePredicateEnvironment() {
             @Override
-            public GraphQLDirectiveContainer getDirectiveContainer() {
+            public @Nullable GraphQLDirectiveContainer getDirectiveContainer() {
                 return container;
             }
 
@@ -269,6 +270,7 @@ public class IntrospectionWithDirectivesSupport {
      * The parameter environment on a call to {@link DirectivePredicate}
      */
     @PublicApi
+    @NullMarked
     public interface DirectivePredicateEnvironment {
 
         /**
@@ -277,7 +279,7 @@ public class IntrospectionWithDirectivesSupport {
          *
          * @return the schema element that contained this directive.
          */
-        GraphQLDirectiveContainer getDirectiveContainer();
+        @Nullable GraphQLDirectiveContainer getDirectiveContainer();
 
         /**
          * @return the directive to be included

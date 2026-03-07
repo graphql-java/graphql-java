@@ -14,7 +14,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.validation.ValidationError;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -29,6 +29,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.whe
  * This {@link Instrumentation} implementation uses {@link TracingSupport} to
  * capture tracing information and puts it into the {@link ExecutionResult}
  */
+@NullMarked
 @PublicApi
 public class TracingInstrumentation extends SimplePerformantInstrumentation {
 
@@ -77,7 +78,7 @@ public class TracingInstrumentation extends SimplePerformantInstrumentation {
     }
 
     @Override
-    public @NonNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState rawState) {
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState rawState) {
         Map<Object, Object> currentExt = executionResult.getExtensions();
 
         TracingSupport tracingSupport = ofState(rawState);

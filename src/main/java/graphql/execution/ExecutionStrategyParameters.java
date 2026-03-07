@@ -3,6 +3,8 @@ package graphql.execution;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.incremental.AlternativeCallContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.function.Consumer;
@@ -13,26 +15,27 @@ import static graphql.Assert.assertNotNull;
  * The parameters that are passed to execution strategies
  */
 @PublicApi
+@NullMarked
 public class ExecutionStrategyParameters {
     private final ExecutionStepInfo executionStepInfo;
-    private final Object source;
-    private final Object localContext;
+    private final @Nullable Object source;
+    private final @Nullable Object localContext;
     private final MergedSelectionSet fields;
     private final NonNullableFieldValidator nonNullableFieldValidator;
     private final ResultPath path;
-    private final MergedField currentField;
-    private final ExecutionStrategyParameters parent;
-    private final AlternativeCallContext alternativeCallContext;
+    private final @Nullable MergedField currentField;
+    private final @Nullable ExecutionStrategyParameters parent;
+    private final @Nullable AlternativeCallContext alternativeCallContext;
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
-                                        Object source,
-                                        Object localContext,
+                                        @Nullable Object source,
+                                        @Nullable Object localContext,
                                         MergedSelectionSet fields,
                                         NonNullableFieldValidator nonNullableFieldValidator,
                                         ResultPath path,
-                                        MergedField currentField,
-                                        ExecutionStrategyParameters parent,
-                                        AlternativeCallContext alternativeCallContext) {
+                                        @Nullable MergedField currentField,
+                                        @Nullable ExecutionStrategyParameters parent,
+                                        @Nullable AlternativeCallContext alternativeCallContext) {
 
         this.executionStepInfo = assertNotNull(executionStepInfo, "executionStepInfo is null");
         this.localContext = localContext;
@@ -49,7 +52,7 @@ public class ExecutionStrategyParameters {
         return executionStepInfo;
     }
 
-    public Object getSource() {
+    public @Nullable Object getSource() {
         return source;
     }
 
@@ -65,11 +68,11 @@ public class ExecutionStrategyParameters {
         return path;
     }
 
-    public Object getLocalContext() {
+    public @Nullable Object getLocalContext() {
         return localContext;
     }
 
-    public ExecutionStrategyParameters getParent() {
+    public @Nullable ExecutionStrategyParameters getParent() {
         return parent;
     }
 
@@ -113,7 +116,7 @@ public class ExecutionStrategyParameters {
      *
      * @return the current merged fields
      */
-    public MergedField getField() {
+    public @Nullable MergedField getField() {
         return currentField;
     }
 
@@ -134,7 +137,7 @@ public class ExecutionStrategyParameters {
     @Internal
     ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
                                           MergedSelectionSet fields,
-                                          Object source) {
+                                          @Nullable Object source) {
         return new ExecutionStrategyParameters(executionStepInfo,
                 source,
                 localContext,
@@ -149,8 +152,8 @@ public class ExecutionStrategyParameters {
     @Internal
     ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
                                           ResultPath path,
-                                          Object localContext,
-                                          Object source) {
+                                          @Nullable Object localContext,
+                                          @Nullable Object source) {
         return new ExecutionStrategyParameters(executionStepInfo,
                 source,
                 localContext,
@@ -164,8 +167,8 @@ public class ExecutionStrategyParameters {
 
     @Internal
     ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
-                                          Object localContext,
-                                          Object source) {
+                                          @Nullable Object localContext,
+                                          @Nullable Object source) {
         return new ExecutionStrategyParameters(executionStepInfo,
                 source,
                 localContext,
@@ -212,6 +215,7 @@ public class ExecutionStrategyParameters {
         return new Builder(oldParameters);
     }
 
+    @NullUnmarked
     public static class Builder {
         ExecutionStepInfo executionStepInfo;
         Object source;

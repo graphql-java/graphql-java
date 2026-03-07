@@ -10,6 +10,8 @@ import graphql.language.Field;
 import graphql.language.OperationDefinition;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldsContainer;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -23,9 +25,10 @@ import java.util.Map;
  * An operation consists of a list of {@link ExecutableNormalizedField}s in a parent child hierarchy
  */
 @PublicApi
+@NullMarked
 public class ExecutableNormalizedOperation {
     private final OperationDefinition.Operation operation;
-    private final String operationName;
+    private final @Nullable String operationName;
     private final List<ExecutableNormalizedField> topLevelFields;
     private final ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField;
     private final Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField;
@@ -36,7 +39,7 @@ public class ExecutableNormalizedOperation {
 
     public ExecutableNormalizedOperation(
             OperationDefinition.Operation operation,
-            String operationName,
+            @Nullable String operationName,
             List<ExecutableNormalizedField> topLevelFields,
             ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField,
             Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
@@ -65,7 +68,7 @@ public class ExecutableNormalizedOperation {
     /**
      * @return the operation name, which can be null
      */
-    public String getOperationName() {
+    public @Nullable String getOperationName() {
         return operationName;
     }
 
@@ -133,7 +136,7 @@ public class ExecutableNormalizedOperation {
      *
      * @return a {@link MergedField} or null if its not present
      */
-    public MergedField getMergedField(ExecutableNormalizedField executableNormalizedField) {
+    public @Nullable MergedField getMergedField(ExecutableNormalizedField executableNormalizedField) {
         return normalizedFieldToMergedField.get(executableNormalizedField);
     }
 
@@ -152,7 +155,7 @@ public class ExecutableNormalizedOperation {
      *
      * @return the fields query directives or null
      */
-    public QueryDirectives getQueryDirectives(ExecutableNormalizedField executableNormalizedField) {
+    public @Nullable QueryDirectives getQueryDirectives(ExecutableNormalizedField executableNormalizedField) {
         return normalizedFieldToQueryDirectives.get(executableNormalizedField);
     }
 

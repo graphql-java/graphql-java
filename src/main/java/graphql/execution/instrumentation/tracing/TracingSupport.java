@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.DataFetchingEnvironment;
+import org.jspecify.annotations.NullMarked;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
 /**
@@ -22,6 +24,7 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
  * calls.  It has been made a separate class so that you can compose this into existing
  * instrumentation code.
  */
+@NullMarked
 @PublicApi
 public class TracingSupport implements InstrumentationState {
 
@@ -78,9 +81,9 @@ public class TracingSupport implements InstrumentationState {
 
             Map<String, Object> fetchMap = new LinkedHashMap<>();
             fetchMap.put("path", executionStepInfo.getPath().toList());
-            fetchMap.put("parentType", simplePrint(executionStepInfo.getParent().getUnwrappedNonNullType()));
+            fetchMap.put("parentType", simplePrint(assertNotNull(executionStepInfo.getParent(), "executionStepInfo parent must not be null").getUnwrappedNonNullType()));
             fetchMap.put("returnType", executionStepInfo.simplePrint());
-            fetchMap.put("fieldName", executionStepInfo.getFieldDefinition().getName());
+            fetchMap.put("fieldName", assertNotNull(executionStepInfo.getFieldDefinition(), "fieldDefinition must not be null").getName());
             fetchMap.put("startOffset", startOffset);
             fetchMap.put("duration", duration);
 

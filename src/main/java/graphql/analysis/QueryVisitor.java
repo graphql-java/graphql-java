@@ -2,6 +2,7 @@ package graphql.analysis;
 
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Used by {@link QueryTraverser} to visit the nodes of a Query.
@@ -9,6 +10,7 @@ import graphql.util.TraversalControl;
  * How this happens in detail (pre vs post-order for example) is defined by {@link QueryTraverser}.
  */
 @PublicApi
+@NullMarked
 public interface QueryVisitor {
 
     void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment);

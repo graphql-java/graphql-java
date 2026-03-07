@@ -32,8 +32,8 @@ public class UnresolvedTypeError implements GraphQLError {
         return format("Can't resolve '%s'. Abstract type '%s' must resolve to an Object type at runtime for field '%s.%s'. %s",
                 path,
                 exception.getInterfaceOrUnionType().getName(),
-                simplePrint(info.getParent().getUnwrappedNonNullType()),
-                info.getFieldDefinition().getName(),
+                simplePrint(assertNotNull(info.getParent(), "executionStepInfo parent must not be null").getUnwrappedNonNullType()),
+                assertNotNull(info.getFieldDefinition(), "fieldDefinition must not be null").getName(),
                 exception.getMessage());
     }
 

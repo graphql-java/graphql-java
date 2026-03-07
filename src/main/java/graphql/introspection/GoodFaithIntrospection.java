@@ -8,6 +8,8 @@ import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.execution.ExecutionContext;
 import graphql.language.SourceLocation;
 import graphql.normalized.ExecutableNormalizedField;
@@ -38,6 +40,7 @@ import static graphql.schema.FieldCoordinates.coordinates;
  * so tooling such as graphiql can work.
  */
 @PublicApi
+@NullMarked
 public class GoodFaithIntrospection {
 
     /**
@@ -90,7 +93,7 @@ public class GoodFaithIntrospection {
             try {
                 operation = mkOperation(executionContext);
             } catch (AbortExecutionException e) {
-                BadFaithIntrospectionError error = BadFaithIntrospectionError.tooBigOperation(e.getMessage());
+                BadFaithIntrospectionError error = BadFaithIntrospectionError.tooBigOperation(String.valueOf(e.getMessage()));
                 return Optional.of(ExecutionResult.newExecutionResult().addError(error).build());
             }
             ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToENFs = operation.getCoordinatesToNormalizedFields();
@@ -163,7 +166,7 @@ public class GoodFaithIntrospection {
         }
 
         @Override
-        public List<SourceLocation> getLocations() {
+        public @Nullable List<SourceLocation> getLocations() {
             return null;
         }
 

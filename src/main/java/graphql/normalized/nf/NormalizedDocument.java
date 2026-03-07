@@ -2,12 +2,14 @@ package graphql.normalized.nf;
 
 import graphql.Assert;
 import graphql.ExperimentalApi;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
 
 @ExperimentalApi
+@NullMarked
 public class NormalizedDocument {
 
     private final List<NormalizedOperationWithAssumedSkipIncludeVariables> normalizedOperations;
@@ -27,7 +29,7 @@ public class NormalizedDocument {
 
     public static class NormalizedOperationWithAssumedSkipIncludeVariables {
 
-        Map<String, Boolean> assumedSkipIncludeVariables;
+        @Nullable Map<String, Boolean> assumedSkipIncludeVariables;
         NormalizedOperation normalizedOperation;
 
         public NormalizedOperationWithAssumedSkipIncludeVariables(@Nullable Map<String, Boolean> assumedSkipIncludeVariables, NormalizedOperation normalizedOperation) {
@@ -35,7 +37,7 @@ public class NormalizedDocument {
             this.normalizedOperation = normalizedOperation;
         }
 
-        public Map<String, Boolean> getAssumedSkipIncludeVariables() {
+        public @Nullable Map<String, Boolean> getAssumedSkipIncludeVariables() {
             return assumedSkipIncludeVariables;
         }
 

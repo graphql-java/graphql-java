@@ -5,12 +5,14 @@ import graphql.PublicApi;
 import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This is thrown if a {@link graphql.schema.TypeResolver} fails to give back a concrete type
  * or provides a type that doesn't implement the given interface or union.
  */
 @PublicApi
+@NullMarked
 public class UnresolvedTypeException extends GraphQLException {
 
     private final GraphQLNamedOutputType interfaceOrUnionType;
