@@ -29,7 +29,7 @@ public class NormalizedDocument {
 
     public static class NormalizedOperationWithAssumedSkipIncludeVariables {
 
-        Map<String, Boolean> assumedSkipIncludeVariables;
+        @Nullable Map<String, Boolean> assumedSkipIncludeVariables;
         NormalizedOperation normalizedOperation;
 
         public NormalizedOperationWithAssumedSkipIncludeVariables(@Nullable Map<String, Boolean> assumedSkipIncludeVariables, NormalizedOperation normalizedOperation) {

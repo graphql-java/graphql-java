@@ -106,7 +106,7 @@ import java.util.Set;
 @ExperimentalApi
 @NullMarked
 public class NormalizedDeferredExecution {
-    private final String label;
+    private final @Nullable String label;
     private final Set<GraphQLObjectType> possibleTypes;
 
     public NormalizedDeferredExecution(@Nullable String label, Set<GraphQLObjectType> possibleTypes) {

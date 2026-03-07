@@ -353,7 +353,7 @@ public class NormalizedDocumentFactory {
 
             // special handling for the root selection Set
             if (normalizedField == null) {
-                GraphQLObjectType rootType = SchemaUtil.getOperationRootType(graphQLSchema, operationDefinition);
+                GraphQLObjectType rootType = SchemaUtil.getOperationRootType(graphQLSchema, Assert.assertNotNull(operationDefinition));
                 possibleObjects = ImmutableSet.of(rootType);
                 collectedFields = new ArrayList<>();
                 collectFromSelectionSet(operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects);
@@ -364,7 +364,7 @@ public class NormalizedDocumentFactory {
                     return;
                 }
                 collectedFields = new ArrayList<>();
-                for (CollectedField fieldAndAstParent : fieldAndAstParents) {
+                for (CollectedField fieldAndAstParent : Assert.assertNotNull(fieldAndAstParents)) {
                     if (fieldAndAstParent.field.getSelectionSet() == null) {
                         continue;
                     }
@@ -467,7 +467,7 @@ public class NormalizedDocumentFactory {
 
                 }
                 if (commonParentsGroups.size() > 1) {
-                    possibleMergerList.add(new PossibleMerger(parent, resultKey));
+                    possibleMergerList.add(new PossibleMerger(Assert.assertNotNull(parent), resultKey));
                 }
             }
         }
@@ -569,13 +569,13 @@ public class NormalizedDocumentFactory {
             GraphQLCompositeType newAstTypeCondition = astTypeCondition;
 
             if (inlineFragment.getTypeCondition() != null) {
-                newAstTypeCondition = (GraphQLCompositeType) this.graphQLSchema.getType(inlineFragment.getTypeCondition().getName());
+                newAstTypeCondition = (GraphQLCompositeType) Assert.assertNotNull(this.graphQLSchema.getType(inlineFragment.getTypeCondition().getName()));
                 newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newAstTypeCondition);
 
             }
 
 
-            collectFromSelectionSet(inlineFragment.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects);
+            collectFromSelectionSet(inlineFragment.getSelectionSet(), result, Assert.assertNotNull(newAstTypeCondition), newPossibleObjects);
         }
 
         private void collectField(List<CollectedField> result,

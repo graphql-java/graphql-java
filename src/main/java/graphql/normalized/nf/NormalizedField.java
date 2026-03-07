@@ -143,6 +143,9 @@ public class NormalizedField {
 
         for (GraphQLInterfaceType commonParentOutputInterface : parent.getInterfacesCommonToAllOutputTypes(schema)) {
             List<GraphQLObjectType> implementations = schema.getImplementations(commonParentOutputInterface);
+            if (implementations == null) {
+                continue;
+            }
             // __typename
             if (fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && implementations.size() == objectTypeNames.size()) {
                 return false;

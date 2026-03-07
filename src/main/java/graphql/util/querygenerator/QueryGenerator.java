@@ -1,5 +1,6 @@
 package graphql.util.querygenerator;
 
+import graphql.Assert;
 import graphql.ExperimentalApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -99,7 +100,7 @@ public class QueryGenerator {
             throw new IllegalArgumentException("Operation must be 'Query', 'Mutation' or 'Subscription'");
         }
 
-        GraphQLFieldsContainer fieldContainer = schema.getObjectType(operation);
+        GraphQLFieldsContainer fieldContainer = Assert.assertNotNull(schema.getObjectType(operation), () -> "Operation type " + operation + " not found in schema");
 
         for (int i = 1; i < fieldParts.length - 1; i++) {
             String fieldName = fieldParts[i];
@@ -146,7 +147,7 @@ public class QueryGenerator {
             }
             Stream<GraphQLFieldsContainer> fieldsContainerStream = Stream.concat(
                     Stream.of((GraphQLInterfaceType) lastType),
-                    schema.getImplementations((GraphQLInterfaceType) lastType).stream()
+                    Assert.assertNotNull(schema.getImplementations((GraphQLInterfaceType) lastType)).stream()
             );
 
             lastFieldContainer = fieldsContainerStream

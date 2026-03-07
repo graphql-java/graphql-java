@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.Assert;
 import graphql.ExperimentalApi;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
@@ -31,7 +32,7 @@ public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
         if (!inputObjectType.isOneOf()) {
             return TraversalControl.CONTINUE;
         }
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        SchemaValidationErrorCollector errorCollector = Assert.assertNotNull(context.getVarFromParents(SchemaValidationErrorCollector.class));
         if (!canBeProvidedAFiniteValue(inputObjectType, new LinkedHashSet<>())) {
             String message = format("OneOf Input Object %s must be inhabited but all fields recursively reference only other OneOf Input Objects forming an unresolvable cycle.", inputObjectType.getName());
             errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNotInhabited, message));
@@ -67,11 +68,11 @@ public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField inputObjectField, TraverserContext<GraphQLSchemaElement> context) {
-        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) context.getParentNode();
+        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) Assert.assertNotNull(context.getParentNode());
         if (!inputObjectType.isOneOf()) {
             return TraversalControl.CONTINUE;
         }
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        SchemaValidationErrorCollector errorCollector = Assert.assertNotNull(context.getVarFromParents(SchemaValidationErrorCollector.class));
         // error messages take from the reference implementation
         if (inputObjectField.hasSetDefaultValue()) {
             String message = format("OneOf input field %s.%s cannot have a default value.", inputObjectType.getName(), inputObjectField.getName());

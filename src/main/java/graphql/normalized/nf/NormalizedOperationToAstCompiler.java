@@ -93,14 +93,15 @@ public class NormalizedOperationToAstCompiler {
 
     public static CompilerResult compileToDocument(GraphQLSchema schema,
                                                    NormalizedOperation normalizedOperation) {
-        GraphQLObjectType operationType = getOperationType(schema, normalizedOperation.getOperation());
+        OperationDefinition.Operation operation = Assert.assertNotNull(normalizedOperation.getOperation(), () -> "operation must not be null for compilation");
+        GraphQLObjectType operationType = getOperationType(schema, operation);
 
         return compileToDocumentImpl(
                 schema,
                 operationType,
                 normalizedOperation.getRootFields(),
                 normalizedOperation.getOperationName(),
-                normalizedOperation.getOperation()
+                operation
         );
     }
 
@@ -227,7 +228,7 @@ public class NormalizedOperationToAstCompiler {
     private static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema,
                                                              String parentType,
                                                              NormalizedField nf) {
-        return Introspection.getFieldDef(schema, (GraphQLCompositeType) schema.getType(parentType), nf.getName());
+        return Introspection.getFieldDef(schema, (GraphQLCompositeType) Assert.assertNotNull(schema.getType(parentType)), nf.getName());
     }
 
 
@@ -237,9 +238,9 @@ public class NormalizedOperationToAstCompiler {
             case QUERY:
                 return schema.getQueryType();
             case MUTATION:
-                return schema.getMutationType();
+                return Assert.assertNotNull(schema.getMutationType());
             case SUBSCRIPTION:
-                return schema.getSubscriptionType();
+                return Assert.assertNotNull(schema.getSubscriptionType());
         }
 
         return Assert.assertShouldNeverHappen("Unknown operation kind " + operationKind);
