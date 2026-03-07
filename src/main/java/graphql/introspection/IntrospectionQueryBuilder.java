@@ -3,6 +3,7 @@ package graphql.introspection;
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
 import graphql.language.AstPrinter;
 import graphql.language.BooleanValue;
 import graphql.language.Document;
@@ -26,6 +27,7 @@ import static graphql.language.TypeName.newTypeName;
  * by the options you specify
  */
 @PublicApi
+@NullMarked
 public class IntrospectionQueryBuilder {
     public static class Options {
 
@@ -221,6 +223,7 @@ public class IntrospectionQueryBuilder {
         }
     }
 
+    @SuppressWarnings("NullAway")
     @SafeVarargs
     private static <T> List<T> filter(T... args) {
         return ImmutableKit.filterVarArgs(Objects::nonNull, args);
@@ -233,6 +236,7 @@ public class IntrospectionQueryBuilder {
      *
      * @return an introspection query in document form
      */
+    @SuppressWarnings("NullAway")
     public static Document buildDocument(Options options) {
         SelectionSet schemaSelectionSet = newSelectionSet().selections(filter(
                         options.schemaDescription ? newField("description").build() : null,
