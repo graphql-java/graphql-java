@@ -29,7 +29,7 @@ plugins {
     id 'jacoco'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.3.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.3.10'
 }
 
 java {
