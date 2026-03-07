@@ -8,7 +8,7 @@ permissions:
 jobs:
   dependabot-auto-merge:
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]'
+    if: github.event.pull_request.user.id == 49699333
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
