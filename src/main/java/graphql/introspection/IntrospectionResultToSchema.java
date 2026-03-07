@@ -62,7 +62,7 @@ public class IntrospectionResultToSchema {
             return null;
         }
 
-        Map<String, Object> introspectionResultMap = introspectionResult.getData();
+        Map<String, Object> introspectionResultMap = assertNotNull(introspectionResult.getData(), "data expected");
         return createSchemaDefinition(introspectionResultMap);
     }
 
@@ -74,7 +74,7 @@ public class IntrospectionResultToSchema {
      *
      * @return a IDL Document of the schema
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NullAway"})
     public Document createSchemaDefinition(Map<String, Object> introspectionResult) {
         Map<String, Object> schema = (Map<String, Object>) introspectionResult.get("__schema");
         assertNotNull(schema, "__schema expected");
@@ -132,6 +132,7 @@ public class IntrospectionResultToSchema {
         return document.build();
     }
 
+    @SuppressWarnings("NullAway")
     private @Nullable DirectiveDefinition createDirective(Map<String, Object> input) {
         String directiveName = (String) input.get("name");
         if (isBuiltInDirective(directiveName)) {
@@ -166,6 +167,7 @@ public class IntrospectionResultToSchema {
         return result;
     }
 
+    @SuppressWarnings("NullAway")
     private @Nullable TypeDefinition createTypeDefinition(Map<String, Object> type) {
         String kind = (String) type.get("kind");
         String name = (String) type.get("name");
@@ -190,6 +192,7 @@ public class IntrospectionResultToSchema {
         }
     }
 
+    @SuppressWarnings("NullAway")
     private @Nullable TypeDefinition createScalar(Map<String, Object> input) {
         String name = (String) input.get("name");
         if (ScalarInfo.isGraphqlSpecifiedScalar(name)) {
@@ -202,7 +205,7 @@ public class IntrospectionResultToSchema {
     }
 
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NullAway"})
     UnionTypeDefinition createUnion(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("UNION"), "wrong input");
 
@@ -220,7 +223,7 @@ public class IntrospectionResultToSchema {
         return unionTypeDefinition.build();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NullAway"})
     EnumTypeDefinition createEnum(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("ENUM"), "wrong input");
 
@@ -242,7 +245,7 @@ public class IntrospectionResultToSchema {
         return enumTypeDefinition.build();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NullAway"})
     InterfaceTypeDefinition createInterface(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("INTERFACE"), "wrong input");
 
@@ -263,7 +266,7 @@ public class IntrospectionResultToSchema {
 
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NullAway"})
     InputObjectTypeDefinition createInputObject(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("INPUT_OBJECT"), "wrong input");
 
@@ -278,7 +281,7 @@ public class IntrospectionResultToSchema {
         return inputObjectTypeDefinition.build();
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NullAway"})
     ObjectTypeDefinition createObject(Map<String, Object> input) {
         assertTrue(input.get("kind").equals("OBJECT"), "wrong input");
 
@@ -296,6 +299,7 @@ public class IntrospectionResultToSchema {
         return objectTypeDefinition.build();
     }
 
+    @SuppressWarnings("NullAway")
     private List<FieldDefinition> createFields(List<Map<String, Object>> fields) {
         List<FieldDefinition> result = new ArrayList<>(fields.size());
         for (Map<String, Object> field : fields) {
@@ -325,7 +329,7 @@ public class IntrospectionResultToSchema {
         }
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NullAway"})
     private List<InputValueDefinition> createInputValueDefinitions(List<Map<String, Object>> args) {
         List<InputValueDefinition> result = new ArrayList<>(args.size());
         for (Map<String, Object> arg : args) {
@@ -343,7 +347,7 @@ public class IntrospectionResultToSchema {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "NullAway"})
     private Type createTypeIndirection(Map<String, Object> type) {
         String kind = (String) type.get("kind");
         switch (kind) {

@@ -164,7 +164,7 @@ public class Introspection {
      * @param getter      the function to call to get a value of T
      * @param <T>         for two
      */
-    private static <T> void register(GraphQLFieldsContainer parentType, String fieldName, Class<T> targetClass, Function<T, Object> getter) {
+    private static <T> void register(GraphQLFieldsContainer parentType, String fieldName, Class<T> targetClass, Function<T, @Nullable Object> getter) {
         IntrospectionDataFetcher<?> dataFetcher = env -> {
             Object source = env.getSource();
             if (targetClass.isInstance(source)) {
@@ -229,7 +229,7 @@ public class Introspection {
         } else if (type instanceof GraphQLNonNull) {
             return TypeKind.NON_NULL;
         } else {
-            return Assert.assertShouldNeverHappen("Unknown kind of type: %s", type);
+            return Assert.assertShouldNeverHappen("Unknown kind of type: %s", String.valueOf(type));
         }
     };
     private static final IntrospectionDataFetcher<?> nameDataFetcher = environment -> {
@@ -354,9 +354,8 @@ public class Introspection {
 
     static {
         IntrospectionDataFetcher<?> argsDataFetcher = environment -> {
-            Object type = environment.getSource();
-            GraphQLFieldDefinition fieldDef = (GraphQLFieldDefinition) type;
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            GraphQLFieldDefinition fieldDef = Assert.assertNotNull(environment.<GraphQLFieldDefinition>getSource());
+            boolean includeDeprecated = Boolean.TRUE.equals(environment.<Boolean>getArgument("includeDeprecated"));
             return ImmutableKit.filter(fieldDef.getArguments(),
                     arg -> includeDeprecated || !arg.isDeprecated());
         };
@@ -397,7 +396,7 @@ public class Introspection {
         Object type = environment.getSource();
         if (type instanceof GraphQLFieldsContainer) {
             GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            boolean includeDeprecated = Boolean.TRUE.equals(environment.<Boolean>getArgument("includeDeprecated"));
             List<GraphQLFieldDefinition> fieldDefinitions = environment
                     .getGraphQLSchema()
                     .getCodeRegistry()
@@ -438,7 +437,7 @@ public class Introspection {
     private static final IntrospectionDataFetcher<?> enumValuesTypesFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLEnumType) {
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            boolean includeDeprecated = Boolean.TRUE.equals(environment.<Boolean>getArgument("includeDeprecated"));
             List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
             if (includeDeprecated) {
                 return values;
@@ -452,7 +451,7 @@ public class Introspection {
     private static final IntrospectionDataFetcher<?> inputFieldsFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLInputObjectType) {
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            boolean includeDeprecated = Boolean.TRUE.equals(environment.<Boolean>getArgument("includeDeprecated"));
             List<GraphQLInputObjectField> inputFields = environment
                     .getGraphQLSchema()
                     .getCodeRegistry()
@@ -641,12 +640,12 @@ public class Introspection {
 
     static {
         IntrospectionDataFetcher<?> locationsDataFetcher = environment -> {
-            GraphQLDirective directive = environment.getSource();
+            GraphQLDirective directive = Assert.assertNotNull(environment.<GraphQLDirective>getSource());
             return new ArrayList<>(directive.validLocations());
         };
         IntrospectionDataFetcher<?> argsDataFetcher = environment -> {
-            GraphQLDirective directive = environment.getSource();
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            GraphQLDirective directive = Assert.assertNotNull(environment.<GraphQLDirective>getSource());
+            boolean includeDeprecated = Boolean.TRUE.equals(environment.<Boolean>getArgument("includeDeprecated"));
             return ImmutableKit.filter(directive.getArguments(),
                     arg -> includeDeprecated || !arg.isDeprecated());
         };
@@ -715,7 +714,7 @@ public class Introspection {
     public static final IntrospectionDataFetcher<?> SchemaMetaFieldDefDataFetcher = IntrospectionDataFetchingEnvironment::getGraphQLSchema;
 
     public static final IntrospectionDataFetcher<?> TypeMetaFieldDefDataFetcher = environment -> {
-        String name = environment.getArgument("name");
+        String name = Assert.assertNotNull(environment.<String>getArgument("name"));
         return environment.getGraphQLSchema().getType(name);
     };
 

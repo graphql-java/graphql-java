@@ -199,13 +199,13 @@ public class IntrospectionWithDirectivesSupport {
             return assertShouldNeverHappen("What directive containing element have we not considered? - %s", originalType);
         };
         DataFetcher<?> argsDF = env -> {
-            final GraphQLAppliedDirective directive = env.getSource();
+            final GraphQLAppliedDirective directive = assertNotNull(env.getSource());
             // we only show directive arguments that have values set on them
             return ImmutableKit.filter(directive.getArguments(),
                     arg -> arg.getArgumentValue().isSet());
         };
         DataFetcher<?> argValueDF = env -> {
-            final GraphQLAppliedDirectiveArgument argument = env.getSource();
+            final GraphQLAppliedDirectiveArgument argument = assertNotNull(env.getSource());
             InputValueWithState value = argument.getArgumentValue();
             Node<?> literal = ValuesResolver.valueToLiteral(value, argument.getType(), env.getGraphQlContext(), env.getLocale());
             return AstPrinter.printAst(literal);
@@ -245,7 +245,7 @@ public class IntrospectionWithDirectivesSupport {
     private DirectivePredicateEnvironment buildDirectivePredicateEnv(GraphQLSchema schema, boolean isDefinedDirective, @Nullable GraphQLDirectiveContainer container, String directiveName) {
         return new DirectivePredicateEnvironment() {
             @Override
-            public GraphQLDirectiveContainer getDirectiveContainer() {
+            public @Nullable GraphQLDirectiveContainer getDirectiveContainer() {
                 return container;
             }
 

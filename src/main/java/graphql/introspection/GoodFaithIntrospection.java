@@ -93,7 +93,7 @@ public class GoodFaithIntrospection {
             try {
                 operation = mkOperation(executionContext);
             } catch (AbortExecutionException e) {
-                BadFaithIntrospectionError error = BadFaithIntrospectionError.tooBigOperation(e.getMessage());
+                BadFaithIntrospectionError error = BadFaithIntrospectionError.tooBigOperation(String.valueOf(e.getMessage()));
                 return Optional.of(ExecutionResult.newExecutionResult().addError(error).build());
             }
             ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToENFs = operation.getCoordinatesToNormalizedFields();
