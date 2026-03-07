@@ -33,62 +33,24 @@ Launch the validator to remove completed classes from
 
 ## Batch Assignments
 
-### Worker 1 — graphql.execution core (26 classes)
+### Worker 1 — graphql.normalized (5 classes)
 ```
-graphql.execution.AbortExecutionException
-graphql.execution.AsyncExecutionStrategy
-graphql.execution.AsyncSerialExecutionStrategy
-graphql.execution.CoercedVariables
-graphql.execution.DataFetcherExceptionHandlerParameters
-graphql.execution.DataFetcherExceptionHandlerResult
-graphql.execution.DefaultValueUnboxer
-graphql.execution.ExecutionContext
-graphql.execution.ExecutionId
-graphql.execution.ExecutionStepInfo
-graphql.execution.ExecutionStrategyParameters
-graphql.execution.FetchedValue
-graphql.execution.FieldValueInfo
-graphql.execution.InputMapDefinesTooManyFieldsException
-graphql.execution.MergedSelectionSet
-graphql.execution.MissingRootTypeException
-graphql.execution.NonNullableValueCoercedAsNullException
-graphql.execution.NormalizedVariables
-graphql.execution.OneOfNullValueException
-graphql.execution.OneOfTooManyKeysException
-graphql.execution.ResultNodesInfo
-graphql.execution.ResultPath
-graphql.execution.SimpleDataFetcherExceptionHandler
-graphql.execution.SubscriptionExecutionStrategy
-graphql.execution.UnknownOperationException
-graphql.execution.UnresolvedTypeException
+graphql.normalized.incremental.NormalizedDeferredExecution
+graphql.normalized.nf.NormalizedDocument
+graphql.normalized.nf.NormalizedDocumentFactory
+graphql.normalized.nf.NormalizedField
+graphql.normalized.nf.NormalizedOperation
 ```
 
-### Worker 2 — graphql.execution sub-packages (24 classes)
+### Worker 2 — graphql.normalized + schema + util (4 classes)
 ```
-graphql.execution.conditional.ConditionalNodeDecision
-graphql.execution.directives.QueryAppliedDirective
-graphql.execution.directives.QueryAppliedDirectiveArgument
-graphql.execution.directives.QueryDirectives
-graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation
-graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation
-graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
-graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
-graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
-graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
-graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
-graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
-graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
-graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
-graphql.execution.instrumentation.tracing.TracingInstrumentation
-graphql.execution.instrumentation.tracing.TracingSupport
-graphql.execution.preparsed.PreparsedDocumentEntry
-graphql.execution.preparsed.persisted.ApolloPersistedQuerySupport
-graphql.execution.preparsed.persisted.InMemoryPersistedQueryCache
-graphql.execution.preparsed.persisted.PersistedQueryCacheMiss
-graphql.execution.preparsed.persisted.PersistedQueryIdInvalid
-graphql.execution.preparsed.persisted.PersistedQueryNotFound
-graphql.execution.reactive.DelegatingSubscription
-graphql.execution.reactive.SubscriptionPublisher
+graphql.normalized.nf.NormalizedOperationToAstCompiler
+graphql.schema.diffing.SchemaGraph
+graphql.schema.validation.OneOfInputObjectRules
+graphql.util.CyclicSchemaAnalyzer
+graphql.util.querygenerator.QueryGenerator
+graphql.util.querygenerator.QueryGeneratorOptions
+graphql.util.querygenerator.QueryGeneratorResult
 ```
 
 ---
