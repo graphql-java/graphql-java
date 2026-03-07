@@ -1,6 +1,7 @@
 package graphql.schema.visitor;
 
 import graphql.PublicApi;
+import static graphql.Assert.assertNotNull;
 import graphql.schema.GraphQLSchemaElement;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -71,13 +72,13 @@ public class GraphQLSchemaTraversalControl {
             TreeTransformerUtil.deleteNode(context);
         }
         if (control == Control.CHANGE) {
-            TreeTransformerUtil.changeNode(context, element);
+            TreeTransformerUtil.changeNode(context, assertNotNull(element, "element should not be null for CHANGE"));
         }
         if (control == Control.INSERT_AFTER) {
-            TreeTransformerUtil.insertAfter(context, element);
+            TreeTransformerUtil.insertAfter(context, assertNotNull(element, "element should not be null for INSERT_AFTER"));
         }
         if (control == Control.INSERT_BEFORE) {
-            TreeTransformerUtil.insertAfter(context, element);
+            TreeTransformerUtil.insertAfter(context, assertNotNull(element, "element should not be null for INSERT_BEFORE"));
         }
         return TraversalControl.CONTINUE;
     }

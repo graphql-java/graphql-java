@@ -155,9 +155,9 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     @Override
     public VariableDefinition deepCopy() {
         return new VariableDefinition(name,
-                deepCopy(type),
+                assertNotNull(deepCopy(type), "type deepCopy should not return null"),
                 deepCopy(defaultValue),
-                deepCopy(directives.getDirectives()),
+                assertNotNull(deepCopy(directives.getDirectives()), "directives deepCopy should not return null"),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),

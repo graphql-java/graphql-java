@@ -633,7 +633,7 @@ public class SchemaPrinter {
             }
 
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
+                printAsAst(out, Assert.assertNotNull(type.getDefinition()), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
                 if (type.getInterfaces().isEmpty()) {
@@ -669,7 +669,7 @@ public class SchemaPrinter {
             Comparator<? super GraphQLSchemaElement> comparator = getComparator(GraphQLUnionType.class, GraphQLOutputType.class);
 
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
+                printAsAst(out, Assert.assertNotNull(type.getDefinition()), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
                 out.format("union %s%s = ", type.getName(), directivesString(GraphQLUnionType.class, type));
@@ -707,7 +707,7 @@ public class SchemaPrinter {
                 return;
             }
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
+                printAsAst(out, Assert.assertNotNull(type.getDefinition()), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
                 if (type.getInterfaces().isEmpty()) {
@@ -740,7 +740,7 @@ public class SchemaPrinter {
                 return;
             }
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
+                printAsAst(out, Assert.assertNotNull(type.getDefinition()), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
 
@@ -1065,7 +1065,7 @@ public class SchemaPrinter {
         return directives;
     }
 
-    private GraphQLAppliedDirective createDeprecatedDirective(String reason) {
+    private GraphQLAppliedDirective createDeprecatedDirective(@Nullable String reason) {
         GraphQLAppliedDirectiveArgument arg = GraphQLAppliedDirectiveArgument.newArgument()
                 .name("reason")
                 .valueProgrammatic(reason)
@@ -1077,7 +1077,7 @@ public class SchemaPrinter {
                 .build();
     }
 
-    private List<GraphQLAppliedDirective> updateDeprecatedDirective(List<GraphQLAppliedDirective> directives, String reason) {
+    private List<GraphQLAppliedDirective> updateDeprecatedDirective(List<GraphQLAppliedDirective> directives, @Nullable String reason) {
         GraphQLAppliedDirectiveArgument newArg = GraphQLAppliedDirectiveArgument.newArgument()
                 .name("reason")
                 .valueProgrammatic(reason)
@@ -1096,7 +1096,7 @@ public class SchemaPrinter {
         }).collect(toList());
     }
 
-    private String getDeprecationReason(GraphQLDirectiveContainer directiveContainer) {
+    private @Nullable String getDeprecationReason(GraphQLDirectiveContainer directiveContainer) {
         if (directiveContainer instanceof GraphQLFieldDefinition) {
             GraphQLFieldDefinition type = (GraphQLFieldDefinition) directiveContainer;
             return type.getDeprecationReason();

@@ -107,7 +107,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
 
     @Override
     public SchemaDefinition deepCopy() {
-        return new SchemaDefinition(deepCopy(directives.getDirectives()), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments(),
+        return new SchemaDefinition(assertNotNull(deepCopy(directives.getDirectives()), "directives deepCopy should not return null"), assertNotNull(deepCopy(operationTypeDefinitions), "operationTypeDefinitions deepCopy should not return null"), getSourceLocation(), getComments(),
                 getIgnoredChars(), getAdditionalData(), description);
     }
 

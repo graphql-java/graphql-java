@@ -32,7 +32,7 @@ public class ScalarTypeExtensionDefinition extends ScalarTypeDefinition implemen
 
     @Override
     public ScalarTypeExtensionDefinition deepCopy() {
-        return new ScalarTypeExtensionDefinition(getName(), deepCopy(getDirectives()), getDescription(), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new ScalarTypeExtensionDefinition(getName(), assertNotNull(deepCopy(getDirectives()), "directives deepCopy should not return null"), getDescription(), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override

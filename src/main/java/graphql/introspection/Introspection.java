@@ -120,11 +120,12 @@ public class Introspection {
 
         boolean isIntrospection = false;
         for (String key : mergedSelectionSet.getKeys()) {
-            String fieldName = mergedSelectionSet.getSubField(key).getName();
+            MergedField subField = Assert.assertNotNull(mergedSelectionSet.getSubField(key), "subField for key '%s' should not be null", key);
+            String fieldName = subField.getName();
             if (fieldName.equals(SchemaMetaFieldDef.getName())
                     || fieldName.equals(TypeMetaFieldDef.getName())) {
                 if (!isIntrospectionEnabled(graphQLContext)) {
-                    return mkDisabledError(mergedSelectionSet.getSubField(key));
+                    return mkDisabledError(subField);
                 }
                 isIntrospection = true;
                 break;
@@ -733,7 +734,7 @@ public class Introspection {
     @Internal
     public static GraphQLFieldDefinition buildTypeField(GraphQLObjectType introspectionSchemaType) {
 
-        GraphQLOutputType fieldType = introspectionSchemaType.getFieldDefinition("types").getType();
+        GraphQLOutputType fieldType = Assert.assertNotNull(introspectionSchemaType.getFieldDefinition("types"), "types field should not be null").getType();
         GraphQLObjectType underscoreType = unwrapAllAs(fieldType);
         return newFieldDefinition()
                 .name("__type")
@@ -798,8 +799,7 @@ public class Introspection {
         assertTrue(parentType instanceof GraphQLFieldsContainer, "should not happen : parent type must be an object or interface %s", parentType);
         GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
         fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
-        assertTrue(fieldDefinition != null, "Unknown field '%s' for type %s", fieldName, fieldsContainer.getName());
-        return fieldDefinition;
+        return Assert.assertNotNull(fieldDefinition, "Unknown field '%s' for type %s", fieldName, fieldsContainer.getName());
     }
 
     /**

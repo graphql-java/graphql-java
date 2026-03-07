@@ -267,7 +267,7 @@ public class SchemaTransformer {
         TraverserVisitor<GraphQLSchemaElement> nodeTraverserVisitor = new TraverserVisitor<>() {
             @Override
             public TraversalControl enter(TraverserContext<GraphQLSchemaElement> context) {
-                GraphQLSchemaElement currentSchemaElement = context.thisNode();
+                GraphQLSchemaElement currentSchemaElement = assertNotNull(context.thisNode(), "thisNode should not be null");
                 if (currentSchemaElement == dummyRoot) {
                     return TraversalControl.CONTINUE;
                 }
@@ -287,7 +287,7 @@ public class SchemaTransformer {
                     nodeZipper = zippers.get(zippers.size() - 1);
                     if (context.originalThisNode() instanceof GraphQLNamedType && context.isChanged()) {
                         GraphQLNamedType originalNamedType = (GraphQLNamedType) context.originalThisNode();
-                        GraphQLNamedType changedNamedType = (GraphQLNamedType) context.thisNode();
+                        GraphQLNamedType changedNamedType = (GraphQLNamedType) assertNotNull(context.thisNode(), "thisNode should not be null");
                         if (!originalNamedType.getName().equals(changedNamedType.getName())) {
                             typesWhereNameIsChanged.put(originalNamedType.getName(), changedNamedType);
                         }

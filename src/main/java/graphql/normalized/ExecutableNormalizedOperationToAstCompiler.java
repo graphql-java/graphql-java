@@ -191,7 +191,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                     Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
                                                     @Nullable VariablePredicate variablePredicate,
                                                     boolean deferSupport) {
-        GraphQLObjectType operationType = getOperationType(schema, operationKind);
+        GraphQLObjectType operationType = Assert.assertNotNull(getOperationType(schema, operationKind), "operationType should not be null");
 
         VariableAccumulator variableAccumulator = new VariableAccumulator(variablePredicate);
         List<Selection<?>> selections = subselectionsForNormalizedField(schema, operationType.getName(), topLevelFields, normalizedFieldToQueryDirectives, variableAccumulator, deferSupport);
@@ -422,7 +422,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
     private static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema,
                                                              String parentType,
                                                              ExecutableNormalizedField nf) {
-        return Introspection.getFieldDef(schema, (GraphQLCompositeType) schema.getType(parentType), nf.getName());
+        return Introspection.getFieldDef(schema, (GraphQLCompositeType) Assert.assertNotNull(schema.getType(parentType), "type '%s' should not be null", parentType), nf.getName());
     }
 
 
@@ -445,10 +445,10 @@ public class ExecutableNormalizedOperationToAstCompiler {
      * Represents important execution details that can be associated with a fragment.
      */
     private static class ExecutionFragmentDetails {
-        private final String typeName;
-        private final NormalizedDeferredExecution deferredExecution;
+        private final @Nullable String typeName;
+        private final @Nullable NormalizedDeferredExecution deferredExecution;
 
-        public ExecutionFragmentDetails(String typeName, NormalizedDeferredExecution deferredExecution) {
+        public ExecutionFragmentDetails(@Nullable String typeName, @Nullable NormalizedDeferredExecution deferredExecution) {
             this.typeName = typeName;
             this.deferredExecution = deferredExecution;
         }

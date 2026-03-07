@@ -133,7 +133,7 @@ public class IntrospectionWithDirectivesSupport {
         GraphQLTypeVisitorStub visitor = new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
-                GraphQLCodeRegistry.Builder codeRegistry = context.getVarFromParents(GraphQLCodeRegistry.Builder.class);
+                GraphQLCodeRegistry.Builder codeRegistry = assertNotNull(context.getVarFromParents(GraphQLCodeRegistry.Builder.class), "codeRegistry should not be null");
                 // we need to change __XXX introspection types to have directive extensions
                 if (INTROSPECTION_ELEMENTS.contains(objectType.getName())) {
                     GraphQLObjectType newObjectType = addAppliedDirectives(objectType, codeRegistry, appliedDirectiveType, directiveArgumentType);

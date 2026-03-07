@@ -96,7 +96,7 @@ public class SelectionSet extends AbstractNode<SelectionSet> {
 
     @Override
     public SelectionSet deepCopy() {
-        return new SelectionSet(deepCopy(selections), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new SelectionSet(assertNotNull(deepCopy(selections), "selections deepCopy should not return null"), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override

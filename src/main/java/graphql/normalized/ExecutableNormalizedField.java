@@ -145,7 +145,7 @@ public class ExecutableNormalizedField {
         }
 
         for (GraphQLInterfaceType commonParentOutputInterface : parent.getInterfacesCommonToAllOutputTypes(schema)) {
-            List<GraphQLObjectType> implementations = schema.getImplementations(commonParentOutputInterface);
+            List<GraphQLObjectType> implementations = assertNotNull(schema.getImplementations(commonParentOutputInterface), "implementations should not be null");
             // __typename
             if (fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && implementations.size() == objectTypeNames.size()) {
                 return false;
@@ -234,7 +234,7 @@ public class ExecutableNormalizedField {
         return assertNotNull(fieldVisibility.getFieldDefinition(type, fieldName), "No field %s found for type %s", fieldName, objectTypeName);
     }
 
-    private static GraphQLFieldDefinition resolveIntrospectionField(GraphQLSchema schema, Set<String> objectTypeNames, String fieldName) {
+    private static @Nullable GraphQLFieldDefinition resolveIntrospectionField(GraphQLSchema schema, Set<String> objectTypeNames, String fieldName) {
         if (fieldName.equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
             return schema.getIntrospectionTypenameFieldDefinition();
         } else if (objectTypeNames.size() == 1 && objectTypeNames.iterator().next().equals(schema.getQueryType().getName())) {

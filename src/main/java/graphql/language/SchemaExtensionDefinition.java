@@ -38,7 +38,7 @@ public class SchemaExtensionDefinition extends SchemaDefinition implements SDLEx
 
     @Override
     public SchemaExtensionDefinition deepCopy() {
-        return new SchemaExtensionDefinition(deepCopy(getDirectives()), deepCopy(getOperationTypeDefinitions()), getSourceLocation(), getComments(),
+        return new SchemaExtensionDefinition(assertNotNull(deepCopy(getDirectives()), "directives deepCopy should not return null"), assertNotNull(deepCopy(getOperationTypeDefinitions()), "operationTypeDefinitions deepCopy should not return null"), getSourceLocation(), getComments(),
                 getIgnoredChars(), getAdditionalData());
     }
 

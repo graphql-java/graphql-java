@@ -113,7 +113,7 @@ public class ScalarTypeDefinition extends AbstractDescribedNode<ScalarTypeDefini
 
     @Override
     public ScalarTypeDefinition deepCopy() {
-        return new ScalarTypeDefinition(name, deepCopy(directives.getDirectives()), description, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new ScalarTypeDefinition(name, assertNotNull(deepCopy(directives.getDirectives()), "directives deepCopy should not return null"), description, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
