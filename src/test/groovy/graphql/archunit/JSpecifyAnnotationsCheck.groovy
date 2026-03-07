@@ -74,19 +74,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.language.SourceLocation",
             "graphql.language.Type",
             "graphql.language.TypeDefinition",
-            "graphql.normalized.incremental.NormalizedDeferredExecution",
-            "graphql.normalized.nf.NormalizedDocument",
-            "graphql.normalized.nf.NormalizedDocumentFactory",
-            "graphql.normalized.nf.NormalizedField",
-            "graphql.normalized.nf.NormalizedOperation",
-            "graphql.normalized.nf.NormalizedOperationToAstCompiler",
-            "graphql.schema.diffing.SchemaGraph",
-            "graphql.schema.validation.OneOfInputObjectRules",
-            "graphql.util.CyclicSchemaAnalyzer",
-            "graphql.util.querygenerator.QueryGenerator",
-            "graphql.util.querygenerator.QueryGeneratorOptions",
-            "graphql.util.querygenerator.QueryGeneratorOptions\$QueryGeneratorOptionsBuilder",
-            "graphql.util.querygenerator.QueryGeneratorResult"
     ] as Set
 
     def "ensure all public API and experimental API classes have @NullMarked annotation"() {
