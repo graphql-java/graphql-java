@@ -2,6 +2,8 @@ package graphql.util;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +20,7 @@ import static graphql.Assert.assertTrue;
 import static graphql.util.NodeZipper.ModificationType.REPLACE;
 
 @PublicApi
+@NullMarked
 public class NodeMultiZipper<T> {
 
     private final T commonRoot;
@@ -49,7 +52,7 @@ public class NodeMultiZipper<T> {
     /**
      * @return can be null if the root node is marked as deleted
      */
-    public T toRootNode() {
+    public @Nullable T toRootNode() {
         if (zippers.size() == 0) {
             return commonRoot;
         }
@@ -88,7 +91,7 @@ public class NodeMultiZipper<T> {
         return zippers.size();
     }
 
-    public NodeZipper<T> getZipperForNode(T node) {
+    public @Nullable NodeZipper<T> getZipperForNode(T node) {
         return FpKit.findOneOrNull(zippers, zipper -> zipper.getCurNode() == node);
     }
 
