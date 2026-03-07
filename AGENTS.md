@@ -9,7 +9,7 @@
 - Immutable data classes w/ Builder: `newFoo()` factory, `foo(value)` setters, `transform()` method
 - Use `graphql.Assert` not `Objects.requireNonNull`
 - Use `@Public`/`@Internal` annotations — never package-private/protected
-- `@NullMarked` on all public API classes; use `@Nullable` for nullable params/returns; NullAway enforced via ErrorProne
+- `@NullMarked` on all public API classes; `@NullUnmarked` on their Builder classes; use `@Nullable` for nullable params/returns; NullAway enforced via ErrorProne
 - Full style guide: `coding-guidelines.md`
 
 ## Test Execution
