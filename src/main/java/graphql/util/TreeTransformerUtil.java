@@ -1,6 +1,7 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Queue;
@@ -8,6 +9,7 @@ import java.util.Queue;
 import static graphql.Assert.assertTrue;
 
 @PublicApi
+@NullMarked
 public class TreeTransformerUtil {
 
     /**
