@@ -14,7 +14,7 @@ graphql-java project.
 
 2. Group the remaining classes into batches (see batches below).
 
-3. Launch worker agents in **waves of 3** to manage token usage.
+3. Launch worker agents in **waves of 5** to maximize throughput.
    After each wave completes, launch the reviewer before starting the next wave.
    Only proceed to the next wave if the reviewer reports no NullAway errors.
 
@@ -23,16 +23,12 @@ graphql-java project.
 ## Execution Flow
 
 ### Wave 1
-Launch Workers 1, 2, 3 in parallel. Wait for all to complete.
+Launch Workers 1, 2, 3, 4, 5 in parallel. Wait for all to complete.
 Launch Reviewer for Wave 1. Wait for completion and NullAway confirmation.
 
 ### Wave 2
-Launch Workers 5, 6, 7 in parallel. Wait for all to complete.
+Launch Workers 6, 7 in parallel. Wait for all to complete.
 Launch Reviewer for Wave 2. Wait for completion and NullAway confirmation.
-
-### Wave 3
-Launch Workers 8, 9 in parallel. Wait for all to complete.
-Launch Reviewer for Wave 3. Wait for completion and NullAway confirmation.
 
 ### Final Step
 Launch the validator to remove completed classes from
@@ -42,85 +38,7 @@ Launch the validator to remove completed classes from
 
 ## Batch Assignments
 
-### Worker 1 — graphql.analysis (16 classes)
-```
-graphql.analysis.QueryComplexityCalculator
-graphql.analysis.QueryComplexityInfo
-graphql.analysis.QueryDepthInfo
-graphql.analysis.QueryReducer
-graphql.analysis.QueryTransformer
-graphql.analysis.QueryTraversalOptions
-graphql.analysis.QueryVisitor
-graphql.analysis.QueryVisitorFieldArgumentEnvironment
-graphql.analysis.QueryVisitorFieldArgumentInputValue
-graphql.analysis.QueryVisitorFieldArgumentValueEnvironment
-graphql.analysis.QueryVisitorFieldEnvironment
-graphql.analysis.QueryVisitorFragmentDefinitionEnvironment
-graphql.analysis.QueryVisitorFragmentSpreadEnvironment
-graphql.analysis.QueryVisitorInlineFragmentEnvironment
-graphql.analysis.QueryVisitorStub
-graphql.analysis.values.ValueTraverser
-```
-
-### Worker 2 — graphql.execution core (26 classes)
-```
-graphql.execution.AbortExecutionException
-graphql.execution.AsyncExecutionStrategy
-graphql.execution.AsyncSerialExecutionStrategy
-graphql.execution.CoercedVariables
-graphql.execution.DataFetcherExceptionHandlerParameters
-graphql.execution.DataFetcherExceptionHandlerResult
-graphql.execution.DefaultValueUnboxer
-graphql.execution.ExecutionContext
-graphql.execution.ExecutionId
-graphql.execution.ExecutionStepInfo
-graphql.execution.ExecutionStrategyParameters
-graphql.execution.FetchedValue
-graphql.execution.FieldValueInfo
-graphql.execution.InputMapDefinesTooManyFieldsException
-graphql.execution.MergedSelectionSet
-graphql.execution.MissingRootTypeException
-graphql.execution.NonNullableValueCoercedAsNullException
-graphql.execution.NormalizedVariables
-graphql.execution.OneOfNullValueException
-graphql.execution.OneOfTooManyKeysException
-graphql.execution.ResultNodesInfo
-graphql.execution.ResultPath
-graphql.execution.SimpleDataFetcherExceptionHandler
-graphql.execution.SubscriptionExecutionStrategy
-graphql.execution.UnknownOperationException
-graphql.execution.UnresolvedTypeException
-```
-
-### Worker 3 — graphql.execution sub-packages (24 classes)
-```
-graphql.execution.conditional.ConditionalNodeDecision
-graphql.execution.directives.QueryAppliedDirective
-graphql.execution.directives.QueryAppliedDirectiveArgument
-graphql.execution.directives.QueryDirectives
-graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation
-graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation
-graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
-graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
-graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
-graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
-graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
-graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
-graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
-graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
-graphql.execution.instrumentation.tracing.TracingInstrumentation
-graphql.execution.instrumentation.tracing.TracingSupport
-graphql.execution.preparsed.PreparsedDocumentEntry
-graphql.execution.preparsed.persisted.ApolloPersistedQuerySupport
-graphql.execution.preparsed.persisted.InMemoryPersistedQueryCache
-graphql.execution.preparsed.persisted.PersistedQueryCacheMiss
-graphql.execution.preparsed.persisted.PersistedQueryIdInvalid
-graphql.execution.preparsed.persisted.PersistedQueryNotFound
-graphql.execution.reactive.DelegatingSubscription
-graphql.execution.reactive.SubscriptionPublisher
-```
-
-### Worker 5 — graphql.language (remaining) + graphql.normalized (23 classes)
+### Worker 1 — graphql.language (remaining) + graphql.normalized (23 classes)
 ```
 graphql.language.ScalarTypeDefinition
 graphql.language.ScalarTypeExtensionDefinition
@@ -147,7 +65,7 @@ graphql.normalized.nf.NormalizedOperation
 graphql.normalized.nf.NormalizedOperationToAstCompiler
 ```
 
-### Worker 6 — graphql.schema core types (38 classes)
+### Worker 2 — graphql.schema core types (38 classes)
 ```
 graphql.schema.AsyncDataFetcher
 graphql.schema.CoercingParseLiteralException
@@ -190,7 +108,7 @@ graphql.schema.GraphQLTypeVisitorStub
 graphql.schema.GraphQLUnmodifiedType
 ```
 
-### Worker 7 — graphql.schema utilities + sub-packages (41 classes)
+### Worker 3 — graphql.schema utilities + sub-packages (41 classes)
 ```
 graphql.schema.GraphqlElementParentTree
 graphql.schema.GraphqlTypeComparatorEnvironment
@@ -233,7 +151,7 @@ graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility
 graphql.schema.visitor.GraphQLSchemaTraversalControl
 ```
 
-### Worker 8 — graphql.extensions + graphql.incremental + graphql.introspection (15 classes)
+### Worker 4 — graphql.extensions + graphql.incremental + graphql.introspection (15 classes)
 ```
 graphql.extensions.ExtensionsBuilder
 graphql.incremental.DeferPayload
@@ -252,7 +170,7 @@ graphql.introspection.IntrospectionWithDirectivesSupport
 graphql.introspection.IntrospectionWithDirectivesSupport$DirectivePredicateEnvironment
 ```
 
-### Worker 9 — graphql.parser + graphql.util (18 classes)
+### Worker 5 — graphql.parser + graphql.util (18 classes)
 ```
 graphql.parser.InvalidSyntaxException
 graphql.parser.MultiSourceReader
@@ -274,6 +192,64 @@ graphql.util.TreeTransformer
 graphql.util.TreeTransformerUtil
 ```
 
+### Worker 6 — graphql.execution core (26 classes)
+```
+graphql.execution.AbortExecutionException
+graphql.execution.AsyncExecutionStrategy
+graphql.execution.AsyncSerialExecutionStrategy
+graphql.execution.CoercedVariables
+graphql.execution.DataFetcherExceptionHandlerParameters
+graphql.execution.DataFetcherExceptionHandlerResult
+graphql.execution.DefaultValueUnboxer
+graphql.execution.ExecutionContext
+graphql.execution.ExecutionId
+graphql.execution.ExecutionStepInfo
+graphql.execution.ExecutionStrategyParameters
+graphql.execution.FetchedValue
+graphql.execution.FieldValueInfo
+graphql.execution.InputMapDefinesTooManyFieldsException
+graphql.execution.MergedSelectionSet
+graphql.execution.MissingRootTypeException
+graphql.execution.NonNullableValueCoercedAsNullException
+graphql.execution.NormalizedVariables
+graphql.execution.OneOfNullValueException
+graphql.execution.OneOfTooManyKeysException
+graphql.execution.ResultNodesInfo
+graphql.execution.ResultPath
+graphql.execution.SimpleDataFetcherExceptionHandler
+graphql.execution.SubscriptionExecutionStrategy
+graphql.execution.UnknownOperationException
+graphql.execution.UnresolvedTypeException
+```
+
+### Worker 7 — graphql.execution sub-packages (24 classes)
+```
+graphql.execution.conditional.ConditionalNodeDecision
+graphql.execution.directives.QueryAppliedDirective
+graphql.execution.directives.QueryAppliedDirectiveArgument
+graphql.execution.directives.QueryDirectives
+graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation
+graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation
+graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
+graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
+graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
+graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
+graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
+graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
+graphql.execution.instrumentation.tracing.TracingInstrumentation
+graphql.execution.instrumentation.tracing.TracingSupport
+graphql.execution.preparsed.PreparsedDocumentEntry
+graphql.execution.preparsed.persisted.ApolloPersistedQuerySupport
+graphql.execution.preparsed.persisted.InMemoryPersistedQueryCache
+graphql.execution.preparsed.persisted.PersistedQueryCacheMiss
+graphql.execution.preparsed.persisted.PersistedQueryIdInvalid
+graphql.execution.preparsed.persisted.PersistedQueryNotFound
+graphql.execution.reactive.DelegatingSubscription
+graphql.execution.reactive.SubscriptionPublisher
+```
+
 ---
 
 ## Instructions for Each Worker Agent
@@ -293,6 +269,11 @@ Each worker agent must follow these rules for every class in its batch:
    and skip further annotation of that inner class
 9. Delete unused imports from the class after editing
 10. Do NOT modify `JSpecifyAnnotationsCheck.groovy`
+
+### IntelliJ inspection check
+After editing each file, use the IntelliJ MCP `inspections` tool to check
+for warnings in the modified file. Fix any nullability-related warnings
+before moving on. This catches issues that NullAway alone may miss.
 
 ### Generics rules
 - `<T>` does NOT allow `@Nullable` type arguments (`Box<@Nullable String>` illegal)
@@ -384,11 +365,11 @@ for each wave. Your job is cleanup and push only.
    from the `JSPECIFY_EXEMPTION_LIST` in `JSpecifyAnnotationsCheck.groovy`
 3. Run `./gradlew compileJava` one final time to confirm the full build passes
 4. Commit: `"Remove annotated classes from JSpecify exemption list"`
-5. Push: `git push -u origin claude/agent-team-jspecify-Frd74`
+5. Push: `git push -u origin claude/jspecify-wave4`
 
 ---
 
 ## Repository Details
-- Working directory: `/home/user/graphql-java`
-- Branch: `claude/agent-team-jspecify-Frd74`
+- Working directory: `/Users/dondonz/Development/graphql-java`
+- Branch: `claude/jspecify-wave4`
 - NullAway compile check: `./gradlew compileJava`
