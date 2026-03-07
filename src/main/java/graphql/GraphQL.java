@@ -547,7 +547,7 @@ public class GraphQL {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
             try {
-                return execute(Assert.assertNotNull(executionInputRef.get()), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState, engineRunningState, profiler);
+                return execute(Assert.assertNotNull(executionInputRef.get()), assertNotNull(preparsedDocumentEntry.getDocument(), "document must not be null"), graphQLSchema, instrumentationState, engineRunningState, profiler);
             } catch (AbortExecutionException e) {
                 return CompletableFuture.completedFuture(e.toExecutionResult());
             }

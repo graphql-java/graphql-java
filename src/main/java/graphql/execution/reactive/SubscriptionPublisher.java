@@ -3,6 +3,7 @@ package graphql.execution.reactive;
 import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
@@ -21,6 +22,7 @@ import java.util.function.Function;
  * }
  * </pre>
  */
+@NullMarked
 @SuppressWarnings("ReactiveStreamsPublisherImplementation")
 @PublicApi
 public class SubscriptionPublisher implements Publisher<ExecutionResult> {

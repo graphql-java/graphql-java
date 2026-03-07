@@ -1,6 +1,8 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * This is passed to a {@link graphql.schema.DataFetcherFactory} when it is invoked to
@@ -10,6 +12,7 @@ import graphql.PublicApi;
  * of a {@link GraphQLFieldDefinition}
  */
 @PublicApi
+@NullMarked
 @Deprecated(since = "2024-11-26")
 public class DataFetcherFactoryEnvironment {
     private final GraphQLFieldDefinition fieldDefinition;
@@ -29,6 +32,7 @@ public class DataFetcherFactoryEnvironment {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         GraphQLFieldDefinition fieldDefinition;
 

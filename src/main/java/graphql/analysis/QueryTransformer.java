@@ -13,6 +13,7 @@ import graphql.util.TreeTransformer;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
@@ -31,6 +32,7 @@ import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
  * visitField calls.
  */
 @PublicApi
+@NullMarked
 public class QueryTransformer {
 
     private final Node root;
@@ -82,7 +84,7 @@ public class QueryTransformer {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
             @Override
@@ -91,7 +93,7 @@ public class QueryTransformer {
                 return TraversalControl.CONTINUE;
             }
         };
-        return new TreeTransformer<>(AST_NODE_ADAPTER).transform(root, nodeTraverserVisitor, rootVars);
+        return assertNotNull(new TreeTransformer<>(AST_NODE_ADAPTER).transform(root, nodeTraverserVisitor, rootVars), "transform result should not be null");
     }
 
     public static Builder newQueryTransformer() {

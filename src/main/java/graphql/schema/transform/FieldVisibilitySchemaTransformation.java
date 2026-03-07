@@ -3,6 +3,7 @@ package graphql.schema.transform;
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.introspection.Introspection;
+import org.jspecify.annotations.NullMarked;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -36,6 +37,7 @@ import static graphql.schema.SchemaTransformer.transformSchemaWithDeletes;
  * Transforms a schema by applying a visibility predicate to every field.
  */
 @PublicApi
+@NullMarked
 public class FieldVisibilitySchemaTransformation {
 
     private final VisibleFieldPredicate visibleFieldPredicate;

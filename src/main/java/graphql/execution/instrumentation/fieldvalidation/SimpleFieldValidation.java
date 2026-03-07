@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.ResultPath;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -19,6 +20,7 @@ import java.util.function.BiFunction;
  * Use {@link #addRule(ResultPath, java.util.function.BiFunction)} to supply the rule callbacks where
  * you implement your specific business logic
  */
+@NullMarked
 @PublicApi
 public class SimpleFieldValidation implements FieldValidation {
 

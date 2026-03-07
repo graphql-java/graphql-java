@@ -9,6 +9,9 @@ import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLTypeUtil;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -26,6 +29,7 @@ import static graphql.schema.GraphQLTypeUtil.isList;
  * type instances, so this helper class adds this information during query execution.
  */
 @PublicApi
+@NullMarked
 public class ExecutionStepInfo {
 
     /*
@@ -56,16 +60,16 @@ public class ExecutionStepInfo {
      * A list element is characterized by having a path ending with an index segment. (ResultPath.isListSegment())
      */
     private final ResultPath path;
-    private final ExecutionStepInfo parent;
+    private final @Nullable ExecutionStepInfo parent;
 
     /**
      * field, fieldDefinition, fieldContainer and arguments differ per field StepInfo.
      * <p>
      * But for list StepInfos these properties are the same as the field returning the list.
      */
-    private final MergedField field;
-    private final GraphQLFieldDefinition fieldDefinition;
-    private final GraphQLObjectType fieldContainer;
+    private final @Nullable MergedField field;
+    private final @Nullable GraphQLFieldDefinition fieldDefinition;
+    private final @Nullable GraphQLObjectType fieldContainer;
     private final Supplier<ImmutableMapWithNullValues<String, Object>> arguments;
 
     private ExecutionStepInfo(Builder builder) {
@@ -83,10 +87,10 @@ public class ExecutionStepInfo {
      */
     private ExecutionStepInfo(GraphQLOutputType type,
                               ResultPath path,
-                              ExecutionStepInfo parent,
-                              MergedField field,
-                              GraphQLFieldDefinition fieldDefinition,
-                              GraphQLObjectType fieldContainer,
+                              @Nullable ExecutionStepInfo parent,
+                              @Nullable MergedField field,
+                              @Nullable GraphQLFieldDefinition fieldDefinition,
+                              @Nullable GraphQLObjectType fieldContainer,
                               Supplier<ImmutableMapWithNullValues<String, Object>> arguments) {
         this.type = assertNotNull(type, "you must provide a graphql type");
         this.path = path;
@@ -104,7 +108,7 @@ public class ExecutionStepInfo {
      *
      * @return the GraphQLObjectType defining the {@link #getFieldDefinition()}
      */
-    public GraphQLObjectType getObjectType() {
+    public @Nullable GraphQLObjectType getObjectType() {
         return fieldContainer;
     }
 
@@ -144,7 +148,7 @@ public class ExecutionStepInfo {
      *
      * @return the field definition or null if there is not one
      */
-    public GraphQLFieldDefinition getFieldDefinition() {
+    public @Nullable GraphQLFieldDefinition getFieldDefinition() {
         return fieldDefinition;
     }
 
@@ -153,7 +157,7 @@ public class ExecutionStepInfo {
      *
      * @return the  merged fields
      */
-    public MergedField getField() {
+    public @Nullable MergedField getField() {
         return field;
     }
 
@@ -194,14 +198,14 @@ public class ExecutionStepInfo {
      * @return the named argument or null if it's not present
      */
     @SuppressWarnings("unchecked")
-    public <T> T getArgument(String name) {
+    public @Nullable <T> T getArgument(String name) {
         return (T) getArguments().get(name);
     }
 
     /**
      * @return the parent type information
      */
-    public ExecutionStepInfo getParent() {
+    public @Nullable ExecutionStepInfo getParent() {
         return parent;
     }
 
@@ -264,7 +268,7 @@ public class ExecutionStepInfo {
     }
 
     public String getResultKey() {
-        return field.getResultKey();
+        return assertNotNull(field, "field must not be null").getResultKey();
     }
 
     /**
@@ -278,6 +282,7 @@ public class ExecutionStepInfo {
         return new Builder(existing);
     }
 
+    @NullUnmarked
     public static class Builder {
         GraphQLOutputType type;
         ExecutionStepInfo parentInfo;

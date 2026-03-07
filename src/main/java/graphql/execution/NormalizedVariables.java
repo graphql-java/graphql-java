@@ -4,6 +4,8 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.normalized.NormalizedInputValue;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -11,6 +13,7 @@ import java.util.Map;
  * Holds coerced variables, that is their values are now in a normalized {@link graphql.normalized.NormalizedInputValue} form.
  */
 @PublicApi
+@NullMarked
 public class NormalizedVariables {
     private final ImmutableMapWithNullValues<String, NormalizedInputValue> normalisedVariables;
 
@@ -26,7 +29,7 @@ public class NormalizedVariables {
         return normalisedVariables.containsKey(key);
     }
 
-    public Object get(String key) {
+    public @Nullable Object get(String key) {
         return normalisedVariables.get(key);
     }
 

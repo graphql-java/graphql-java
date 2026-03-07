@@ -1,6 +1,7 @@
 package graphql.execution.conditional;
 
 import graphql.ExperimentalApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This callback interface allows custom implementations to decide if a field is included in a query or not.
@@ -8,6 +9,7 @@ import graphql.ExperimentalApi;
  * The default `@skip / @include` is built in, but you can create your own implementations to allow you to make
  * decisions on whether fields are considered part of a query.
  */
+@NullMarked
 @ExperimentalApi
 public interface ConditionalNodeDecision {
 

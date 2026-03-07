@@ -27,7 +27,7 @@ public class ExceptionWhileDataFetching implements GraphQLError {
     private final List<SourceLocation> locations;
     private final @Nullable Map<String, Object> extensions;
 
-    public ExceptionWhileDataFetching(ResultPath path, Throwable exception, SourceLocation sourceLocation) {
+    public ExceptionWhileDataFetching(ResultPath path, Throwable exception, @Nullable SourceLocation sourceLocation) {
         this.path = assertNotNull(path).toList();
         this.exception = assertNotNull(exception);
         this.locations = Collections.singletonList(sourceLocation);

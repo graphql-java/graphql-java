@@ -2,6 +2,7 @@ package graphql.execution.preparsed.persisted;
 
 import graphql.PublicApi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.function.Function;
 
@@ -10,6 +11,7 @@ import java.util.function.Function;
  * by the graphql engine.  If you get a cache miss in your {@link graphql.execution.preparsed.persisted.PersistedQueryCache} implementation
  * then you are required to call back on the provided instance of this interface
  */
+@NullMarked
 @PublicApi
 public interface PersistedQueryCacheMiss extends Function<String, PreparsedDocumentEntry> {
     /**
