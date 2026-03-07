@@ -2,6 +2,7 @@ package graphql.schema.usage;
 
 import graphql.PublicApi;
 import graphql.schema.GraphQLAppliedDirective;
+import org.jspecify.annotations.NullMarked;
 import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -31,6 +32,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.util.TraversalControl.CONTINUE;
 
 @PublicApi
+@NullMarked
 public class SchemaUsageSupport {
 
     /**
