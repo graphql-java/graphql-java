@@ -20,9 +20,9 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
 import graphql.util.MutableRef;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,8 +51,9 @@ import static java.util.stream.Collectors.toSet;
  */
 @ExperimentalApi
 @Mutable
+@NullMarked
 public class NormalizedField {
-    private final String alias;
+    private final @Nullable String alias;
     private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
     private final LinkedHashMap<String, Object> resolvedArguments;
     private final ImmutableList<Argument> astArguments;
@@ -61,7 +62,7 @@ public class NormalizedField {
     // Mutable List on purpose: it is modified after creation
     private final LinkedHashSet<String> objectTypeNames;
     private final ArrayList<NormalizedField> children;
-    private NormalizedField parent;
+    private @Nullable NormalizedField parent;
 
     private final String fieldName;
     private final int level;
@@ -135,7 +136,7 @@ public class NormalizedField {
      * @param schema - the graphql schema in play
      * @return true if the field is conditional
      */
-    public boolean isConditional(@NonNull GraphQLSchema schema) {
+    public boolean isConditional(GraphQLSchema schema) {
         if (parent == null) {
             return false;
         }
@@ -225,7 +226,7 @@ public class NormalizedField {
         return assertNotNull(type.getField(fieldName), "No field %s found for type %s", fieldName, objectTypeName);
     }
 
-    private static GraphQLFieldDefinition resolveIntrospectionField(GraphQLSchema schema, Set<String> objectTypeNames, String fieldName) {
+    private static @Nullable GraphQLFieldDefinition resolveIntrospectionField(GraphQLSchema schema, Set<String> objectTypeNames, String fieldName) {
         if (fieldName.equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
             return schema.getIntrospectionTypenameFieldDefinition();
         } else if (objectTypeNames.size() == 1 && objectTypeNames.iterator().next().equals(schema.getQueryType().getName())) {
@@ -301,7 +302,7 @@ public class NormalizedField {
      * @see #getResultKey()
      * @see #getName()
      */
-    public String getAlias() {
+    public @Nullable String getAlias() {
         return alias;
     }
 
@@ -327,7 +328,7 @@ public class NormalizedField {
      * @param name the name of the argument
      * @return an argument value
      */
-    public NormalizedInputValue getNormalizedArgument(String name) {
+    public @Nullable NormalizedInputValue getNormalizedArgument(String name) {
         return normalizedArguments.get(name);
     }
 
@@ -463,13 +464,13 @@ public class NormalizedField {
     /**
      * @return the parent of this {@link NormalizedField} or null if it's a top level field
      */
-    public NormalizedField getParent() {
+    public @Nullable NormalizedField getParent() {
         return parent;
     }
 
 
     @Internal
-    public void replaceParent(NormalizedField newParent) {
+    public void replaceParent(@Nullable NormalizedField newParent) {
         this.parent = newParent;
     }
 
@@ -584,6 +585,7 @@ public class NormalizedField {
     }
 
 
+    @NullUnmarked
     public static class Builder {
         private LinkedHashSet<String> objectTypeNames = new LinkedHashSet<>();
         private String fieldName;
@@ -637,12 +639,12 @@ public class NormalizedField {
             return this;
         }
 
-        public Builder astArguments(@NonNull List<Argument> astArguments) {
+        public Builder astArguments(List<Argument> astArguments) {
             this.astArguments = ImmutableList.copyOf(astArguments);
             return this;
         }
 
-        public Builder astDirectives(@NonNull List<Directive> astDirectives) {
+        public Builder astDirectives(List<Directive> astDirectives) {
             this.astDirectives = astDirectives;
             return this;
         }
