@@ -4,6 +4,7 @@ package graphql.schema;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Collections;
 import java.util.List;
@@ -18,6 +19,7 @@ import static graphql.Assert.assertTrue;
  * See <a href="https://graphql.org/learn/schema/#lists-and-non-null">https://graphql.org/learn/schema/#lists-and-non-null</a> for more details on the concept
  */
 @PublicApi
+@NullMarked
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {
 
     /**
