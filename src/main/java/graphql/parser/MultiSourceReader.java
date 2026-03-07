@@ -3,6 +3,9 @@ package graphql.parser;
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.util.LockKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -21,6 +24,7 @@ import java.util.List;
  * place at some point in time.
  */
 @PublicApi
+@NullMarked
 public class MultiSourceReader extends Reader {
 
     // In Java version 16+, LineNumberReader.read considers end-of-stream to be a line terminator
@@ -99,10 +103,10 @@ public class MultiSourceReader extends Reader {
     }
 
     public static class SourceAndLine {
-        private String sourceName = null;
+        private @Nullable String sourceName = null;
         private int line = 0;
 
-        public String getSourceName() {
+        public @Nullable String getSourceName() {
             return sourceName;
         }
 
@@ -191,7 +195,7 @@ public class MultiSourceReader extends Reader {
     /**
      * @return The name of the current source
      */
-    public String getSourceName() {
+    public @Nullable String getSourceName() {
         return readerLock.callLocked(() -> {
             if (sourceParts.isEmpty()) {
                 return null;
@@ -270,6 +274,7 @@ public class MultiSourceReader extends Reader {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         List<SourcePart> sourceParts = new ArrayList<>();
         boolean trackData = true;
