@@ -1,32 +1,32 @@
 {
   "tests": {
     "java11": {
-      "total": 5671,
-      "passed": 5614,
+      "total": 5680,
+      "passed": 5624,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 56
+    },
+    "java17": {
+      "total": 5680,
+      "passed": 5623,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
-    "java17": {
-      "total": 5671,
-      "passed": 5613,
-      "failed": 0,
-      "errors": 0,
-      "skipped": 58
-    },
     "java21": {
-      "total": 5671,
-      "passed": 5613,
+      "total": 5680,
+      "passed": 5623,
       "failed": 0,
       "errors": 0,
-      "skipped": 58
+      "skipped": 57
     },
     "java25": {
-      "total": 5671,
-      "passed": 5613,
+      "total": 5680,
+      "passed": 5623,
       "failed": 0,
       "errors": 0,
-      "skipped": 58
+      "skipped": 57
     },
     "jcstress": {
       "total": 32,
@@ -39,12 +39,12 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8333,
-        "missed": 1509
+        "covered": 8332,
+        "missed": 1510
       },
       "line": {
-        "covered": 28699,
-        "missed": 3125
+        "covered": 28698,
+        "missed": 3126
       },
       "method": {
         "covered": 7681,
@@ -4170,12 +4170,12 @@
       },
       "graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 81,
-          "missed": 0
+          "covered": 80,
+          "missed": 1
         },
         "branch": {
-          "covered": 26,
-          "missed": 0
+          "covered": 24,
+          "missed": 2
         },
         "method": {
           "covered": 17,
@@ -12546,8 +12546,8 @@
           "missed": 1
         },
         "branch": {
-          "covered": 1,
-          "missed": 1
+          "covered": 2,
+          "missed": 0
         },
         "method": {
           "covered": 8,
