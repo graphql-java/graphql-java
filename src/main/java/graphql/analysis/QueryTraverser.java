@@ -166,10 +166,7 @@ public class QueryTraverser {
     }
 
     private GraphQLObjectType getRootTypeFromOperation(OperationDefinition operationDefinition) {
-        OperationDefinition.Operation op = operationDefinition.getOperation() != null
-                ? operationDefinition.getOperation()
-                : OperationDefinition.Operation.QUERY;
-        switch (op) {
+        switch (operationDefinition.getOperation()) {
             case MUTATION:
                 return assertNotNull(schema.getMutationType());
             case QUERY:

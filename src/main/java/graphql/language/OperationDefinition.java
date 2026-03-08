@@ -34,7 +34,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     private final @Nullable String name;
 
-    private final @Nullable Operation operation;
+    private final Operation operation;
     private final ImmutableList<VariableDefinition> variableDefinitions;
     private final DirectivesHolder directives;
     private final SelectionSet selectionSet;
@@ -45,7 +45,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
     @Internal
     protected OperationDefinition(@Nullable String name,
-                                  @Nullable Operation operation,
+                                  Operation operation,
                                   List<VariableDefinition> variableDefinitions,
                                   List<Directive> directives,
                                   SelectionSet selectionSet,
@@ -93,7 +93,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         return name;
     }
 
-    public @Nullable Operation getOperation() {
+    public Operation getOperation() {
         return operation;
     }
 
@@ -184,7 +184,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
         private String name;
-        private Operation operation;
+        private Operation operation = Operation.QUERY;
         private ImmutableList<VariableDefinition> variableDefinitions = emptyList();
         private ImmutableList<Directive> directives = emptyList();
         private SelectionSet selectionSet;
