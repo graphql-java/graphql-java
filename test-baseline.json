@@ -1,32 +1,32 @@
 {
   "tests": {
     "java11": {
-      "total": 5671,
-      "passed": 5614,
+      "total": 5680,
+      "passed": 5624,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 56
+    },
+    "java17": {
+      "total": 5680,
+      "passed": 5623,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
-    "java17": {
-      "total": 5671,
-      "passed": 5613,
-      "failed": 0,
-      "errors": 0,
-      "skipped": 58
-    },
     "java21": {
-      "total": 5671,
-      "passed": 5613,
+      "total": 5680,
+      "passed": 5623,
       "failed": 0,
       "errors": 0,
-      "skipped": 58
+      "skipped": 57
     },
     "java25": {
-      "total": 5671,
-      "passed": 5613,
+      "total": 5680,
+      "passed": 5623,
       "failed": 0,
       "errors": 0,
-      "skipped": 58
+      "skipped": 57
     },
     "jcstress": {
       "total": 32,
@@ -416,7 +416,7 @@
           "missed": 3
         }
       },
-      "graphql.language.NamedNode": {
+      "graphql.language.FragmentSpread": {
         "line": {
           "covered": 23,
           "missed": 8
@@ -500,7 +500,7 @@
           "missed": 2
         }
       },
-      "graphql.language.NodeDirectivesBuilder": {
+      "graphql.language.ScalarTypeExtensionDefinition$Builder": {
         "line": {
           "covered": 15,
           "missed": 19
@@ -752,7 +752,7 @@
           "missed": 2
         }
       },
-      "graphql.language.Node": {
+      "graphql.language.EnumValue": {
         "line": {
           "covered": 17,
           "missed": 8
@@ -878,7 +878,7 @@
           "missed": 6
         }
       },
-      "graphql.language.TypeDefinition": {
+      "graphql.language.AstSorter": {
         "line": {
           "covered": 65,
           "missed": 10
@@ -1116,7 +1116,7 @@
           "missed": 2
         }
       },
-      "graphql.language.SDLDefinition": {
+      "graphql.language.NodeTraverser": {
         "line": {
           "covered": 21,
           "missed": 0
@@ -1200,7 +1200,7 @@
           "missed": 0
         }
       },
-      "graphql.language.Type": {
+      "graphql.language.PrettyAstPrinter": {
         "line": {
           "covered": 199,
           "missed": 10
@@ -1284,7 +1284,7 @@
           "missed": 6
         }
       },
-      "graphql.language.ScalarValue": {
+      "graphql.language.AstSignature": {
         "line": {
           "covered": 30,
           "missed": 0
@@ -1326,7 +1326,7 @@
           "missed": 3
         }
       },
-      "graphql.language.NodeVisitor": {
+      "graphql.language.ObjectTypeExtensionDefinition": {
         "line": {
           "covered": 9,
           "missed": 16
@@ -1382,7 +1382,7 @@
           "missed": 3
         }
       },
-      "graphql.language.DescribedNode": {
+      "graphql.language.InlineFragment": {
         "line": {
           "covered": 42,
           "missed": 5
@@ -1480,7 +1480,7 @@
           "missed": 3
         }
       },
-      "graphql.language.NodeBuilder": {
+      "graphql.language.Field": {
         "line": {
           "covered": 56,
           "missed": 5
@@ -1494,7 +1494,7 @@
           "missed": 3
         }
       },
-      "graphql.language.SDLNamedDefinition": {
+      "graphql.language.IntValue$Builder": {
         "line": {
           "covered": 20,
           "missed": 6
@@ -1732,7 +1732,7 @@
           "missed": 4
         }
       },
-      "graphql.language.SDLExtensionDefinition": {
+      "graphql.language.DirectiveLocation": {
         "line": {
           "covered": 14,
           "missed": 9
@@ -1774,7 +1774,7 @@
           "missed": 1
         }
       },
-      "graphql.execution.preparsed.PreparsedDocumentProvider": {
+      "graphql.execution.preparsed.NoOpPreparsedDocumentProvider": {
         "line": {
           "covered": 3,
           "missed": 0
@@ -1858,7 +1858,7 @@
           "missed": 2
         }
       },
-      "graphql.schema.idl.SchemaPrinter$SchemaElementPrinter": {
+      "graphql.schema.idl.SchemaDirectiveWiringSchemaGeneratorPostProcessing$Visitor": {
         "line": {
           "covered": 34,
           "missed": 3
@@ -2012,7 +2012,7 @@
           "missed": 4
         }
       },
-      "graphql.schema.idl.EnumValuesProvider": {
+      "graphql.schema.idl.TypeDefinitionRegistry": {
         "line": {
           "covered": 319,
           "missed": 22
@@ -2264,7 +2264,7 @@
           "missed": 1
         }
       },
-      "graphql.schema.idl.SchemaDirectiveWiringEnvironment": {
+      "graphql.schema.idl.SchemaGenerator": {
         "line": {
           "covered": 42,
           "missed": 0
@@ -2362,7 +2362,7 @@
           "missed": 1
         }
       },
-      "graphql.schema.idl.SchemaGeneratorDirectiveHelper$EnvBuilder": {
+      "graphql.schema.idl.RuntimeWiring": {
         "line": {
           "covered": 45,
           "missed": 1
@@ -2376,7 +2376,7 @@
           "missed": 2
         }
       },
-      "graphql.schema.idl.SchemaGeneratorDirectiveHelper$EnvInvoker": {
+      "graphql.schema.idl.MapEnumValuesProvider": {
         "line": {
           "covered": 5,
           "missed": 0
@@ -2656,7 +2656,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.validation.SchemaValidationErrorClassification": {
+      "graphql.schema.validation.TypesImplementInterfaces": {
         "line": {
           "covered": 111,
           "missed": 1
@@ -2670,7 +2670,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$ScalarModificationDetail": {
+      "graphql.schema.diffing.ana.SchemaDifference$UnionAddition": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -2684,7 +2684,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$DirectiveDifference": {
+      "graphql.schema.diffing.ana.SchemaDifference$ScalarAddition": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -2782,7 +2782,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$EnumModificationDetail": {
+      "graphql.schema.diffing.ana.SchemaDifference$InputObjectModification": {
         "line": {
           "covered": 16,
           "missed": 0
@@ -2880,7 +2880,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$SchemaDeletion": {
+      "graphql.schema.diffing.ana.SchemaDifference$InputObjectFieldDeletion": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -2922,7 +2922,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$InterfaceDifference": {
+      "graphql.schema.diffing.ana.SchemaDifference$ObjectInterfaceImplementationAddition": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -2950,7 +2950,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$ObjectModificationDetail": {
+      "graphql.schema.diffing.ana.SchemaDifference$InputObjectFieldRename": {
         "line": {
           "covered": 6,
           "missed": 0
@@ -2978,7 +2978,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$SchemaModificationDetail": {
+      "graphql.schema.diffing.ana.SchemaDifference$EnumDeletion": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -2992,7 +2992,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$InputObjectDifference": {
+      "graphql.schema.diffing.ana.SchemaDifference$EnumModification": {
         "line": {
           "covered": 16,
           "missed": 0
@@ -3104,7 +3104,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$InputObjectModificationDetail": {
+      "graphql.schema.diffing.ana.SchemaDifference$EnumValueRenamed": {
         "line": {
           "covered": 6,
           "missed": 0
@@ -3188,7 +3188,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$UnionModificationDetail": {
+      "graphql.schema.diffing.ana.SchemaDifference$DirectiveArgumentRename": {
         "line": {
           "covered": 6,
           "missed": 0
@@ -3300,7 +3300,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$ScalarDifference": {
+      "graphql.schema.diffing.ana.SchemaDifference$InterfaceInterfaceImplementationDeletion": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -3314,7 +3314,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$EnumDifference": {
+      "graphql.schema.diffing.ana.SchemaDifference$ObjectFieldDeletion": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -3342,7 +3342,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$InterfaceModificationDetail": {
+      "graphql.schema.diffing.ana.SchemaDifference$DirectiveArgumentDefaultValueModification": {
         "line": {
           "covered": 8,
           "missed": 0
@@ -3426,7 +3426,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$SchemaAddition": {
+      "graphql.schema.diffing.ana.SchemaDifference$ObjectFieldArgumentAddition": {
         "line": {
           "covered": 6,
           "missed": 0
@@ -3566,7 +3566,7 @@
           "missed": 9
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference": {
+      "graphql.schema.diffing.ana.SchemaDifference$DirectiveModification": {
         "line": {
           "covered": 16,
           "missed": 0
@@ -3580,7 +3580,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$AppliedDirectiveLocationDetail": {
+      "graphql.schema.diffing.ana.SchemaDifference$AppliedDirectiveArgumentAddition": {
         "line": {
           "covered": 6,
           "missed": 0
@@ -3706,7 +3706,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diffing.ana.SchemaDifference$AppliedDirectiveDifference": {
+      "graphql.schema.diffing.ana.SchemaDifference$AppliedDirectiveArgumentValueModification": {
         "line": {
           "covered": 10,
           "missed": 0
@@ -4126,7 +4126,7 @@
           "missed": 1
         }
       },
-      "graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory": {
+      "graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy$CallStack$StateForLevel": {
         "line": {
           "covered": 10,
           "missed": 5
@@ -4156,12 +4156,12 @@
       },
       "graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 124,
-          "missed": 10
+          "covered": 125,
+          "missed": 9
         },
         "branch": {
-          "covered": 46,
-          "missed": 4
+          "covered": 47,
+          "missed": 3
         },
         "method": {
           "covered": 21,
@@ -4170,12 +4170,12 @@
       },
       "graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 81,
-          "missed": 0
+          "covered": 80,
+          "missed": 1
         },
         "branch": {
-          "covered": 26,
-          "missed": 0
+          "covered": 24,
+          "missed": 2
         },
         "method": {
           "covered": 17,
@@ -4196,7 +4196,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.transform.VisibleFieldPredicate": {
+      "graphql.schema.transform.VisibleFieldPredicateEnvironment$VisibleFieldPredicateEnvironmentImpl": {
         "line": {
           "covered": 5,
           "missed": 1
@@ -4238,7 +4238,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.transform.VisibleFieldPredicateEnvironment": {
+      "graphql.schema.transform.FieldVisibilitySchemaTransformation$FieldRemovalVisitor": {
         "line": {
           "covered": 33,
           "missed": 0
@@ -5456,7 +5456,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.visitor.GraphQLSchemaVisitor$InterfaceTypeVisitorEnvironment": {
+      "graphql.schema.visitor.GraphQLSchemaVisitorAdapter$InputObjectFieldEnv": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -5470,7 +5470,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.visitor.GraphQLSchemaVisitor$DirectiveVisitorEnvironment": {
+      "graphql.schema.visitor.GraphQLSchemaVisitorAdapter$InterfaceTypeEnv": {
         "line": {
           "covered": 2,
           "missed": 0
@@ -5484,7 +5484,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.visitor.GraphQLSchemaVisitor$UnionTypeVisitorEnvironment": {
+      "graphql.schema.visitor.GraphQLSchemaVisitorAdapter$AppliedDirectiveArgumentEnv": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -5512,7 +5512,7 @@
           "missed": 6
         }
       },
-      "graphql.schema.visitor.GraphQLSchemaVisitor$FieldDefinitionVisitorEnvironment": {
+      "graphql.schema.visitor.GraphQLSchemaVisitorAdapter$InputObjectTypeEnv": {
         "line": {
           "covered": 2,
           "missed": 0
@@ -5526,7 +5526,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.visitor.GraphQLSchemaVisitor$SchemaElementVisitorEnvironment": {
+      "graphql.schema.visitor.GraphQLSchemaVisitorAdapter$ArgumentEnv": {
         "line": {
           "covered": 4,
           "missed": 0
@@ -5554,7 +5554,7 @@
           "missed": 2
         }
       },
-      "graphql.schema.visitor.GraphQLSchemaVisitor$InputObjectTypeVisitorEnvironment": {
+      "graphql.schema.visitor.GraphQLSchemaVisitorAdapter$UnionTypeEnv": {
         "line": {
           "covered": 2,
           "missed": 0
@@ -5568,7 +5568,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.visitor.GraphQLSchemaVisitor$EnumTypeVisitorEnvironment": {
+      "graphql.schema.visitor.GraphQLSchemaVisitorAdapter$AppliedDirectiveEnv": {
         "line": {
           "covered": 3,
           "missed": 0
@@ -5582,7 +5582,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.visitor.GraphQLSchemaVisitor$EnumValueDefinitionVisitorEnvironment": {
+      "graphql.schema.visitor.GraphQLSchemaVisitorAdapter$EnumValueDefinitionEnv": {
         "line": {
           "covered": 3,
           "missed": 0
@@ -5638,7 +5638,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.visitor.GraphQLSchemaVisitor$AppliedDirectiveArgumentVisitorEnvironment": {
+      "graphql.schema.visitor.GraphQLSchemaVisitorAdapter": {
         "line": {
           "covered": 23,
           "missed": 0
@@ -5750,7 +5750,7 @@
           "missed": 0
         }
       },
-      "graphql.execution.conditional.ConditionalNodeDecision": {
+      "graphql.execution.conditional.ConditionalNodes$1": {
         "line": {
           "covered": 5,
           "missed": 0
@@ -6380,7 +6380,7 @@
           "missed": 0
         }
       },
-      "graphql.execution.instrumentation.InstrumentationContext": {
+      "graphql.execution.instrumentation.ChainedInstrumentation": {
         "line": {
           "covered": 79,
           "missed": 4
@@ -6450,7 +6450,7 @@
           "missed": 11
         }
       },
-      "graphql.execution.instrumentation.ChainedInstrumentation$ChainedInstrumentationFunction": {
+      "graphql.execution.instrumentation.ChainedInstrumentation$ChainedExecutionStrategyInstrumentationContext": {
         "line": {
           "covered": 9,
           "missed": 2
@@ -6702,7 +6702,7 @@
           "missed": 0
         }
       },
-      "graphql.execution.incremental.IncrementalExecutionContextKeys": {
+      "graphql.execution.incremental.DeferredExecutionSupport": {
         "line": {
           "covered": 1,
           "missed": 0
@@ -6716,7 +6716,7 @@
           "missed": 0
         }
       },
-      "graphql.execution.incremental.IncrementalCall": {
+      "graphql.execution.incremental.DeferredExecutionSupport$DeferredExecutionSupportImpl": {
         "line": {
           "covered": 74,
           "missed": 0
@@ -6758,7 +6758,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.diff.reporting.DifferenceReporter": {
+      "graphql.schema.diff.reporting.CapturingReporter": {
         "line": {
           "covered": 21,
           "missed": 0
@@ -6912,7 +6912,7 @@
           "missed": 0
         }
       },
-      "graphql.PublicSpi": {
+      "graphql.GraphQLUnusualConfiguration$ResponseMapFactoryConfig": {
         "line": {
           "covered": 6,
           "missed": 0
@@ -6926,7 +6926,7 @@
           "missed": 0
         }
       },
-      "graphql.VisibleForTesting": {
+      "graphql.GraphqlErrorBuilder$GraphqlErrorImpl": {
         "line": {
           "covered": 13,
           "missed": 0
@@ -7108,7 +7108,7 @@
           "missed": 0
         }
       },
-      "graphql.PublicApi": {
+      "graphql.ExecutionResult": {
         "line": {
           "covered": 5,
           "missed": 0
@@ -7136,7 +7136,7 @@
           "missed": 3
         }
       },
-      "graphql.ThreadSafe": {
+      "graphql.GraphQLException": {
         "line": {
           "covered": 8,
           "missed": 0
@@ -7192,7 +7192,7 @@
           "missed": 0
         }
       },
-      "graphql.Internal": {
+      "graphql.ParseAndValidate": {
         "line": {
           "covered": 21,
           "missed": 3
@@ -7346,7 +7346,7 @@
           "missed": 0
         }
       },
-      "graphql.TrivialDataFetcher": {
+      "graphql.GraphqlErrorException$BuilderBase": {
         "line": {
           "covered": 12,
           "missed": 4
@@ -7416,7 +7416,7 @@
           "missed": 0
         }
       },
-      "graphql.GraphQLError$Builder": {
+      "graphql.SerializationError": {
         "line": {
           "covered": 11,
           "missed": 2
@@ -7472,7 +7472,7 @@
           "missed": 0
         }
       },
-      "graphql.Contract": {
+      "graphql.GraphQLUnusualConfiguration": {
         "line": {
           "covered": 5,
           "missed": 0
@@ -7500,7 +7500,7 @@
           "missed": 0
         }
       },
-      "graphql.ExecutionResult$Builder": {
+      "graphql.GraphQLUnusualConfiguration$PropertyDataFetcherConfig": {
         "line": {
           "covered": 3,
           "missed": 3
@@ -7528,7 +7528,7 @@
           "missed": 2
         }
       },
-      "graphql.Mutable": {
+      "graphql.Profiler": {
         "line": {
           "covered": 6,
           "missed": 4
@@ -7612,7 +7612,7 @@
           "missed": 1
         }
       },
-      "graphql.analysis.values.ValueVisitor$InputElements": {
+      "graphql.analysis.values.ValueTraverser$InputElements": {
         "line": {
           "covered": 20,
           "missed": 0
@@ -7640,7 +7640,7 @@
           "missed": 0
         }
       },
-      "graphql.analysis.QueryVisitorFieldArgumentValueEnvironment": {
+      "graphql.analysis.QueryTransformer$Builder": {
         "line": {
           "covered": 13,
           "missed": 2
@@ -7654,7 +7654,7 @@
           "missed": 1
         }
       },
-      "graphql.analysis.QueryVisitorFragmentDefinitionEnvironment": {
+      "graphql.analysis.QueryComplexityCalculator$1": {
         "line": {
           "covered": 8,
           "missed": 0
@@ -7682,7 +7682,7 @@
           "missed": 0
         }
       },
-      "graphql.analysis.QueryVisitorFieldEnvironment": {
+      "graphql.analysis.QueryTraversalOptions": {
         "line": {
           "covered": 6,
           "missed": 0
@@ -7724,7 +7724,7 @@
           "missed": 0
         }
       },
-      "graphql.analysis.QueryVisitorFieldArgumentEnvironment": {
+      "graphql.analysis.QueryTraversalContext": {
         "line": {
           "covered": 11,
           "missed": 0
@@ -7738,7 +7738,7 @@
           "missed": 0
         }
       },
-      "graphql.analysis.QueryVisitorInlineFragmentEnvironment": {
+      "graphql.analysis.QueryDepthInfo": {
         "line": {
           "covered": 4,
           "missed": 2
@@ -7836,7 +7836,7 @@
           "missed": 0
         }
       },
-      "graphql.analysis.QueryReducer": {
+      "graphql.analysis.QueryVisitorFieldArgumentInputValueImpl": {
         "line": {
           "covered": 13,
           "missed": 1
@@ -7864,7 +7864,7 @@
           "missed": 0
         }
       },
-      "graphql.analysis.FieldComplexityCalculator": {
+      "graphql.analysis.MaxQueryComplexityInstrumentation": {
         "line": {
           "covered": 36,
           "missed": 0
@@ -7990,7 +7990,7 @@
           "missed": 0
         }
       },
-      "graphql.analysis.QueryVisitorFragmentSpreadEnvironment": {
+      "graphql.analysis.QueryVisitorFragmentSpreadEnvironmentImpl": {
         "line": {
           "covered": 9,
           "missed": 1
@@ -8018,7 +8018,7 @@
           "missed": 2
         }
       },
-      "graphql.analysis.QueryVisitorFieldArgumentInputValue": {
+      "graphql.analysis.QueryVisitorFieldArgumentValueEnvironmentImpl": {
         "line": {
           "covered": 10,
           "missed": 5
@@ -8662,7 +8662,7 @@
           "missed": 0
         }
       },
-      "graphql.execution.instrumentation.fieldvalidation.FieldValidation": {
+      "graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation": {
         "line": {
           "covered": 16,
           "missed": 0
@@ -8676,7 +8676,7 @@
           "missed": 0
         }
       },
-      "graphql.execution.instrumentation.fieldvalidation.FieldValidationEnvironment": {
+      "graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation": {
         "line": {
           "covered": 7,
           "missed": 0
@@ -8704,7 +8704,7 @@
           "missed": 2
         }
       },
-      "graphql.execution.instrumentation.fieldvalidation.FieldAndArguments": {
+      "graphql.execution.instrumentation.fieldvalidation.FieldValidationSupport$FieldValidationEnvironmentImpl": {
         "line": {
           "covered": 9,
           "missed": 1
@@ -9236,7 +9236,7 @@
           "missed": 0
         }
       },
-      "graphql.util.NodeAdapter": {
+      "graphql.util.TraverserState$StackTraverserState": {
         "line": {
           "covered": 20,
           "missed": 0
@@ -9320,7 +9320,7 @@
           "missed": 0
         }
       },
-      "graphql.util.TraverserContext": {
+      "graphql.util.NodeZipper": {
         "line": {
           "covered": 50,
           "missed": 6
@@ -9432,7 +9432,7 @@
           "missed": 0
         }
       },
-      "graphql.incremental.IncrementalExecutionResult": {
+      "graphql.incremental.IncrementalPayload": {
         "line": {
           "covered": 20,
           "missed": 4
@@ -9600,7 +9600,7 @@
           "missed": 3
         }
       },
-      "graphql.schema.GraphQLNullableType": {
+      "graphql.schema.GraphqlElementParentTree": {
         "line": {
           "covered": 18,
           "missed": 1
@@ -9684,7 +9684,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.DataFetchingFieldSelectionSet": {
+      "graphql.schema.SchemaTraverser$TraverserDelegateVisitor": {
         "line": {
           "covered": 6,
           "missed": 0
@@ -9740,7 +9740,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.GraphQLNamedType": {
+      "graphql.schema.GraphqlTypeComparatorEnvironment": {
         "line": {
           "covered": 11,
           "missed": 0
@@ -9754,7 +9754,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.GraphQLType": {
+      "graphql.schema.GraphQLInterfaceType$Builder": {
         "line": {
           "covered": 61,
           "missed": 12
@@ -9852,7 +9852,7 @@
           "missed": 1
         }
       },
-      "graphql.schema.GraphQLNamedInputType": {
+      "graphql.schema.CoercingParseLiteralException$Builder": {
         "line": {
           "covered": 2,
           "missed": 0
@@ -9964,7 +9964,7 @@
           "missed": 5
         }
       },
-      "graphql.schema.SelectedField": {
+      "graphql.schema.GraphQLAppliedDirective$Builder": {
         "line": {
           "covered": 24,
           "missed": 2
@@ -10020,7 +10020,7 @@
           "missed": 2
         }
       },
-      "graphql.schema.GraphQLOutputType": {
+      "graphql.schema.GraphQLSchema": {
         "line": {
           "covered": 196,
           "missed": 9
@@ -10034,7 +10034,7 @@
           "missed": 3
         }
       },
-      "graphql.schema.GraphQLModifiedType": {
+      "graphql.schema.GraphQLObjectType": {
         "line": {
           "covered": 55,
           "missed": 5
@@ -10286,7 +10286,7 @@
           "missed": 1
         }
       },
-      "graphql.schema.TypeResolver": {
+      "graphql.schema.GraphQLTypeResolvingVisitor$TypeRefResolvingVisitor": {
         "line": {
           "covered": 15,
           "missed": 0
@@ -10314,7 +10314,7 @@
           "missed": 13
         }
       },
-      "graphql.schema.GraphQLUnmodifiedType": {
+      "graphql.schema.GraphQLArgument": {
         "line": {
           "covered": 58,
           "missed": 3
@@ -10356,7 +10356,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.GraphQLInputSchemaElement": {
+      "graphql.schema.GraphQLFieldDefinition$Builder": {
         "line": {
           "covered": 55,
           "missed": 8
@@ -10384,7 +10384,7 @@
           "missed": 3
         }
       },
-      "graphql.schema.GraphQLInputFieldsContainer": {
+      "graphql.schema.DataFetchingFieldSelectionSetImpl$SelectedFieldImpl": {
         "line": {
           "covered": 24,
           "missed": 6
@@ -10412,7 +10412,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.PropertyFetchingImpl$MethodFinder": {
+      "graphql.schema.GraphQLInterfaceType": {
         "line": {
           "covered": 56,
           "missed": 5
@@ -10538,7 +10538,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.DataFetcher": {
+      "graphql.schema.GraphQLTypeVisitorStub": {
         "line": {
           "covered": 18,
           "missed": 0
@@ -10552,7 +10552,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.GraphQLInputType": {
+      "graphql.schema.GraphQLTypeUtil": {
         "line": {
           "covered": 48,
           "missed": 7
@@ -10594,7 +10594,7 @@
           "missed": 4
         }
       },
-      "graphql.schema.GraphQLInputValueDefinition": {
+      "graphql.schema.GraphQLAppliedDirectiveArgument$Builder": {
         "line": {
           "covered": 21,
           "missed": 0
@@ -10622,7 +10622,7 @@
           "missed": 3
         }
       },
-      "graphql.schema.GraphQLImplementingType": {
+      "graphql.schema.GraphQLScalarType": {
         "line": {
           "covered": 39,
           "missed": 4
@@ -10748,7 +10748,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.GraphQLNamedOutputType": {
+      "graphql.schema.DataFetchingEnvironmentImpl$DFEInternalState": {
         "line": {
           "covered": 7,
           "missed": 1
@@ -10958,7 +10958,7 @@
           "missed": 1
         }
       },
-      "graphql.schema.GraphQLCompositeType": {
+      "graphql.schema.CoercingSerializeException$Builder": {
         "line": {
           "covered": 2,
           "missed": 0
@@ -10972,7 +10972,7 @@
           "missed": 0
         }
       },
-      "graphql.schema.GraphQLNamedSchemaElement": {
+      "graphql.schema.ShallowTypeRefCollector$InterfaceInterfaceReplaceTarget": {
         "line": {
           "covered": 3,
           "missed": 0
@@ -11350,7 +11350,7 @@
           "missed": 0
         }
       },
-      "graphql.parser.ParsingListener$Token": {
+      "graphql.parser.ParserEnvironment": {
         "line": {
           "covered": 1,
           "missed": 0
@@ -11532,7 +11532,7 @@
           "missed": 8
         }
       },
-      "graphql.introspection.IntrospectionDataFetcher": {
+      "graphql.introspection.IntrospectionWithDirectivesSupport": {
         "line": {
           "covered": 75,
           "missed": 2
@@ -11560,7 +11560,7 @@
           "missed": 0
         }
       },
-      "graphql.introspection.IntrospectionDataFetchingEnvironment": {
+      "graphql.introspection.IntrospectionDisabledError": {
         "line": {
           "covered": 4,
           "missed": 2
@@ -11630,7 +11630,7 @@
           "missed": 0
         }
       },
-      "graphql.introspection.IntrospectionWithDirectivesSupport$DirectivePredicateEnvironment": {
+      "graphql.introspection.IntrospectionQueryBuilder": {
         "line": {
           "covered": 134,
           "missed": 1
@@ -11644,7 +11644,7 @@
           "missed": 1
         }
       },
-      "graphql.relay.PageInfo": {
+      "graphql.relay.SimpleListConnection": {
         "line": {
           "covered": 58,
           "missed": 12
@@ -11658,7 +11658,7 @@
           "missed": 1
         }
       },
-      "graphql.relay.Connection": {
+      "graphql.relay.DefaultEdge": {
         "line": {
           "covered": 6,
           "missed": 1
@@ -11714,7 +11714,7 @@
           "missed": 2
         }
       },
-      "graphql.relay.ConnectionCursor": {
+      "graphql.relay.InvalidPageSizeException": {
         "line": {
           "covered": 0,
           "missed": 6
@@ -11938,7 +11938,7 @@
           "missed": 0
         }
       },
-      "graphql.execution.instrumentation.tracing.TracingSupport$TracingContext": {
+      "graphql.execution.instrumentation.tracing.TracingInstrumentation$Options": {
         "line": {
           "covered": 6,
           "missed": 0
@@ -12246,7 +12246,7 @@
           "missed": 5
         }
       },
-      "graphql.execution.directives.QueryDirectives$Builder": {
+      "graphql.execution.directives.QueryDirectivesImpl": {
         "line": {
           "covered": 82,
           "missed": 2
@@ -12546,15 +12546,15 @@
           "missed": 1
         },
         "branch": {
-          "covered": 1,
-          "missed": 1
+          "covered": 2,
+          "missed": 0
         },
         "method": {
           "covered": 8,
           "missed": 1
         }
       },
-      "graphql.execution.DataFetcherExceptionHandler": {
+      "graphql.execution.ExecutionStepInfo": {
         "line": {
           "covered": 42,
           "missed": 3
@@ -13156,7 +13156,7 @@
           "missed": 0
         }
       },
-      "graphql.execution.EngineRunningObserver": {
+      "graphql.execution.ValuesResolver$ValueMode": {
         "line": {
           "covered": 3,
           "missed": 0
@@ -13226,7 +13226,7 @@
           "missed": 0
         }
       },
-      "graphql.execution.Async$CombinedBuilder": {
+      "graphql.execution.DefaultResponseMapFactory": {
         "line": {
           "covered": 8,
           "missed": 0
@@ -13464,7 +13464,7 @@
           "missed": 0
         }
       },
-      "graphql.validation.ValidationErrorClassification": {
+      "graphql.validation.VariablesTypesMatcher": {
         "line": {
           "covered": 19,
           "missed": 4
@@ -13506,7 +13506,7 @@
           "missed": 1
         }
       },
-      "graphql.validation.DocumentVisitor": {
+      "graphql.validation.ValidationErrorCollector$MaxValidationErrorsReached": {
         "line": {
           "covered": 2,
           "missed": 0

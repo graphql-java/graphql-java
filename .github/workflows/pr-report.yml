@@ -64,9 +64,10 @@ jobs:
             }
             console.log(`Posting report for PR #${prNumber}`);
 
+            const { parseJacocoXml, pct, zeroCov } = require('./.github/scripts/parse-jacoco.js');
+
             const versions = ['java11', 'java17', 'java21', 'java25', 'jcstress'];
             const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
-            const zeroCov = { covered: 0, missed: 0 };
 
             // --- Read current test stats from artifacts ---
             const current = {};
@@ -90,44 +91,12 @@ jobs:
             const baseClasses = (baseline.coverage || {}).classes || {};
 
             // --- Parse JaCoCo XML for coverage ---
-            let covLine = null, covBranch = null, covMethod = null;
-            const classCounters = {};
             const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
-            if (fs.existsSync(jacocoFile)) {
-              const xml = fs.readFileSync(jacocoFile, 'utf8');
-              const stripped = xml.replace(/<package[\s\S]*?<\/package>/g, '');
-              const re = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
-              let m;
-              while ((m = re.exec(stripped)) !== null) {
-                const entry = { covered: parseInt(m[3]), missed: parseInt(m[2]) };
-                if (m[1] === 'LINE') covLine = entry;
-                else if (m[1] === 'BRANCH') covBranch = entry;
-                else if (m[1] === 'METHOD') covMethod = entry;
-              }
-
-              const pkgRe = /<package\s+name="([^"]+)">([\s\S]*?)<\/package>/g;
-              let pkgMatch;
-              while ((pkgMatch = pkgRe.exec(xml)) !== null) {
-                const pkgName = pkgMatch[1].replace(/\//g, '.');
-                const pkgBody = pkgMatch[2];
-                const classRe = /<class\s+name="([^"]+)"[^>]*>([\s\S]*?)<\/class>/g;
-                let classMatch;
-                while ((classMatch = classRe.exec(pkgBody)) !== null) {
-                  const className = classMatch[1].replace(/\//g, '.');
-                  const classBody = classMatch[2];
-                  const counters = { line: { ...zeroCov }, branch: { ...zeroCov }, method: { ...zeroCov } };
-                  const cntRe = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
-                  let cntMatch;
-                  while ((cntMatch = cntRe.exec(classBody)) !== null) {
-                    const entry = { covered: parseInt(cntMatch[3]), missed: parseInt(cntMatch[2]) };
-                    if (cntMatch[1] === 'LINE') counters.line = entry;
-                    else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
-                    else if (cntMatch[1] === 'METHOD') counters.method = entry;
-                  }
-                  classCounters[className] = counters;
-                }
-              }
-            }
+            const parsed = parseJacocoXml(jacocoFile);
+            const covLine = parsed?.overall?.line || null;
+            const covBranch = parsed?.overall?.branch || null;
+            const covMethod = parsed?.overall?.method || null;
+            const classCounters = parsed?.classes || {};
 
             // --- Helpers ---
             function delta(curr, prev, positiveIsGood) {
@@ -141,11 +110,6 @@ jobs:
 
             function fmtCell(curr, prev, positiveIsGood) {
               return `${curr} (${delta(curr, prev, positiveIsGood)})`;
-            }
-
-            function pct(covered, missed) {
-              const total = covered + missed;
-              return total === 0 ? 0 : (covered / total * 100);
             }
 
             function fmtPct(value) {
