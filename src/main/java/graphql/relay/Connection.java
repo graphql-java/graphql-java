@@ -14,7 +14,7 @@ import java.util.List;
  */
 @PublicApi
 @NullMarked
-public interface Connection<T> {
+public interface Connection<T extends @Nullable Object> {
 
     /**
      * @return a list of {@link graphql.relay.Edge}s that contain a node of data and its cursor. Can be null as defined in the spec.

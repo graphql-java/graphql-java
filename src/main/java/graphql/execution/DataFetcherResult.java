@@ -127,7 +127,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
      *
      * @return a new instance with where the data value has been transformed
      */
-    public <R> DataFetcherResult<R> map(Function<@Nullable T, @Nullable R> transformation) {
+    public <R extends @Nullable Object> DataFetcherResult<R> map(Function<@Nullable T, @Nullable R> transformation) {
         return new Builder<>(transformation.apply(this.data))
                 .errors(this.errors)
                 .extensions(this.extensions)
@@ -171,7 +171,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
      *
      * @return a new builder
      */
-    public static <T> Builder<T> newResult() {
+    public static <T extends @Nullable Object> Builder<T> newResult() {
         return new Builder<>();
     }
 
@@ -184,7 +184,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
      *
      * @return a new builder
      */
-    public static <T> Builder<@Nullable T> newResult(@Nullable T data) {
+    public static <T extends @Nullable Object> Builder<@Nullable T> newResult(@Nullable T data) {
         return new Builder<>(data);
     }
 

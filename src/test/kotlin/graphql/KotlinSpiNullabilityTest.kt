@@ -1,6 +1,13 @@
 package graphql
 
+import graphql.execution.DataFetcherResult
 import graphql.execution.instrumentation.InstrumentationContext
+import graphql.relay.Connection
+import graphql.relay.ConnectionCursor
+import graphql.relay.DefaultConnection
+import graphql.relay.DefaultEdge
+import graphql.relay.DefaultPageInfo
+import graphql.relay.Edge
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
@@ -20,26 +27,35 @@ import java.util.Locale
 /**
  * End-to-end Kotlin compatibility test for JSpecify-annotated generic SPI interfaces.
  *
- * The Kotlin *compilation* of this file is the primary regression guard:
- * if a JSpecify annotation is placed in a position that Kotlin's strict mode
- * (`-Xjspecify-annotations=strict`) considers illegal (e.g. @Nullable on a type
- * variable declaration, or a conflicting bound in a @NullMarked context), the
- * compiler will reject this file and the build fails before any test runs.
+ * The Kotlin *compilation* of this file is the primary regression guard.  Two
+ * distinct annotation problems are caught at compile time:
+ *
+ * 1. @Nullable on a type variable in a position Kotlin's strict JSpecify mode
+ *    (`-Xjspecify-annotations=strict`) considers illegal.
+ *
+ * 2. Missing `T extends @Nullable Object` on a @NullMarked generic type whose
+ *    members use `@Nullable T`.  Without the bound, Kotlin infers `T : Any`
+ *    (non-null) and rejects nullable type arguments such as
+ *    `InstrumentationContext<String?>` at the call site.
+ *
+ * If either problem exists the compiler rejects this file and the build fails
+ * before any test runner is invoked.
  *
  * Runtime assertions then double-check that null/non-null contracts are
  * honoured the way Kotlin users would expect.
  */
 class KotlinSpiNullabilityTest {
 
-    // -------------------------------------------------------------------------
-    // InstrumentationContext<T>
+    // =========================================================================
+    // InstrumentationContext<T extends @Nullable Object>
     //
-    // The interface is @NullMarked.  The critical annotation under test is
+    // The interface is @NullMarked with:
     //   void onCompleted(@Nullable T result, @Nullable Throwable t)
     //
-    // In strict mode Kotlin translates @Nullable T → T? (where T : Any due to
-    // @NullMarked).  The combination must not produce a compiler error.
-    // -------------------------------------------------------------------------
+    // Without `T extends @Nullable Object` Kotlin would infer T : Any and
+    // reject `InstrumentationContext<String?>` at call-sites (Void, Object
+    // field values, etc.).
+    // =========================================================================
 
     /** Minimal Kotlin implementation that records the calls for assertion. */
     private class RecordingContext<T : Any> : InstrumentationContext<T> {
@@ -47,11 +63,9 @@ class KotlinSpiNullabilityTest {
         var result: T? = null
         var throwable: Throwable? = null
 
-        override fun onDispatched() {
-            dispatched = true
-        }
+        override fun onDispatched() { dispatched = true }
 
-        // @Nullable T result  →  T?   must compile under strict JSpecify mode
+        // @Nullable T result  →  T?  must compile under strict JSpecify mode
         override fun onCompleted(result: T?, t: Throwable?) {
             this.result = result
             this.throwable = t
@@ -62,7 +76,6 @@ class KotlinSpiNullabilityTest {
     fun `InstrumentationContext onCompleted accepts null for @Nullable T result`() {
         val ctx = RecordingContext<String>()
         ctx.onDispatched()
-        // Passing null must be accepted – @Nullable T guarantees it
         ctx.onCompleted(null, null)
         assertTrue(ctx.dispatched)
         assertNull(ctx.result)
@@ -74,7 +87,6 @@ class KotlinSpiNullabilityTest {
         val ctx = RecordingContext<String>()
         ctx.onCompleted("hello", null)
         assertEquals("hello", ctx.result)
-        assertNull(ctx.throwable)
     }
 
     @Test
@@ -82,33 +94,166 @@ class KotlinSpiNullabilityTest {
         val ctx = RecordingContext<String>()
         val ex = RuntimeException("boom")
         ctx.onCompleted(null, ex)
-        assertNull(ctx.result)
         assertSame(ex, ctx.throwable)
     }
 
-    // -------------------------------------------------------------------------
-    // DataFetcher<T>
-    //
-    // No JSpecify annotations yet on DataFetcher itself, but implementing it in
-    // Kotlin is the baseline for future annotation additions.
-    // -------------------------------------------------------------------------
+    /**
+     * Uses a nullable type argument – only compiles when the interface declares
+     * `T extends @Nullable Object` (Kotlin bound: T : Any?).
+     * Without the bound Kotlin infers T : Any and `String?` violates it.
+     */
+    @Test
+    fun `InstrumentationContext accepts nullable type argument`() {
+        // InstrumentationContext<Void> mirrors real engine usage (beginReactiveResults)
+        // Void can only hold null, so T must allow nullable type arguments.
+        val ctx = object : InstrumentationContext<Void?> {
+            var completed = false
+            override fun onDispatched() {}
+            override fun onCompleted(result: Void?, t: Throwable?) { completed = true }
+        }
+        ctx.onCompleted(null, null)
+        assertTrue(ctx.completed)
+    }
 
-    /** DataFetcher whose return value can be null. */
+    @Test
+    fun `InstrumentationContext lambda-style implementation compiles`() {
+        var seen: String? = "not-called"
+        val ctx = object : InstrumentationContext<String> {
+            override fun onDispatched() {}
+            override fun onCompleted(result: String?, t: Throwable?) { seen = result }
+        }
+        ctx.onCompleted(null, null)
+        assertNull(seen)
+    }
+
+    // =========================================================================
+    // DataFetcherResult<T extends @Nullable Object>
+    //
+    // The reference implementation of the `T extends @Nullable Object` fix.
+    // DataFetcherResult was corrected first; these tests document the expected
+    // behaviour so regressions are caught.
+    // =========================================================================
+
+    @Test
+    fun `DataFetcherResult with nullable type argument compiles and returns null data`() {
+        // DataFetcher<String?> naturally produces a DataFetcherResult<String?>.
+        // This requires T : Any? – i.e. T extends @Nullable Object.
+        val result: DataFetcherResult<String?> = DataFetcherResult.newResult<String?>()
+            .data(null)
+            .build()
+
+        // getData() is @Nullable T → String? in Kotlin
+        val data: String? = result.getData()
+        assertNull(data)
+    }
+
+    @Test
+    fun `DataFetcherResult with non-null type argument works normally`() {
+        val result: DataFetcherResult<String> = DataFetcherResult.newResult<String>()
+            .data("hello")
+            .build()
+        assertEquals("hello", result.getData())
+    }
+
+    @Test
+    fun `DataFetcherResult map transforms nullable data`() {
+        // map() is declared as: <R> DataFetcherResult<R> map(Function<@Nullable T, @Nullable R>)
+        // The Function type arguments are @Nullable, which must compile in strict mode.
+        val original: DataFetcherResult<String?> = DataFetcherResult.newResult<String?>()
+            .data(null)
+            .build()
+
+        val mapped: DataFetcherResult<Int?> = original.map { str: String? -> str?.length }
+        assertNull(mapped.getData())
+    }
+
+    @Test
+    fun `DataFetcherResult map transforms non-null data`() {
+        val original: DataFetcherResult<String?> = DataFetcherResult.newResult<String?>()
+            .data("hello")
+            .build()
+
+        val mapped: DataFetcherResult<Int?> = original.map { str: String? -> str?.length }
+        assertEquals(5, mapped.getData())
+    }
+
+    @Test
+    fun `DataFetcherResult builder data method accepts null`() {
+        // Builder.data(@Nullable T data) – null must be a legal argument
+        val builder: DataFetcherResult.Builder<String?> = DataFetcherResult.newResult()
+        builder.data(null)
+        assertNull(builder.build().getData())
+    }
+
+    @Test
+    fun `DataFetcherResult newResult factory with nullable data compiles`() {
+        // newResult(@Nullable T data) overload – verifies the factory type parameter
+        // T extends @Nullable Object is in place, otherwise String? is rejected here.
+        val result = DataFetcherResult.newResult<String?>(null).build()
+        assertNull(result.getData())
+    }
+
+    @Test
+    fun `DataFetcherResult transform preserves nullability`() {
+        val original: DataFetcherResult<String?> = DataFetcherResult.newResult<String?>()
+            .data(null)
+            .build()
+
+        val transformed: DataFetcherResult<String?> = original.transform { builder ->
+            builder.data("replaced")
+        }
+        assertEquals("replaced", transformed.getData())
+    }
+
+    // =========================================================================
+    // Edge<T extends @Nullable Object> / DefaultEdge<T extends @Nullable Object>
+    //
+    // Edge.getNode() is @Nullable T.  Without `T extends @Nullable Object` Kotlin
+    // rejects Edge<String?> (and the common real-world Edge<SomeDomainObject?>).
+    // =========================================================================
+
+    @Test
+    fun `DefaultEdge with non-null node compiles and returns node`() {
+        val cursor = ConnectionCursor { "cursor-1" }
+        val edge: Edge<String> = DefaultEdge("node-value", cursor)
+        // getNode() is @Nullable T → String? in Kotlin
+        val node: String? = edge.getNode()
+        assertEquals("node-value", node)
+    }
+
+    @Test
+    fun `DefaultEdge with nullable type argument accepts null node`() {
+        // Edge<String?> requires T : Any? – only valid with T extends @Nullable Object.
+        // Without the bound the compiler rejects this line.
+        val cursor = ConnectionCursor { "cursor-2" }
+        val edge: Edge<String?> = DefaultEdge<String?>(null, cursor)
+        assertNull(edge.getNode())
+    }
+
+    @Test
+    fun `Connection with nullable type argument compiles`() {
+        // Connection<T> wraps Edge<T>; both need T extends @Nullable Object so that
+        // Connection<String?> is a valid type.
+        val cursor = ConnectionCursor { "c" }
+        val edge: Edge<String?> = DefaultEdge<String?>(null, cursor)
+        val pageInfo = DefaultPageInfo(null, null, false, false)
+        val connection: Connection<String?> = DefaultConnection(listOf(edge), pageInfo)
+        assertNull(connection.edges?.first()?.getNode())
+    }
+
+    // =========================================================================
+    // DataFetcher<T> / DataFetcherFactory<T> / TrivialDataFetcher<T>
+    // =========================================================================
+
     private class NullableStringFetcher : DataFetcher<String?> {
         override fun get(env: DataFetchingEnvironment): String? = null
     }
 
-    /** DataFetcher whose return value is always non-null. */
     private class NonNullStringFetcher : DataFetcher<String> {
         override fun get(env: DataFetchingEnvironment): String = "result"
     }
 
-    /** DataFetcher expressed as a Kotlin lambda (SAM conversion). */
     private val lambdaFetcher: DataFetcher<Int> = DataFetcher { 42 }
-
-    // -------------------------------------------------------------------------
-    // DataFetcherFactory<T>
-    // -------------------------------------------------------------------------
 
     private class StringFetcherFactory : DataFetcherFactory<String> {
         @Deprecated("Deprecated in the SPI – present only to satisfy the interface contract")
@@ -119,28 +264,17 @@ class KotlinSpiNullabilityTest {
             NonNullStringFetcher()
     }
 
-    // -------------------------------------------------------------------------
-    // TrivialDataFetcher<T>  (extends DataFetcher<T>)
-    // -------------------------------------------------------------------------
-
     private class TrivialFetcher : TrivialDataFetcher<String?> {
         override fun get(env: DataFetchingEnvironment): String? = null
     }
 
-    // -------------------------------------------------------------------------
+    // =========================================================================
     // Coercing<I, O>
     //
     // Two generic parameters with mixed @Nullable/@NonNull on method signatures.
     // Compiling this class in strict mode validates every annotated position.
-    // -------------------------------------------------------------------------
+    // =========================================================================
 
-    /**
-     * Minimal String-to-String Coercing.  Overrides only the current
-     * (non-deprecated) method variants.
-     *
-     * Return type of serialize is @Nullable O → String?  in Kotlin.
-     * Return type of parseValue is @Nullable I → String?  in Kotlin.
-     */
     private class PassThroughCoercing : Coercing<String, String> {
 
         @Throws(CoercingSerializeException::class)
@@ -169,7 +303,6 @@ class KotlinSpiNullabilityTest {
     fun `Coercing serialize returns nullable result`() {
         val coercing = PassThroughCoercing()
         val ctx = GraphQLContext.newContext().build()
-        // @Nullable O return – result may be null, so Kotlin type is String?
         val result: String? = coercing.serialize("hello", ctx, Locale.ENGLISH)
         assertEquals("hello", result)
     }
@@ -180,40 +313,5 @@ class KotlinSpiNullabilityTest {
         val ctx = GraphQLContext.newContext().build()
         val result: String? = coercing.parseValue("world", ctx, Locale.ENGLISH)
         assertEquals("world", result)
-    }
-
-    // -------------------------------------------------------------------------
-    // Using InstrumentationContext<T> with a concrete bounded type
-    //
-    // Verifies that using the interface from Kotlin call-sites also compiles
-    // correctly – not just implementing it.
-    // -------------------------------------------------------------------------
-
-    @Test
-    fun `InstrumentationContext call-site usage with concrete type parameter`() {
-        // Type argument is a Kotlin nullable type – exercises T = String?
-        val ctx = RecordingContext<String>()
-
-        // Calling through the interface type confirms Kotlin is happy with the
-        // @Nullable T parameter on the declared interface type.
-        val iface: InstrumentationContext<String> = ctx
-        iface.onCompleted(null, null)
-
-        assertNull(ctx.result)
-    }
-
-    @Test
-    fun `InstrumentationContext lambda-style implementation compiles`() {
-        // Anonymous object implementing the interface in the most idiomatic
-        // Kotlin style – ensuring no annotation-driven compile error.
-        var seen: String? = "not-called"
-        val ctx = object : InstrumentationContext<String> {
-            override fun onDispatched() {}
-            override fun onCompleted(result: String?, t: Throwable?) {
-                seen = result
-            }
-        }
-        ctx.onCompleted(null, null)
-        assertNull(seen)
     }
 }

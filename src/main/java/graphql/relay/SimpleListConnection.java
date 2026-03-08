@@ -20,7 +20,7 @@ import static java.util.Base64.getEncoder;
 
 @PublicApi
 @NullMarked
-public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>> {
+public class SimpleListConnection<T extends @Nullable Object> implements TrivialDataFetcher<Connection<T>> {
 
     static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
     private final String prefix;

@@ -16,7 +16,7 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 @NullMarked
-public class DefaultConnection<T> implements Connection<T> {
+public class DefaultConnection<T extends @Nullable Object> implements Connection<T> {
 
     private final ImmutableList<Edge<T>> edges;
     private final PageInfo pageInfo;

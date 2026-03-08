@@ -11,7 +11,7 @@ import org.jspecify.annotations.Nullable;
  */
 @PublicApi
 @NullMarked
-public interface Edge<T> {
+public interface Edge<T extends @Nullable Object> {
 
     /**
      * @return the node of data that this edge represents, or null if the node failed to resolve

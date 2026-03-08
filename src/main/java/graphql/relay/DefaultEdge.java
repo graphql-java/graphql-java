@@ -10,7 +10,7 @@ import static graphql.Assert.assertNotNull;
 
 @PublicApi
 @NullMarked
-public class DefaultEdge<T> implements Edge<T> {
+public class DefaultEdge<T extends @Nullable Object> implements Edge<T> {
 
     private final @Nullable T node;
     private final ConnectionCursor cursor;

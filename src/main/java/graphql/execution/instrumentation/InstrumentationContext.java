@@ -14,7 +14,7 @@ import org.jspecify.annotations.Nullable;
  */
 @PublicSpi
 @NullMarked
-public interface InstrumentationContext<T> {
+public interface InstrumentationContext<T extends @Nullable Object> {
 
     /**
      * This is invoked when the instrumentation step is initially dispatched
