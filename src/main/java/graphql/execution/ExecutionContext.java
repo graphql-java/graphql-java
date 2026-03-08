@@ -20,7 +20,6 @@ import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.ExecutableNormalizedOperation;
-import graphql.normalized.ExecutableNormalizedOperationFactory;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
@@ -36,7 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static graphql.normalized.ExecutableNormalizedOperationFactory.*;
+import static graphql.normalized.ExecutableNormalizedOperationFactory.Options;
+import static graphql.normalized.ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
