@@ -12,6 +12,13 @@ Analyze this Java class and add JSpecify annotations based on:
 5. Method implementations that return null or check for null
 6. GraphQL specification details (see details below)
 
+## API Compatibility and Breaking Changes
+
+When adding JSpecify annotations, **DO NOT break existing public APIs**.
+- **Do not remove interfaces** from public classes (e.g., if a class implements `NamedNode`, it must continue to do so).
+- **Be extremely careful when changing methods to return `@Nullable`**. If an interface contract (or widespread ecosystem usage) expects a non-null return value, changing it to `@Nullable` is a breaking change that will cause compilation errors or `NullPointerException`s for callers. For example, if a method returned `null` implicitly but its interface requires non-null, you must honor the non-null contract (e.g., returning an empty string or default value instead of `null`).
+- **Do not change the binary signature** of methods or constructors in a way that breaks backwards compatibility.
+
 ## GraphQL Specification Compliance
 This is a GraphQL implementation. When determining nullability, consult the GraphQL specification (https://spec.graphql.org/draft/) for the relevant concept. Key principles:
 
@@ -26,7 +33,9 @@ If you find NullAway errors, try and make the smallest possible change to fix th
 
 ## Formatting Guidelines
 
-Do not make spacing or formatting changes. Avoid adjusting whitespace, line breaks, or other formatting when editing code. These changes make diffs messy and harder to review. Only make the minimal changes necessary to accomplish the task.
+- **Zero Formatting Changes**: Do NOT reformat the code.
+- **Minimise Whitespace/Newline Changes**: Do not add or remove blank lines unless absolutely necessary. Keep the diff as clean as possible to ease the review process.
+- Avoid adjusting whitespace, line breaks, or other formatting when editing code. These changes make diffs messy and harder to review. Only make the minimal changes necessary to accomplish the task.
 
 ## Cleaning up
 Finally, can you remove this class from the JSpecifyAnnotationsCheck as an exemption
