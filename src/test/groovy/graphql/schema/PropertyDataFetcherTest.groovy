@@ -7,6 +7,7 @@ import graphql.schema.fetching.ConfusedPojo
 import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.ClassWithInterfaces
 import graphql.schema.somepackage.ClassWithInteritanceAndInterfaces
+import graphql.schema.somepackage.InterfaceInheritanceHolder
 import graphql.schema.somepackage.RecordLikeClass
 import graphql.schema.somepackage.RecordLikeTwoClassesDown
 import graphql.schema.somepackage.TestClass
@@ -787,6 +788,89 @@ class PropertyDataFetcherTest extends Specification {
     }
 
     class OtherObject extends BaseObject {}
+
+    def "fetch via public interface method on non-public class - issue 4278"() {
+        given:
+        // TreeMap.Entry is a package-private class implementing the public Map.Entry interface
+        // On Java 16+, setAccessible fails on JDK internal classes, so the only way to invoke
+        // getValue() is by finding it through the public Map.Entry interface
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def treeMap = new TreeMap<String, String>()
+        treeMap.put("testKey", "testValue")
+        def entry = treeMap.entrySet().iterator().next()
+        def environment = env("value", entry)
+
+        when:
+        def result = fetcher.get(environment)
+
+        then:
+        result == "testValue"
+
+        where:
+        fetcher                                  | _
+        new PropertyDataFetcher("value")         | _
+        SingletonPropertyDataFetcher.singleton() | _
+    }
+
+    def "fetch via public interface method on non-public class for key - issue 4278"() {
+        given:
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def treeMap = new TreeMap<String, String>()
+        treeMap.put("testKey", "testValue")
+        def entry = treeMap.entrySet().iterator().next()
+        def environment = env("key", entry)
+
+        when:
+        def result = fetcher.get(environment)
+
+        then:
+        result == "testKey"
+
+        where:
+        fetcher                                  | _
+        new PropertyDataFetcher("key")           | _
+        SingletonPropertyDataFetcher.singleton() | _
+    }
+
+    def "fetch method from public interface through package-private interface chain"() {
+        given:
+        // PackagePrivateChainImpl (package-private) implements PackagePrivateMiddleInterface (package-private)
+        // which extends PublicBaseInterface (public) — defines getBaseValue()
+        // The recursive interface search must traverse through the package-private middle interface
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def obj = InterfaceInheritanceHolder.createChainImpl()
+        def environment = env("baseValue", obj)
+
+        when:
+        def result = new PropertyDataFetcher("baseValue").get(environment)
+
+        then:
+        result == "baseValue"
+    }
+
+    def "fetch method through diamond interface inheritance"() {
+        given:
+        // DiamondImpl (package-private) implements both PackagePrivateBranchA and PackagePrivateBranchB
+        // Both are package-private interfaces extending PublicBaseInterface (public) — defines getBaseValue()
+        // The search must find getBaseValue() through either branch
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def obj = InterfaceInheritanceHolder.createDiamondImpl()
+
+        expect:
+        new PropertyDataFetcher(property).get(env(property, obj)) == expected
+
+        where:
+        property    | expected
+        "baseValue" | "diamondBaseValue"
+    }
 
     def "Can access private property from base class that starts with i in Turkish"() {
         // see https://github.com/graphql-java/graphql-java/issues/3385
