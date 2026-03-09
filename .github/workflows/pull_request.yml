@@ -54,14 +54,14 @@ jobs:
             ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
           fi
       - name: Upload Coverage HTML Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always() && matrix.label == 'java25'
         with:
           name: jacoco-html-report
           path: build/reports/jacoco/test/html/
           retention-days: 14
       - name: Upload Coverage XML Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always() && matrix.label == 'java25'
         with:
           name: coverage-report
@@ -109,7 +109,7 @@ jobs:
             > "/tmp/test-stats/${{ matrix.label }}.json"
       - name: Upload Test Stats
         if: always() && matrix.label != 'check'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-stats-${{ matrix.label }}
           path: /tmp/test-stats/${{ matrix.label }}.json
