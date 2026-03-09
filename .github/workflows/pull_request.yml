@@ -159,13 +159,48 @@ jobs:
             const regressions = [];
             for (const [cls, curr] of Object.entries(classCounters)) {
               const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
+              const classRegressions = [];
               for (const [metric, key] of [['Line', 'line'], ['Branch', 'branch'], ['Method', 'method']]) {
                 const currPct = pct(curr[key].covered, curr[key].missed);
                 const basePct = pct(base[key].covered, base[key].missed);
                 const currMissed = curr[key].missed;
                 const baseMissed = base[key].missed;
                 if (currPct < basePct - 0.05 && currMissed > baseMissed) {
-                  regressions.push(`  ${cls} ${metric}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%, missed: ${currMissed} was ${baseMissed})`);
+                  classRegressions.push(`  ${cls} ${metric}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%, missed: ${currMissed} was ${baseMissed})`);
+                }
+              }
+              if (classRegressions.length > 0) {
+                regressions.push(...classRegressions);
+                // Add method-level details for this regression
+                const currMethods = curr.methods || [];
+                const baseMethods = (base.methods || []);
+                if (currMethods.length > 0 || baseMethods.length > 0) {
+                  const baseByKey = {};
+                  for (const m of baseMethods) baseByKey[m.name + m.desc] = m;
+                  const seen = new Set();
+                  for (const m of currMethods) {
+                    const key = m.name + m.desc;
+                    seen.add(key);
+                    const bm = baseByKey[key];
+                    const currLinePct = pct(m.counters.line.covered, m.counters.line.missed);
+                    const baseLinePct = bm ? pct(bm.counters.line.covered, bm.counters.line.missed) : null;
+                    const hasMissed = m.counters.line.missed > 0 || m.counters.branch.missed > 0;
+                    const lineChanged = baseLinePct !== null && Math.abs(currLinePct - baseLinePct) >= 0.05;
+                    const isNew = !bm;
+                    if (hasMissed || lineChanged || isNew) {
+                      const displayName = m.name === '<init>' ? 'constructor' : m.name;
+                      let detail = `      ${displayName} — Line: ${currLinePct.toFixed(1)}%`;
+                      if (baseLinePct !== null) detail += ` (was ${baseLinePct.toFixed(1)}%)`;
+                      else detail += ' (new)';
+                      regressions.push(detail);
+                    }
+                  }
+                  for (const bm of baseMethods) {
+                    if (!seen.has(bm.name + bm.desc)) {
+                      const displayName = bm.name === '<init>' ? 'constructor' : bm.name;
+                      regressions.push(`      ${displayName} — removed`);
+                    }
+                  }
                 }
               }
             }
