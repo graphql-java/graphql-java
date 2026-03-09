@@ -5,6 +5,8 @@ import graphql.execution.ResultPath;
 import graphql.language.Field;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -12,6 +14,7 @@ import java.util.Map;
  * This represents a field and its arguments that may be validated.
  */
 @PublicApi
+@NullMarked
 public interface FieldAndArguments {
 
     /**
@@ -32,7 +35,7 @@ public interface FieldAndArguments {
     /**
      * @return the parent arguments or null if there is no parent
      */
-    FieldAndArguments getParentFieldAndArguments();
+    @Nullable FieldAndArguments getParentFieldAndArguments();
 
     /**
      * @return the path to this field
@@ -56,5 +59,5 @@ public interface FieldAndArguments {
      * @return a cast object of type T
      */
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    <T> T getArgumentValue(String argumentName);
+    <T> @Nullable T getArgumentValue(String argumentName);
 }
