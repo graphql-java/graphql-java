@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5684,
-      "passed": 5628,
+      "total": 5692,
+      "passed": 5636,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5684,
-      "passed": 5627,
+      "total": 5692,
+      "passed": 5635,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5684,
-      "passed": 5627,
+      "total": 5692,
+      "passed": 5635,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5684,
-      "passed": 5627,
+      "total": 5692,
+      "passed": 5635,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,15 +39,15 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8332,
-        "missed": 1510
+        "covered": 8347,
+        "missed": 1509
       },
       "line": {
-        "covered": 28706,
-        "missed": 3119
+        "covered": 28728,
+        "missed": 3120
       },
       "method": {
-        "covered": 7683,
+        "covered": 7684,
         "missed": 1222
       }
     },
@@ -4170,12 +4170,12 @@
       },
       "graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 80,
-          "missed": 1
+          "covered": 81,
+          "missed": 0
         },
         "branch": {
-          "covered": 24,
-          "missed": 2
+          "covered": 26,
+          "missed": 0
         },
         "method": {
           "covered": 17,
@@ -10498,15 +10498,15 @@
       },
       "graphql.schema.PropertyFetchingImpl": {
         "line": {
-          "covered": 144,
-          "missed": 20
+          "covered": 165,
+          "missed": 22
         },
         "branch": {
-          "covered": 55,
-          "missed": 13
+          "covered": 68,
+          "missed": 14
         },
         "method": {
-          "covered": 31,
+          "covered": 32,
           "missed": 0
         }
       },
