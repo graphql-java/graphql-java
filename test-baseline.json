@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5680,
-      "passed": 5624,
+      "total": 5684,
+      "passed": 5628,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5680,
-      "passed": 5623,
+      "total": 5684,
+      "passed": 5627,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5680,
-      "passed": 5623,
+      "total": 5684,
+      "passed": 5627,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5680,
-      "passed": 5623,
+      "total": 5684,
+      "passed": 5627,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -43,12 +43,12 @@
         "missed": 1510
       },
       "line": {
-        "covered": 28698,
-        "missed": 3126
+        "covered": 28706,
+        "missed": 3119
       },
       "method": {
-        "covered": 7681,
-        "missed": 1224
+        "covered": 7683,
+        "missed": 1222
       }
     },
     "classes": {
@@ -4100,7 +4100,7 @@
       },
       "graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy$CallStack": {
         "line": {
-          "covered": 18,
+          "covered": 19,
           "missed": 0
         },
         "branch": {
@@ -4156,16 +4156,16 @@
       },
       "graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy": {
         "line": {
-          "covered": 125,
-          "missed": 9
+          "covered": 132,
+          "missed": 2
         },
         "branch": {
           "covered": 47,
           "missed": 3
         },
         "method": {
-          "covered": 21,
-          "missed": 2
+          "covered": 23,
+          "missed": 0
         }
       },
       "graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy": {
