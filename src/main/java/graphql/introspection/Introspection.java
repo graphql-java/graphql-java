@@ -338,7 +338,7 @@ public class Introspection {
                     .type(nonNull(list(nonNull(__InputValue))))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("type")
@@ -355,7 +355,7 @@ public class Introspection {
         IntrospectionDataFetcher<?> argsDataFetcher = environment -> {
             Object type = environment.getSource();
             GraphQLFieldDefinition fieldDef = (GraphQLFieldDefinition) type;
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            boolean includeDeprecated = environment.getArgument("includeDeprecated");
             return ImmutableKit.filter(fieldDef.getArguments(),
                     arg -> includeDeprecated || !arg.isDeprecated());
         };
@@ -396,7 +396,7 @@ public class Introspection {
         Object type = environment.getSource();
         if (type instanceof GraphQLFieldsContainer) {
             GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) type;
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            boolean includeDeprecated = environment.getArgument("includeDeprecated");
             List<GraphQLFieldDefinition> fieldDefinitions = environment
                     .getGraphQLSchema()
                     .getCodeRegistry()
@@ -437,7 +437,7 @@ public class Introspection {
     private static final IntrospectionDataFetcher<?> enumValuesTypesFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLEnumType) {
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            boolean includeDeprecated = environment.getArgument("includeDeprecated");
             List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
             if (includeDeprecated) {
                 return values;
@@ -451,7 +451,7 @@ public class Introspection {
     private static final IntrospectionDataFetcher<?> inputFieldsFetcher = environment -> {
         Object type = environment.getSource();
         if (type instanceof GraphQLInputObjectType) {
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            boolean includeDeprecated = environment.getArgument("includeDeprecated");
             List<GraphQLInputObjectField> inputFields = environment
                     .getGraphQLSchema()
                     .getCodeRegistry()
@@ -506,7 +506,7 @@ public class Introspection {
                     .type(list(nonNull(__Field)))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("interfaces")
@@ -519,14 +519,14 @@ public class Introspection {
                     .type(list(nonNull(__EnumValue)))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("inputFields")
                     .type(list(nonNull(__InputValue)))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("ofType")
@@ -634,7 +634,7 @@ public class Introspection {
                     .type(nonNull(list(nonNull(__InputValue))))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .build();
 
@@ -645,7 +645,7 @@ public class Introspection {
         };
         IntrospectionDataFetcher<?> argsDataFetcher = environment -> {
             GraphQLDirective directive = environment.getSource();
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            boolean includeDeprecated = environment.getArgument("includeDeprecated");
             return ImmutableKit.filter(directive.getArguments(),
                     arg -> includeDeprecated || !arg.isDeprecated());
         };
