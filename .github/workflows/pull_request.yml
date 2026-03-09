@@ -184,10 +184,16 @@ jobs:
                     const bm = baseByKey[key];
                     const currLinePct = pct(m.counters.line.covered, m.counters.line.missed);
                     const baseLinePct = bm ? pct(bm.counters.line.covered, bm.counters.line.missed) : null;
-                    const hasMissed = m.counters.line.missed > 0 || m.counters.branch.missed > 0;
                     const lineChanged = baseLinePct !== null && Math.abs(currLinePct - baseLinePct) >= 0.05;
                     const isNew = !bm;
-                    if (hasMissed || lineChanged || isNew) {
+                    // When baseline method data exists, only show methods that actually
+                    // changed or are new. Fall back to showing all uncovered methods
+                    // when no baseline method data is available yet.
+                    const hasMissed = m.counters.line.missed > 0 || m.counters.branch.missed > 0;
+                    const show = baseMethods.length > 0
+                      ? (lineChanged || isNew)
+                      : (hasMissed || isNew);
+                    if (show) {
                       const displayName = m.name === '<init>' ? 'constructor' : m.name;
                       let detail = `      ${displayName} — Line: ${currLinePct.toFixed(1)}%`;
                       if (baseLinePct !== null) detail += ` (was ${baseLinePct.toFixed(1)}%)`;
