@@ -64,7 +64,7 @@ jobs:
             }
             console.log(`Posting report for PR #${prNumber}`);
 
-            const { parseJacocoXml, pct, zeroCov } = require('./.github/scripts/parse-jacoco.js');
+            const { parseJacocoXml, pct, zeroCov, isRegression } = require('./.github/scripts/parse-jacoco.js');
 
             const versions = ['java11', 'java17', 'java21', 'java25', 'jcstress'];
             const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
@@ -232,20 +232,25 @@ jobs:
                 return result.replace(/\$/g, '<br>\\$');
               }
 
-              function fmtClassDelta(delta) {
-                return fmtPctDelta(delta, 0);
+              function fmtClassDelta(delta, currMissed, baseMissed) {
+                if (Math.abs(delta) < 0.05) return '±0.0%';
+                const str = delta > 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`;
+                if (delta > 0) return str + ' 🟢';
+                // Negative delta: use hybrid check — only 🔴 if missed count also increased
+                if (currMissed !== undefined && baseMissed !== undefined && currMissed <= baseMissed) {
+                  return str + ' 🟡';
+                }
+                return str + ' 🔴';
               }
 
               // Build a method-level detail block for classes with coverage decreases.
               // Uses method name+desc as a stable key to match between baseline and current.
               function buildMethodDetails(c) {
                 if (c.removed) return '';
-                // Use the same hybrid check as the coverage gate: percentage
-                // dropped AND absolute missed count increased. This avoids
-                // showing details for classes where code was merely extracted/moved.
-                const lineRegressed = c.lineDelta < -0.05 && c.currMissed.line > c.baseMissed.line;
-                const branchRegressed = c.branchDelta < -0.05 && c.currMissed.branch > c.baseMissed.branch;
-                const methodRegressed = c.methodDelta < -0.05 && c.currMissed.method > c.baseMissed.method;
+                // Only show method details for true regressions (hybrid check)
+                const lineRegressed = isRegression(c.linePct, c.linePct - c.lineDelta, c.currMissed.line, c.baseMissed.line);
+                const branchRegressed = isRegression(c.branchPct, c.branchPct - c.branchDelta, c.currMissed.branch, c.baseMissed.branch);
+                const methodRegressed = isRegression(c.methodPct, c.methodPct - c.methodDelta, c.currMissed.method, c.baseMissed.method);
                 if (!lineRegressed && !branchRegressed && !methodRegressed) return '';
 
                 const currMethods = c.currMethods || [];
@@ -328,7 +333,7 @@ jobs:
                   if (c.removed) {
                     body += `| ${shortenClass(c.name)} | *removed* | *removed* | *removed* |\n`;
                   } else {
-                    body += `| ${shortenClass(c.name)} | ${fmtClassDelta(c.lineDelta)} | ${fmtClassDelta(c.branchDelta)} | ${fmtClassDelta(c.methodDelta)} |\n`;
+                    body += `| ${shortenClass(c.name)} | ${fmtClassDelta(c.lineDelta, c.currMissed.line, c.baseMissed.line)} | ${fmtClassDelta(c.branchDelta, c.currMissed.branch, c.baseMissed.branch)} | ${fmtClassDelta(c.methodDelta, c.currMissed.method, c.baseMissed.method)} |\n`;
                   }
                 }
                 body += '\n';

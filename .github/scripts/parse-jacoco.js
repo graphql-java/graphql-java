@@ -92,4 +92,12 @@ function pct(covered, missed) {
   return total === 0 ? 0 : (covered / total * 100);
 }
 
-module.exports = { parseJacocoXml, pct, zeroCov };
+// A coverage metric is a "real regression" when BOTH the percentage drops
+// beyond the tolerance AND the absolute number of missed items increases.
+// This avoids false positives when well-covered code is extracted/moved out
+// of a class (which lowers the percentage without actually losing coverage).
+function isRegression(currPct, basePct, currMissed, baseMissed, tolerance = 0.05) {
+  return currPct < basePct - tolerance && currMissed > baseMissed;
+}
+
+module.exports = { parseJacocoXml, pct, zeroCov, isRegression };
