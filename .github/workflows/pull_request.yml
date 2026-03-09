@@ -152,14 +152,20 @@ jobs:
             const classCounters = parsed.classes;
 
             // --- Coverage gate: fail if any class regresses on any metric ---
+            // A regression requires BOTH a percentage drop AND an increase in the
+            // absolute number of missed items. This avoids false positives when
+            // well-covered code is extracted/moved out of a class (which lowers the
+            // percentage without actually losing any test coverage).
             const regressions = [];
             for (const [cls, curr] of Object.entries(classCounters)) {
               const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
               for (const [metric, key] of [['Line', 'line'], ['Branch', 'branch'], ['Method', 'method']]) {
                 const currPct = pct(curr[key].covered, curr[key].missed);
                 const basePct = pct(base[key].covered, base[key].missed);
-                if (currPct < basePct - 0.05) {
-                  regressions.push(`  ${cls} ${metric}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%)`);
+                const currMissed = curr[key].missed;
+                const baseMissed = base[key].missed;
+                if (currPct < basePct - 0.05 && currMissed > baseMissed) {
+                  regressions.push(`  ${cls} ${metric}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%, missed: ${currMissed} was ${baseMissed})`);
                 }
               }
             }
