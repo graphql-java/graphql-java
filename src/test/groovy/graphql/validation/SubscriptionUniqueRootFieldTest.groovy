@@ -286,6 +286,172 @@ class SubscriptionUniqueRootFieldTest extends Specification {
         then:
         validationErrors.empty
     }
+    def "5.2.3.1 subscription with two root fields where one has @skip with literal true passes validation"() {
+        given:
+        def query = '''
+            subscription doggo {
+              dog @skip(if: true) {
+                name
+              }
+              cat {
+                name
+              }
+            }
+        '''
+
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        validationErrors.empty
+    }
+
+    def "5.2.3.1 subscription with two root fields where one has @include with literal false passes validation"() {
+        given:
+        def query = '''
+            subscription doggo {
+              dog @include(if: false) {
+                name
+              }
+              cat {
+                name
+              }
+            }
+        '''
+
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        validationErrors.empty
+    }
+
+    def "5.2.3.1 subscription with two root fields where one has @skip with variable fails validation"() {
+        given:
+        def query = '''
+            subscription doggo($shouldSkip: Boolean!) {
+              dog @skip(if: $shouldSkip) {
+                name
+              }
+              cat {
+                name
+              }
+            }
+        '''
+
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
+    }
+
+    def "5.2.3.1 subscription with two root fields where one has @include with variable fails validation"() {
+        given:
+        def query = '''
+            subscription doggo($shouldInclude: Boolean!) {
+              dog @include(if: $shouldInclude) {
+                name
+              }
+              cat {
+                name
+              }
+            }
+        '''
+
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
+    }
+
+    def "5.2.3.1 subscription with one root field with @skip variable passes validation"() {
+        given:
+        def query = '''
+            subscription doggo($shouldSkip: Boolean!) {
+              dog @skip(if: $shouldSkip) {
+                name
+              }
+            }
+        '''
+
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        validationErrors.empty
+    }
+
+    def "5.2.3.1 subscription with one root field with @include variable passes validation"() {
+        given:
+        def query = '''
+            subscription doggo($shouldInclude: Boolean!) {
+              dog @include(if: $shouldInclude) {
+                name
+              }
+            }
+        '''
+
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        validationErrors.empty
+    }
+
+    def "5.2.3.1 subscription with two root fields where one has @skip with literal false fails validation"() {
+        given:
+        def query = '''
+            subscription doggo {
+              dog @skip(if: false) {
+                name
+              }
+              cat {
+                name
+              }
+            }
+        '''
+
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
+    }
+
+    def "5.2.3.1 subscription with two root fields in fragment where one has @skip with variable fails validation"() {
+        given:
+        def query = '''
+            subscription doggo($shouldSkip: Boolean!) {
+              ...fields
+            }
+
+            fragment fields on SubscriptionRoot {
+              dog @skip(if: $shouldSkip) {
+                name
+              }
+              cat {
+                name
+              }
+            }
+        '''
+
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
+    }
+
     static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
         return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)

@@ -36,7 +36,10 @@ public class ConditionalNodes {
     ) {
         //
         // call the base @include / @skip first
-        if (!shouldInclude(variables, element.getDirectives())) {
+        // shouldInclude returns null if the directive references a variable that is not in the variables map
+        // (e.g. during validation when variable values are not known). In that case, treat the node as included.
+        Boolean includeResult = shouldInclude(variables, element.getDirectives());
+        if (includeResult != null && !includeResult) {
             return false;
         }
         //
@@ -146,7 +149,11 @@ public class ConditionalNodes {
                     return ((BooleanValue) value).isValue();
                 }
                 if (value instanceof VariableReference && variables != null) {
-                    return (boolean) variables.get(((VariableReference) value).getName());
+                    Object result = variables.get(((VariableReference) value).getName());
+                    if (result == null) {
+                        return null;
+                    }
+                    return (Boolean) result;
                 }
                 return null;
             }
