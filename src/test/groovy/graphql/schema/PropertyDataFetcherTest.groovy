@@ -872,6 +872,41 @@ class PropertyDataFetcherTest extends Specification {
         "baseValue" | "diamondBaseValue"
     }
 
+    def "fetch via public interface method with DataFetchingEnvironment parameter on non-public class"() {
+        given:
+        // PackagePrivateDfeImpl implements PublicDfeInterface which declares getDfeValue(DataFetchingEnvironment)
+        // This exercises the dfeInUse path in findMethodOnPublicInterfaces (lines 262-267)
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def obj = InterfaceInheritanceHolder.createDfeImpl()
+        def environment = env("dfeValue", obj)
+
+        when:
+        def result = new PropertyDataFetcher("dfeValue").get(environment)
+
+        then:
+        result == "dfeValue"
+    }
+
+    def "fetch via interface search hits NoSuchMethodException and continues to next interface"() {
+        given:
+        // PackagePrivateMultiInterfaceImpl implements PublicInterfaceWithoutTarget (no getBaseValue)
+        // and PublicBaseInterface (has getBaseValue). The search must hit NoSuchMethodException
+        // on the first interface and continue to find it on the second.
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcher.clearReflectionCache()
+
+        def obj = InterfaceInheritanceHolder.createMultiInterfaceImpl()
+        def environment = env("baseValue", obj)
+
+        when:
+        def result = new PropertyDataFetcher("baseValue").get(environment)
+
+        then:
+        result == "foundViaSecondInterface"
+    }
+
     def "Can access private property from base class that starts with i in Turkish"() {
         // see https://github.com/graphql-java/graphql-java/issues/3385
         given:

@@ -1,5 +1,7 @@
 package graphql.schema.somepackage;
 
+import graphql.schema.DataFetchingEnvironment;
+
 /**
  * Test fixtures for interface-extends-interface method resolution.
  * <p>
@@ -79,6 +81,43 @@ public class InterfaceInheritanceHolder {
         }
     }
 
+    // --- DFE interface: public interface with a method accepting DataFetchingEnvironment ---
+
+    public interface PublicDfeInterface {
+        String getDfeValue(DataFetchingEnvironment dfe);
+    }
+
+    // Package-private class implementing the public DFE interface.
+    // Exercises the dfeInUse path in findMethodOnPublicInterfaces.
+    static class PackagePrivateDfeImpl implements PublicDfeInterface {
+        @Override
+        public String getDfeValue(DataFetchingEnvironment dfe) {
+            return "dfeValue";
+        }
+    }
+
+    // --- Interface with multiple methods: one exists, one doesn't ---
+    // Used to exercise the NoSuchMethodException catch path in findMethodOnPublicInterfaces.
+
+    public interface PublicInterfaceWithoutTarget {
+        String getUnrelatedValue();
+    }
+
+    // Package-private class implementing an interface that does NOT have the fetched property.
+    // Also implements PublicBaseInterface which DOES have it.
+    // The search hits NoSuchMethodException on PublicInterfaceWithoutTarget, then finds it on PublicBaseInterface.
+    static class PackagePrivateMultiInterfaceImpl implements PublicInterfaceWithoutTarget, PublicBaseInterface {
+        @Override
+        public String getUnrelatedValue() {
+            return "unrelated";
+        }
+
+        @Override
+        public String getBaseValue() {
+            return "foundViaSecondInterface";
+        }
+    }
+
     // --- Factory methods (public entry points for tests) ---
 
     public static Object createChainImpl() {
@@ -87,5 +126,13 @@ public class InterfaceInheritanceHolder {
 
     public static Object createDiamondImpl() {
         return new DiamondImpl();
+    }
+
+    public static Object createDfeImpl() {
+        return new PackagePrivateDfeImpl();
+    }
+
+    public static Object createMultiInterfaceImpl() {
+        return new PackagePrivateMultiInterfaceImpl();
     }
 }
