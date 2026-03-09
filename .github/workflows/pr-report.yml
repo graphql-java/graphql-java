@@ -199,6 +199,8 @@ jobs:
                     linePct: currLinePct, lineDelta: currLinePct - baseLinePct,
                     branchPct: currBranchPct, branchDelta: currBranchPct - baseBranchPct,
                     methodPct: currMethodPct, methodDelta: currMethodPct - baseMethodPct,
+                    currMissed: { line: curr.line.missed, branch: curr.branch.missed, method: curr.method.missed },
+                    baseMissed: { line: base.line.missed, branch: base.branch.missed, method: base.method.missed },
                     currMethods: curr.methods || [],
                     baseMethods: base.methods || [],
                   });
@@ -238,8 +240,13 @@ jobs:
               // Uses method name+desc as a stable key to match between baseline and current.
               function buildMethodDetails(c) {
                 if (c.removed) return '';
-                const hasDecrease = c.lineDelta < -0.05 || c.branchDelta < -0.05 || c.methodDelta < -0.05;
-                if (!hasDecrease) return '';
+                // Use the same hybrid check as the coverage gate: percentage
+                // dropped AND absolute missed count increased. This avoids
+                // showing details for classes where code was merely extracted/moved.
+                const lineRegressed = c.lineDelta < -0.05 && c.currMissed.line > c.baseMissed.line;
+                const branchRegressed = c.branchDelta < -0.05 && c.currMissed.branch > c.baseMissed.branch;
+                const methodRegressed = c.methodDelta < -0.05 && c.currMissed.method > c.baseMissed.method;
+                if (!lineRegressed && !branchRegressed && !methodRegressed) return '';
 
                 const currMethods = c.currMethods || [];
                 const baseMethods = c.baseMethods || [];
