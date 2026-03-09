@@ -191,9 +191,15 @@ jobs:
                 const baseBranchPct = pct(base.branch.covered, base.branch.missed);
                 const currMethodPct = pct(curr.method.covered, curr.method.missed);
                 const baseMethodPct = pct(base.method.covered, base.method.missed);
-                if (Math.abs(currLinePct - baseLinePct) >= 0.05 ||
-                    Math.abs(currBranchPct - baseBranchPct) >= 0.05 ||
-                    Math.abs(currMethodPct - baseMethodPct) >= 0.05) {
+                // Check for improvements (positive delta) or real regressions (hybrid check)
+                const lineImproved = currLinePct > baseLinePct + 0.05;
+                const branchImproved = currBranchPct > baseBranchPct + 0.05;
+                const methodImproved = currMethodPct > baseMethodPct + 0.05;
+                const lineRegressed = isRegression(currLinePct, baseLinePct, curr.line.missed, base.line.missed);
+                const branchRegressed = isRegression(currBranchPct, baseBranchPct, curr.branch.missed, base.branch.missed);
+                const methodRegressed = isRegression(currMethodPct, baseMethodPct, curr.method.missed, base.method.missed);
+                if (lineImproved || branchImproved || methodImproved ||
+                    lineRegressed || branchRegressed || methodRegressed) {
                   changedClasses.push({
                     name: cls,
                     linePct: currLinePct, lineDelta: currLinePct - baseLinePct,
@@ -236,9 +242,9 @@ jobs:
                 if (Math.abs(delta) < 0.05) return '±0.0%';
                 const str = delta > 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`;
                 if (delta > 0) return str + ' 🟢';
-                // Negative delta: use hybrid check — only 🔴 if missed count also increased
+                // Negative delta: only show as regression if missed count also increased
                 if (currMissed !== undefined && baseMissed !== undefined && currMissed <= baseMissed) {
-                  return str + ' 🟡';
+                  return '±0.0%';
                 }
                 return str + ' 🔴';
               }
