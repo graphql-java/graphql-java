@@ -199,6 +199,10 @@ jobs:
                     linePct: currLinePct, lineDelta: currLinePct - baseLinePct,
                     branchPct: currBranchPct, branchDelta: currBranchPct - baseBranchPct,
                     methodPct: currMethodPct, methodDelta: currMethodPct - baseMethodPct,
+                    currMissed: { line: curr.line.missed, branch: curr.branch.missed, method: curr.method.missed },
+                    baseMissed: { line: base.line.missed, branch: base.branch.missed, method: base.method.missed },
+                    currMethods: curr.methods || [],
+                    baseMethods: base.methods || [],
                   });
                 }
               }
@@ -232,6 +236,90 @@ jobs:
                 return fmtPctDelta(delta, 0);
               }
 
+              // Build a method-level detail block for classes with coverage decreases.
+              // Uses method name+desc as a stable key to match between baseline and current.
+              function buildMethodDetails(c) {
+                if (c.removed) return '';
+                // Use the same hybrid check as the coverage gate: percentage
+                // dropped AND absolute missed count increased. This avoids
+                // showing details for classes where code was merely extracted/moved.
+                const lineRegressed = c.lineDelta < -0.05 && c.currMissed.line > c.baseMissed.line;
+                const branchRegressed = c.branchDelta < -0.05 && c.currMissed.branch > c.baseMissed.branch;
+                const methodRegressed = c.methodDelta < -0.05 && c.currMissed.method > c.baseMissed.method;
+                if (!lineRegressed && !branchRegressed && !methodRegressed) return '';
+
+                const currMethods = c.currMethods || [];
+                const baseMethods = c.baseMethods || [];
+                if (currMethods.length === 0 && baseMethods.length === 0) return '';
+
+                // Index baseline methods by name+desc
+                const baseByKey = {};
+                for (const m of baseMethods) {
+                  baseByKey[m.name + m.desc] = m;
+                }
+
+                const rows = [];
+                const seen = new Set();
+                for (const m of currMethods) {
+                  const key = m.name + m.desc;
+                  seen.add(key);
+                  const bm = baseByKey[key];
+                  const currLinePct = pct(m.counters.line.covered, m.counters.line.missed);
+                  const baseLinePct = bm ? pct(bm.counters.line.covered, bm.counters.line.missed) : null;
+                  const currBranchTotal = m.counters.branch.covered + m.counters.branch.missed;
+                  const currBranchPct = currBranchTotal > 0 ? pct(m.counters.branch.covered, m.counters.branch.missed) : null;
+                  const baseBranchPct = bm ? (() => {
+                    const t = bm.counters.branch.covered + bm.counters.branch.missed;
+                    return t > 0 ? pct(bm.counters.branch.covered, bm.counters.branch.missed) : null;
+                  })() : null;
+
+                  // Show methods that actually changed coverage or are new/removed.
+                  // When baseline method data exists, only show methods whose coverage
+                  // moved — this avoids noise from methods that were already partially
+                  // covered. Fall back to showing all uncovered methods when no baseline
+                  // method data is available yet.
+                  const hasMissed = m.counters.line.missed > 0 || m.counters.branch.missed > 0;
+                  const lineChanged = baseLinePct !== null && Math.abs(currLinePct - baseLinePct) >= 0.05;
+                  const branchChanged = currBranchPct !== null && baseBranchPct !== null && Math.abs(currBranchPct - baseBranchPct) >= 0.05;
+                  const isNew = !bm;
+                  const show = baseMethods.length > 0
+                    ? (lineChanged || branchChanged || isNew)
+                    : (hasMissed || isNew);
+
+                  if (show) {
+                    let lineStr = fmtPct(currLinePct);
+                    if (baseLinePct !== null && Math.abs(currLinePct - baseLinePct) >= 0.05) {
+                      lineStr += ` (${fmtPctDelta(currLinePct, baseLinePct)})`;
+                    }
+                    let branchStr = currBranchPct !== null ? fmtPct(currBranchPct) : '—';
+                    if (currBranchPct !== null && baseBranchPct !== null && Math.abs(currBranchPct - baseBranchPct) >= 0.05) {
+                      branchStr += ` (${fmtPctDelta(currBranchPct, baseBranchPct)})`;
+                    }
+                    const tag = isNew ? ' **new**' : '';
+                    const displayName = m.name === '<init>' ? '*constructor*' : m.name;
+                    rows.push(`| ${displayName}${tag} | ${lineStr} | ${branchStr} |`);
+                  }
+                }
+                // Methods removed since baseline
+                for (const bm of baseMethods) {
+                  const key = bm.name + bm.desc;
+                  if (!seen.has(key)) {
+                    const displayName = bm.name === '<init>' ? '*constructor*' : bm.name;
+                    rows.push(`| ~~${displayName}~~ | *removed* | *removed* |`);
+                  }
+                }
+
+                if (rows.length === 0) return '';
+
+                const shortName = c.name.split('.').pop().replace(/\$/g, '.');
+                let detail = `\n<details>\n<summary>${shortName} — method details</summary>\n\n`;
+                detail += '| Method | Line | Branch |\n';
+                detail += '|:-------|-----:|-------:|\n';
+                detail += rows.join('\n') + '\n';
+                detail += '\n</details>\n';
+                return detail;
+              }
+
               if (changedClasses.length > 0) {
                 body += `**Changed Class Coverage** (${changedClasses.length} ${changedClasses.length === 1 ? 'class' : 'classes'})\n\n`;
                 body += '| Class | Line | Branch | Method |\n';
@@ -244,6 +332,11 @@ jobs:
                   }
                 }
                 body += '\n';
+
+                // Add collapsible method-level details for classes with coverage decreases
+                for (const c of changedClasses) {
+                  body += buildMethodDetails(c);
+                }
               } else {
                 body += '> No per-class coverage changes detected.\n';
               }
