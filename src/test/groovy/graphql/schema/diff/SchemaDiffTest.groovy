@@ -807,4 +807,91 @@ class SchemaDiffTest extends Specification {
         }
 
     }
+
+    def "directive definition repeatable change is detected"() {
+        def oldSdl = '''
+            directive @myDirective repeatable on FIELD_DEFINITION
+            type Query { hello: String }
+        '''
+        def newSdl = '''
+            directive @myDirective on FIELD_DEFINITION
+            type Query { hello: String }
+        '''
+        def reporter = new CapturingReporter()
+        SchemaDiffSet diffSet = SchemaDiffSet.diffSetFromSdl(oldSdl, newSdl)
+        def diff = new SchemaDiff()
+        when:
+        diff.diffSchema(diffSet, reporter)
+
+        then:
+        reporter.breakageCount == 1
+        reporter.breakages[0].typeKind == TypeKind.Directive
+        reporter.breakages[0].typeName == "myDirective"
+        reporter.breakages[0].category == DiffCategory.STRICTER
+    }
+
+    def "directive definition becoming repeatable is informational"() {
+        def oldSdl = '''
+            directive @myDirective on FIELD_DEFINITION
+            type Query { hello: String }
+        '''
+        def newSdl = '''
+            directive @myDirective repeatable on FIELD_DEFINITION
+            type Query { hello: String }
+        '''
+        def reporter = new CapturingReporter()
+        SchemaDiffSet diffSet = SchemaDiffSet.diffSetFromSdl(oldSdl, newSdl)
+        def diff = new SchemaDiff()
+        when:
+        diff.diffSchema(diffSet, reporter)
+
+        then:
+        reporter.breakageCount == 0
+        reporter.infos.any {
+            it.typeKind == TypeKind.Directive &&
+                    it.typeName == "myDirective"
+        }
+    }
+
+    def "missing directive definition is detected"() {
+        def oldSdl = '''
+            directive @myDirective on FIELD_DEFINITION
+            type Query { hello: String }
+        '''
+        def newSdl = '''
+            type Query { hello: String }
+        '''
+        def reporter = new CapturingReporter()
+        SchemaDiffSet diffSet = SchemaDiffSet.diffSetFromSdl(oldSdl, newSdl)
+        def diff = new SchemaDiff()
+        when:
+        diff.diffSchema(diffSet, reporter)
+
+        then:
+        reporter.breakageCount == 1
+        reporter.breakages[0].typeKind == TypeKind.Directive
+        reporter.breakages[0].typeName == "myDirective"
+        reporter.breakages[0].category == DiffCategory.MISSING
+    }
+
+    def "directive location removal is detected"() {
+        def oldSdl = '''
+            directive @myDirective on FIELD_DEFINITION | OBJECT
+            type Query { hello: String }
+        '''
+        def newSdl = '''
+            directive @myDirective on FIELD_DEFINITION
+            type Query { hello: String }
+        '''
+        def reporter = new CapturingReporter()
+        SchemaDiffSet diffSet = SchemaDiffSet.diffSetFromSdl(oldSdl, newSdl)
+        def diff = new SchemaDiff()
+        when:
+        diff.diffSchema(diffSet, reporter)
+
+        then:
+        reporter.breakageCount == 1
+        reporter.breakages[0].typeKind == TypeKind.Directive
+        reporter.breakages[0].category == DiffCategory.STRICTER
+    }
 }

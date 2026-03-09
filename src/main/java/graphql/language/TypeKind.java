@@ -9,7 +9,7 @@ import graphql.PublicApi;
 @PublicApi
 public enum TypeKind {
 
-    Operation, Object, Interface, Union, Enum, Scalar, InputObject;
+    Operation, Object, Interface, Union, Enum, Scalar, InputObject, Directive;
 
     public static TypeKind getTypeKind(TypeDefinition def) {
         if (def instanceof ObjectTypeDefinition) {

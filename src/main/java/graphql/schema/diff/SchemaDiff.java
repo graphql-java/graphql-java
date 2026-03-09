@@ -5,6 +5,8 @@ import graphql.PublicSpi;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.Argument;
 import graphql.language.Directive;
+import graphql.language.DirectiveDefinition;
+import graphql.language.DirectiveLocation;
 import graphql.language.DirectivesContainer;
 import graphql.language.Document;
 import graphql.language.EnumTypeDefinition;
@@ -157,12 +159,76 @@ public class SchemaDiff {
         Optional<SchemaDefinition> oldSchemaDef = getSchemaDef(oldDoc);
         Optional<SchemaDefinition> newSchemaDef = getSchemaDef(newDoc);
 
+        // check directive definitions
+        checkDirectiveDefinitions(ctx, oldDoc, newDoc);
+
         // check query operation
         checkOperation(ctx, "query", oldSchemaDef, newSchemaDef);
         checkOperation(ctx, "mutation", oldSchemaDef, newSchemaDef);
         checkOperation(ctx, "subscription", oldSchemaDef, newSchemaDef);
 
         reporter.onEnd();
+    }
+
+    private void checkDirectiveDefinitions(DiffCtx ctx, Document oldDoc, Document newDoc) {
+        Map<String, DirectiveDefinition> oldDirectiveDefs = sortedMap(
+                oldDoc.getDefinitionsOfType(DirectiveDefinition.class), DirectiveDefinition::getName);
+        Map<String, DirectiveDefinition> newDirectiveDefs = sortedMap(
+                newDoc.getDefinitionsOfType(DirectiveDefinition.class), DirectiveDefinition::getName);
+
+        for (Map.Entry<String, DirectiveDefinition> entry : oldDirectiveDefs.entrySet()) {
+            String directiveName = entry.getKey();
+            DirectiveDefinition oldDirectiveDef = entry.getValue();
+            DirectiveDefinition newDirectiveDef = newDirectiveDefs.get(directiveName);
+
+            if (newDirectiveDef == null) {
+                ctx.report(DiffEvent.apiBreakage()
+                        .category(DiffCategory.MISSING)
+                        .typeName(directiveName)
+                        .typeKind(TypeKind.Directive)
+                        .reasonMsg("The new API does not have a directive definition named '%s'", directiveName)
+                        .build());
+                continue;
+            }
+
+            // Check repeatable changed
+            if (oldDirectiveDef.isRepeatable() && !newDirectiveDef.isRepeatable()) {
+                ctx.report(DiffEvent.apiBreakage()
+                        .category(DiffCategory.STRICTER)
+                        .typeName(directiveName)
+                        .typeKind(TypeKind.Directive)
+                        .reasonMsg("The directive '%s' was repeatable but is no longer repeatable in the new API", directiveName)
+                        .build());
+            } else if (!oldDirectiveDef.isRepeatable() && newDirectiveDef.isRepeatable()) {
+                ctx.report(DiffEvent.apiInfo()
+                        .typeName(directiveName)
+                        .typeKind(TypeKind.Directive)
+                        .reasonMsg("The directive '%s' is now repeatable in the new API", directiveName)
+                        .build());
+            }
+
+            // Check directive locations removed
+            Set<String> oldLocations = new LinkedHashSet<>();
+            for (DirectiveLocation loc : oldDirectiveDef.getDirectiveLocations()) {
+                oldLocations.add(loc.getName());
+            }
+            Set<String> newLocations = new LinkedHashSet<>();
+            for (DirectiveLocation loc : newDirectiveDef.getDirectiveLocations()) {
+                newLocations.add(loc.getName());
+            }
+
+            for (String oldLocation : oldLocations) {
+                if (!newLocations.contains(oldLocation)) {
+                    ctx.report(DiffEvent.apiBreakage()
+                            .category(DiffCategory.STRICTER)
+                            .typeName(directiveName)
+                            .typeKind(TypeKind.Directive)
+                            .components(oldLocation)
+                            .reasonMsg("The directive '%s' no longer supports the '%s' location in the new API", directiveName, oldLocation)
+                            .build());
+                }
+            }
+        }
     }
 
     private void checkOperation(DiffCtx ctx, String opName, Optional<SchemaDefinition> oldSchemaDef, Optional<SchemaDefinition> newSchemaDef) {
