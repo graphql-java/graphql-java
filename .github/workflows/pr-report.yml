@@ -266,13 +266,20 @@ jobs:
                     return t > 0 ? pct(bm.counters.branch.covered, bm.counters.branch.missed) : null;
                   })() : null;
 
-                  // Show methods that have uncovered lines or changed coverage
+                  // Show methods that actually changed coverage or are new/removed.
+                  // When baseline method data exists, only show methods whose coverage
+                  // moved — this avoids noise from methods that were already partially
+                  // covered. Fall back to showing all uncovered methods when no baseline
+                  // method data is available yet.
                   const hasMissed = m.counters.line.missed > 0 || m.counters.branch.missed > 0;
                   const lineChanged = baseLinePct !== null && Math.abs(currLinePct - baseLinePct) >= 0.05;
                   const branchChanged = currBranchPct !== null && baseBranchPct !== null && Math.abs(currBranchPct - baseBranchPct) >= 0.05;
                   const isNew = !bm;
+                  const show = baseMethods.length > 0
+                    ? (lineChanged || branchChanged || isNew)
+                    : (hasMissed || isNew);
 
-                  if (hasMissed || lineChanged || branchChanged || isNew) {
+                  if (show) {
                     let lineStr = fmtPct(currLinePct);
                     if (baseLinePct !== null && Math.abs(currLinePct - baseLinePct) >= 0.05) {
                       lineStr += ` (${fmtPctDelta(currLinePct, baseLinePct)})`;
