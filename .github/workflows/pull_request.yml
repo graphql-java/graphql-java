@@ -132,7 +132,7 @@ jobs:
           script: |
             const fs = require('fs');
             const path = require('path');
-            const { parseJacocoXml, pct, zeroCov } = require('./.github/scripts/parse-jacoco.js');
+            const { parseJacocoXml, pct, zeroCov, isRegression } = require('./.github/scripts/parse-jacoco.js');
 
             // --- Read baseline from repo ---
             const baselineFile = 'test-baseline.json';
@@ -165,7 +165,7 @@ jobs:
                 const basePct = pct(base[key].covered, base[key].missed);
                 const currMissed = curr[key].missed;
                 const baseMissed = base[key].missed;
-                if (currPct < basePct - 0.05 && currMissed > baseMissed) {
+                if (isRegression(currPct, basePct, currMissed, baseMissed)) {
                   classRegressions.push(`  ${cls} ${metric}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%, missed: ${currMissed} was ${baseMissed})`);
                 }
               }
