@@ -64,13 +64,9 @@ public class NoUnbrokenInputCycles extends GraphQLTypeVisitorStub {
 
     private GraphQLType unwrapNonNull(GraphQLNonNull type) {
         if (isList(type.getWrappedType())) {
-            //we only care about [type!]! i.e. non-null lists of non-nulls
-            GraphQLList listType = (GraphQLList) type.getWrappedType();
-            if (isNonNull(listType.getWrappedType())) {
-                return unwrapAll(listType.getWrappedType());
-            } else {
-                return type.getWrappedType();
-            }
+            // A non-null list can always be satisfied with an empty list [],
+            // so it breaks the cycle regardless of inner element nullability.
+            return type.getWrappedType();
         } else {
             return unwrapAll(type.getWrappedType());
         }
