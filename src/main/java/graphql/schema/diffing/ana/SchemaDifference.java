@@ -1224,6 +1224,24 @@ public interface SchemaDifference {
         }
     }
 
+    class DirectiveRepeatableModification implements DirectiveModificationDetail {
+        private final boolean oldValue;
+        private final boolean newValue;
+
+        public DirectiveRepeatableModification(boolean oldValue, boolean newValue) {
+            this.oldValue = oldValue;
+            this.newValue = newValue;
+        }
+
+        public boolean getOldValue() {
+            return oldValue;
+        }
+
+        public boolean getNewValue() {
+            return newValue;
+        }
+    }
+
     //------Applied Directives
     interface AppliedDirectiveDifference {
 

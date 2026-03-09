@@ -48,6 +48,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentTypeM
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveDifference;
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveModification;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveRepeatableModification;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumDifference;
@@ -2572,12 +2573,21 @@ public class EditOperationAnalyzer {
         String oldName = editOperation.getSourceVertex().getName();
         String newName = editOperation.getTargetVertex().getName();
 
-        if (oldName.equals(newName)) {
+        boolean oldRepeatable = (boolean) editOperation.getSourceVertex().getProperties().getOrDefault("repeatable", false);
+        boolean newRepeatable = (boolean) editOperation.getTargetVertex().getProperties().getOrDefault("repeatable", false);
+
+        boolean nameChanged = !oldName.equals(newName);
+        boolean repeatableChanged = oldRepeatable != newRepeatable;
+
+        if (!nameChanged && !repeatableChanged) {
             // Something else like description could have changed
             return;
         }
 
         DirectiveModification modification = new DirectiveModification(oldName, newName);
+        if (repeatableChanged) {
+            modification.getDetails().add(new DirectiveRepeatableModification(oldRepeatable, newRepeatable));
+        }
         directiveDifferences.put(oldName, modification);
         directiveDifferences.put(newName, modification);
     }

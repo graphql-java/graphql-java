@@ -21,6 +21,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentRenam
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentTypeModification
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveModification
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveRepeatableModification
 import static graphql.schema.diffing.ana.SchemaDifference.EnumAddition
 import static graphql.schema.diffing.ana.SchemaDifference.EnumDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.EnumModification
@@ -1704,6 +1705,54 @@ class EditOperationAnalyzerTest extends Specification {
         argTypeModification[0].argumentName == "foo"
         argTypeModification[0].oldType == 'String'
         argTypeModification[0].newType == '[String]!'
+    }
+
+    def "directive repeatable changed to non-repeatable"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d repeatable on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d on FIELD
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d"] instanceof DirectiveModification
+        def repeatableModification = (changes.directiveDifferences["d"] as DirectiveModification).getDetails(DirectiveRepeatableModification)
+        repeatableModification.size() == 1
+        repeatableModification[0].oldValue == true
+        repeatableModification[0].newValue == false
+    }
+
+    def "directive non-repeatable changed to repeatable"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d repeatable on FIELD
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d"] instanceof DirectiveModification
+        def repeatableModification = (changes.directiveDifferences["d"] as DirectiveModification).getDetails(DirectiveRepeatableModification)
+        repeatableModification.size() == 1
+        repeatableModification[0].oldValue == false
+        repeatableModification[0].newValue == true
     }
 
     def "field renamed and output type changed and argument deleted"() {
