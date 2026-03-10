@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - gradle-argument: 'assemble && ./gradlew check -x test -x testng -x testngWithJava11 -x testngWithJava17 -x testngWithJava21'
+          - gradle-argument: 'assemble && ./gradlew check'
             label: 'check'
           - gradle-argument: 'testWithJava11 testngWithJava11'
             label: 'java11'
@@ -23,7 +23,7 @@ jobs:
           - gradle-argument: 'testWithJava21 testngWithJava21'
             label: 'java21'
             test-results-dirs: 'testWithJava21 testngWithJava21'
-          - gradle-argument: 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 testng jacocoTestReport'
+          - gradle-argument: 'test testng jacocoTestReport'
             label: 'java25'
             test-results-dirs: 'test testng'
           - gradle-argument: 'jcstress'
@@ -220,4 +220,4 @@ jobs:
           java-version: '25'
           distribution: 'corretto'
       - name: publishToMavenCentral
-        run: ./gradlew assemble && ./gradlew check -x test -x testng -x testngWithJava11 -x testngWithJava17 -x testngWithJava21 --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
+        run: ./gradlew assemble && ./gradlew check --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
