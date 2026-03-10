@@ -10,6 +10,7 @@ import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.UnionTypeError;
 
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +46,15 @@ class UnionTypesChecker {
         //noinspection rawtypes
         List<Type> memberTypes = unionTypeDefinition.getMemberTypes();
         if (memberTypes == null || memberTypes.isEmpty()) {
+            // For extensions, an empty member list is valid (the extension may only add directives).
+            // For base definitions, an empty member list is valid only if extensions supply members
+            // (the grammar makes UnionMemberTypes optional to allow stubs completed by extensions).
+            if (unionTypeDefinition instanceof UnionTypeExtensionDefinition) {
+                return;
+            }
+            if (hasAnyMembersFromExtensions(typeRegistry, unionTypeDefinition.getName())) {
+                return;
+            }
             errors.add(new UnionTypeError(unionTypeDefinition, format("Union type '%s' must include one or more member types.", unionTypeDefinition.getName())));
             return;
         }
@@ -64,6 +74,13 @@ class UnionTypesChecker {
             }
             typeNames.add(memberTypeName);
         }
+    }
+
+    private boolean hasAnyMembersFromExtensions(TypeDefinitionRegistry typeRegistry, String unionName) {
+        List<UnionTypeExtensionDefinition> extensions = typeRegistry.unionTypeExtensions()
+                .getOrDefault(unionName, Collections.emptyList());
+        return extensions.stream()
+                .anyMatch(ext -> ext.getMemberTypes() != null && !ext.getMemberTypes().isEmpty());
     }
 
     private void assertTypeName(UnionTypeDefinition unionTypeDefinition, List<GraphQLError> errors) {

@@ -1787,15 +1787,88 @@ class SchemaTypeCheckerTest extends Specification {
         errorContaining(result, "Union type 'UnionType' must include one or more member types.")
     }
 
+    def "empty union base definition is valid when extensions add members"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+
+            type Cat { name: String }
+            type Dog { name: String }
+
+            union Pet
+            extend union Pet = Cat | Dog
+        """
+
+        when:
+        def result = check(sdl, ["Pet"])
+
+        then:
+        result.isEmpty()
+    }
+
+    def "empty union base with directive-only extension and member extension is valid"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+
+            directive @tag on UNION
+
+            type Cat { name: String }
+
+            union Pet
+            extend union Pet @tag
+            extend union Pet = Cat
+        """
+
+        when:
+        def result = check(sdl, ["Pet"])
+
+        then:
+        result.isEmpty()
+    }
+
+    def "empty union base with no extensions still errors"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+
+            union UnionType
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "Union type 'UnionType' must include one or more member types.")
+    }
+
+    def "empty union base with only directive extensions and no members still errors"() {
+        given:
+        def sdl = """
+            type Query { hello: String }
+
+            directive @tag on UNION
+
+            union UnionType
+            extend union UnionType @tag
+        """
+
+        when:
+        def result = check(sdl, ["UnionType"])
+
+        then:
+        errorContaining(result, "Union type 'UnionType' must include one or more member types.")
+    }
+
     def "The member types of a Union type must all be object base types"() {
         given:
         def sdl = """
             type Query { hello: String }
-            
+
             type A { hello: String }
-            
+
             interface B { hello: String }
-            
+
             union UnionType = A | B
         """
 
