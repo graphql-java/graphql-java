@@ -106,13 +106,13 @@ jobs:
         with:
           token: ${{ secrets.ADMIN_PAT }}
       - name: Download Test Stats
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: test-stats-*
           merge-multiple: true
           path: test-stats/
       - name: Download Coverage Report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           name: coverage-report
