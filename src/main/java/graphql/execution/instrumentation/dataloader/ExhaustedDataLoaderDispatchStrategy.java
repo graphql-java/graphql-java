@@ -32,7 +32,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     private final Map<AlternativeCallContext, CallStack> alternativeCallContextMap = new ConcurrentHashMap<>();
 
 
-    // VisibleForTesting - package-private to allow test subclassing for CAS contention tests
+    @VisibleForTesting
     static class CallStack {
 
         // 30 bits for objectRunningCount
