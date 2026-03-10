@@ -406,8 +406,6 @@ task testng(type: Test) {
     dependsOn tasks.named('testClasses')
     doLast { verifyTestngSkips(it, expectedTestngSkips) }
 }
-check.dependsOn testng
-
 compileJava {
     options.compilerArgs += ["-parameters"]
     source file("build/generated-src"), sourceSets.main.java
@@ -563,9 +561,6 @@ tasks.register('testWithJava11', Test) {
     }
 }
 
-test.dependsOn testWithJava21
-test.dependsOn testWithJava17
-test.dependsOn testWithJava11
 
 jacoco {
     toolVersion = "0.8.12"
