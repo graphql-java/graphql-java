@@ -14,8 +14,8 @@
 
 ## Test Execution
 
-When running tests, exclude the Java version-specific test tasks to avoid failures:
-
 ```bash
-./gradlew test -x testWithJava21 -x testWithJava17 -x testWithJava11 -x testng
+./gradlew test
 ```
+
+This runs tests on Java 25 only. Other JVM versions (11, 17, 21) require explicit tasks (e.g. `testWithJava11`).
