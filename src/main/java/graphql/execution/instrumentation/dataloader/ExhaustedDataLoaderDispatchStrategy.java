@@ -9,6 +9,7 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.incremental.AlternativeCallContext;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import graphql.VisibleForTesting;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -31,7 +32,8 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     private final Map<AlternativeCallContext, CallStack> alternativeCallContextMap = new ConcurrentHashMap<>();
 
 
-    private static class CallStack {
+    // VisibleForTesting - package-private to allow test subclassing for CAS contention tests
+    static class CallStack {
 
         // 30 bits for objectRunningCount
         // 1 bit for dataLoaderToDispatch
@@ -127,7 +129,12 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     }
 
     public ExhaustedDataLoaderDispatchStrategy(ExecutionContext executionContext) {
-        this.initialCallStack = new CallStack();
+        this(executionContext, new CallStack());
+    }
+
+    @VisibleForTesting
+    ExhaustedDataLoaderDispatchStrategy(ExecutionContext executionContext, CallStack callStack) {
+        this.initialCallStack = callStack;
         this.executionContext = executionContext;
 
         this.profiler = executionContext.getProfiler();
