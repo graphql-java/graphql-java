@@ -20,10 +20,12 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static graphql.collect.ImmutableKit.map;
@@ -32,6 +34,7 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+import static graphql.schema.validation.SchemaValidationErrorType.DuplicateInterfaceImplementation;
 import static graphql.schema.validation.SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces;
 import static java.lang.String.format;
 
@@ -65,11 +68,23 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
 
     private void check(GraphQLImplementingType implementingType, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLNamedOutputType> interfaces = implementingType.getInterfaces();
+        checkDuplicateInterfaces(implementingType, interfaces, validationErrorCollector);
         interfaces.forEach(interfaceType -> {
             // we have resolved the interfaces at this point and hence the cast is ok
             checkObjectImplementsInterface(implementingType, (GraphQLInterfaceType) interfaceType, validationErrorCollector);
         });
 
+    }
+
+    private void checkDuplicateInterfaces(GraphQLImplementingType implementingType, List<GraphQLNamedOutputType> interfaces, SchemaValidationErrorCollector validationErrorCollector) {
+        Set<String> seen = new LinkedHashSet<>();
+        for (GraphQLNamedOutputType iface : interfaces) {
+            if (!seen.add(iface.getName())) {
+                validationErrorCollector.addError(new SchemaValidationError(DuplicateInterfaceImplementation,
+                        format("%s type '%s' implements interface '%s' more than once",
+                                TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), iface.getName())));
+            }
+        }
     }
 
     // this deliberately has open field visibility here since it's validating the schema

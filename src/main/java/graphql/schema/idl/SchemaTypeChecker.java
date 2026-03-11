@@ -70,6 +70,11 @@ public class SchemaTypeChecker {
         checkScalarImplementationsArePresent(errors, typeRegistry, wiring);
         checkTypeResolversArePresent(errors, typeRegistry, wiring);
 
+        // Note: these checks are also present in SchemaValidator (runtime-level) via
+        // UniqueNamesAreValid and DirectiveDefinitionsAreValid rules. Both SDL and
+        // programmatic paths now get consistent validation through SchemaValidator.
+        // The SDL checks below are retained for earlier, more precise error reporting
+        // with source locations. They can be removed in a future PR.
         checkFieldsAreSensible(errors, typeRegistry);
 
         //check directive definitions before checking directive usages
