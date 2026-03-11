@@ -16,7 +16,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotEmpty;
-import static graphql.Assert.assertNotNull;
+
 
 /**
  * This represents all Fields in a query which overlap and are merged into one.
@@ -428,7 +428,11 @@ public class MergedField {
             if (this.singleField != null && this.fields == null) {
                 return new MergedField(singleField, deferredExecutions);
             }
-            ImmutableList<Field> fields = assertNotNull(this.fields, "You MUST add at least one field via the builder").build();
+            ImmutableList.Builder<Field> fieldsBuilder = this.fields;
+            if (fieldsBuilder == null) {
+                throw new AssertionError("You MUST add at least one field via the builder");
+            }
+            ImmutableList<Field> fields = fieldsBuilder.build();
             assertNotEmpty(fields);
             return new MultiMergedField(fields, deferredExecutions);
         }

@@ -81,8 +81,7 @@ public class ObjectValue extends AbstractNode<ObjectValue> implements Value<Obje
 
     @Override
     public ObjectValue deepCopy() {
-        List<ObjectField> copiedFields = assertNotNull(deepCopy(objectFields));
-        return new ObjectValue(copiedFields, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new ObjectValue(assertNotNull(deepCopy(objectFields)), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
 

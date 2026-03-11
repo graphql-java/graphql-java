@@ -91,8 +91,7 @@ public class ArrayValue extends AbstractNode<ArrayValue> implements Value<ArrayV
 
     @Override
     public ArrayValue deepCopy() {
-        List<Value> copiedValues = assertNotNull(deepCopy(values));
-        return new ArrayValue(copiedValues, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new ArrayValue(assertNotNull(deepCopy(values)), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
