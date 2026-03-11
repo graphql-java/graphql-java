@@ -42,6 +42,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
     private final String name;
     private final String description;
+    private final String deprecationReason;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName;
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
@@ -57,6 +58,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     @Internal
     private GraphQLObjectType(String name,
                               String description,
+                              String deprecationReason,
                               List<GraphQLFieldDefinition> fieldDefinitions,
                               List<GraphQLNamedOutputType> interfaces,
                               List<GraphQLDirective> directives,
@@ -69,6 +71,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         assertNotNull(interfaces, "interfaces can't be null");
         this.name = name;
         this.description = description;
+        this.deprecationReason = deprecationReason;
         this.interfaceComparator = interfaceComparator;
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.definition = definition;
@@ -143,6 +146,13 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         return description;
     }
 
+    public String getDeprecationReason() {
+        return deprecationReason;
+    }
+
+    public boolean isDeprecated() {
+        return deprecationReason != null;
+    }
 
     @Override
     public String getName() {
@@ -250,6 +260,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     @PublicApi
     @NullUnmarked
     public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
+        private String deprecationReason;
         private ObjectTypeDefinition definition;
         private List<ObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
@@ -261,6 +272,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         public Builder(GraphQLObjectType existing) {
             name = existing.getName();
             description = existing.getDescription();
+            deprecationReason = existing.getDeprecationReason();
             definition = existing.getDefinition();
             extensionDefinitions = existing.getExtensionDefinitions();
             fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
@@ -275,6 +287,11 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
 
         public Builder extensionDefinitions(List<ObjectTypeExtensionDefinition> extensionDefinitions) {
             this.extensionDefinitions = extensionDefinitions;
+            return this;
+        }
+
+        public Builder deprecate(String deprecationReason) {
+            this.deprecationReason = deprecationReason;
             return this;
         }
 
@@ -434,6 +451,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
             return new GraphQLObjectType(
                     name,
                     description,
+                    deprecationReason,
                     sort(fields, GraphQLObjectType.class, GraphQLFieldDefinition.class),
                     valuesToList(interfaces),
                     sort(directives, GraphQLObjectType.class, GraphQLDirective.class),

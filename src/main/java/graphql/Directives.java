@@ -25,7 +25,9 @@ import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPR
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
+import static graphql.introspection.Introspection.DirectiveLocation.INTERFACE;
 import static graphql.introspection.Introspection.DirectiveLocation.MUTATION;
+import static graphql.introspection.Introspection.DirectiveLocation.OBJECT;
 import static graphql.introspection.Introspection.DirectiveLocation.QUERY;
 import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.introspection.Introspection.DirectiveLocation.SUBSCRIPTION;
@@ -73,7 +75,9 @@ public class Directives {
                 .directiveLocation(newDirectiveLocation().name(ENUM_VALUE.name()).build())
                 .directiveLocation(newDirectiveLocation().name(ARGUMENT_DEFINITION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(INPUT_FIELD_DEFINITION.name()).build())
-                .description(createDescription("Marks the field, argument, input field or enum value as deprecated"))
+                .directiveLocation(newDirectiveLocation().name(OBJECT.name()).build())
+                .directiveLocation(newDirectiveLocation().name(INTERFACE.name()).build())
+                .description(createDescription("Marks the field, argument, input field, enum value, object type or interface type as deprecated"))
                 .inputValueDefinition(
                         newInputValueDefinition()
                                 .name("reason")
@@ -216,13 +220,13 @@ public class Directives {
      */
     public static final GraphQLDirective DeprecatedDirective = GraphQLDirective.newDirective()
             .name(DEPRECATED)
-            .description("Marks the field, argument, input field or enum value as deprecated")
+            .description("Marks the field, argument, input field, enum value, object type or interface type as deprecated")
             .argument(newArgument()
                     .name("reason")
                     .type(nonNull(GraphQLString))
                     .defaultValueProgrammatic(NO_LONGER_SUPPORTED)
                     .description("The reason for the deprecation"))
-            .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION)
+            .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION, OBJECT, INTERFACE)
             .definition(DEPRECATED_DIRECTIVE_DEFINITION)
             .build();
 

@@ -42,6 +42,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     private final String name;
     private final String description;
+    private final String deprecationReason;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName;
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
@@ -58,6 +59,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     @Internal
     private GraphQLInterfaceType(String name,
                                  String description,
+                                 String deprecationReason,
                                  List<GraphQLFieldDefinition> fieldDefinitions,
                                  TypeResolver typeResolver,
                                  List<GraphQLDirective> directives,
@@ -72,6 +74,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
         this.name = name;
         this.description = description;
+        this.deprecationReason = deprecationReason;
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.interfaceComparator = interfaceComparator;
@@ -103,6 +106,14 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     public String getDescription() {
         return description;
+    }
+
+    public String getDeprecationReason() {
+        return deprecationReason;
+    }
+
+    public boolean isDeprecated() {
+        return deprecationReason != null;
     }
 
     // to be removed in a future version when all code is in the code registry
@@ -261,6 +272,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     @PublicApi
     @NullUnmarked
     public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
+        private String deprecationReason;
         private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
         private List<InterfaceTypeExtensionDefinition> extensionDefinitions = emptyList();
@@ -273,6 +285,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         public Builder(GraphQLInterfaceType existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
+            this.deprecationReason = existing.getDeprecationReason();
             this.typeResolver = existing.getTypeResolver();
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
@@ -288,6 +301,11 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
         public Builder extensionDefinitions(List<InterfaceTypeExtensionDefinition> extensionDefinitions) {
             this.extensionDefinitions = extensionDefinitions;
+            return this;
+        }
+
+        public Builder deprecate(String deprecationReason) {
+            this.deprecationReason = deprecationReason;
             return this;
         }
 
@@ -454,6 +472,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return new GraphQLInterfaceType(
                     name,
                     description,
+                    deprecationReason,
                     sort(fields, GraphQLInterfaceType.class, GraphQLFieldDefinition.class),
                     typeResolver,
                     sort(directives, GraphQLInterfaceType.class, GraphQLDirective.class),

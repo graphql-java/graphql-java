@@ -245,6 +245,7 @@ public class IntrospectionResultToSchema {
 
         InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name((String) input.get("name"));
         interfaceTypeDefinition.description(toDescription(input));
+        createDeprecatedDirective(input, interfaceTypeDefinition);
         if (input.containsKey("interfaces") && input.get("interfaces") != null) {
             interfaceTypeDefinition.implementz(
                     map(
@@ -281,6 +282,7 @@ public class IntrospectionResultToSchema {
 
         ObjectTypeDefinition.Builder objectTypeDefinition = ObjectTypeDefinition.newObjectTypeDefinition().name((String) input.get("name"));
         objectTypeDefinition.description(toDescription(input));
+        createDeprecatedDirective(input, objectTypeDefinition);
         if (input.containsKey("interfaces")) {
             objectTypeDefinition.implementz(
                     map((List<Map<String, Object>>) input.get("interfaces"), this::createTypeIndirection)

@@ -40,6 +40,8 @@ public class IntrospectionQueryBuilder {
 
         private final boolean inputValueDeprecation;
 
+        private final boolean typeDeprecation;
+
         private final int typeRefFragmentDepth;
 
         private Options(boolean descriptions,
@@ -48,6 +50,7 @@ public class IntrospectionQueryBuilder {
                         boolean directiveIsRepeatable,
                         boolean schemaDescription,
                         boolean inputValueDeprecation,
+                        boolean typeDeprecation,
                         int typeRefFragmentDepth) {
             this.descriptions = descriptions;
             this.specifiedByUrl = specifiedByUrl;
@@ -55,6 +58,7 @@ public class IntrospectionQueryBuilder {
             this.directiveIsRepeatable = directiveIsRepeatable;
             this.schemaDescription = schemaDescription;
             this.inputValueDeprecation = inputValueDeprecation;
+            this.typeDeprecation = typeDeprecation;
             this.typeRefFragmentDepth = typeRefFragmentDepth;
         }
 
@@ -82,6 +86,10 @@ public class IntrospectionQueryBuilder {
             return inputValueDeprecation;
         }
 
+        public boolean isTypeDeprecation() {
+            return typeDeprecation;
+        }
+
         public int getTypeRefFragmentDepth() {
             return typeRefFragmentDepth;
         }
@@ -93,6 +101,7 @@ public class IntrospectionQueryBuilder {
                     true,
                     true,
                     false,
+                    true,
                     true,
                     7
             );
@@ -112,6 +121,7 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
+                    this.typeDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -129,6 +139,7 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
+                    this.typeDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -149,6 +160,7 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
+                    this.typeDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -166,6 +178,7 @@ public class IntrospectionQueryBuilder {
                     flag,
                     this.schemaDescription,
                     this.inputValueDeprecation,
+                    this.typeDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -183,6 +196,7 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     flag,
                     this.inputValueDeprecation,
+                    this.typeDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -199,6 +213,25 @@ public class IntrospectionQueryBuilder {
                     this.isOneOf,
                     this.directiveIsRepeatable,
                     this.schemaDescription,
+                    flag,
+                    this.typeDeprecation,
+                    this.typeRefFragmentDepth);
+        }
+
+        /**
+         * This will allow you to include the `isDeprecated` and `deprecationReason` fields for types in the introspection query.
+         *
+         * @param flag whether to include them
+         *
+         * @return options
+         */
+        public Options typeDeprecation(boolean flag) {
+            return new Options(this.descriptions,
+                    this.specifiedByUrl,
+                    this.isOneOf,
+                    this.directiveIsRepeatable,
+                    this.schemaDescription,
+                    this.inputValueDeprecation,
                     flag,
                     this.typeRefFragmentDepth);
         }
@@ -217,6 +250,7 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
+                    this.typeDeprecation,
                     typeRefFragmentDepth);
         }
     }
@@ -283,6 +317,8 @@ public class IntrospectionQueryBuilder {
                 options.descriptions ? newField("description").build() : null,
                 options.specifiedByUrl ? newField("specifiedByURL").build() : null,
                 options.isOneOf ? newField("isOneOf").build() : null,
+                options.typeDeprecation ? newField("isDeprecated").build() : null,
+                options.typeDeprecation ? newField("deprecationReason").build() : null,
                 newField("fields")
                         .arguments(ImmutableList.of(
                                 newArgument("includeDeprecated", BooleanValue.of(true)).build()

@@ -543,7 +543,35 @@ public class Introspection {
                     .type(GraphQLString)
                     .deprecate("This legacy name has been replaced by `specifiedByURL`")
             )
+            .field(newFieldDefinition()
+                    .name("isDeprecated")
+                    .type(GraphQLBoolean))
+            .field(newFieldDefinition()
+                    .name("deprecationReason")
+                    .type(GraphQLString))
             .build();
+
+    private static final IntrospectionDataFetcher<?> typeIsDeprecatedFetcher = environment -> {
+        Object type = environment.getSource();
+        if (type instanceof GraphQLObjectType) {
+            return ((GraphQLObjectType) type).isDeprecated();
+        }
+        if (type instanceof GraphQLInterfaceType) {
+            return ((GraphQLInterfaceType) type).isDeprecated();
+        }
+        return null;
+    };
+
+    private static final IntrospectionDataFetcher<?> typeDeprecationReasonFetcher = environment -> {
+        Object type = environment.getSource();
+        if (type instanceof GraphQLObjectType) {
+            return ((GraphQLObjectType) type).getDeprecationReason();
+        }
+        if (type instanceof GraphQLInterfaceType) {
+            return ((GraphQLInterfaceType) type).getDeprecationReason();
+        }
+        return null;
+    };
 
     static {
         register(__Type, "kind", kindDataFetcher);
@@ -558,6 +586,8 @@ public class Introspection {
         register(__Type, "isOneOf", isOneOfFetcher);
         register(__Type, "specifiedByURL", specifiedByUrlDataFetcher);
         register(__Type, "specifiedByUrl", specifiedByUrlDataFetcher); // note that this field is deprecated
+        register(__Type, "isDeprecated", typeIsDeprecatedFetcher);
+        register(__Type, "deprecationReason", typeDeprecationReasonFetcher);
     }
 
 
