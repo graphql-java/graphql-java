@@ -8,7 +8,6 @@ import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
-import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLObjectType.newObject
 
 class DeprecatedObjectsAndInterfacesTest extends Specification {
@@ -53,46 +52,6 @@ class DeprecatedObjectsAndInterfacesTest extends Specification {
         transformed.getDeprecationReason() == null
     }
 
-    def "interface type can be deprecated programmatically"() {
-        when:
-        def interfaceType = newInterface().name("Foo")
-                .deprecate("Use Bar instead")
-                .field(newFieldDefinition().name("id").type(GraphQLString))
-                .build()
-
-        then:
-        interfaceType.isDeprecated()
-        interfaceType.getDeprecationReason() == "Use Bar instead"
-    }
-
-    def "interface type is not deprecated by default"() {
-        when:
-        def interfaceType = newInterface().name("Foo")
-                .field(newFieldDefinition().name("id").type(GraphQLString))
-                .build()
-
-        then:
-        !interfaceType.isDeprecated()
-        interfaceType.getDeprecationReason() == null
-    }
-
-    def "interface type deprecation can be removed via transform"() {
-        given:
-        def interfaceType = newInterface().name("Foo")
-                .deprecate("Use Bar instead")
-                .field(newFieldDefinition().name("id").type(GraphQLString))
-                .build()
-
-        when:
-        def transformed = interfaceType.transform({ builder -> builder.deprecate(null) })
-
-        then:
-        interfaceType.isDeprecated()
-        interfaceType.getDeprecationReason() == "Use Bar instead"
-        !transformed.isDeprecated()
-        transformed.getDeprecationReason() == null
-    }
-
     def "deprecated object type can be built from SDL"() {
         def spec = '''
             type Query {
@@ -131,28 +90,6 @@ class DeprecatedObjectsAndInterfacesTest extends Specification {
         fooType.getDeprecationReason() == "No longer supported"
     }
 
-    def "deprecated interface type can be built from SDL"() {
-        def spec = '''
-            type Query {
-                foo : Foo
-            }
-            interface Foo @deprecated(reason: "Use Bar instead") {
-                id : String
-            }
-            type FooImpl implements Foo {
-                id : String
-            }
-        '''
-
-        when:
-        def schema = TestUtil.schema(spec)
-        def fooType = schema.getType("Foo") as GraphQLInterfaceType
-
-        then:
-        fooType.isDeprecated()
-        fooType.getDeprecationReason() == "Use Bar instead"
-    }
-
     def "deprecated object type is visible in introspection"() {
         def spec = '''
             type Query {
@@ -183,33 +120,6 @@ class DeprecatedObjectsAndInterfacesTest extends Specification {
         def barType = types.find { it['name'] == 'Bar' }
         barType['isDeprecated'] == false
         barType['deprecationReason'] == null
-    }
-
-    def "deprecated interface type is visible in introspection"() {
-        def spec = '''
-            type Query {
-                foo : Foo
-            }
-            interface Foo @deprecated(reason: "Use BarInterface instead") {
-                id : String
-            }
-            type FooImpl implements Foo {
-                id : String
-            }
-        '''
-
-        when:
-        def graphQL = TestUtil.graphQL(spec).build()
-        def introspectionQuery = IntrospectionQueryBuilder.build(IntrospectionQueryBuilder.Options.defaultOptions().typeDeprecation(true))
-        def executionResult = graphQL.execute(introspectionQuery)
-
-        then:
-        executionResult.errors.isEmpty()
-
-        def types = executionResult.data['__schema']['types'] as List
-        def fooType = types.find { it['name'] == 'Foo' }
-        fooType['isDeprecated'] == true
-        fooType['deprecationReason'] == "Use BarInterface instead"
     }
 
     def "non-deprecated types return null for isDeprecated in introspection"() {
@@ -249,26 +159,5 @@ class DeprecatedObjectsAndInterfacesTest extends Specification {
 
         then:
         printed.contains('type Foo @deprecated(reason : "Use Bar instead")')
-    }
-
-    def "deprecated interface type is printed in SDL"() {
-        def spec = '''
-            type Query {
-                foo : Foo
-            }
-            interface Foo @deprecated(reason: "Use Bar instead") {
-                id : String
-            }
-            type FooImpl implements Foo {
-                id : String
-            }
-        '''
-
-        when:
-        def schema = TestUtil.schema(spec)
-        def printed = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(schema)
-
-        then:
-        printed.contains('interface Foo @deprecated(reason : "Use Bar instead")')
     }
 }

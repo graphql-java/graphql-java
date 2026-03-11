@@ -634,7 +634,7 @@ public class SchemaPrinter {
             } else {
                 printComments(out, type, "");
                 if (type.getInterfaces().isEmpty()) {
-                    out.format("interface %s%s", type.getName(), directivesString(GraphQLInterfaceType.class, type.isDeprecated(), type));
+                    out.format("interface %s%s", type.getName(), directivesString(GraphQLInterfaceType.class, type));
                 } else {
 
                     Comparator<? super GraphQLSchemaElement> implementsComparator = getComparator(GraphQLInterfaceType.class, GraphQLOutputType.class);
@@ -646,7 +646,7 @@ public class SchemaPrinter {
                     out.format("interface %s implements %s%s",
                             type.getName(),
                             interfaceNames.collect(joining(" & ")),
-                            directivesString(GraphQLInterfaceType.class, type.isDeprecated(), type));
+                            directivesString(GraphQLInterfaceType.class, type));
                 }
 
                 Comparator<? super GraphQLSchemaElement> comparator = getComparator(GraphQLInterfaceType.class, GraphQLFieldDefinition.class);
@@ -1107,9 +1107,6 @@ public class SchemaPrinter {
             return type.getDeprecationReason();
         } else if (directiveContainer instanceof GraphQLObjectType) {
             GraphQLObjectType type = (GraphQLObjectType) directiveContainer;
-            return type.getDeprecationReason();
-        } else if (directiveContainer instanceof GraphQLInterfaceType) {
-            GraphQLInterfaceType type = (GraphQLInterfaceType) directiveContainer;
             return type.getDeprecationReason();
         } else {
             return Assert.assertShouldNeverHappen();

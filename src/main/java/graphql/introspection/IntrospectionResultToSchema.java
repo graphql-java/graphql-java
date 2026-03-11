@@ -245,7 +245,6 @@ public class IntrospectionResultToSchema {
 
         InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name((String) input.get("name"));
         interfaceTypeDefinition.description(toDescription(input));
-        createDeprecatedDirective(input, interfaceTypeDefinition);
         if (input.containsKey("interfaces") && input.get("interfaces") != null) {
             interfaceTypeDefinition.implementz(
                     map(

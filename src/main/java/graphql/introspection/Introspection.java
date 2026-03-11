@@ -556,9 +556,6 @@ public class Introspection {
         if (type instanceof GraphQLObjectType) {
             return ((GraphQLObjectType) type).isDeprecated();
         }
-        if (type instanceof GraphQLInterfaceType) {
-            return ((GraphQLInterfaceType) type).isDeprecated();
-        }
         return null;
     };
 
@@ -566,9 +563,6 @@ public class Introspection {
         Object type = environment.getSource();
         if (type instanceof GraphQLObjectType) {
             return ((GraphQLObjectType) type).getDeprecationReason();
-        }
-        if (type instanceof GraphQLInterfaceType) {
-            return ((GraphQLInterfaceType) type).getDeprecationReason();
         }
         return null;
     };

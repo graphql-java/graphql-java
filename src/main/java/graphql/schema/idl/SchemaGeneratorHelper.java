@@ -590,7 +590,6 @@ public class SchemaGeneratorHelper {
         builder.name(typeDefinition.getName());
         builder.description(buildDescription(buildCtx, typeDefinition, typeDefinition.getDescription()));
         builder.comparatorRegistry(buildCtx.getComparatorRegistry());
-        builder.deprecate(buildDeprecationReason(typeDefinition.getDirectives()));
 
         List<InterfaceTypeExtensionDefinition> extensions = interfaceTypeExtensions(typeDefinition, buildCtx);
         builder.extensionDefinitions(buildCtx.isCaptureAstDefinitions() ? extensions : emptyList());
