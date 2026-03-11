@@ -20,7 +20,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - gradle-argument: 'assemble && ./gradlew check'
+          - gradle-argument: 'assemble && ./gradlew check -x test -x testng'
             label: 'check'
           - gradle-argument: 'testWithJava11 testngWithJava11'
             label: 'java11'

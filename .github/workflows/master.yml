@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - gradle-argument: 'assemble && ./gradlew check'
+          - gradle-argument: 'assemble && ./gradlew check -x test -x testng'
             label: 'check'
           - gradle-argument: 'testWithJava11 testngWithJava11'
             label: 'java11'
@@ -220,4 +220,4 @@ jobs:
           java-version: '25'
           distribution: 'corretto'
       - name: publishToMavenCentral
-        run: ./gradlew assemble && ./gradlew check --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
+        run: ./gradlew assemble && ./gradlew check -x test -x testng --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
