@@ -7,24 +7,27 @@ import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.idl.SchemaGenerator;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.Objects;
 
 @PublicApi
+@NullMarked
 public class SourceLocation implements Serializable {
 
     public static final SourceLocation EMPTY = new SourceLocation(-1, -1);
 
     private final int line;
     private final int column;
-    private final String sourceName;
+    private final @Nullable String sourceName;
 
     public SourceLocation(int line, int column) {
         this(line, column, null);
     }
 
-    public SourceLocation(int line, int column, String sourceName) {
+    public SourceLocation(int line, int column, @Nullable String sourceName) {
         this.line = line;
         this.column = column;
         this.sourceName = sourceName;
@@ -38,12 +41,12 @@ public class SourceLocation implements Serializable {
         return column;
     }
 
-    public String getSourceName() {
+    public @Nullable String getSourceName() {
         return sourceName;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }
@@ -91,7 +94,7 @@ public class SourceLocation implements Serializable {
      *
      * @return the source location if available or null if it's not.
      */
-    public static SourceLocation getLocation(GraphQLSchemaElement schemaElement) {
+    public static @Nullable SourceLocation getLocation(GraphQLSchemaElement schemaElement) {
         if (schemaElement instanceof GraphQLModifiedType) {
             schemaElement = GraphQLTypeUtil.unwrapAllAs((GraphQLModifiedType) schemaElement);
         }
