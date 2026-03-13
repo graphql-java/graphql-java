@@ -7,6 +7,9 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,10 +24,11 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class InputValueDefinition extends AbstractDescribedNode<InputValueDefinition> implements DirectivesContainer<InputValueDefinition>, NamedNode<InputValueDefinition> {
     private final String name;
     private final Type type;
-    private final Value defaultValue;
+    private final @Nullable Value defaultValue;
     private final NodeUtil.DirectivesHolder directives;
 
     public static final String CHILD_TYPE = "type";
@@ -34,10 +38,10 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
     @Internal
     protected InputValueDefinition(String name,
                                    Type type,
-                                   Value defaultValue,
+                                   @Nullable Value defaultValue,
                                    List<Directive> directives,
-                                   Description description,
-                                   SourceLocation sourceLocation,
+                                   @Nullable Description description,
+                                   @Nullable SourceLocation sourceLocation,
                                    List<Comment> comments,
                                    IgnoredChars ignoredChars,
                                    Map<String, String> additionalData) {
@@ -70,7 +74,7 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
 
     public InputValueDefinition(String name,
                                 Type type,
-                                Value defaultValue) {
+                                @Nullable Value defaultValue) {
         this(name, type, defaultValue, emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
 
     }
@@ -84,7 +88,7 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
         return name;
     }
 
-    public Value getDefaultValue() {
+    public @Nullable Value getDefaultValue() {
         return defaultValue;
     }
 
@@ -139,7 +143,7 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -155,9 +159,9 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
     @Override
     public InputValueDefinition deepCopy() {
         return new InputValueDefinition(name,
-                deepCopy(type),
+                assertNotNull(deepCopy(type), "type cannot be null"),
                 deepCopy(defaultValue),
-                deepCopy(directives.getDirectives()),
+                assertNotNull(deepCopy(directives.getDirectives()), "directives cannot be null"),
                 description,
                 getSourceLocation(),
                 getComments(),
@@ -190,6 +194,7 @@ public class InputValueDefinition extends AbstractDescribedNode<InputValueDefini
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
