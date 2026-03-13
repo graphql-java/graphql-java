@@ -69,6 +69,7 @@ import org.jspecify.annotations.NullMarked;
  *   <li>{@link #UNIQUE_OBJECT_FIELD_NAME} - input object fields are unique</li>
  *   <li>{@link #DEFER_DIRECTIVE_LABEL} - defer labels are unique strings</li>
  *   <li>{@link #KNOWN_OPERATION_TYPES} - schema supports the operation type</li>
+ *   <li>{@link #VARIABLES_NOT_ALLOWED_IN_DIRECTIVES_ON_VARIABLE_DEFINITIONS} - variable references not allowed in constant directive positions</li>
  * </ul>
  *
  * <h3>Operation-Scoped Rules</h3>
@@ -184,4 +185,7 @@ public enum OperationValidationRule {
 
     /** Defer directive must not be used in subscription operations. Requires operation context. */
     DEFER_DIRECTIVE_ON_VALID_OPERATION,
+
+    /** Variable references must not appear in directive arguments on variable definitions (constant context). */
+    VARIABLES_NOT_ALLOWED_IN_DIRECTIVES_ON_VARIABLE_DEFINITIONS,
 }
