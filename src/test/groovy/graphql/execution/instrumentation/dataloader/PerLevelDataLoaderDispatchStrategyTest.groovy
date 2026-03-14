@@ -21,6 +21,7 @@ import graphql.schema.DataFetchingEnvironment
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
+import graphql.execution.incremental.AlternativeCallContext
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -178,5 +179,17 @@ class PerLevelDataLoaderDispatchStrategyTest extends Specification {
 
         then:
         strategy.initialCallStack.get(0).happenedCompletionFinishedCount > 0
+    }
+
+    def "subscription call stack is cleaned up after completion to prevent memory leak"() {
+        when:
+        def contexts = (1..100).collect { new AlternativeCallContext() }
+        contexts.each { altCtx ->
+            strategy.newSubscriptionExecution(altCtx)
+            strategy.subscriptionEventCompletionDone(altCtx)
+        }
+
+        then: "all subscription call stacks are removed after completion"
+        strategy.alternativeCallContextMap.isEmpty()
     }
 }

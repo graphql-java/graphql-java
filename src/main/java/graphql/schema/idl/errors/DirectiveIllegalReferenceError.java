@@ -8,7 +8,7 @@ import graphql.language.NamedNode;
 public class DirectiveIllegalReferenceError extends BaseError {
     public DirectiveIllegalReferenceError(DirectiveDefinition directive, NamedNode location) {
         super(directive,
-                String.format("'%s' must not reference itself on '%s''%s'",
+                String.format("'%s' must not reference itself directly or transitively on '%s''%s'",
                         directive.getName(), location.getName(), lineCol(location)
                 ));
     }

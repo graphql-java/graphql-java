@@ -171,6 +171,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     public void subscriptionEventCompletionDone(AlternativeCallContext alternativeCallContext) {
         CallStack callStack = getCallStack(alternativeCallContext);
         decrementObjectRunningAndMaybeDispatch(callStack);
+        alternativeCallContextMap.remove(alternativeCallContext);
     }
 
     @Override

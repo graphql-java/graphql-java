@@ -12,6 +12,7 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.normalized.NormalizedInputValue;
+import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
@@ -221,8 +222,11 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             @NonNull Locale locale
     ) {
-        return scalarType.getCoercing().valueToLiteral(value, graphqlContext, locale);
-
+        try {
+            return scalarType.getCoercing().valueToLiteral(value, graphqlContext, locale);
+        } catch (RuntimeException e) {
+            throw new CoercingParseValueException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -567,10 +571,16 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) throws CoercingParseValueException {
-        return graphQLScalarType.getCoercing().parseValue(
-                value,
-                graphqlContext,
-                locale);
+        try {
+            return graphQLScalarType.getCoercing().parseValue(
+                    value,
+                    graphqlContext,
+                    locale);
+        } catch (CoercingParseValueException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CoercingParseValueException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -582,10 +592,16 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) throws CoercingParseValueException {
-        return graphQLEnumType.parseValue(
-                value,
-                graphqlContext,
-                locale);
+        try {
+            return graphQLEnumType.parseValue(
+                    value,
+                    graphqlContext,
+                    locale);
+        } catch (CoercingParseValueException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CoercingParseValueException(e.getMessage(), e);
+        }
     }
 
     /**
@@ -718,11 +734,17 @@ class ValuesResolverConversion {
             @NonNull Locale locale
     ) {
         // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
-        return scalarType.getCoercing().parseLiteral(
-                inputValue,
-                coercedVariables,
-                graphqlContext,
-                locale);
+        try {
+            return scalarType.getCoercing().parseLiteral(
+                    inputValue,
+                    coercedVariables,
+                    graphqlContext,
+                    locale);
+        } catch (CoercingParseLiteralException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CoercingParseLiteralException(e.getMessage(), e);
+        }
     }
 
     /**

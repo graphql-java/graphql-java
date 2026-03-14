@@ -14,6 +14,7 @@ import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
 import graphql.language.Value;
+import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
@@ -148,10 +149,16 @@ class ValuesResolverLegacy {
     }
 
     private static Object serializeLegacy(GraphQLType type, Object value, GraphQLContext graphqlContext, Locale locale) {
-        if (type instanceof GraphQLScalarType) {
-            return ((GraphQLScalarType) type).getCoercing().serialize(value, graphqlContext, locale);
-        } else {
-            return ((GraphQLEnumType) type).serialize(value, graphqlContext, locale);
+        try {
+            if (type instanceof GraphQLScalarType) {
+                return ((GraphQLScalarType) type).getCoercing().serialize(value, graphqlContext, locale);
+            } else {
+                return ((GraphQLEnumType) type).serialize(value, graphqlContext, locale);
+            }
+        } catch (CoercingSerializeException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CoercingSerializeException(e.getMessage(), e);
         }
     }
 }

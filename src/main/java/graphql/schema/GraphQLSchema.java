@@ -1072,18 +1072,20 @@ public class GraphQLSchema {
         }
 
         private void ensureBuiltInDirectives() {
-            // put built-in directives first, preserving user-supplied overrides by name
-            Set<String> userDirectiveNames = new LinkedHashSet<>();
+            // Deduplicate directives by name (keeps first occurrence) to prevent
+            // duplicate definitions appearing in introspection results (issue #3453)
+            LinkedHashMap<String, GraphQLDirective> byName = new LinkedHashMap<>();
             for (GraphQLDirective d : additionalDirectives) {
-                userDirectiveNames.add(d.getName());
+                byName.putIfAbsent(d.getName(), d);
             }
+            // put built-in directives first, preserving user-supplied overrides by name
             LinkedHashSet<GraphQLDirective> ordered = new LinkedHashSet<>();
             for (GraphQLDirective builtIn : Directives.BUILT_IN_DIRECTIVES) {
-                if (!userDirectiveNames.contains(builtIn.getName())) {
+                if (!byName.containsKey(builtIn.getName())) {
                     ordered.add(builtIn);
                 }
             }
-            ordered.addAll(additionalDirectives);
+            ordered.addAll(byName.values());
             additionalDirectives.clear();
             additionalDirectives.addAll(ordered);
         }

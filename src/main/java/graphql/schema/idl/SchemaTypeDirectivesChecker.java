@@ -31,9 +31,11 @@ import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.NotAnInputTypeError;
 
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
@@ -187,11 +189,35 @@ class SchemaTypeDirectivesChecker {
             directiveDefinition.getInputValueDefinitions().forEach(inputValueDefinition -> {
                 assertTypeName(inputValueDefinition, errors);
                 assertExistAndIsInputType(inputValueDefinition, errors);
-                if (inputValueDefinition.hasDirective(directiveDefinition.getName())) {
-                    errors.add(new DirectiveIllegalReferenceError(directiveDefinition, inputValueDefinition));
-                }
             });
+            checkForDirectiveCycles(directiveDefinition, errors);
         });
+    }
+
+    private void checkForDirectiveCycles(DirectiveDefinition directiveDefinition, List<GraphQLError> errors) {
+        Set<String> visited = new LinkedHashSet<>();
+        visited.add(directiveDefinition.getName());
+        checkForDirectiveCyclesRecursive(directiveDefinition, directiveDefinition, visited, errors);
+    }
+
+    private void checkForDirectiveCyclesRecursive(DirectiveDefinition root, DirectiveDefinition current,
+                                                  Set<String> visited, List<GraphQLError> errors) {
+        for (InputValueDefinition inputValueDefinition : current.getInputValueDefinitions()) {
+            for (Directive appliedDirective : inputValueDefinition.getDirectives()) {
+                String refName = appliedDirective.getName();
+                if (refName.equals(root.getName())) {
+                    errors.add(new DirectiveIllegalReferenceError(root, inputValueDefinition));
+                    return;
+                }
+                if (visited.add(refName)) {
+                    DirectiveDefinition refDef = typeRegistry.getDirectiveDefinition(refName).orElse(null);
+                    if (refDef != null) {
+                        checkForDirectiveCyclesRecursive(root, refDef, visited, errors);
+                    }
+                    visited.remove(refName);
+                }
+            }
+        }
     }
 
     private static void assertTypeName(NamedNode<?> node, List<GraphQLError> errors) {

@@ -242,6 +242,21 @@ class ExhaustedDataLoaderDispatchStrategyTest extends Specification {
         batchLoaderInvocations.get() == 1
     }
 
+    def "subscription call stack is cleaned up after completion to prevent memory leak"() {
+        given:
+        setupStrategy(simpleBatchLoader())
+
+        when:
+        def contexts = (1..100).collect { new AlternativeCallContext() }
+        contexts.each { altCtx ->
+            strategy.newSubscriptionExecution(altCtx)
+            strategy.subscriptionEventCompletionDone(altCtx)
+        }
+
+        then: "all subscription call stacks are removed after completion"
+        strategy.alternativeCallContextMap.isEmpty()
+    }
+
     def "startComplete and stopComplete affect dispatch"() {
         given:
         setupStrategy(simpleBatchLoader())

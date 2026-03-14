@@ -804,4 +804,30 @@ class IntrospectionTest extends Specification {
         er.errors.isEmpty()
     }
 
+    @Issue("3453")
+    def "schema introspection does not return duplicate directive definitions after transform"() {
+        given:
+        def spec = '''
+            directive @myDirective on FIELD_DEFINITION
+
+            type Query {
+                foo: String @myDirective
+            }
+        '''
+        def schema = TestUtil.schema(spec)
+
+        when: "schema is transformed (which copies directives via newSchema)"
+        def transformed = schema.transform({ b -> b })
+
+        and: "introspection is run on the transformed schema"
+        def graphQL = newGraphQL(transformed).build()
+        def er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+        def directives = er.data.__schema.directives as List<Map>
+        def directiveNames = directives.collect { it.name }
+
+        then: "each directive name appears exactly once"
+        er.errors.isEmpty()
+        directiveNames.unique(false) == directiveNames
+    }
+
 }

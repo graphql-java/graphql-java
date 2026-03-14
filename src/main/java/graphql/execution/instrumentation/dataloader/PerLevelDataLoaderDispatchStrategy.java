@@ -393,6 +393,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             }
         }
         onCompletionFinished(0, callStack);
+        alternativeCallContextMap.remove(alternativeCallContext);
     }
 
     @Override

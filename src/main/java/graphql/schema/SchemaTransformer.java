@@ -722,14 +722,11 @@ public class SchemaTransformer {
         }
 
         public GraphQLSchema rebuildSchema(GraphQLCodeRegistry.Builder codeRegistry, Set<String> changedNamedTypes) {
-            // if an extra type was changed, we are adding the type to the additional types
-            // to ensure it is correctly discovered, because it might not be directly reachable (any more)
-            // this is a special handling for deletion case. See SchemaTransformerTest for more info.
-            for (GraphQLNamedType extraType : extraTypes) {
-                if (changedNamedTypes.contains(extraType.getName())) {
-                    this.additionalTypes.add(extraType);
-                }
-            }
+            // All extra types must be added back as additional types to ensure they are
+            // correctly discovered during schema rebuild, because they might not be directly
+            // reachable from root types. Previously only changed types were added back,
+            // causing type reference resolution failures (issue #3384).
+            this.additionalTypes.addAll(extraTypes);
             return GraphQLSchema.newSchema()
                     .query(this.query)
                     .mutation(this.mutation)

@@ -1513,4 +1513,24 @@ type Rental {
         newSchema.getDirective("experimental_disableErrorPropagation") != null
         newSchema.getDirectives().size() == schema.getDirectives().size()
     }
+
+    def "issue 3384 - schema transform preserves all types including unreachable extra types"() {
+        given:
+        def schema = TestUtil.schema('''
+            type Query {
+                foo: String
+            }
+
+            type DetachedType {
+                bar: String
+            }
+        ''')
+
+        when: "transform with no-op visitor"
+        def newSchema = SchemaTransformer.transformSchema(schema, new GraphQLTypeVisitorStub() {})
+
+        then: "DetachedType is preserved"
+        newSchema.getType("DetachedType") != null
+        newSchema.getType("Query") != null
+    }
 }

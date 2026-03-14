@@ -229,7 +229,7 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         then:
         errors.size() == 1
         errors.get(0) instanceof DirectiveIllegalReferenceError
-        errors.get(0).getMessage() == "'invalidExample' must not reference itself on 'arg''[@2:39]'"
+        errors.get(0).getMessage() == "'invalidExample' must not reference itself directly or transitively on 'arg''[@2:39]'"
     }
 
     def "directive must not begin with '__'"() {
@@ -297,6 +297,69 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         errors.size() == 1
         errors.get(0) instanceof NotAnInputTypeError
         errors.get(0).getMessage() == "The type 'NotInputType' [@2:13] is not an input type, but was used as an input type [@6:46]"
+    }
+
+    def "directive must not reference itself indirectly via two-way cycle"() {
+        given:
+        def spec = '''
+            directive @foo(arg: String @bar) on ARGUMENT_DEFINITION
+            directive @bar(arg: String @foo) on ARGUMENT_DEFINITION
+
+            type Query {
+                f1 : String
+            }
+        '''
+        def registry = parse(spec)
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
+
+        then:
+        errors.size() == 2
+        errors.every { it instanceof DirectiveIllegalReferenceError }
+    }
+
+    def "directive must not reference itself indirectly via three-way cycle"() {
+        given:
+        def spec = '''
+            directive @dirA(arg: String @dirB) on ARGUMENT_DEFINITION
+            directive @dirB(arg: String @dirC) on ARGUMENT_DEFINITION
+            directive @dirC(arg: String @dirA) on ARGUMENT_DEFINITION
+
+            type Query {
+                f1 : String
+            }
+        '''
+        def registry = parse(spec)
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
+
+        then:
+        errors.size() == 3
+        errors.every { it instanceof DirectiveIllegalReferenceError }
+    }
+
+    def "non-cyclic directive references are allowed"() {
+        given:
+        def spec = '''
+            directive @inner on ARGUMENT_DEFINITION
+            directive @outer(arg: String @inner) on ARGUMENT_DEFINITION
+
+            type Query {
+                f1 : String
+            }
+        '''
+        def registry = parse(spec)
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
+
+        then:
+        errors.size() == 0
     }
 
     def "uses runtime wiring factory for scalars"() {
