@@ -567,12 +567,16 @@ jacoco {
 }
 
 jacocoTestReport {
-    dependsOn test
+    dependsOn test, testng
     reports {
         xml.required = true
         html.required = true
         csv.required = false
     }
+
+    // Include execution data from both the JUnit (test) and TestNG (testng) tasks
+    // so that coverage from TestNG tests is not missing from the report.
+    executionData.setFrom(fileTree(layout.buildDirectory.dir('jacoco')).include('*.exec'))
 
     // Use the JaCoCo-specific classes (with @Generated annotations on equals/hashCode)
     // instead of the original classes, so coverage-modified bytecode is never published.
