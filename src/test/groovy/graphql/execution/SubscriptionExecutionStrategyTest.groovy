@@ -884,6 +884,531 @@ class SubscriptionExecutionStrategyTest extends Specification {
     }
 
 
+    @Unroll
+    def "subscription query with variables passes arguments correctly using '#why' implementation"() {
+
+        given:
+        Object publisher = eventStreamPublisher
+
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                assert environment.getArgument("roomId") == 456
+                return publisher
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages($room: Int) {
+              newMessage(roomId: $room) {
+                sender
+                text
+              }
+            }
+        ''').variables([room: 456]).build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        when:
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 5
+        for (int i = 0; i < messages.size(); i++) {
+            def message = messages[i].data
+            assert message == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+        }
+
+        where:
+        why                       | eventStreamPublisher
+        'reactive streams stream' | new ReactiveStreamsMessagePublisher(5)
+        'rxjava stream'           | new RxJavaMessagePublisher(5)
+        'flow stream'             | new FlowMessagePublisher(5)
+    }
+
+    def "subscription query with multiple variables of different types"() {
+
+        given:
+        def variablesIdl = """
+            type Query {
+                name : String
+            }
+
+            type Message {
+                sender : String!
+                text : String!
+            }
+
+            type Subscription {
+                newMessage(roomId: Int, filter: String) : Message
+            }
+        """
+
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                assert environment.getArgument("roomId") == 789
+                assert environment.getArgument("filter") == "important"
+                return new ReactiveStreamsMessagePublisher(3)
+            }
+        }
+
+        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(newTypeWiring("Subscription").dataFetcher("newMessage", newMessageDF).build())
+                .build()
+
+        def graphQL = TestUtil.graphQL(variablesIdl, runtimeWiring)
+                .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription FilteredMessages($room: Int, $msgFilter: String) {
+              newMessage(roomId: $room, filter: $msgFilter) {
+                sender
+                text
+              }
+            }
+        ''').variables([room: 789, msgFilter: "important"]).build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 3
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+        }
+    }
+
+    def "subscription query with variable default values"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                // default value of 100 should be used since no variable is provided
+                assert environment.getArgument("roomId") == 100
+                return new ReactiveStreamsMessagePublisher(2)
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages($room: Int = 100) {
+              newMessage(roomId: $room) {
+                sender
+                text
+              }
+            }
+        ''').build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 2
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+        }
+    }
+
+    def "anonymous subscription query works"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return new ReactiveStreamsMessagePublisher(3)
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        ''').build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 3
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+        }
+    }
+
+    def "subscription with inline fragment in selection set"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return new ReactiveStreamsMessagePublisher(3)
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                ... on Message {
+                  sender
+                  text
+                }
+              }
+            }
+        ''').build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 3
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+        }
+    }
+
+    def "subscription with named fragment spread in selection set"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return new ReactiveStreamsMessagePublisher(3)
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                ...MessageFields
+              }
+            }
+            fragment MessageFields on Message {
+              sender
+              text
+            }
+        ''').build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 3
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+        }
+    }
+
+    def "subscription with empty stream completes with zero events"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return new ReactiveStreamsMessagePublisher(0)
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        ''').build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        capturingSubscriber.events.size() == 0
+        capturingSubscriber.isCompleted()
+    }
+
+    def "subscription data fetcher returning null publisher results in null data"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return null
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        ''').build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.data == null
+        executionResult.errors.isEmpty()
+    }
+
+    def "subscription data fetcher can return CompletableFuture of Publisher"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return CompletableFuture.supplyAsync({
+                    new ReactiveStreamsMessagePublisher(3)
+                })
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        ''').build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 3
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+        }
+    }
+
+    def "subscription graphQLContext is accessible in data fetchers"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                assert environment.getGraphQlContext().get("customKey") == "customValue"
+                return new ReactiveStreamsMessagePublisher(2)
+            }
+        }
+
+        DataFetcher senderDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                // context should also be available in sub-field data fetchers during event processing
+                assert environment.getGraphQlContext().get("customKey") == "customValue"
+                Message msg = environment.getSource()
+                return msg.sender
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF, PropertyDataFetcher.fetching("text"))
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        ''').graphQLContext([customKey: "customValue"]).build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 2
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+        }
+    }
+
+    def "subscription with partial field selection"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return new ReactiveStreamsMessagePublisher(3)
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        // Only select 'sender', not 'text'
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+              }
+            }
+        ''').build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 3
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["newMessage": [sender: "sender" + i]]
+        }
+    }
+
+    def "subscription with field alias in sub-selection"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return new ReactiveStreamsMessagePublisher(2)
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                from: sender
+                body: text
+              }
+            }
+        ''').build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 2
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["newMessage": [from: "sender" + i, body: "text" + i]]
+        }
+    }
+
+    def "subscription with variables and alias combined"() {
+
+        given:
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                assert environment.getArgument("roomId") == 999
+                return new ReactiveStreamsMessagePublisher(2)
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query('''
+            subscription($room: Int) {
+              feed: newMessage(roomId: $room) {
+                from: sender
+                body: text
+              }
+            }
+        ''').variables([room: 999]).build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 2
+        for (int i = 0; i < messages.size(); i++) {
+            assert messages[i].data == ["feed": [from: "sender" + i, body: "text" + i]]
+        }
+    }
+
     def "can instrument subscription reactive ending"() {
 
         given:
