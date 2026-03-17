@@ -574,15 +574,18 @@ jacocoTestReport {
         csv.required = false
     }
 
-    // Exclude generated ANTLR code from coverage
+    // Use the JaCoCo-specific classes (with @Generated annotations on equals/hashCode)
+    // instead of the original classes, so coverage-modified bytecode is never published.
+    // Also exclude generated ANTLR code from coverage.
     afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
+        def jacocoClassDir = layout.buildDirectory.dir('classes-jacoco/java/main').get().asFile
+        classDirectories.setFrom(files(
+            fileTree(dir: jacocoClassDir, exclude: [
                     'graphql/parser/antlr/**',
                     'graphql/com/google/**',
                     'graphql/org/antlr/**'
             ])
-        }))
+        ))
     }
 }
 
@@ -598,12 +601,19 @@ tasks.register('markGeneratedEqualsHashCode') {
     dependsOn classes
 
     doLast {
-        def dir = layout.buildDirectory.dir('classes/java/main').get().asFile
-        if (!dir.exists()) return
+        def srcDir = layout.buildDirectory.dir('classes/java/main').get().asFile
+        def destDir = layout.buildDirectory.dir('classes-jacoco/java/main').get().asFile
+        if (!srcDir.exists()) return
+
+        // Copy all class files to a separate directory for JaCoCo
+        project.copy {
+            from srcDir
+            into destDir
+        }
 
         def ANNOTATION = 'Lgraphql/coverage/Generated;'
 
-        dir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+        destDir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
             if (!file.name.endsWith('.class')) return
 
             def bytes = file.bytes
@@ -631,10 +641,8 @@ tasks.register('markGeneratedEqualsHashCode') {
     }
 }
 
-// Ensure the annotation task runs before anything that reads the main class files
-tasks.named('test') { dependsOn markGeneratedEqualsHashCode }
-tasks.named('compileTestJava') { dependsOn markGeneratedEqualsHashCode }
-tasks.named('jar') { dependsOn markGeneratedEqualsHashCode }
+// Only JaCoCo reporting needs the annotated classes — never the jar or published artifacts
+tasks.named('jacocoTestReport') { dependsOn markGeneratedEqualsHashCode }
 
 /*
  * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7
