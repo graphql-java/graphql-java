@@ -578,13 +578,12 @@ jacocoTestReport {
     // so that coverage from TestNG tests is not missing from the report.
     executionData.setFrom(fileTree(layout.buildDirectory.dir('jacoco')).include('*.exec'))
 
-    // Use the JaCoCo-specific classes (with @Generated annotations on equals/hashCode)
-    // instead of the original classes, so coverage-modified bytecode is never published.
-    // Also exclude generated ANTLR code from coverage.
+    // Use the original compiled classes (not a modified copy) so that JaCoCo's
+    // CRC64 checksums match the execution data recorded during testing.
+    // Exclude generated ANTLR parser code and shaded dependencies from coverage.
     afterEvaluate {
-        def jacocoClassDir = layout.buildDirectory.dir('classes-jacoco/java/main').get().asFile
         classDirectories.setFrom(files(
-            fileTree(dir: jacocoClassDir, exclude: [
+            fileTree(dir: layout.buildDirectory.dir('classes/java/main'), exclude: [
                     'graphql/parser/antlr/**',
                     'graphql/com/google/**',
                     'graphql/org/antlr/**'
@@ -592,61 +591,6 @@ jacocoTestReport {
         ))
     }
 }
-
-// ---------------------------------------------------------------------------
-// Mark identity equals(Object)/hashCode() with a @Generated annotation so
-// JaCoCo's AnnotationGeneratedFilter excludes them from coverage.
-// The annotation class need not exist — JaCoCo only inspects the descriptor
-// string in the bytecode, and the JVM ignores unknown CLASS-retention
-// annotations.
-// ---------------------------------------------------------------------------
-tasks.register('markGeneratedEqualsHashCode') {
-    description = 'Add @Generated annotation to equals/hashCode so JaCoCo ignores them'
-    dependsOn classes
-
-    doLast {
-        def srcDir = layout.buildDirectory.dir('classes/java/main').get().asFile
-        def destDir = layout.buildDirectory.dir('classes-jacoco/java/main').get().asFile
-        if (!srcDir.exists()) return
-
-        // Copy all class files to a separate directory for JaCoCo
-        project.copy {
-            from srcDir
-            into destDir
-        }
-
-        def ANNOTATION = 'Lgraphql/coverage/Generated;'
-
-        destDir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
-            if (!file.name.endsWith('.class')) return
-
-            def bytes = file.bytes
-            def classNode = new org.objectweb.asm.tree.ClassNode()
-            new org.objectweb.asm.ClassReader(bytes).accept(classNode, 0)
-
-            boolean modified = false
-            for (method in classNode.methods) {
-                if ((method.name == 'equals' && method.desc == '(Ljava/lang/Object;)Z') ||
-                        (method.name == 'hashCode' && method.desc == '()I')) {
-                    if (method.invisibleAnnotations == null) {
-                        method.invisibleAnnotations = []
-                    }
-                    method.invisibleAnnotations.add(new org.objectweb.asm.tree.AnnotationNode(ANNOTATION))
-                    modified = true
-                }
-            }
-
-            if (modified) {
-                def writer = new org.objectweb.asm.ClassWriter(0)
-                classNode.accept(writer)
-                file.bytes = writer.toByteArray()
-            }
-        }
-    }
-}
-
-// Only JaCoCo reporting needs the annotated classes — never the jar or published artifacts
-tasks.named('jacocoTestReport') { dependsOn markGeneratedEqualsHashCode }
 
 /*
  * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7
