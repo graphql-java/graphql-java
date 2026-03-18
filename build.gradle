@@ -574,15 +574,17 @@ jacocoTestReport {
         csv.required = false
     }
 
-    // Exclude generated ANTLR code from coverage
+    // Use the modified classes from classes-jacoco/ (with @Generated annotations)
+    // so CRC64 checksums match the execution data recorded during tests.
+    // Also exclude generated ANTLR code and shaded dependencies from coverage.
     afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                    'graphql/parser/antlr/**',
-                    'graphql/com/google/**',
-                    'graphql/org/antlr/**'
-            ])
-        }))
+        classDirectories.setFrom(files(
+                fileTree(dir: layout.buildDirectory.dir('classes-jacoco/java/main'), exclude: [
+                        'graphql/parser/antlr/**',
+                        'graphql/com/google/**',
+                        'graphql/org/antlr/**'
+                ])
+        ))
     }
 }
 
@@ -592,18 +594,34 @@ jacocoTestReport {
 // The annotation class need not exist — JaCoCo only inspects the descriptor
 // string in the bytecode, and the JVM ignores unknown CLASS-retention
 // annotations.
+//
+// IMPORTANT: modifications are made on a COPY in classes-jacoco/ so that
+// the original (pristine) class files in classes/java/main are packaged
+// into the published jar unchanged.
 // ---------------------------------------------------------------------------
 tasks.register('markGeneratedEqualsHashCode') {
     description = 'Add @Generated annotation to equals/hashCode so JaCoCo ignores them'
     dependsOn classes
 
+    def originalDir = layout.buildDirectory.dir('classes/java/main')
+    def jacocoDir = layout.buildDirectory.dir('classes-jacoco/java/main')
+
+    inputs.dir(originalDir)
+    outputs.dir(jacocoDir)
+
     doLast {
-        def dir = layout.buildDirectory.dir('classes/java/main').get().asFile
-        if (!dir.exists()) return
+        def src = originalDir.get().asFile
+        def dest = jacocoDir.get().asFile
+        if (!src.exists()) return
+
+        // Copy all class files to a separate directory for JaCoCo
+        ant.copy(todir: dest) {
+            fileset(dir: src)
+        }
 
         def ANNOTATION = 'Lgraphql/coverage/Generated;'
 
-        dir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+        dest.eachFileRecurse(groovy.io.FileType.FILES) { file ->
             if (!file.name.endsWith('.class')) return
 
             def bytes = file.bytes
@@ -631,10 +649,15 @@ tasks.register('markGeneratedEqualsHashCode') {
     }
 }
 
-// Ensure the annotation task runs before anything that reads the main class files
+// Test tasks need the modified classes for JaCoCo coverage recording
 tasks.named('test') { dependsOn markGeneratedEqualsHashCode }
 tasks.named('compileTestJava') { dependsOn markGeneratedEqualsHashCode }
-tasks.named('jar') { dependsOn markGeneratedEqualsHashCode }
+
+// Prepend modified classes to the test classpath so the JaCoCo agent records
+// execution data with CRC64s that match the annotated bytecode.
+tasks.named('test', Test) {
+    classpath = files(layout.buildDirectory.dir('classes-jacoco/java/main')) + classpath
+}
 
 /*
  * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7
