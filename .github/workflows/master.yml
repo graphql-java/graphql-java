@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - gradle-argument: 'assemble && ./gradlew check -x test -x testng -x testngWithJava11 -x testngWithJava17 -x testngWithJava21'
+          - gradle-argument: 'assemble && ./gradlew check -x test -x testng'
             label: 'check'
           - gradle-argument: 'testWithJava11 testngWithJava11'
             label: 'java11'
@@ -23,7 +23,7 @@ jobs:
           - gradle-argument: 'testWithJava21 testngWithJava21'
             label: 'java21'
             test-results-dirs: 'testWithJava21 testngWithJava21'
-          - gradle-argument: 'test -x testWithJava11 -x testWithJava17 -x testWithJava21 testng jacocoTestReport'
+          - gradle-argument: 'test testng jacocoTestReport'
             label: 'java25'
             test-results-dirs: 'test testng'
           - gradle-argument: 'jcstress'
@@ -46,7 +46,7 @@ jobs:
             ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
           fi
       - name: Upload Coverage XML Report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always() && matrix.label == 'java25'
         with:
           name: coverage-report
@@ -94,7 +94,7 @@ jobs:
             > "/tmp/test-stats/${{ matrix.label }}.json"
       - name: Upload Test Stats
         if: always() && matrix.label != 'check'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-stats-${{ matrix.label }}
           path: /tmp/test-stats/${{ matrix.label }}.json
@@ -106,19 +106,19 @@ jobs:
         with:
           token: ${{ secrets.ADMIN_PAT }}
       - name: Download Test Stats
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: test-stats-*
           merge-multiple: true
           path: test-stats/
       - name: Download Coverage Report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         continue-on-error: true
         with:
           name: coverage-report
           path: coverage/
       - name: Update Baseline
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const fs = require('fs');
@@ -220,4 +220,4 @@ jobs:
           java-version: '25'
           distribution: 'corretto'
       - name: publishToMavenCentral
-        run: ./gradlew assemble && ./gradlew check -x test -x testng -x testngWithJava11 -x testngWithJava17 -x testngWithJava21 --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
+        run: ./gradlew assemble && ./gradlew check -x test -x testng --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
