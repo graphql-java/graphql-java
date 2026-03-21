@@ -58,16 +58,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.execution.directives.QueryAppliedDirective",
             "graphql.execution.directives.QueryAppliedDirectiveArgument",
             "graphql.execution.directives.QueryDirectives",
-            "graphql.execution.incremental.DeferredExecution",
-            "graphql.execution.instrumentation.ChainedInstrumentation",
-            "graphql.execution.instrumentation.DocumentAndVariables",
-            "graphql.execution.instrumentation.NoContextChainedInstrumentation",
-            "graphql.execution.ResponseMapFactory",
-            "graphql.execution.instrumentation.SimpleInstrumentation",
-            "graphql.execution.instrumentation.SimpleInstrumentationContext",
-            "graphql.execution.instrumentation.SimplePerformantInstrumentation",
-            "graphql.execution.instrumentation.fieldvalidation.FieldAndArguments",
-            "graphql.execution.instrumentation.fieldvalidation.FieldValidationEnvironment",
             "graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation",
             "graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation",
             "graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters",
@@ -123,17 +113,22 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.language.FieldDefinition",
             "graphql.language.FragmentDefinition",
             "graphql.language.FragmentSpread",
-            "graphql.language.NodeTraverser",
-            "graphql.language.NonNullType",
-            "graphql.language.ObjectField",
-            "graphql.language.ObjectTypeDefinition",
-            "graphql.language.ObjectTypeExtensionDefinition",
-            "graphql.language.OperationDefinition",
-            "graphql.language.OperationTypeDefinition",
-            "graphql.language.PrettyAstPrinter",
-            "graphql.language.SDLDefinition",
-            "graphql.language.SDLExtensionDefinition",
-            "graphql.language.SDLNamedDefinition",
+            "graphql.language.IgnoredChar",
+            "graphql.language.IgnoredChars",
+            "graphql.language.ImplementingTypeDefinition",
+            "graphql.language.InlineFragment",
+            "graphql.language.InputObjectTypeDefinition",
+            "graphql.language.InputObjectTypeExtensionDefinition",
+            "graphql.language.InputValueDefinition",
+            "graphql.language.InterfaceTypeDefinition",
+            "graphql.language.InterfaceTypeExtensionDefinition",
+            "graphql.language.ListType",
+            "graphql.language.Node",
+            "graphql.language.NodeChildrenContainer",
+            "graphql.language.NodeDirectivesBuilder",
+            "graphql.language.NodeParentTree",
+            "graphql.language.NodeVisitor",
+            "graphql.language.NodeVisitorStub",
             "graphql.language.ScalarTypeDefinition",
             "graphql.language.ScalarTypeExtensionDefinition",
             "graphql.language.SchemaDefinition",
@@ -141,7 +136,8 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.language.Selection",
             "graphql.language.SelectionSet",
             "graphql.language.SelectionSetContainer",
-            "graphql.language.TypeDefinition",
+            "graphql.language.SourceLocation",
+            "graphql.language.Type",
             "graphql.language.TypeKind",
             "graphql.language.TypeName",
             "graphql.language.UnionTypeDefinition",
@@ -254,11 +250,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.util.TraversalControl",
             "graphql.util.TraverserContext",
             "graphql.util.TreeTransformer",
-            "graphql.util.TreeTransformerUtil",
-            // These classes will not be public API later, exempt here while marked as experimental
-            "graphql.validation.rules.DeferDirectiveLabel",
-            "graphql.validation.rules.DeferDirectiveOnRootLevel",
-            "graphql.validation.rules.DeferDirectiveOnValidOperation"
+            "graphql.util.TreeTransformerUtil"
     ] as Set
 
     def "ensure all public API and experimental API classes have @NullMarked annotation"() {
@@ -308,4 +300,4 @@ ${annotatedButExempted.sort().join("\n")}
 Please remove them from the exemption list in ${JSpecifyAnnotationsCheck.class.simpleName}.groovy.""")
         }
     }
-} 
+}
