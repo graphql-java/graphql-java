@@ -281,7 +281,7 @@ public class AstSorter {
         Function<Definition, Integer> byType = d -> {
             if (d instanceof OperationDefinition) {
                 OperationDefinition.Operation operation = ((OperationDefinition) d).getOperation();
-                if (OperationDefinition.Operation.QUERY == operation || operation == null) {
+                if (OperationDefinition.Operation.QUERY == operation) {
                     return 101;
                 }
                 if (OperationDefinition.Operation.MUTATION == operation) {
