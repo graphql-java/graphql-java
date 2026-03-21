@@ -74,6 +74,23 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
         return null;
     }
 
+    /**
+     * Returns an argument by name. If the argument is not found, an {@link graphql.AssertException} is thrown.
+     * <p>
+     * This is useful when you know the argument must exist (e.g., it is a required argument in the directive definition)
+     * and want to avoid dealing with nullability.
+     *
+     * @param name the name of the argument
+     *
+     * @return the argument, never null
+     *
+     * @throws graphql.AssertException if the argument is not found
+     */
+    public GraphQLAppliedDirectiveArgument getNonNullArgument(String name) {
+        GraphQLAppliedDirectiveArgument argument = getArgument(name);
+        return assertNotNull(argument, "Argument '%s' not found on applied directive '%s'", name, this.name);
+    }
+
     public Directive getDefinition() {
         return definition;
     }

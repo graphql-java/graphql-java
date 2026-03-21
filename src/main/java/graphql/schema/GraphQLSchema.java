@@ -427,6 +427,40 @@ public class GraphQLSchema {
     }
 
     /**
+     * Called to return a named {@link graphql.schema.GraphQLObjectType} from the schema or throws
+     * an {@link graphql.AssertException} if it's not present.
+     * <p>
+     * This is useful when you know the type must exist and want to avoid dealing with nullability.
+     *
+     * @param typeName the name of the type
+     *
+     * @return a graphql object type, never null
+     *
+     * @throws graphql.AssertException  if the type is not found
+     * @throws graphql.GraphQLException if the type is NOT an object type
+     */
+    public GraphQLObjectType getNonNullObjectType(String typeName) {
+        GraphQLObjectType objectType = getObjectType(typeName);
+        return assertNotNull(objectType, "Object type '%s' not found in schema", typeName);
+    }
+
+    /**
+     * Gets the named type from the schema or throws an {@link graphql.AssertException} if it's not present.
+     * <p>
+     * This is useful when you know the type must exist and want to avoid dealing with nullability.
+     *
+     * @param typeName the name of the type to retrieve
+     *
+     * @return the type, never null
+     *
+     * @throws graphql.AssertException if the type is not found
+     */
+    public GraphQLType getNonNullType(String typeName) {
+        GraphQLType type = typeMap.get(typeName);
+        return assertNotNull(type, "Type '%s' not found in schema", typeName);
+    }
+
+    /**
      * Returns a {@link GraphQLFieldDefinition} as the specified co-ordinates or null
      * if it does not exist
      *
@@ -495,7 +529,7 @@ public class GraphQLSchema {
      *
      * @return list of types implementing provided interface
      */
-    public @Nullable List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
+    public List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
         return interfaceNameToObjectTypes.getOrDefault(type.getName(), emptyList());
     }
 

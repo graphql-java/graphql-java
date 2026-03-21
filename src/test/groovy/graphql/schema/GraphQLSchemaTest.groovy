@@ -750,4 +750,51 @@ class GraphQLSchemaTest extends Specification {
         schema.getAdditionalTypes().contains(simpleScalar)
     }
 
+    def "getNonNullObjectType returns object type when it exists"() {
+        when:
+        def objectType = starWarsSchema.getNonNullObjectType("HumanType")
+
+        then:
+        objectType == humanType
+    }
+
+    def "getNonNullObjectType throws when type does not exist"() {
+        when:
+        starWarsSchema.getNonNullObjectType("NonExistentType")
+
+        then:
+        thrown(AssertException)
+    }
+
+    def "getNonNullType returns type when it exists"() {
+        when:
+        def type = starWarsSchema.getNonNullType("HumanType")
+
+        then:
+        type == humanType
+    }
+
+    def "getNonNullType throws when type does not exist"() {
+        when:
+        starWarsSchema.getNonNullType("NonExistentType")
+
+        then:
+        thrown(AssertException)
+    }
+
+    def "getImplementations returns empty list for interface with no implementations"() {
+        given:
+        def iface = GraphQLInterfaceType.newInterface()
+                .name("UnusedInterface")
+                .field(newFieldDefinition().name("id").type(GraphQLString))
+                .build()
+
+        when:
+        def result = starWarsSchema.getImplementations(iface)
+
+        then:
+        result != null
+        result.isEmpty()
+    }
+
 }
