@@ -168,7 +168,7 @@ public class ENFMerger {
         return true;
     }
 
-    // copied from graphql.validation.rules.OverlappingFieldsCanBeMerged
+    // copied from graphql.validation.OperationValidator
     private static boolean sameArguments(List<Argument> arguments1, List<Argument> arguments2) {
         if (arguments1.size() != arguments2.size()) {
             return false;

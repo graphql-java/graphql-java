@@ -3,6 +3,8 @@ package graphql.schema
 import graphql.AssertException
 import graphql.Scalars
 import graphql.introspection.Introspection
+import graphql.language.EnumValue
+import graphql.schema.validation.InvalidSchemaException
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
@@ -11,6 +13,7 @@ import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLAppliedDirective.newDirective as newAppliedDirective
 import static graphql.schema.GraphQLAppliedDirectiveArgument.newArgument as newAppliedArgument
 import static graphql.schema.GraphQLEnumType.newEnum
+import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
@@ -2107,5 +2110,262 @@ class FastBuilderTest extends Specification {
 
         def searchField = schema.queryType.getFieldDefinition("search")
         searchField.getArgument("filter").getType() == filterInput
+    }
+
+    def "applied directive on directive definition argument with type-ref enum arg resolves correctly"() {
+        given: "an enum type used as the applied directive's argument type"
+        def colorEnum = newEnum()
+                .name("Color")
+                .value("RED")
+                .value("GREEN")
+                .build()
+
+        and: "a helper directive whose arg type is Color — applied to directive definition args"
+        def annotateDirective = newDirective()
+                .name("annotate")
+                .validLocation(Introspection.DirectiveLocation.ARGUMENT_DEFINITION)
+                .argument(newArgument()
+                        .name("color")
+                        .type(typeRef("Color")))
+                .build()
+
+        and: "an applied @annotate on a directive definition argument, with unresolved type ref"
+        def appliedAnnotate = newAppliedDirective()
+                .name("annotate")
+                .argument(newAppliedArgument()
+                        .name("color")
+                        .type(typeRef("Color"))
+                        .valueLiteral(new EnumValue("GREEN"))
+                        .build())
+                .build()
+
+        and: "a main directive whose argument carries the applied @annotate"
+        def mainDirective = newDirective()
+                .name("main")
+                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
+                .argument(newArgument()
+                        .name("arg")
+                        .type(GraphQLString)
+                        .withAppliedDirective(appliedAnnotate))
+                .build()
+
+        and: "a simple query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("field")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder and validation enabled"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(colorEnum)
+                .additionalDirective(annotateDirective)
+                .additionalDirective(mainDirective)
+                .withValidation(true)
+                .build()
+
+        then: "schema builds successfully and the applied directive arg type is resolved"
+        schema != null
+        def resolvedMain = schema.getDirective("main")
+        def mainArg = resolvedMain.getArgument("arg")
+        def resolvedApplied = mainArg.getAppliedDirective("annotate")
+        resolvedApplied != null
+        !(resolvedApplied.getArgument("color").type instanceof GraphQLTypeReference)
+        resolvedApplied.getArgument("color").type == colorEnum
+    }
+
+    // Regression tests for ShallowTypeRefCollector bug:
+    // Applied directives on field arguments and enum values were not scanned for type
+    // references, leaving GraphQLTypeReference unresolved and causing spurious
+    // InvalidSchemaException from AppliedDirectiveArgumentsAreValid validator.
+
+    def "applied directive on object type field argument with type-ref enum arg resolves correctly"() {
+        given: "an enum type used as a directive argument type"
+        def statusEnum = newEnum()
+                .name("Status")
+                .value("ACTIVE")
+                .value("INACTIVE")
+                .build()
+
+        and: "a directive definition referencing Status"
+        def metaDirective = newDirective()
+                .name("meta")
+                .validLocation(Introspection.DirectiveLocation.ARGUMENT_DEFINITION)
+                .argument(newArgument()
+                        .name("status")
+                        .type(typeRef("Status")))
+                .build()
+
+        and: "an applied directive on a field argument whose arg type is still a GraphQLTypeReference"
+        def appliedMeta = newAppliedDirective()
+                .name("meta")
+                .argument(newAppliedArgument()
+                        .name("status")
+                        .type(typeRef("Status"))
+                        .valueLiteral(new EnumValue("ACTIVE"))
+                        .build())
+                .build()
+
+        and: "query type with a field whose argument carries the applied directive"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("field")
+                        .type(GraphQLString)
+                        .argument(newArgument()
+                                .name("arg")
+                                .type(GraphQLString)
+                                .withAppliedDirective(appliedMeta)))
+                .build()
+
+        when: "building with FastBuilder and validation enabled"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(statusEnum)
+                .additionalDirective(metaDirective)
+                .withValidation(true)
+                .build()
+
+        then: "schema builds successfully and the applied directive arg type is resolved"
+        schema != null
+        def fieldArg = schema.queryType.getFieldDefinition("field").getArgument("arg")
+        def resolvedApplied = fieldArg.getAppliedDirective("meta")
+        resolvedApplied != null
+        !(resolvedApplied.getArgument("status").type instanceof GraphQLTypeReference)
+        resolvedApplied.getArgument("status").type == statusEnum
+    }
+
+    def "applied directive on interface field argument with type-ref enum arg resolves correctly"() {
+        given: "an enum type used as a directive argument type"
+        def statusEnum = newEnum()
+                .name("Status")
+                .value("ACTIVE")
+                .value("INACTIVE")
+                .build()
+
+        and: "a directive definition referencing Status"
+        def metaDirective = newDirective()
+                .name("meta")
+                .validLocation(Introspection.DirectiveLocation.ARGUMENT_DEFINITION)
+                .argument(newArgument()
+                        .name("status")
+                        .type(typeRef("Status")))
+                .build()
+
+        and: "an applied directive on an interface field argument with unresolved type ref"
+        def appliedMeta = newAppliedDirective()
+                .name("meta")
+                .argument(newAppliedArgument()
+                        .name("status")
+                        .type(typeRef("Status"))
+                        .valueLiteral(new EnumValue("ACTIVE"))
+                        .build())
+                .build()
+
+        and: "an interface type with a field argument that has the applied directive"
+        def nodeInterface = GraphQLInterfaceType.newInterface()
+                .name("Node")
+                .typeResolver { null }
+                .field(newFieldDefinition()
+                        .name("find")
+                        .type(GraphQLString)
+                        .argument(newArgument()
+                                .name("filter")
+                                .type(GraphQLString)
+                                .withAppliedDirective(appliedMeta)))
+                .build()
+
+        and: "a query type referencing the interface"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("node")
+                        .type(typeRef("Node")))
+                .build()
+
+        when: "building with FastBuilder and validation enabled"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(statusEnum)
+                .addType(nodeInterface)
+                .additionalDirective(metaDirective)
+                .withValidation(true)
+                .build()
+
+        then: "schema builds successfully and the applied directive arg type is resolved"
+        schema != null
+        def iface = schema.getType("Node") as GraphQLInterfaceType
+        def fieldArg = iface.getFieldDefinition("find").getArgument("filter")
+        def resolvedApplied = fieldArg.getAppliedDirective("meta")
+        resolvedApplied != null
+        !(resolvedApplied.getArgument("status").type instanceof GraphQLTypeReference)
+        resolvedApplied.getArgument("status").type == statusEnum
+    }
+
+    def "applied directive on enum value with type-ref enum arg resolves correctly"() {
+        given: "a Color enum type used as the directive argument type"
+        def colorEnum = newEnum()
+                .name("Color")
+                .value("RED")
+                .value("GREEN")
+                .build()
+
+        and: "a directive definition referencing Color"
+        def metaDirective = newDirective()
+                .name("meta")
+                .validLocation(Introspection.DirectiveLocation.ENUM_VALUE)
+                .argument(newArgument()
+                        .name("color")
+                        .type(typeRef("Color")))
+                .build()
+
+        and: "an applied directive on an enum value with unresolved type ref"
+        def appliedMeta = newAppliedDirective()
+                .name("meta")
+                .argument(newAppliedArgument()
+                        .name("color")
+                        .type(typeRef("Color"))
+                        .valueLiteral(new EnumValue("GREEN"))
+                        .build())
+                .build()
+
+        and: "an enum type whose values have the applied directive"
+        def statusEnum = newEnum()
+                .name("Status")
+                .value(newEnumValueDefinition()
+                        .name("ACTIVE")
+                        .value("ACTIVE")
+                        .withAppliedDirective(appliedMeta)
+                        .build())
+                .value("INACTIVE")
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("field")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder and validation enabled"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(statusEnum)
+                .addType(colorEnum)
+                .additionalDirective(metaDirective)
+                .withValidation(true)
+                .build()
+
+        then: "schema builds successfully and the applied directive arg type is resolved"
+        schema != null
+        def resolvedStatus = schema.getType("Status") as GraphQLEnumType
+        def activeValue = resolvedStatus.getValue("ACTIVE")
+        def resolvedApplied = activeValue.getAppliedDirective("meta")
+        resolvedApplied != null
+        !(resolvedApplied.getArgument("color").type instanceof GraphQLTypeReference)
+        resolvedApplied.getArgument("color").type == colorEnum
     }
 }

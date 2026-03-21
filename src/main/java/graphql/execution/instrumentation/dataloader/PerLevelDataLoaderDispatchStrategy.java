@@ -13,6 +13,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import graphql.VisibleForTesting;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -30,7 +31,8 @@ import java.util.function.Supplier;
 @NullMarked
 public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStrategy {
 
-    private final CallStack initialCallStack;
+    @VisibleForTesting
+    final CallStack initialCallStack;
     private final ExecutionContext executionContext;
     private final boolean enableDataLoaderChaining;
 
@@ -145,7 +147,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     }
 
-    private static class CallStack {
+    // package-private for testing
+    static class CallStack {
 
         /**
          * We track three things per level:
@@ -177,8 +180,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
          */
 
         static class StateForLevel {
-            private final int happenedCompletionFinishedCount;
-            private final int happenedExecuteObjectCalls;
+            @VisibleForTesting
+            final int happenedCompletionFinishedCount;
+            @VisibleForTesting
+            final int happenedExecuteObjectCalls;
 
 
             public StateForLevel() {
@@ -216,7 +221,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         private final Map<Integer, AtomicReference<StateForLevel>> stateForLevelMap = new ConcurrentHashMap<>();
 
-        private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
+        @VisibleForTesting
+        final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
 
         public ChainedDLStack chainedDLStack = new ChainedDLStack();
 
@@ -439,7 +445,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
 
-    private boolean markLevelAsDispatchedIfReady(int level, CallStack callStack) {
+    @VisibleForTesting
+    boolean markLevelAsDispatchedIfReady(int level, CallStack callStack) {
         boolean ready = isLevelReady(level, callStack);
         if (ready) {
             if (!callStack.dispatchedLevels.add(level)) {
