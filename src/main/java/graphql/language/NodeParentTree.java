@@ -11,6 +11,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static graphql.Assert.assertNotNull;
@@ -48,7 +49,7 @@ public class NodeParentTree<T extends Node> {
     private ImmutableList<String> mkPath(Deque<T> copy) {
         return ImmutableKit.filterAndMap(copy,
                 node1 -> node1 instanceof NamedNode,
-                node1 -> ((NamedNode) node1).getName());
+                node1 -> Objects.toString(((NamedNode) node1).getName(), ""));
     }
 
 
