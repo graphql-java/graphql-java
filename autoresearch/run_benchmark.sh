@@ -2,6 +2,9 @@
 # Runs the ENF1 throughput benchmark and extracts the score.
 # Usage: ./autoresearch/run_benchmark.sh
 # Output: prints the benchmark score (ops/sec) to stdout, or "FAILED" on error.
+#
+# Note: This script only runs the benchmark, NOT the tests.
+# The autoresearch.sh loop runs tests separately before calling this.
 
 set -euo pipefail
 
@@ -9,13 +12,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 cd "$PROJECT_DIR"
-
-echo "=== Running tests first ===" >&2
-if ! ./gradlew test -q 2>&1 | tail -5 >&2; then
-    echo "FAILED: tests did not pass" >&2
-    echo "FAILED"
-    exit 1
-fi
 
 echo "=== Running ENF1 throughput benchmark ===" >&2
 BENCHMARK_OUTPUT=$(./gradlew jmhRun \
