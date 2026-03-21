@@ -371,7 +371,8 @@ public class AstPrinter {
                     && node.getOperation() == OperationDefinition.Operation.QUERY) {
                 node(out, node.getSelectionSet());
             } else {
-                out.append(node.getOperation().toString().toLowerCase());
+                OperationDefinition.Operation op = node.getOperation();
+                out.append(op.toString().toLowerCase());
                 if (!isEmpty(name)) {
                     out.append(' ');
                     out.append(name);

@@ -80,7 +80,7 @@ public class QueryDirectivesImpl implements QueryDirectives {
 
                 ImmutableList.Builder<QueryAppliedDirective> appliedDirectiveBuilder = ImmutableList.builder();
                 for (GraphQLDirective resolvedDirective : resolvedDirectives) {
-                    QueryAppliedDirective appliedDirective = toAppliedDirective(resolvedDirective);
+                    QueryAppliedDirective appliedDirective = directivesResolver.toAppliedDirective(resolvedDirective);
                     appliedDirectiveBuilder.add(appliedDirective);
                     gqlDirectiveCounterParts.put(resolvedDirective, appliedDirective);
                 }
@@ -123,23 +123,6 @@ public class QueryDirectivesImpl implements QueryDirectives {
             this.fieldAppliedDirectivesByField = ImmutableMap.copyOf(byFieldApplied);
             this.normalizedValuesByAppliedDirective = ImmutableMap.copyOf(normalizedValuesByAppliedDirective);
         });
-    }
-
-    private QueryAppliedDirective toAppliedDirective(GraphQLDirective directive) {
-        QueryAppliedDirective.Builder builder = QueryAppliedDirective.newDirective();
-        builder.name(directive.getName());
-        for (GraphQLArgument argument : directive.getArguments()) {
-            builder.argument(toAppliedArgument(argument));
-        }
-        return builder.build();
-    }
-
-    private QueryAppliedDirectiveArgument toAppliedArgument(GraphQLArgument argument) {
-        return QueryAppliedDirectiveArgument.newArgument()
-                .name(argument.getName())
-                .type(argument.getType())
-                .inputValueWithState(argument.getArgumentValue())
-                .build();
     }
 
 

@@ -6,8 +6,10 @@ import graphql.parser.Parser;
 import graphql.parser.ParserEnvironment;
 import graphql.parser.ParserOptions;
 import graphql.schema.GraphQLSchema;
+import graphql.validation.OperationValidationRule;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
@@ -28,7 +30,7 @@ public class ParseAndValidate {
 
     /**
      * This {@link GraphQLContext} hint can be used to supply a Predicate to the Validator so that certain rules can be skipped.
-     * <p>
+     *
      * This is an internal capability that you should use at your own risk.  While we intend for this to be present for some time, the validation
      * rule class names may change, as may this mechanism.
      */
@@ -44,7 +46,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static ParseAndValidateResult parseAndValidate(GraphQLSchema graphQLSchema, ExecutionInput executionInput) {
+    public static ParseAndValidateResult parseAndValidate(@NonNull GraphQLSchema graphQLSchema, @NonNull ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
             List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"), executionInput.getLocale());
@@ -60,7 +62,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static ParseAndValidateResult parse(ExecutionInput executionInput) {
+    public static ParseAndValidateResult parse(@NonNull ExecutionInput executionInput) {
         try {
             //
             // we allow the caller to specify new parser options by context
@@ -89,8 +91,8 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Locale locale) {
-        return validate(graphQLSchema, parsedDocument, ruleClass -> true, locale);
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Locale locale) {
+        return validate(graphQLSchema, parsedDocument, rule -> true, locale);
     }
 
     /**
@@ -101,8 +103,8 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument) {
-        return validate(graphQLSchema, parsedDocument, ruleClass -> true, Locale.getDefault());
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument) {
+        return validate(graphQLSchema, parsedDocument, rule -> true, Locale.getDefault());
     }
 
     /**
@@ -115,7 +117,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<Class<?>> rulePredicate, Locale locale) {
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<OperationValidationRule> rulePredicate, @NonNull Locale locale) {
         Validator validator = new Validator();
         return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale);
     }
@@ -129,7 +131,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<Class<?>> rulePredicate) {
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<OperationValidationRule> rulePredicate) {
         Validator validator = new Validator();
         return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, Locale.getDefault());
     }
