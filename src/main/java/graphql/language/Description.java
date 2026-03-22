@@ -1,16 +1,19 @@
 package graphql.language;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 
 @PublicApi
+@NullMarked
 public class Description implements Serializable {
     public final String content;
-    public final SourceLocation sourceLocation;
+    public final @Nullable SourceLocation sourceLocation;
     public final boolean multiLine;
 
-    public Description(String content, SourceLocation sourceLocation, boolean multiLine) {
+    public Description(String content, @Nullable SourceLocation sourceLocation, boolean multiLine) {
         this.content = content;
         this.sourceLocation = sourceLocation;
         this.multiLine = multiLine;
@@ -20,7 +23,7 @@ public class Description implements Serializable {
         return content;
     }
 
-    public SourceLocation getSourceLocation() {
+    public @Nullable SourceLocation getSourceLocation() {
         return sourceLocation;
     }
 
