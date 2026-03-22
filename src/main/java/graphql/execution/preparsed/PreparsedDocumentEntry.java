@@ -8,6 +8,7 @@ import java.io.Serializable;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -36,7 +37,7 @@ public class PreparsedDocumentEntry implements Serializable {
     public PreparsedDocumentEntry(Document document) {
         assertNotNull(document);
         this.document = document;
-        this.errors = null;
+        this.errors = emptyList();
     }
 
     public PreparsedDocumentEntry(List<? extends GraphQLError> errors) {
@@ -58,6 +59,6 @@ public class PreparsedDocumentEntry implements Serializable {
     }
 
     public boolean hasErrors() {
-        return errors != null && !errors.isEmpty();
+        return !errors.isEmpty();
     }
 }
