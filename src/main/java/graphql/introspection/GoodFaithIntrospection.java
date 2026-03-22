@@ -4,12 +4,6 @@ import graphql.ErrorClassification;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
-import graphql.language.Definition;
-import graphql.language.Document;
-import graphql.language.Field;
-import graphql.language.OperationDefinition;
-import graphql.language.Selection;
-import graphql.language.SelectionSet;
 import graphql.language.SourceLocation;
 import graphql.validation.QueryComplexityLimits;
 import org.jspecify.annotations.NullMarked;
@@ -90,33 +84,6 @@ public class GoodFaithIntrospection {
     }
 
     /**
-     * Performs a shallow scan of the document to check if any operation's top-level selections
-     * contain introspection fields ({@code __schema} or {@code __type}).
-     *
-     * @param document the parsed document
-     *
-     * @return true if the document contains top-level introspection fields
-     */
-    public static boolean containsIntrospectionFields(Document document) {
-        for (Definition<?> definition : document.getDefinitions()) {
-            if (definition instanceof OperationDefinition) {
-                SelectionSet selectionSet = ((OperationDefinition) definition).getSelectionSet();
-                if (selectionSet != null) {
-                    for (Selection<?> selection : selectionSet.getSelections()) {
-                        if (selection instanceof Field) {
-                            String name = ((Field) selection).getName();
-                            if ("__schema".equals(name) || "__type".equals(name)) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
      * Returns query complexity limits that are the minimum of the existing limits and the
      * good faith introspection limits. This ensures introspection queries are bounded
      * without overriding tighter user-specified limits.
@@ -125,10 +92,7 @@ public class GoodFaithIntrospection {
      *
      * @return complexity limits with good faith bounds applied
      */
-    public static QueryComplexityLimits goodFaithLimits(@Nullable QueryComplexityLimits existing) {
-        if (existing == null) {
-            existing = QueryComplexityLimits.getDefaultLimits();
-        }
+    public static QueryComplexityLimits goodFaithLimits(QueryComplexityLimits existing) {
         int maxFields = Math.min(existing.getMaxFieldsCount(), GOOD_FAITH_MAX_FIELDS_COUNT);
         int maxDepth = Math.min(existing.getMaxDepth(), GOOD_FAITH_MAX_DEPTH_COUNT);
         return QueryComplexityLimits.newLimits()

@@ -189,6 +189,41 @@ class GoodFaithIntrospectionTest extends Specification {
         100 | GoodFaithIntrospection.BadFaithIntrospectionError.class
     }
 
+    def "introspection via inline fragment on Query is detected as bad faith"() {
+        def query = """
+            query badActor {
+                ...on Query {
+                    __schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}
+                }
+            }
+        """
+
+        when:
+        ExecutionResult er = graphql.execute(query)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+    }
+
+    def "introspection via fragment spread is detected as bad faith"() {
+        def query = """
+            query badActor {
+                ...IntrospectionFragment
+            }
+            fragment IntrospectionFragment on Query {
+                __schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}
+            }
+        """
+
+        when:
+        ExecutionResult er = graphql.execute(query)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+    }
+
     def "good faith limits are applied on top of custom user limits"() {
         given:
         def limits = QueryComplexityLimits.newLimits().maxFieldsCount(200).maxDepth(15).build()
@@ -201,18 +236,6 @@ class GoodFaithIntrospectionTest extends Specification {
 
         then:
         er.errors.isEmpty()
-    }
-
-    def "containsIntrospectionFields handles operation with no selection set"() {
-        given:
-        def op = graphql.language.OperationDefinition.newOperationDefinition()
-                .name("empty")
-                .operation(graphql.language.OperationDefinition.Operation.QUERY)
-                .build()
-        def doc = Document.newDocument().definition(op).build()
-
-        expect:
-        !GoodFaithIntrospection.containsIntrospectionFields(doc)
     }
 
     def "introspection query exceeding field count limit is detected as bad faith"() {

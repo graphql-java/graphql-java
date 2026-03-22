@@ -14,6 +14,7 @@ import graphql.execution.MergedSelectionSet;
 import graphql.execution.TypeFromAST;
 import graphql.execution.ValuesResolver;
 import graphql.i18n.I18nMsg;
+import graphql.introspection.GoodFaithIntrospection;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
@@ -332,7 +333,7 @@ public class OperationValidator implements DocumentVisitor {
     private int fieldCount = 0;
     private int currentFieldDepth = 0;
     private int maxFieldDepthSeen = 0;
-    private final QueryComplexityLimits complexityLimits;
+    private QueryComplexityLimits complexityLimits;
     // Fragment complexity calculated lazily during first spread
     private final Map<String, FragmentComplexityInfo> fragmentComplexityMap = new HashMap<>();
     // Max depth seen during current fragment traversal (for calculating fragment's internal depth)
@@ -340,6 +341,7 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- State: Good Faith Introspection ---
     private final Map<String, Integer> introspectionFieldCounts = new HashMap<>();
+    private boolean introspectionQueryDetected = false;
 
     // --- Track whether we're in a context where fragment spread rules should run ---
     // fragmentRetraversalDepth == 0 means we're NOT inside a manually-traversed fragment => run non-fragment-spread checks
@@ -406,6 +408,10 @@ public class OperationValidator implements DocumentVisitor {
 
     private void checkFieldCountLimit() {
         if (fieldCount > complexityLimits.getMaxFieldsCount()) {
+            if (introspectionQueryDetected) {
+                throw GoodFaithIntrospectionExceeded.tooBigOperation(
+                        "Query has " + fieldCount + " fields which exceeds maximum allowed " + complexityLimits.getMaxFieldsCount());
+            }
             throw new QueryComplexityLimitsExceeded(
                     ValidationErrorType.MaxQueryFieldsExceeded,
                     complexityLimits.getMaxFieldsCount(),
@@ -417,6 +423,10 @@ public class OperationValidator implements DocumentVisitor {
         if (depth > maxFieldDepthSeen) {
             maxFieldDepthSeen = depth;
             if (maxFieldDepthSeen > complexityLimits.getMaxDepth()) {
+                if (introspectionQueryDetected) {
+                    throw GoodFaithIntrospectionExceeded.tooBigOperation(
+                            "Query depth " + maxFieldDepthSeen + " exceeds maximum allowed depth " + complexityLimits.getMaxDepth());
+                }
                 throw new QueryComplexityLimitsExceeded(
                         ValidationErrorType.MaxQueryDepthExceeded,
                         complexityLimits.getMaxDepth(),
@@ -629,6 +639,10 @@ public class OperationValidator implements DocumentVisitor {
             if (queryType != null && parentType.getName().equals(queryType.getName())) {
                 if ("__schema".equals(fieldName) || "__type".equals(fieldName)) {
                     key = parentType.getName() + "." + fieldName;
+                    if (!introspectionQueryDetected) {
+                        introspectionQueryDetected = true;
+                        complexityLimits = GoodFaithIntrospection.goodFaithLimits(complexityLimits);
+                    }
                 }
             }
         }

@@ -30,7 +30,6 @@ import graphql.validation.GoodFaithIntrospectionExceeded;
 import graphql.validation.OperationValidationRule;
 import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationError;
-import graphql.validation.ValidationErrorType;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 
@@ -609,31 +608,16 @@ public class GraphQL {
         validationCtx.onDispatched();
 
         Predicate<OperationValidationRule> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
-        Locale locale = executionInput.getLocale() != null ? executionInput.getLocale() : Locale.getDefault();
+        Locale locale = executionInput.getLocale();
         QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
 
-        // Good Faith Introspection: apply tighter limits and enable the rule for introspection queries
-        boolean goodFaithActive = GoodFaithIntrospection.isEnabled(executionInput.getGraphQLContext())
-                && GoodFaithIntrospection.containsIntrospectionFields(document);
-        if (goodFaithActive) {
-            limits = GoodFaithIntrospection.goodFaithLimits(limits);
-        } else {
+        // Good Faith Introspection: disable the rule if good faith is off
+        if (!GoodFaithIntrospection.isEnabled(executionInput.getGraphQLContext())) {
             Predicate<OperationValidationRule> existing = validationRulePredicate;
             validationRulePredicate = rule -> rule != OperationValidationRule.GOOD_FAITH_INTROSPECTION && existing.test(rule);
         }
 
         List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale, limits);
-
-        // If good faith is active and a complexity limit error was produced, convert it to a bad faith error
-        if (goodFaithActive) {
-            for (ValidationError error : validationErrors) {
-                if (error.getValidationErrorType() == ValidationErrorType.MaxQueryFieldsExceeded
-                        || error.getValidationErrorType() == ValidationErrorType.MaxQueryDepthExceeded) {
-                    validationCtx.onCompleted(null, null);
-                    throw GoodFaithIntrospectionExceeded.tooBigOperation(error.getDescription());
-                }
-            }
-        }
 
         validationCtx.onCompleted(validationErrors, null);
         return validationErrors;
