@@ -1,6 +1,10 @@
-# https://docs.github.com/en/code-security/tutorials/secure-your-dependencies/automating-dependabot-with-github-actions#enable-auto-merge-on-a-pull-request
+# Auto-merge Dependabot PRs after CI passes.
+# Triggers on push to dependabot/* branches so it does NOT appear as a PR check.
 name: Dependabot auto-merge
-on: pull_request_target
+on:
+  push:
+    branches:
+      - 'dependabot/**'
 
 permissions:
   contents: write
@@ -9,15 +13,13 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.user.login == 'dependabot[bot]' && github.repository == 'graphql-java/graphql-java'
+    if: github.actor == 'dependabot[bot]' && github.repository == 'graphql-java/graphql-java'
     steps:
-      - name: Dependabot metadata
-        id: metadata
-        uses: dependabot/fetch-metadata@d7267f607e9d3fb96fc2fbe83e0af444713e90b7
-        with:
-          github-token: "${{ secrets.GITHUB_TOKEN }}"
       - name: Enable auto-merge for Dependabot PRs
-        run: gh pr merge --auto --squash "$PR_URL"
+        run: |
+          PR_URL=$(gh pr list --head "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json url --jq '.[0].url')
+          if [ -n "$PR_URL" ]; then
+            gh pr merge --auto --squash "$PR_URL"
+          fi
         env:
-          PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

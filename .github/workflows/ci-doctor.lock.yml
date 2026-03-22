@@ -28,7 +28,7 @@
 #
 # Source: githubnext/agentics/workflows/ci-doctor.md@ee50a3b7d1d3eb4a8c409ac9409fd61c9a66b0f5
 #
-# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"0fbcc28c3a0de45b34a4b1280e8b9a78cbdc6404bfe43196ef7b9968c5a1bae8","compiler_version":"v0.49.0"}
+# gh-aw-metadata: {"schema_version":"v1","frontmatter_hash":"bcdf59fa400502b56ce723d730807bf5e69604aca98d3e8c847424ccb46b15f2","compiler_version":"v0.49.0"}
 
 name: "CI Failure Doctor"
 "on":
@@ -1023,7 +1023,7 @@ jobs:
           GH_AW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           GH_AW_AGENT_CONCLUSION: ${{ needs.agent.result }}
           GH_AW_NOOP_MESSAGE: ${{ steps.noop.outputs.noop_message }}
-          GH_AW_NOOP_REPORT_AS_ISSUE: "true"
+          GH_AW_NOOP_REPORT_AS_ISSUE: "false"
         with:
           github-token: ${{ secrets.GH_AW_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}
           script: |
