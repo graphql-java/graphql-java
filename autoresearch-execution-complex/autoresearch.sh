@@ -5,6 +5,11 @@
 #   ./autoresearch-execution-complex/autoresearch.sh [max_iterations]
 #
 # Default: 200 iterations (designed for overnight runs)
+#
+# Safety:
+#   The agent runs with --permission-mode plan and explicit --allowedTools.
+#   It can read files, edit source code, and run gradle for profiling.
+#   Tests, benchmarks, git commits, and reverts are handled by the outer harness.
 
 set -euo pipefail
 
@@ -68,10 +73,14 @@ or the utility files listed in program.md.
 
 Make the change now."
 
+    # Allowed tools: read-only exploration + code edits + safe bash commands
+    ALLOWED_TOOLS='Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(cat:*),Bash(wc:*),Bash(head:*),Bash(tail:*),Bash(find:*),Bash(ls:*),Bash(grep:*),Bash(git diff:*),Bash(git status:*),Bash(git log:*),Bash(git show:*)'
+
     echo "--- Asking Claude to make an optimization ---"
     CLAUDE_OUTPUT=$(claude \
         --model sonnet \
-        --dangerously-skip-permissions \
+        --permission-mode plan \
+        --allowedTools "$ALLOWED_TOOLS" \
         --max-turns 25 \
         --verbose \
         -p "$PROMPT" \
