@@ -126,7 +126,7 @@ public class ExecutionContext {
 
     private Supplier<Map<String, ImmutableList<QueryAppliedDirective>>> mkOpDirectives(Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives) {
         return FpKit.interThreadMemoize(() -> {
-            List<QueryAppliedDirective> list = allOperationsDirectives.get().get(operationDefinition);
+            List<QueryAppliedDirective> list = allOperationsDirectives.get().getOrDefault(operationDefinition, ImmutableList.of());
             return OperationDirectivesResolver.toAppliedDirectivesByName(list);
         });
     }
