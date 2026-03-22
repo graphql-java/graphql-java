@@ -74,7 +74,7 @@ or the utility files listed in program.md.
 Make the change now."
 
     # Allowed tools: read-only exploration + code edits + safe bash commands
-    ALLOWED_TOOLS='Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(cat:*),Bash(wc:*),Bash(head:*),Bash(tail:*),Bash(find:*),Bash(ls:*),Bash(grep:*),Bash(git diff:*),Bash(git status:*),Bash(git log:*),Bash(git show:*)'
+    ALLOWED_TOOLS='Read,Glob,Grep,Edit,Write,Bash(./gradlew:*),Bash(cat:*),Bash(wc:*),Bash(head:*),Bash(tail:*),Bash(find:*),Bash(ls:*),Bash(grep:*),Bash(git diff:*),Bash(git status:*),Bash(git log:*),Bash(git show:*),Bash(git checkout:*)'
 
     echo "--- Asking Claude to make an optimization ---"
     CLAUDE_OUTPUT=$(claude \
