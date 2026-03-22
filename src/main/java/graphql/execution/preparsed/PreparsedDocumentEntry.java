@@ -7,6 +7,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
@@ -26,7 +27,7 @@ import static java.util.Collections.singletonList;
 @PublicApi
 public class PreparsedDocumentEntry implements Serializable {
     private final @Nullable Document document;
-    private final @Nullable List<? extends GraphQLError> errors;
+    private final List<? extends GraphQLError> errors;
 
     public PreparsedDocumentEntry(Document document,
                                   List<? extends GraphQLError> errors) {
@@ -39,7 +40,7 @@ public class PreparsedDocumentEntry implements Serializable {
     public PreparsedDocumentEntry(Document document) {
         assertNotNull(document);
         this.document = document;
-        this.errors = null;
+        this.errors = Collections.emptyList();
     }
 
     public PreparsedDocumentEntry(List<? extends GraphQLError> errors) {
@@ -57,12 +58,11 @@ public class PreparsedDocumentEntry implements Serializable {
         return document;
     }
 
-    @Nullable
     public List<? extends GraphQLError> getErrors() {
         return errors;
     }
 
     public boolean hasErrors() {
-        return errors != null && !errors.isEmpty();
+        return !errors.isEmpty();
     }
 }
