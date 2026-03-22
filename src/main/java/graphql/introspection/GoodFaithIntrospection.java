@@ -125,7 +125,7 @@ public class GoodFaithIntrospection {
      *
      * @return complexity limits with good faith bounds applied
      */
-    public static QueryComplexityLimits goodFaithLimits(QueryComplexityLimits existing) {
+    public static QueryComplexityLimits goodFaithLimits(@Nullable QueryComplexityLimits existing) {
         if (existing == null) {
             existing = QueryComplexityLimits.getDefaultLimits();
         }

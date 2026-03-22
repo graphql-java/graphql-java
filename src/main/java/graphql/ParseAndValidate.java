@@ -12,6 +12,7 @@ import graphql.validation.ValidationError;
 import graphql.validation.Validator;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -133,7 +134,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<OperationValidationRule> rulePredicate, @NonNull Locale locale, QueryComplexityLimits limits) {
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<OperationValidationRule> rulePredicate, @NonNull Locale locale, @Nullable QueryComplexityLimits limits) {
         Validator validator = new Validator();
         return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale, limits);
     }
