@@ -1,0 +1,385 @@
+name: PR Test Report
+# Posts test results and coverage as a PR comment.
+# Uses workflow_run so it has write permissions even for fork PRs.
+on:
+  workflow_run:
+    workflows: ["Pull Request Build"]
+    types: [completed]
+permissions:
+  pull-requests: write
+  actions: read
+jobs:
+  post-report:
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      (github.event.workflow_run.conclusion == 'success' ||
+       github.event.workflow_run.conclusion == 'failure')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download Test Stats
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          pattern: test-stats-*
+          merge-multiple: true
+          path: test-stats/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: coverage-report
+          path: coverage/
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Post Test Report Comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // --- Find the PR number from the triggering workflow run ---
+            // payload.workflow_run.pull_requests is often empty, so fall back
+            // to searching by head branch + repo when needed.
+            let prNumber = (context.payload.workflow_run.pull_requests || [])[0]?.number;
+            if (!prNumber) {
+              const headBranch = context.payload.workflow_run.head_branch;
+              const headOwner = context.payload.workflow_run.head_repository.owner.login;
+              const { data: prs } = await github.rest.pulls.list({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                head: `${headOwner}:${headBranch}`,
+                state: 'open',
+              });
+              if (prs.length > 0) {
+                prNumber = prs[0].number;
+              }
+            }
+            if (!prNumber) {
+              console.log('No pull request associated with this workflow run, skipping.');
+              return;
+            }
+            console.log(`Posting report for PR #${prNumber}`);
+
+            const { parseJacocoXml, pct, zeroCov, isRegression } = require('./.github/scripts/parse-jacoco.js');
+
+            const versions = ['java11', 'java17', 'java21', 'java25', 'jcstress'];
+            const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
+
+            // --- Read current test stats from artifacts ---
+            const current = {};
+            for (const v of versions) {
+              const file = path.join('test-stats', `${v}.json`);
+              if (fs.existsSync(file)) {
+                current[v] = JSON.parse(fs.readFileSync(file, 'utf8'));
+              } else {
+                current[v] = null;
+              }
+            }
+
+            // --- Read baseline from repo (read-only) ---
+            const baselineFile = 'test-baseline.json';
+            let baseline = { tests: {}, coverage: {} };
+            if (fs.existsSync(baselineFile)) {
+              baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
+            }
+            const baseTests = baseline.tests || {};
+            const baseCov = (baseline.coverage || {}).overall || {};
+            const baseClasses = (baseline.coverage || {}).classes || {};
+
+            // --- Parse JaCoCo XML for coverage ---
+            const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
+            const parsed = parseJacocoXml(jacocoFile);
+            const covLine = parsed?.overall?.line || null;
+            const covBranch = parsed?.overall?.branch || null;
+            const covMethod = parsed?.overall?.method || null;
+            const classCounters = parsed?.classes || {};
+
+            // --- Helpers ---
+            function delta(curr, prev, positiveIsGood) {
+              const d = curr - prev;
+              if (d === 0) return '±0';
+              const str = d > 0 ? `+${d}` : `${d}`;
+              if (positiveIsGood === undefined) return str;
+              const icon = (positiveIsGood ? d > 0 : d < 0) ? ' 🟢' : ' 🔴';
+              return str + icon;
+            }
+
+            function fmtCell(curr, prev, positiveIsGood) {
+              return `${curr} (${delta(curr, prev, positiveIsGood)})`;
+            }
+
+            function fmtPct(value) {
+              return value.toFixed(1) + '%';
+            }
+
+            function fmtPctDelta(curr, prev) {
+              const d = curr - prev;
+              if (Math.abs(d) < 0.05) return '±0.0%';
+              const str = d > 0 ? `+${d.toFixed(1)}%` : `${d.toFixed(1)}%`;
+              const icon = d > 0 ? ' 🟢' : ' 🔴';
+              return str + icon;
+            }
+
+            // --- Build Test Results table ---
+            let body = '<!-- test-report -->\n## Test Report\n\n';
+            body += '### Test Results\n';
+            body += '| Java Version | Total | Passed | Failed | Errors | Skipped |\n';
+            body += '|:-------------|------:|-------:|-------:|-------:|--------:|\n';
+
+            for (const v of versions) {
+              const c = current[v] || zeroTest;
+              const b = baseTests[v] || zeroTest;
+              const label = v.replace('java', 'Java ');
+              if (!current[v]) {
+                body += `| ${label} | - | - | - | - | - |\n`;
+              } else {
+                body += `| ${label} | ${fmtCell(c.total, b.total, true)} | ${fmtCell(c.passed, b.passed, true)} | ${fmtCell(c.failed, b.failed, false)} | ${fmtCell(c.errors, b.errors, false)} | ${fmtCell(c.skipped, b.skipped)} |\n`;
+              }
+            }
+
+            const totalCurr = { ...zeroTest };
+            const totalBase = { ...zeroTest };
+            let hasAny = false;
+            for (const v of versions) {
+              if (current[v]) {
+                hasAny = true;
+                for (const k of Object.keys(zeroTest)) {
+                  totalCurr[k] += current[v][k];
+                  totalBase[k] += (baseTests[v] || zeroTest)[k];
+                }
+              }
+            }
+            if (hasAny) {
+              body += `| **Total** | **${fmtCell(totalCurr.total, totalBase.total, true)}** | **${fmtCell(totalCurr.passed, totalBase.passed, true)}** | **${fmtCell(totalCurr.failed, totalBase.failed, false)}** | **${fmtCell(totalCurr.errors, totalBase.errors, false)}** | **${fmtCell(totalCurr.skipped, totalBase.skipped)}** |\n`;
+            }
+
+            // --- Build Coverage table ---
+            if (covLine || covBranch || covMethod) {
+              body += '\n### Code Coverage (Java 25)\n';
+              body += '| Metric   | Covered | Missed | Coverage | vs Master |\n';
+              body += '|:---------|--------:|-------:|---------:|----------:|\n';
+
+              const metrics = [
+                { name: 'Lines', curr: covLine, baseKey: 'line' },
+                { name: 'Branches', curr: covBranch, baseKey: 'branch' },
+                { name: 'Methods', curr: covMethod, baseKey: 'method' },
+              ];
+
+              for (const { name, curr, baseKey } of metrics) {
+                if (!curr) continue;
+                const b = baseCov[baseKey] || zeroCov;
+                const currPct = pct(curr.covered, curr.missed);
+                const basePct = pct(b.covered, b.missed);
+                body += `| ${name} | ${curr.covered} | ${curr.missed} | ${fmtPct(currPct)} | ${fmtPctDelta(currPct, basePct)} |\n`;
+              }
+
+              body += '\n';
+
+              // --- Per-class coverage deltas ---
+              const changedClasses = [];
+              for (const [cls, curr] of Object.entries(classCounters)) {
+                const totalLines = curr.line.covered + curr.line.missed;
+                if (totalLines === 0) continue;
+                const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
+                const currLinePct = pct(curr.line.covered, curr.line.missed);
+                const baseLinePct = pct(base.line.covered, base.line.missed);
+                const currBranchPct = pct(curr.branch.covered, curr.branch.missed);
+                const baseBranchPct = pct(base.branch.covered, base.branch.missed);
+                const currMethodPct = pct(curr.method.covered, curr.method.missed);
+                const baseMethodPct = pct(base.method.covered, base.method.missed);
+                // Check for improvements (positive delta) or real regressions (hybrid check)
+                const lineImproved = currLinePct > baseLinePct + 0.05;
+                const branchImproved = currBranchPct > baseBranchPct + 0.05;
+                const methodImproved = currMethodPct > baseMethodPct + 0.05;
+                const lineRegressed = isRegression(currLinePct, baseLinePct, curr.line.missed, base.line.missed);
+                const branchRegressed = isRegression(currBranchPct, baseBranchPct, curr.branch.missed, base.branch.missed);
+                const methodRegressed = isRegression(currMethodPct, baseMethodPct, curr.method.missed, base.method.missed);
+                if (lineImproved || branchImproved || methodImproved ||
+                    lineRegressed || branchRegressed || methodRegressed) {
+                  changedClasses.push({
+                    name: cls,
+                    linePct: currLinePct, lineDelta: currLinePct - baseLinePct,
+                    branchPct: currBranchPct, branchDelta: currBranchPct - baseBranchPct,
+                    methodPct: currMethodPct, methodDelta: currMethodPct - baseMethodPct,
+                    currMissed: { line: curr.line.missed, branch: curr.branch.missed, method: curr.method.missed },
+                    baseMissed: { line: base.line.missed, branch: base.branch.missed, method: base.method.missed },
+                    currMethods: curr.methods || [],
+                    baseMethods: base.methods || [],
+                  });
+                }
+              }
+              for (const cls of Object.keys(baseClasses)) {
+                const baseTotalLines = baseClasses[cls].line.covered + baseClasses[cls].line.missed;
+                if (baseTotalLines === 0) continue;
+                if (!classCounters[cls]) {
+                  changedClasses.push({
+                    name: cls,
+                    linePct: 0, lineDelta: -pct(baseClasses[cls].line.covered, baseClasses[cls].line.missed),
+                    branchPct: 0, branchDelta: -pct(baseClasses[cls].branch.covered, baseClasses[cls].branch.missed),
+                    methodPct: 0, methodDelta: -pct(baseClasses[cls].method.covered, baseClasses[cls].method.missed),
+                    removed: true,
+                  });
+                }
+              }
+
+              changedClasses.sort((a, b) => a.name.localeCompare(b.name));
+
+              function shortenClass(name) {
+                const dollarIdx = name.indexOf('$');
+                const mainPart = dollarIdx >= 0 ? name.substring(0, dollarIdx) : name;
+                const suffix = dollarIdx >= 0 ? name.substring(dollarIdx) : '';
+                const parts = mainPart.split('.');
+                const shortened = parts.map((p, i) => i < parts.length - 1 ? p[0] : p);
+                const result = shortened.join('.') + suffix;
+                return result.replace(/\$/g, '<br>\\$');
+              }
+
+              function fmtClassDelta(delta, currMissed, baseMissed) {
+                if (Math.abs(delta) < 0.05) return '±0.0%';
+                const str = delta > 0 ? `+${delta.toFixed(1)}%` : `${delta.toFixed(1)}%`;
+                if (delta > 0) return str + ' 🟢';
+                // Negative delta: only show as regression if missed count also increased
+                if (currMissed !== undefined && baseMissed !== undefined && currMissed <= baseMissed) {
+                  return '±0.0%';
+                }
+                return str + ' 🔴';
+              }
+
+              // Build a method-level detail block for classes with coverage decreases.
+              // Uses method name+desc as a stable key to match between baseline and current.
+              function buildMethodDetails(c) {
+                if (c.removed) return '';
+                // Only show method details for true regressions (hybrid check)
+                const lineRegressed = isRegression(c.linePct, c.linePct - c.lineDelta, c.currMissed.line, c.baseMissed.line);
+                const branchRegressed = isRegression(c.branchPct, c.branchPct - c.branchDelta, c.currMissed.branch, c.baseMissed.branch);
+                const methodRegressed = isRegression(c.methodPct, c.methodPct - c.methodDelta, c.currMissed.method, c.baseMissed.method);
+                if (!lineRegressed && !branchRegressed && !methodRegressed) return '';
+
+                const currMethods = c.currMethods || [];
+                const baseMethods = c.baseMethods || [];
+                if (currMethods.length === 0 && baseMethods.length === 0) return '';
+
+                // Index baseline methods by name+desc
+                const baseByKey = {};
+                for (const m of baseMethods) {
+                  baseByKey[m.name + m.desc] = m;
+                }
+
+                const rows = [];
+                const seen = new Set();
+                for (const m of currMethods) {
+                  const key = m.name + m.desc;
+                  seen.add(key);
+                  const bm = baseByKey[key];
+                  const currLinePct = pct(m.counters.line.covered, m.counters.line.missed);
+                  const baseLinePct = bm ? pct(bm.counters.line.covered, bm.counters.line.missed) : null;
+                  const currBranchTotal = m.counters.branch.covered + m.counters.branch.missed;
+                  const currBranchPct = currBranchTotal > 0 ? pct(m.counters.branch.covered, m.counters.branch.missed) : null;
+                  const baseBranchPct = bm ? (() => {
+                    const t = bm.counters.branch.covered + bm.counters.branch.missed;
+                    return t > 0 ? pct(bm.counters.branch.covered, bm.counters.branch.missed) : null;
+                  })() : null;
+
+                  // Show methods that actually changed coverage or are new/removed.
+                  // When baseline method data exists, only show methods whose coverage
+                  // moved — this avoids noise from methods that were already partially
+                  // covered. Fall back to showing all uncovered methods when no baseline
+                  // method data is available yet.
+                  const hasMissed = m.counters.line.missed > 0 || m.counters.branch.missed > 0;
+                  const lineChanged = baseLinePct !== null && Math.abs(currLinePct - baseLinePct) >= 0.05;
+                  const branchChanged = currBranchPct !== null && baseBranchPct !== null && Math.abs(currBranchPct - baseBranchPct) >= 0.05;
+                  const isNew = !bm;
+                  const show = baseMethods.length > 0
+                    ? (lineChanged || branchChanged || isNew)
+                    : (hasMissed || isNew);
+
+                  if (show) {
+                    let lineStr = fmtPct(currLinePct);
+                    if (baseLinePct !== null && Math.abs(currLinePct - baseLinePct) >= 0.05) {
+                      lineStr += ` (${fmtPctDelta(currLinePct, baseLinePct)})`;
+                    }
+                    let branchStr = currBranchPct !== null ? fmtPct(currBranchPct) : '—';
+                    if (currBranchPct !== null && baseBranchPct !== null && Math.abs(currBranchPct - baseBranchPct) >= 0.05) {
+                      branchStr += ` (${fmtPctDelta(currBranchPct, baseBranchPct)})`;
+                    }
+                    const tag = isNew ? ' **new**' : '';
+                    const displayName = m.name === '<init>' ? '*constructor*' : m.name;
+                    rows.push(`| ${displayName}${tag} | ${lineStr} | ${branchStr} |`);
+                  }
+                }
+                // Methods removed since baseline
+                for (const bm of baseMethods) {
+                  const key = bm.name + bm.desc;
+                  if (!seen.has(key)) {
+                    const displayName = bm.name === '<init>' ? '*constructor*' : bm.name;
+                    rows.push(`| ~~${displayName}~~ | *removed* | *removed* |`);
+                  }
+                }
+
+                if (rows.length === 0) return '';
+
+                const shortName = c.name.split('.').pop().replace(/\$/g, '.');
+                let detail = `\n<details>\n<summary>${shortName} — method details</summary>\n\n`;
+                detail += '| Method | Line | Branch |\n';
+                detail += '|:-------|-----:|-------:|\n';
+                detail += rows.join('\n') + '\n';
+                detail += '\n</details>\n';
+                return detail;
+              }
+
+              if (changedClasses.length > 0) {
+                body += `**Changed Class Coverage** (${changedClasses.length} ${changedClasses.length === 1 ? 'class' : 'classes'})\n\n`;
+                body += '| Class | Line | Branch | Method |\n';
+                body += '|:------|-----:|-------:|-------:|\n';
+                for (const c of changedClasses) {
+                  if (c.removed) {
+                    body += `| ${shortenClass(c.name)} | *removed* | *removed* | *removed* |\n`;
+                  } else {
+                    body += `| ${shortenClass(c.name)} | ${fmtClassDelta(c.lineDelta, c.currMissed.line, c.baseMissed.line)} | ${fmtClassDelta(c.branchDelta, c.currMissed.branch, c.baseMissed.branch)} | ${fmtClassDelta(c.methodDelta, c.currMissed.method, c.baseMissed.method)} |\n`;
+                  }
+                }
+                body += '\n';
+
+                // Add collapsible method-level details for classes with coverage decreases
+                for (const c of changedClasses) {
+                  body += buildMethodDetails(c);
+                }
+              } else {
+                body += '> No per-class coverage changes detected.\n';
+              }
+
+              body += '\n> Full HTML report: build artifact `jacoco-html-report`\n';
+            }
+
+            // Timestamp
+            const now = new Date().toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+            body += `\n> *Updated: ${now}*\n`;
+
+            // --- Post or update single comment ---
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            const marker = '<!-- test-report -->';
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+            console.log(`Posted test report comment on PR #${prNumber}`);

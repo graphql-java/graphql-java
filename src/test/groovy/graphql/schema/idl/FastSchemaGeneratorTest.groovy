@@ -329,4 +329,5 @@ class FastSchemaGeneratorTest extends Specification {
         notThrown(InvalidSchemaException)
         schema != null
     }
+
 }

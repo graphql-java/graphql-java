@@ -3,6 +3,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
 
 import java.io.Serializable;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.List;
  * This costs more memory but for certain use cases (like editors) this maybe be useful
  */
 @PublicApi
+@NullMarked
 public class IgnoredChars implements Serializable {
 
     private final ImmutableList<IgnoredChar> left;

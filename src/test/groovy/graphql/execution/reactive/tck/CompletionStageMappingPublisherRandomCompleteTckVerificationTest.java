@@ -12,6 +12,8 @@ import java.time.Duration;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 /**
@@ -49,6 +51,7 @@ public class CompletionStageMappingPublisherRandomCompleteTckVerificationTest ex
 
     @NonNull
     private static Function<Integer, CompletionStage<String>> mapperFunc() {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         return i -> CompletableFuture.supplyAsync(() -> {
             int ms = rand(0, 5);
             try {
@@ -57,7 +60,7 @@ public class CompletionStageMappingPublisherRandomCompleteTckVerificationTest ex
                 throw new RuntimeException(e);
             }
             return i + "!";
-        });
+        }, executor);
     }
 
     static Random rn = new Random();
