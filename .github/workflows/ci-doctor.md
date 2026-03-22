@@ -19,6 +19,8 @@ permissions: read-all
 network: defaults
 
 safe-outputs:
+  noop:
+    report-as-issue: false
   create-issue:
     title-prefix: "${{ github.workflow }}"
     labels: [automation, ci]
