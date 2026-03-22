@@ -39,7 +39,7 @@ public class ValidationContext {
         this(schema, document, i18n, null);
     }
 
-    public ValidationContext(GraphQLSchema schema, Document document, I18n i18n, QueryComplexityLimits limits) {
+    public ValidationContext(GraphQLSchema schema, Document document, I18n i18n, @Nullable QueryComplexityLimits limits) {
         this.schema = schema;
         this.document = document;
         this.traversalContext = new TraversalContext(schema);

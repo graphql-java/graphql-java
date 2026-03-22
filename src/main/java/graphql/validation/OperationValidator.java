@@ -624,7 +624,7 @@ public class OperationValidator implements DocumentVisitor {
         // Check query-level introspection fields (__schema, __type).
         // Only counted at the structural level (not during fragment traversal) to match ENO merging
         // behavior where the same field from a direct selection and a fragment spread merge into one.
-        if (shouldRunNonFragmentSpreadChecks()) {
+        if (shouldRunDocumentLevelRules()) {
             GraphQLObjectType queryType = validationContext.getSchema().getQueryType();
             if (queryType != null && parentType.getName().equals(queryType.getName())) {
                 if ("__schema".equals(fieldName) || "__type".equals(fieldName)) {
