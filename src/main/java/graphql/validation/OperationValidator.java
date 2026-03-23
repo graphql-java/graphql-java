@@ -636,7 +636,7 @@ public class OperationValidator implements DocumentVisitor {
         // behavior where the same field from a direct selection and a fragment spread merge into one.
         if (shouldRunDocumentLevelRules()) {
             GraphQLObjectType queryType = validationContext.getSchema().getQueryType();
-            if (queryType != null && parentType.getName().equals(queryType.getName())) {
+            if (parentType.getName().equals(queryType.getName())) {
                 if ("__schema".equals(fieldName) || "__type".equals(fieldName)) {
                     key = parentType.getName() + "." + fieldName;
                     if (!introspectionQueryDetected) {
