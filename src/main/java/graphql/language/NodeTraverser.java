@@ -7,6 +7,7 @@ import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -18,6 +19,7 @@ import java.util.function.Function;
  * Lets you traverse a {@link Node} tree.
  */
 @PublicApi
+@NullMarked
 public class NodeTraverser {
 
 
