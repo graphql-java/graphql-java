@@ -19,7 +19,7 @@ class PreparsedDocumentEntryTest extends Specification {
 
         then:
         docEntry.document == document
-        docEntry.errors == null
+        docEntry.errors == []
     }
 
     def "Ensure a null document throws Exception"() {

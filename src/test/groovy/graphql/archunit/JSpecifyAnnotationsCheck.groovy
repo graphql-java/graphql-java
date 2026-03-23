@@ -12,16 +12,6 @@ class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
             "graphql.analysis.QueryTraverser",
-            "graphql.execution.incremental.DeferredExecution",
-            "graphql.execution.instrumentation.ChainedInstrumentation",
-            "graphql.execution.instrumentation.DocumentAndVariables",
-            "graphql.execution.instrumentation.NoContextChainedInstrumentation",
-            "graphql.execution.ResponseMapFactory",
-            "graphql.execution.instrumentation.SimpleInstrumentation",
-            "graphql.execution.instrumentation.SimpleInstrumentationContext",
-            "graphql.execution.instrumentation.SimplePerformantInstrumentation",
-            "graphql.execution.instrumentation.fieldvalidation.FieldAndArguments",
-            "graphql.execution.instrumentation.fieldvalidation.FieldValidationEnvironment",
             "graphql.extensions.ExtensionsBuilder",
             "graphql.incremental.DeferPayload",
             "graphql.incremental.DelayedIncrementalPartialResult",
