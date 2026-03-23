@@ -70,7 +70,7 @@ public class QueryComplexityLimits {
      * @param limits the default limits to use (use {@link #NONE} to disable, {@link #DEFAULT} to restore)
      */
     public static void setDefaultLimits(QueryComplexityLimits limits) {
-        defaultLimits = limits != null ? limits : DEFAULT;
+        defaultLimits = limits;
     }
 
     /**
