@@ -15,6 +15,7 @@ import graphql.execution.TypeFromAST;
 import graphql.execution.ValuesResolver;
 import graphql.i18n.I18nMsg;
 import graphql.introspection.GoodFaithIntrospection;
+import graphql.introspection.Introspection;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
@@ -637,7 +638,7 @@ public class OperationValidator implements DocumentVisitor {
         if (shouldRunDocumentLevelRules()) {
             GraphQLObjectType queryType = validationContext.getSchema().getQueryType();
             if (parentType.getName().equals(queryType.getName())) {
-                if ("__schema".equals(fieldName) || "__type".equals(fieldName)) {
+                if (Introspection.SchemaMetaFieldDef.getName().equals(fieldName) || Introspection.TypeMetaFieldDef.getName().equals(fieldName)) {
                     key = parentType.getName() + "." + fieldName;
                     if (!introspectionQueryDetected) {
                         introspectionQueryDetected = true;
@@ -650,7 +651,7 @@ public class OperationValidator implements DocumentVisitor {
         // Check __Type fields that can form cycles.
         // Counted during ALL traversals (including fragment spreads) because each occurrence
         // at a different depth represents a separate cycle risk.
-        if ("__Type".equals(parentType.getName())) {
+        if (Introspection.__Type.getName().equals(parentType.getName())) {
             if ("fields".equals(fieldName) || "inputFields".equals(fieldName)
                     || "interfaces".equals(fieldName) || "possibleTypes".equals(fieldName)) {
                 key = "__Type." + fieldName;
