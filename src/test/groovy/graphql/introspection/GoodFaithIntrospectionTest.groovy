@@ -2,10 +2,12 @@ package graphql.introspection
 
 import graphql.ExecutionInput
 import graphql.ExecutionResult
+import graphql.ParseAndValidate
 import graphql.TestUtil
 import graphql.execution.CoercedVariables
 import graphql.language.Document
 import graphql.normalized.ExecutableNormalizedOperationFactory
+import graphql.validation.OperationValidationRule
 import graphql.validation.QueryComplexityLimits
 import spock.lang.Specification
 
@@ -138,6 +140,24 @@ class GoodFaithIntrospectionTest extends Specification {
 
         when:
         ExecutionResult er = graphql.execute("query badActor{__schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}}")
+
+        then:
+        er.errors.isEmpty()
+    }
+
+    def "disabling good faith composes with custom validation rule predicates"() {
+        given:
+        // Custom predicate that disables a specific rule
+        def customPredicate = { OperationValidationRule rule -> rule != OperationValidationRule.KNOWN_ARGUMENT_NAMES } as java.util.function.Predicate
+
+        when:
+        def context = [
+                (GoodFaithIntrospection.GOOD_FAITH_INTROSPECTION_DISABLED)    : true,
+                (ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT)         : customPredicate
+        ]
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput("{ normalField }")
+                .graphQLContext(context).build()
+        ExecutionResult er = graphql.execute(executionInput)
 
         then:
         er.errors.isEmpty()
