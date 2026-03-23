@@ -90,7 +90,7 @@ def getDevelopmentVersion() {
     gitRevParse.waitForProcessOutput(gitRevParseOutput, gitRevParseError)
     def branchName = gitRevParseOutput.toString().trim().replaceAll('[/\\\\]', '-')
 
-    return makeDevelopmentVersion(["0.0.0", sanitizedBranchName, "SNAPSHOT"])
+    return makeDevelopmentVersion(["0.0.0", branchName, "SNAPSHOT"])
 }
 
 def reactiveStreamsVersion = '1.0.3'
