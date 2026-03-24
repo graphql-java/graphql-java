@@ -33,13 +33,19 @@ public class ValidationContext {
     private final Map<String, FragmentDefinition> fragmentDefinitionMap = new LinkedHashMap<>();
     private final I18n i18n;
     private final GraphQLContext graphQLContext;
+    private final QueryComplexityLimits queryComplexityLimits;
 
     public ValidationContext(GraphQLSchema schema, Document document, I18n i18n) {
+        this(schema, document, i18n, null);
+    }
+
+    public ValidationContext(GraphQLSchema schema, Document document, I18n i18n, @Nullable QueryComplexityLimits limits) {
         this.schema = schema;
         this.document = document;
         this.traversalContext = new TraversalContext(schema);
         this.i18n = i18n;
         this.graphQLContext = GraphQLContext.newContext().of(Locale.class, i18n.getLocale()).build();
+        this.queryComplexityLimits = limits != null ? limits : QueryComplexityLimits.getDefaultLimits();
         buildFragmentMap();
     }
 
@@ -107,6 +113,10 @@ public class ValidationContext {
 
     public GraphQLContext getGraphQLContext() {
         return graphQLContext;
+    }
+
+    public QueryComplexityLimits getQueryComplexityLimits() {
+        return queryComplexityLimits;
     }
 
     /**
