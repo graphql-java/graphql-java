@@ -1,10 +1,12 @@
 package graphql.normalized;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
+import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.directives.QueryDirectives;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
@@ -25,6 +27,7 @@ import java.util.Map;
 @PublicApi
 public class ExecutableNormalizedOperation {
     private final OperationDefinition.Operation operation;
+    private final Map<String, ImmutableList<QueryAppliedDirective>> operationDirectives;
     private final String operationName;
     private final List<ExecutableNormalizedField> topLevelFields;
     private final ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField;
@@ -37,6 +40,7 @@ public class ExecutableNormalizedOperation {
     public ExecutableNormalizedOperation(
             OperationDefinition.Operation operation,
             String operationName,
+            Map<String, ImmutableList<QueryAppliedDirective>> operationDirectives,
             List<ExecutableNormalizedField> topLevelFields,
             ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField,
             Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
@@ -46,6 +50,7 @@ public class ExecutableNormalizedOperation {
             int operationDepth) {
         this.operation = operation;
         this.operationName = operationName;
+        this.operationDirectives = operationDirectives;
         this.topLevelFields = topLevelFields;
         this.fieldToNormalizedField = fieldToNormalizedField;
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;
@@ -67,6 +72,20 @@ public class ExecutableNormalizedOperation {
      */
     public String getOperationName() {
         return operationName;
+    }
+
+    /**
+     * This is the directives that are on the operation itself and not the fields under it for example
+     * <pre>
+     * {@code
+     *   query opName @foo { field }
+     * }
+     * </pre>
+     *
+     * @return the directives that are on this operation itself.
+     */
+    public Map<String, ImmutableList<QueryAppliedDirective>> getOperationDirectives() {
+        return operationDirectives;
     }
 
     /**
