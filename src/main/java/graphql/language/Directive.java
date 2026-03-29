@@ -7,6 +7,9 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,6 +24,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.nodeByName;
 
 @PublicApi
+@NullMarked
 public class Directive extends AbstractNode<Directive> implements NamedNode<Directive> {
     private final String name;
     private final ImmutableList<Argument> arguments;
@@ -28,7 +32,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     public static final String CHILD_ARGUMENTS = "arguments";
 
     @Internal
-    protected Directive(String name, List<Argument> arguments, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected Directive(String name, List<Argument> arguments, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.arguments = ImmutableList.copyOf(arguments);
@@ -63,7 +67,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
         return nodeByName(arguments);
     }
 
-    public Argument getArgument(String argumentName) {
+    public @Nullable Argument getArgument(String argumentName) {
         return NodeUtil.findNodeByName(arguments, argumentName);
     }
 
@@ -93,7 +97,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -109,7 +113,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
 
     @Override
     public Directive deepCopy() {
-        return new Directive(name, deepCopy(arguments), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new Directive(name, assertNotNull(deepCopy(arguments), "arguments cannot be null"), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -135,6 +139,7 @@ public class Directive extends AbstractNode<Directive> implements NamedNode<Dire
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();

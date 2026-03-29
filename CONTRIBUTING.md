@@ -20,6 +20,35 @@ therefore we avoid adding any new dependency.
 access etc is out of scope.
 
 
+## File Validation
+
+This repository enforces file compatibility and size standards through both local Git hooks and CI checks.
+
+### Local Git Hooks
+
+To install the pre-commit hook locally, run:
+
+```bash
+./scripts/setup-hooks.sh
+```
+
+The pre-commit hook will automatically check for:
+
+- **Windows-incompatible filenames**: Files with characters that are reserved on Windows (< > : " | ? * \) will be rejected. This ensures the repository can be cloned on Windows systems.
+
+- **Large files**: Files larger than 10MB will be rejected. If you need to commit large files, consider:
+  - Splitting them into smaller parts (`.part1`, `.part2`, etc.)
+  - Reducing the file size
+
+- **Dangerous Unicode characters**: Files containing invisible or rendering-altering Unicode characters will be rejected. This protects against [Trojan Source](https://trojansource.codes/) (BiDi override) and glassworm-style attacks. Blocked character categories include C0/C1 control characters, zero-width characters, and BiDi overrides.
+
+To bypass the hooks temporarily (not recommended), use `git commit --no-verify`.
+
+### CI Validation
+
+The same checks are also enforced by the "Validate Files" GitHub Action on all pull requests and pushes. This ensures that even if the local hook is bypassed, incompatible files will be caught during CI.
+
+
 If you have any question please consider asking in our [Discussions](https://github.com/graphql-java/graphql-java/discussions). For bug reports or specific code related topics create a new issue.
 
 Thanks!

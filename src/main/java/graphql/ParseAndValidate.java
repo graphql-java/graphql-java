@@ -72,7 +72,7 @@ public class ParseAndValidate {
             // we use the query parser options by default if they are not specified
             parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultOperationParserOptions());
             Parser parser = new Parser();
-            Locale locale = executionInput.getLocale() == null ? Locale.getDefault() : executionInput.getLocale();
+            Locale locale = executionInput.getLocale();
             ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
                     .document(executionInput.getQuery()).parserOptions(parserOptions)
                     .locale(locale)
@@ -134,7 +134,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<OperationValidationRule> rulePredicate, @NonNull Locale locale, @Nullable QueryComplexityLimits limits) {
+    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<OperationValidationRule> rulePredicate, Locale locale, @Nullable QueryComplexityLimits limits) {
         Validator validator = new Validator();
         return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale, limits);
     }

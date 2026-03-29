@@ -69,7 +69,7 @@ public class GraphQLSchema {
     private final @Nullable SchemaDefinition definition;
     private final ImmutableList<SchemaExtensionDefinition> extensionDefinitions;
     private final @Nullable String description;
-    private final @Nullable GraphQLCodeRegistry codeRegistry;
+    private final GraphQLCodeRegistry codeRegistry;
 
     private final ImmutableMap<String, GraphQLNamedType> typeMap;
     private final ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes;
@@ -77,7 +77,7 @@ public class GraphQLSchema {
 
     /*
      * This constructs partial GraphQL schema object which has the schema (query / mutation / subscription) trees
-     * in it but it does not have the collected types, code registry nor the type references replaced
+     * in it but it does not have the collected types, the correct code registry nor the type references replaced
      *
      * But it can be traversed to discover all that and filled out later via another constructor.
      *
@@ -102,7 +102,7 @@ public class GraphQLSchema {
         this.extensionDefinitions = nonNullCopyOf(builder.extensionDefinitions);
         this.description = builder.description;
 
-        this.codeRegistry = null;
+        this.codeRegistry = builder.codeRegistry;
         this.typeMap = ImmutableKit.emptyMap();
         this.interfaceNameToObjectTypes = ImmutableKit.emptyMap();
         this.interfaceNameToObjectTypeNames = ImmutableKit.emptyMap();
@@ -254,7 +254,7 @@ public class GraphQLSchema {
         return map.build();
     }
 
-    public @Nullable GraphQLCodeRegistry getCodeRegistry() {
+    public GraphQLCodeRegistry getCodeRegistry() {
         return codeRegistry;
     }
 
@@ -565,7 +565,7 @@ public class GraphQLSchema {
      *
      * @return the directive or null if there is not one with that name
      */
-    public GraphQLDirective getDirective(String directiveName) {
+    public @Nullable GraphQLDirective getDirective(String directiveName) {
         return directiveDefinitionsHolder.getDirective(directiveName);
     }
 
@@ -931,6 +931,30 @@ public class GraphQLSchema {
             return this;
         }
 
+        /**
+         * Clears all directives from this builder, including any that were previously added
+         * via {@link #additionalDirective(GraphQLDirective)} or {@link #additionalDirectives(Set)}.
+         * Built-in directives ({@code @include}, {@code @skip}, {@code @deprecated}, etc.) will
+         * always be added back automatically at build time by {@code ensureBuiltInDirectives()}.
+         * <p>
+         * This is useful when transforming a schema to replace all non-built-in directives:
+         * <pre>{@code
+         * schema.transform(builder -> {
+         *     List<GraphQLDirective> nonBuiltIns = schema.getDirectives().stream()
+         *         .filter(d -> !Directives.isBuiltInDirective(d))
+         *         .collect(toList());
+         *     builder.clearDirectives()
+         *         .additionalDirectives(transform(nonBuiltIns));
+         * })
+         * }</pre>
+         *
+         * @return this builder
+         */
+        public Builder clearDirectives() {
+            this.additionalDirectives.clear();
+            return this;
+        }
+
         public Builder withSchemaDirectives(GraphQLDirective... directives) {
             for (GraphQLDirective directive : directives) {
                 withSchemaDirective(directive);
@@ -1215,6 +1239,7 @@ public class GraphQLSchema {
          * multiple FastBuilder instances.
          *
          * @param type the named type to add
+         *
          * @return this builder for chaining
          */
         public FastBuilder addType(GraphQLNamedType type) {
@@ -1264,6 +1289,7 @@ public class GraphQLSchema {
          * All non-root types added via this method will be included in {@link GraphQLSchema#getAdditionalTypes()}.
          *
          * @param types the named types to add
+         *
          * @return this builder for chaining
          */
         public FastBuilder addTypes(Collection<? extends GraphQLNamedType> types) {
@@ -1275,6 +1301,7 @@ public class GraphQLSchema {
          * Adds a directive definition to the schema.
          *
          * @param directive the directive to add
+         *
          * @return this builder for chaining
          */
         public FastBuilder additionalDirective(GraphQLDirective directive) {
@@ -1296,6 +1323,7 @@ public class GraphQLSchema {
          * Adds multiple directive definitions to the schema.
          *
          * @param directives the directives to add
+         *
          * @return this builder for chaining
          */
         public FastBuilder additionalDirectives(Collection<? extends GraphQLDirective> directives) {
@@ -1307,6 +1335,7 @@ public class GraphQLSchema {
          * Adds a schema-level directive (deprecated, use applied directives).
          *
          * @param directive the directive to add
+         *
          * @return this builder for chaining
          */
         public FastBuilder withSchemaDirective(GraphQLDirective directive) {
@@ -1318,6 +1347,7 @@ public class GraphQLSchema {
          * Adds multiple schema-level directives.
          *
          * @param directives the directives to add
+         *
          * @return this builder for chaining
          */
         public FastBuilder withSchemaDirectives(Collection<? extends GraphQLDirective> directives) {
@@ -1329,6 +1359,7 @@ public class GraphQLSchema {
          * Adds a schema-level applied directive.
          *
          * @param applied the applied directive to add
+         *
          * @return this builder for chaining
          */
         public FastBuilder withSchemaAppliedDirective(GraphQLAppliedDirective applied) {
@@ -1342,6 +1373,7 @@ public class GraphQLSchema {
          * Adds multiple schema-level applied directives.
          *
          * @param appliedList the applied directives to add
+         *
          * @return this builder for chaining
          */
         public FastBuilder withSchemaAppliedDirectives(Collection<? extends GraphQLAppliedDirective> appliedList) {
@@ -1355,6 +1387,7 @@ public class GraphQLSchema {
          * Sets the schema definition (AST).
          *
          * @param def the schema definition
+         *
          * @return this builder for chaining
          */
         public FastBuilder definition(SchemaDefinition def) {
@@ -1366,6 +1399,7 @@ public class GraphQLSchema {
          * Sets the schema extension definitions (AST).
          *
          * @param defs the extension definitions
+         *
          * @return this builder for chaining
          */
         public FastBuilder extensionDefinitions(List<SchemaExtensionDefinition> defs) {
@@ -1377,6 +1411,7 @@ public class GraphQLSchema {
          * Sets the schema description.
          *
          * @param description the description
+         *
          * @return this builder for chaining
          */
         public FastBuilder description(String description) {
@@ -1388,6 +1423,7 @@ public class GraphQLSchema {
          * Sets the introspection schema type.
          *
          * @param type the introspection schema type
+         *
          * @return this builder for chaining
          */
         public FastBuilder introspectionSchemaType(GraphQLObjectType type) {
@@ -1399,6 +1435,7 @@ public class GraphQLSchema {
          * Enables or disables schema validation.
          *
          * @param enabled true to enable validation, false to disable
+         *
          * @return this builder for chaining
          */
         public FastBuilder withValidation(boolean enabled) {
@@ -1415,9 +1452,10 @@ public class GraphQLSchema {
          * should not be reused with another FastBuilder.
          *
          * @return the built schema
+         *
          * @throws InvalidSchemaException if validation is enabled and the schema is invalid
-         * @throws AssertException if a type reference cannot be resolved or if an interface/union
-         *                         type is missing a type resolver
+         * @throws AssertException        if a type reference cannot be resolved or if an interface/union
+         *                                type is missing a type resolver
          */
         public GraphQLSchema build() {
             // Validate type resolvers for all interfaces and unions
