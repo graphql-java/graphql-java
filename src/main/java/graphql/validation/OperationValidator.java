@@ -316,6 +316,9 @@ public class OperationValidator implements DocumentVisitor {
     // Cache FieldAndType by Field identity — avoids re-creating objects and re-looking up field types
     // when the same fragment fields are collected across multiple mergeSubSelections calls
     private final IdentityHashMap<Field, FieldAndType> fieldAndTypeCache = new IdentityHashMap<>();
+    // Cache single-field sub-selections by FieldAndType identity — since FieldAndType is interned,
+    // the same field's sub-selections are collected once and reused across all recursion depths
+    private final IdentityHashMap<FieldAndType, Map<String, Set<FieldAndType>>> singleFieldSubSelectionsCache = new IdentityHashMap<>();
 
     // --- State: LoneAnonymousOperation ---
     private boolean hasAnonymousOp = false;
@@ -1285,6 +1288,22 @@ public class OperationValidator implements DocumentVisitor {
         Map<String, Set<FieldAndType>> cached = cache.get(sameNameFields);
         if (cached != null) {
             return cached;
+        }
+        // For single-element sets, cache by the FieldAndType identity (which is interned).
+        // This enables cross-recursion-depth reuse: the same field's sub-selections are
+        // collected once and reused at every depth, whereas the per-call IdentityHashMap cache
+        // only deduplicates between the two passes at the same depth.
+        if (sameNameFields.size() == 1) {
+            FieldAndType single = ((FieldSet) sameNameFields).first();
+            Map<String, Set<FieldAndType>> singleCached = singleFieldSubSelectionsCache.get(single);
+            if (singleCached != null) {
+                cache.put(sameNameFields, singleCached);
+                return singleCached;
+            }
+            Map<String, Set<FieldAndType>> result = mergeSubSelections(sameNameFields);
+            singleFieldSubSelectionsCache.put(single, result);
+            cache.put(sameNameFields, result);
+            return result;
         }
         Map<String, Set<FieldAndType>> result = mergeSubSelections(sameNameFields);
         cache.put(sameNameFields, result);
