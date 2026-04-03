@@ -1268,7 +1268,7 @@ public class OperationValidator implements DocumentVisitor {
                 pathStack.remove(pathStack.size() - 1);
             } else {
                 // Single field can't conflict with itself, but still recurse into sub-selections
-                FieldAndType single = fieldAndTypes.iterator().next();
+                FieldAndType single = ((FieldSet) fieldAndTypes).first();
                 if (single.field.getSelectionSet() != null) {
                     Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
                     if (!subSelections.isEmpty()) {
@@ -1315,7 +1315,7 @@ public class OperationValidator implements DocumentVisitor {
                 if (!sameForCommonParentsChecked.add(fieldAndTypes)) {
                     continue;
                 }
-                FieldAndType single = fieldAndTypes.iterator().next();
+                FieldAndType single = ((FieldSet) fieldAndTypes).first();
                 if (single.field.getSelectionSet() != null) {
                     Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
                     if (!subSelections.isEmpty()) {
@@ -1410,12 +1410,14 @@ public class OperationValidator implements DocumentVisitor {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
+        // Check for conflicts without allocating a fields list — only build it if a conflict is found.
+        // Must preserve partial-list semantics (fields up to and including conflicting one) for dedup.
         String name = null;
         List<Argument> arguments = null;
-        List<Field> fields = new ArrayList<>();
+        int count = 0;
         for (FieldAndType fieldAndType : fieldAndTypes) {
             Field field = fieldAndType.field;
-            fields.add(field);
+            count++;
             if (name == null) {
                 name = field.getName();
                 arguments = field.getArguments();
@@ -1423,14 +1425,30 @@ public class OperationValidator implements DocumentVisitor {
             }
             if (!field.getName().equals(name)) {
                 String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentFields", pathToString(path), name, field.getName());
-                return new Conflict(reason, fields);
+                return new Conflict(reason, collectFieldsUpTo(fieldAndTypes, count));
             }
             if (!sameArguments(field.getArguments(), arguments)) {
                 String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentArgs", pathToString(path));
-                return new Conflict(reason, fields);
+                return new Conflict(reason, collectFieldsUpTo(fieldAndTypes, count));
             }
         }
         return null;
+    }
+
+    /**
+     * Collects Field references from the first {@code limit} elements of fieldAndTypes.
+     * Preserves the same partial-list semantics as the original incremental collection.
+     */
+    private static List<Field> collectFieldsUpTo(Set<FieldAndType> fieldAndTypes, int limit) {
+        List<Field> fields = new ArrayList<>(limit);
+        int i = 0;
+        for (FieldAndType fieldAndType : fieldAndTypes) {
+            fields.add(fieldAndType.field);
+            if (++i >= limit) {
+                break;
+            }
+        }
+        return fields;
     }
 
     private String pathToString(List<String> path) {
@@ -1466,7 +1484,25 @@ public class OperationValidator implements DocumentVisitor {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
-        List<Field> fields = new ArrayList<>();
+        // Fast-path: if all fields resolve to the exact same type object (identity check),
+        // no type shape conflict is possible — skip the full unwrap-and-compare loop.
+        // This is the common case for overlapping fragments selecting the same field on the same type.
+        GraphQLType firstType = null;
+        boolean allSameType = true;
+        for (FieldAndType fieldAndType : fieldAndTypes) {
+            if (firstType == null) {
+                firstType = fieldAndType.graphQLType;
+            } else if (fieldAndType.graphQLType != firstType) {
+                allSameType = false;
+                break;
+            }
+        }
+        if (allSameType) {
+            return null;
+        }
+        // Slow path: types differ, do full unwrap-and-compare check.
+        // Build fields list only here (error path allocation) since conflicts are rare for valid queries.
+        List<Field> fields = new ArrayList<>(fieldAndTypes.size());
         GraphQLType typeAOriginal = null;
         for (FieldAndType fieldAndType : fieldAndTypes) {
             fields.add(fieldAndType.field);
@@ -1572,12 +1608,16 @@ public class OperationValidator implements DocumentVisitor {
      */
     private static class FieldSet extends LinkedHashSet<FieldAndType> {
         private int cachedHash = 0;
+        private @Nullable FieldAndType first;
 
         @Override
         public boolean add(FieldAndType e) {
             boolean added = super.add(e);
             if (added) {
                 cachedHash += e.hashCode();
+                if (first == null) {
+                    first = e;
+                }
             }
             return added;
         }
@@ -1585,6 +1625,15 @@ public class OperationValidator implements DocumentVisitor {
         @Override
         public int hashCode() {
             return cachedHash;
+        }
+
+        /**
+         * Returns the first element without allocating an Iterator.
+         * Only valid when the set is non-empty.
+         */
+        @SuppressWarnings("NullAway") // first is non-null when set is non-empty
+        FieldAndType first() {
+            return first;
         }
     }
 
