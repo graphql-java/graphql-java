@@ -24,14 +24,20 @@ import static graphql.Assert.assertNotNull;
  * <p>
  * Input coercion is made out of three different methods {@link #parseLiteral(Object)} which converts an literal Ast
  * into an internal input value, {@link #parseValue(Object)} which converts an external input value into an internal one
- * and {@link #valueToLiteral(Object)} which is a translation between an external input value into a literal.
- * <br>
- * The relationship between these three methods is as follows:
- * It is required that every valid external input values for {@link #parseValue(Object)} is also valid for
- * {@link #valueToLiteral(Object)}
- * and vice versa.
- * Furthermore the literals returned by {@link #valueToLiteral(Object)} are required to be valid for
- * {@link #parseLiteral(Object)}.
+ * and {@link #valueToLiteral(Object)} which converts an external input value into an AST literal.
+ * <p>
+ * The four methods form a consistent value conversion system:
+ * <ul>
+ *   <li>{@link #serialize(Object)} - converts an internal (runtime/Java) value to an external (serialized) value</li>
+ *   <li>{@link #parseValue(Object)} - converts an external (serialized) value to an internal (runtime/Java) value</li>
+ *   <li>{@link #parseLiteral(Object)} - converts an AST {@link Value} literal to an internal (runtime/Java) value</li>
+ *   <li>{@link #valueToLiteral(Object)} - converts an external (serialized) value to an AST {@link Value} literal</li>
+ * </ul>
+ * <p>
+ * The relationship between the input coercion methods is as follows:
+ * every valid external input value for {@link #parseValue(Object)} must also be valid for
+ * {@link #valueToLiteral(Object)} and vice versa. Furthermore, the AST literals returned by
+ * {@link #valueToLiteral(Object)} must be valid input for {@link #parseLiteral(Object)}.
  */
 @PublicSpi
 public interface Coercing<I, O> {
@@ -209,13 +215,20 @@ public interface Coercing<I, O> {
     /**
      * This is deprecated and you should implement {@link #valueToLiteral(Object, GraphQLContext, Locale)} instead
      * <p>
-     * Converts an external input value to a literal (Ast Value).
+     * Converts an external input value to an AST {@link Value} literal. The input is an external value in the
+     * same form that {@link #parseValue(Object)} accepts (e.g., a JSON-deserialized object such as a String,
+     * Number, or Map), not an internal runtime value. This is the inverse direction of {@link #parseLiteral(Object)}:
+     * while {@code parseLiteral} converts AST to internal, {@code valueToLiteral} converts external to AST.
      * <p>
-     * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object)}.
+     * This method is used in contexts such as introspection default value rendering and schema printing, where
+     * an external value needs to be represented as an AST literal.
+     * <p>
+     * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object)}, so implementations
+     * can assume the input is a valid external value for this scalar type.
      *
-     * @param input an external input value
+     * @param input an external input value (same form as {@link #parseValue(Object)} input)
      *
-     * @return The literal matching the external input value.
+     * @return an AST {@link Value} literal representing the input value
      */
     @Deprecated(since = "2022-08-22")
     default @NonNull Value valueToLiteral(@NonNull Object input) {
@@ -223,15 +236,23 @@ public interface Coercing<I, O> {
     }
 
     /**
-     * Converts an external input value to a literal (Ast Value).
+     * Converts an external input value to an AST {@link Value} literal. The input is an external value in the
+     * same form that {@link #parseValue(Object, GraphQLContext, Locale)} accepts (e.g., a JSON-deserialized object
+     * such as a String, Number, or Map), not an internal runtime value. This is the inverse direction of
+     * {@link #parseLiteral(Value, CoercedVariables, GraphQLContext, Locale)}: while {@code parseLiteral} converts
+     * AST to internal, {@code valueToLiteral} converts external to AST.
      * <p>
-     * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object)}.
+     * This method is used in contexts such as introspection default value rendering and schema printing, where
+     * an external value needs to be represented as an AST literal.
+     * <p>
+     * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object, GraphQLContext, Locale)},
+     * so implementations can assume the input is a valid external value for this scalar type.
      *
-     * @param input          an external input value
+     * @param input          an external input value (same form as {@link #parseValue(Object, GraphQLContext, Locale)} input)
      * @param graphQLContext the graphql context in place
      * @param locale         the locale to use
      *
-     * @return The literal matching the external input value.
+     * @return an AST {@link Value} literal representing the input value
      */
     default @NonNull Value<?> valueToLiteral(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) {
         assertNotNull(input);
