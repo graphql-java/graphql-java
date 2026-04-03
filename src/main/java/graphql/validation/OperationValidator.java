@@ -1298,7 +1298,7 @@ public class OperationValidator implements DocumentVisitor {
         for (FieldAndType fieldAndType : sameNameFields) {
             if (fieldAndType.field.getSelectionSet() != null) {
                 if (fieldMap == null) {
-                    fieldMap = new LinkedHashMap<>();
+                    fieldMap = new HashMap<>();
                     visitedFragments = new HashSet<>();
                 }
                 overlappingFields_collectFields(fieldMap, fieldAndType.field.getSelectionSet(), fieldAndType.graphQLType, visitedFragments);
@@ -1606,9 +1606,19 @@ public class OperationValidator implements DocumentVisitor {
      * in the sameResponseShapeChecked/sameForCommonParentsChecked dedup sets.
      * Elements must only be added (never removed) for the cached hash to stay correct.
      */
+    /**
+     * A LinkedHashSet that incrementally caches its hashCode as elements are added.
+     * This avoids O(N) recomputation of Set.hashCode() every time the set is used as a key
+     * in the sameResponseShapeChecked/sameForCommonParentsChecked dedup sets.
+     * Elements must only be added (never removed) for the cached hash to stay correct.
+     */
     private static class FieldSet extends LinkedHashSet<FieldAndType> {
         private int cachedHash = 0;
         private @Nullable FieldAndType first;
+
+        FieldSet() {
+            super(4); // Pre-size for typical small sets (most field groups have 1-3 elements)
+        }
 
         @Override
         public boolean add(FieldAndType e) {
