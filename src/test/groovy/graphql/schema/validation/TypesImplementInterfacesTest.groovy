@@ -429,6 +429,98 @@ class TypesImplementInterfacesTest extends Specification {
         errors.iterator().next().description == "object type 'Object' field 'argField' defines an additional non-optional argument 'arg1' which is not allowed because field is also defined in interface 'Interface'"
     }
 
+    def "implementing type cannot deprecate a field that the interface has not deprecated"() {
+        given:
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("field").type(GraphQLString))
+                .build()
+
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
+
+        GraphQLObjectType objType = newObject()
+                .name("Object")
+                .withInterface(interfaceType)
+                .field(newFieldDefinition().name("field").type(GraphQLString).deprecate("no longer used"))
+                .build()
+
+        when:
+        new TypesImplementInterfaces().check(objType, errorCollector)
+
+        then:
+        def errors = errorCollector.getErrors()
+        errors.size() == 1
+        errors[0].description == "object type 'Object' field 'field' cannot be deprecated because interface 'Interface' does not deprecate this field"
+    }
+
+    def "implementing type can deprecate a field that the interface has also deprecated"() {
+        given:
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("field").type(GraphQLString).deprecate("old"))
+                .build()
+
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
+
+        GraphQLObjectType objType = newObject()
+                .name("Object")
+                .withInterface(interfaceType)
+                .field(newFieldDefinition().name("field").type(GraphQLString).deprecate("no longer used"))
+                .build()
+
+        when:
+        new TypesImplementInterfaces().check(objType, errorCollector)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def "implementing type can have non-deprecated field when interface field is also not deprecated"() {
+        given:
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("field").type(GraphQLString))
+                .build()
+
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
+
+        GraphQLObjectType objType = newObject()
+                .name("Object")
+                .withInterface(interfaceType)
+                .field(newFieldDefinition().name("field").type(GraphQLString))
+                .build()
+
+        when:
+        new TypesImplementInterfaces().check(objType, errorCollector)
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def "implementing interface type cannot deprecate a field that the parent interface has not deprecated"() {
+        given:
+        GraphQLInterfaceType parentInterface = newInterface()
+                .name("ParentInterface")
+                .field(newFieldDefinition().name("field").type(GraphQLString))
+                .build()
+
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
+
+        GraphQLInterfaceType childInterface = newInterface()
+                .name("ChildInterface")
+                .withInterface(parentInterface)
+                .field(newFieldDefinition().name("field").type(GraphQLString).deprecate("no longer used"))
+                .build()
+
+        when:
+        new TypesImplementInterfaces().check(childInterface, errorCollector)
+
+        then:
+        def errors = errorCollector.getErrors()
+        errors.size() == 1
+        errors[0].description == "interface type 'ChildInterface' field 'field' cannot be deprecated because interface 'ParentInterface' does not deprecate this field"
+    }
+
     def "type can change order of field arguments"() {
         given:
 

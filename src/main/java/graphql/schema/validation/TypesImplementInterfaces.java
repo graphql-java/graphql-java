@@ -84,6 +84,7 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
                                 TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName())));
             } else {
                 checkFieldTypeCompatibility(implementingType, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
+                checkFieldDeprecationCompatibility(implementingType, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
             }
         }
 
@@ -117,6 +118,18 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
         } else {
             checkFieldArgumentEquivalence(implementingType, interfaceType, validationErrorCollector, interfaceFieldDef, objectFieldDef);
         }
+    }
+
+    private void checkFieldDeprecationCompatibility(GraphQLImplementingType implementingType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
+        if (!objectFieldDef.isDeprecated()) {
+            return;
+        }
+        if (interfaceFieldDef.isDeprecated()) {
+            return;
+        }
+        validationErrorCollector.addError(
+                error(format("%s type '%s' field '%s' cannot be deprecated because interface '%s' does not deprecate this field",
+                        TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), objectFieldDef.getName(), interfaceType.getName())));
     }
 
     private void checkFieldArgumentEquivalence(GraphQLImplementingType implementingType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector, GraphQLFieldDefinition interfaceFieldDef, GraphQLFieldDefinition objectFieldDef) {
