@@ -688,7 +688,13 @@ public class Introspection {
         register(__Schema, "types", GraphQLSchema.class, GraphQLSchema::getAllTypesAsList);
         register(__Schema, "queryType", GraphQLSchema.class, GraphQLSchema::getQueryType);
         register(__Schema, "mutationType", GraphQLSchema.class, GraphQLSchema::getMutationType);
-        register(__Schema, "directives", GraphQLSchema.class, GraphQLSchema::getDirectives);
+        register(__Schema, "directives", GraphQLSchema.class, schema -> {
+            java.util.LinkedHashMap<String, GraphQLDirective> uniqueDirectives = new java.util.LinkedHashMap<>();
+            for (GraphQLDirective directive : schema.getDirectives()) {
+                uniqueDirectives.putIfAbsent(directive.getName(), directive);
+            }
+            return new java.util.ArrayList<>(uniqueDirectives.values());
+        });
         register(__Schema, "subscriptionType", GraphQLSchema.class, GraphQLSchema::getSubscriptionType);
     }
 

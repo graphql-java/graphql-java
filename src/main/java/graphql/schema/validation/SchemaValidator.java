@@ -1,15 +1,19 @@
 package graphql.schema.validation;
 
 import graphql.Internal;
+import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeVisitor;
 import graphql.schema.SchemaTraverser;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.lang.String.format;
 
 @Internal
 public class SchemaValidator {
@@ -39,7 +43,19 @@ public class SchemaValidator {
         rootVars.put(GraphQLSchema.class, schema);
         rootVars.put(SchemaValidationErrorCollector.class, validationErrorCollector);
         new SchemaTraverser().depthFirstFullSchema(rules, schema, rootVars);
+        checkForDuplicateDirectiveDefinitions(schema, validationErrorCollector);
         return validationErrorCollector.getErrors();
+    }
+
+    private void checkForDuplicateDirectiveDefinitions(GraphQLSchema schema, SchemaValidationErrorCollector collector) {
+        Set<String> seen = new HashSet<>();
+        for (GraphQLDirective directive : schema.getDirectives()) {
+            if (!seen.add(directive.getName())) {
+                collector.addError(new SchemaValidationError(
+                        SchemaValidationErrorType.DuplicateDirectiveDefinition,
+                        format("Duplicate directive definition: '%s'", directive.getName())));
+            }
+        }
     }
 
 }
