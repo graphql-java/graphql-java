@@ -1380,4 +1380,78 @@ class ValuesResolverTest extends Specification {
         executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a Number input, but it was a 'String'"
         executionResult.errors[0].locations == [new SourceLocation(2, 35)]
     }
+
+    // Tests for graphql-spec#1056: hasValue must only be true when a value is explicitly provided
+    // via a literal or a variable that exists, not merely because the argument definition exists.
+
+    def "getArgumentValues: argument not provided in query uses schema default value"() {
+        given: "an argument definition with a default value, but no argument in the query"
+        def fieldArgument = newArgument().name("arg").type(GraphQLString).defaultValueProgrammatic("defaultVal").build()
+
+        when: "no arguments are provided in the query"
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [], CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then: "the default value from the schema is used"
+        values['arg'] == 'defaultVal'
+    }
+
+    def "getArgumentValues: argument not provided and no default value results in absent key"() {
+        given: "an argument definition without a default value, and no argument in the query"
+        def fieldArgument = newArgument().name("arg").type(GraphQLString).build()
+
+        when: "no arguments are provided in the query"
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [], CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then: "the argument key is not present in the result"
+        !values.containsKey('arg')
+    }
+
+    def "getArgumentValues: variable reference to missing variable uses schema default"() {
+        given: "an argument with a default and a variable reference, but the variable is not provided"
+        def fieldArgument = newArgument().name("arg").type(GraphQLString).defaultValueProgrammatic("defaultVal").build()
+        def argument = new Argument("arg", new VariableReference("missingVar"))
+
+        when: "the variable is not in the coerced variables"
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then: "the schema default value is used because hasValue is false for a missing variable"
+        values['arg'] == 'defaultVal'
+    }
+
+    def "getArgumentValues: variable reference to missing variable and no default results in absent key"() {
+        given: "an argument without a default and a variable reference, but the variable is not provided"
+        def fieldArgument = newArgument().name("arg").type(GraphQLString).build()
+        def argument = new Argument("arg", new VariableReference("missingVar"))
+
+        when: "the variable is not in the coerced variables"
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then: "the argument key is not present because hasValue is false and there is no default"
+        !values.containsKey('arg')
+    }
+
+    def "getArgumentValues: explicitly provided literal value is used over schema default"() {
+        given: "an argument with a default and a literal value provided in the query"
+        def fieldArgument = newArgument().name("arg").type(GraphQLString).defaultValueProgrammatic("defaultVal").build()
+        def argument = new Argument("arg", new StringValue("providedVal"))
+
+        when: "a literal value is provided"
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then: "the provided literal value is used, not the default"
+        values['arg'] == 'providedVal'
+    }
+
+    def "getArgumentValues: explicitly provided variable value is used over schema default"() {
+        given: "an argument with a default and a variable reference that exists in coerced variables"
+        def fieldArgument = newArgument().name("arg").type(GraphQLString).defaultValueProgrammatic("defaultVal").build()
+        def argument = new Argument("arg", new VariableReference("myVar"))
+        def variables = CoercedVariables.of([myVar: "varValue"])
+
+        when: "a variable value is provided"
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
+
+        then: "the variable value is used, not the default"
+        values['arg'] == 'varValue'
+    }
 }
