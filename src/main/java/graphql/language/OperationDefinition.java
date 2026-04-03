@@ -26,7 +26,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition>, NamedNode<OperationDefinition> {
+public class OperationDefinition extends AbstractDescribedNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition>, NamedNode<OperationDefinition> {
 
     public enum Operation {
         QUERY, MUTATION, SUBSCRIPTION
@@ -52,8 +52,9 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                                   @Nullable SourceLocation sourceLocation,
                                   List<Comment> comments,
                                   IgnoredChars ignoredChars,
-                                  Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+                                  Map<String, String> additionalData,
+                                  @Nullable Description description) {
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.operation = operation;
         this.variableDefinitions = ImmutableList.copyOf(variableDefinitions);
@@ -150,7 +151,8 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
-                getAdditionalData());
+                getAdditionalData(),
+                getDescription());
     }
 
     @Override
@@ -190,6 +192,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
+        private Description description;
 
         private Builder() {
         }
@@ -204,6 +207,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
+            this.description = existing.getDescription();
         }
 
 
@@ -253,6 +257,11 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
             return this;
         }
 
+        public Builder description(Description description) {
+            this.description = description;
+            return this;
+        }
+
         public Builder ignoredChars(IgnoredChars ignoredChars) {
             this.ignoredChars = ignoredChars;
             return this;
@@ -278,7 +287,8 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                     sourceLocation,
                     comments,
                     ignoredChars,
-                    additionalData);
+                    additionalData,
+                    description);
         }
     }
 }

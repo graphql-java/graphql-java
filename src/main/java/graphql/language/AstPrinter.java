@@ -251,6 +251,7 @@ public class AstPrinter {
 
     private NodePrinter<FragmentDefinition> fragmentDefinition() {
         return (out, node) -> {
+            description(out, node);
             out.append("fragment ");
             out.append(node.getName());
             out.append(" on ");
@@ -368,9 +369,11 @@ public class AstPrinter {
             // Anonymous queries with no directives or variable definitions can use
             // the query short form.
             if (isEmpty(name) && isEmpty(node.getDirectives()) && isEmpty(node.getVariableDefinitions())
-                    && node.getOperation() == OperationDefinition.Operation.QUERY) {
+                    && node.getOperation() == OperationDefinition.Operation.QUERY
+                    && node.getDescription() == null) {
                 node(out, node.getSelectionSet());
             } else {
+                description(out, node);
                 OperationDefinition.Operation op = node.getOperation();
                 out.append(op.toString().toLowerCase());
                 if (!isEmpty(name)) {
@@ -546,6 +549,11 @@ public class AstPrinter {
         String nameTypeSep = compactMode ? ":" : ": ";
         String defaultValueEquals = compactMode ? "=" : " = ";
         return (out, node) -> {
+            if (node.getDescription() != null && !compactMode) {
+                out.append('"');
+                escapeJsonStringTo(out, node.getDescription().getContent());
+                out.append("\" ");
+            }
             out.append('$');
             out.append(node.getName());
             out.append(nameTypeSep);

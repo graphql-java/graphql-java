@@ -7,6 +7,7 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,7 +22,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
-public class VariableDefinition extends AbstractNode<VariableDefinition> implements DirectivesContainer<VariableDefinition>, NamedNode<VariableDefinition> {
+public class VariableDefinition extends AbstractDescribedNode<VariableDefinition> implements DirectivesContainer<VariableDefinition>, NamedNode<VariableDefinition> {
 
     private final String name;
     private final Type type;
@@ -35,13 +36,14 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     @Internal
     protected VariableDefinition(String name,
                                  Type type,
-                                 Value defaultValue,
+                                 @Nullable Value defaultValue,
                                  List<Directive> directives,
-                                 SourceLocation sourceLocation,
+                                 @Nullable SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars,
-                                 Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+                                 Map<String, String> additionalData,
+                                 @Nullable Description description) {
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
@@ -58,7 +60,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     public VariableDefinition(String name,
                               Type type,
                               Value defaultValue) {
-        this(name, type, defaultValue, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, defaultValue, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap(), null);
     }
 
     /**
@@ -69,7 +71,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
      */
     public VariableDefinition(String name,
                               Type type) {
-        this(name, type, null, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, null, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap(), null);
     }
 
     public Value getDefaultValue() {
@@ -157,7 +159,8 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
-                getAdditionalData());
+                getAdditionalData(),
+                getDescription());
     }
 
     @Override
@@ -207,6 +210,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
+        private Description description;
 
         private Builder() {
         }
@@ -220,6 +224,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
+            this.description = existing.getDescription();
         }
 
         public Builder sourceLocation(SourceLocation sourceLocation) {
@@ -258,6 +263,11 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             return this;
         }
 
+        public Builder description(Description description) {
+            this.description = description;
+            return this;
+        }
+
         public Builder ignoredChars(IgnoredChars ignoredChars) {
             this.ignoredChars = ignoredChars;
             return this;
@@ -282,7 +292,8 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                     sourceLocation,
                     comments,
                     ignoredChars,
-                    additionalData);
+                    additionalData,
+                    description);
         }
     }
 }

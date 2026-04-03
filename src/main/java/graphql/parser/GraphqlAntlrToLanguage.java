@@ -145,6 +145,7 @@ public class GraphqlAntlrToLanguage {
         operationDefinition.variableDefinitions(createVariableDefinitions(ctx.variableDefinitions()));
         operationDefinition.selectionSet(createSelectionSet(ctx.selectionSet()));
         operationDefinition.directives(createDirectives(ctx.directives()));
+        operationDefinition.description(newDescription(ctx.description()));
         return captureRuleContext(operationDefinition.build(), ctx);
     }
 
@@ -185,6 +186,7 @@ public class GraphqlAntlrToLanguage {
         }
         variableDefinition.type(createType(ctx.type()));
         variableDefinition.directives(createDirectives(ctx.directives()));
+        variableDefinition.description(newDescription(ctx.description()));
         return captureRuleContext(variableDefinition.build(), ctx);
 
     }
@@ -196,6 +198,7 @@ public class GraphqlAntlrToLanguage {
         fragmentDefinition.typeCondition(TypeName.newTypeName().name(ctx.typeCondition().typeName().getText()).build());
         fragmentDefinition.directives(createDirectives(ctx.directives()));
         fragmentDefinition.selectionSet(createSelectionSet(ctx.selectionSet()));
+        fragmentDefinition.description(newDescription(ctx.description()));
         return captureRuleContext(fragmentDefinition.build(), ctx);
     }
 

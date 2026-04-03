@@ -7,6 +7,7 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,7 +24,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
  * Provided to the DataFetcher, therefore public API
  */
 @PublicApi
-public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition>, NamedNode<FragmentDefinition> {
+public class FragmentDefinition extends AbstractDescribedNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition>, NamedNode<FragmentDefinition> {
 
     private final String name;
     private final TypeName typeCondition;
@@ -42,8 +43,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
                                  SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars,
-                                 Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+                                 Map<String, String> additionalData,
+                                 @Nullable Description description) {
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.typeCondition = typeCondition;
         this.directives = NodeUtil.DirectivesHolder.of(directives);
@@ -135,7 +137,8 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
-                getAdditionalData());
+                getAdditionalData(),
+                getDescription());
     }
 
     @Override
@@ -173,6 +176,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
+        private Description description;
 
         private Builder() {
         }
@@ -186,6 +190,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
+            this.description = existing.getDescription();
         }
 
 
@@ -225,6 +230,11 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
             return this;
         }
 
+        public Builder description(Description description) {
+            this.description = description;
+            return this;
+        }
+
         public Builder ignoredChars(IgnoredChars ignoredChars) {
             this.ignoredChars = ignoredChars;
             return this;
@@ -242,7 +252,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
 
         public FragmentDefinition build() {
-            return new FragmentDefinition(name, typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
+            return new FragmentDefinition(name, typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData, description);
         }
     }
 }
