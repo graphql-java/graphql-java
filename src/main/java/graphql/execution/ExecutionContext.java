@@ -88,6 +88,8 @@ public class ExecutionContext {
     // True when instrumentation is the no-op singleton, allowing hot paths to skip
     // instrumentation parameter object allocations entirely
     private final boolean noOpInstrumentation;
+    // Cached incremental support flag - avoids ConcurrentHashMap lookup on every call
+    private final boolean incrementalSupport;
     private final EngineRunningState engineRunningState;
 
     private final Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives;
@@ -123,6 +125,7 @@ public class ExecutionContext {
         this.profiler = builder.profiler;
         this.noOpInstrumentation = builder.instrumentation == SimplePerformantInstrumentation.INSTANCE;
         this.maxResultNodes = builder.graphQLContext != null ? builder.graphQLContext.get(ResultNodesInfo.MAX_RESULT_NODES) : null;
+        this.incrementalSupport = builder.graphQLContext != null && builder.graphQLContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
         // lazy loading for performance
         this.queryTree = mkExecutableNormalizedOperation();
         this.allOperationsDirectives = builder.allOperationsDirectives;
@@ -442,8 +445,7 @@ public class ExecutionContext {
 
     @Internal
     public boolean hasIncrementalSupport() {
-        GraphQLContext graphqlContext = getGraphQLContext();
-        return graphqlContext != null && graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
+        return incrementalSupport;
     }
 
     /**

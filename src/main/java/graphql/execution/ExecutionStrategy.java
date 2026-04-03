@@ -834,12 +834,17 @@ public abstract class ExecutionStrategy {
         OptionalInt size = FpKit.toSize(iterableValues);
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-
-        InstrumentationContext<Object> completeListCtx = nonNullCtx(instrumentation.beginFieldListCompletion(
-                instrumentationParams, executionContext.getInstrumentationState()
-        ));
+        boolean noOpInstrumentation = executionContext.isNoOpInstrumentation();
+        InstrumentationContext<Object> completeListCtx;
+        if (noOpInstrumentation) {
+            completeListCtx = null;
+        } else {
+            InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
+            Instrumentation instrumentation = executionContext.getInstrumentation();
+            completeListCtx = nonNullCtx(instrumentation.beginFieldListCompletion(
+                    instrumentationParams, executionContext.getInstrumentationState()
+            ));
+        }
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
@@ -871,8 +876,10 @@ public abstract class ExecutionStrategy {
             @SuppressWarnings("unchecked")
             CompletableFuture<List<Object>> resultsFuture = (CompletableFuture<List<Object>>) listResults;
             CompletableFuture<Object> overallResult = new CompletableFuture<>();
-            completeListCtx.onDispatched();
-            overallResult.whenComplete(completeListCtx::onCompleted);
+            if (completeListCtx != null) {
+                completeListCtx.onDispatched();
+                overallResult.whenComplete(completeListCtx::onCompleted);
+            }
 
             resultsFuture.whenComplete((results, exception) -> {
                 exception = executionContext.possibleCancellation(exception);
@@ -887,7 +894,9 @@ public abstract class ExecutionStrategy {
             });
             listOrPromiseToList = overallResult;
         } else {
-            completeListCtx.onCompleted(listResults, null);
+            if (completeListCtx != null) {
+                completeListCtx.onCompleted(listResults, null);
+            }
             listOrPromiseToList = listResults;
         }
         return new FieldValueInfo(LIST, listOrPromiseToList, fieldValueInfos);
