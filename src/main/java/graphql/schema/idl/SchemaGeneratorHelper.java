@@ -811,22 +811,36 @@ public class SchemaGeneratorHelper {
         builder.type(fieldType);
 
         GraphQLFieldDefinition fieldDefinition = builder.build();
-        // if they have already wired in a fetcher - then leave it alone
-        FieldCoordinates coordinates = FieldCoordinates.coordinates(parentType.getName(), fieldDefinition.getName());
-        if (!buildCtx.getCodeRegistry().hasDataFetcher(coordinates)) {
-            Optional<DataFetcherFactory<?>> dataFetcherFactory = buildDataFetcherFactory(buildCtx,
-                    parentType,
-                    fieldDef,
-                    fieldType,
-                    appliedDirectives.first,
-                    appliedDirectives.second);
-
-            // if the dataFetcherFactory is empty, then it must have been the code registry default one
-            // and hence we don't need to make a "map entry" in the code registry since it will be defaulted
-            // anyway
-            dataFetcherFactory.ifPresent(fetcherFactory -> buildCtx.getCodeRegistry().dataFetcher(coordinates, fetcherFactory));
+        // DataFetchers should only be registered on concrete object types, not on interface types.
+        // Interface fields are inherited by implementing types which have their own datafetchers.
+        if (!(parentType instanceof InterfaceTypeDefinition)) {
+            registerDataFetcherForField(buildCtx, parentType, fieldDef, fieldType, appliedDirectives, fieldDefinition);
         }
         return directivesObserve(buildCtx, fieldDefinition);
+    }
+
+    private void registerDataFetcherForField(BuildContext buildCtx,
+                                                TypeDefinition<?> parentType,
+                                                FieldDefinition fieldDef,
+                                                GraphQLOutputType fieldType,
+                                                Pair<List<GraphQLDirective>, List<GraphQLAppliedDirective>> appliedDirectives,
+                                                GraphQLFieldDefinition fieldDefinition) {
+        // if they have already wired in a fetcher - then leave it alone
+        FieldCoordinates coordinates = FieldCoordinates.coordinates(parentType.getName(), fieldDefinition.getName());
+        if (buildCtx.getCodeRegistry().hasDataFetcher(coordinates)) {
+            return;
+        }
+        Optional<DataFetcherFactory<?>> dataFetcherFactory = buildDataFetcherFactory(buildCtx,
+                parentType,
+                fieldDef,
+                fieldType,
+                appliedDirectives.first,
+                appliedDirectives.second);
+
+        // if the dataFetcherFactory is empty, then it must have been the code registry default one
+        // and hence we don't need to make a "map entry" in the code registry since it will be defaulted
+        // anyway
+        dataFetcherFactory.ifPresent(fetcherFactory -> buildCtx.getCodeRegistry().dataFetcher(coordinates, fetcherFactory));
     }
 
     private Optional<DataFetcherFactory<?>> buildDataFetcherFactory(BuildContext buildCtx,

@@ -10,6 +10,7 @@ import org.jspecify.annotations.NullUnmarked;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -98,6 +99,17 @@ public class GraphQLCodeRegistry {
      */
     public boolean hasDataFetcher(FieldCoordinates coordinates) {
         return hasDataFetcherImpl(coordinates, dataFetcherMap, systemDataFetcherMap);
+    }
+
+    /**
+     * Returns the set of field coordinates that have explicitly registered data fetchers.
+     * This does not include system data fetchers or the default data fetcher.
+     *
+     * @return the set of field coordinates with registered data fetchers
+     */
+    @Internal
+    public Set<FieldCoordinates> getRegisteredDataFetcherCoordinates() {
+        return dataFetcherMap.keySet();
     }
 
     /**

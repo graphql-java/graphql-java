@@ -1053,6 +1053,8 @@ public class GraphQLSchema {
             // quick build - no traversing
             final GraphQLSchema partiallyBuiltSchema = new GraphQLSchema(this);
 
+            // Capture user-provided coordinates before traversal adds field-definition datafetchers
+            Set<FieldCoordinates> userProvidedCoordinates = codeRegistry.getRegisteredDataFetcherCoordinates();
             GraphQLCodeRegistry.Builder extractedDataFetchers = GraphQLCodeRegistry.newCodeRegistry(codeRegistry);
             CodeRegistryVisitor codeRegistryVisitor = new CodeRegistryVisitor(extractedDataFetchers);
             GraphQLTypeCollectingVisitor typeCollectingVisitor = new GraphQLTypeCollectingVisitor();
@@ -1060,6 +1062,7 @@ public class GraphQLSchema {
 
             codeRegistry = extractedDataFetchers.build();
             ImmutableMap<String, GraphQLNamedType> allTypes = typeCollectingVisitor.getResult();
+            assertNoDataFetchersOnAbstractTypes(userProvidedCoordinates, allTypes);
             List<GraphQLNamedType> allTypesAsList = getAllTypesAsList(allTypes);
 
             ImmutableMap<String, List<GraphQLObjectType>> groupedImplementations = SchemaUtil.groupInterfaceImplementationsByName(allTypesAsList);
@@ -1094,6 +1097,24 @@ public class GraphQLSchema {
                 throw new InvalidSchemaException(errors);
             }
             return graphQLSchema;
+        }
+
+        private static void assertNoDataFetchersOnAbstractTypes(Set<FieldCoordinates> coordinates, ImmutableMap<String, GraphQLNamedType> allTypes) {
+            for (FieldCoordinates coord : coordinates) {
+                GraphQLNamedType type = allTypes.get(coord.getTypeName());
+                if (type instanceof GraphQLInterfaceType) {
+                    assertTrue(false,
+                            "You MUST NOT register a DataFetcher on the interface type '%s' field '%s'. " +
+                                    "DataFetchers should only be registered on concrete object types that implement this interface.",
+                            coord.getTypeName(), coord.getFieldName());
+                }
+                if (type instanceof GraphQLUnionType) {
+                    assertTrue(false,
+                            "You MUST NOT register a DataFetcher on the union type '%s' field '%s'. " +
+                                    "DataFetchers should only be registered on concrete object types.",
+                            coord.getTypeName(), coord.getFieldName());
+                }
+            }
         }
 
         private void addBuiltInDirective(GraphQLDirective qlDirective, Set<GraphQLDirective> additionalDirectives1) {
