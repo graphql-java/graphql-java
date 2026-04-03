@@ -76,7 +76,7 @@ public class ValidationErrorCollector {
      * Indicates that that maximum number of validation errors has been reached
      */
     @Internal
-    static class MaxValidationErrorsReached extends RuntimeException {
+    static class MaxValidationErrorsReached extends graphql.GraphQLException {
 
         @Override
         public synchronized Throwable fillInStackTrace() {

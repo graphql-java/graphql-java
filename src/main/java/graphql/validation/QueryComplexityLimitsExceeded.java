@@ -1,5 +1,6 @@
 package graphql.validation;
 
+import graphql.GraphQLException;
 import graphql.Internal;
 import org.jspecify.annotations.NullMarked;
 
@@ -9,7 +10,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @Internal
 @NullMarked
-public class QueryComplexityLimitsExceeded extends RuntimeException {
+public class QueryComplexityLimitsExceeded extends GraphQLException {
 
     private final ValidationErrorType errorType;
     private final int limit;

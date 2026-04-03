@@ -1,5 +1,6 @@
 package graphql.validation;
 
+import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.introspection.GoodFaithIntrospection;
 import org.jspecify.annotations.NullMarked;
@@ -11,7 +12,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @Internal
 @NullMarked
-public class GoodFaithIntrospectionExceeded extends RuntimeException {
+public class GoodFaithIntrospectionExceeded extends GraphQLException {
 
     private final boolean tooBig;
     private final String detail;

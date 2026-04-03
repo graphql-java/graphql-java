@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.schema.GraphQLType;
 
@@ -12,7 +13,7 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
  * so we use exceptions to indicate this special case
  */
 @Internal
-public class NonNullableFieldWasNullException extends RuntimeException {
+public class NonNullableFieldWasNullException extends GraphQLException {
 
     private final ExecutionStepInfo executionStepInfo;
     private final ResultPath path;

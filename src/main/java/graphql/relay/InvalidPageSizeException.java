@@ -2,6 +2,7 @@ package graphql.relay;
 
 import graphql.ErrorType;
 import graphql.GraphQLError;
+import graphql.GraphQLException;
 import graphql.GraphqlErrorHelper;
 import graphql.Internal;
 import graphql.language.SourceLocation;
@@ -11,7 +12,7 @@ import java.util.List;
 import static graphql.ErrorType.DataFetchingException;
 
 @Internal
-public class InvalidPageSizeException extends RuntimeException implements GraphQLError {
+public class InvalidPageSizeException extends GraphQLException implements GraphQLError {
 
     InvalidPageSizeException(String message) {
         this(message, null);
