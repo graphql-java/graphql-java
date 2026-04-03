@@ -1237,10 +1237,9 @@ public class OperationValidator implements DocumentVisitor {
     private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             Set<FieldAndType> fieldAndTypes = entry.getValue();
-            if (sameResponseShapeChecked.contains(fieldAndTypes)) {
+            if (!sameResponseShapeChecked.add(fieldAndTypes)) {
                 continue;
             }
-            sameResponseShapeChecked.add(fieldAndTypes);
             if (fieldAndTypes.size() > 1) {
                 pathStack.add(entry.getKey());
                 Conflict conflict = requireSameOutputTypeShape(pathStack, fieldAndTypes);
@@ -1256,11 +1255,14 @@ public class OperationValidator implements DocumentVisitor {
                 pathStack.remove(pathStack.size() - 1);
             } else {
                 // Single field can't conflict with itself, but still recurse into sub-selections
-                Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fieldAndTypes);
-                if (!subSelections.isEmpty()) {
-                    pathStack.add(entry.getKey());
-                    sameResponseShapeByName(subSelections, pathStack, conflictsResult);
-                    pathStack.remove(pathStack.size() - 1);
+                FieldAndType single = fieldAndTypes.iterator().next();
+                if (single.field.getSelectionSet() != null) {
+                    Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fieldAndTypes);
+                    if (!subSelections.isEmpty()) {
+                        pathStack.add(entry.getKey());
+                        sameResponseShapeByName(subSelections, pathStack, conflictsResult);
+                        pathStack.remove(pathStack.size() - 1);
+                    }
                 }
             }
         }
@@ -1280,13 +1282,28 @@ public class OperationValidator implements DocumentVisitor {
     private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             Set<FieldAndType> fieldAndTypes = entry.getValue();
+            if (fieldAndTypes.size() == 1) {
+                // Single field: no grouping needed, no conflict possible, just recurse into sub-selections
+                if (!sameForCommonParentsChecked.add(fieldAndTypes)) {
+                    continue;
+                }
+                FieldAndType single = fieldAndTypes.iterator().next();
+                if (single.field.getSelectionSet() != null) {
+                    Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fieldAndTypes);
+                    if (!subSelections.isEmpty()) {
+                        pathStack.add(entry.getKey());
+                        sameForCommonParentsByName(subSelections, pathStack, conflictsResult);
+                        pathStack.remove(pathStack.size() - 1);
+                    }
+                }
+                continue;
+            }
             List<Set<FieldAndType>> groups = groupByCommonParents(fieldAndTypes);
             pathStack.add(entry.getKey());
             for (Set<FieldAndType> group : groups) {
-                if (sameForCommonParentsChecked.contains(group)) {
+                if (!sameForCommonParentsChecked.add(group)) {
                     continue;
                 }
-                sameForCommonParentsChecked.add(group);
                 if (group.size() > 1) {
                     Conflict conflict = requireSameNameAndArguments(pathStack, group);
                     if (conflict != null) {
@@ -1304,7 +1321,22 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private List<Set<FieldAndType>> groupByCommonParents(Set<FieldAndType> fields) {
-        // Single-pass: partition into abstract types and concrete groups simultaneously
+        // Fast path: if all fields share the same parent type, they form a single group
+        GraphQLType firstParent = null;
+        boolean allSameParent = true;
+        for (FieldAndType fieldAndType : fields) {
+            if (firstParent == null) {
+                firstParent = fieldAndType.parentType;
+            } else if (fieldAndType.parentType != firstParent) {
+                allSameParent = false;
+                break;
+            }
+        }
+        if (allSameParent) {
+            return Collections.singletonList(fields);
+        }
+
+        // Slow path: partition into abstract types and concrete groups
         List<FieldAndType> abstractTypes = null;
         Map<GraphQLType, Set<FieldAndType>> concreteGroups = null;
 
@@ -1316,9 +1348,9 @@ public class OperationValidator implements DocumentVisitor {
                 abstractTypes.add(fieldAndType);
             } else if (fieldAndType.parentType instanceof GraphQLObjectType) {
                 if (concreteGroups == null) {
-                    concreteGroups = new LinkedHashMap<>();
+                    concreteGroups = new HashMap<>();
                 }
-                concreteGroups.computeIfAbsent(fieldAndType.parentType, k -> new LinkedHashSet<>()).add(fieldAndType);
+                concreteGroups.computeIfAbsent(fieldAndType.parentType, k -> new HashSet<>()).add(fieldAndType);
             }
         }
 
@@ -1327,7 +1359,7 @@ public class OperationValidator implements DocumentVisitor {
             if (abstractTypes == null) {
                 return Collections.singletonList(fields);
             }
-            return Collections.singletonList(new LinkedHashSet<>(abstractTypes));
+            return Collections.singletonList(new HashSet<>(abstractTypes));
         }
 
         List<Set<FieldAndType>> result = new ArrayList<>(concreteGroups.size());
