@@ -1232,7 +1232,7 @@ public class OperationValidator implements DocumentVisitor {
             fieldAndType = new FieldAndType(field, fieldType, unwrappedParent);
             fieldAndTypeCache.put(field, fieldAndType);
         }
-        fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(fieldAndType);
+        fieldMap.computeIfAbsent(responseName, k -> new FieldSet()).add(fieldAndType);
     }
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
@@ -1378,7 +1378,7 @@ public class OperationValidator implements DocumentVisitor {
                 if (concreteGroups == null) {
                     concreteGroups = new HashMap<>();
                 }
-                concreteGroups.computeIfAbsent(fieldAndType.parentType, k -> new HashSet<>()).add(fieldAndType);
+                concreteGroups.computeIfAbsent(fieldAndType.parentType, k -> new FieldSet()).add(fieldAndType);
             }
         }
 
@@ -1387,7 +1387,9 @@ public class OperationValidator implements DocumentVisitor {
             if (abstractTypes == null) {
                 return Collections.singletonList(fields);
             }
-            return Collections.singletonList(new HashSet<>(abstractTypes));
+            FieldSet abstractSet = new FieldSet();
+            abstractSet.addAll(abstractTypes);
+            return Collections.singletonList(abstractSet);
         }
 
         List<Set<FieldAndType>> result = new ArrayList<>(concreteGroups.size());
@@ -1559,6 +1561,30 @@ public class OperationValidator implements DocumentVisitor {
         @Override
         public int hashCode() {
             return Objects.hashCode(field);
+        }
+    }
+
+    /**
+     * A LinkedHashSet that incrementally caches its hashCode as elements are added.
+     * This avoids O(N) recomputation of Set.hashCode() every time the set is used as a key
+     * in the sameResponseShapeChecked/sameForCommonParentsChecked dedup sets.
+     * Elements must only be added (never removed) for the cached hash to stay correct.
+     */
+    private static class FieldSet extends LinkedHashSet<FieldAndType> {
+        private int cachedHash = 0;
+
+        @Override
+        public boolean add(FieldAndType e) {
+            boolean added = super.add(e);
+            if (added) {
+                cachedHash += e.hashCode();
+            }
+            return added;
+        }
+
+        @Override
+        public int hashCode() {
+            return cachedHash;
         }
     }
 
