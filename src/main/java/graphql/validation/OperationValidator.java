@@ -68,6 +68,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
@@ -1229,12 +1230,16 @@ public class OperationValidator implements DocumentVisitor {
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
         List<Conflict> result = new ArrayList<>();
         ArrayList<String> pathStack = new ArrayList<>();
-        sameResponseShapeByName(fieldMap, pathStack, result);
-        sameForCommonParentsByName(fieldMap, pathStack, result);
+        // Cache mergeSubSelections results by Set identity — sameResponseShapeByName computes sub-selections
+        // first, then sameForCommonParentsByName reuses them for the same field sets (common in the
+        // all-same-parent fast-path where groupByCommonParents returns the original set reference)
+        IdentityHashMap<Set<FieldAndType>, Map<String, Set<FieldAndType>>> subSelectionsCache = new IdentityHashMap<>();
+        sameResponseShapeByName(fieldMap, pathStack, result, subSelectionsCache);
+        sameForCommonParentsByName(fieldMap, pathStack, result, subSelectionsCache);
         return result;
     }
 
-    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult) {
+    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult, IdentityHashMap<Set<FieldAndType>, Map<String, Set<FieldAndType>>> subSelectionsCache) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             Set<FieldAndType> fieldAndTypes = entry.getValue();
             if (!sameResponseShapeChecked.add(fieldAndTypes)) {
@@ -1248,19 +1253,19 @@ public class OperationValidator implements DocumentVisitor {
                     pathStack.remove(pathStack.size() - 1);
                     continue;
                 }
-                Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fieldAndTypes);
+                Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
                 if (!subSelections.isEmpty()) {
-                    sameResponseShapeByName(subSelections, pathStack, conflictsResult);
+                    sameResponseShapeByName(subSelections, pathStack, conflictsResult, subSelectionsCache);
                 }
                 pathStack.remove(pathStack.size() - 1);
             } else {
                 // Single field can't conflict with itself, but still recurse into sub-selections
                 FieldAndType single = fieldAndTypes.iterator().next();
                 if (single.field.getSelectionSet() != null) {
-                    Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fieldAndTypes);
+                    Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
                     if (!subSelections.isEmpty()) {
                         pathStack.add(entry.getKey());
-                        sameResponseShapeByName(subSelections, pathStack, conflictsResult);
+                        sameResponseShapeByName(subSelections, pathStack, conflictsResult, subSelectionsCache);
                         pathStack.remove(pathStack.size() - 1);
                     }
                 }
@@ -1268,18 +1273,33 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
+    private Map<String, Set<FieldAndType>> cachedMergeSubSelections(Set<FieldAndType> sameNameFields, IdentityHashMap<Set<FieldAndType>, Map<String, Set<FieldAndType>>> cache) {
+        Map<String, Set<FieldAndType>> cached = cache.get(sameNameFields);
+        if (cached != null) {
+            return cached;
+        }
+        Map<String, Set<FieldAndType>> result = mergeSubSelections(sameNameFields);
+        cache.put(sameNameFields, result);
+        return result;
+    }
+
+    @SuppressWarnings("NullAway") // visitedFragments is always initialized together with fieldMap
     private Map<String, Set<FieldAndType>> mergeSubSelections(Set<FieldAndType> sameNameFields) {
-        Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>();
-        Set<String> visitedFragments = new HashSet<>();
+        Map<String, Set<FieldAndType>> fieldMap = null;
+        Set<String> visitedFragments = null;
         for (FieldAndType fieldAndType : sameNameFields) {
             if (fieldAndType.field.getSelectionSet() != null) {
+                if (fieldMap == null) {
+                    fieldMap = new LinkedHashMap<>();
+                    visitedFragments = new HashSet<>();
+                }
                 overlappingFields_collectFields(fieldMap, fieldAndType.field.getSelectionSet(), fieldAndType.graphQLType, visitedFragments);
             }
         }
-        return fieldMap;
+        return fieldMap != null ? fieldMap : Collections.emptyMap();
     }
 
-    private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult) {
+    private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult, IdentityHashMap<Set<FieldAndType>, Map<String, Set<FieldAndType>>> subSelectionsCache) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             Set<FieldAndType> fieldAndTypes = entry.getValue();
             if (fieldAndTypes.size() == 1) {
@@ -1289,10 +1309,10 @@ public class OperationValidator implements DocumentVisitor {
                 }
                 FieldAndType single = fieldAndTypes.iterator().next();
                 if (single.field.getSelectionSet() != null) {
-                    Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fieldAndTypes);
+                    Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
                     if (!subSelections.isEmpty()) {
                         pathStack.add(entry.getKey());
-                        sameForCommonParentsByName(subSelections, pathStack, conflictsResult);
+                        sameForCommonParentsByName(subSelections, pathStack, conflictsResult, subSelectionsCache);
                         pathStack.remove(pathStack.size() - 1);
                     }
                 }
@@ -1311,9 +1331,9 @@ public class OperationValidator implements DocumentVisitor {
                         continue;
                     }
                 }
-                Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group);
+                Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(group, subSelectionsCache);
                 if (!subSelections.isEmpty()) {
-                    sameForCommonParentsByName(subSelections, pathStack, conflictsResult);
+                    sameForCommonParentsByName(subSelections, pathStack, conflictsResult, subSelectionsCache);
                 }
             }
             pathStack.remove(pathStack.size() - 1);
