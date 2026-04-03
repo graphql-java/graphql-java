@@ -58,13 +58,11 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
-import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
 import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
-import static graphql.execution.ResultNodesInfo.MAX_RESULT_NODES;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
@@ -212,13 +210,14 @@ public abstract class ExecutionStrategy {
         dataLoaderDispatcherStrategy.executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
         Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
-        CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
-        BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
-
         resolveObjectCtx.onDispatched();
 
         Object fieldValueInfosResult = resolvedFieldFutures.awaitPolymorphic();
         if (fieldValueInfosResult instanceof CompletableFuture) {
+            // Async path - allocate CF infrastructure only when needed
+            CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
+
             CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
             fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
                 throwable = executionContext.possibleCancellation(throwable);
@@ -252,11 +251,16 @@ public abstract class ExecutionStrategy {
 
             Object completedValuesObject = resultFutures.awaitPolymorphic();
             if (completedValuesObject instanceof CompletableFuture) {
+                // Semi-async path - allocate CF infrastructure only when needed
+                CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
+                BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
+
                 CompletableFuture<List<Object>> completedValues = (CompletableFuture<List<Object>>) completedValuesObject;
                 completedValues.whenComplete(handleResultsConsumer);
                 overallResult.whenComplete(resolveObjectCtx::onCompleted);
                 return overallResult;
             } else {
+                // Fully sync path - no CompletableFuture allocation needed
                 Map<String, Object> fieldValueMap = executionContext.getResponseMapFactory().createInsertionOrdered(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
                 resolveObjectCtx.onCompleted(fieldValueMap, null);
                 return fieldValueMap;
@@ -943,16 +947,9 @@ public abstract class ExecutionStrategy {
     protected Object completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
-        FieldCollectorParameters collectorParameters = newParameters()
-                .schema(executionContext.getGraphQLSchema())
-                .objectType(resolvedObjectType)
-                .fragments(executionContext.getFragmentsByName())
-                .variables(executionContext.getCoercedVariables().toMap())
-                .graphQLContext(executionContext.getGraphQLContext())
-                .build();
-
-        MergedSelectionSet subFields = fieldCollector.collectFields(
-                collectorParameters,
+        MergedSelectionSet subFields = executionContext.getOrComputeFieldCollection(
+                fieldCollector,
+                resolvedObjectType,
                 parameters.getField(),
                 executionContext.hasIncrementalSupport()
         );
@@ -1009,8 +1006,8 @@ public abstract class ExecutionStrategy {
      */
     private boolean incrementAndCheckMaxNodesExceeded(ExecutionContext executionContext) {
         int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
-        Integer maxNodes;
-        if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
+        Integer maxNodes = executionContext.getMaxResultNodes();
+        if (maxNodes != null) {
             if (resultNodesCount > maxNodes) {
                 executionContext.getResultNodesInfo().maxResultNodesExceeded();
                 return true;

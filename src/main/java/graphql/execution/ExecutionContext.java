@@ -31,9 +31,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import graphql.schema.GraphQLObjectType;
 
 import static graphql.normalized.ExecutableNormalizedOperationFactory.Options;
 import static graphql.normalized.ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation;
@@ -75,6 +78,12 @@ public class ExecutionContext {
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
+    // Cached max result nodes limit - avoids ConcurrentHashMap lookup on every node increment
+    private final Integer maxResultNodes;
+    // Per-execution cache for field collection results. Within a single execution, the collected fields
+    // for a given (objectType, mergedField) pair are always the same since schema, fragments, variables
+    // and graphQLContext are constant. This avoids recomputing field collection for every element in large lists.
+    private final ConcurrentHashMap<GraphQLObjectType, ConcurrentHashMap<MergedField, MergedSelectionSet>> fieldCollectionCache = new ConcurrentHashMap<>();
     private final EngineRunningState engineRunningState;
 
     private final Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives;
@@ -108,6 +117,7 @@ public class ExecutionContext {
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
         this.profiler = builder.profiler;
+        this.maxResultNodes = builder.graphQLContext != null ? builder.graphQLContext.get(ResultNodesInfo.MAX_RESULT_NODES) : null;
         // lazy loading for performance
         this.queryTree = mkExecutableNormalizedOperation();
         this.allOperationsDirectives = builder.allOperationsDirectives;
@@ -406,10 +416,43 @@ public class ExecutionContext {
         return resultNodesInfo;
     }
 
+    /**
+     * Returns the cached max result nodes limit, avoiding repeated ConcurrentHashMap lookups.
+     *
+     * @return the max result nodes limit, or null if not set
+     */
+    @Internal
+    public Integer getMaxResultNodes() {
+        return maxResultNodes;
+    }
+
     @Internal
     public boolean hasIncrementalSupport() {
         GraphQLContext graphqlContext = getGraphQLContext();
         return graphqlContext != null && graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
+    }
+
+    /**
+     * Returns cached field collection results for the given object type and merged field, computing them
+     * if not already cached. Within a single execution, field collection results are deterministic for
+     * the same (objectType, mergedField) pair.
+     */
+    @Internal
+    public MergedSelectionSet getOrComputeFieldCollection(FieldCollector fieldCollector,
+                                                          GraphQLObjectType objectType,
+                                                          MergedField mergedField,
+                                                          boolean incrementalSupport) {
+        ConcurrentHashMap<MergedField, MergedSelectionSet> innerCache = fieldCollectionCache.computeIfAbsent(objectType, k -> new ConcurrentHashMap<>());
+        return innerCache.computeIfAbsent(mergedField, k -> {
+            FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
+                    .schema(graphQLSchema)
+                    .objectType(objectType)
+                    .fragments(fragmentsByName)
+                    .variables(coercedVariables.toMap())
+                    .graphQLContext(graphQLContext)
+                    .build();
+            return fieldCollector.collectFields(collectorParameters, mergedField, incrementalSupport);
+        });
     }
 
     @Internal
