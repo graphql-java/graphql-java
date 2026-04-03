@@ -76,9 +76,15 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
     default @Nullable O serialize(@NonNull Object dataFetcherResult, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingSerializeException {
-        assertNotNull(dataFetcherResult);
-        assertNotNull(graphQLContext);
-        return serialize(dataFetcherResult);
+        try {
+            assertNotNull(dataFetcherResult);
+            assertNotNull(graphQLContext);
+            return serialize(dataFetcherResult);
+        } catch (CoercingSerializeException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CoercingSerializeException("Failed to serialize value: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -120,10 +126,16 @@ public interface Coercing<I, O> {
      */
     @Nullable
     default I parseValue(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseValueException {
-        assertNotNull(input);
-        assertNotNull(graphQLContext);
-        assertNotNull(locale);
-        return parseValue(input);
+        try {
+            assertNotNull(input);
+            assertNotNull(graphQLContext);
+            assertNotNull(locale);
+            return parseValue(input);
+        } catch (CoercingParseValueException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CoercingParseValueException("Failed to parse value: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -199,10 +211,16 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
     default @Nullable I parseLiteral(@NonNull Value<?> input, @NonNull CoercedVariables variables, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseLiteralException {
-        assertNotNull(input);
-        assertNotNull(graphQLContext);
-        assertNotNull(locale);
-        return parseLiteral(input, variables.toMap());
+        try {
+            assertNotNull(input);
+            assertNotNull(graphQLContext);
+            assertNotNull(locale);
+            return parseLiteral(input, variables.toMap());
+        } catch (CoercingParseLiteralException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CoercingParseLiteralException("Failed to parse literal: " + e.getMessage(), e);
+        }
     }
 
 

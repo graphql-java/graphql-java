@@ -3,6 +3,7 @@ package graphql.schema
 import graphql.ExecutionInput
 import graphql.GraphQLContext
 import graphql.TestUtil
+import graphql.execution.CoercedVariables
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.language.ArrayValue
 import graphql.language.BooleanValue
@@ -296,5 +297,155 @@ class CoercingTest extends Specification {
         notThrown(Exception)
         er.errors.isEmpty()
         er.data == [field: ZonedDateTime.parse("2022-05-16T19:52:37Z")]
+    }
+
+    /**
+     * A Coercing that only implements the deprecated single-arg methods,
+     * simulating libraries like graphql-java-extended-scalars.
+     */
+    Coercing deprecatedOnlyCoercing = new Coercing() {
+        @Override
+        Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+            return dataFetcherResult
+        }
+
+        @Override
+        Object parseValue(Object input) throws CoercingParseValueException {
+            return input
+        }
+
+        @Override
+        Object parseLiteral(Object input) throws CoercingParseLiteralException {
+            return input
+        }
+    }
+
+    def "serialize with null dataFetcherResult throws CoercingSerializeException not RuntimeException"() {
+        when:
+        deprecatedOnlyCoercing.serialize(null, GraphQLContext.getDefault(), Locale.getDefault())
+
+        then:
+        thrown(CoercingSerializeException)
+    }
+
+    def "parseValue with null input throws CoercingParseValueException not RuntimeException"() {
+        when:
+        deprecatedOnlyCoercing.parseValue(null, GraphQLContext.getDefault(), Locale.getDefault())
+
+        then:
+        thrown(CoercingParseValueException)
+    }
+
+    def "parseLiteral with null input throws CoercingParseLiteralException not RuntimeException"() {
+        when:
+        deprecatedOnlyCoercing.parseLiteral(null, CoercedVariables.emptyVariables(), GraphQLContext.getDefault(), Locale.getDefault())
+
+        then:
+        thrown(CoercingParseLiteralException)
+    }
+
+    def "serialize with null graphQLContext throws CoercingSerializeException not RuntimeException"() {
+        when:
+        deprecatedOnlyCoercing.serialize("test", null, Locale.getDefault())
+
+        then:
+        thrown(CoercingSerializeException)
+    }
+
+    def "parseValue with null graphQLContext throws CoercingParseValueException not RuntimeException"() {
+        when:
+        deprecatedOnlyCoercing.parseValue("test", null, Locale.getDefault())
+
+        then:
+        thrown(CoercingParseValueException)
+    }
+
+    def "parseValue with null locale throws CoercingParseValueException not RuntimeException"() {
+        when:
+        deprecatedOnlyCoercing.parseValue("test", GraphQLContext.getDefault(), null)
+
+        then:
+        thrown(CoercingParseValueException)
+    }
+
+    def "serialize still throws CoercingSerializeException when deprecated method throws it"() {
+        given:
+        Coercing coercing = new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                throw new CoercingSerializeException("test error")
+            }
+
+            @Override
+            Object parseValue(Object input) throws CoercingParseValueException {
+                return input
+            }
+
+            @Override
+            Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                return input
+            }
+        }
+
+        when:
+        coercing.serialize("test", GraphQLContext.getDefault(), Locale.getDefault())
+
+        then:
+        def ex = thrown(CoercingSerializeException)
+        ex.message == "test error"
+    }
+
+    def "parseValue still throws CoercingParseValueException when deprecated method throws it"() {
+        given:
+        Coercing coercing = new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                return dataFetcherResult
+            }
+
+            @Override
+            Object parseValue(Object input) throws CoercingParseValueException {
+                throw new CoercingParseValueException("test error")
+            }
+
+            @Override
+            Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                return input
+            }
+        }
+
+        when:
+        coercing.parseValue("test", GraphQLContext.getDefault(), Locale.getDefault())
+
+        then:
+        def ex = thrown(CoercingParseValueException)
+        ex.message == "test error"
+    }
+
+    def "parseLiteral still throws CoercingParseLiteralException when deprecated method throws it"() {
+        given:
+        Coercing coercing = new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                return dataFetcherResult
+            }
+
+            @Override
+            Object parseValue(Object input) throws CoercingParseValueException {
+                return input
+            }
+
+            @Override
+            Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                throw new CoercingParseLiteralException("test error")
+            }
+        }
+
+        when:
+        coercing.parseLiteral(StringValue.newStringValue("test").build(), CoercedVariables.emptyVariables(), GraphQLContext.getDefault(), Locale.getDefault())
+
+        then:
+        def ex = thrown(CoercingParseLiteralException)
+        ex.message == "test error"
     }
 }
