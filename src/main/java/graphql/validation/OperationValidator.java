@@ -78,7 +78,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static graphql.collect.ImmutableKit.addToList;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isInput;
@@ -310,9 +309,9 @@ public class OperationValidator implements DocumentVisitor {
     private @Nullable Map<String, VariableDefinition> variableDefinitionMap;
 
     // --- State: OverlappingFieldsCanBeMerged ---
-    private final Set<Set<FieldAndType>> sameResponseShapeChecked = new LinkedHashSet<>();
-    private final Set<Set<FieldAndType>> sameForCommonParentsChecked = new LinkedHashSet<>();
-    private final Set<Set<Field>> conflictsReported = new LinkedHashSet<>();
+    private final Set<Set<FieldAndType>> sameResponseShapeChecked = new HashSet<>();
+    private final Set<Set<FieldAndType>> sameForCommonParentsChecked = new HashSet<>();
+    private final Set<Set<Field>> conflictsReported = new HashSet<>();
 
     // --- State: LoneAnonymousOperation ---
     private boolean hasAnonymousOp = false;
@@ -1169,7 +1168,7 @@ public class OperationValidator implements DocumentVisitor {
 
     private void overlappingFieldsImpl(SelectionSet selectionSet, @Nullable GraphQLOutputType graphQLOutputType) {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>(selectionSet.getSelections().size());
-        Set<String> visitedFragments = new LinkedHashSet<>();
+        Set<String> visitedFragments = new HashSet<>();
         overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments);
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
@@ -1198,10 +1197,9 @@ public class OperationValidator implements DocumentVisitor {
         if (fragment == null) {
             return;
         }
-        if (visitedFragments.contains(fragment.getName())) {
+        if (!visitedFragments.add(fragment.getName())) {
             return;
         }
-        visitedFragments.add(fragment.getName());
         GraphQLType graphQLType = TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
         overlappingFields_collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragments);
     }
@@ -1230,56 +1228,78 @@ public class OperationValidator implements DocumentVisitor {
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
         List<Conflict> result = new ArrayList<>();
-        sameResponseShapeByName(fieldMap, emptyList(), result);
-        sameForCommonParentsByName(fieldMap, emptyList(), result);
+        ArrayList<String> pathStack = new ArrayList<>();
+        sameResponseShapeByName(fieldMap, pathStack, result);
+        sameForCommonParentsByName(fieldMap, pathStack, result);
         return result;
     }
 
-    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
-            if (sameResponseShapeChecked.contains(entry.getValue())) {
+            Set<FieldAndType> fieldAndTypes = entry.getValue();
+            if (sameResponseShapeChecked.contains(fieldAndTypes)) {
                 continue;
             }
-            ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
-            sameResponseShapeChecked.add(entry.getValue());
-            Conflict conflict = requireSameOutputTypeShape(newPath, entry.getValue());
-            if (conflict != null) {
-                conflictsResult.add(conflict);
-                continue;
+            sameResponseShapeChecked.add(fieldAndTypes);
+            if (fieldAndTypes.size() > 1) {
+                pathStack.add(entry.getKey());
+                Conflict conflict = requireSameOutputTypeShape(pathStack, fieldAndTypes);
+                if (conflict != null) {
+                    conflictsResult.add(conflict);
+                    pathStack.remove(pathStack.size() - 1);
+                    continue;
+                }
+                Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fieldAndTypes);
+                if (!subSelections.isEmpty()) {
+                    sameResponseShapeByName(subSelections, pathStack, conflictsResult);
+                }
+                pathStack.remove(pathStack.size() - 1);
+            } else {
+                // Single field can't conflict with itself, but still recurse into sub-selections
+                Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fieldAndTypes);
+                if (!subSelections.isEmpty()) {
+                    pathStack.add(entry.getKey());
+                    sameResponseShapeByName(subSelections, pathStack, conflictsResult);
+                    pathStack.remove(pathStack.size() - 1);
+                }
             }
-            Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(entry.getValue());
-            sameResponseShapeByName(subSelections, newPath, conflictsResult);
         }
     }
 
     private Map<String, Set<FieldAndType>> mergeSubSelections(Set<FieldAndType> sameNameFields) {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>();
+        Set<String> visitedFragments = new HashSet<>();
         for (FieldAndType fieldAndType : sameNameFields) {
             if (fieldAndType.field.getSelectionSet() != null) {
-                Set<String> visitedFragments = new LinkedHashSet<>();
                 overlappingFields_collectFields(fieldMap, fieldAndType.field.getSelectionSet(), fieldAndType.graphQLType, visitedFragments);
             }
         }
         return fieldMap;
     }
 
-    private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+    private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
-            List<Set<FieldAndType>> groups = groupByCommonParents(entry.getValue());
-            ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
+            Set<FieldAndType> fieldAndTypes = entry.getValue();
+            List<Set<FieldAndType>> groups = groupByCommonParents(fieldAndTypes);
+            pathStack.add(entry.getKey());
             for (Set<FieldAndType> group : groups) {
                 if (sameForCommonParentsChecked.contains(group)) {
                     continue;
                 }
                 sameForCommonParentsChecked.add(group);
-                Conflict conflict = requireSameNameAndArguments(newPath, group);
-                if (conflict != null) {
-                    conflictsResult.add(conflict);
-                    continue;
+                if (group.size() > 1) {
+                    Conflict conflict = requireSameNameAndArguments(pathStack, group);
+                    if (conflict != null) {
+                        conflictsResult.add(conflict);
+                        continue;
+                    }
                 }
                 Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group);
-                sameForCommonParentsByName(subSelections, newPath, conflictsResult);
+                if (!subSelections.isEmpty()) {
+                    sameForCommonParentsByName(subSelections, pathStack, conflictsResult);
+                }
             }
+            pathStack.remove(pathStack.size() - 1);
         }
     }
 
@@ -1324,7 +1344,7 @@ public class OperationValidator implements DocumentVisitor {
         return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType;
     }
 
-    private @Nullable Conflict requireSameNameAndArguments(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
+    private @Nullable Conflict requireSameNameAndArguments(List<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -1351,7 +1371,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private String pathToString(ImmutableList<String> path) {
+    private String pathToString(List<String> path) {
         return String.join("/", path);
     }
 
@@ -1380,7 +1400,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private @Nullable Conflict requireSameOutputTypeShape(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
+    private @Nullable Conflict requireSameOutputTypeShape(List<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -1430,7 +1450,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private Conflict mkNotSameTypeError(ImmutableList<String> path, List<Field> fields, @Nullable GraphQLType typeA, @Nullable GraphQLType typeB) {
+    private Conflict mkNotSameTypeError(List<String> path, List<Field> fields, @Nullable GraphQLType typeA, @Nullable GraphQLType typeB) {
         String name1 = typeA != null ? simplePrint(typeA) : "null";
         String name2 = typeB != null ? simplePrint(typeB) : "null";
         String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentReturnTypes", pathToString(path), name1, name2);
