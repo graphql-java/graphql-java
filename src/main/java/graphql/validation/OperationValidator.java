@@ -313,6 +313,9 @@ public class OperationValidator implements DocumentVisitor {
     private final Set<Set<FieldAndType>> sameResponseShapeChecked = new HashSet<>();
     private final Set<Set<FieldAndType>> sameForCommonParentsChecked = new HashSet<>();
     private final Set<Set<Field>> conflictsReported = new HashSet<>();
+    // Cache FieldAndType by Field identity — avoids re-creating objects and re-looking up field types
+    // when the same fragment fields are collected across multiple mergeSubSelections calls
+    private final IdentityHashMap<Field, FieldAndType> fieldAndTypeCache = new IdentityHashMap<>();
 
     // --- State: LoneAnonymousOperation ---
     private boolean hasAnonymousOp = false;
@@ -1217,14 +1220,19 @@ public class OperationValidator implements DocumentVisitor {
 
     private void overlappingFields_collectFieldsForField(Map<String, Set<FieldAndType>> fieldMap, @Nullable GraphQLType parentType, Field field) {
         String responseName = field.getResultKey();
-        GraphQLOutputType fieldType = null;
-        GraphQLUnmodifiedType unwrappedParent = parentType != null ? unwrapAll(parentType) : null;
-        if (unwrappedParent instanceof GraphQLFieldsContainer) {
-            GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) unwrappedParent;
-            GraphQLFieldDefinition fieldDefinition = validationContext.getSchema().getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
-            fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
+        FieldAndType fieldAndType = fieldAndTypeCache.get(field);
+        if (fieldAndType == null) {
+            GraphQLOutputType fieldType = null;
+            GraphQLUnmodifiedType unwrappedParent = parentType != null ? unwrapAll(parentType) : null;
+            if (unwrappedParent instanceof GraphQLFieldsContainer) {
+                GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) unwrappedParent;
+                GraphQLFieldDefinition fieldDefinition = validationContext.getSchema().getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
+                fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
+            }
+            fieldAndType = new FieldAndType(field, fieldType, unwrappedParent);
+            fieldAndTypeCache.put(field, fieldAndType);
         }
-        fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(new FieldAndType(field, fieldType, unwrappedParent));
+        fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(fieldAndType);
     }
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
