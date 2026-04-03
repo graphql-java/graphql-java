@@ -7,9 +7,11 @@ import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
@@ -77,6 +79,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
         assertTypeUniqueness(node, result);
         save(node.getName(), node);
+        saveInterfaceIndirectStrongReferences(node);
         return CONTINUE;
     }
 
@@ -91,6 +94,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
         assertTypeUniqueness(node, result);
         save(node.getName(), node);
+        saveInterfaceIndirectStrongReferences(node);
         return CONTINUE;
     }
 
@@ -123,6 +127,14 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
         saveIndirectStrongReference(node::getType);
         return CONTINUE;
+    }
+
+    private void saveInterfaceIndirectStrongReferences(GraphQLImplementingType node) {
+        for (GraphQLNamedOutputType iface : node.getInterfaces()) {
+            if (!(iface instanceof GraphQLTypeReference)) {
+                indirectStrongReferences.put(iface.getName(), (GraphQLNamedType) iface);
+            }
+        }
     }
 
     private void saveIndirectStrongReference(Supplier<GraphQLType> typeSupplier) {

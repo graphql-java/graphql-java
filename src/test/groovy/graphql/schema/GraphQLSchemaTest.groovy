@@ -750,4 +750,70 @@ class GraphQLSchemaTest extends Specification {
         schema.getAdditionalTypes().contains(simpleScalar)
     }
 
+    def "#3384 rebuilding a schema with interfaces should not fail on replaceTypeReferences"() {
+        given: "a schema built from SDL with an interface"
+        def sdl = '''
+            type Query {
+                myObject: MyObject
+            }
+
+            interface MyInterface {
+                id: String
+            }
+
+            type MyObject implements MyInterface {
+                id: String
+            }
+        '''
+        def schema = TestUtil.schema(sdl)
+
+        when: "rebuilding the schema with mutation set to null"
+        def rebuiltSchema = GraphQLSchema.newSchema(schema).mutation(null).build()
+
+        then: "the schema should be rebuilt without error and contain the interface"
+        rebuiltSchema.getType("MyInterface") != null
+        rebuiltSchema.getType("MyInterface") instanceof GraphQLInterfaceType
+        rebuiltSchema.getType("MyObject") != null
+        def rebuiltObject = (GraphQLObjectType) rebuiltSchema.getType("MyObject")
+        rebuiltObject.getInterfaces().size() == 1
+        rebuiltObject.getInterfaces()[0].name == "MyInterface"
+        rebuiltObject.getInterfaces()[0] instanceof GraphQLInterfaceType
+    }
+
+    def "#3384 type collecting visitor captures resolved interfaces as indirect strong references"() {
+        given: "an object type where getInterfaces returns resolved types but getChildrenWithTypeReferences returns type references"
+        def iface = GraphQLInterfaceType.newInterface()
+                .name("MyInterface")
+                .field(newFieldDefinition().name("id").type(GraphQLString).build())
+                .build()
+
+        def objectType = newObject()
+                .name("MyObject")
+                .withInterface(typeRef("MyInterface"))
+                .field(newFieldDefinition().name("id").type(GraphQLString).build())
+                .build()
+
+        and: "simulate resolved interfaces (as happens after replaceTypeReferences)"
+        objectType.replaceInterfaces([iface])
+
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("myObject").type(objectType).build())
+                .build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("MyInterface", { env -> null })
+                .build()
+
+        when: "building a schema with this object type"
+        def schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .codeRegistry(codeRegistry)
+                .build()
+
+        then: "the interface type should be found in the schema typeMap"
+        schema.getType("MyInterface") != null
+        schema.getType("MyInterface") instanceof GraphQLInterfaceType
+    }
+
 }
