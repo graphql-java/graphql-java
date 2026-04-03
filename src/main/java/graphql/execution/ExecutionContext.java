@@ -16,6 +16,7 @@ import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
@@ -84,6 +85,9 @@ public class ExecutionContext {
     // for a given (objectType, mergedField) pair are always the same since schema, fragments, variables
     // and graphQLContext are constant. This avoids recomputing field collection for every element in large lists.
     private final ConcurrentHashMap<GraphQLObjectType, ConcurrentHashMap<MergedField, MergedSelectionSet>> fieldCollectionCache = new ConcurrentHashMap<>();
+    // True when instrumentation is the no-op singleton, allowing hot paths to skip
+    // instrumentation parameter object allocations entirely
+    private final boolean noOpInstrumentation;
     private final EngineRunningState engineRunningState;
 
     private final Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives;
@@ -117,6 +121,7 @@ public class ExecutionContext {
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
         this.profiler = builder.profiler;
+        this.noOpInstrumentation = builder.instrumentation == SimplePerformantInstrumentation.INSTANCE;
         this.maxResultNodes = builder.graphQLContext != null ? builder.graphQLContext.get(ResultNodesInfo.MAX_RESULT_NODES) : null;
         // lazy loading for performance
         this.queryTree = mkExecutableNormalizedOperation();
@@ -152,6 +157,15 @@ public class ExecutionContext {
 
     public Instrumentation getInstrumentation() {
         return instrumentation;
+    }
+
+    /**
+     * @return true if the instrumentation is the no-op singleton, meaning instrumentation
+     * parameter objects don't need to be allocated in hot paths
+     */
+    @Internal
+    public boolean isNoOpInstrumentation() {
+        return noOpInstrumentation;
     }
 
     public GraphQLSchema getGraphQLSchema() {

@@ -196,12 +196,17 @@ public abstract class ExecutionStrategy {
         executionContext.throwIfCancelled();
 
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
-        ExecuteObjectInstrumentationContext resolveObjectCtx = ExecuteObjectInstrumentationContext.nonNullCtx(
-                instrumentation.beginExecuteObject(instrumentationParameters, executionContext.getInstrumentationState())
-        );
+        ExecuteObjectInstrumentationContext resolveObjectCtx;
+        if (executionContext.isNoOpInstrumentation()) {
+            resolveObjectCtx = ExecuteObjectInstrumentationContext.NOOP;
+        } else {
+            Instrumentation instrumentation = executionContext.getInstrumentation();
+            InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+            resolveObjectCtx = ExecuteObjectInstrumentationContext.nonNullCtx(
+                    instrumentation.beginExecuteObject(instrumentationParameters, executionContext.getInstrumentationState())
+            );
+        }
 
         List<String> fieldNames = parameters.getFields().getKeys();
 
@@ -364,6 +369,27 @@ public abstract class ExecutionStrategy {
     @DuckTyped(shape = "CompletableFuture<FieldValueInfo> | FieldValueInfo")
     protected Object resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
+
+        if (executionContext.isNoOpInstrumentation()) {
+            // Fast path: skip instrumentation parameter allocation and context creation
+            Object fetchedValueObj = fetchField(fieldDef, executionContext, parameters);
+            if (fetchedValueObj instanceof CompletableFuture) {
+                CompletableFuture<Object> fetchFieldFuture = (CompletableFuture<Object>) fetchedValueObj;
+                return fetchFieldFuture.thenApply((fetchedValue) -> {
+                    executionContext.getDataLoaderDispatcherStrategy().startComplete(parameters);
+                    FieldValueInfo completeFieldResult = completeField(fieldDef, executionContext, parameters, fetchedValue);
+                    executionContext.getDataLoaderDispatcherStrategy().stopComplete(parameters);
+                    return completeFieldResult;
+                });
+            } else {
+                try {
+                    return completeField(fieldDef, executionContext, parameters, fetchedValueObj);
+                } catch (Exception e) {
+                    return Async.exceptionallyCompletedFuture(e);
+                }
+            }
+        }
+
         Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -469,14 +495,20 @@ public abstract class ExecutionStrategy {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType.getName(), fieldDef.getName(), fieldDef);
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
+        DataFetcher<?> dataFetcher;
+        FieldFetchingInstrumentationContext fetchCtx;
+        if (executionContext.isNoOpInstrumentation()) {
+            dataFetcher = originalDataFetcher;
+            fetchCtx = FieldFetchingInstrumentationContext.NOOP;
+        } else {
+            Instrumentation instrumentation = executionContext.getInstrumentation();
+            InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, originalDataFetcher instanceof TrivialDataFetcher);
+            fetchCtx = FieldFetchingInstrumentationContext.nonNullCtx(instrumentation.beginFieldFetching(instrumentationFieldFetchParams,
+                    executionContext.getInstrumentationState())
+            );
+            dataFetcher = instrumentation.instrumentDataFetcher(originalDataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
+        }
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, originalDataFetcher instanceof TrivialDataFetcher);
-        FieldFetchingInstrumentationContext fetchCtx = FieldFetchingInstrumentationContext.nonNullCtx(instrumentation.beginFieldFetching(instrumentationFieldFetchParams,
-                executionContext.getInstrumentationState())
-        );
-
-        DataFetcher<?> dataFetcher = instrumentation.instrumentDataFetcher(originalDataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, originalDataFetcher, dataFetcher);
         executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject, dataFetchingEnvironment);
         fetchCtx.onDispatched();
@@ -649,17 +681,21 @@ public abstract class ExecutionStrategy {
         GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
-        InstrumentationContext<Object> ctxCompleteField = nonNullCtx(instrumentation.beginFieldCompletion(
-                instrumentationParams, executionContext.getInstrumentationState()
-        ));
-
         ExecutionStrategyParameters newParameters = parameters.transform(
                 executionStepInfo,
                 FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext()),
                 FetchedValue.getFetchedValue(fetchedValue)
         );
+
+        if (executionContext.isNoOpInstrumentation()) {
+            return completeValue(executionContext, newParameters);
+        }
+
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
+        InstrumentationContext<Object> ctxCompleteField = nonNullCtx(instrumentation.beginFieldCompletion(
+                instrumentationParams, executionContext.getInstrumentationState()
+        ));
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
         ctxCompleteField.onDispatched();
