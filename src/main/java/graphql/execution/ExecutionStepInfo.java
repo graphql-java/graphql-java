@@ -278,6 +278,20 @@ public class ExecutionStepInfo {
         return new Builder(existing);
     }
 
+    /**
+     * Direct construction without Builder overhead - for internal hot path use only.
+     */
+    @Internal
+    static ExecutionStepInfo newExecutionStepInfoDirect(GraphQLOutputType type,
+                                                        ResultPath path,
+                                                        ExecutionStepInfo parent,
+                                                        MergedField field,
+                                                        GraphQLFieldDefinition fieldDefinition,
+                                                        GraphQLObjectType fieldContainer,
+                                                        Supplier<ImmutableMapWithNullValues<String, Object>> arguments) {
+        return new ExecutionStepInfo(type, path, parent, field, fieldDefinition, fieldContainer, arguments);
+    }
+
     public static class Builder {
         GraphQLOutputType type;
         ExecutionStepInfo parentInfo;

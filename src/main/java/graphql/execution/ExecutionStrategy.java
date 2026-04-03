@@ -250,9 +250,22 @@ public abstract class ExecutionStrategy {
         } else {
             List<FieldValueInfo> completeValueInfos = (List<FieldValueInfo>) fieldValueInfosResult;
 
-            Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
             dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
             resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
+
+            // Fast path: single sync field value - avoid CombinedBuilder overhead
+            if (completeValueInfos.size() == 1) {
+                FieldValueInfo singleFvi = completeValueInfos.get(0);
+                Object fieldValue = singleFvi.getFieldValueObject();
+                if (!(fieldValue instanceof CompletableFuture)) {
+                    Map<String, Object> fieldValueMap = executionContext.getResponseMapFactory()
+                            .createInsertionOrdered(fieldsExecutedOnInitialResult, Collections.singletonList(fieldValue));
+                    resolveObjectCtx.onCompleted(fieldValueMap, null);
+                    return fieldValueMap;
+                }
+            }
+
+            Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
 
             Object completedValuesObject = resultFutures.awaitPolymorphic();
             if (completedValuesObject instanceof CompletableFuture) {
