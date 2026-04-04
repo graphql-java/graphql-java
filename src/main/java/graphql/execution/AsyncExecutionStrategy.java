@@ -60,11 +60,16 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             return CompletableFuture.completedFuture(isNotSensible.get());
         }
 
-        DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
+        // Inline the incremental support check to avoid createDeferredExecutionSupport method call
+        // and NOOP.getNonDeferredFieldNames virtual dispatch when incremental support is disabled
+        boolean hasIncrementalSupport = executionContext.hasIncrementalSupport();
+        DeferredExecutionSupport deferredExecutionSupport = hasIncrementalSupport ?
+                createDeferredExecutionSupport(executionContext, parameters) : DeferredExecutionSupport.NOOP;
 
         if (!noOpDL) {
             DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
-            dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters, deferredExecutionSupport.getNonDeferredFieldNames(fieldNames).size());
+            List<String> nonDeferredFieldNames = hasIncrementalSupport ? deferredExecutionSupport.getNonDeferredFieldNames(fieldNames) : fieldNames;
+            dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters, nonDeferredFieldNames.size());
         }
         Object resolvedFieldResult = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
         if (!noOpDL) {
@@ -89,7 +94,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             CompletableFuture<List<FieldValueInfo>> fieldValueInfosCF = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
             CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
             fieldValueInfosCF.whenComplete((completeValueInfos, throwable) -> {
-                List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+                List<String> fieldsExecutedOnInitialResult = hasIncrementalSupport ?
+                        deferredExecutionSupport.getNonDeferredFieldNames(fieldNames) : fieldNames;
 
                 BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
                 throwable = executionContext.possibleCancellation(throwable);
@@ -125,7 +131,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         } else {
             @SuppressWarnings("unchecked")
             List<FieldValueInfo> completeValueInfos = (List<FieldValueInfo>) fieldValueInfosResult;
-            List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+            List<String> fieldsExecutedOnInitialResult = hasIncrementalSupport ?
+                    deferredExecutionSupport.getNonDeferredFieldNames(fieldNames) : fieldNames;
 
             Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {

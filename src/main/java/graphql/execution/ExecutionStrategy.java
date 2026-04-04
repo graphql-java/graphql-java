@@ -222,8 +222,18 @@ public abstract class ExecutionStrategy {
 
         List<String> fieldNames = parameters.getFields().getKeys();
 
-        DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
-        List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+        // Inline the incremental support check to avoid createDeferredExecutionSupport method call
+        // and NOOP.getNonDeferredFieldNames virtual dispatch when incremental support is disabled (~5.5K/op)
+        boolean hasIncrementalSupport = executionContext.hasIncrementalSupport();
+        DeferredExecutionSupport deferredExecutionSupport;
+        List<String> fieldsExecutedOnInitialResult;
+        if (hasIncrementalSupport) {
+            deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
+            fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+        } else {
+            deferredExecutionSupport = DeferredExecutionSupport.NOOP;
+            fieldsExecutedOnInitialResult = fieldNames;
+        }
         if (!noOpDL) {
             executionContext.getDataLoaderDispatcherStrategy().executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
         }
@@ -548,15 +558,17 @@ public abstract class ExecutionStrategy {
             return null;
         }
 
-        MergedField field = parameters.getField();
-        GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
-
         boolean noOpFieldInstr = executionContext.isNoOpFieldInstrumentation();
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
         // For no-op instrumentation, skip the intraThreadMemoize wrapper since the supplier is called at most once
-        // in the normal code path, avoiding an IntraThreadMemoizedSupplier allocation per field
+        // in the normal code path, avoiding an IntraThreadMemoizedSupplier allocation per field.
+        // parentType and field are computed lazily inside the lambda to reduce capture count from 6 to 4 fields,
+        // saving 16 bytes per lambda and avoiding ~54K getUnwrappedNonNullTypeAs()+getField() calls per op
+        // for PropertyDataFetcher fields where the DFE supplier is never evaluated.
         Supplier<DataFetchingEnvironment> dfeFactory = () -> {
+            GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
+            MergedField field = parameters.getField();
 
             Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(
                     () -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
@@ -580,7 +592,7 @@ public abstract class ExecutionStrategy {
                     .localContext(parameters.getLocalContext())
                     .arguments(argumentValues)
                     .fieldDefinition(fieldDef)
-                    .mergedField(parameters.getField())
+                    .mergedField(field)
                     .fieldType(fieldDef.getType())
                     .executionStepInfo(executionStepInfo)
                     .parentType(parentType)
