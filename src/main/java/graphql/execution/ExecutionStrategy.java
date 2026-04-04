@@ -58,7 +58,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
-import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
 import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
@@ -367,7 +366,8 @@ public abstract class ExecutionStrategy {
                 new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
         ));
 
-        Object fetchedValueObj = fetchField(executionContext, parameters);
+        // Pass the already-resolved fieldDef to avoid a redundant getFieldDef lookup inside fetchField
+        Object fetchedValueObj = fetchField(fieldDef, executionContext, parameters);
         if (fetchedValueObj instanceof CompletableFuture) {
             CompletableFuture<Object> fetchFieldFuture = (CompletableFuture<Object>) fetchedValueObj;
             CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) -> {
@@ -841,9 +841,7 @@ public abstract class ExecutionStrategy {
                     handleValueException(overallResult, exception, executionContext);
                     return;
                 }
-                List<Object> completedResults = new ArrayList<>(results.size());
-                completedResults.addAll(results);
-                overallResult.complete(completedResults);
+                overallResult.complete(results);
             });
             listOrPromiseToList = overallResult;
         } else {
@@ -943,13 +941,13 @@ public abstract class ExecutionStrategy {
     protected Object completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
-        FieldCollectorParameters collectorParameters = newParameters()
-                .schema(executionContext.getGraphQLSchema())
-                .objectType(resolvedObjectType)
-                .fragments(executionContext.getFragmentsByName())
-                .variables(executionContext.getCoercedVariables().toMap())
-                .graphQLContext(executionContext.getGraphQLContext())
-                .build();
+        FieldCollectorParameters collectorParameters = new FieldCollectorParameters(
+                executionContext.getGraphQLSchema(),
+                resolvedObjectType,
+                executionContext.getFragmentsByName(),
+                executionContext.getCoercedVariables().toMap(),
+                executionContext.getGraphQLContext()
+        );
 
         MergedSelectionSet subFields = fieldCollector.collectFields(
                 collectorParameters,

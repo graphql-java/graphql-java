@@ -48,6 +48,14 @@ public class FieldCollectorParameters {
         this.graphQLContext = builder.graphQLContext;
     }
 
+    FieldCollectorParameters(GraphQLSchema graphQLSchema, GraphQLObjectType objectType, Map<String, FragmentDefinition> fragmentsByName, Map<String, Object> variables, GraphQLContext graphQLContext) {
+        this.graphQLSchema = graphQLSchema;
+        this.objectType = objectType;
+        this.fragmentsByName = fragmentsByName;
+        this.variables = variables;
+        this.graphQLContext = graphQLContext;
+    }
+
     public static Builder newParameters() {
         return new Builder();
     }
