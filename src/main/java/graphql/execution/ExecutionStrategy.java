@@ -445,7 +445,20 @@ public abstract class ExecutionStrategy {
     @SuppressWarnings("unchecked")
     @DuckTyped(shape = "CompletableFuture<FieldValueInfo> | FieldValueInfo")
     protected Object resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
+        // Look up field definition + data fetcher from per-execution cache to avoid
+        // per-field getFieldDef (field visibility dispatch + map lookup) and getDataFetcher
+        // (2-3 HashMap lookups + resolveDataFetcher) for repeated field resolutions on the same type.
+        GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
+        String fieldName = parameters.getField().getSingleField().getName();
+        ExecutionContext.FieldResolveInfo resolveInfo = executionContext.getCachedFieldResolveInfo(parentType, fieldName);
+        if (resolveInfo == null) {
+            GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, parameters.getField().getSingleField());
+            GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
+            DataFetcher<?> dataFetcher = codeRegistry.getDataFetcher(parentType.getName(), fieldDef.getName(), fieldDef);
+            resolveInfo = new ExecutionContext.FieldResolveInfo(fieldDef, dataFetcher);
+            executionContext.putCachedFieldResolveInfo(parentType, fieldName, resolveInfo);
+        }
+        GraphQLFieldDefinition fieldDef = resolveInfo.fieldDef;
 
         boolean noOpFieldInstr = executionContext.isNoOpFieldInstrumentation();
 
@@ -458,8 +471,8 @@ public abstract class ExecutionStrategy {
             ));
         }
 
-        // Pass the already-resolved fieldDef to avoid a redundant getFieldDef lookup inside fetchField
-        Object fetchedValueObj = fetchField(fieldDef, executionContext, parameters);
+        // Pass the cached fieldDef and dataFetcher to avoid redundant lookups inside fetchField
+        Object fetchedValueObj = fetchField(resolveInfo, executionContext, parameters);
         if (fetchedValueObj instanceof CompletableFuture) {
             CompletableFuture<Object> fetchFieldFuture = (CompletableFuture<Object>) fetchedValueObj;
             CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) -> {
@@ -515,7 +528,20 @@ public abstract class ExecutionStrategy {
     }
 
     @DuckTyped(shape = "CompletableFuture<FetchedValue|Object> | <FetchedValue|Object>")
+    private Object fetchField(ExecutionContext.FieldResolveInfo resolveInfo, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        return fetchField(resolveInfo.fieldDef, resolveInfo.dataFetcher, executionContext, parameters);
+    }
+
+    @DuckTyped(shape = "CompletableFuture<FetchedValue|Object> | <FetchedValue|Object>")
     private Object fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
+        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
+        DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType.getName(), fieldDef.getName(), fieldDef);
+        return fetchField(fieldDef, originalDataFetcher, executionContext, parameters);
+    }
+
+    @DuckTyped(shape = "CompletableFuture<FetchedValue|Object> | <FetchedValue|Object>")
+    private Object fetchField(GraphQLFieldDefinition fieldDef, DataFetcher<?> originalDataFetcher, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         executionContext.throwIfCancelled();
 
         if (incrementAndCheckMaxNodesExceeded(executionContext)) {
@@ -524,9 +550,6 @@ public abstract class ExecutionStrategy {
 
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
-
-        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType.getName(), fieldDef.getName(), fieldDef);
 
         boolean noOpFieldInstr = executionContext.isNoOpFieldInstrumentation();
 

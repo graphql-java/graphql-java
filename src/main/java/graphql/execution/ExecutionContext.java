@@ -100,6 +100,12 @@ public class ExecutionContext {
     // when the same object type is completed multiple times (e.g., all Product objects in a list).
     private final ConcurrentHashMap<GraphQLObjectType, ConcurrentHashMap<MergedField, MergedSelectionSet>> collectedFieldsCache = new ConcurrentHashMap<>();
 
+    // Per-execution cache for field definition + data fetcher lookups, keyed by (GraphQLObjectType, fieldName).
+    // Avoids per-field getFieldDef (field visibility dispatch + map lookup) and getDataFetcher
+    // (2-3 HashMap lookups + resolveDataFetcher) for repeated field resolutions on the same type.
+    // Only ~36-48 unique entries for typical queries, but cache hit rate is >99% across ~66K field resolutions.
+    private final ConcurrentHashMap<GraphQLObjectType, ConcurrentHashMap<String, FieldResolveInfo>> fieldResolveCache = new ConcurrentHashMap<>();
+
     private final Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives;
     private final Supplier<Map<String, ImmutableList<QueryAppliedDirective>>> operationDirectives;
     private final Profiler profiler;
@@ -521,5 +527,41 @@ public class ExecutionContext {
     @Internal
     void putCachedCollectedFields(GraphQLObjectType objectType, MergedField mergedField, MergedSelectionSet result) {
         collectedFieldsCache.computeIfAbsent(objectType, k -> new ConcurrentHashMap<>()).put(mergedField, result);
+    }
+
+    /**
+     * Lightweight holder for cached field definition + data fetcher resolution.
+     * Package-private to be accessible from ExecutionStrategy.
+     */
+    @Internal
+    static final class FieldResolveInfo {
+        final graphql.schema.GraphQLFieldDefinition fieldDef;
+        final graphql.schema.DataFetcher<?> dataFetcher;
+
+        FieldResolveInfo(graphql.schema.GraphQLFieldDefinition fieldDef, graphql.schema.DataFetcher<?> dataFetcher) {
+            this.fieldDef = fieldDef;
+            this.dataFetcher = dataFetcher;
+        }
+    }
+
+    /**
+     * Returns a cached FieldResolveInfo for the given object type and field name, or null if not cached.
+     */
+    @Internal
+    @Nullable
+    FieldResolveInfo getCachedFieldResolveInfo(GraphQLObjectType objectType, String fieldName) {
+        ConcurrentHashMap<String, FieldResolveInfo> inner = fieldResolveCache.get(objectType);
+        if (inner != null) {
+            return inner.get(fieldName);
+        }
+        return null;
+    }
+
+    /**
+     * Stores a FieldResolveInfo in the per-execution cache for the given object type and field name.
+     */
+    @Internal
+    void putCachedFieldResolveInfo(GraphQLObjectType objectType, String fieldName, FieldResolveInfo info) {
+        fieldResolveCache.computeIfAbsent(objectType, k -> new ConcurrentHashMap<>()).put(fieldName, info);
     }
 }
