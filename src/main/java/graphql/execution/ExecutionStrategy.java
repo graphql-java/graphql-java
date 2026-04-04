@@ -340,12 +340,17 @@ public abstract class ExecutionStrategy {
         executionContext.throwIfCancelled();
 
         MergedSelectionSet fields = parameters.getFields();
+        boolean hasIncrementalSupport = executionContext.hasIncrementalSupport();
 
-        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
+        if (hasIncrementalSupport) {
+            executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
+        }
 
         // Only non-deferred fields should be considered for calculating the expected size of futures.
-        Async.CombinedBuilder<FieldValueInfo> futures = Async
-                .ofExpectedSize(fields.size() - deferredExecutionSupport.deferredFieldsCount());
+        int expectedSize = hasIncrementalSupport
+                ? fields.size() - deferredExecutionSupport.deferredFieldsCount()
+                : fields.size();
+        Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(expectedSize);
 
         for (String fieldName : fields.getKeys()) {
             executionContext.throwIfCancelled();
@@ -355,14 +360,15 @@ public abstract class ExecutionStrategy {
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters.transform(currentField, fieldPath, parameters);
 
-            if (!deferredExecutionSupport.isDeferredField(currentField)) {
+            // Skip the per-field isDeferredField virtual call when incremental support is disabled
+            if (!hasIncrementalSupport || !deferredExecutionSupport.isDeferredField(currentField)) {
                 Object fieldValueInfo = resolveFieldWithInfo(executionContext, newParameters);
                 futures.addObject(fieldValueInfo);
             }
 
         }
 
-        if (executionContext.hasIncrementalSupport()
+        if (hasIncrementalSupport
                 && deferredExecutionSupport.deferredFieldsCount() > 0
                 && executionContext.getGraphQLContext().getBoolean(IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START, false)) {
 
@@ -889,32 +895,54 @@ public abstract class ExecutionStrategy {
             index++;
         }
 
-        Object listResults = Async.eachPolymorphic(fieldValueInfos, FieldValueInfo::getFieldValueObject);
+        // Fast path: extract field values directly and check for CFs in a single pass,
+        // avoiding CombinedBuilder (Many object + Object[] array) allocation overhead
+        int listSize = fieldValueInfos.size();
         Object listOrPromiseToList;
-        if (listResults instanceof CompletableFuture) {
-            @SuppressWarnings("unchecked")
-            CompletableFuture<List<Object>> resultsFuture = (CompletableFuture<List<Object>>) listResults;
-            CompletableFuture<Object> overallResult = new CompletableFuture<>();
+        if (listSize == 0) {
             if (completeListCtx != null) {
-                completeListCtx.onDispatched();
-                overallResult.whenComplete(completeListCtx::onCompleted);
+                completeListCtx.onCompleted(Collections.emptyList(), null);
             }
-
-            resultsFuture.whenComplete((results, exception) -> {
-                exception = executionContext.possibleCancellation(exception);
-
-                if (exception != null) {
-                    handleValueException(overallResult, exception, executionContext);
-                    return;
-                }
-                overallResult.complete(results);
-            });
-            listOrPromiseToList = overallResult;
+            listOrPromiseToList = Collections.emptyList();
         } else {
-            if (completeListCtx != null) {
-                completeListCtx.onCompleted(listResults, null);
+            Object[] values = new Object[listSize];
+            boolean hasCF = false;
+            for (int i = 0; i < listSize; i++) {
+                Object val = fieldValueInfos.get(i).getFieldValueObject();
+                values[i] = val;
+                if (val instanceof CompletableFuture) {
+                    hasCF = true;
+                }
             }
-            listOrPromiseToList = listResults;
+
+            if (hasCF) {
+                Async.CombinedBuilder<Object> resultFutures = Async.ofExpectedSize(listSize);
+                for (Object val : values) {
+                    resultFutures.addObject(val);
+                }
+                CompletableFuture<Object> overallResult = new CompletableFuture<>();
+                if (completeListCtx != null) {
+                    completeListCtx.onDispatched();
+                    overallResult.whenComplete(completeListCtx::onCompleted);
+                }
+                resultFutures.await().whenComplete((results, exception) -> {
+                    exception = executionContext.possibleCancellation(exception);
+
+                    if (exception != null) {
+                        handleValueException(overallResult, exception, executionContext);
+                        return;
+                    }
+                    overallResult.complete(results);
+                });
+                listOrPromiseToList = overallResult;
+            } else {
+                @SuppressWarnings("unchecked")
+                List<Object> results = (List<Object>) (List<?>) Arrays.asList(values);
+                if (completeListCtx != null) {
+                    completeListCtx.onCompleted(results, null);
+                }
+                listOrPromiseToList = results;
+            }
         }
         return new FieldValueInfo(LIST, listOrPromiseToList, fieldValueInfos);
     }
