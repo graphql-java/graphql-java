@@ -48,6 +48,7 @@ import graphql.util.FpKit;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -260,20 +261,36 @@ public abstract class ExecutionStrategy {
         } else {
             List<FieldValueInfo> completeValueInfos = (List<FieldValueInfo>) fieldValueInfosResult;
 
-            Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
             dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
             resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
 
-            Object completedValuesObject = resultFutures.awaitPolymorphic();
-            if (completedValuesObject instanceof CompletableFuture) {
+            // Fast path: extract field values directly and check for CFs in a single pass,
+            // avoiding CombinedBuilder (Many object + Object[] array) allocation overhead
+            int size = completeValueInfos.size();
+            Object[] fieldValues = new Object[size];
+            boolean hasCF = false;
+            for (int i = 0; i < size; i++) {
+                Object val = completeValueInfos.get(i).getFieldValueObject();
+                fieldValues[i] = val;
+                if (val instanceof CompletableFuture) {
+                    hasCF = true;
+                }
+            }
+
+            if (hasCF) {
+                Async.CombinedBuilder<Object> resultFutures = Async.ofExpectedSize(size);
+                for (Object val : fieldValues) {
+                    resultFutures.addObject(val);
+                }
                 CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
                 BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
-                CompletableFuture<List<Object>> completedValues = (CompletableFuture<List<Object>>) completedValuesObject;
-                completedValues.whenComplete(handleResultsConsumer);
+                resultFutures.await().whenComplete(handleResultsConsumer);
                 overallResult.whenComplete(resolveObjectCtx::onCompleted);
                 return overallResult;
             } else {
-                Map<String, Object> fieldValueMap = executionContext.getResponseMapFactory().createInsertionOrdered(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
+                @SuppressWarnings("unchecked")
+                List<Object> results = (List<Object>) (List<?>) Arrays.asList(fieldValues);
+                Map<String, Object> fieldValueMap = executionContext.getResponseMapFactory().createInsertionOrdered(fieldsExecutedOnInitialResult, results);
                 resolveObjectCtx.onCompleted(fieldValueMap, null);
                 return fieldValueMap;
             }
@@ -451,9 +468,16 @@ public abstract class ExecutionStrategy {
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
 
-        // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
+        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
+        DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType.getName(), fieldDef.getName(), fieldDef);
 
-        Supplier<DataFetchingEnvironment> dataFetchingEnvironment = FpKit.intraThreadMemoize(() -> {
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
+
+        // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
+        // For no-op instrumentation, skip the intraThreadMemoize wrapper since the supplier is called at most once
+        // in the normal code path, avoiding an IntraThreadMemoizedSupplier allocation per field
+        Supplier<DataFetchingEnvironment> dfeFactory = () -> {
 
             Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(
                     () -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
@@ -486,13 +510,8 @@ public abstract class ExecutionStrategy {
                     .deferredCallContext(parameters.getDeferredCallContext())
                     .level(parameters.getPath().getLevel())
                     .build();
-        });
-
-        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType.getName(), fieldDef.getName(), fieldDef);
-
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
+        };
+        Supplier<DataFetchingEnvironment> dataFetchingEnvironment = noOpFieldInstr ? dfeFactory : FpKit.intraThreadMemoize(dfeFactory);
 
         FieldFetchingInstrumentationContext fetchCtx;
         DataFetcher<?> dataFetcher;
