@@ -227,13 +227,12 @@ public abstract class ExecutionStrategy {
         dataLoaderDispatcherStrategy.executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
         Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
-        CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
-        BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
-
         resolveObjectCtx.onDispatched();
 
         Object fieldValueInfosResult = resolvedFieldFutures.awaitPolymorphic();
         if (fieldValueInfosResult instanceof CompletableFuture) {
+            CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
             CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
             fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
                 throwable = executionContext.possibleCancellation(throwable);
@@ -267,6 +266,8 @@ public abstract class ExecutionStrategy {
 
             Object completedValuesObject = resultFutures.awaitPolymorphic();
             if (completedValuesObject instanceof CompletableFuture) {
+                CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
+                BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
                 CompletableFuture<List<Object>> completedValues = (CompletableFuture<List<Object>>) completedValuesObject;
                 completedValues.whenComplete(handleResultsConsumer);
                 overallResult.whenComplete(resolveObjectCtx::onCompleted);

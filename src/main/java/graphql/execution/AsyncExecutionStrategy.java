@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredExecutionSupport;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
@@ -9,6 +10,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.introspection.Introspection;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -65,19 +67,47 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         dataLoaderDispatcherStrategy.finishedFetching(executionContext, parameters);
 
 
-        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched();
 
-        futures.await().whenComplete((completeValueInfos, throwable) -> {
+        Object fieldValueInfosResult = futures.awaitPolymorphic();
+        if (fieldValueInfosResult instanceof CompletableFuture) {
+            @SuppressWarnings("unchecked")
+            CompletableFuture<List<FieldValueInfo>> fieldValueInfosCF = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
+            CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+            fieldValueInfosCF.whenComplete((completeValueInfos, throwable) -> {
+                List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+
+                BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
+                throwable = executionContext.possibleCancellation(throwable);
+
+                if (throwable != null) {
+                    handleResultsConsumer.accept(null, throwable.getCause());
+                    return;
+                }
+
+                Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
+                for (FieldValueInfo completeValueInfo : completeValueInfos) {
+                    fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
+                }
+                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
+                executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
+                fieldValuesFutures.await().whenComplete(handleResultsConsumer);
+            }).exceptionally((ex) -> {
+                // if there are any issues with combining/handling the field results,
+                // complete the future at all costs and bubble up any thrown exception so
+                // the execution does not hang.
+                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesException(ex, parameters);
+                executionStrategyCtx.onFieldValuesException();
+                overallResult.completeExceptionally(ex);
+                return null;
+            });
+
+            overallResult.whenComplete(executionStrategyCtx::onCompleted);
+            return overallResult;
+        } else {
+            @SuppressWarnings("unchecked")
+            List<FieldValueInfo> completeValueInfos = (List<FieldValueInfo>) fieldValueInfosResult;
             List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
-
-            BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
-            throwable = executionContext.possibleCancellation(throwable);
-
-            if (throwable != null) {
-                handleResultsConsumer.accept(null, throwable.getCause());
-                return;
-            }
 
             Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
@@ -85,19 +115,25 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             }
             dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
-            fieldValuesFutures.await().whenComplete(handleResultsConsumer);
-        }).exceptionally((ex) -> {
-            // if there are any issues with combining/handling the field results,
-            // complete the future at all costs and bubble up any thrown exception so
-            // the execution does not hang.
-            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesException(ex, parameters);
-            executionStrategyCtx.onFieldValuesException();
-            overallResult.completeExceptionally(ex);
-            return null;
-        });
 
-        overallResult.whenComplete(executionStrategyCtx::onCompleted);
-        return overallResult;
+            Object completedValuesObject = fieldValuesFutures.awaitPolymorphic();
+            if (completedValuesObject instanceof CompletableFuture) {
+                @SuppressWarnings("unchecked")
+                CompletableFuture<List<Object>> completedValues = (CompletableFuture<List<Object>>) completedValuesObject;
+                CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+                BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
+                completedValues.whenComplete(handleResultsConsumer);
+                overallResult.whenComplete(executionStrategyCtx::onCompleted);
+                return overallResult;
+            } else {
+                @SuppressWarnings("unchecked")
+                List<Object> results = (List<Object>) completedValuesObject;
+                Map<String, Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldsExecutedOnInitialResult, results);
+                ExecutionResult executionResult = new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors());
+                executionStrategyCtx.onCompleted(executionResult, null);
+                return CompletableFuture.completedFuture(executionResult);
+            }
+        }
     }
 
 }
