@@ -20,6 +20,7 @@ import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -76,6 +78,11 @@ public class ExecutionContext {
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
     private final EngineRunningState engineRunningState;
+
+    // Per-execution cache for collectFields results, keyed by (GraphQLObjectType, MergedField).
+    // Avoids redundant field collection, LinkedHashMap/LinkedHashSet allocation, and MergedField creation
+    // when the same object type is completed multiple times (e.g., all Product objects in a list).
+    private final ConcurrentHashMap<GraphQLObjectType, ConcurrentHashMap<MergedField, MergedSelectionSet>> collectedFieldsCache = new ConcurrentHashMap<>();
 
     private final Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives;
     private final Supplier<Map<String, ImmutableList<QueryAppliedDirective>>> operationDirectives;
@@ -432,5 +439,27 @@ public class ExecutionContext {
     @Internal
     void throwIfCancelled() throws AbortExecutionException {
         engineRunningState.throwIfCancelled();
+    }
+
+    /**
+     * Returns a cached MergedSelectionSet for the given object type and merged field, or null if not cached.
+     * This avoids redundant field collection when the same type+field combination is completed multiple times.
+     */
+    @Internal
+    @Nullable
+    MergedSelectionSet getCachedCollectedFields(GraphQLObjectType objectType, MergedField mergedField) {
+        ConcurrentHashMap<MergedField, MergedSelectionSet> inner = collectedFieldsCache.get(objectType);
+        if (inner != null) {
+            return inner.get(mergedField);
+        }
+        return null;
+    }
+
+    /**
+     * Stores a MergedSelectionSet in the per-execution cache for the given object type and merged field.
+     */
+    @Internal
+    void putCachedCollectedFields(GraphQLObjectType objectType, MergedField mergedField, MergedSelectionSet result) {
+        collectedFieldsCache.computeIfAbsent(objectType, k -> new ConcurrentHashMap<>()).put(mergedField, result);
     }
 }

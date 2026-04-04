@@ -990,19 +990,25 @@ public abstract class ExecutionStrategy {
     protected Object completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
-        FieldCollectorParameters collectorParameters = new FieldCollectorParameters(
-                executionContext.getGraphQLSchema(),
-                resolvedObjectType,
-                executionContext.getFragmentsByName(),
-                executionContext.getCoercedVariables().toMap(),
-                executionContext.getGraphQLContext()
-        );
-
-        MergedSelectionSet subFields = fieldCollector.collectFields(
-                collectorParameters,
-                parameters.getField(),
-                executionContext.hasIncrementalSupport()
-        );
+        // Try the per-execution cache first — avoids FieldCollectorParameters allocation,
+        // LinkedHashMap/LinkedHashSet allocation in collectFields, and MergedField creation per sub-field
+        MergedField currentField = parameters.getField();
+        MergedSelectionSet subFields = executionContext.getCachedCollectedFields(resolvedObjectType, currentField);
+        if (subFields == null) {
+            FieldCollectorParameters collectorParameters = new FieldCollectorParameters(
+                    executionContext.getGraphQLSchema(),
+                    resolvedObjectType,
+                    executionContext.getFragmentsByName(),
+                    executionContext.getCoercedVariables().toMap(),
+                    executionContext.getGraphQLContext()
+            );
+            subFields = fieldCollector.collectFields(
+                    collectorParameters,
+                    currentField,
+                    executionContext.hasIncrementalSupport()
+            );
+            executionContext.putCachedCollectedFields(resolvedObjectType, currentField, subFields);
+        }
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
 
