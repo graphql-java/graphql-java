@@ -1335,12 +1335,38 @@ public class OperationValidator implements DocumentVisitor {
         Map<String, Set<FieldAndType>> fieldMap = null;
         Set<String> visitedFragments = null;
         for (FieldAndType fieldAndType : sameNameFields) {
-            if (fieldAndType.field.getSelectionSet() != null) {
+            if (fieldAndType.field.getSelectionSet() == null) {
+                continue;
+            }
+            // Check per-field cache: each FieldAndType's sub-selection is computed at most once globally.
+            // This reuses results from single-element FieldSet lookups and avoids redundant collection
+            // when the same field appears in multiple multi-element mergeSubSelections calls.
+            Map<String, Set<FieldAndType>> perFieldResult = singleFieldSubSelectionsCache.get(fieldAndType);
+            if (perFieldResult != null) {
+                if (perFieldResult.isEmpty()) {
+                    continue;
+                }
                 if (fieldMap == null) {
                     fieldMap = new HashMap<>();
-                    visitedFragments = new HashSet<>();
                 }
-                overlappingFields_collectFields(fieldMap, fieldAndType.field.getSelectionSet(), fieldAndType.graphQLType, visitedFragments);
+                for (Map.Entry<String, Set<FieldAndType>> entry : perFieldResult.entrySet()) {
+                    fieldMap.computeIfAbsent(entry.getKey(), k -> new FieldSet()).addAll(entry.getValue());
+                }
+            } else {
+                // Compute per-field sub-selections and cache
+                Map<String, Set<FieldAndType>> tempMap = new HashMap<>();
+                Set<String> tempVisited = new HashSet<>();
+                overlappingFields_collectFields(tempMap, fieldAndType.field.getSelectionSet(), fieldAndType.graphQLType, tempVisited);
+                Map<String, Set<FieldAndType>> cachedResult = tempMap.isEmpty() ? Collections.emptyMap() : tempMap;
+                singleFieldSubSelectionsCache.put(fieldAndType, cachedResult);
+                if (!tempMap.isEmpty()) {
+                    if (fieldMap == null) {
+                        fieldMap = new HashMap<>();
+                    }
+                    for (Map.Entry<String, Set<FieldAndType>> entry : tempMap.entrySet()) {
+                        fieldMap.computeIfAbsent(entry.getKey(), k -> new FieldSet()).addAll(entry.getValue());
+                    }
+                }
             }
         }
         return fieldMap != null ? fieldMap : Collections.emptyMap();
@@ -1591,11 +1617,13 @@ public class OperationValidator implements DocumentVisitor {
         final Field field;
         final @Nullable GraphQLType graphQLType;
         final @Nullable GraphQLType parentType;
+        private final int hash;
 
         public FieldAndType(Field field, @Nullable GraphQLType graphQLType, @Nullable GraphQLType parentType) {
             this.field = field;
             this.graphQLType = graphQLType;
             this.parentType = parentType;
+            this.hash = System.identityHashCode(field);
         }
 
         @Override
@@ -1612,16 +1640,15 @@ public class OperationValidator implements DocumentVisitor {
             if (this == o) {
                 return true;
             }
-            if (o == null || getClass() != o.getClass()) {
+            if (!(o instanceof FieldAndType)) {
                 return false;
             }
-            FieldAndType that = (FieldAndType) o;
-            return Objects.equals(field, that.field);
+            return field == ((FieldAndType) o).field;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hashCode(field);
+            return hash;
         }
     }
 
