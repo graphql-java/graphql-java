@@ -39,7 +39,9 @@ import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -489,7 +491,7 @@ public abstract class ExecutionStrategy {
                 if (!executionContext.isNoOpDataLoaderDispatch()) {
                     executionContext.getDataLoaderDispatcherStrategy().startComplete(parameters);
                 }
-                FieldValueInfo completeFieldResult = completeField(fieldDef, executionContext, parameters, fetchedValue);
+                FieldValueInfo completeFieldResult = completeField(fieldDef, parentType, executionContext, parameters, fetchedValue);
                 if (!executionContext.isNoOpDataLoaderDispatch()) {
                     executionContext.getDataLoaderDispatcherStrategy().stopComplete(parameters);
                 }
@@ -503,7 +505,7 @@ public abstract class ExecutionStrategy {
             return result;
         } else {
             try {
-                FieldValueInfo fieldValueInfo = completeField(fieldDef, executionContext, parameters, fetchedValueObj);
+                FieldValueInfo fieldValueInfo = completeField(fieldDef, parentType, executionContext, parameters, fetchedValueObj);
                 if (fieldCtx != null) {
                     fieldCtx.onDispatched();
                     fieldCtx.onCompleted(FetchedValue.getFetchedValue(fetchedValueObj), null);
@@ -791,11 +793,10 @@ public abstract class ExecutionStrategy {
         Field field = parameters.getField().getSingleField();
         GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
-        return completeField(fieldDef, executionContext, parameters, fetchedValue);
+        return completeField(fieldDef, parentType, executionContext, parameters, fetchedValue);
     }
 
-    private FieldValueInfo completeField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
-        GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
+    private FieldValueInfo completeField(GraphQLFieldDefinition fieldDef, GraphQLObjectType parentType, ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object fetchedValue) {
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
         boolean noOpFieldInstr = executionContext.isNoOpFieldInstrumentation();
@@ -966,22 +967,29 @@ public abstract class ExecutionStrategy {
         }
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
+        // Hoist loop-invariant computations: the parent path and local context don't change per element,
+        // and the list element type (unwrapped from the list type) is the same for all elements
+        ResultPath parentPath = parameters.getPath();
+        Object parentLocalContext = parameters.getLocalContext();
+        GraphQLList listFieldType = executionStepInfo.getUnwrappedNonNullTypeAs();
+        GraphQLOutputType typeInList = (GraphQLOutputType) listFieldType.getWrappedType();
         int index = 0;
         for (Object item : iterableValues) {
             if (incrementAndCheckMaxNodesExceeded(executionContext)) {
                 return new FieldValueInfo(NULL, null, fieldValueInfos);
             }
 
-            ResultPath indexedPath = parameters.getPath().segment(index);
+            ResultPath indexedPath = parentPath.segment(index);
 
-            ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, indexedPath);
+            // Inline newExecutionStepInfoForListElement to avoid per-element getUnwrappedNonNullTypeAs + getWrappedType
+            ExecutionStepInfo stepInfoForListElement = executionStepInfo.transform(typeInList, executionStepInfo, indexedPath);
 
             Object fetchedValue = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
             ExecutionStrategyParameters newParameters = parameters.transform(
                     stepInfoForListElement,
                     indexedPath,
-                    FetchedValue.getLocalContext(fetchedValue, parameters.getLocalContext()),
+                    FetchedValue.getLocalContext(fetchedValue, parentLocalContext),
                     FetchedValue.getFetchedValue(fetchedValue)
             );
 
