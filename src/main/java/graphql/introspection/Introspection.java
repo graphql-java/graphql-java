@@ -118,7 +118,6 @@ public class Introspection {
     public static Optional<ExecutionResult> isIntrospectionSensible(MergedSelectionSet mergedSelectionSet, ExecutionContext executionContext) {
         GraphQLContext graphQLContext = executionContext.getGraphQLContext();
 
-        boolean isIntrospection = false;
         for (String key : mergedSelectionSet.getKeys()) {
             MergedField subField = Assert.assertNotNull(mergedSelectionSet.getSubField(key), "subField for key '%s' should not be null", key);
             String fieldName = subField.getName();
@@ -127,12 +126,8 @@ public class Introspection {
                 if (!isIntrospectionEnabled(graphQLContext)) {
                     return mkDisabledError(subField);
                 }
-                isIntrospection = true;
                 break;
             }
-        }
-        if (isIntrospection) {
-            return GoodFaithIntrospection.checkIntrospection(executionContext);
         }
         return Optional.empty();
     }

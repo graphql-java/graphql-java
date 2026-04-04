@@ -8,8 +8,8 @@ import java.text.SimpleDateFormat
 buildscript {
     repositories { mavenCentral() }
     dependencies {
-        classpath 'org.ow2.asm:asm:9.7.1'
-        classpath 'org.ow2.asm:asm-tree:9.7.1'
+        classpath 'org.ow2.asm:asm:9.9.1'
+        classpath 'org.ow2.asm:asm-tree:9.9.1'
     }
 }
 
@@ -19,7 +19,7 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "9.3.1"
+    id "com.gradleup.shadow" version "9.3.2"
     id "biz.aQute.bnd.builder" version "7.1.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
@@ -29,7 +29,7 @@ plugins {
     id 'jacoco'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.3.10'
+    id 'org.jetbrains.kotlin.jvm' version '2.3.20'
 }
 
 java {
@@ -137,13 +137,13 @@ dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.1'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.3'
 
     testImplementation 'org.spockframework:spock-core:2.4-groovy-5.0'
-    testImplementation 'net.bytebuddy:byte-buddy:1.18.7'
+    testImplementation 'net.bytebuddy:byte-buddy:1.18.8'
     testImplementation 'org.objenesis:objenesis:3.5'
-    testImplementation 'org.apache.groovy:groovy:5.0.4'
-    testImplementation 'org.apache.groovy:groovy-json:5.0.4'
+    testImplementation 'org.apache.groovy:groovy:5.0.5'
+    testImplementation 'org.apache.groovy:groovy-json:5.0.5'
     testImplementation 'com.google.code.gson:gson:2.13.2'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.26'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.21.1'
@@ -152,27 +152,27 @@ dependencies {
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.8.3"
+    testImplementation "io.projectreactor:reactor-core:3.8.4"
 
     testImplementation 'org.testng:testng:7.12.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
     testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
     
     // JUnit Platform launcher required for Gradle 9
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.3'
 
     antlr 'org.antlr:antlr4:' + antlrVersion
 
     // this is needed for the idea jmh plugin to work correctly
     jmh 'org.openjdk.jmh:jmh-core:1.37'
     jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
-    jmh 'me.bechberger:ap-loader-all:4.3-12'
+    jmh 'me.bechberger:ap-loader-all:4.3-13'
 
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
     errorprone 'com.uber.nullaway:nullaway:0.12.10'
-    errorprone 'com.google.errorprone:error_prone_core:2.47.0'
+    errorprone 'com.google.errorprone:error_prone_core:2.48.0'
 
     // just tests - no Kotlin otherwise
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
@@ -406,8 +406,6 @@ task testng(type: Test) {
     dependsOn tasks.named('testClasses')
     doLast { verifyTestngSkips(it, expectedTestngSkips) }
 }
-check.dependsOn testng
-
 compileJava {
     options.compilerArgs += ["-parameters"]
     source file("build/generated-src"), sourceSets.main.java
@@ -563,9 +561,6 @@ tasks.register('testWithJava11', Test) {
     }
 }
 
-test.dependsOn testWithJava21
-test.dependsOn testWithJava17
-test.dependsOn testWithJava11
 
 jacoco {
     toolVersion = "0.8.12"
@@ -579,15 +574,17 @@ jacocoTestReport {
         csv.required = false
     }
 
-    // Exclude generated ANTLR code from coverage
+    // Use the modified classes from classes-jacoco/ (with @Generated annotations)
+    // so CRC64 checksums match the execution data recorded during tests.
+    // Also exclude generated ANTLR code and shaded dependencies from coverage.
     afterEvaluate {
-        classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: [
-                    'graphql/parser/antlr/**',
-                    'graphql/com/google/**',
-                    'graphql/org/antlr/**'
-            ])
-        }))
+        classDirectories.setFrom(files(
+                fileTree(dir: layout.buildDirectory.dir('classes-jacoco/java/main'), exclude: [
+                        'graphql/parser/antlr/**',
+                        'graphql/com/google/**',
+                        'graphql/org/antlr/**'
+                ])
+        ))
     }
 }
 
@@ -597,18 +594,34 @@ jacocoTestReport {
 // The annotation class need not exist — JaCoCo only inspects the descriptor
 // string in the bytecode, and the JVM ignores unknown CLASS-retention
 // annotations.
+//
+// IMPORTANT: modifications are made on a COPY in classes-jacoco/ so that
+// the original (pristine) class files in classes/java/main are packaged
+// into the published jar unchanged.
 // ---------------------------------------------------------------------------
 tasks.register('markGeneratedEqualsHashCode') {
     description = 'Add @Generated annotation to equals/hashCode so JaCoCo ignores them'
     dependsOn classes
 
+    def originalDir = layout.buildDirectory.dir('classes/java/main')
+    def jacocoDir = layout.buildDirectory.dir('classes-jacoco/java/main')
+
+    inputs.dir(originalDir)
+    outputs.dir(jacocoDir)
+
     doLast {
-        def dir = layout.buildDirectory.dir('classes/java/main').get().asFile
-        if (!dir.exists()) return
+        def src = originalDir.get().asFile
+        def dest = jacocoDir.get().asFile
+        if (!src.exists()) return
+
+        // Copy all class files to a separate directory for JaCoCo
+        ant.copy(todir: dest) {
+            fileset(dir: src)
+        }
 
         def ANNOTATION = 'Lgraphql/coverage/Generated;'
 
-        dir.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+        dest.eachFileRecurse(groovy.io.FileType.FILES) { file ->
             if (!file.name.endsWith('.class')) return
 
             def bytes = file.bytes
@@ -636,10 +649,15 @@ tasks.register('markGeneratedEqualsHashCode') {
     }
 }
 
-// Ensure the annotation task runs before anything that reads the main class files
+// Test tasks need the modified classes for JaCoCo coverage recording
 tasks.named('test') { dependsOn markGeneratedEqualsHashCode }
 tasks.named('compileTestJava') { dependsOn markGeneratedEqualsHashCode }
-tasks.named('jar') { dependsOn markGeneratedEqualsHashCode }
+
+// Prepend modified classes to the test classpath so the JaCoCo agent records
+// execution data with CRC64s that match the annotated bytecode.
+tasks.named('test', Test) {
+    classpath = files(layout.buildDirectory.dir('classes-jacoco/java/main')) + classpath
+}
 
 /*
  * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7

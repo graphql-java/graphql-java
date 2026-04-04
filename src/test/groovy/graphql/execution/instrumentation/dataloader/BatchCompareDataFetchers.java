@@ -16,6 +16,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -32,8 +35,19 @@ public class BatchCompareDataFetchers {
 
     AtomicBoolean useAsyncBatchLoading = new AtomicBoolean(false);
 
+    private volatile CountDownLatch rootFetcherRendezvous;
+    private volatile CountDownLatch completionOverlapLatch;
+    private final AtomicBoolean shopsOverlapSignaled = new AtomicBoolean(false);
+    private final AtomicBoolean exShopsOverlapSignaled = new AtomicBoolean(false);
+    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+
     public void useAsyncBatchLoading(boolean flag) {
         useAsyncBatchLoading.set(flag);
+    }
+
+    public void useSynchronizedFetching(int numberOfRootFetchers) {
+        rootFetcherRendezvous = new CountDownLatch(numberOfRootFetchers);
+        completionOverlapLatch = new CountDownLatch(numberOfRootFetchers);
     }
 
 
@@ -52,10 +66,10 @@ public class BatchCompareDataFetchers {
 
 
     public DataFetcher<CompletableFuture<List<Shop>>> shopsDataFetcher =
-            environment -> supplyAsyncWithSleep(() -> new ArrayList<>(shops.values()));
+            environment -> supplyAsyncWithRendezvous(() -> new ArrayList<>(shops.values()));
 
     public DataFetcher<CompletableFuture<List<Shop>>> expensiveShopsDataFetcher = environment ->
-            supplyAsyncWithSleep(() -> new ArrayList<>(expensiveShops.values()));
+            supplyAsyncWithRendezvous(() -> new ArrayList<>(expensiveShops.values()));
 
     // Departments
     private static Map<String, Department> departments = new LinkedHashMap<>();
@@ -101,6 +115,21 @@ public class BatchCompareDataFetchers {
 
     public DataFetcher<CompletableFuture<List<Department>>> departmentsForShopDataLoaderDataFetcher = environment -> {
         Shop shop = environment.getSource();
+        // When synchronized fetching is enabled, ensure both root fields (shops and expensiveShops)
+        // are inside their startComplete/stopComplete window before either proceeds.
+        // This guarantees objectRunningCount never drops to 0 prematurely.
+        CountDownLatch overlapLatch = completionOverlapLatch;
+        if (overlapLatch != null) {
+            AtomicBoolean flag = shop.getId().startsWith("ex") ? exShopsOverlapSignaled : shopsOverlapSignaled;
+            if (flag.compareAndSet(false, true)) {
+                overlapLatch.countDown();
+                try {
+                    overlapLatch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
         return (CompletableFuture) environment.getDataLoader("departments").load(shop.getId());
     };
 
@@ -147,6 +176,22 @@ public class BatchCompareDataFetchers {
         } else {
             return supplier.get();
         }
+    }
+
+    private <T> CompletableFuture<T> supplyAsyncWithRendezvous(Supplier<T> supplier) {
+        CountDownLatch latch = rootFetcherRendezvous;
+        if (latch != null) {
+            return CompletableFuture.supplyAsync(() -> {
+                try {
+                    latch.countDown();
+                    latch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                return supplier.get();
+            }, executor);
+        }
+        return supplyAsyncWithSleep(supplier);
     }
 
     private static <T> CompletableFuture<T> supplyAsyncWithSleep(Supplier<T> supplier) {
