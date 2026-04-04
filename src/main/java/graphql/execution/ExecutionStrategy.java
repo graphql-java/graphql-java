@@ -208,11 +208,17 @@ public abstract class ExecutionStrategy {
 
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+        boolean noOpInstr = isNoOpFieldInstrumentation(instrumentation);
 
-        ExecuteObjectInstrumentationContext resolveObjectCtx = ExecuteObjectInstrumentationContext.nonNullCtx(
-                instrumentation.beginExecuteObject(instrumentationParameters, executionContext.getInstrumentationState())
-        );
+        ExecuteObjectInstrumentationContext resolveObjectCtx;
+        if (noOpInstr) {
+            resolveObjectCtx = ExecuteObjectInstrumentationContext.NOOP;
+        } else {
+            InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+            resolveObjectCtx = ExecuteObjectInstrumentationContext.nonNullCtx(
+                    instrumentation.beginExecuteObject(instrumentationParameters, executionContext.getInstrumentationState())
+            );
+        }
 
         List<String> fieldNames = parameters.getFields().getKeys();
 

@@ -40,9 +40,15 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+        boolean noOpInstr = ExecutionStrategy.isNoOpFieldInstrumentation(instrumentation);
 
-        ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters, executionContext.getInstrumentationState()));
+        ExecutionStrategyInstrumentationContext executionStrategyCtx;
+        if (noOpInstr) {
+            executionStrategyCtx = ExecutionStrategyInstrumentationContext.NOOP;
+        } else {
+            InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+            executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters, executionContext.getInstrumentationState()));
+        }
 
         MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = fields.getKeys();
