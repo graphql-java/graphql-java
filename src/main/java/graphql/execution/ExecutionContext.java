@@ -86,9 +86,14 @@ public class ExecutionContext {
     // noOpFieldInstrumentation: avoids getClass() == SimplePerformantInstrumentation.class check per field (~198K/op)
     // subscriptionOperation: avoids enum comparison per field (~66K/op)
     // incrementalSupport: avoids ConcurrentHashMap.get() lookup per object (~11K/op)
+    // noOpProfiler: avoids virtual dispatch + argument evaluation per field (~66K/op)
     private final boolean noOpFieldInstrumentation;
     private final boolean subscriptionOperation;
     private final boolean incrementalSupport;
+    private final boolean noOpProfiler;
+    // noOpDataLoaderDispatch: set when DataLoaderDispatchStrategy is NO_OP to skip empty virtual calls
+    // (~70K+ virtual dispatches/op). Volatile because dataLoaderDispatcherStrategy is set after construction.
+    private volatile boolean noOpDataLoaderDispatch;
 
     // Per-execution cache for collectFields results, keyed by (GraphQLObjectType, MergedField).
     // Avoids redundant field collection, LinkedHashMap/LinkedHashSet allocation, and MergedField creation
@@ -136,6 +141,8 @@ public class ExecutionContext {
                 && OperationDefinition.Operation.SUBSCRIPTION.equals(builder.operationDefinition.getOperation());
         this.incrementalSupport = builder.graphQLContext != null
                 && builder.graphQLContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
+        this.noOpProfiler = builder.profiler == Profiler.NO_OP;
+        this.noOpDataLoaderDispatch = (builder.dataLoaderDispatcherStrategy == DataLoaderDispatchStrategy.NO_OP);
         // lazy loading for performance
         this.queryTree = mkExecutableNormalizedOperation();
         this.allOperationsDirectives = builder.allOperationsDirectives;
@@ -409,6 +416,7 @@ public class ExecutionContext {
     @Internal
     public void setDataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
         this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
+        this.noOpDataLoaderDispatch = (dataLoaderDispatcherStrategy == DataLoaderDispatchStrategy.NO_OP);
     }
 
     @Internal
@@ -453,6 +461,22 @@ public class ExecutionContext {
      */
     boolean isNoOpFieldInstrumentation() {
         return noOpFieldInstrumentation;
+    }
+
+    /**
+     * Returns whether the profiler is the default no-op Profiler.NO_OP.
+     * Cached at construction time to avoid per-field virtual dispatch overhead.
+     */
+    boolean isNoOpProfiler() {
+        return noOpProfiler;
+    }
+
+    /**
+     * Returns whether the DataLoaderDispatchStrategy is the NO_OP instance.
+     * Cached to avoid per-field virtual dispatch to empty default methods.
+     */
+    boolean isNoOpDataLoaderDispatch() {
+        return noOpDataLoaderDispatch;
     }
 
     @Internal

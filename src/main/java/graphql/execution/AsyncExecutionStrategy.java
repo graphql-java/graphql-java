@@ -40,8 +40,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         boolean noOpInstr = executionContext.isNoOpFieldInstrumentation();
+        boolean noOpDL = executionContext.isNoOpDataLoaderDispatch();
 
         ExecutionStrategyInstrumentationContext executionStrategyCtx;
         if (noOpInstr) {
@@ -62,12 +62,18 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
 
-        dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters, deferredExecutionSupport.getNonDeferredFieldNames(fieldNames).size());
+        if (!noOpDL) {
+            DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
+            dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters, deferredExecutionSupport.getNonDeferredFieldNames(fieldNames).size());
+        }
         Object resolvedFieldResult = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
-        dataLoaderDispatcherStrategy.finishedFetching(executionContext, parameters);
+        if (!noOpDL) {
+            executionContext.getDataLoaderDispatcherStrategy().finishedFetching(executionContext, parameters);
+        }
 
-
-        executionStrategyCtx.onDispatched();
+        if (!noOpInstr) {
+            executionStrategyCtx.onDispatched();
+        }
 
         // getAsyncFieldValueInfo returns either a List<FieldValueInfo> (materialized) or a CombinedBuilder
         Object fieldValueInfosResult;
@@ -97,14 +103,18 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 for (FieldValueInfo completeValueInfo : completeValueInfos) {
                     fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
                 }
-                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
+                if (!noOpDL) {
+                    executionContext.getDataLoaderDispatcherStrategy().executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
+                }
                 executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
                 fieldValuesFutures.await().whenComplete(handleResultsConsumer);
             }).exceptionally((ex) -> {
                 // if there are any issues with combining/handling the field results,
                 // complete the future at all costs and bubble up any thrown exception so
                 // the execution does not hang.
-                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesException(ex, parameters);
+                if (!noOpDL) {
+                    executionContext.getDataLoaderDispatcherStrategy().executionStrategyOnFieldValuesException(ex, parameters);
+                }
                 executionStrategyCtx.onFieldValuesException();
                 overallResult.completeExceptionally(ex);
                 return null;
@@ -121,8 +131,12 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
             }
-            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
-            executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
+            if (!noOpDL) {
+                executionContext.getDataLoaderDispatcherStrategy().executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
+            }
+            if (!noOpInstr) {
+                executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
+            }
 
             Object completedValuesObject = fieldValuesFutures.awaitPolymorphic();
             if (completedValuesObject instanceof CompletableFuture) {
@@ -138,7 +152,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 List<Object> results = (List<Object>) completedValuesObject;
                 Map<String, Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldsExecutedOnInitialResult, results);
                 ExecutionResult executionResult = new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors());
-                executionStrategyCtx.onCompleted(executionResult, null);
+                if (!noOpInstr) {
+                    executionStrategyCtx.onCompleted(executionResult, null);
+                }
                 return CompletableFuture.completedFuture(executionResult);
             }
         }

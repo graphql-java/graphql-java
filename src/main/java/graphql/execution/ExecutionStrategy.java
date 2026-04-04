@@ -206,8 +206,8 @@ public abstract class ExecutionStrategy {
     protected Object executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         executionContext.throwIfCancelled();
 
-        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         boolean noOpInstr = executionContext.isNoOpFieldInstrumentation();
+        boolean noOpDL = executionContext.isNoOpDataLoaderDispatch();
 
         ExecuteObjectInstrumentationContext resolveObjectCtx;
         if (noOpInstr) {
@@ -224,10 +224,14 @@ public abstract class ExecutionStrategy {
 
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
         List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
-        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
+        if (!noOpDL) {
+            executionContext.getDataLoaderDispatcherStrategy().executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
+        }
         Object resolvedFieldResult = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
-        resolveObjectCtx.onDispatched();
+        if (!noOpInstr) {
+            resolveObjectCtx.onDispatched();
+        }
 
         // getAsyncFieldValueInfo returns either a List<FieldValueInfo> (materialized) or a CombinedBuilder
         Object fieldValueInfosResult;
@@ -251,14 +255,18 @@ public abstract class ExecutionStrategy {
                 }
 
                 Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
-                dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
+                if (!noOpDL) {
+                    executionContext.getDataLoaderDispatcherStrategy().executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
+                }
                 resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
                 resultFutures.await().whenComplete(handleResultsConsumer);
             }).exceptionally((ex) -> {
                 // if there are any issues with combining/handling the field results,
                 // complete the future at all costs and bubble up any thrown exception so
                 // the execution does not hang.
-                dataLoaderDispatcherStrategy.executeObjectOnFieldValuesException(ex, parameters);
+                if (!noOpDL) {
+                    executionContext.getDataLoaderDispatcherStrategy().executeObjectOnFieldValuesException(ex, parameters);
+                }
                 resolveObjectCtx.onFieldValuesException();
                 overallResult.completeExceptionally(ex);
                 return null;
@@ -268,8 +276,12 @@ public abstract class ExecutionStrategy {
         } else {
             List<FieldValueInfo> completeValueInfos = (List<FieldValueInfo>) fieldValueInfosResult;
 
-            dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
-            resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
+            if (!noOpDL) {
+                executionContext.getDataLoaderDispatcherStrategy().executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
+            }
+            if (!noOpInstr) {
+                resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
+            }
 
             // Fast path: extract field values directly and check for CFs in a single pass,
             // avoiding CombinedBuilder (Many object + Object[] array) allocation overhead
@@ -451,9 +463,13 @@ public abstract class ExecutionStrategy {
         if (fetchedValueObj instanceof CompletableFuture) {
             CompletableFuture<Object> fetchFieldFuture = (CompletableFuture<Object>) fetchedValueObj;
             CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) -> {
-                executionContext.getDataLoaderDispatcherStrategy().startComplete(parameters);
+                if (!executionContext.isNoOpDataLoaderDispatch()) {
+                    executionContext.getDataLoaderDispatcherStrategy().startComplete(parameters);
+                }
                 FieldValueInfo completeFieldResult = completeField(fieldDef, executionContext, parameters, fetchedValue);
-                executionContext.getDataLoaderDispatcherStrategy().stopComplete(parameters);
+                if (!executionContext.isNoOpDataLoaderDispatch()) {
+                    executionContext.getDataLoaderDispatcherStrategy().stopComplete(parameters);
+                }
                 return completeFieldResult;
             });
 
@@ -568,9 +584,13 @@ public abstract class ExecutionStrategy {
         }
 
         Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, originalDataFetcher, dataFetcher);
-        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject, dataFetchingEnvironment);
-        fetchCtx.onDispatched();
-        fetchCtx.onFetchedValue(fetchedObject);
+        if (!executionContext.isNoOpDataLoaderDispatch()) {
+            executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject, dataFetchingEnvironment);
+        }
+        if (!noOpFieldInstr) {
+            fetchCtx.onDispatched();
+            fetchCtx.onFetchedValue(fetchedObject);
+        }
         // if it's a subscription, leave any reactive objects alone
         if (!executionContext.isSubscriptionOperation()) {
             // possible convert reactive objects into CompletableFutures
@@ -602,7 +622,9 @@ public abstract class ExecutionStrategy {
             return rawResultCF
                     .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
         } else {
-            fetchCtx.onCompleted(fetchedObject, null);
+            if (!noOpFieldInstr) {
+                fetchCtx.onCompleted(fetchedObject, null);
+            }
             return unboxPossibleDataFetcherResult(executionContext, parameters, fetchedObject);
         }
     }
@@ -620,7 +642,9 @@ public abstract class ExecutionStrategy {
             } else {
                 fetchedValueRaw = dataFetcher.get(dataFetchingEnvironment.get());
             }
-            executionContext.getProfiler().fieldFetched(fetchedValueRaw, originalDataFetcher, dataFetcher, parameters.getPath(), fieldDef, parameters.getExecutionStepInfo().getType());
+            if (!executionContext.isNoOpProfiler()) {
+                executionContext.getProfiler().fieldFetched(fetchedValueRaw, originalDataFetcher, dataFetcher, parameters.getPath(), fieldDef, parameters.getExecutionStepInfo().getType());
+            }
             fetchedValue = Async.toCompletableFutureOrMaterializedObject(fetchedValueRaw);
         } catch (Exception e) {
             fetchedValue = Async.exceptionallyCompletedFuture(e);
