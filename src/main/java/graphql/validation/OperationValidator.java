@@ -319,6 +319,12 @@ public class OperationValidator implements DocumentVisitor {
     // Cache single-field sub-selections by FieldAndType identity — since FieldAndType is interned,
     // the same field's sub-selections are collected once and reused across all recursion depths
     private final IdentityHashMap<FieldAndType, Map<String, Set<FieldAndType>>> singleFieldSubSelectionsCache = new IdentityHashMap<>();
+    // Map-level memoization: track which sub-selection Maps have been fully validated by each pass.
+    // When the same cached Map identity (from singleFieldSubSelectionsCache) is encountered at a
+    // deeper recursion depth, the entire sub-tree is skipped — all entries and their recursive
+    // sub-trees were already validated on the first visit.
+    private final Set<Map<String, Set<FieldAndType>>> shapeCheckedMaps = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<Map<String, Set<FieldAndType>>> parentCheckedMaps = Collections.newSetFromMap(new IdentityHashMap<>());
 
     // --- State: LoneAnonymousOperation ---
     private boolean hasAnonymousOp = false;
@@ -1251,6 +1257,9 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult, IdentityHashMap<Set<FieldAndType>, Map<String, Set<FieldAndType>>> subSelectionsCache) {
+        if (!shapeCheckedMaps.add(fieldMap)) {
+            return;
+        }
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             Set<FieldAndType> fieldAndTypes = entry.getValue();
             if (!sameResponseShapeChecked.add(fieldAndTypes)) {
@@ -1327,6 +1336,9 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ArrayList<String> pathStack, List<Conflict> conflictsResult, IdentityHashMap<Set<FieldAndType>, Map<String, Set<FieldAndType>>> subSelectionsCache) {
+        if (!parentCheckedMaps.add(fieldMap)) {
+            return;
+        }
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             Set<FieldAndType> fieldAndTypes = entry.getValue();
             if (fieldAndTypes.size() == 1) {
