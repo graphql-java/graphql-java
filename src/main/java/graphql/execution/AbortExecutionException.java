@@ -48,7 +48,7 @@ public class AbortExecutionException extends GraphQLException implements GraphQL
 
     @Override
     public List<SourceLocation> getLocations() {
-        return null;
+        return emptyList();
     }
 
     @Override
