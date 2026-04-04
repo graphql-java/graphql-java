@@ -94,6 +94,9 @@ public class ExecutionContext {
     // noOpDataLoaderDispatch: set when DataLoaderDispatchStrategy is NO_OP to skip empty virtual calls
     // (~70K+ virtual dispatches/op). Volatile because dataLoaderDispatcherStrategy is set after construction.
     private volatile boolean noOpDataLoaderDispatch;
+    // defaultValueUnboxer: cached flag to skip ValueUnboxer.unbox() virtual dispatch when the default
+    // DefaultValueUnboxer is in use and the value is not an Optional type (~132K virtual dispatches/op eliminated)
+    private final boolean defaultValueUnboxer;
 
     // Per-execution cache for collectFields results, keyed by (GraphQLObjectType, MergedField).
     // Avoids redundant field collection, LinkedHashMap/LinkedHashSet allocation, and MergedField creation
@@ -149,6 +152,8 @@ public class ExecutionContext {
                 && builder.graphQLContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
         this.noOpProfiler = builder.profiler == Profiler.NO_OP;
         this.noOpDataLoaderDispatch = (builder.dataLoaderDispatcherStrategy == DataLoaderDispatchStrategy.NO_OP);
+        this.defaultValueUnboxer = builder.valueUnboxer != null
+                && builder.valueUnboxer.getClass() == DefaultValueUnboxer.class;
         // lazy loading for performance
         this.queryTree = mkExecutableNormalizedOperation();
         this.allOperationsDirectives = builder.allOperationsDirectives;
@@ -268,6 +273,18 @@ public class ExecutionContext {
 
     public ValueUnboxer getValueUnboxer() {
         return valueUnboxer;
+    }
+
+    /**
+     * Fast-path unbox that skips the virtual dispatch to ValueUnboxer.unbox() when the default
+     * DefaultValueUnboxer is in use. Inlines the unbox logic as a direct method call, allowing the
+     * JIT to optimize without needing to devirtualize through the ValueUnboxer interface.
+     */
+    Object unbox(Object value) {
+        if (defaultValueUnboxer) {
+            return DefaultValueUnboxer.unboxValue(value);
+        }
+        return valueUnboxer.unbox(value);
     }
 
     /**

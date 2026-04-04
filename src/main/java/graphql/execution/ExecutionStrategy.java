@@ -719,10 +719,10 @@ public abstract class ExecutionStrategy {
                 // if the field returns nothing then they get the context of their parent field
                 localContext = parameters.getLocalContext();
             }
-            Object unBoxedValue = executionContext.getValueUnboxer().unbox(dataFetcherResult.getData());
+            Object unBoxedValue = executionContext.unbox(dataFetcherResult.getData());
             return new FetchedValue(unBoxedValue, dataFetcherResult.getErrors(), localContext);
         } else {
-            return executionContext.getValueUnboxer().unbox(result);
+            return executionContext.unbox(result);
         }
     }
 
@@ -846,7 +846,7 @@ public abstract class ExecutionStrategy {
      */
     protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
-        Object result = executionContext.getValueUnboxer().unbox(parameters.getSource());
+        Object result = executionContext.unbox(parameters.getSource());
         GraphQLType fieldType = executionStepInfo.getUnwrappedNonNullType();
         Object fieldValue;
 
