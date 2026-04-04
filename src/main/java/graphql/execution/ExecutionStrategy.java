@@ -20,6 +20,7 @@ import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.FieldFetchingInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -131,6 +132,15 @@ public abstract class ExecutionStrategy {
     protected final ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory();
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
     private final ResolveType resolvedType = new ResolveType();
+
+    /**
+     * Returns true if the instrumentation is guaranteed to be a no-op for per-field callbacks
+     * (beginFieldExecution, beginFieldFetching, beginFieldCompletion, beginFieldListCompletion, instrumentDataFetcher).
+     * When true, the execution engine skips allocating instrumentation parameter objects in the hot path.
+     */
+    static boolean isNoOpFieldInstrumentation(Instrumentation instrumentation) {
+        return instrumentation.getClass() == SimplePerformantInstrumentation.class;
+    }
 
 
     /**
@@ -359,12 +369,17 @@ public abstract class ExecutionStrategy {
     @DuckTyped(shape = "CompletableFuture<FieldValueInfo> | FieldValueInfo")
     protected Object resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
-        Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationContext<Object> fieldCtx = nonNullCtx(instrumentation.beginFieldExecution(
-                new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
-        ));
+        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
+
+        InstrumentationContext<Object> fieldCtx = null;
+        if (!noOpFieldInstr) {
+            Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
+            fieldCtx = nonNullCtx(instrumentation.beginFieldExecution(
+                    new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
+            ));
+        }
 
         // Pass the already-resolved fieldDef to avoid a redundant getFieldDef lookup inside fetchField
         Object fetchedValueObj = fetchField(fieldDef, executionContext, parameters);
@@ -377,14 +392,18 @@ public abstract class ExecutionStrategy {
                 return completeFieldResult;
             });
 
-            fieldCtx.onDispatched();
-            result.whenComplete(fieldCtx::onCompleted);
+            if (fieldCtx != null) {
+                fieldCtx.onDispatched();
+                result.whenComplete(fieldCtx::onCompleted);
+            }
             return result;
         } else {
             try {
                 FieldValueInfo fieldValueInfo = completeField(fieldDef, executionContext, parameters, fetchedValueObj);
-                fieldCtx.onDispatched();
-                fieldCtx.onCompleted(FetchedValue.getFetchedValue(fetchedValueObj), null);
+                if (fieldCtx != null) {
+                    fieldCtx.onDispatched();
+                    fieldCtx.onCompleted(FetchedValue.getFetchedValue(fetchedValueObj), null);
+                }
                 return fieldValueInfo;
             } catch (Exception e) {
                 return Async.exceptionallyCompletedFuture(e);
@@ -466,13 +485,21 @@ public abstract class ExecutionStrategy {
         DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType.getName(), fieldDef.getName(), fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
+        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, originalDataFetcher instanceof TrivialDataFetcher);
-        FieldFetchingInstrumentationContext fetchCtx = FieldFetchingInstrumentationContext.nonNullCtx(instrumentation.beginFieldFetching(instrumentationFieldFetchParams,
-                executionContext.getInstrumentationState())
-        );
+        FieldFetchingInstrumentationContext fetchCtx;
+        DataFetcher<?> dataFetcher;
+        if (noOpFieldInstr) {
+            fetchCtx = FieldFetchingInstrumentationContext.NOOP;
+            dataFetcher = originalDataFetcher;
+        } else {
+            InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, originalDataFetcher instanceof TrivialDataFetcher);
+            fetchCtx = FieldFetchingInstrumentationContext.nonNullCtx(instrumentation.beginFieldFetching(instrumentationFieldFetchParams,
+                    executionContext.getInstrumentationState())
+            );
+            dataFetcher = instrumentation.instrumentDataFetcher(originalDataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
+        }
 
-        DataFetcher<?> dataFetcher = instrumentation.instrumentDataFetcher(originalDataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, originalDataFetcher, dataFetcher);
         executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject, dataFetchingEnvironment);
         fetchCtx.onDispatched();
@@ -646,10 +673,15 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
-        InstrumentationContext<Object> ctxCompleteField = nonNullCtx(instrumentation.beginFieldCompletion(
-                instrumentationParams, executionContext.getInstrumentationState()
-        ));
+        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
+
+        InstrumentationContext<Object> ctxCompleteField = null;
+        if (!noOpFieldInstr) {
+            InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
+            ctxCompleteField = nonNullCtx(instrumentation.beginFieldCompletion(
+                    instrumentationParams, executionContext.getInstrumentationState()
+            ));
+        }
 
         ExecutionStrategyParameters newParameters = parameters.transform(
                 executionStepInfo,
@@ -658,12 +690,14 @@ public abstract class ExecutionStrategy {
         );
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
-        ctxCompleteField.onDispatched();
-        if (fieldValueInfo.isFutureValue()) {
-            CompletableFuture<Object> executionResultFuture = fieldValueInfo.getFieldValueFuture();
-            executionResultFuture.whenComplete(ctxCompleteField::onCompleted);
-        } else {
-            ctxCompleteField.onCompleted(fieldValueInfo.getFieldValueObject(), null);
+        if (ctxCompleteField != null) {
+            ctxCompleteField.onDispatched();
+            if (fieldValueInfo.isFutureValue()) {
+                CompletableFuture<Object> executionResultFuture = fieldValueInfo.getFieldValueFuture();
+                executionResultFuture.whenComplete(ctxCompleteField::onCompleted);
+            } else {
+                ctxCompleteField.onCompleted(fieldValueInfo.getFieldValueObject(), null);
+            }
         }
         return fieldValueInfo;
     }
@@ -794,12 +828,16 @@ public abstract class ExecutionStrategy {
         OptionalInt size = FpKit.toSize(iterableValues);
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
         Instrumentation instrumentation = executionContext.getInstrumentation();
+        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
 
-        InstrumentationContext<Object> completeListCtx = nonNullCtx(instrumentation.beginFieldListCompletion(
-                instrumentationParams, executionContext.getInstrumentationState()
-        ));
+        InstrumentationContext<Object> completeListCtx = null;
+        if (!noOpFieldInstr) {
+            InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
+            completeListCtx = nonNullCtx(instrumentation.beginFieldListCompletion(
+                    instrumentationParams, executionContext.getInstrumentationState()
+            ));
+        }
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
@@ -831,8 +869,10 @@ public abstract class ExecutionStrategy {
             @SuppressWarnings("unchecked")
             CompletableFuture<List<Object>> resultsFuture = (CompletableFuture<List<Object>>) listResults;
             CompletableFuture<Object> overallResult = new CompletableFuture<>();
-            completeListCtx.onDispatched();
-            overallResult.whenComplete(completeListCtx::onCompleted);
+            if (completeListCtx != null) {
+                completeListCtx.onDispatched();
+                overallResult.whenComplete(completeListCtx::onCompleted);
+            }
 
             resultsFuture.whenComplete((results, exception) -> {
                 exception = executionContext.possibleCancellation(exception);
@@ -845,7 +885,9 @@ public abstract class ExecutionStrategy {
             });
             listOrPromiseToList = overallResult;
         } else {
-            completeListCtx.onCompleted(listResults, null);
+            if (completeListCtx != null) {
+                completeListCtx.onCompleted(listResults, null);
+            }
             listOrPromiseToList = listResults;
         }
         return new FieldValueInfo(LIST, listOrPromiseToList, fieldValueInfos);
