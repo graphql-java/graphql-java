@@ -63,13 +63,21 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
 
         dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters, deferredExecutionSupport.getNonDeferredFieldNames(fieldNames).size());
-        Async.CombinedBuilder<FieldValueInfo> futures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
+        Object resolvedFieldResult = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
         dataLoaderDispatcherStrategy.finishedFetching(executionContext, parameters);
 
 
         executionStrategyCtx.onDispatched();
 
-        Object fieldValueInfosResult = futures.awaitPolymorphic();
+        // getAsyncFieldValueInfo returns either a List<FieldValueInfo> (materialized) or a CombinedBuilder
+        Object fieldValueInfosResult;
+        if (resolvedFieldResult instanceof List) {
+            fieldValueInfosResult = resolvedFieldResult;
+        } else {
+            @SuppressWarnings("unchecked")
+            Async.CombinedBuilder<FieldValueInfo> builder = (Async.CombinedBuilder<FieldValueInfo>) resolvedFieldResult;
+            fieldValueInfosResult = builder.awaitPolymorphic();
+        }
         if (fieldValueInfosResult instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
             CompletableFuture<List<FieldValueInfo>> fieldValueInfosCF = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;

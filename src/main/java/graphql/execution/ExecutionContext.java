@@ -77,6 +77,9 @@ public class ExecutionContext {
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
+    // Cached MAX_RESULT_NODES value to avoid per-field ConcurrentHashMap.get() lookup on GraphQLContext.
+    // This is set once at construction time and is immutable for the duration of execution.
+    private final int maxResultNodes;
     private final EngineRunningState engineRunningState;
 
     // Per-execution cache for collectFields results, keyed by (GraphQLObjectType, MergedField).
@@ -115,6 +118,9 @@ public class ExecutionContext {
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
         this.profiler = builder.profiler;
+        // Cache MAX_RESULT_NODES to avoid per-field ConcurrentHashMap lookup on GraphQLContext
+        Integer maxNodesVal = builder.graphQLContext != null ? builder.graphQLContext.get(ResultNodesInfo.MAX_RESULT_NODES) : null;
+        this.maxResultNodes = maxNodesVal != null ? maxNodesVal : 0;
         // lazy loading for performance
         this.queryTree = mkExecutableNormalizedOperation();
         this.allOperationsDirectives = builder.allOperationsDirectives;
@@ -411,6 +417,14 @@ public class ExecutionContext {
 
     public ResultNodesInfo getResultNodesInfo() {
         return resultNodesInfo;
+    }
+
+    /**
+     * Returns the cached MAX_RESULT_NODES value, or 0 if not set.
+     * This avoids per-field ConcurrentHashMap.get() lookups on GraphQLContext.
+     */
+    int getMaxResultNodes() {
+        return maxResultNodes;
     }
 
     @Internal

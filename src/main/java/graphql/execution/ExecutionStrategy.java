@@ -65,7 +65,6 @@ import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
-import static graphql.execution.ResultNodesInfo.MAX_RESULT_NODES;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
@@ -226,11 +225,19 @@ public abstract class ExecutionStrategy {
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
         List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
         dataLoaderDispatcherStrategy.executeObject(executionContext, parameters, fieldsExecutedOnInitialResult.size());
-        Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
+        Object resolvedFieldResult = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
         resolveObjectCtx.onDispatched();
 
-        Object fieldValueInfosResult = resolvedFieldFutures.awaitPolymorphic();
+        // getAsyncFieldValueInfo returns either a List<FieldValueInfo> (materialized) or a CombinedBuilder
+        Object fieldValueInfosResult;
+        if (resolvedFieldResult instanceof List) {
+            fieldValueInfosResult = resolvedFieldResult;
+        } else {
+            @SuppressWarnings("unchecked")
+            Async.CombinedBuilder<FieldValueInfo> builder = (Async.CombinedBuilder<FieldValueInfo>) resolvedFieldResult;
+            fieldValueInfosResult = builder.awaitPolymorphic();
+        }
         if (fieldValueInfosResult instanceof CompletableFuture) {
             CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
             BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
@@ -332,7 +339,13 @@ public abstract class ExecutionStrategy {
 
     }
 
-    Async.@NonNull CombinedBuilder<FieldValueInfo> getAsyncFieldValueInfo(
+    /**
+     * Returns either a {@code List<FieldValueInfo>} (when all fields resolved synchronously) or
+     * an {@code Async.CombinedBuilder<FieldValueInfo>} (when at least one field resolved asynchronously).
+     * Callers must check the return type and call {@code awaitPolymorphic()} only on CombinedBuilder results.
+     */
+    @DuckTyped(shape = "List<FieldValueInfo> | Async.CombinedBuilder<FieldValueInfo>")
+    Object getAsyncFieldValueInfo(
             ExecutionContext executionContext,
             ExecutionStrategyParameters parameters,
             DeferredExecutionSupport deferredExecutionSupport
@@ -350,7 +363,13 @@ public abstract class ExecutionStrategy {
         int expectedSize = hasIncrementalSupport
                 ? fields.size() - deferredExecutionSupport.deferredFieldsCount()
                 : fields.size();
-        Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(expectedSize);
+
+        // Collect field results into an array, tracking whether any are CompletableFutures.
+        // This avoids allocating a CombinedBuilder (Many object + internal Object[]) for the
+        // common case where all fields resolve synchronously.
+        Object[] items = new Object[expectedSize];
+        int ix = 0;
+        boolean hasCF = false;
 
         for (String fieldName : fields.getKeys()) {
             executionContext.throwIfCancelled();
@@ -363,7 +382,10 @@ public abstract class ExecutionStrategy {
             // Skip the per-field isDeferredField virtual call when incremental support is disabled
             if (!hasIncrementalSupport || !deferredExecutionSupport.isDeferredField(currentField)) {
                 Object fieldValueInfo = resolveFieldWithInfo(executionContext, newParameters);
-                futures.addObject(fieldValueInfo);
+                items[ix++] = fieldValueInfo;
+                if (fieldValueInfo instanceof CompletableFuture) {
+                    hasCF = true;
+                }
             }
 
         }
@@ -375,7 +397,20 @@ public abstract class ExecutionStrategy {
             executionContext.getIncrementalCallState().startDrainingNow();
         }
 
-        return futures;
+        if (!hasCF) {
+            // All fields resolved synchronously — return the materialized list directly,
+            // avoiding CombinedBuilder (Many object) allocation
+            @SuppressWarnings("unchecked")
+            List<FieldValueInfo> result = (List<FieldValueInfo>) (List<?>) Arrays.asList(items);
+            return result;
+        } else {
+            // At least one field is async — build a CombinedBuilder from the collected items
+            Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(expectedSize);
+            for (Object item : items) {
+                futures.addObject(item);
+            }
+            return futures;
+        }
     }
 
     /**
@@ -1109,12 +1144,11 @@ public abstract class ExecutionStrategy {
      */
     private boolean incrementAndCheckMaxNodesExceeded(ExecutionContext executionContext) {
         int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
-        Integer maxNodes;
-        if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
-            if (resultNodesCount > maxNodes) {
-                executionContext.getResultNodesInfo().maxResultNodesExceeded();
-                return true;
-            }
+        // Use cached maxResultNodes from ExecutionContext to avoid per-field ConcurrentHashMap.get() lookup
+        int maxNodes = executionContext.getMaxResultNodes();
+        if (maxNodes > 0 && resultNodesCount > maxNodes) {
+            executionContext.getResultNodesInfo().maxResultNodesExceeded();
+            return true;
         }
         return false;
     }
