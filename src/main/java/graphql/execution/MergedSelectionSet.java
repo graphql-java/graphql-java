@@ -52,6 +52,13 @@ public class MergedSelectionSet {
         return new Builder();
     }
 
+    /**
+     * Package-private direct construction that bypasses the Builder, avoiding 1 allocation in the hot path.
+     */
+    static MergedSelectionSet newMergedSelectionSetDirect(Map<String, MergedField> subFields) {
+        return new MergedSelectionSet(subFields);
+    }
+
     public static class Builder {
 
         private Map<String, MergedField> subFields;

@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
 import static graphql.execution.TypeFromAST.getTypeFromAST;
 
 /**
@@ -46,7 +45,7 @@ public class FieldCollector {
                 this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields, null, incrementalSupport);
             }
         });
-        return newMergedSelectionSet().subFields(subFields).build();
+        return MergedSelectionSet.newMergedSelectionSetDirect(subFields);
     }
 
     /**
@@ -65,7 +64,7 @@ public class FieldCollector {
         Map<String, MergedField> subFields = new LinkedHashMap<>();
         Set<String> visitedFragments = new LinkedHashSet<>();
         this.collectFields(parameters, selectionSet, visitedFragments, subFields, null, incrementalSupport);
-        return newMergedSelectionSet().subFields(subFields).build();
+        return MergedSelectionSet.newMergedSelectionSetDirect(subFields);
     }
 
 

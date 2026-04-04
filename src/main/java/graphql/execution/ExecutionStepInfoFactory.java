@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 
 @Internal
 @NullMarked
@@ -57,15 +56,15 @@ public class ExecutionStepInfoFactory {
         }
 
 
-        return newExecutionStepInfo()
-                .type(fieldType)
-                .fieldDefinition(fieldDefinition)
-                .fieldContainer(fieldContainer)
-                .field(field)
-                .path(parameters.getPath())
-                .parentInfo(parentStepInfo)
-                .arguments(argumentValues)
-                .build();
+        return ExecutionStepInfo.newExecutionStepInfoDirect(
+                fieldType,
+                parameters.getPath(),
+                parentStepInfo,
+                field,
+                fieldDefinition,
+                fieldContainer,
+                argumentValues
+        );
     }
 
     @NonNull

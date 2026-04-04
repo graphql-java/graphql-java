@@ -274,6 +274,20 @@ public class ExecutionStepInfo {
         return new Builder();
     }
 
+    /**
+     * Package-private direct construction that bypasses the Builder, avoiding 2 allocations in the hot path.
+     */
+    static ExecutionStepInfo newExecutionStepInfoDirect(
+            GraphQLOutputType type,
+            ResultPath path,
+            ExecutionStepInfo parent,
+            MergedField field,
+            GraphQLFieldDefinition fieldDefinition,
+            GraphQLObjectType fieldContainer,
+            Supplier<ImmutableMapWithNullValues<String, Object>> arguments) {
+        return new ExecutionStepInfo(type, path, parent, field, fieldDefinition, fieldContainer, arguments);
+    }
+
     public static ExecutionStepInfo.Builder newExecutionStepInfo(ExecutionStepInfo existing) {
         return new Builder(existing);
     }

@@ -197,10 +197,11 @@ public class Async {
         public CompletableFuture<List<T>> await() {
             commonSizeAssert();
 
-            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
             if (cfCount == 0) {
-                overallResult.complete(materialisedList(array));
-            } else {
+                return CompletableFuture.completedFuture(materialisedList(array));
+            }
+            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+            {
                 CompletableFuture<T>[] cfsArr = copyOnlyCFsToArray();
                 CompletableFuture.allOf(cfsArr)
                         .whenComplete((ignored, exception) -> {
