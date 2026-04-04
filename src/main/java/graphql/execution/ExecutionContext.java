@@ -16,6 +16,7 @@ import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
@@ -81,6 +82,13 @@ public class ExecutionContext {
     // This is set once at construction time and is immutable for the duration of execution.
     private final int maxResultNodes;
     private final EngineRunningState engineRunningState;
+    // Cached per-execution flags computed once at construction to avoid per-field recalculation.
+    // noOpFieldInstrumentation: avoids getClass() == SimplePerformantInstrumentation.class check per field (~198K/op)
+    // subscriptionOperation: avoids enum comparison per field (~66K/op)
+    // incrementalSupport: avoids ConcurrentHashMap.get() lookup per object (~11K/op)
+    private final boolean noOpFieldInstrumentation;
+    private final boolean subscriptionOperation;
+    private final boolean incrementalSupport;
 
     // Per-execution cache for collectFields results, keyed by (GraphQLObjectType, MergedField).
     // Avoids redundant field collection, LinkedHashMap/LinkedHashSet allocation, and MergedField creation
@@ -121,6 +129,13 @@ public class ExecutionContext {
         // Cache MAX_RESULT_NODES to avoid per-field ConcurrentHashMap lookup on GraphQLContext
         Integer maxNodesVal = builder.graphQLContext != null ? builder.graphQLContext.get(ResultNodesInfo.MAX_RESULT_NODES) : null;
         this.maxResultNodes = maxNodesVal != null ? maxNodesVal : 0;
+        // Cache per-execution flags to avoid per-field recalculation
+        this.noOpFieldInstrumentation = builder.instrumentation != null
+                && builder.instrumentation.getClass() == SimplePerformantInstrumentation.class;
+        this.subscriptionOperation = builder.operationDefinition != null
+                && OperationDefinition.Operation.SUBSCRIPTION.equals(builder.operationDefinition.getOperation());
+        this.incrementalSupport = builder.graphQLContext != null
+                && builder.graphQLContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
         // lazy loading for performance
         this.queryTree = mkExecutableNormalizedOperation();
         this.allOperationsDirectives = builder.allOperationsDirectives;
@@ -272,7 +287,7 @@ public class ExecutionContext {
      * @return true if the current operation is a Subscription
      */
     public boolean isSubscriptionOperation() {
-        return isOpType(OperationDefinition.Operation.SUBSCRIPTION);
+        return subscriptionOperation;
     }
 
     private boolean isOpType(OperationDefinition.Operation operation) {
@@ -429,8 +444,15 @@ public class ExecutionContext {
 
     @Internal
     public boolean hasIncrementalSupport() {
-        GraphQLContext graphqlContext = getGraphQLContext();
-        return graphqlContext != null && graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
+        return incrementalSupport;
+    }
+
+    /**
+     * Returns whether the instrumentation is the default no-op SimplePerformantInstrumentation.
+     * Cached at construction time to avoid per-field getClass() identity checks.
+     */
+    boolean isNoOpFieldInstrumentation() {
+        return noOpFieldInstrumentation;
     }
 
     @Internal

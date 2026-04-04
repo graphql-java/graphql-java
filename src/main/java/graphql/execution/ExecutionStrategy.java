@@ -207,13 +207,13 @@ public abstract class ExecutionStrategy {
         executionContext.throwIfCancelled();
 
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        boolean noOpInstr = isNoOpFieldInstrumentation(instrumentation);
+        boolean noOpInstr = executionContext.isNoOpFieldInstrumentation();
 
         ExecuteObjectInstrumentationContext resolveObjectCtx;
         if (noOpInstr) {
             resolveObjectCtx = ExecuteObjectInstrumentationContext.NOOP;
         } else {
+            Instrumentation instrumentation = executionContext.getInstrumentation();
             InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
             resolveObjectCtx = ExecuteObjectInstrumentationContext.nonNullCtx(
                     instrumentation.beginExecuteObject(instrumentationParameters, executionContext.getInstrumentationState())
@@ -435,11 +435,11 @@ public abstract class ExecutionStrategy {
     protected Object resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
+        boolean noOpFieldInstr = executionContext.isNoOpFieldInstrumentation();
 
         InstrumentationContext<Object> fieldCtx = null;
         if (!noOpFieldInstr) {
+            Instrumentation instrumentation = executionContext.getInstrumentation();
             Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
             fieldCtx = nonNullCtx(instrumentation.beginFieldExecution(
                     new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
@@ -512,8 +512,7 @@ public abstract class ExecutionStrategy {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         DataFetcher<?> originalDataFetcher = codeRegistry.getDataFetcher(parentType.getName(), fieldDef.getName(), fieldDef);
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
+        boolean noOpFieldInstr = executionContext.isNoOpFieldInstrumentation();
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
         // For no-op instrumentation, skip the intraThreadMemoize wrapper since the supplier is called at most once
@@ -560,6 +559,7 @@ public abstract class ExecutionStrategy {
             fetchCtx = FieldFetchingInstrumentationContext.NOOP;
             dataFetcher = originalDataFetcher;
         } else {
+            Instrumentation instrumentation = executionContext.getInstrumentation();
             InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, originalDataFetcher instanceof TrivialDataFetcher);
             fetchCtx = FieldFetchingInstrumentationContext.nonNullCtx(instrumentation.beginFieldFetching(instrumentationFieldFetchParams,
                     executionContext.getInstrumentationState())
@@ -739,11 +739,11 @@ public abstract class ExecutionStrategy {
         GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
+        boolean noOpFieldInstr = executionContext.isNoOpFieldInstrumentation();
 
         InstrumentationContext<Object> ctxCompleteField = null;
         if (!noOpFieldInstr) {
+            Instrumentation instrumentation = executionContext.getInstrumentation();
             InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
             ctxCompleteField = nonNullCtx(instrumentation.beginFieldCompletion(
                     instrumentationParams, executionContext.getInstrumentationState()
@@ -895,11 +895,11 @@ public abstract class ExecutionStrategy {
         OptionalInt size = FpKit.toSize(iterableValues);
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        boolean noOpFieldInstr = isNoOpFieldInstrumentation(instrumentation);
+        boolean noOpFieldInstr = executionContext.isNoOpFieldInstrumentation();
 
         InstrumentationContext<Object> completeListCtx = null;
         if (!noOpFieldInstr) {
+            Instrumentation instrumentation = executionContext.getInstrumentation();
             InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
             completeListCtx = nonNullCtx(instrumentation.beginFieldListCompletion(
                     instrumentationParams, executionContext.getInstrumentationState()
