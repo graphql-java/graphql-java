@@ -1,6 +1,7 @@
 package performance;
 
 import graphql.Assert;
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.i18n.I18n;
@@ -11,6 +12,7 @@ import graphql.schema.idl.SchemaGenerator;
 import graphql.validation.LanguageTraversal;
 import graphql.validation.OperationValidationRule;
 import graphql.validation.OperationValidator;
+import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
@@ -82,7 +84,11 @@ public class OverlappingFieldValidationPerformance {
 
                 // make sure this is a valid query overall
                 GraphQL graphQL = GraphQL.newGraphQL(schema).build();
-                ExecutionResult executionResult = graphQL.execute(query);
+                ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                        .query(query)
+                        .graphQLContext(java.util.Map.of(QueryComplexityLimits.KEY, QueryComplexityLimits.NONE))
+                        .build();
+                ExecutionResult executionResult = graphQL.execute(executionInput);
                 assertTrue(executionResult.getErrors().size() == 0);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -149,7 +155,7 @@ public class OverlappingFieldValidationPerformance {
     private List<ValidationError> validateQuery(GraphQLSchema schema, Document document) {
         ValidationErrorCollector errorCollector = new ValidationErrorCollector();
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH);
-        ValidationContext validationContext = new ValidationContext(schema, document, i18n);
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n, QueryComplexityLimits.NONE);
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 rule -> rule == OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
         LanguageTraversal languageTraversal = new LanguageTraversal();
