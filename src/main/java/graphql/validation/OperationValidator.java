@@ -1265,29 +1265,40 @@ public class OperationValidator implements DocumentVisitor {
             if (!sameResponseShapeChecked.add(fieldAndTypes)) {
                 continue;
             }
+            FieldSet fs = (FieldSet) fieldAndTypes;
             if (fieldAndTypes.size() > 1) {
-                pathStack.add(entry.getKey());
-                Conflict conflict = requireSameOutputTypeShape(pathStack, fieldAndTypes);
-                if (conflict != null) {
-                    conflictsResult.add(conflict);
+                if (!fs.allSameType()) {
+                    pathStack.add(entry.getKey());
+                    Conflict conflict = requireSameOutputTypeShape(pathStack, fieldAndTypes);
+                    if (conflict != null) {
+                        conflictsResult.add(conflict);
+                        pathStack.remove(pathStack.size() - 1);
+                        continue;
+                    }
+                    if (fs.hasFieldWithSelections()) {
+                        Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
+                        if (!subSelections.isEmpty()) {
+                            sameResponseShapeByName(subSelections, pathStack, conflictsResult, subSelectionsCache);
+                        }
+                    }
                     pathStack.remove(pathStack.size() - 1);
-                    continue;
-                }
-                Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
-                if (!subSelections.isEmpty()) {
-                    sameResponseShapeByName(subSelections, pathStack, conflictsResult, subSelectionsCache);
-                }
-                pathStack.remove(pathStack.size() - 1);
-            } else {
-                // Single field can't conflict with itself, but still recurse into sub-selections
-                FieldAndType single = ((FieldSet) fieldAndTypes).first();
-                if (single.field.getSelectionSet() != null) {
+                } else if (fs.hasFieldWithSelections()) {
+                    // All same type — no conflict possible, just recurse into sub-selections
                     Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
                     if (!subSelections.isEmpty()) {
                         pathStack.add(entry.getKey());
                         sameResponseShapeByName(subSelections, pathStack, conflictsResult, subSelectionsCache);
                         pathStack.remove(pathStack.size() - 1);
                     }
+                }
+                // else: all same type AND no sub-selections — nothing to do
+            } else if (fs.hasFieldWithSelections()) {
+                // Single field can't conflict with itself, but still recurse into sub-selections
+                Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
+                if (!subSelections.isEmpty()) {
+                    pathStack.add(entry.getKey());
+                    sameResponseShapeByName(subSelections, pathStack, conflictsResult, subSelectionsCache);
+                    pathStack.remove(pathStack.size() - 1);
                 }
             }
         }
@@ -1341,13 +1352,13 @@ public class OperationValidator implements DocumentVisitor {
         }
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             Set<FieldAndType> fieldAndTypes = entry.getValue();
+            FieldSet fs = (FieldSet) fieldAndTypes;
             if (fieldAndTypes.size() == 1) {
                 // Single field: no grouping needed, no conflict possible, just recurse into sub-selections
                 if (!sameForCommonParentsChecked.add(fieldAndTypes)) {
                     continue;
                 }
-                FieldAndType single = ((FieldSet) fieldAndTypes).first();
-                if (single.field.getSelectionSet() != null) {
+                if (fs.hasFieldWithSelections()) {
                     Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(fieldAndTypes, subSelectionsCache);
                     if (!subSelections.isEmpty()) {
                         pathStack.add(entry.getKey());
@@ -1370,6 +1381,10 @@ public class OperationValidator implements DocumentVisitor {
                         continue;
                     }
                 }
+                boolean groupHasSelections = (group instanceof FieldSet) ? ((FieldSet) group).hasFieldWithSelections() : true;
+                if (!groupHasSelections) {
+                    continue;
+                }
                 Map<String, Set<FieldAndType>> subSelections = cachedMergeSubSelections(group, subSelectionsCache);
                 if (!subSelections.isEmpty()) {
                     sameForCommonParentsByName(subSelections, pathStack, conflictsResult, subSelectionsCache);
@@ -1380,18 +1395,8 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private List<Set<FieldAndType>> groupByCommonParents(Set<FieldAndType> fields) {
-        // Fast path: if all fields share the same parent type, they form a single group
-        GraphQLType firstParent = null;
-        boolean allSameParent = true;
-        for (FieldAndType fieldAndType : fields) {
-            if (firstParent == null) {
-                firstParent = fieldAndType.parentType;
-            } else if (fieldAndType.parentType != firstParent) {
-                allSameParent = false;
-                break;
-            }
-        }
-        if (allSameParent) {
+        // Fast path: FieldSet tracks allSameParent incrementally during add(), so this is O(1)
+        if (fields instanceof FieldSet && ((FieldSet) fields).allSameParent()) {
             return Collections.singletonList(fields);
         }
 
@@ -1515,20 +1520,9 @@ public class OperationValidator implements DocumentVisitor {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
-        // Fast-path: if all fields resolve to the exact same type object (identity check),
-        // no type shape conflict is possible — skip the full unwrap-and-compare loop.
-        // This is the common case for overlapping fragments selecting the same field on the same type.
-        GraphQLType firstType = null;
-        boolean allSameType = true;
-        for (FieldAndType fieldAndType : fieldAndTypes) {
-            if (firstType == null) {
-                firstType = fieldAndType.graphQLType;
-            } else if (fieldAndType.graphQLType != firstType) {
-                allSameType = false;
-                break;
-            }
-        }
-        if (allSameType) {
+        // Fast-path: FieldSet tracks allSameType incrementally during add(), so this is O(1)
+        // instead of the previous O(N) scan. Common case for overlapping fragments on the same type.
+        if (((FieldSet) fieldAndTypes).allSameType()) {
             return null;
         }
         // Slow path: types differ, do full unwrap-and-compare check.
@@ -1632,20 +1626,18 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     /**
-     * A LinkedHashSet that incrementally caches its hashCode as elements are added.
-     * This avoids O(N) recomputation of Set.hashCode() every time the set is used as a key
-     * in the sameResponseShapeChecked/sameForCommonParentsChecked dedup sets.
-     * Elements must only be added (never removed) for the cached hash to stay correct.
-     */
-    /**
-     * A LinkedHashSet that incrementally caches its hashCode as elements are added.
-     * This avoids O(N) recomputation of Set.hashCode() every time the set is used as a key
-     * in the sameResponseShapeChecked/sameForCommonParentsChecked dedup sets.
-     * Elements must only be added (never removed) for the cached hash to stay correct.
+     * A LinkedHashSet that incrementally caches its hashCode and tracks metadata as elements
+     * are added. This enables O(1) hashCode() for dedup sets, and O(1) fast-path checks for
+     * requireSameOutputTypeShape (allSameType), groupByCommonParents (allSameParent), and
+     * mergeSubSelections (hasSelections) — avoiding O(N) scans on every multi-field entry.
+     * Elements must only be added (never removed) for the cached state to stay correct.
      */
     private static class FieldSet extends LinkedHashSet<FieldAndType> {
         private int cachedHash = 0;
         private @Nullable FieldAndType first;
+        private boolean hasSelections = false;
+        private boolean allSameType = true;
+        private boolean allSameParent = true;
 
         FieldSet() {
             super(4); // Pre-size for typical small sets (most field groups have 1-3 elements)
@@ -1658,6 +1650,16 @@ public class OperationValidator implements DocumentVisitor {
                 cachedHash += e.hashCode();
                 if (first == null) {
                     first = e;
+                } else {
+                    if (allSameType && e.graphQLType != first.graphQLType) {
+                        allSameType = false;
+                    }
+                    if (allSameParent && e.parentType != first.parentType) {
+                        allSameParent = false;
+                    }
+                }
+                if (!hasSelections && e.field.getSelectionSet() != null) {
+                    hasSelections = true;
                 }
             }
             return added;
@@ -1675,6 +1677,18 @@ public class OperationValidator implements DocumentVisitor {
         @SuppressWarnings("NullAway") // first is non-null when set is non-empty
         FieldAndType first() {
             return first;
+        }
+
+        boolean hasFieldWithSelections() {
+            return hasSelections;
+        }
+
+        boolean allSameType() {
+            return allSameType;
+        }
+
+        boolean allSameParent() {
+            return allSameParent;
         }
     }
 
