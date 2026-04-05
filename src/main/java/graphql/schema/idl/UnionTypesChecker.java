@@ -45,6 +45,11 @@ class UnionTypesChecker {
         //noinspection rawtypes
         List<Type> memberTypes = unionTypeDefinition.getMemberTypes();
         if (memberTypes == null || memberTypes.isEmpty()) {
+            // Per the GraphQL spec, UnionMemberTypes is optional in base definitions.
+            // An empty base definition is valid if extensions add members.
+            if (!(unionTypeDefinition instanceof UnionTypeExtensionDefinition) && hasExtensionsWithMembers(typeRegistry, unionTypeDefinition.getName())) {
+                return;
+            }
             errors.add(new UnionTypeError(unionTypeDefinition, format("Union type '%s' must include one or more member types.", unionTypeDefinition.getName())));
             return;
         }
@@ -64,6 +69,14 @@ class UnionTypesChecker {
             }
             typeNames.add(memberTypeName);
         }
+    }
+
+    private boolean hasExtensionsWithMembers(TypeDefinitionRegistry typeRegistry, String unionName) {
+        List<UnionTypeExtensionDefinition> extensions = typeRegistry.unionTypeExtensions().get(unionName);
+        if (extensions == null) {
+            return false;
+        }
+        return extensions.stream().anyMatch(ext -> ext.getMemberTypes() != null && !ext.getMemberTypes().isEmpty());
     }
 
     private void assertTypeName(UnionTypeDefinition unionTypeDefinition, List<GraphQLError> errors) {
