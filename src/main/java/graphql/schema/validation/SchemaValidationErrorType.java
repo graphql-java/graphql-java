@@ -18,6 +18,7 @@ public enum SchemaValidationErrorType implements SchemaValidationErrorClassifica
     InvalidDefaultValue,
     InvalidAppliedDirectiveArgument,
     InvalidAppliedDirective,
+    InvalidDirectiveDefinition,
     OutputTypeUsedInInputTypeContext,
     InputTypeUsedInOutputTypeContext,
     OneOfDefaultValueOnField,
