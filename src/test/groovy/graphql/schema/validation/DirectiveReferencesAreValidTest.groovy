@@ -17,6 +17,37 @@ import static graphql.schema.GraphQLSchema.newSchema
 
 class DirectiveReferencesAreValidTest extends Specification {
 
+    def "programmatic schemas reject direct self-referential directives"() {
+        given:
+        def invalid = GraphQLDirective.newDirective()
+                .name("invalid")
+                .validLocation(ARGUMENT_DEFINITION)
+                .build()
+        invalid = invalid.transform { builder ->
+            builder.argument(newArgument()
+                    .name("arg")
+                    .type(GraphQLString)
+                    .withAppliedDirective(invalid.toAppliedDirective())
+                    .build())
+        }
+
+        when:
+        newSchema()
+                .query(newObject()
+                        .name("Query")
+                        .field(newFieldDefinition()
+                                .name("hello")
+                                .type(GraphQLString)
+                                .build())
+                        .build())
+                .additionalDirective(invalid)
+                .build()
+
+        then:
+        def error = thrown(InvalidSchemaException)
+        error.message.contains("@invalid -> @invalid")
+    }
+
     def "programmatic schemas reject directive cycles through directives"() {
         given:
         def first = GraphQLDirective.newDirective()

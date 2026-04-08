@@ -70,13 +70,9 @@ public class DirectiveCycleDetector {
     }
 
     private String findCycleFromDirectiveReference(String directiveName, String startDirectiveName, List<String> path, Set<String> visited) {
-        if (directiveName.equals(startDirectiveName) && path.size() == 1) {
-            return null;
-        }
-
         String displayName = directiveName(directiveName);
         if (directiveName.equals(startDirectiveName)) {
-            return canonicalize(addToPath(path, displayName));
+            return cyclePath(path, displayName);
         }
         if (visited.contains(displayName)) {
             return null;
@@ -164,28 +160,8 @@ public class DirectiveCycleDetector {
         return nextVisited;
     }
 
-    private String canonicalize(List<String> cyclePath) {
-        List<String> cycle = cyclePath.subList(0, cyclePath.size() - 1);
-        String best = null;
-        int bestIndex = 0;
-
-        for (int i = 0; i < cycle.size(); i++) {
-            String candidate = rotate(cycle, i);
-            if (best == null || candidate.compareTo(best) < 0) {
-                best = candidate;
-                bestIndex = i;
-            }
-        }
-
-        return best + " -> " + cycle.get(bestIndex);
-    }
-
-    private String rotate(List<String> cycle, int offset) {
-        List<String> rotated = new ArrayList<>(cycle.size());
-        for (int i = 0; i < cycle.size(); i++) {
-            rotated.add(cycle.get((i + offset) % cycle.size()));
-        }
-        return String.join(" -> ", rotated);
+    private String cyclePath(List<String> path, String cycleElement) {
+        return String.join(" -> ", addToPath(path, cycleElement));
     }
 
     private String directiveName(String directiveName) {
