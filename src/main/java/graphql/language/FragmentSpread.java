@@ -1,5 +1,6 @@
 package graphql.language;
 
+
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -23,8 +24,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class FragmentSpread extends AbstractNode<FragmentSpread>
-        implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread>, NamedNode<FragmentSpread> {
+public class FragmentSpread extends AbstractNode<FragmentSpread> implements Selection<FragmentSpread>, DirectivesContainer<FragmentSpread>, NamedNode<FragmentSpread> {
 
     private final String name;
     private final NodeUtil.DirectivesHolder directives;
@@ -32,8 +32,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread>
     public static final String CHILD_DIRECTIVES = "directives";
 
     @Internal
-    protected FragmentSpread(String name, List<Directive> directives, @Nullable SourceLocation sourceLocation,
-            List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected FragmentSpread(String name, List<Directive> directives, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.directives = NodeUtil.DirectivesHolder.of(directives);
@@ -87,6 +86,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread>
         return Objects.equals(this.name, that.name);
     }
 
+
     @Override
     public List<Node> getChildren() {
         return ImmutableList.copyOf(directives.getDirectives());
@@ -102,13 +102,13 @@ public class FragmentSpread extends AbstractNode<FragmentSpread>
     @Override
     public FragmentSpread withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
     }
 
     @Override
     public FragmentSpread deepCopy() {
-        return new FragmentSpread(name, assertNotNull(deepCopy(directives.getDirectives())), getSourceLocation(),
-                getComments(), getIgnoredChars(), getAdditionalData());
+        return new FragmentSpread(name, assertNotNull(deepCopy(directives.getDirectives())), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -131,6 +131,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread>
     public static Builder newFragmentSpread(String name) {
         return new Builder().name(name);
     }
+
 
     public FragmentSpread transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
@@ -185,6 +186,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread>
             return this;
         }
 
+
         public Builder ignoredChars(IgnoredChars ignoredChars) {
             this.ignoredChars = ignoredChars;
             return this;
@@ -201,8 +203,7 @@ public class FragmentSpread extends AbstractNode<FragmentSpread>
         }
 
         public FragmentSpread build() {
-            return new FragmentSpread(assertNotNull(name), directives, sourceLocation, comments, ignoredChars,
-                    additionalData);
+            return new FragmentSpread(assertNotNull(name), directives, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

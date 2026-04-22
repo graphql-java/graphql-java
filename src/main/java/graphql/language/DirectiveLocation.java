@@ -1,5 +1,6 @@
 package graphql.language;
 
+
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -27,8 +28,7 @@ public class DirectiveLocation extends AbstractNode<DirectiveLocation> implement
     private final String name;
 
     @Internal
-    protected DirectiveLocation(String name, @Nullable SourceLocation sourceLocation, List<Comment> comments,
-            IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected DirectiveLocation(String name, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
     }

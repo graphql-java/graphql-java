@@ -22,13 +22,13 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
 
     @Internal
     protected EnumTypeExtensionDefinition(String name,
-            List<EnumValueDefinition> enumValueDefinitions,
-            List<Directive> directives,
-            @Nullable Description description,
-            @Nullable SourceLocation sourceLocation,
-            List<Comment> comments,
-            IgnoredChars ignoredChars,
-            Map<String, String> additionalData) {
+                                          List<EnumValueDefinition> enumValueDefinitions,
+                                          List<Directive> directives,
+                                          @Nullable Description description,
+                                          @Nullable SourceLocation sourceLocation,
+                                          List<Comment> comments,
+                                          IgnoredChars ignoredChars,
+                                          Map<String, String> additionalData) {
         super(name, enumValueDefinitions, directives, description,
                 sourceLocation, comments, ignoredChars, additionalData);
     }
@@ -61,7 +61,8 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
     public EnumTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transformExtension(builder -> builder
                 .enumValueDefinitions(newChildren.getChildren(CHILD_ENUM_VALUE_DEFINITIONS))
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
     }
 
     public EnumTypeExtensionDefinition transformExtension(Consumer<Builder> builderConsumer) {
@@ -145,6 +146,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
             this.additionalData.put(key, value);
             return this;
         }
+
 
         public EnumTypeExtensionDefinition build() {
             return new EnumTypeExtensionDefinition(assertNotNull(name),

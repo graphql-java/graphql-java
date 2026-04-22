@@ -1,5 +1,6 @@
 package graphql.language;
 
+
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -23,8 +24,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefinition>
-        implements DirectivesContainer<EnumValueDefinition>, NamedNode<EnumValueDefinition> {
+public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefinition> implements DirectivesContainer<EnumValueDefinition>, NamedNode<EnumValueDefinition> {
     private final String name;
     private final NodeUtil.DirectivesHolder directives;
 
@@ -32,11 +32,11 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
 
     @Internal
     protected EnumValueDefinition(String name,
-            List<Directive> directives,
-            @Nullable Description description,
-            @Nullable SourceLocation sourceLocation,
-            List<Comment> comments,
-            IgnoredChars ignoredChars, Map<String, String> additionalData) {
+                                  List<Directive> directives,
+                                  @Nullable Description description,
+                                  @Nullable SourceLocation sourceLocation,
+                                  List<Comment> comments,
+                                  IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.directives = NodeUtil.DirectivesHolder.of(directives);
@@ -101,7 +101,8 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
     @Override
     public EnumValueDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
     }
 
     @Override
@@ -121,8 +122,7 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
 
     @Override
     public EnumValueDefinition deepCopy() {
-        return new EnumValueDefinition(name, assertNotNull(deepCopy(directives.getDirectives())), description,
-                getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new EnumValueDefinition(name, assertNotNull(deepCopy(directives.getDirectives())), description, getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -217,9 +217,9 @@ public class EnumValueDefinition extends AbstractDescribedNode<EnumValueDefiniti
             return this;
         }
 
+
         public EnumValueDefinition build() {
-            return new EnumValueDefinition(assertNotNull(name), directives, description, sourceLocation, comments,
-                    ignoredChars, additionalData);
+            return new EnumValueDefinition(assertNotNull(name), directives, description, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

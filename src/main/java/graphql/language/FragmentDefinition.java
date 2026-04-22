@@ -1,5 +1,6 @@
 package graphql.language;
 
+
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -26,9 +27,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
  */
 @PublicApi
 @NullMarked
-public class FragmentDefinition extends AbstractNode<FragmentDefinition>
-        implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>,
-        DirectivesContainer<FragmentDefinition>, NamedNode<FragmentDefinition> {
+public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition>, NamedNode<FragmentDefinition> {
 
     private final String name;
     private final TypeName typeCondition;
@@ -41,13 +40,13 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
 
     @Internal
     protected FragmentDefinition(String name,
-            TypeName typeCondition,
-            List<Directive> directives,
-            SelectionSet selectionSet,
-            @Nullable SourceLocation sourceLocation,
-            List<Comment> comments,
-            IgnoredChars ignoredChars,
-            Map<String, String> additionalData) {
+                                 TypeName typeCondition,
+                                 List<Directive> directives,
+                                 SelectionSet selectionSet,
+                                 @Nullable SourceLocation sourceLocation,
+                                 List<Comment> comments,
+                                 IgnoredChars ignoredChars,
+                                 Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.typeCondition = typeCondition;
@@ -59,6 +58,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
     public String getName() {
         return name;
     }
+
 
     public TypeName getTypeCondition() {
         return typeCondition;
@@ -112,7 +112,8 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
         return transform(builder -> builder
                 .typeCondition(assertNotNull(newChildren.getChildOrNull(CHILD_TYPE_CONDITION)))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-                .selectionSet(assertNotNull(newChildren.getChildOrNull(CHILD_SELECTION_SET))));
+                .selectionSet(assertNotNull(newChildren.getChildOrNull(CHILD_SELECTION_SET)))
+        );
     }
 
     @Override
@@ -192,6 +193,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
+
         public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
@@ -243,9 +245,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition>
             return this;
         }
 
+
         public FragmentDefinition build() {
-            return new FragmentDefinition(assertNotNull(name), assertNotNull(typeCondition), directives,
-                    assertNotNull(selectionSet), sourceLocation, comments, ignoredChars, additionalData);
+            return new FragmentDefinition(assertNotNull(name), assertNotNull(typeCondition), directives, assertNotNull(selectionSet), sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

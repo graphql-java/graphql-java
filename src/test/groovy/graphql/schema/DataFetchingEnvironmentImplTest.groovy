@@ -12,7 +12,6 @@ import graphql.language.OperationDefinition
 import graphql.language.SelectionSet
 import graphql.language.StringValue
 import graphql.language.TypeName
-import graphql.language.SelectionSet
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry

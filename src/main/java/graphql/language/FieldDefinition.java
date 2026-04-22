@@ -1,5 +1,6 @@
 package graphql.language;
 
+
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -24,8 +25,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
-        implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
+public class FieldDefinition extends AbstractDescribedNode<FieldDefinition> implements DirectivesContainer<FieldDefinition>, NamedNode<FieldDefinition> {
     private final String name;
     private final Type type;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;
@@ -37,14 +37,14 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
 
     @Internal
     protected FieldDefinition(String name,
-            Type type,
-            List<InputValueDefinition> inputValueDefinitions,
-            List<Directive> directives,
-            @Nullable Description description,
-            @Nullable SourceLocation sourceLocation,
-            List<Comment> comments,
-            IgnoredChars ignoredChars,
-            Map<String, String> additionalData) {
+                              Type type,
+                              List<InputValueDefinition> inputValueDefinitions,
+                              List<Directive> directives,
+                              @Nullable Description description,
+                              @Nullable SourceLocation sourceLocation,
+                              List<Comment> comments,
+                              IgnoredChars ignoredChars,
+                              Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.type = type;
@@ -53,7 +53,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
     }
 
     public FieldDefinition(String name,
-            Type type) {
+                           Type type) {
         this(name, type, emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
@@ -113,7 +113,8 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
         return transform(builder -> builder
                 .type(assertNotNull(newChildren.getChildOrNull(CHILD_TYPE)))
                 .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITION))
-                .directives(newChildren.getChildren(CHILD_DIRECTIVES)));
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+        );
     }
 
     @Override
@@ -195,6 +196,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
+
         public Builder sourceLocation(SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
@@ -230,6 +232,7 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
             return this;
         }
 
+
         @Override
         public Builder directives(List<Directive> directives) {
             this.directives = ImmutableList.copyOf(directives);
@@ -256,10 +259,9 @@ public class FieldDefinition extends AbstractDescribedNode<FieldDefinition>
             return this;
         }
 
+
         public FieldDefinition build() {
-            return new FieldDefinition(assertNotNull(name), assertNotNull(type), inputValueDefinitions, directives,
-                    description,
-                    sourceLocation, comments, ignoredChars, additionalData);
+            return new FieldDefinition(assertNotNull(name), assertNotNull(type), inputValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
