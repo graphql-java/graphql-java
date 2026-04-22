@@ -53,7 +53,7 @@ class OverlappingFieldsCanBeMergedBenchmarkTest extends Specification {
     private List<ValidationError> validateQuery(GraphQLSchema schema, Document document) {
         ValidationErrorCollector errorCollector = new ValidationErrorCollector()
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
-        ValidationContext validationContext = new ValidationContext(schema, document, i18n)
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n, QueryComplexityLimits.NONE)
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 { r -> r == OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED })
         LanguageTraversal languageTraversal = new LanguageTraversal()
@@ -74,7 +74,11 @@ class OverlappingFieldsCanBeMergedBenchmarkTest extends Specification {
     def "large schema query executes without errors"() {
         when:
         GraphQL graphQL = GraphQL.newGraphQL(schema).build()
-        ExecutionResult executionResult = graphQL.execute(loadResource("large-schema-4-query.graphql"))
+        def executionInput = graphql.ExecutionInput.newExecutionInput()
+                .query(loadResource("large-schema-4-query.graphql"))
+                .graphQLContext([(QueryComplexityLimits.KEY): QueryComplexityLimits.NONE])
+                .build()
+        ExecutionResult executionResult = graphQL.execute(executionInput)
 
         then:
         executionResult.errors.size() == 0

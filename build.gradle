@@ -29,7 +29,7 @@ plugins {
     id 'jacoco'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.3.10'
+    id 'org.jetbrains.kotlin.jvm' version '2.3.20'
 }
 
 java {
@@ -140,10 +140,10 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.14.3'
 
     testImplementation 'org.spockframework:spock-core:2.4-groovy-5.0'
-    testImplementation 'net.bytebuddy:byte-buddy:1.18.7'
+    testImplementation 'net.bytebuddy:byte-buddy:1.18.8'
     testImplementation 'org.objenesis:objenesis:3.5'
-    testImplementation 'org.apache.groovy:groovy:5.0.4'
-    testImplementation 'org.apache.groovy:groovy-json:5.0.4'
+    testImplementation 'org.apache.groovy:groovy:5.0.5'
+    testImplementation 'org.apache.groovy:groovy-json:5.0.5'
     testImplementation 'com.google.code.gson:gson:2.13.2'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.26'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.21.1'
@@ -166,7 +166,7 @@ dependencies {
     // this is needed for the idea jmh plugin to work correctly
     jmh 'org.openjdk.jmh:jmh-core:1.37'
     jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
-    jmh 'me.bechberger:ap-loader-all:4.3-12'
+    jmh 'me.bechberger:ap-loader-all:4.3-13'
 
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
