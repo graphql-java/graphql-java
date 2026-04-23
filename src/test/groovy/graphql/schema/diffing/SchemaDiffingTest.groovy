@@ -1446,20 +1446,20 @@ class SchemaDiffingTest extends Specification {
         def schema1 = schema('''
             input I {
                 name: String
-                field: I = {name: "default name"}
+                field: I = {name: "default name", field: null}
             }
             type Query {
                 foo(arg: I): String
-            } 
+            }
         ''')
         def schema2 = schema('''
             input I {
                 name: String
-                field: [I] = [{name: "default name"}]
+                field: [I] = [{name: "default name", field: null}]
             }
             type Query {
                 foo(arg: I): String
-            } 
+            }
         ''')
 
         when:
