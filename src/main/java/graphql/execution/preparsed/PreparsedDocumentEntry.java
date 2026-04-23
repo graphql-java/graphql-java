@@ -3,8 +3,11 @@ package graphql.execution.preparsed;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.language.Document;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
@@ -20,9 +23,10 @@ import static java.util.Collections.singletonList;
  * with times frames that cross graphql-java versions.  While we don't change things unnecessarily,  we may inadvertently break
  * the serialised compatibility across versions.
  */
+@NullMarked
 @PublicApi
 public class PreparsedDocumentEntry implements Serializable {
-    private final Document document;
+    private final @Nullable Document document;
     private final List<? extends GraphQLError> errors;
 
     public PreparsedDocumentEntry(Document document,
@@ -36,7 +40,7 @@ public class PreparsedDocumentEntry implements Serializable {
     public PreparsedDocumentEntry(Document document) {
         assertNotNull(document);
         this.document = document;
-        this.errors = null;
+        this.errors = Collections.emptyList();
     }
 
     public PreparsedDocumentEntry(List<? extends GraphQLError> errors) {
@@ -49,6 +53,7 @@ public class PreparsedDocumentEntry implements Serializable {
         this(singletonList(assertNotNull(error)));
     }
 
+    @Nullable
     public Document getDocument() {
         return document;
     }
@@ -58,6 +63,6 @@ public class PreparsedDocumentEntry implements Serializable {
     }
 
     public boolean hasErrors() {
-        return errors != null && !errors.isEmpty();
+        return !errors.isEmpty();
     }
 }

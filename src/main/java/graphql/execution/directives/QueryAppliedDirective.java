@@ -7,7 +7,8 @@ import graphql.language.Directive;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphqlTypeBuilder;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
@@ -32,6 +33,7 @@ import static graphql.util.FpKit.getByName;
  * <p>
  * See <a href="https://graphql.org/learn/queries/#directives">https://graphql.org/learn/queries/#directives</a> for more details on the concept.
  */
+@NullMarked
 @PublicApi
 public class QueryAppliedDirective {
 
@@ -47,7 +49,6 @@ public class QueryAppliedDirective {
         this.definition = definition;
     }
 
-    @NonNull
     public String getName() {
         return name;
     }
@@ -107,6 +108,7 @@ public class QueryAppliedDirective {
         return new Builder(existing);
     }
 
+    @NullUnmarked
     public static class Builder extends GraphqlTypeBuilder<Builder> {
 
         private final Map<String, QueryAppliedDirectiveArgument> arguments = new LinkedHashMap<>();

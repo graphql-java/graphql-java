@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 
 @Internal
@@ -44,7 +45,7 @@ public class ExecutionStepInfoFactory {
                                                         ExecutionStrategyParameters parameters,
                                                         GraphQLFieldDefinition fieldDefinition,
                                                         @Nullable GraphQLObjectType fieldContainer) {
-        MergedField field = parameters.getField();
+        MergedField field = assertNotNull(parameters.getField(), "field must not be null");
         ExecutionStepInfo parentStepInfo = parameters.getExecutionStepInfo();
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<GraphQLArgument> fieldArgDefs = fieldDefinition.getArguments();

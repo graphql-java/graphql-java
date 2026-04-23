@@ -2,6 +2,8 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -19,6 +21,7 @@ import static graphql.Assert.assertNotNull;
  * values might need a call to a database or other systems will tend to be {@link CompletableFuture} promises.
  */
 @PublicApi
+@NullMarked
 public class FieldValueInfo {
 
     public enum CompleteValueType {
@@ -30,14 +33,14 @@ public class FieldValueInfo {
     }
 
     private final CompleteValueType completeValueType;
-    private final Object /* CompletableFuture<Object> | Object */ fieldValueObject;
+    private final @Nullable Object /* CompletableFuture<Object> | Object */ fieldValueObject;
     private final List<FieldValueInfo> fieldValueInfos;
 
-    public FieldValueInfo(CompleteValueType completeValueType, Object fieldValueObject) {
+    public FieldValueInfo(CompleteValueType completeValueType, @Nullable Object fieldValueObject) {
         this(completeValueType, fieldValueObject, ImmutableList.of());
     }
 
-    public FieldValueInfo(CompleteValueType completeValueType, Object fieldValueObject, List<FieldValueInfo> fieldValueInfos) {
+    public FieldValueInfo(CompleteValueType completeValueType, @Nullable Object fieldValueObject, List<FieldValueInfo> fieldValueInfos) {
         assertNotNull(fieldValueInfos, "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
         this.fieldValueObject = fieldValueObject;
@@ -58,7 +61,7 @@ public class FieldValueInfo {
      *
      * @return either an object that is materialized or a {@link CompletableFuture} promise to a value
      */
-    public Object /* CompletableFuture<Object> | Object */ getFieldValueObject() {
+    public @Nullable Object /* CompletableFuture<Object> | Object */ getFieldValueObject() {
         return fieldValueObject;
     }
 

@@ -2,6 +2,7 @@ package graphql.execution.directives;
 
 import graphql.GraphQLContext;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 import graphql.execution.CoercedVariables;
 import graphql.execution.MergedField;
 import graphql.execution.NormalizedVariables;
@@ -30,6 +31,7 @@ import java.util.function.Supplier;
  *
  * @see graphql.execution.MergedField
  */
+@NullMarked
 @PublicApi
 public interface QueryDirectives {
 

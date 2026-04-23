@@ -5,10 +5,12 @@ import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Parameters sent to {@link Instrumentation} methods
  */
+@NullMarked
 @PublicApi
 public class InstrumentationValidationParameters extends InstrumentationExecutionParameters {
     private final Document document;

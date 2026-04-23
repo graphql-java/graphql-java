@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredExecutionSupport;
+import org.jspecify.annotations.NullMarked;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -17,6 +18,7 @@ import java.util.function.BiConsumer;
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
  */
 @PublicApi
+@NullMarked
 public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     /**

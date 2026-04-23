@@ -7,10 +7,13 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLSchema;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
 @PublicApi
+@NullMarked
 public interface QueryVisitorFieldArgumentEnvironment {
 
     GraphQLSchema getSchema();
@@ -21,7 +24,7 @@ public interface QueryVisitorFieldArgumentEnvironment {
 
     Argument getArgument();
 
-    Object getArgumentValue();
+    @Nullable Object getArgumentValue();
 
     Map<String, Object> getVariables();
 

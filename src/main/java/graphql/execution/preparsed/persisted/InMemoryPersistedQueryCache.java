@@ -4,6 +4,8 @@ import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.PublicApi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * A PersistedQueryCache that is just an in memory map of known queries.
  */
+@NullMarked
 @PublicApi
 public class InMemoryPersistedQueryCache implements PersistedQueryCache {
 
@@ -53,6 +56,7 @@ public class InMemoryPersistedQueryCache implements PersistedQueryCache {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         private final Map<Object, String> knownQueries = new HashMap<>();
 
