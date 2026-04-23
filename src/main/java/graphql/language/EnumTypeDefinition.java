@@ -6,6 +6,9 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -20,6 +23,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition> implements TypeDefinition<EnumTypeDefinition>, DirectivesContainer<EnumTypeDefinition>, NamedNode<EnumTypeDefinition> {
     private final String name;
     private final ImmutableList<EnumValueDefinition> enumValueDefinitions;
@@ -32,8 +36,8 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     protected EnumTypeDefinition(String name,
                                  List<EnumValueDefinition> enumValueDefinitions,
                                  List<Directive> directives,
-                                 Description description,
-                                 SourceLocation sourceLocation,
+                                 @Nullable Description description,
+                                 @Nullable SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
@@ -105,7 +109,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -121,8 +125,8 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
     @Override
     public EnumTypeDefinition deepCopy() {
         return new EnumTypeDefinition(name,
-                deepCopy(enumValueDefinitions),
-                deepCopy(directives.getDirectives()),
+                assertNotNull(deepCopy(enumValueDefinitions)),
+                assertNotNull(deepCopy(directives.getDirectives())),
                 description,
                 getSourceLocation(),
                 getComments(),
@@ -154,6 +158,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
@@ -236,7 +241,7 @@ public class EnumTypeDefinition extends AbstractDescribedNode<EnumTypeDefinition
 
 
         public EnumTypeDefinition build() {
-            return new EnumTypeDefinition(name, enumValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
+            return new EnumTypeDefinition(assertNotNull(name), enumValueDefinitions, directives, description, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
