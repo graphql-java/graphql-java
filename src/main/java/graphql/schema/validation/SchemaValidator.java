@@ -23,6 +23,7 @@ public class SchemaValidator {
         rules.add(new TypeAndFieldRule());
         rules.add(new DefaultValuesAreValid());
         rules.add(new AppliedDirectivesAreValid());
+        rules.add(new DirectiveReferencesAreValid());
         rules.add(new AppliedDirectiveArgumentsAreValid());
         rules.add(new InputAndOutputTypesUsedAppropriately());
         rules.add(new OneOfInputObjectRules());

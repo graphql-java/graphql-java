@@ -5,6 +5,7 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.errors.DirectiveIllegalLocationError
 import graphql.schema.idl.errors.DirectiveIllegalReferenceError
 import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError
+import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.idl.errors.DirectiveUndeclaredError
 import graphql.schema.idl.errors.DirectiveUnknownArgumentError
 import graphql.schema.idl.errors.IllegalNameError
@@ -230,6 +231,77 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         errors.size() == 1
         errors.get(0) instanceof DirectiveIllegalReferenceError
         errors.get(0).getMessage() == "'invalidExample' must not reference itself on 'arg''[@2:39]'"
+    }
+
+    def "directive must not participate in a cycle through other directives"() {
+        given:
+        def spec = '''
+            directive @first(arg: String @second) on ARGUMENT_DEFINITION
+            directive @second(arg: String @first) on ARGUMENT_DEFINITION
+
+            type Query {
+                hello: String
+            }
+        '''
+        def registry = parse(spec)
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
+
+        then:
+        errors.size() == 2
+        errors.every { it instanceof DirectiveIllegalReferenceError }
+        errors.every { it.message.contains("first") }
+        errors.every { it.message.contains("second") }
+    }
+
+    def "directive must not participate in a cycle through input types"() {
+        given:
+        def spec = '''
+            directive @first(arg: Filter) on ARGUMENT_DEFINITION
+            directive @second(arg: Int @first) on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+
+            input Filter {
+                field: Int @second(arg: 1)
+            }
+
+            type Query {
+                hello: String
+            }
+        '''
+        def registry = parse(spec)
+        def errors = []
+
+        when:
+        new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
+
+        then:
+        errors.size() == 2
+        errors.every { it instanceof DirectiveIllegalReferenceError }
+        errors.every { it.message.contains("Filter") }
+        errors*.message.any { it.contains("first") }
+        errors*.message.any { it.contains("second") }
+    }
+
+    def "schema generator rejects directive cycles before schema construction recurses"() {
+        given:
+        def spec = '''
+            directive @first(arg: String @second) on ARGUMENT_DEFINITION
+            directive @second(arg: String @first) on ARGUMENT_DEFINITION
+
+            type Query {
+                hello: String
+            }
+        '''
+
+        when:
+        new SchemaGenerator().makeExecutableSchema(parse(spec), RuntimeWiring.newRuntimeWiring().build())
+
+        then:
+        def error = thrown(SchemaProblem)
+        error.message.contains("first")
+        error.message.contains("second")
     }
 
     def "directive must not begin with '__'"() {
