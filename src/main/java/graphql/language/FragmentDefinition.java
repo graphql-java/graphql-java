@@ -7,6 +7,9 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,6 +26,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
  * Provided to the DataFetcher, therefore public API
  */
 @PublicApi
+@NullMarked
 public class FragmentDefinition extends AbstractNode<FragmentDefinition> implements Definition<FragmentDefinition>, SelectionSetContainer<FragmentDefinition>, DirectivesContainer<FragmentDefinition>, NamedNode<FragmentDefinition> {
 
     private final String name;
@@ -39,7 +43,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
                                  TypeName typeCondition,
                                  List<Directive> directives,
                                  SelectionSet selectionSet,
-                                 SourceLocation sourceLocation,
+                                 @Nullable SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars,
                                  Map<String, String> additionalData) {
@@ -106,14 +110,14 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     @Override
     public FragmentDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
-                .typeCondition(newChildren.getChildOrNull(CHILD_TYPE_CONDITION))
+                .typeCondition(assertNotNull(newChildren.getChildOrNull(CHILD_TYPE_CONDITION)))
                 .directives(newChildren.getChildren(CHILD_DIRECTIVES))
-                .selectionSet(newChildren.getChildOrNull(CHILD_SELECTION_SET))
+                .selectionSet(assertNotNull(newChildren.getChildOrNull(CHILD_SELECTION_SET)))
         );
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -129,9 +133,9 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
     @Override
     public FragmentDefinition deepCopy() {
         return new FragmentDefinition(name,
-                deepCopy(typeCondition),
-                deepCopy(directives.getDirectives()),
-                deepCopy(selectionSet),
+                assertNotNull(deepCopy(typeCondition)),
+                assertNotNull(deepCopy(directives.getDirectives())),
+                assertNotNull(deepCopy(selectionSet)),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -163,6 +167,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
@@ -242,7 +247,7 @@ public class FragmentDefinition extends AbstractNode<FragmentDefinition> impleme
 
 
         public FragmentDefinition build() {
-            return new FragmentDefinition(name, typeCondition, directives, selectionSet, sourceLocation, comments, ignoredChars, additionalData);
+            return new FragmentDefinition(assertNotNull(name), assertNotNull(typeCondition), directives, assertNotNull(selectionSet), sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }

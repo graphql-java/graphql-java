@@ -27,7 +27,7 @@ import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironm
 
 class DataFetchingEnvironmentImplTest extends Specification {
 
-    def frag = FragmentDefinition.newFragmentDefinition().name("frag").typeCondition(new TypeName("t")).build()
+    def frag = FragmentDefinition.newFragmentDefinition().name("frag").typeCondition(new TypeName("t")).selectionSet(SelectionSet.newSelectionSet().build()).build()
 
     def dataLoader = DataLoaderFactory.newDataLoader({ keys -> CompletableFuture.completedFuture(keys) } as BatchLoader)
     def operationDefinition = OperationDefinition.newOperationDefinition()

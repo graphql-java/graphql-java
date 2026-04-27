@@ -563,7 +563,7 @@ tasks.register('testWithJava11', Test) {
 
 
 jacoco {
-    toolVersion = "0.8.12"
+    toolVersion = "0.8.14"
 }
 
 jacocoTestReport {
