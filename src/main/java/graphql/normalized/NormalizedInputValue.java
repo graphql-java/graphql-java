@@ -3,6 +3,8 @@ package graphql.normalized;
 import graphql.Assert;
 import graphql.PublicApi;
 import graphql.language.Value;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -15,11 +17,12 @@ import static graphql.language.AstPrinter.printAst;
  * An argument value with type information.
  */
 @PublicApi
+@NullMarked
 public class NormalizedInputValue {
     private final String typeName;
-    private final Object value;
+    private final @Nullable Object value;
 
-    public NormalizedInputValue(String typeName, Object value) {
+    public NormalizedInputValue(String typeName, @Nullable Object value) {
         this.typeName = assertValidTypeName(typeName);
         this.value = value;
     }
@@ -61,7 +64,7 @@ public class NormalizedInputValue {
      *
      * @return the value
      */
-    public Object getValue() {
+    public @Nullable Object getValue() {
         return value;
     }
 
@@ -115,7 +118,7 @@ public class NormalizedInputValue {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }

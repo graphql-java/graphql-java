@@ -4,6 +4,7 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 
@@ -14,6 +15,7 @@ import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChil
  * this interface.
  */
 @PublicApi
+@NullMarked
 public interface GraphQLSchemaElement {
 
     default List<GraphQLSchemaElement> getChildren() {

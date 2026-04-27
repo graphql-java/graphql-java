@@ -2,6 +2,8 @@ package graphql.incremental;
 
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -13,10 +15,11 @@ import java.util.Objects;
  * Represents a stream payload
  */
 @ExperimentalApi
+@NullMarked
 public class StreamPayload extends IncrementalPayload {
-    private final List<Object> items;
+    private final @Nullable List<Object> items;
 
-    private StreamPayload(List<Object> items, List<Object> path, String label, List<GraphQLError> errors, Map<Object, Object> extensions) {
+    private StreamPayload(@Nullable List<Object> items, List<Object> path, @Nullable String label, @Nullable List<GraphQLError> errors, @Nullable Map<Object, Object> extensions) {
         super(path, label, errors, extensions);
         this.items = items;
     }
@@ -47,7 +50,7 @@ public class StreamPayload extends IncrementalPayload {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         if (!super.equals(obj)) return false;
@@ -62,6 +65,7 @@ public class StreamPayload extends IncrementalPayload {
         return new StreamPayload.Builder();
     }
 
+    @NullUnmarked
     public static class Builder extends IncrementalPayload.Builder<Builder> {
         private List<Object> items = null;
 
