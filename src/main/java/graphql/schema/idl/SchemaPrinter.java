@@ -823,7 +823,7 @@ public class SchemaPrinter {
      * @param extensions a list of schema definition extensions
      */
     private void printAsAst(PrintWriter out, @Nullable SchemaDefinition definition, List<SchemaExtensionDefinition> extensions) {
-        out.printf("%s\n", AstPrinter.printAst(definition));
+        out.printf("%s\n", AstPrinter.printAst(Assert.assertNotNull(definition, "definition should not be null - guard with shouldPrintAsAst")));
         if (extensions != null) {
             for (SchemaExtensionDefinition extension : extensions) {
                 out.printf("\n%s\n", AstPrinter.printAst(extension));

@@ -873,7 +873,7 @@ public class Anonymizer {
                 TypeName typeCondition = node.getTypeCondition();
                 if (typeCondition != null) {
                     GraphQLType currentCondition = assertNotNull(schema.getType(typeCondition.getName()));
-                    String newCondition = newNames.get(currentCondition);
+                    String newCondition = assertNotNull(newNames.get(currentCondition), "newCondition should not be null");
                     return changeNode(context, node.transform(builder -> builder.typeCondition(new TypeName(newCondition))));
                 }
                 return TraversalControl.CONTINUE;
