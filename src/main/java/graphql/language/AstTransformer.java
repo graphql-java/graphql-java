@@ -36,7 +36,7 @@ public class AstTransformer {
 
         TraverserVisitor<Node> traverserVisitor = getNodeTraverserVisitor(nodeVisitor);
         TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
-        return treeTransformer.transform(root, traverserVisitor);
+        return assertNotNull(treeTransformer.transform(root, traverserVisitor), "transform should not return null");
     }
 
     /**
@@ -55,7 +55,10 @@ public class AstTransformer {
 
         TraverserVisitor<Node> traverserVisitor = getNodeTraverserVisitor(nodeVisitor);
         TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
-        return treeTransformer.transform(root, traverserVisitor, rootVars);
+        Node result = rootVars == null
+                ? treeTransformer.transform(root, traverserVisitor)
+                : treeTransformer.transform(root, traverserVisitor, rootVars);
+        return assertNotNull(result, "transform should not return null");
     }
 
     public Node transformParallel(Node root, NodeVisitor nodeVisitor) {
@@ -69,7 +72,7 @@ public class AstTransformer {
         TraverserVisitor<Node> traverserVisitor = new TraverserVisitorStub<Node>() {
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
         };
@@ -82,7 +85,7 @@ public class AstTransformer {
         return new TraverserVisitor<Node>() {
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
             @Override

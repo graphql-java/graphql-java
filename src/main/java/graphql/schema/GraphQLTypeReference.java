@@ -5,6 +5,8 @@ import graphql.PublicApi;
 import graphql.language.Node;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertValidName;
 
@@ -13,6 +15,7 @@ import static graphql.Assert.assertValidName;
  * object when the schema is built.
  */
 @PublicApi
+@NullMarked
 public class GraphQLTypeReference implements GraphQLNamedOutputType, GraphQLNamedInputType {
 
     /**
@@ -41,12 +44,12 @@ public class GraphQLTypeReference implements GraphQLNamedOutputType, GraphQLName
     }
 
     @Override
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return null;
     }
 
     @Override
-    public Node getDefinition() {
+    public @Nullable Node getDefinition() {
         return null;
     }
 

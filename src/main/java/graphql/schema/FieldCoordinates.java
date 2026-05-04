@@ -2,6 +2,8 @@ package graphql.schema;
 
 import graphql.AssertException;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -13,19 +15,20 @@ import static graphql.Assert.assertValidName;
  * like {@link graphql.schema.DataFetcher} need to be specified using those coordinates.
  */
 @PublicApi
+@NullMarked
 public class FieldCoordinates {
 
     private final boolean systemCoordinates;
-    private final String typeName;
+    private final @Nullable String typeName;
     private final String fieldName;
 
-    private FieldCoordinates(String typeName, String fieldName, boolean systemCoordinates) {
+    private FieldCoordinates(@Nullable String typeName, String fieldName, boolean systemCoordinates) {
         this.typeName = typeName;
         this.fieldName = fieldName;
         this.systemCoordinates = systemCoordinates;
     }
 
-    public String getTypeName() {
+    public @Nullable String getTypeName() {
         return typeName;
     }
 

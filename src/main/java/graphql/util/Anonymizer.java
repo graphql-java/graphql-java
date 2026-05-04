@@ -166,7 +166,7 @@ public class Anonymizer {
             @Override
             public TraversalControl visitGraphQLTypeReference(GraphQLTypeReference graphQLTypeReference, TraverserContext<GraphQLSchemaElement> context) {
                 GraphQLNamedSchemaElement type = (GraphQLNamedSchemaElement) schema.getType(graphQLTypeReference.getName());
-                String newName = newNameMap.get(type);
+                String newName = assertNotNull(newNameMap.get(type));
                 GraphQLTypeReference newReference = GraphQLTypeReference.typeRef(newName);
                 return changeNode(context, newReference);
             }
@@ -404,7 +404,7 @@ public class Anonymizer {
             for (ObjectField objectField : objectFields) {
                 String objectFieldName = objectField.getName();
                 Value objectFieldValue = objectField.getValue();
-                GraphQLInputObjectField inputObjectTypeField = inputObjectType.getField(objectFieldName);
+                GraphQLInputObjectField inputObjectTypeField = assertNotNull(inputObjectType.getField(objectFieldName));
                 GraphQLInputType fieldType = unwrapNonNullAs(inputObjectTypeField.getType());
                 ObjectField newObjectField = objectField.transform(builder -> {
                     builder.name(newNameMap.get(inputObjectTypeField));
@@ -480,7 +480,7 @@ public class Anonymizer {
                 }
                 GraphQLFieldDefinition fieldDefinition = (GraphQLFieldDefinition) parentNode;
                 String fieldName = fieldDefinition.getName();
-                GraphQLImplementingType implementingType = (GraphQLImplementingType) context.getParentContext().getParentNode();
+                GraphQLImplementingType implementingType = (GraphQLImplementingType) assertNotNull(assertNotNull(context.getParentContext()).getParentNode());
                 Set<GraphQLFieldDefinition> matchingInterfaceFieldDefinitions = getSameFields(fieldName, implementingType.getName(), interfaceToImplementations, schema);
                 String newName;
                 if (matchingInterfaceFieldDefinitions.size() == 0) {
@@ -565,7 +565,7 @@ public class Anonymizer {
             @Override
             public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition graphQLFieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
                 String fieldName = graphQLFieldDefinition.getName();
-                GraphQLImplementingType parentNode = (GraphQLImplementingType) context.getParentNode();
+                GraphQLImplementingType parentNode = (GraphQLImplementingType) assertNotNull(context.getParentNode());
                 Set<GraphQLFieldDefinition> sameFields = getSameFields(fieldName, parentNode.getName(), interfaceToImplementations, schema);
                 String newName;
                 if (sameFields.size() == 0) {
@@ -798,7 +798,7 @@ public class Anonymizer {
             @Override
             public TraversalControl visitDirective(Directive directive, TraverserContext<Node> context) {
                 String newName = assertNotNull(astNodeToNewName.get(directive));
-                GraphQLDirective directiveDefinition = schema.getDirective(directive.getName());
+                GraphQLDirective directiveDefinition = assertNotNull(schema.getDirective(directive.getName()));
                 context.setVar(GraphQLDirective.class, directiveDefinition);
                 return changeNode(context, directive.transform(builder -> builder.name(newName)));
             }
@@ -864,7 +864,7 @@ public class Anonymizer {
             public TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> context) {
                 String newName = assertNotNull(astNodeToNewName.get(node));
                 GraphQLType currentCondition = assertNotNull(schema.getType(node.getTypeCondition().getName()));
-                String newCondition = newNames.get(currentCondition);
+                String newCondition = assertNotNull(newNames.get(currentCondition), "newCondition should not be null");
                 return changeNode(context, node.transform(builder -> builder.name(newName).typeCondition(new TypeName(newCondition))));
             }
 
@@ -873,7 +873,7 @@ public class Anonymizer {
                 TypeName typeCondition = node.getTypeCondition();
                 if (typeCondition != null) {
                     GraphQLType currentCondition = assertNotNull(schema.getType(typeCondition.getName()));
-                    String newCondition = newNames.get(currentCondition);
+                    String newCondition = assertNotNull(newNames.get(currentCondition), "newCondition should not be null");
                     return changeNode(context, node.transform(builder -> builder.typeCondition(new TypeName(newCondition))));
                 }
                 return TraversalControl.CONTINUE;
@@ -890,13 +890,13 @@ public class Anonymizer {
                 GraphQLArgument graphQLArgumentDefinition;
                 // An argument is either from a applied query directive or from a field
                 if (context.getVarFromParents(GraphQLDirective.class) != null) {
-                    GraphQLDirective directiveDefinition = context.getVarFromParents(GraphQLDirective.class);
+                    GraphQLDirective directiveDefinition = assertNotNull(context.getVarFromParents(GraphQLDirective.class));
                     graphQLArgumentDefinition = directiveDefinition.getArgument(argument.getName());
                 } else {
                     GraphQLFieldDefinition graphQLFieldDefinition = assertNotNull(context.getVarFromParents(GraphQLFieldDefinition.class));
                     graphQLArgumentDefinition = graphQLFieldDefinition.getArgument(argument.getName());
                 }
-                GraphQLInputType argumentType = graphQLArgumentDefinition.getType();
+                GraphQLInputType argumentType = assertNotNull(graphQLArgumentDefinition).getType();
                 String newName = assertNotNull(astNodeToNewName.get(argument));
                 Value newValue = replaceValue(argument.getValue(), argumentType, newNames, defaultStringValueCounter, defaultIntValueCounter);
                 return changeNode(context, argument.transform(builder -> builder.name(newName).value(newValue)));

@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 import graphql.language.OperationTypeDefinition;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
@@ -49,6 +50,7 @@ import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
  * </ol>
  */
 @PublicApi
+@NullMarked
 public class SchemaGenerator {
 
     private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();

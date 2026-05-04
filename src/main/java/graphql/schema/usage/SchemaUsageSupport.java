@@ -2,6 +2,8 @@ package graphql.schema.usage;
 
 import graphql.PublicApi;
 import graphql.schema.GraphQLAppliedDirective;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -31,6 +33,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.util.TraversalControl.CONTINUE;
 
 @PublicApi
+@NullMarked
 public class SchemaUsageSupport {
 
     /**
@@ -84,9 +87,9 @@ public class SchemaUsageSupport {
 
                 GraphQLSchemaElement parentElement = context.getParentNode();
                 if (parentElement instanceof GraphQLFieldDefinition) {
-                    parentElement = context.getParentContext().getParentNode();
+                    parentElement = assertNotNull(context.getParentContext(), "parentContext should not be null").getParentNode();
                 }
-                recordBackReference(inputType, parentElement);
+                recordBackReference(inputType, assertNotNull(parentElement, "parentElement should not be null"));
                 return CONTINUE;
             }
 
@@ -97,9 +100,9 @@ public class SchemaUsageSupport {
 
                 GraphQLSchemaElement parentElement = context.getParentNode();
                 if (parentElement instanceof GraphQLAppliedDirective) {
-                    parentElement = context.getParentContext().getParentNode();
+                    parentElement = assertNotNull(context.getParentContext(), "parentContext should not be null").getParentNode();
                 }
-                recordBackReference(inputType, parentElement);
+                recordBackReference(inputType, assertNotNull(parentElement, "parentElement should not be null"));
                 return CONTINUE;
             }
 
@@ -109,7 +112,7 @@ public class SchemaUsageSupport {
                 builder.fieldReferenceCounts.compute(fieldType.getName(), incCount());
                 builder.outputFieldReferenceCounts.compute(fieldType.getName(), incCount());
 
-                recordBackReference(fieldType, context.getParentNode());
+                recordBackReference(fieldType, assertNotNull(context.getParentNode(), "parentNode should not be null"));
 
                 return CONTINUE;
             }
@@ -120,42 +123,46 @@ public class SchemaUsageSupport {
                 builder.fieldReferenceCounts.compute(fieldType.getName(), incCount());
                 builder.inputFieldReferenceCounts.compute(fieldType.getName(), incCount());
 
-                recordBackReference(fieldType, context.getParentNode());
+                recordBackReference(fieldType, assertNotNull(context.getParentNode(), "parentNode should not be null"));
 
                 return CONTINUE;
             }
 
             @Override
             public TraversalControl visitGraphQLDirective(GraphQLDirective directive, TraverserContext<GraphQLSchemaElement> context) {
-                GraphQLSchemaElement parentElement = visitDirectiveLike(context, directive.getName());
-                recordBackReference(directive, parentElement);
+                @Nullable GraphQLSchemaElement parentElement = visitDirectiveLike(context, directive.getName());
+                if (parentElement != null) {
+                    recordBackReference(directive, parentElement);
+                }
                 return CONTINUE;
             }
 
             @Override
             public TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective appliedDirective, TraverserContext<GraphQLSchemaElement> context) {
-                GraphQLSchemaElement parentElement = visitDirectiveLike(context, appliedDirective.getName());
-                recordBackReference(appliedDirective, parentElement);
+                @Nullable GraphQLSchemaElement parentElement = visitDirectiveLike(context, appliedDirective.getName());
+                if (parentElement != null) {
+                    recordBackReference(appliedDirective, parentElement);
+                }
                 return CONTINUE;
             }
 
-            private GraphQLSchemaElement visitDirectiveLike(TraverserContext<GraphQLSchemaElement> context, String directiveName) {
-                GraphQLSchemaElement parentElement = context.getParentNode();
+            private @Nullable GraphQLSchemaElement visitDirectiveLike(TraverserContext<GraphQLSchemaElement> context, String directiveName) {
+                @Nullable GraphQLSchemaElement parentElement = context.getParentNode();
                 if (parentElement != null) {
                     // a null parent is a directive definition
                     // we record a count if the directive is applied to something - not just defined
                     builder.directiveReferenceCount.compute(directiveName, incCount());
                 }
                 if (parentElement instanceof GraphQLArgument) {
-                    context = context.getParentContext();
+                    context = assertNotNull(context.getParentContext(), "parentContext should not be null");
                     parentElement = context.getParentNode();
                 }
                 if (parentElement instanceof GraphQLFieldDefinition) {
-                    context = context.getParentContext();
+                    context = assertNotNull(context.getParentContext(), "parentContext should not be null");
                     parentElement = context.getParentNode();
                 }
                 if (parentElement instanceof GraphQLInputObjectField) {
-                    context = context.getParentContext();
+                    context = assertNotNull(context.getParentContext(), "parentContext should not be null");
                     parentElement = context.getParentNode();
                 }
                 return parentElement;

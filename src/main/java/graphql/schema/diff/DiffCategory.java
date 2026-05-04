@@ -1,11 +1,13 @@
 package graphql.schema.diff;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * A classification of difference events.
  */
 @PublicApi
+@NullMarked
 public enum DiffCategory {
     /**
      * The new API is missing something compared to the old API
