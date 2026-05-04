@@ -12,4 +12,11 @@ public class DirectiveIllegalReferenceError extends BaseError {
                         directive.getName(), location.getName(), lineCol(location)
                 ));
     }
+
+    public DirectiveIllegalReferenceError(DirectiveDefinition directive, String cycle) {
+        super(directive,
+                String.format("'%s' must not form a circular reference: %s",
+                        directive.getName(), cycle
+                ));
+    }
 }

@@ -7,9 +7,11 @@ import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumTypeDefinition;
+import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
 import graphql.language.InputObjectTypeDefinition;
+import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.NamedNode;
@@ -17,6 +19,7 @@ import graphql.language.Node;
 import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
+import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.SchemaDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
@@ -30,10 +33,14 @@ import graphql.schema.idl.errors.IllegalNameError;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.NotAnInputTypeError;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
@@ -184,14 +191,203 @@ class SchemaTypeDirectivesChecker {
     private void commonCheck(Collection<DirectiveDefinition> directiveDefinitions, List<GraphQLError> errors) {
         directiveDefinitions.forEach(directiveDefinition -> {
             assertTypeName(directiveDefinition, errors);
-            directiveDefinition.getInputValueDefinitions().forEach(inputValueDefinition -> {
+            boolean hasDirectSelfReference = false;
+            for (InputValueDefinition inputValueDefinition : directiveDefinition.getInputValueDefinitions()) {
                 assertTypeName(inputValueDefinition, errors);
                 assertExistAndIsInputType(inputValueDefinition, errors);
                 if (inputValueDefinition.hasDirective(directiveDefinition.getName())) {
                     errors.add(new DirectiveIllegalReferenceError(directiveDefinition, inputValueDefinition));
+                    hasDirectSelfReference = true;
                 }
-            });
+            }
+            if (hasDirectSelfReference) {
+                return;
+            }
+
+            String cycle = findDirectiveCycle(directiveDefinition);
+            if (cycle != null) {
+                errors.add(new DirectiveIllegalReferenceError(directiveDefinition, cycle));
+            }
         });
+    }
+
+    private String findDirectiveCycle(DirectiveDefinition directiveDefinition) {
+        List<String> path = new ArrayList<>();
+        path.add(directiveName(directiveDefinition.getName()));
+
+        Set<String> visited = new LinkedHashSet<>();
+        visited.add(directiveName(directiveDefinition.getName()));
+
+        return findCycleFromInputValueDefinitions(directiveDefinition.getInputValueDefinitions(), directiveDefinition.getName(), path, visited);
+    }
+
+    private String findCycleFromInputValueDefinitions(List<InputValueDefinition> inputValueDefinitions, String startDirectiveName, List<String> path, Set<String> visited) {
+        for (InputValueDefinition inputValueDefinition : inputValueDefinitions) {
+            String cycle = findCycleFromDirectives(inputValueDefinition.getDirectives(), startDirectiveName, path, visited);
+            if (cycle != null) {
+                return cycle;
+            }
+
+            cycle = findCycleFromInputType(inputValueDefinition.getType(), startDirectiveName, path, visited);
+            if (cycle != null) {
+                return cycle;
+            }
+        }
+        return null;
+    }
+
+    private String findCycleFromDirectives(List<Directive> directives, String startDirectiveName, List<String> path, Set<String> visited) {
+        for (Directive directive : directives) {
+            String cycle = findCycleFromDirectiveReference(directive.getName(), startDirectiveName, path, visited);
+            if (cycle != null) {
+                return cycle;
+            }
+        }
+        return null;
+    }
+
+    private String findCycleFromDirectiveReference(String directiveName, String startDirectiveName, List<String> path, Set<String> visited) {
+        String displayName = directiveName(directiveName);
+        if (directiveName.equals(startDirectiveName)) {
+            return cyclePath(path, displayName);
+        }
+        if (visited.contains(displayName)) {
+            return null;
+        }
+
+        Optional<DirectiveDefinition> directiveDefinition = typeRegistry.getDirectiveDefinition(directiveName);
+        if (directiveDefinition.isEmpty()) {
+            return null;
+        }
+
+        return findCycleFromInputValueDefinitions(
+                directiveDefinition.get().getInputValueDefinitions(),
+                startDirectiveName,
+                addToPath(path, displayName),
+                addToVisited(visited, displayName)
+        );
+    }
+
+    private String findCycleFromInputType(graphql.language.Type<?> type, String startDirectiveName, List<String> path, Set<String> visited) {
+        TypeDefinition<?> typeDefinition = findTypeDefFromRegistry(TypeUtil.unwrapAll(type).getName(), typeRegistry);
+        if (typeDefinition == null) {
+            return null;
+        }
+        if (visited.contains(typeDefinition.getName())) {
+            return null;
+        }
+
+        List<String> nextPath = addToPath(path, typeDefinition.getName());
+        Set<String> nextVisited = addToVisited(visited, typeDefinition.getName());
+
+        if (typeDefinition instanceof ScalarTypeDefinition) {
+            return findCycleFromScalarType((ScalarTypeDefinition) typeDefinition, startDirectiveName, nextPath, nextVisited);
+        }
+        if (typeDefinition instanceof EnumTypeDefinition) {
+            return findCycleFromEnumType((EnumTypeDefinition) typeDefinition, startDirectiveName, nextPath, nextVisited);
+        }
+        if (typeDefinition instanceof InputObjectTypeDefinition) {
+            return findCycleFromInputObjectType((InputObjectTypeDefinition) typeDefinition, startDirectiveName, nextPath, nextVisited);
+        }
+        return null;
+    }
+
+    private String findCycleFromScalarType(ScalarTypeDefinition typeDefinition, String startDirectiveName, List<String> path, Set<String> visited) {
+        String cycle = findCycleFromDirectives(typeDefinition.getDirectives(), startDirectiveName, path, visited);
+        if (cycle != null) {
+            return cycle;
+        }
+
+        List<ScalarTypeExtensionDefinition> extensions = typeRegistry.scalarTypeExtensions().getOrDefault(typeDefinition.getName(), Collections.emptyList());
+        for (ScalarTypeExtensionDefinition extension : extensions) {
+            cycle = findCycleFromDirectives(extension.getDirectives(), startDirectiveName, path, visited);
+            if (cycle != null) {
+                return cycle;
+            }
+        }
+        return null;
+    }
+
+    private String findCycleFromEnumType(EnumTypeDefinition typeDefinition, String startDirectiveName, List<String> path, Set<String> visited) {
+        String cycle = findCycleFromDirectives(typeDefinition.getDirectives(), startDirectiveName, path, visited);
+        if (cycle != null) {
+            return cycle;
+        }
+
+        cycle = findCycleFromEnumValues(typeDefinition.getEnumValueDefinitions(), startDirectiveName, path, visited);
+        if (cycle != null) {
+            return cycle;
+        }
+
+        List<EnumTypeExtensionDefinition> extensions = typeRegistry.enumTypeExtensions().getOrDefault(typeDefinition.getName(), Collections.emptyList());
+        for (EnumTypeExtensionDefinition extension : extensions) {
+            cycle = findCycleFromDirectives(extension.getDirectives(), startDirectiveName, path, visited);
+            if (cycle != null) {
+                return cycle;
+            }
+
+            cycle = findCycleFromEnumValues(extension.getEnumValueDefinitions(), startDirectiveName, path, visited);
+            if (cycle != null) {
+                return cycle;
+            }
+        }
+        return null;
+    }
+
+    private String findCycleFromEnumValues(List<EnumValueDefinition> enumValueDefinitions, String startDirectiveName, List<String> path, Set<String> visited) {
+        for (EnumValueDefinition enumValueDefinition : enumValueDefinitions) {
+            String cycle = findCycleFromDirectives(enumValueDefinition.getDirectives(), startDirectiveName, path, visited);
+            if (cycle != null) {
+                return cycle;
+            }
+        }
+        return null;
+    }
+
+    private String findCycleFromInputObjectType(InputObjectTypeDefinition typeDefinition, String startDirectiveName, List<String> path, Set<String> visited) {
+        String cycle = findCycleFromDirectives(typeDefinition.getDirectives(), startDirectiveName, path, visited);
+        if (cycle != null) {
+            return cycle;
+        }
+
+        cycle = findCycleFromInputValueDefinitions(typeDefinition.getInputValueDefinitions(), startDirectiveName, path, visited);
+        if (cycle != null) {
+            return cycle;
+        }
+
+        List<InputObjectTypeExtensionDefinition> extensions = typeRegistry.inputObjectTypeExtensions().getOrDefault(typeDefinition.getName(), Collections.emptyList());
+        for (InputObjectTypeExtensionDefinition extension : extensions) {
+            cycle = findCycleFromDirectives(extension.getDirectives(), startDirectiveName, path, visited);
+            if (cycle != null) {
+                return cycle;
+            }
+
+            cycle = findCycleFromInputValueDefinitions(extension.getInputValueDefinitions(), startDirectiveName, path, visited);
+            if (cycle != null) {
+                return cycle;
+            }
+        }
+        return null;
+    }
+
+    private List<String> addToPath(List<String> path, String element) {
+        List<String> nextPath = new ArrayList<>(path);
+        nextPath.add(element);
+        return nextPath;
+    }
+
+    private Set<String> addToVisited(Set<String> visited, String element) {
+        Set<String> nextVisited = new LinkedHashSet<>(visited);
+        nextVisited.add(element);
+        return nextVisited;
+    }
+
+    private String cyclePath(List<String> path, String cycleElement) {
+        return String.join(" -> ", addToPath(path, cycleElement));
+    }
+
+    private String directiveName(String directiveName) {
+        return "@" + directiveName;
     }
 
     private static void assertTypeName(NamedNode<?> node, List<GraphQLError> errors) {
