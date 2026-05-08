@@ -241,6 +241,9 @@ public interface Instrumentation {
     @Nullable
     default FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         InstrumentationContext<Object> ctx = beginFieldFetch(parameters, state);
+        if (ctx == noOp()) {
+            return FieldFetchingInstrumentationContext.NOOP;
+        }
         return FieldFetchingInstrumentationContext.adapter(ctx);
     }
 
