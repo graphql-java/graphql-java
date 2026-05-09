@@ -1,7 +1,7 @@
 package graphql.language;
 
-import graphql.Scalars;
 import graphql.PublicApi;
+import graphql.Scalars;
 import graphql.collect.ImmutableKit;
 import graphql.execution.CoercedVariables;
 import graphql.execution.TypeFromAST;
@@ -20,7 +20,6 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -128,24 +127,13 @@ public class AstSignature {
         Map<String, GraphQLInputType> variableTypes = variableTypes(operationDefinition, schema);
         List<Definition> definitions = new ArrayList<>(document.getDefinitions().size());
         for (Definition definition : document.getDefinitions()) {
-            definitions.add(redactDefinition(definition, schema, variables, variableTypes, variableRemapping, variableCount));
+            if (definition instanceof OperationDefinition) {
+                definitions.add(redactOperationDefinition((OperationDefinition) definition, schema, variables, variableTypes, variableRemapping, variableCount));
+                continue;
+            }
+            definitions.add(redactFragmentDefinition((FragmentDefinition) definition, schema, variables, variableTypes, variableRemapping, variableCount));
         }
         return document.transform(builder -> builder.definitions(definitions));
-    }
-
-    private Definition redactDefinition(Definition definition,
-                                        GraphQLSchema schema,
-                                        CoercedVariables variables,
-                                        Map<String, GraphQLInputType> variableTypes,
-                                        Map<String, String> variableRemapping,
-                                        AtomicInteger variableCount) {
-        if (definition instanceof OperationDefinition) {
-            return redactOperationDefinition((OperationDefinition) definition, schema, variables, variableTypes, variableRemapping, variableCount);
-        }
-        if (definition instanceof FragmentDefinition) {
-            return redactFragmentDefinition((FragmentDefinition) definition, schema, variables, variableTypes, variableRemapping, variableCount);
-        }
-        return definition;
     }
 
     private OperationDefinition redactOperationDefinition(OperationDefinition operationDefinition,
@@ -236,10 +224,7 @@ public class AstSignature {
         if (selection instanceof InlineFragment) {
             return redactInlineFragment((InlineFragment) selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount);
         }
-        if (selection instanceof FragmentSpread) {
-            return redactFragmentSpread((FragmentSpread) selection, schema, variables, variableTypes, variableRemapping, variableCount);
-        }
-        return selection;
+        return redactFragmentSpread((FragmentSpread) selection, schema, variables, variableTypes, variableRemapping, variableCount);
     }
 
     private Field redactField(Field field,
@@ -269,11 +254,8 @@ public class AstSignature {
         if (selectionSet == null) {
             return null;
         }
-        GraphQLUnmodifiedType unmodifiedType = unwrapAll(fieldType);
-        if (!(unmodifiedType instanceof GraphQLOutputType)) {
-            return selectionSet;
-        }
-        return redactSelectionSet(selectionSet, (GraphQLOutputType) unmodifiedType, schema, variables, variableTypes, variableRemapping, variableCount);
+        GraphQLOutputType unmodifiedType = (GraphQLOutputType) unwrapAll(fieldType);
+        return redactSelectionSet(selectionSet, unmodifiedType, schema, variables, variableTypes, variableRemapping, variableCount);
     }
 
     private InlineFragment redactInlineFragment(InlineFragment inlineFragment,
@@ -493,10 +475,11 @@ public class AstSignature {
         if (inputType instanceof GraphQLEnumType) {
             return EnumValue.of("REDACTED");
         }
+        GraphQLScalarType scalarType = Scalars.GraphQLString;
         if (inputType instanceof GraphQLScalarType) {
-            return redactedScalarValue((GraphQLScalarType) inputType);
+            scalarType = (GraphQLScalarType) inputType;
         }
-        return StringValue.of("");
+        return redactedScalarValue(scalarType);
     }
 
     private ArrayValue redactExternalListValue(Object value, GraphQLList listType, GraphQLSchema schema) {

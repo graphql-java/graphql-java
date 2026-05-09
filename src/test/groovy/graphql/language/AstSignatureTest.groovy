@@ -188,6 +188,72 @@ fragment X on SomeType {
 '''
     }
 
+    def "signature with input redacts literal single values supplied to list arguments"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                search(ids: "abc") {
+                    id
+                }
+            }
+        ''') == '''query Test {
+  search(ids: "") {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input keeps literal null values"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                search(term: null) {
+                    id
+                }
+            }
+        ''') == '''query Test {
+  search(term: null) {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input redacts malformed input object literals without schema shape"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                search(filter: "secret") {
+                    id
+                }
+            }
+        ''') == '''query Test {
+  search(filter: "") {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input redacts non null argument and variable values"() {
+        expect:
+        signatureWithInput('''
+            query Test($filter: FilterInput!) {
+                search(requiredFilter: $filter, requiredTerm: "secret") {
+                    id
+                }
+            }
+        ''', [
+                filter: [term: "secret"]
+        ]) == '''query Test($var1: FilterInput!) {
+  search(requiredFilter: {term : ""}, requiredTerm: "") {
+    id
+  }
+}
+'''
+    }
+
     def "signature with input omits an argument when its variable is absent"() {
         expect:
         signatureWithInput('''
@@ -220,6 +286,24 @@ fragment X on SomeType {
 '''
     }
 
+    def "signature with input redacts null variables as explicit null values"() {
+        expect:
+        signatureWithInput('''
+            query Test($term: String) {
+                search(term: $term) {
+                    id
+                }
+            }
+        ''', [
+                term: null
+        ]) == '''query Test($var1: String) {
+  search(term: null) {
+    id
+  }
+}
+'''
+    }
+
     def "signature with input expands variable values into redacted input shapes"() {
         expect:
         signatureWithInput('''
@@ -246,6 +330,42 @@ fragment X on SomeType {
 '''
     }
 
+    def "signature with input expands singleton variable values into list shapes"() {
+        expect:
+        signatureWithInput('''
+            query Test($ids: [ID]) {
+                search(ids: $ids) {
+                    id
+                }
+            }
+        ''', [
+                ids: "abc"
+        ]) == '''query Test($var1: [ID]) {
+  search(ids: [""]) {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input redacts invalid input object variable values as empty object shapes"() {
+        expect:
+        signatureWithInput('''
+            query Test($filter: FilterInput) {
+                search(filter: $filter) {
+                    id
+                }
+            }
+        ''', [
+                filter: "not a map"
+        ]) == '''query Test($var1: FilterInput) {
+  search(filter: {}) {
+    id
+  }
+}
+'''
+    }
+
     def "signature with input redacts variable default values"() {
         expect:
         signatureWithInput('''
@@ -258,6 +378,150 @@ fragment X on SomeType {
                 filter: [term: "default", nested: [min: 1]]
         ]) == '''query Test($var1: FilterInput = {nested : {min : 0}, term : ""}) {
   search(filter: {nested : {min : 0}, term : ""}) {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input redacts unknown arguments and unknown input object fields without schema types"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                search(filter: { term: "secret", unknownField: "secret" }, unknownArg: { inner: "secret" }) {
+                    id
+                }
+            }
+        ''') == '''query Test {
+  search(filter: {term : "", unknownField : ""}, unknownArg: {inner : ""}) {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input redacts unknown directive arguments without schema types"() {
+        expect:
+        signatureWithInput('''
+            query Test($known: FilterInput) {
+                search @unknown(
+                    array: [1, 2.5, "secret", true, DESC, null, { inner: "secret" }]
+                    known: $known
+                    unknown: $unknown
+                ) {
+                    id
+                }
+            }
+        ''', [
+                known: [term: "secret"]
+        ]) == '''query Test($var1: FilterInput) {
+  search @unknown(array: [0, 0, "", false, REDACTED, null, {inner : ""}], known: {term : ""}, unknown: $var2) {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input redacts absent typed variables in unknown directive arguments as null"() {
+        expect:
+        signatureWithInput('''
+            query Test($term: String) {
+                search @unknown(term: $term) {
+                    id
+                }
+            }
+        ''') == '''query Test($var1: String) {
+  search @unknown(term: null) {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input handles mutation and subscription root operation types"() {
+        expect:
+        signatureWithInput(query) == expectedQuery
+
+        where:
+        query                                                                   | expectedQuery
+        '''mutation Test { update(term: "secret") { id } }'''                  | '''mutation Test {
+  update(term: "") {
+    id
+  }
+}
+'''
+        '''subscription Test { updates(term: "secret") { id } }'''             | '''subscription Test {
+  updates(term: "") {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input handles inline fragments without type conditions"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                search(term: "root") {
+                    ... {
+                        child(filter: { term: "secret" }) {
+                            id
+                        }
+                    }
+                }
+            }
+        ''') == '''query Test {
+  search(term: "") {
+    ... {
+      child(filter: {term : ""}) {
+        id
+      }
+    }
+  }
+}
+'''
+    }
+
+    def "signature with input leaves unknown inline fragment type conditions unchanged"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                node(filter: { term: "root" }) {
+                    ... on MissingType {
+                        child(filter: { term: "secret" }) {
+                            id
+                        }
+                    }
+                }
+            }
+        ''') == '''query Test {
+  node(filter: {term : ""}) {
+    ... on MissingType {
+      child(filter: {term : "secret"}) {
+        id
+      }
+    }
+  }
+}
+'''
+    }
+
+    def "signature with input can retain fragments when no operation matches"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                search(term: "not selected") {
+                    id
+                }
+            }
+
+            fragment MissingFields on MissingType {
+                child(filter: { term: "secret" }) {
+                    id
+                }
+            }
+        ''', [:], "DoesNotExist") == '''fragment MissingFields on MissingType {
+  child(filter: {term : "secret"}) {
     id
   }
 }
@@ -311,8 +575,12 @@ fragment ResultFields on SearchResult {
     }
 
     def signatureWithInput(String query, Map<String, Object> variables = [:], String operationName = "Test") {
+        signatureWithInput(query, variables, operationName, inputSignatureSchema())
+    }
+
+    def signatureWithInput(String query, Map<String, Object> variables, String operationName, def schema) {
         def doc = TestUtil.parseQuery(query)
-        def newDoc = new AstSignature().signatureWithInput(doc, operationName, inputSignatureSchema(), CoercedVariables.of(variables))
+        def newDoc = new AstSignature().signatureWithInput(doc, operationName, schema, CoercedVariables.of(variables))
         printAst(newDoc)
     }
 
@@ -349,8 +617,18 @@ fragment ResultFields on SearchResult {
                     enumArg: Sort
                     ids: [ID]
                     raw: JSON
+                    requiredTerm: String!
+                    requiredFilter: FilterInput!
                 ): SearchResult
                 node(filter: FilterInput): Node
+            }
+
+            type Mutation {
+                update(term: String): SearchResult
+            }
+
+            type Subscription {
+                updates(term: String): SearchResult
             }
 
             input FilterInput {
