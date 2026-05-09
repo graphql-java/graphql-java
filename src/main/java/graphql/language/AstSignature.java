@@ -1,7 +1,27 @@
 package graphql.language;
 
+import graphql.Scalars;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.execution.CoercedVariables;
+import graphql.execution.TypeFromAST;
+import graphql.introspection.Introspection;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCompositeType;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnmodifiedType;
+import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
@@ -9,11 +29,18 @@ import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static graphql.Assert.assertNotNull;
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static graphql.util.TreeTransformerUtil.changeNode;
 
 /**
@@ -66,6 +93,579 @@ public class AstSignature {
                         hideLiterals(false,
                                 dropUnusedQueryDefinitions(document, operationName)))
         );
+    }
+
+    /**
+     * This can produce a "signature" AST that preserves the shape of arguments and input object fields while redacting
+     * all concrete values.  Unlike {@link AstSignature#signatureQuery(Document, String)}, input object fields are retained
+     * recursively and variable references are resolved against the provided coerced variable values.
+     *
+     * Omitted arguments and omitted input object fields stay omitted.  This means two operations with different input
+     * shapes can be categorised differently without exposing the values that were supplied.
+     *
+     * @param document      the document to make a signature query from
+     * @param operationName the name of the operation to do it for (since only one query can be run at a time)
+     * @param schema        the schema used to resolve field, directive, argument and input object types
+     * @param variables     the coerced variables for the operation
+     *
+     * @return the signature query in document form
+     */
+    public Document signatureWithInput(Document document, @Nullable String operationName, GraphQLSchema schema, CoercedVariables variables) {
+        Map<String, String> variableRemapping = new HashMap<>();
+        AtomicInteger variableCount = new AtomicInteger();
+        Document wantedDocument = dropUnusedQueryDefinitions(document, operationName);
+        Document signatureDocument = redactInputValues(wantedDocument, operationName, schema, variables, variableRemapping, variableCount);
+        return sortAST(removeAliases(signatureDocument));
+    }
+
+    private Document redactInputValues(Document document,
+                                       @Nullable String operationName,
+                                       GraphQLSchema schema,
+                                       CoercedVariables variables,
+                                       Map<String, String> variableRemapping,
+                                       AtomicInteger variableCount) {
+        OperationDefinition operationDefinition = findOperationDefinition(document, operationName);
+        Map<String, GraphQLInputType> variableTypes = variableTypes(operationDefinition, schema);
+        List<Definition> definitions = new ArrayList<>(document.getDefinitions().size());
+        for (Definition definition : document.getDefinitions()) {
+            definitions.add(redactDefinition(definition, schema, variables, variableTypes, variableRemapping, variableCount));
+        }
+        return document.transform(builder -> builder.definitions(definitions));
+    }
+
+    private Definition redactDefinition(Definition definition,
+                                        GraphQLSchema schema,
+                                        CoercedVariables variables,
+                                        Map<String, GraphQLInputType> variableTypes,
+                                        Map<String, String> variableRemapping,
+                                        AtomicInteger variableCount) {
+        if (definition instanceof OperationDefinition) {
+            return redactOperationDefinition((OperationDefinition) definition, schema, variables, variableTypes, variableRemapping, variableCount);
+        }
+        if (definition instanceof FragmentDefinition) {
+            return redactFragmentDefinition((FragmentDefinition) definition, schema, variables, variableTypes, variableRemapping, variableCount);
+        }
+        return definition;
+    }
+
+    private OperationDefinition redactOperationDefinition(OperationDefinition operationDefinition,
+                                                         GraphQLSchema schema,
+                                                         CoercedVariables variables,
+                                                         Map<String, GraphQLInputType> variableTypes,
+                                                         Map<String, String> variableRemapping,
+                                                         AtomicInteger variableCount) {
+        GraphQLOutputType rootType = operationRootType(operationDefinition, schema);
+        return operationDefinition.transform(builder -> {
+            builder.variableDefinitions(redactVariableDefinitions(operationDefinition.getVariableDefinitions(), schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.directives(redactDirectives(operationDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.selectionSet(redactSelectionSet(operationDefinition.getSelectionSet(), rootType, schema, variables, variableTypes, variableRemapping, variableCount));
+        });
+    }
+
+    private FragmentDefinition redactFragmentDefinition(FragmentDefinition fragmentDefinition,
+                                                       GraphQLSchema schema,
+                                                       CoercedVariables variables,
+                                                       Map<String, GraphQLInputType> variableTypes,
+                                                       Map<String, String> variableRemapping,
+                                                       AtomicInteger variableCount) {
+        GraphQLOutputType outputType = outputType(schema, fragmentDefinition.getTypeCondition());
+        if (outputType == null) {
+            return fragmentDefinition;
+        }
+        return fragmentDefinition.transform(builder -> {
+            builder.directives(redactDirectives(fragmentDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.selectionSet(redactSelectionSet(fragmentDefinition.getSelectionSet(), outputType, schema, variables, variableTypes, variableRemapping, variableCount));
+        });
+    }
+
+    private List<VariableDefinition> redactVariableDefinitions(List<VariableDefinition> variableDefinitions,
+                                                               GraphQLSchema schema,
+                                                               CoercedVariables variables,
+                                                               Map<String, GraphQLInputType> variableTypes,
+                                                               Map<String, String> variableRemapping,
+                                                               AtomicInteger variableCount) {
+        List<VariableDefinition> result = new ArrayList<>(variableDefinitions.size());
+        for (VariableDefinition variableDefinition : variableDefinitions) {
+            result.add(redactVariableDefinition(variableDefinition, schema, variables, variableTypes, variableRemapping, variableCount));
+        }
+        return result;
+    }
+
+    private VariableDefinition redactVariableDefinition(VariableDefinition variableDefinition,
+                                                       GraphQLSchema schema,
+                                                       CoercedVariables variables,
+                                                       Map<String, GraphQLInputType> variableTypes,
+                                                       Map<String, String> variableRemapping,
+                                                       AtomicInteger variableCount) {
+        Value defaultValue = variableDefinition.getDefaultValue();
+        GraphQLInputType variableType = variableTypes.get(variableDefinition.getName());
+        Value redactedDefaultValue = defaultValue == null || variableType == null
+                ? defaultValue
+                : redactValue(defaultValue, variableType, schema, variables, variableRemapping, variableCount);
+        return variableDefinition.transform(builder -> {
+            builder.name(remapVariable(variableDefinition.getName(), variableRemapping, variableCount));
+            builder.defaultValue(redactedDefaultValue);
+            builder.directives(redactDirectives(variableDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
+        });
+    }
+
+    private SelectionSet redactSelectionSet(SelectionSet selectionSet,
+                                            GraphQLOutputType parentType,
+                                            GraphQLSchema schema,
+                                            CoercedVariables variables,
+                                            Map<String, GraphQLInputType> variableTypes,
+                                            Map<String, String> variableRemapping,
+                                            AtomicInteger variableCount) {
+        List<Selection> selections = new ArrayList<>(selectionSet.getSelections().size());
+        for (Selection selection : selectionSet.getSelections()) {
+            selections.add(redactSelection(selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount));
+        }
+        return selectionSet.transform(builder -> builder.selections(selections));
+    }
+
+    private Selection redactSelection(Selection selection,
+                                      GraphQLOutputType parentType,
+                                      GraphQLSchema schema,
+                                      CoercedVariables variables,
+                                      Map<String, GraphQLInputType> variableTypes,
+                                      Map<String, String> variableRemapping,
+                                      AtomicInteger variableCount) {
+        if (selection instanceof Field) {
+            return redactField((Field) selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount);
+        }
+        if (selection instanceof InlineFragment) {
+            return redactInlineFragment((InlineFragment) selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount);
+        }
+        if (selection instanceof FragmentSpread) {
+            return redactFragmentSpread((FragmentSpread) selection, schema, variables, variableTypes, variableRemapping, variableCount);
+        }
+        return selection;
+    }
+
+    private Field redactField(Field field,
+                              GraphQLOutputType parentType,
+                              GraphQLSchema schema,
+                              CoercedVariables variables,
+                              Map<String, GraphQLInputType> variableTypes,
+                              Map<String, String> variableRemapping,
+                              AtomicInteger variableCount) {
+        GraphQLCompositeType compositeType = (GraphQLCompositeType) unwrapAll(parentType);
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, compositeType, field.getName());
+        return field.transform(builder -> {
+            builder.arguments(redactArguments(field.getArguments(), fieldDefinition.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.directives(redactDirectives(field.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.selectionSet(redactFieldSelectionSet(field, fieldDefinition.getType(), schema, variables, variableTypes, variableRemapping, variableCount));
+        });
+    }
+
+    private @Nullable SelectionSet redactFieldSelectionSet(Field field,
+                                                           GraphQLOutputType fieldType,
+                                                           GraphQLSchema schema,
+                                                           CoercedVariables variables,
+                                                           Map<String, GraphQLInputType> variableTypes,
+                                                           Map<String, String> variableRemapping,
+                                                           AtomicInteger variableCount) {
+        SelectionSet selectionSet = field.getSelectionSet();
+        if (selectionSet == null) {
+            return null;
+        }
+        GraphQLUnmodifiedType unmodifiedType = unwrapAll(fieldType);
+        if (!(unmodifiedType instanceof GraphQLOutputType)) {
+            return selectionSet;
+        }
+        return redactSelectionSet(selectionSet, (GraphQLOutputType) unmodifiedType, schema, variables, variableTypes, variableRemapping, variableCount);
+    }
+
+    private InlineFragment redactInlineFragment(InlineFragment inlineFragment,
+                                                GraphQLOutputType parentType,
+                                                GraphQLSchema schema,
+                                                CoercedVariables variables,
+                                                Map<String, GraphQLInputType> variableTypes,
+                                                Map<String, String> variableRemapping,
+                                                AtomicInteger variableCount) {
+        GraphQLOutputType outputType = inlineFragment.getTypeCondition() == null
+                ? parentType
+                : outputType(schema, inlineFragment.getTypeCondition());
+        if (outputType == null) {
+            return inlineFragment;
+        }
+        return inlineFragment.transform(builder -> {
+            builder.directives(redactDirectives(inlineFragment.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.selectionSet(redactSelectionSet(inlineFragment.getSelectionSet(), outputType, schema, variables, variableTypes, variableRemapping, variableCount));
+        });
+    }
+
+    private FragmentSpread redactFragmentSpread(FragmentSpread fragmentSpread,
+                                                GraphQLSchema schema,
+                                                CoercedVariables variables,
+                                                Map<String, GraphQLInputType> variableTypes,
+                                                Map<String, String> variableRemapping,
+                                                AtomicInteger variableCount) {
+        return fragmentSpread.transform(builder -> {
+            builder.directives(redactDirectives(fragmentSpread.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
+        });
+    }
+
+    private List<Directive> redactDirectives(List<Directive> directives,
+                                             GraphQLSchema schema,
+                                             CoercedVariables variables,
+                                             Map<String, GraphQLInputType> variableTypes,
+                                             Map<String, String> variableRemapping,
+                                             AtomicInteger variableCount) {
+        List<Directive> result = new ArrayList<>(directives.size());
+        for (Directive directive : directives) {
+            GraphQLDirective directiveDefinition = schema.getDirective(directive.getName());
+            result.add(redactDirective(directive, directiveDefinition, schema, variables, variableTypes, variableRemapping, variableCount));
+        }
+        return result;
+    }
+
+    private Directive redactDirective(Directive directive,
+                                      @Nullable GraphQLDirective directiveDefinition,
+                                      GraphQLSchema schema,
+                                      CoercedVariables variables,
+                                      Map<String, GraphQLInputType> variableTypes,
+                                      Map<String, String> variableRemapping,
+                                      AtomicInteger variableCount) {
+        if (directiveDefinition == null) {
+            return directive.transform(builder -> builder.arguments(redactArgumentsWithoutTypes(directive.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount)));
+        }
+        return directive.transform(builder -> {
+            builder.arguments(redactArguments(directive.getArguments(), directiveDefinition.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount));
+        });
+    }
+
+    private List<Argument> redactArguments(List<Argument> arguments,
+                                           List<GraphQLArgument> argumentDefinitions,
+                                           GraphQLSchema schema,
+                                           CoercedVariables variables,
+                                           Map<String, GraphQLInputType> variableTypes,
+                                           Map<String, String> variableRemapping,
+                                           AtomicInteger variableCount) {
+        Map<String, GraphQLArgument> argumentDefinitionByName = argumentDefinitionByName(argumentDefinitions);
+        List<Argument> result = new ArrayList<>(arguments.size());
+        for (Argument argument : arguments) {
+            Argument redactedArgument = redactArgument(argument, argumentDefinitionByName.get(argument.getName()), schema, variables, variableTypes, variableRemapping, variableCount);
+            if (redactedArgument != null) {
+                result.add(redactedArgument);
+            }
+        }
+        return result;
+    }
+
+    private List<Argument> redactArgumentsWithoutTypes(List<Argument> arguments,
+                                                       GraphQLSchema schema,
+                                                       CoercedVariables variables,
+                                                       Map<String, GraphQLInputType> variableTypes,
+                                                       Map<String, String> variableRemapping,
+                                                       AtomicInteger variableCount) {
+        List<Argument> result = new ArrayList<>(arguments.size());
+        for (Argument argument : arguments) {
+            Value value = redactValueWithoutType(argument.getValue(), schema, variables, variableTypes, variableRemapping, variableCount);
+            result.add(argument.transform(builder -> builder.value(value)));
+        }
+        return result;
+    }
+
+    private @Nullable Argument redactArgument(Argument argument,
+                                              @Nullable GraphQLArgument argumentDefinition,
+                                              GraphQLSchema schema,
+                                              CoercedVariables variables,
+                                              Map<String, GraphQLInputType> variableTypes,
+                                              Map<String, String> variableRemapping,
+                                              AtomicInteger variableCount) {
+        if (isAbsentVariableReference(argument.getValue(), variables)) {
+            return null;
+        }
+        if (argumentDefinition == null) {
+            Value value = redactValueWithoutType(argument.getValue(), schema, variables, variableTypes, variableRemapping, variableCount);
+            return argument.transform(builder -> builder.value(value));
+        }
+        Value redactedValue = redactValue(argument.getValue(), argumentDefinition.getType(), schema, variables, variableRemapping, variableCount);
+        return argument.transform(builder -> builder.value(redactedValue));
+    }
+
+    private Value redactValue(Value value,
+                              GraphQLInputType inputType,
+                              GraphQLSchema schema,
+                              CoercedVariables variables,
+                              Map<String, String> variableRemapping,
+                              AtomicInteger variableCount) {
+        if (value instanceof VariableReference) {
+            return redactVariableReference((VariableReference) value, inputType, schema, variables);
+        }
+        if (value instanceof NullValue) {
+            return NullValue.of();
+        }
+        if (isNonNull(inputType)) {
+            return redactValue(value, (GraphQLInputType) unwrapOne(inputType), schema, variables, variableRemapping, variableCount);
+        }
+        if (isList(inputType)) {
+            return redactListValue(value, (GraphQLList) inputType, schema, variables, variableRemapping, variableCount);
+        }
+        if (inputType instanceof GraphQLInputObjectType && value instanceof ObjectValue) {
+            return redactObjectValue((ObjectValue) value, (GraphQLInputObjectType) inputType, schema, variables, variableRemapping, variableCount);
+        }
+        if (inputType instanceof GraphQLEnumType) {
+            return EnumValue.of("REDACTED");
+        }
+        if (inputType instanceof GraphQLScalarType) {
+            return redactedScalarValue((GraphQLScalarType) inputType);
+        }
+        return redactValueWithoutType(value, schema, variables, Collections.emptyMap(), variableRemapping, variableCount);
+    }
+
+    private Value redactVariableReference(VariableReference variableReference,
+                                          GraphQLInputType inputType,
+                                          GraphQLSchema schema,
+                                          CoercedVariables variables) {
+        if (!variables.containsKey(variableReference.getName())) {
+            return NullValue.of();
+        }
+        return redactExternalValue(variables.get(variableReference.getName()), inputType, schema);
+    }
+
+    private Value redactListValue(Value value,
+                                  GraphQLList listType,
+                                  GraphQLSchema schema,
+                                  CoercedVariables variables,
+                                  Map<String, String> variableRemapping,
+                                  AtomicInteger variableCount) {
+        GraphQLInputType wrappedType = (GraphQLInputType) listType.getWrappedType();
+        if (!(value instanceof ArrayValue)) {
+            return redactValue(value, wrappedType, schema, variables, variableRemapping, variableCount);
+        }
+        ArrayValue arrayValue = (ArrayValue) value;
+        List<Value> values = new ArrayList<>(arrayValue.getValues().size());
+        for (Value item : arrayValue.getValues()) {
+            values.add(redactValue(item, wrappedType, schema, variables, variableRemapping, variableCount));
+        }
+        return arrayValue.transform(builder -> builder.values(values));
+    }
+
+    private ObjectValue redactObjectValue(ObjectValue objectValue,
+                                          GraphQLInputObjectType inputObjectType,
+                                          GraphQLSchema schema,
+                                          CoercedVariables variables,
+                                          Map<String, String> variableRemapping,
+                                          AtomicInteger variableCount) {
+        Map<String, GraphQLInputObjectField> fieldDefinitionByName = inputObjectFieldDefinitionByName(inputObjectType, schema);
+        List<ObjectField> objectFields = new ArrayList<>(objectValue.getObjectFields().size());
+        for (ObjectField objectField : objectValue.getObjectFields()) {
+            ObjectField redactedObjectField = redactObjectField(objectField, fieldDefinitionByName.get(objectField.getName()), schema, variables, variableRemapping, variableCount);
+            if (redactedObjectField != null) {
+                objectFields.add(redactedObjectField);
+            }
+        }
+        return objectValue.transform(builder -> builder.objectFields(objectFields));
+    }
+
+    private @Nullable ObjectField redactObjectField(ObjectField objectField,
+                                                    @Nullable GraphQLInputObjectField fieldDefinition,
+                                                    GraphQLSchema schema,
+                                                    CoercedVariables variables,
+                                                    Map<String, String> variableRemapping,
+                                                    AtomicInteger variableCount) {
+        if (isAbsentVariableReference(objectField.getValue(), variables)) {
+            return null;
+        }
+        if (fieldDefinition == null) {
+            Value redactedValue = redactValueWithoutType(objectField.getValue(), schema, variables, Collections.emptyMap(), variableRemapping, variableCount);
+            return objectField.transform(builder -> builder.value(redactedValue));
+        }
+        Value redactedValue = redactValue(objectField.getValue(), fieldDefinition.getType(), schema, variables, variableRemapping, variableCount);
+        return objectField.transform(builder -> builder.value(redactedValue));
+    }
+
+    private Value redactExternalValue(@Nullable Object value, GraphQLInputType inputType, GraphQLSchema schema) {
+        if (value == null) {
+            return NullValue.of();
+        }
+        if (isNonNull(inputType)) {
+            return redactExternalValue(value, (GraphQLInputType) unwrapOne(inputType), schema);
+        }
+        if (inputType instanceof GraphQLList) {
+            return redactExternalListValue(value, (GraphQLList) inputType, schema);
+        }
+        if (inputType instanceof GraphQLInputObjectType) {
+            return redactExternalObjectValue(value, (GraphQLInputObjectType) inputType, schema);
+        }
+        if (inputType instanceof GraphQLEnumType) {
+            return EnumValue.of("REDACTED");
+        }
+        if (inputType instanceof GraphQLScalarType) {
+            return redactedScalarValue((GraphQLScalarType) inputType);
+        }
+        return StringValue.of("");
+    }
+
+    private ArrayValue redactExternalListValue(Object value, GraphQLList listType, GraphQLSchema schema) {
+        GraphQLInputType wrappedType = (GraphQLInputType) listType.getWrappedType();
+        List<?> values = value instanceof List<?> ? (List<?>) value : Collections.singletonList(value);
+        List<Value> redactedValues = new ArrayList<>(values.size());
+        for (Object item : values) {
+            redactedValues.add(redactExternalValue(item, wrappedType, schema));
+        }
+        return ArrayValue.newArrayValue().values(redactedValues).build();
+    }
+
+    private Value redactExternalObjectValue(Object value, GraphQLInputObjectType inputObjectType, GraphQLSchema schema) {
+        if (!(value instanceof Map<?, ?>)) {
+            return ObjectValue.newObjectValue().build();
+        }
+        Map<?, ?> inputMap = (Map<?, ?>) value;
+        GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
+        List<ObjectField> objectFields = new ArrayList<>();
+        for (GraphQLInputObjectField fieldDefinition : fieldVisibility.getFieldDefinitions(inputObjectType)) {
+            String fieldName = fieldDefinition.getName();
+            if (inputMap.containsKey(fieldName)) {
+                Value redactedValue = redactExternalValue(inputMap.get(fieldName), fieldDefinition.getType(), schema);
+                objectFields.add(ObjectField.newObjectField().name(fieldName).value(redactedValue).build());
+            }
+        }
+        return ObjectValue.newObjectValue().objectFields(objectFields).build();
+    }
+
+    private Value redactedScalarValue(GraphQLScalarType scalarType) {
+        if (Scalars.GraphQLInt.getName().equals(scalarType.getName())) {
+            return IntValue.of(0);
+        }
+        if (Scalars.GraphQLFloat.getName().equals(scalarType.getName())) {
+            return FloatValue.newFloatValue(BigDecimal.ZERO).build();
+        }
+        if (Scalars.GraphQLBoolean.getName().equals(scalarType.getName())) {
+            return BooleanValue.of(false);
+        }
+        return StringValue.of("");
+    }
+
+    private Value redactValueWithoutType(Value value,
+                                         GraphQLSchema schema,
+                                         CoercedVariables variables,
+                                         Map<String, GraphQLInputType> variableTypes,
+                                         Map<String, String> variableRemapping,
+                                         AtomicInteger variableCount) {
+        if (value instanceof VariableReference) {
+            VariableReference variableReference = (VariableReference) value;
+            GraphQLInputType variableType = variableTypes.get(variableReference.getName());
+            if (variableType != null) {
+                return redactVariableReference(variableReference, variableType, schema, variables);
+            }
+            return variableReference.transform(builder -> builder.name(remapVariable(variableReference.getName(), variableRemapping, variableCount)));
+        }
+        if (value instanceof ArrayValue) {
+            return redactArrayValueWithoutType((ArrayValue) value, schema, variables, variableTypes, variableRemapping, variableCount);
+        }
+        if (value instanceof ObjectValue) {
+            return redactObjectValueWithoutType((ObjectValue) value, schema, variables, variableTypes, variableRemapping, variableCount);
+        }
+        if (value instanceof IntValue) {
+            return IntValue.of(0);
+        }
+        if (value instanceof FloatValue) {
+            return FloatValue.newFloatValue(BigDecimal.ZERO).build();
+        }
+        if (value instanceof StringValue) {
+            return StringValue.of("");
+        }
+        if (value instanceof BooleanValue) {
+            return BooleanValue.of(false);
+        }
+        if (value instanceof EnumValue) {
+            return EnumValue.of("REDACTED");
+        }
+        return NullValue.of();
+    }
+
+    private ArrayValue redactArrayValueWithoutType(ArrayValue arrayValue,
+                                                   GraphQLSchema schema,
+                                                   CoercedVariables variables,
+                                                   Map<String, GraphQLInputType> variableTypes,
+                                                   Map<String, String> variableRemapping,
+                                                   AtomicInteger variableCount) {
+        List<Value> values = new ArrayList<>(arrayValue.getValues().size());
+        for (Value item : arrayValue.getValues()) {
+            values.add(redactValueWithoutType(item, schema, variables, variableTypes, variableRemapping, variableCount));
+        }
+        return arrayValue.transform(builder -> builder.values(values));
+    }
+
+    private ObjectValue redactObjectValueWithoutType(ObjectValue objectValue,
+                                                     GraphQLSchema schema,
+                                                     CoercedVariables variables,
+                                                     Map<String, GraphQLInputType> variableTypes,
+                                                     Map<String, String> variableRemapping,
+                                                     AtomicInteger variableCount) {
+        List<ObjectField> objectFields = new ArrayList<>(objectValue.getObjectFields().size());
+        for (ObjectField objectField : objectValue.getObjectFields()) {
+            Value value = redactValueWithoutType(objectField.getValue(), schema, variables, variableTypes, variableRemapping, variableCount);
+            objectFields.add(objectField.transform(builder -> builder.value(value)));
+        }
+        return objectValue.transform(builder -> builder.objectFields(objectFields));
+    }
+
+    private boolean isAbsentVariableReference(Value value, CoercedVariables variables) {
+        if (!(value instanceof VariableReference)) {
+            return false;
+        }
+        VariableReference variableReference = (VariableReference) value;
+        return !variables.containsKey(variableReference.getName());
+    }
+
+    private Map<String, GraphQLArgument> argumentDefinitionByName(List<GraphQLArgument> argumentDefinitions) {
+        Map<String, GraphQLArgument> result = new HashMap<>();
+        for (GraphQLArgument argumentDefinition : argumentDefinitions) {
+            result.put(argumentDefinition.getName(), argumentDefinition);
+        }
+        return result;
+    }
+
+    private Map<String, GraphQLInputObjectField> inputObjectFieldDefinitionByName(GraphQLInputObjectType inputObjectType, GraphQLSchema schema) {
+        GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
+        Map<String, GraphQLInputObjectField> result = new HashMap<>();
+        for (GraphQLInputObjectField fieldDefinition : fieldVisibility.getFieldDefinitions(inputObjectType)) {
+            result.put(fieldDefinition.getName(), fieldDefinition);
+        }
+        return result;
+    }
+
+    private Map<String, GraphQLInputType> variableTypes(@Nullable OperationDefinition operationDefinition, GraphQLSchema schema) {
+        if (operationDefinition == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, GraphQLInputType> result = new HashMap<>();
+        for (VariableDefinition variableDefinition : operationDefinition.getVariableDefinitions()) {
+            GraphQLType graphQLType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
+            if (graphQLType instanceof GraphQLInputType) {
+                result.put(variableDefinition.getName(), (GraphQLInputType) graphQLType);
+            }
+        }
+        return result;
+    }
+
+    private @Nullable OperationDefinition findOperationDefinition(Document document, @Nullable String operationName) {
+        for (Definition definition : document.getDefinitions()) {
+            if (definition instanceof OperationDefinition && isThisOperation((OperationDefinition) definition, operationName)) {
+                return (OperationDefinition) definition;
+            }
+        }
+        return null;
+    }
+
+    private GraphQLOutputType operationRootType(OperationDefinition operationDefinition, GraphQLSchema schema) {
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+            return assertNotNull(schema.getMutationType(), "mutation root type must be present");
+        }
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
+            return assertNotNull(schema.getSubscriptionType(), "subscription root type must be present");
+        }
+        GraphQLObjectType queryType = schema.getQueryType();
+        return assertNotNull(queryType, "query root type must be present");
+    }
+
+    private @Nullable GraphQLOutputType outputType(GraphQLSchema schema, TypeName typeName) {
+        GraphQLType graphQLType = schema.getType(typeName.getName());
+        return graphQLType instanceof GraphQLOutputType ? (GraphQLOutputType) graphQLType : null;
     }
 
     private Document hideLiterals(boolean signatureMode, Document document) {
