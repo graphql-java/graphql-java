@@ -574,19 +574,308 @@ fragment ResultFields on SearchResult {
 '''
     }
 
+    def "signature with input result collects field and input coordinates"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test($filter: FilterInput) {
+                search(filter: $filter, term: "secret") {
+                    id
+                }
+            }
+        ''', [
+                filter: [term: "variable", nested: [min: 1]]
+        ])
+
+        then:
+        result.fieldCoordinates == ["Query.search", "SearchResult.id"]
+        result.fieldArgumentCoordinates == ["Query.search(filter:)", "Query.search(term:)"]
+        result.inputObjectFieldCoordinates == ["FilterInput.nested", "FilterInput.term", "NestedInput.min"]
+        result.usedDirectives == []
+        result.directiveArgumentCoordinates == []
+    }
+
+    def "signature with input result collects used directives and directive arguments"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test($include: Boolean!, $meta: FilterInput) @searchMeta(meta: { term: "operation" }, enabled: true) {
+                search(term: "secret") @include(if: $include) @searchMeta(meta: $meta) {
+                    id
+                }
+            }
+        ''', [
+                include: true,
+                meta   : [nested: [min: 1]]
+        ])
+
+        then:
+        result.usedDirectives == ["@include", "@searchMeta"]
+        result.directiveArgumentCoordinates == ["@include(if:)", "@searchMeta(enabled:)", "@searchMeta(meta:)"]
+        result.inputObjectFieldCoordinates == ["FilterInput.nested", "FilterInput.term", "NestedInput.min"]
+    }
+
+    def "signature with input result collects variable definition directives"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test($term: String @searchMeta(meta: { term: "variable" })) {
+                search(term: $term) {
+                    id
+                }
+            }
+        ''')
+
+        then:
+        result.fieldCoordinates == ["Query.search", "SearchResult.id"]
+        result.usedDirectives == ["@searchMeta"]
+        result.directiveArgumentCoordinates == ["@searchMeta(meta:)"]
+        result.fieldArgumentCoordinates == []
+        result.inputObjectFieldCoordinates == ["FilterInput.term"]
+    }
+
+    def "signature with input result collects used fragment references once"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test {
+                node(filter: { term: "root" }) {
+                    ...ResultFields
+                    ...ResultFields
+                }
+            }
+
+            fragment ResultFields on SearchResult @searchMeta(meta: { term: "fragment" }) {
+                child(filter: { nested: { flag: true } }) @skip(if: false) {
+                    id
+                }
+            }
+        ''')
+
+        then:
+        result.fieldCoordinates == ["Query.node", "SearchResult.child", "SearchResult.id"]
+        result.usedDirectives == ["@searchMeta", "@skip"]
+        result.fieldArgumentCoordinates == ["Query.node(filter:)", "SearchResult.child(filter:)"]
+        result.directiveArgumentCoordinates == ["@searchMeta(meta:)", "@skip(if:)"]
+        result.inputObjectFieldCoordinates == ["FilterInput.nested", "FilterInput.term", "NestedInput.flag"]
+    }
+
+    def "signature with input result does not collect unreferenced fragment references"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test {
+                search {
+                    id
+                }
+            }
+
+            fragment UnusedFields on SearchResult @searchMeta(meta: { nested: { max: 1 } }) {
+                child(filter: { nested: { flag: true } }) {
+                    id
+                }
+            }
+        ''')
+
+        then:
+        result.fieldCoordinates == ["Query.search", "SearchResult.id"]
+        result.usedDirectives == []
+        result.fieldArgumentCoordinates == []
+        result.directiveArgumentCoordinates == []
+        result.inputObjectFieldCoordinates == []
+    }
+
+    def "signature with input result ignores unknown reference definitions"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test {
+                search(unknownArg: { term: "secret" }) @unknown(meta: { term: "secret" }) {
+                    id
+                }
+            }
+        ''')
+
+        then:
+        result.fieldCoordinates == ["Query.search", "SearchResult.id"]
+        result.fieldArgumentCoordinates == []
+        result.usedDirectives == []
+        result.directiveArgumentCoordinates == []
+        result.inputObjectFieldCoordinates == []
+    }
+
+    def "signature with input result omits absent variable reference coordinates"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test($term: String) {
+                search(count: 1, term: $term) {
+                    id
+                }
+            }
+        ''')
+
+        then:
+        result.fieldCoordinates == ["Query.search", "SearchResult.id"]
+        result.fieldArgumentCoordinates == ["Query.search(count:)"]
+        result.inputObjectFieldCoordinates == []
+    }
+
+    def "signature with input result ignores introspection fields but collects their directives"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test($include: Boolean!) {
+                search {
+                    __typename @include(if: $include)
+                    id
+                }
+            }
+        ''', [
+                include: true
+        ])
+
+        then:
+        result.fieldCoordinates == ["Query.search", "SearchResult.id"]
+        result.usedDirectives == ["@include"]
+        result.directiveArgumentCoordinates == ["@include(if:)"]
+    }
+
+    def "signature with input result collects known directives but ignores unknown directive arguments"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test {
+                search @searchMeta(meta: { term: "secret" }, unknown: "secret") {
+                    id
+                }
+            }
+        ''')
+
+        then:
+        result.usedDirectives == ["@searchMeta"]
+        result.directiveArgumentCoordinates == ["@searchMeta(meta:)"]
+        result.inputObjectFieldCoordinates == ["FilterInput.term"]
+    }
+
+    def "signature with input result ignores missing and recursive fragment references"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test {
+                search {
+                    ...Missing @include(if: true)
+                    ...MissingTypeFields
+                    ...A
+                }
+            }
+
+            fragment A on SearchResult {
+                id
+                ...B
+            }
+
+            fragment B on SearchResult {
+                child {
+                    ...A
+                }
+            }
+
+            fragment MissingTypeFields on MissingType {
+                id
+            }
+        ''')
+
+        then:
+        result.fieldCoordinates == ["Query.search", "SearchResult.child", "SearchResult.id"]
+        result.usedDirectives == ["@include"]
+        result.directiveArgumentCoordinates == ["@include(if:)"]
+    }
+
+    def "signature with input result ignores non selectable type conditions"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test {
+                search {
+                    ...InputFields
+                    ... on FilterInput {
+                        term
+                    }
+                    id
+                }
+            }
+
+            fragment InputFields on FilterInput {
+                term
+            }
+        ''')
+
+        then:
+        result.fieldCoordinates == ["Query.search", "SearchResult.id"]
+        result.fieldArgumentCoordinates == []
+        result.inputObjectFieldCoordinates == []
+    }
+
+    def "signature with input result collects interface and union field references"() {
+        when:
+        def result = signatureWithInputResult('''
+            query Test {
+                lookup {
+                    ... on SearchUnion {
+                        ... on SearchResult {
+                            id
+                        }
+                    }
+                }
+                node(filter: { term: "secret" }) {
+                    ... on Node {
+                        id
+                    }
+                }
+            }
+        ''')
+
+        then:
+        result.fieldCoordinates == ["Node.id", "Query.lookup", "Query.node", "SearchResult.id"]
+        result.fieldArgumentCoordinates == ["Query.node(filter:)"]
+        result.inputObjectFieldCoordinates == ["FilterInput.term"]
+    }
+
+    def "signature with input result can be transformed"() {
+        given:
+        def result = signatureWithInputResult('''
+            query Test {
+                search {
+                    id
+                }
+            }
+        ''')
+
+        when:
+        def transformed = result.transform { builder ->
+            builder.usedDirectives(["@custom"])
+        }
+
+        then:
+        transformed.document == result.document
+        transformed.fieldCoordinates == result.fieldCoordinates
+        transformed.usedDirectives == ["@custom"]
+        transformed.fieldArgumentCoordinates == result.fieldArgumentCoordinates
+        transformed.directiveArgumentCoordinates == result.directiveArgumentCoordinates
+        transformed.inputObjectFieldCoordinates == result.inputObjectFieldCoordinates
+    }
+
     def signatureWithInput(String query, Map<String, Object> variables = [:], String operationName = "Test") {
         signatureWithInput(query, variables, operationName, inputSignatureSchema())
     }
 
     def signatureWithInput(String query, Map<String, Object> variables, String operationName, def schema) {
+        def result = signatureWithInputResult(query, variables, operationName, schema)
+        printAst(result.document)
+    }
+
+    def signatureWithInputResult(String query, Map<String, Object> variables = [:], String operationName = "Test") {
+        signatureWithInputResult(query, variables, operationName, inputSignatureSchema())
+    }
+
+    def signatureWithInputResult(String query, Map<String, Object> variables, String operationName, def schema) {
         def doc = TestUtil.parseQuery(query)
-        def newDoc = new AstSignature().signatureWithInput(doc, operationName, schema, CoercedVariables.of(variables))
-        printAst(newDoc)
+        new AstSignature().signatureWithInput(doc, operationName, schema, CoercedVariables.of(variables))
     }
 
     def inputSignatureSchema() {
         TestUtil.schema('''
-            directive @searchMeta(meta: FilterInput, enabled: Boolean) on FIELD | QUERY | FRAGMENT_SPREAD | INLINE_FRAGMENT
+            directive @searchMeta(meta: FilterInput, enabled: Boolean) on FIELD | QUERY | VARIABLE_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
             scalar JSON
 
@@ -603,6 +892,8 @@ fragment ResultFields on SearchResult {
                 id: ID
                 child(filter: FilterInput): SearchResult
             }
+
+            union SearchUnion = SearchResult
 
             type Query {
                 search(
@@ -621,6 +912,7 @@ fragment ResultFields on SearchResult {
                     requiredFilter: FilterInput!
                 ): SearchResult
                 node(filter: FilterInput): Node
+                lookup: SearchUnion
             }
 
             type Mutation {
