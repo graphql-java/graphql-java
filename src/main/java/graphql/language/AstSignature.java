@@ -9,11 +9,13 @@ import graphql.introspection.Introspection;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
@@ -33,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static graphql.Assert.assertNotNull;
@@ -107,14 +110,24 @@ public class AstSignature {
      * @param schema        the schema used to resolve field, directive, argument and input object types
      * @param variables     the coerced variables for the operation
      *
-     * @return the signature query in document form
+     * @return the signature query in document form and the coordinates referenced by it
      */
-    public Document signatureWithInput(Document document, @Nullable String operationName, GraphQLSchema schema, CoercedVariables variables) {
+    public AstSignatureWithInputResult signatureWithInput(Document document, @Nullable String operationName, GraphQLSchema schema, CoercedVariables variables) {
         Map<String, String> variableRemapping = new HashMap<>();
         AtomicInteger variableCount = new AtomicInteger();
         Document wantedDocument = dropUnusedQueryDefinitions(document, operationName);
-        Document signatureDocument = redactInputValues(wantedDocument, operationName, schema, variables, variableRemapping, variableCount);
-        return sortAST(removeAliases(signatureDocument));
+        AstSignatureReferenceCollector referenceCollector = new AstSignatureReferenceCollector();
+        Document signatureDocument = redactInputValues(wantedDocument, operationName, schema, variables, variableRemapping, variableCount, referenceCollector);
+        Document sortedDocument = sortAST(removeAliases(signatureDocument));
+        AstSignatureInputReferences references = referenceCollector.toReferences();
+        return AstSignatureWithInputResult.newAstSignatureWithInputResult()
+                .document(sortedDocument)
+                .fieldCoordinates(references.getFieldCoordinates())
+                .usedDirectives(references.getUsedDirectives())
+                .fieldArgumentCoordinates(references.getFieldArgumentCoordinates())
+                .directiveArgumentCoordinates(references.getDirectiveArgumentCoordinates())
+                .inputObjectFieldCoordinates(references.getInputObjectFieldCoordinates())
+                .build();
     }
 
     private Document redactInputValues(Document document,
@@ -122,16 +135,36 @@ public class AstSignature {
                                        GraphQLSchema schema,
                                        CoercedVariables variables,
                                        Map<String, String> variableRemapping,
-                                       AtomicInteger variableCount) {
+                                       AtomicInteger variableCount,
+                                       AstSignatureReferenceCollector referenceCollector) {
         OperationDefinition operationDefinition = findOperationDefinition(document, operationName);
         Map<String, GraphQLInputType> variableTypes = variableTypes(operationDefinition, schema);
         List<Definition> definitions = new ArrayList<>(document.getDefinitions().size());
         for (Definition definition : document.getDefinitions()) {
             if (definition instanceof OperationDefinition) {
-                definitions.add(redactOperationDefinition((OperationDefinition) definition, schema, variables, variableTypes, variableRemapping, variableCount));
+                definitions.add(redactOperationDefinition(
+                        (OperationDefinition) definition,
+                        schema,
+                        variables,
+                        variableTypes,
+                        variableRemapping,
+                        variableCount,
+                        referenceCollector.getOperationReferences(),
+                        referenceCollector.getOperationFragmentSpreads()
+                ));
                 continue;
             }
-            definitions.add(redactFragmentDefinition((FragmentDefinition) definition, schema, variables, variableTypes, variableRemapping, variableCount));
+            FragmentDefinition fragmentDefinition = (FragmentDefinition) definition;
+            definitions.add(redactFragmentDefinition(
+                    fragmentDefinition,
+                    schema,
+                    variables,
+                    variableTypes,
+                    variableRemapping,
+                    variableCount,
+                    referenceCollector.getFragmentReferences(fragmentDefinition.getName()),
+                    referenceCollector.getFragmentSpreads(fragmentDefinition.getName())
+            ));
         }
         return document.transform(builder -> builder.definitions(definitions));
     }
@@ -141,12 +174,14 @@ public class AstSignature {
                                                          CoercedVariables variables,
                                                          Map<String, GraphQLInputType> variableTypes,
                                                          Map<String, String> variableRemapping,
-                                                         AtomicInteger variableCount) {
+                                                         AtomicInteger variableCount,
+                                                         AstSignatureInputReferences references,
+                                                         Set<String> fragmentSpreads) {
         GraphQLOutputType rootType = operationRootType(operationDefinition, schema);
         return operationDefinition.transform(builder -> {
-            builder.variableDefinitions(redactVariableDefinitions(operationDefinition.getVariableDefinitions(), schema, variables, variableTypes, variableRemapping, variableCount));
-            builder.directives(redactDirectives(operationDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
-            builder.selectionSet(redactSelectionSet(operationDefinition.getSelectionSet(), rootType, schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.variableDefinitions(redactVariableDefinitions(operationDefinition.getVariableDefinitions(), schema, variables, variableTypes, variableRemapping, variableCount, references));
+            builder.directives(redactDirectives(operationDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
+            builder.selectionSet(redactSelectionSet(operationDefinition.getSelectionSet(), rootType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
         });
     }
 
@@ -155,14 +190,16 @@ public class AstSignature {
                                                        CoercedVariables variables,
                                                        Map<String, GraphQLInputType> variableTypes,
                                                        Map<String, String> variableRemapping,
-                                                       AtomicInteger variableCount) {
+                                                       AtomicInteger variableCount,
+                                                       AstSignatureInputReferences references,
+                                                       Set<String> fragmentSpreads) {
         GraphQLOutputType outputType = outputType(schema, fragmentDefinition.getTypeCondition());
         if (outputType == null) {
             return fragmentDefinition;
         }
         return fragmentDefinition.transform(builder -> {
-            builder.directives(redactDirectives(fragmentDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
-            builder.selectionSet(redactSelectionSet(fragmentDefinition.getSelectionSet(), outputType, schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.directives(redactDirectives(fragmentDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
+            builder.selectionSet(redactSelectionSet(fragmentDefinition.getSelectionSet(), outputType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
         });
     }
 
@@ -171,10 +208,11 @@ public class AstSignature {
                                                                CoercedVariables variables,
                                                                Map<String, GraphQLInputType> variableTypes,
                                                                Map<String, String> variableRemapping,
-                                                               AtomicInteger variableCount) {
+                                                               AtomicInteger variableCount,
+                                                               AstSignatureInputReferences references) {
         List<VariableDefinition> result = new ArrayList<>(variableDefinitions.size());
         for (VariableDefinition variableDefinition : variableDefinitions) {
-            result.add(redactVariableDefinition(variableDefinition, schema, variables, variableTypes, variableRemapping, variableCount));
+            result.add(redactVariableDefinition(variableDefinition, schema, variables, variableTypes, variableRemapping, variableCount, references));
         }
         return result;
     }
@@ -184,16 +222,17 @@ public class AstSignature {
                                                        CoercedVariables variables,
                                                        Map<String, GraphQLInputType> variableTypes,
                                                        Map<String, String> variableRemapping,
-                                                       AtomicInteger variableCount) {
+                                                       AtomicInteger variableCount,
+                                                       AstSignatureInputReferences references) {
         Value defaultValue = variableDefinition.getDefaultValue();
         GraphQLInputType variableType = variableTypes.get(variableDefinition.getName());
         Value redactedDefaultValue = defaultValue == null || variableType == null
                 ? defaultValue
-                : redactValue(defaultValue, variableType, schema, variables, variableRemapping, variableCount);
+                : redactValue(defaultValue, variableType, schema, variables, variableRemapping, variableCount, references);
         return variableDefinition.transform(builder -> {
             builder.name(remapVariable(variableDefinition.getName(), variableRemapping, variableCount));
             builder.defaultValue(redactedDefaultValue);
-            builder.directives(redactDirectives(variableDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.directives(redactDirectives(variableDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
         });
     }
 
@@ -203,10 +242,12 @@ public class AstSignature {
                                             CoercedVariables variables,
                                             Map<String, GraphQLInputType> variableTypes,
                                             Map<String, String> variableRemapping,
-                                            AtomicInteger variableCount) {
+                                            AtomicInteger variableCount,
+                                            AstSignatureInputReferences references,
+                                            Set<String> fragmentSpreads) {
         List<Selection> selections = new ArrayList<>(selectionSet.getSelections().size());
         for (Selection selection : selectionSet.getSelections()) {
-            selections.add(redactSelection(selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount));
+            selections.add(redactSelection(selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
         }
         return selectionSet.transform(builder -> builder.selections(selections));
     }
@@ -217,14 +258,16 @@ public class AstSignature {
                                       CoercedVariables variables,
                                       Map<String, GraphQLInputType> variableTypes,
                                       Map<String, String> variableRemapping,
-                                      AtomicInteger variableCount) {
+                                      AtomicInteger variableCount,
+                                      AstSignatureInputReferences references,
+                                      Set<String> fragmentSpreads) {
         if (selection instanceof Field) {
-            return redactField((Field) selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount);
+            return redactField((Field) selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads);
         }
         if (selection instanceof InlineFragment) {
-            return redactInlineFragment((InlineFragment) selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount);
+            return redactInlineFragment((InlineFragment) selection, parentType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads);
         }
-        return redactFragmentSpread((FragmentSpread) selection, schema, variables, variableTypes, variableRemapping, variableCount);
+        return redactFragmentSpread((FragmentSpread) selection, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads);
     }
 
     private Field redactField(Field field,
@@ -233,14 +276,28 @@ public class AstSignature {
                               CoercedVariables variables,
                               Map<String, GraphQLInputType> variableTypes,
                               Map<String, String> variableRemapping,
-                              AtomicInteger variableCount) {
+                              AtomicInteger variableCount,
+                              AstSignatureInputReferences references,
+                              Set<String> fragmentSpreads) {
         GraphQLCompositeType compositeType = (GraphQLCompositeType) unwrapAll(parentType);
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, compositeType, field.getName());
         return field.transform(builder -> {
-            builder.arguments(redactArguments(field.getArguments(), fieldDefinition.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount));
-            builder.directives(redactDirectives(field.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
-            builder.selectionSet(redactFieldSelectionSet(field, fieldDefinition.getType(), schema, variables, variableTypes, variableRemapping, variableCount));
+            String fieldCoordinate = fieldCoordinate(compositeType, field);
+            if (fieldCoordinate != null) {
+                references.addFieldCoordinate(fieldCoordinate);
+            }
+            builder.arguments(redactFieldArguments(fieldCoordinate, field.getArguments(), fieldDefinition.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount, references));
+            builder.directives(redactDirectives(field.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
+            builder.selectionSet(redactFieldSelectionSet(field, fieldDefinition.getType(), schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
         });
+    }
+
+    private @Nullable String fieldCoordinate(GraphQLCompositeType compositeType, Field field) {
+        if (field.getName().startsWith("__")) {
+            return null;
+        }
+        GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) compositeType;
+        return fieldsContainer.getName() + "." + field.getName();
     }
 
     private @Nullable SelectionSet redactFieldSelectionSet(Field field,
@@ -249,13 +306,15 @@ public class AstSignature {
                                                            CoercedVariables variables,
                                                            Map<String, GraphQLInputType> variableTypes,
                                                            Map<String, String> variableRemapping,
-                                                           AtomicInteger variableCount) {
+                                                           AtomicInteger variableCount,
+                                                           AstSignatureInputReferences references,
+                                                           Set<String> fragmentSpreads) {
         SelectionSet selectionSet = field.getSelectionSet();
         if (selectionSet == null) {
             return null;
         }
         GraphQLOutputType unmodifiedType = (GraphQLOutputType) unwrapAll(fieldType);
-        return redactSelectionSet(selectionSet, unmodifiedType, schema, variables, variableTypes, variableRemapping, variableCount);
+        return redactSelectionSet(selectionSet, unmodifiedType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads);
     }
 
     private InlineFragment redactInlineFragment(InlineFragment inlineFragment,
@@ -264,7 +323,9 @@ public class AstSignature {
                                                 CoercedVariables variables,
                                                 Map<String, GraphQLInputType> variableTypes,
                                                 Map<String, String> variableRemapping,
-                                                AtomicInteger variableCount) {
+                                                AtomicInteger variableCount,
+                                                AstSignatureInputReferences references,
+                                                Set<String> fragmentSpreads) {
         GraphQLOutputType outputType = inlineFragment.getTypeCondition() == null
                 ? parentType
                 : outputType(schema, inlineFragment.getTypeCondition());
@@ -272,8 +333,8 @@ public class AstSignature {
             return inlineFragment;
         }
         return inlineFragment.transform(builder -> {
-            builder.directives(redactDirectives(inlineFragment.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
-            builder.selectionSet(redactSelectionSet(inlineFragment.getSelectionSet(), outputType, schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.directives(redactDirectives(inlineFragment.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
+            builder.selectionSet(redactSelectionSet(inlineFragment.getSelectionSet(), outputType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
         });
     }
 
@@ -282,9 +343,12 @@ public class AstSignature {
                                                 CoercedVariables variables,
                                                 Map<String, GraphQLInputType> variableTypes,
                                                 Map<String, String> variableRemapping,
-                                                AtomicInteger variableCount) {
+                                                AtomicInteger variableCount,
+                                                AstSignatureInputReferences references,
+                                                Set<String> fragmentSpreads) {
+        fragmentSpreads.add(fragmentSpread.getName());
         return fragmentSpread.transform(builder -> {
-            builder.directives(redactDirectives(fragmentSpread.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.directives(redactDirectives(fragmentSpread.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
         });
     }
 
@@ -293,11 +357,12 @@ public class AstSignature {
                                              CoercedVariables variables,
                                              Map<String, GraphQLInputType> variableTypes,
                                              Map<String, String> variableRemapping,
-                                             AtomicInteger variableCount) {
+                                             AtomicInteger variableCount,
+                                             AstSignatureInputReferences references) {
         List<Directive> result = new ArrayList<>(directives.size());
         for (Directive directive : directives) {
             GraphQLDirective directiveDefinition = schema.getDirective(directive.getName());
-            result.add(redactDirective(directive, directiveDefinition, schema, variables, variableTypes, variableRemapping, variableCount));
+            result.add(redactDirective(directive, directiveDefinition, schema, variables, variableTypes, variableRemapping, variableCount, references));
         }
         return result;
     }
@@ -308,31 +373,101 @@ public class AstSignature {
                                       CoercedVariables variables,
                                       Map<String, GraphQLInputType> variableTypes,
                                       Map<String, String> variableRemapping,
-                                      AtomicInteger variableCount) {
+                                      AtomicInteger variableCount,
+                                      AstSignatureInputReferences references) {
         if (directiveDefinition == null) {
             return directive.transform(builder -> builder.arguments(redactArgumentsWithoutTypes(directive.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount)));
         }
+        String usedDirective = "@" + directive.getName();
+        references.addUsedDirective(usedDirective);
         return directive.transform(builder -> {
-            builder.arguments(redactArguments(directive.getArguments(), directiveDefinition.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount));
+            builder.arguments(redactDirectiveArguments(usedDirective, directive.getArguments(), directiveDefinition.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount, references));
         });
     }
 
-    private List<Argument> redactArguments(List<Argument> arguments,
+    private List<Argument> redactFieldArguments(@Nullable String fieldCoordinate,
+                                                List<Argument> arguments,
+                                                List<GraphQLArgument> argumentDefinitions,
+                                                GraphQLSchema schema,
+                                                CoercedVariables variables,
+                                                Map<String, GraphQLInputType> variableTypes,
+                                                Map<String, String> variableRemapping,
+                                                AtomicInteger variableCount,
+                                                AstSignatureInputReferences references) {
+        return redactArguments(
+                fieldCoordinate,
+                null,
+                arguments,
+                argumentDefinitions,
+                schema,
+                variables,
+                variableTypes,
+                variableRemapping,
+                variableCount,
+                references
+        );
+    }
+
+    private List<Argument> redactDirectiveArguments(String usedDirective,
+                                                    List<Argument> arguments,
+                                                    List<GraphQLArgument> argumentDefinitions,
+                                                    GraphQLSchema schema,
+                                                    CoercedVariables variables,
+                                                    Map<String, GraphQLInputType> variableTypes,
+                                                    Map<String, String> variableRemapping,
+                                                    AtomicInteger variableCount,
+                                                    AstSignatureInputReferences references) {
+        return redactArguments(
+                null,
+                usedDirective,
+                arguments,
+                argumentDefinitions,
+                schema,
+                variables,
+                variableTypes,
+                variableRemapping,
+                variableCount,
+                references
+        );
+    }
+
+    private List<Argument> redactArguments(@Nullable String fieldCoordinate,
+                                           @Nullable String usedDirective,
+                                           List<Argument> arguments,
                                            List<GraphQLArgument> argumentDefinitions,
                                            GraphQLSchema schema,
                                            CoercedVariables variables,
                                            Map<String, GraphQLInputType> variableTypes,
                                            Map<String, String> variableRemapping,
-                                           AtomicInteger variableCount) {
+                                           AtomicInteger variableCount,
+                                           AstSignatureInputReferences references) {
         Map<String, GraphQLArgument> argumentDefinitionByName = argumentDefinitionByName(argumentDefinitions);
         List<Argument> result = new ArrayList<>(arguments.size());
         for (Argument argument : arguments) {
-            Argument redactedArgument = redactArgument(argument, argumentDefinitionByName.get(argument.getName()), schema, variables, variableTypes, variableRemapping, variableCount);
+            GraphQLArgument argumentDefinition = argumentDefinitionByName.get(argument.getName());
+            Argument redactedArgument = redactArgument(argument, argumentDefinition, schema, variables, variableTypes, variableRemapping, variableCount, references);
             if (redactedArgument != null) {
+                collectArgumentReference(fieldCoordinate, usedDirective, redactedArgument, argumentDefinition, references);
                 result.add(redactedArgument);
             }
         }
         return result;
+    }
+
+    private void collectArgumentReference(@Nullable String fieldCoordinate,
+                                          @Nullable String usedDirective,
+                                          Argument argument,
+                                          @Nullable GraphQLArgument argumentDefinition,
+                                          AstSignatureInputReferences references) {
+        if (argumentDefinition == null) {
+            return;
+        }
+        if (fieldCoordinate != null) {
+            references.addFieldArgumentCoordinate(fieldCoordinate + "(" + argument.getName() + ":)");
+        }
+        if (usedDirective != null) {
+            references.addDirectiveArgumentCoordinate(usedDirective + "(" + argument.getName() + ":)");
+        }
     }
 
     private List<Argument> redactArgumentsWithoutTypes(List<Argument> arguments,
@@ -355,7 +490,8 @@ public class AstSignature {
                                               CoercedVariables variables,
                                               Map<String, GraphQLInputType> variableTypes,
                                               Map<String, String> variableRemapping,
-                                              AtomicInteger variableCount) {
+                                              AtomicInteger variableCount,
+                                              AstSignatureInputReferences references) {
         if (isAbsentVariableReference(argument.getValue(), variables)) {
             return null;
         }
@@ -363,7 +499,7 @@ public class AstSignature {
             Value value = redactValueWithoutType(argument.getValue(), schema, variables, variableTypes, variableRemapping, variableCount);
             return argument.transform(builder -> builder.value(value));
         }
-        Value redactedValue = redactValue(argument.getValue(), argumentDefinition.getType(), schema, variables, variableRemapping, variableCount);
+        Value redactedValue = redactValue(argument.getValue(), argumentDefinition.getType(), schema, variables, variableRemapping, variableCount, references);
         return argument.transform(builder -> builder.value(redactedValue));
     }
 
@@ -372,21 +508,22 @@ public class AstSignature {
                               GraphQLSchema schema,
                               CoercedVariables variables,
                               Map<String, String> variableRemapping,
-                              AtomicInteger variableCount) {
+                              AtomicInteger variableCount,
+                              AstSignatureInputReferences references) {
         if (value instanceof VariableReference) {
-            return redactVariableReference((VariableReference) value, inputType, schema, variables);
+            return redactVariableReference((VariableReference) value, inputType, schema, variables, references);
         }
         if (value instanceof NullValue) {
             return NullValue.of();
         }
         if (isNonNull(inputType)) {
-            return redactValue(value, (GraphQLInputType) unwrapOne(inputType), schema, variables, variableRemapping, variableCount);
+            return redactValue(value, (GraphQLInputType) unwrapOne(inputType), schema, variables, variableRemapping, variableCount, references);
         }
         if (isList(inputType)) {
-            return redactListValue(value, (GraphQLList) inputType, schema, variables, variableRemapping, variableCount);
+            return redactListValue(value, (GraphQLList) inputType, schema, variables, variableRemapping, variableCount, references);
         }
         if (inputType instanceof GraphQLInputObjectType && value instanceof ObjectValue) {
-            return redactObjectValue((ObjectValue) value, (GraphQLInputObjectType) inputType, schema, variables, variableRemapping, variableCount);
+            return redactObjectValue((ObjectValue) value, (GraphQLInputObjectType) inputType, schema, variables, variableRemapping, variableCount, references);
         }
         if (inputType instanceof GraphQLEnumType) {
             return EnumValue.of("REDACTED");
@@ -400,11 +537,12 @@ public class AstSignature {
     private Value redactVariableReference(VariableReference variableReference,
                                           GraphQLInputType inputType,
                                           GraphQLSchema schema,
-                                          CoercedVariables variables) {
+                                          CoercedVariables variables,
+                                          AstSignatureInputReferences references) {
         if (!variables.containsKey(variableReference.getName())) {
             return NullValue.of();
         }
-        return redactExternalValue(variables.get(variableReference.getName()), inputType, schema);
+        return redactExternalValue(variables.get(variableReference.getName()), inputType, schema, references);
     }
 
     private Value redactListValue(Value value,
@@ -412,15 +550,16 @@ public class AstSignature {
                                   GraphQLSchema schema,
                                   CoercedVariables variables,
                                   Map<String, String> variableRemapping,
-                                  AtomicInteger variableCount) {
+                                  AtomicInteger variableCount,
+                                  AstSignatureInputReferences references) {
         GraphQLInputType wrappedType = (GraphQLInputType) listType.getWrappedType();
         if (!(value instanceof ArrayValue)) {
-            return redactValue(value, wrappedType, schema, variables, variableRemapping, variableCount);
+            return redactValue(value, wrappedType, schema, variables, variableRemapping, variableCount, references);
         }
         ArrayValue arrayValue = (ArrayValue) value;
         List<Value> values = new ArrayList<>(arrayValue.getValues().size());
         for (Value item : arrayValue.getValues()) {
-            values.add(redactValue(item, wrappedType, schema, variables, variableRemapping, variableCount));
+            values.add(redactValue(item, wrappedType, schema, variables, variableRemapping, variableCount, references));
         }
         return arrayValue.transform(builder -> builder.values(values));
     }
@@ -430,11 +569,12 @@ public class AstSignature {
                                           GraphQLSchema schema,
                                           CoercedVariables variables,
                                           Map<String, String> variableRemapping,
-                                          AtomicInteger variableCount) {
+                                          AtomicInteger variableCount,
+                                          AstSignatureInputReferences references) {
         Map<String, GraphQLInputObjectField> fieldDefinitionByName = inputObjectFieldDefinitionByName(inputObjectType, schema);
         List<ObjectField> objectFields = new ArrayList<>(objectValue.getObjectFields().size());
         for (ObjectField objectField : objectValue.getObjectFields()) {
-            ObjectField redactedObjectField = redactObjectField(objectField, fieldDefinitionByName.get(objectField.getName()), schema, variables, variableRemapping, variableCount);
+            ObjectField redactedObjectField = redactObjectField(objectField, inputObjectType, fieldDefinitionByName.get(objectField.getName()), schema, variables, variableRemapping, variableCount, references);
             if (redactedObjectField != null) {
                 objectFields.add(redactedObjectField);
             }
@@ -443,11 +583,13 @@ public class AstSignature {
     }
 
     private @Nullable ObjectField redactObjectField(ObjectField objectField,
+                                                    GraphQLInputObjectType inputObjectType,
                                                     @Nullable GraphQLInputObjectField fieldDefinition,
                                                     GraphQLSchema schema,
                                                     CoercedVariables variables,
                                                     Map<String, String> variableRemapping,
-                                                    AtomicInteger variableCount) {
+                                                    AtomicInteger variableCount,
+                                                    AstSignatureInputReferences references) {
         if (isAbsentVariableReference(objectField.getValue(), variables)) {
             return null;
         }
@@ -455,22 +597,26 @@ public class AstSignature {
             Value redactedValue = redactValueWithoutType(objectField.getValue(), schema, variables, Collections.emptyMap(), variableRemapping, variableCount);
             return objectField.transform(builder -> builder.value(redactedValue));
         }
-        Value redactedValue = redactValue(objectField.getValue(), fieldDefinition.getType(), schema, variables, variableRemapping, variableCount);
+        references.addInputObjectFieldCoordinate(inputObjectType.getName() + "." + objectField.getName());
+        Value redactedValue = redactValue(objectField.getValue(), fieldDefinition.getType(), schema, variables, variableRemapping, variableCount, references);
         return objectField.transform(builder -> builder.value(redactedValue));
     }
 
-    private Value redactExternalValue(@Nullable Object value, GraphQLInputType inputType, GraphQLSchema schema) {
+    private Value redactExternalValue(@Nullable Object value,
+                                      GraphQLInputType inputType,
+                                      GraphQLSchema schema,
+                                      AstSignatureInputReferences references) {
         if (value == null) {
             return NullValue.of();
         }
         if (isNonNull(inputType)) {
-            return redactExternalValue(value, (GraphQLInputType) unwrapOne(inputType), schema);
+            return redactExternalValue(value, (GraphQLInputType) unwrapOne(inputType), schema, references);
         }
         if (inputType instanceof GraphQLList) {
-            return redactExternalListValue(value, (GraphQLList) inputType, schema);
+            return redactExternalListValue(value, (GraphQLList) inputType, schema, references);
         }
         if (inputType instanceof GraphQLInputObjectType) {
-            return redactExternalObjectValue(value, (GraphQLInputObjectType) inputType, schema);
+            return redactExternalObjectValue(value, (GraphQLInputObjectType) inputType, schema, references);
         }
         if (inputType instanceof GraphQLEnumType) {
             return EnumValue.of("REDACTED");
@@ -482,17 +628,23 @@ public class AstSignature {
         return redactedScalarValue(scalarType);
     }
 
-    private ArrayValue redactExternalListValue(Object value, GraphQLList listType, GraphQLSchema schema) {
+    private ArrayValue redactExternalListValue(Object value,
+                                               GraphQLList listType,
+                                               GraphQLSchema schema,
+                                               AstSignatureInputReferences references) {
         GraphQLInputType wrappedType = (GraphQLInputType) listType.getWrappedType();
         List<?> values = value instanceof List<?> ? (List<?>) value : Collections.singletonList(value);
         List<Value> redactedValues = new ArrayList<>(values.size());
         for (Object item : values) {
-            redactedValues.add(redactExternalValue(item, wrappedType, schema));
+            redactedValues.add(redactExternalValue(item, wrappedType, schema, references));
         }
         return ArrayValue.newArrayValue().values(redactedValues).build();
     }
 
-    private Value redactExternalObjectValue(Object value, GraphQLInputObjectType inputObjectType, GraphQLSchema schema) {
+    private Value redactExternalObjectValue(Object value,
+                                            GraphQLInputObjectType inputObjectType,
+                                            GraphQLSchema schema,
+                                            AstSignatureInputReferences references) {
         if (!(value instanceof Map<?, ?>)) {
             return ObjectValue.newObjectValue().build();
         }
@@ -502,7 +654,8 @@ public class AstSignature {
         for (GraphQLInputObjectField fieldDefinition : fieldVisibility.getFieldDefinitions(inputObjectType)) {
             String fieldName = fieldDefinition.getName();
             if (inputMap.containsKey(fieldName)) {
-                Value redactedValue = redactExternalValue(inputMap.get(fieldName), fieldDefinition.getType(), schema);
+                references.addInputObjectFieldCoordinate(inputObjectType.getName() + "." + fieldName);
+                Value redactedValue = redactExternalValue(inputMap.get(fieldName), fieldDefinition.getType(), schema, references);
                 objectFields.add(ObjectField.newObjectField().name(fieldName).value(redactedValue).build());
             }
         }
@@ -532,7 +685,7 @@ public class AstSignature {
             VariableReference variableReference = (VariableReference) value;
             GraphQLInputType variableType = variableTypes.get(variableReference.getName());
             if (variableType != null) {
-                return redactVariableReference(variableReference, variableType, schema, variables);
+                return redactVariableReference(variableReference, variableType, schema, variables, new AstSignatureInputReferences());
             }
             return variableReference.transform(builder -> builder.name(remapVariable(variableReference.getName(), variableRemapping, variableCount)));
         }
