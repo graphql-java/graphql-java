@@ -10,5 +10,6 @@ import org.jspecify.annotations.NullMarked;
 @NullMarked
 public enum OnError {
     NULL,
-    PROPAGATE
+    PROPAGATE,
+    HALT
 }

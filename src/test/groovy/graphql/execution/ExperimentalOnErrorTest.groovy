@@ -38,6 +38,34 @@ class ExperimentalOnErrorTest extends Specification {
         er.errors[0].path.toList() == ["foo"]
     }
 
+    def "with onError: HALT, execution stops and a request error is returned"() {
+
+        def sdl = '''
+            type Query {
+                foo : Int!
+                bar : Int
+            }
+        '''
+
+        def graphql = TestUtil.graphQL(sdl).build()
+
+        def query = '''
+            query GetFoo { foo bar }
+        '''
+        when:
+
+        ExecutionInput ei = ExecutionInput.newExecutionInput(query).root(
+                [foo: null, bar: 42]
+        ).onError(OnError.HALT).build()
+
+        def er = graphql.execute(ei)
+
+        then:
+        er.data == null
+        er.errors.size() == 1
+        er.errors[0].path.toList() == ["foo"]
+    }
+
     def "with onError: PROPAGATE, error is propagated"() {
 
         def sdl = '''

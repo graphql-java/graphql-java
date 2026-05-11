@@ -60,6 +60,8 @@ public class NonNullableFieldValidator {
                 if (onError == OnError.PROPAGATE) {
 
                     throw nonNullException;
+                } else if (onError == OnError.HALT) {
+                    throw new AbortExecutionException(executionContext.getErrors());
                 }
             }
         }
