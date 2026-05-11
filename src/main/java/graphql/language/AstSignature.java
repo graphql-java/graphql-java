@@ -118,7 +118,7 @@ public class AstSignature {
         Document wantedDocument = dropUnusedQueryDefinitions(document, operationName);
         AstSignatureReferenceCollector referenceCollector = new AstSignatureReferenceCollector();
         Document signatureDocument = redactInputValues(wantedDocument, operationName, schema, variables, variableRemapping, variableCount, referenceCollector);
-        Document sortedDocument = sortAST(removeAliases(signatureDocument));
+        Document sortedDocument = sortExecutableAst(signatureDocument);
         AstSignatureInputReferences references = referenceCollector.toReferences();
         return AstSignatureWithInputResult.newAstSignatureWithInputResult()
                 .document(sortedDocument)
@@ -195,7 +195,7 @@ public class AstSignature {
                                                        Set<String> fragmentSpreads) {
         GraphQLOutputType outputType = outputType(schema, fragmentDefinition.getTypeCondition());
         if (outputType == null) {
-            return fragmentDefinition;
+            return removeAliases(fragmentDefinition);
         }
         return fragmentDefinition.transform(builder -> {
             builder.directives(redactDirectives(fragmentDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
@@ -286,6 +286,7 @@ public class AstSignature {
             if (fieldCoordinate != null) {
                 references.addFieldCoordinate(fieldCoordinate);
             }
+            builder.alias(null);
             builder.arguments(redactFieldArguments(fieldCoordinate, field.getArguments(), fieldDefinition.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount, references));
             builder.directives(redactDirectives(field.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
             builder.selectionSet(redactFieldSelectionSet(field, fieldDefinition.getType(), schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
@@ -330,7 +331,7 @@ public class AstSignature {
                 ? parentType
                 : outputType(schema, inlineFragment.getTypeCondition());
         if (outputType == null) {
-            return inlineFragment;
+            return removeAliases(inlineFragment);
         }
         return inlineFragment.transform(builder -> {
             builder.directives(redactDirectives(inlineFragment.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
@@ -879,31 +880,301 @@ public class AstSignature {
         return transformDoc(document, visitor);
     }
 
+    private FragmentDefinition removeAliases(FragmentDefinition fragmentDefinition) {
+        return fragmentDefinition.transform(builder -> builder.selectionSet(removeAliases(fragmentDefinition.getSelectionSet())));
+    }
+
+    private InlineFragment removeAliases(InlineFragment inlineFragment) {
+        return inlineFragment.transform(builder -> builder.selectionSet(removeAliases(inlineFragment.getSelectionSet())));
+    }
+
+    private SelectionSet removeAliases(SelectionSet selectionSet) {
+        List<Selection> selections = new ArrayList<>(selectionSet.getSelections().size());
+        for (Selection selection : selectionSet.getSelections()) {
+            selections.add(removeAliases(selection));
+        }
+        return selectionSet.transform(builder -> builder.selections(selections));
+    }
+
+    private Selection removeAliases(Selection selection) {
+        if (selection instanceof Field) {
+            return removeAliases((Field) selection);
+        }
+        if (selection instanceof InlineFragment) {
+            return removeAliases((InlineFragment) selection);
+        }
+        return selection;
+    }
+
+    private Field removeAliases(Field field) {
+        return field.transform(builder -> {
+            builder.alias(null);
+            SelectionSet selectionSet = field.getSelectionSet();
+            if (selectionSet != null) {
+                builder.selectionSet(removeAliases(selectionSet));
+            }
+        });
+    }
+
     private Document sortAST(Document document) {
         return new AstSorter().sort(document);
     }
 
-    private Document dropUnusedQueryDefinitions(Document document, final @Nullable String operationName) {
-        NodeVisitorStub visitor = new NodeVisitorStub() {
-            @Override
-            public TraversalControl visitDocument(Document node, TraverserContext<Node> context) {
-                List<Definition> wantedDefinitions = ImmutableKit.filter(node.getDefinitions(),
-                        d -> {
-                            if (d instanceof OperationDefinition) {
-                                OperationDefinition operationDefinition = (OperationDefinition) d;
-                                return isThisOperation(operationDefinition, operationName);
-                            }
-                            return d instanceof FragmentDefinition;
-                            // SDL in a query makes no sense - its gone should it be present
-                        });
+    private Document sortExecutableAst(Document document) {
+        List<Definition> definitions = new ArrayList<>(document.getDefinitions().size());
+        for (Definition definition : document.getDefinitions()) {
+            definitions.add(sortExecutableDefinition(definition));
+        }
+        definitions.sort(this::compareDefinitions);
+        return document.transform(builder -> builder.definitions(definitions));
+    }
 
-                Document changedNode = node.transform(builder -> {
-                    builder.definitions(wantedDefinitions);
-                });
-                return changeNode(context, changedNode);
+    private Definition sortExecutableDefinition(Definition definition) {
+        if (definition instanceof OperationDefinition) {
+            return sortOperationDefinition((OperationDefinition) definition);
+        }
+        if (definition instanceof FragmentDefinition) {
+            return sortFragmentDefinition((FragmentDefinition) definition);
+        }
+        return definition;
+    }
+
+    private OperationDefinition sortOperationDefinition(OperationDefinition operationDefinition) {
+        return operationDefinition.transform(builder -> {
+            builder.variableDefinitions(sortVariableDefinitions(operationDefinition.getVariableDefinitions()));
+            builder.directives(sortDirectives(operationDefinition.getDirectives()));
+            builder.selectionSet(sortSelectionSet(operationDefinition.getSelectionSet()));
+        });
+    }
+
+    private FragmentDefinition sortFragmentDefinition(FragmentDefinition fragmentDefinition) {
+        return fragmentDefinition.transform(builder -> {
+            builder.directives(sortDirectives(fragmentDefinition.getDirectives()));
+            builder.selectionSet(sortSelectionSet(fragmentDefinition.getSelectionSet()));
+        });
+    }
+
+    private SelectionSet sortSelectionSet(SelectionSet selectionSet) {
+        List<Selection> selections = new ArrayList<>(selectionSet.getSelections().size());
+        for (Selection selection : selectionSet.getSelections()) {
+            selections.add(sortSelection(selection));
+        }
+        selections.sort(this::compareSelections);
+        return selectionSet.transform(builder -> builder.selections(selections));
+    }
+
+    private Selection sortSelection(Selection selection) {
+        if (selection instanceof Field) {
+            return sortField((Field) selection);
+        }
+        if (selection instanceof InlineFragment) {
+            return sortInlineFragment((InlineFragment) selection);
+        }
+        return sortFragmentSpread((FragmentSpread) selection);
+    }
+
+    private Field sortField(Field field) {
+        return field.transform(builder -> {
+            builder.alias(null);
+            builder.arguments(sortArguments(field.getArguments()));
+            builder.directives(sortDirectives(field.getDirectives()));
+            SelectionSet selectionSet = field.getSelectionSet();
+            if (selectionSet != null) {
+                builder.selectionSet(sortSelectionSet(selectionSet));
             }
-        };
-        return transformDoc(document, visitor);
+        });
+    }
+
+    private InlineFragment sortInlineFragment(InlineFragment inlineFragment) {
+        return inlineFragment.transform(builder -> {
+            builder.directives(sortDirectives(inlineFragment.getDirectives()));
+            builder.selectionSet(sortSelectionSet(inlineFragment.getSelectionSet()));
+        });
+    }
+
+    private FragmentSpread sortFragmentSpread(FragmentSpread fragmentSpread) {
+        return fragmentSpread.transform(builder -> builder.directives(sortDirectives(fragmentSpread.getDirectives())));
+    }
+
+    private List<VariableDefinition> sortVariableDefinitions(List<VariableDefinition> variableDefinitions) {
+        List<VariableDefinition> result = new ArrayList<>(variableDefinitions.size());
+        for (VariableDefinition variableDefinition : variableDefinitions) {
+            result.add(sortVariableDefinition(variableDefinition));
+        }
+        result.sort((left, right) -> left.getName().compareTo(right.getName()));
+        return result;
+    }
+
+    private VariableDefinition sortVariableDefinition(VariableDefinition variableDefinition) {
+        return variableDefinition.transform(builder -> {
+            Value defaultValue = variableDefinition.getDefaultValue();
+            if (defaultValue != null) {
+                builder.defaultValue(sortValue(defaultValue));
+            }
+            builder.directives(sortDirectives(variableDefinition.getDirectives()));
+        });
+    }
+
+    private List<Directive> sortDirectives(List<Directive> directives) {
+        List<Directive> result = new ArrayList<>(directives.size());
+        for (Directive directive : directives) {
+            result.add(sortDirective(directive));
+        }
+        result.sort((left, right) -> left.getName().compareTo(right.getName()));
+        return result;
+    }
+
+    private Directive sortDirective(Directive directive) {
+        return directive.transform(builder -> builder.arguments(sortArguments(directive.getArguments())));
+    }
+
+    private List<Argument> sortArguments(List<Argument> arguments) {
+        List<Argument> result = new ArrayList<>(arguments.size());
+        for (Argument argument : arguments) {
+            result.add(sortArgument(argument));
+        }
+        result.sort((left, right) -> left.getName().compareTo(right.getName()));
+        return result;
+    }
+
+    private Argument sortArgument(Argument argument) {
+        return argument.transform(builder -> builder.value(sortValue(argument.getValue())));
+    }
+
+    private Value sortValue(Value value) {
+        if (value instanceof ObjectValue) {
+            return sortObjectValue((ObjectValue) value);
+        }
+        if (value instanceof ArrayValue) {
+            return sortArrayValue((ArrayValue) value);
+        }
+        return value;
+    }
+
+    private ArrayValue sortArrayValue(ArrayValue arrayValue) {
+        List<Value> values = new ArrayList<>(arrayValue.getValues().size());
+        for (Value value : arrayValue.getValues()) {
+            values.add(sortValue(value));
+        }
+        return arrayValue.transform(builder -> builder.values(values));
+    }
+
+    private ObjectValue sortObjectValue(ObjectValue objectValue) {
+        List<ObjectField> objectFields = new ArrayList<>(objectValue.getObjectFields().size());
+        for (ObjectField objectField : objectValue.getObjectFields()) {
+            objectFields.add(sortObjectField(objectField));
+        }
+        objectFields.sort((left, right) -> left.getName().compareTo(right.getName()));
+        return objectValue.transform(builder -> builder.objectFields(objectFields));
+    }
+
+    private ObjectField sortObjectField(ObjectField objectField) {
+        return objectField.transform(builder -> builder.value(sortValue(objectField.getValue())));
+    }
+
+    private int compareSelections(Selection left, Selection right) {
+        int typeComparison = Integer.compare(selectionSortType(left), selectionSortType(right));
+        if (typeComparison != 0) {
+            return typeComparison;
+        }
+        return selectionSortName(left).compareTo(selectionSortName(right));
+    }
+
+    private int selectionSortType(Selection selection) {
+        if (selection instanceof Field) {
+            return 1;
+        }
+        if (selection instanceof FragmentSpread) {
+            return 2;
+        }
+        if (selection instanceof InlineFragment) {
+            return 3;
+        }
+        return 4;
+    }
+
+    private String selectionSortName(Selection selection) {
+        if (selection instanceof Field) {
+            return ((Field) selection).getName();
+        }
+        if (selection instanceof FragmentSpread) {
+            return ((FragmentSpread) selection).getName();
+        }
+        if (selection instanceof InlineFragment) {
+            TypeName typeCondition = ((InlineFragment) selection).getTypeCondition();
+            return typeCondition == null ? "" : typeCondition.getName();
+        }
+        return "";
+    }
+
+    private int compareDefinitions(Definition left, Definition right) {
+        int typeComparison = Integer.compare(definitionSortType(left), definitionSortType(right));
+        if (typeComparison != 0) {
+            return typeComparison;
+        }
+        return definitionSortName(left).compareTo(definitionSortName(right));
+    }
+
+    private int definitionSortType(Definition definition) {
+        if (definition instanceof OperationDefinition) {
+            return operationSortType((OperationDefinition) definition);
+        }
+        if (definition instanceof FragmentDefinition) {
+            return 200;
+        }
+        return -1;
+    }
+
+    private int operationSortType(OperationDefinition operationDefinition) {
+        OperationDefinition.Operation operation = operationDefinition.getOperation();
+        if (OperationDefinition.Operation.QUERY == operation) {
+            return 101;
+        }
+        if (OperationDefinition.Operation.MUTATION == operation) {
+            return 102;
+        }
+        if (OperationDefinition.Operation.SUBSCRIPTION == operation) {
+            return 104;
+        }
+        return 100;
+    }
+
+    private String definitionSortName(Definition definition) {
+        if (definition instanceof OperationDefinition) {
+            String name = ((OperationDefinition) definition).getName();
+            return name == null ? "" : name;
+        }
+        if (definition instanceof FragmentDefinition) {
+            return ((FragmentDefinition) definition).getName();
+        }
+        return "";
+    }
+
+    private Document dropUnusedQueryDefinitions(Document document, final @Nullable String operationName) {
+        List<Definition> definitions = document.getDefinitions();
+        List<Definition> wantedDefinitions = new ArrayList<>(definitions.size());
+        boolean changed = false;
+        for (Definition definition : definitions) {
+            if (definition instanceof OperationDefinition) {
+                OperationDefinition operationDefinition = (OperationDefinition) definition;
+                if (isThisOperation(operationDefinition, operationName)) {
+                    wantedDefinitions.add(definition);
+                    continue;
+                }
+                changed = true;
+                continue;
+            }
+            if (definition instanceof FragmentDefinition) {
+                wantedDefinitions.add(definition);
+                continue;
+            }
+            changed = true;
+            // SDL in a query makes no sense - its gone should it be present
+        }
+        if (!changed) {
+            return document;
+        }
+        return document.transform(builder -> builder.definitions(wantedDefinitions));
     }
 
     private boolean isThisOperation(OperationDefinition operationDefinition, @Nullable String operationName) {
