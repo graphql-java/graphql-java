@@ -2,7 +2,6 @@ package graphql.execution;
 
 
 import com.google.common.collect.ImmutableList;
-import graphql.Directives;
 import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
@@ -29,7 +28,6 @@ import graphql.execution.reactive.ReactiveSupport;
 import graphql.extensions.ExtensionsBuilder;
 import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalExecutionResultImpl;
-import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
@@ -46,9 +44,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
-import static graphql.Directives.EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -103,7 +101,7 @@ public class Execution {
             return completedFuture(abortExecutionException.toExecutionResult());
         }
 
-        boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
+        OnError onError = isExperimentalOnErrorEnabled()? executionInput.getOnError() : OnError.PROPAGATE;
 
         GraphQLContext graphQLContext = executionInput.getGraphQLContext();
         Locale locale = executionInput.getLocale();
@@ -137,7 +135,7 @@ public class Execution {
                 .valueUnboxer(valueUnboxer)
                 .responseMapFactory(responseMapFactory)
                 .executionInput(executionInput)
-                .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
+                .onError(onError)
                 .engineRunningState(engineRunningState)
                 .profiler(profiler)
                 .build();
@@ -317,12 +315,24 @@ public class Execution {
         return executionResult;
     }
 
-    private boolean propagateErrorsOnNonNullContractFailure(List<Directive> directives) {
-        boolean jvmWideEnabled = Directives.isExperimentalDisableErrorPropagationDirectiveEnabled();
-        if (!jvmWideEnabled) {
-            return true;
-        }
-        Directive foundDirective = NodeUtil.findNodeByName(directives, EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
-        return foundDirective == null;
+    private static final AtomicBoolean EXPERIMENTAL_ON_ERROR_ENABLED = new AtomicBoolean(true);
+
+    /**
+     * This can be used to get the state the `onError` request parameter support on a JVM-wide basis.
+     * @return true if the `onError` request parameter will be respected
+     */
+    public static boolean isExperimentalOnErrorEnabled() {
+        return EXPERIMENTAL_ON_ERROR_ENABLED.get();
     }
+
+    /**
+     * This can be used to disable the `onError` request parameter support on a JVM-wide basis in case your server
+     * implementation does NOT want to act on the request parameter ever.
+     *
+     * @param flag the desired state of the flag
+     */
+    public static void setExperimentalOnErrorEnabled(boolean flag) {
+        EXPERIMENTAL_ON_ERROR_ENABLED.set(flag);
+    }
+
 }

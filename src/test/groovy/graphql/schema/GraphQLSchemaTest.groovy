@@ -155,25 +155,24 @@ class GraphQLSchemaTest extends Specification {
 
         when: "a schema is built"
         def schema = schemaBuilder.build()
-        then: "all 7 built-in directives are present"
-        schema.directives.size() == 7
+        then: "all 6 built-in directives are present"
+        schema.directives.size() == 6
         schema.getDirective("include") != null
         schema.getDirective("skip") != null
         schema.getDirective("deprecated") != null
         schema.getDirective("specifiedBy") != null
         schema.getDirective("oneOf") != null
         schema.getDirective("defer") != null
-        schema.getDirective("experimental_disableErrorPropagation") != null
 
         when: "the schema is transformed, things are copied"
         schema = schema.transform({ builder -> builder })
-        then: "all 7 built-in directives are still present"
-        schema.directives.size() == 7
+        then: "all 6 built-in directives are still present"
+        schema.directives.size() == 6
 
         when: "clearDirectives is called"
         schema = basicSchemaBuilder().clearDirectives().build()
-        then: "all 7 built-in directives are still present because ensureBuiltInDirectives re-adds them"
-        schema.directives.size() == 7
+        then: "all 6 built-in directives are still present because ensureBuiltInDirectives re-adds them"
+        schema.directives.size() == 6
 
         when: "clearDirectives is called and additional directives are added"
         schema = basicSchemaBuilder().clearDirectives()
@@ -182,8 +181,8 @@ class GraphQLSchemaTest extends Specification {
                         .validLocations(DirectiveLocation.FIELD)
                         .build())
                 .build()
-        then: "all 7 built-in directives are present plus the additional one"
-        schema.directives.size() == 8
+        then: "all 6 built-in directives are present plus the additional one"
+        schema.directives.size() == 7
         schema.getDirective("custom") != null
     }
 
@@ -275,7 +274,7 @@ class GraphQLSchemaTest extends Specification {
         def schema = basicSchemaBuilder()
                 .additionalDirective(originalDirective)
                 .build()
-        assert schema.directives.size() == 8
+        assert schema.directives.size() == 7
 
         when: "the schema is transformed to replace the custom directive"
         def replacementDirective = GraphQLDirective.newDirective()
@@ -291,7 +290,7 @@ class GraphQLSchemaTest extends Specification {
         })
 
         then: "all 7 built-in directives are still present"
-        newSchema.directives.size() == 8
+        newSchema.directives.size() == 7
         newSchema.getDirective("include") != null
         newSchema.getDirective("skip") != null
         newSchema.getDirective("deprecated") != null
@@ -319,8 +318,7 @@ class GraphQLSchemaTest extends Specification {
 
         then: "unoverridden built-ins come first (in BUILT_IN_DIRECTIVES order, skip excluded), then user-supplied in insertion order"
         def names = schema.directives.collect { it.name }
-        names == ["include", "deprecated", "specifiedBy", "oneOf", "defer",
-                  "experimental_disableErrorPropagation", "custom", "skip"]
+        names == ["include", "deprecated", "specifiedBy", "oneOf", "defer", "custom", "skip"]
 
         and: "the customized skip directive retains its custom description"
         schema.getDirective("skip").description == "custom skip description"

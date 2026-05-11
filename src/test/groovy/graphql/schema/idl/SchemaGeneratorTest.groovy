@@ -2085,7 +2085,7 @@ class SchemaGeneratorTest extends Specification {
         directives = schema.getDirectives()
 
         then:
-        directives.size() == 10 // built in ones :  include / skip and deprecated
+        directives.size() == 9 // built in ones :  include / skip and deprecated
         def directiveNames = directives.collect { it.name }
         directiveNames.contains("include")
         directiveNames.contains("skip")
@@ -2101,7 +2101,7 @@ class SchemaGeneratorTest extends Specification {
         directivesMap = schema.getDirectivesByName()
 
         then:
-        directivesMap.size() == 10 // built in ones
+        directivesMap.size() == 9 // built in ones
         directivesMap.containsKey("include")
         directivesMap.containsKey("skip")
         directivesMap.containsKey("defer")
