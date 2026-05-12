@@ -13,13 +13,11 @@ Latest build in Maven central: https://repo1.maven.org/maven2/com/graphql-java/g
 
 ### Documentation
 
-The GraphQL Java book, from the maintainers: [GraphQL with Java and Spring](https://leanpub.com/graphql-java/)
-
 See our tutorial for beginners: [Getting started with GraphQL Java and Spring Boot](https://www.graphql-java.com/tutorials/getting-started-with-spring-boot/)
 
 For further details, please see the documentation: https://www.graphql-java.com/documentation/getting-started
 
-If you're looking to learn more, we (the maintainers) have written a book! [GraphQL with Java and Spring](https://leanpub.com/graphql-java) includes everything you need to know to build a production ready GraphQL service. The book is available on [Leanpub](https://leanpub.com/graphql-java) and [Amazon](https://www.amazon.com/GraphQL-Java-Spring-Andreas-Marek-ebook/dp/B0C96ZYWPF/).
+We (the maintainers) have written a book — [GraphQL with Java and Spring](https://leanpub.com/graphql-java) — covering everything you need to build a production-ready GraphQL service. Available on [Leanpub](https://leanpub.com/graphql-java) and [Amazon](https://www.amazon.com/GraphQL-Java-Spring-Andreas-Marek-ebook/dp/B0C96ZYWPF/).
 
 Please take a look at our [list of releases](https://github.com/graphql-java/graphql-java/releases) if you want to learn more about new releases and the changelog.
 
