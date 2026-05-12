@@ -922,21 +922,17 @@ public class AstSignature {
 
     private Document sortExecutableAst(Document document) {
         List<Definition> definitions = new ArrayList<>(document.getDefinitions().size());
+        List<FragmentDefinition> fragments = new ArrayList<>();
         for (Definition definition : document.getDefinitions()) {
-            definitions.add(sortExecutableDefinition(definition));
+            if (definition instanceof FragmentDefinition) {
+                fragments.add(sortFragmentDefinition((FragmentDefinition) definition));
+                continue;
+            }
+            definitions.add(sortOperationDefinition((OperationDefinition) definition));
         }
-        definitions.sort(this::compareDefinitions);
+        fragments.sort((left, right) -> left.getName().compareTo(right.getName()));
+        definitions.addAll(fragments);
         return document.transform(builder -> builder.definitions(definitions));
-    }
-
-    private Definition sortExecutableDefinition(Definition definition) {
-        if (definition instanceof OperationDefinition) {
-            return sortOperationDefinition((OperationDefinition) definition);
-        }
-        if (definition instanceof FragmentDefinition) {
-            return sortFragmentDefinition((FragmentDefinition) definition);
-        }
-        return definition;
     }
 
     private OperationDefinition sortOperationDefinition(OperationDefinition operationDefinition) {
@@ -1087,10 +1083,7 @@ public class AstSignature {
         if (selection instanceof FragmentSpread) {
             return 2;
         }
-        if (selection instanceof InlineFragment) {
-            return 3;
-        }
-        return 4;
+        return 3;
     }
 
     private String selectionSortName(Selection selection) {
@@ -1100,54 +1093,8 @@ public class AstSignature {
         if (selection instanceof FragmentSpread) {
             return ((FragmentSpread) selection).getName();
         }
-        if (selection instanceof InlineFragment) {
-            TypeName typeCondition = ((InlineFragment) selection).getTypeCondition();
-            return typeCondition == null ? "" : typeCondition.getName();
-        }
-        return "";
-    }
-
-    private int compareDefinitions(Definition left, Definition right) {
-        int typeComparison = Integer.compare(definitionSortType(left), definitionSortType(right));
-        if (typeComparison != 0) {
-            return typeComparison;
-        }
-        return definitionSortName(left).compareTo(definitionSortName(right));
-    }
-
-    private int definitionSortType(Definition definition) {
-        if (definition instanceof OperationDefinition) {
-            return operationSortType((OperationDefinition) definition);
-        }
-        if (definition instanceof FragmentDefinition) {
-            return 200;
-        }
-        return -1;
-    }
-
-    private int operationSortType(OperationDefinition operationDefinition) {
-        OperationDefinition.Operation operation = operationDefinition.getOperation();
-        if (OperationDefinition.Operation.QUERY == operation) {
-            return 101;
-        }
-        if (OperationDefinition.Operation.MUTATION == operation) {
-            return 102;
-        }
-        if (OperationDefinition.Operation.SUBSCRIPTION == operation) {
-            return 104;
-        }
-        return 100;
-    }
-
-    private String definitionSortName(Definition definition) {
-        if (definition instanceof OperationDefinition) {
-            String name = ((OperationDefinition) definition).getName();
-            return name == null ? "" : name;
-        }
-        if (definition instanceof FragmentDefinition) {
-            return ((FragmentDefinition) definition).getName();
-        }
-        return "";
+        TypeName typeCondition = ((InlineFragment) selection).getTypeCondition();
+        return typeCondition == null ? "" : typeCondition.getName();
     }
 
     private Document dropUnusedQueryDefinitions(Document document, final @Nullable String operationName) {

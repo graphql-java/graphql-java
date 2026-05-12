@@ -506,6 +506,132 @@ fragment X on SomeType {
 '''
     }
 
+    def "signature with input removes aliases from unknown type conditions without redacting unknown values"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                node(filter: { term: "root" }) {
+                    ...UnknownFields
+                    ... on MissingType {
+                        inlineAlias: child(filter: { term: "inline" }) {
+                            leafAlias: id
+                            ...NestedUnknown
+                        }
+                        ... {
+                            nestedInlineAlias: child(filter: { term: "nested inline" }) {
+                                leafAlias: id
+                            }
+                        }
+                    }
+                }
+            }
+
+            fragment UnknownFields on MissingType {
+                fragmentAlias: child(filter: { term: "fragment" }) {
+                    leafAlias: id
+                    ...NestedUnknown
+                }
+            }
+
+            fragment NestedUnknown on MissingType {
+                nestedAlias: child(filter: { term: "nested" }) {
+                    leafAlias: id
+                }
+            }
+        ''') == '''query Test {
+  node(filter: {term : ""}) {
+    ...UnknownFields
+    ... on MissingType {
+      child(filter: {term : "inline"}) {
+        id
+        ...NestedUnknown
+      }
+      ... {
+        child(filter: {term : "nested inline"}) {
+          id
+        }
+      }
+    }
+  }
+}
+
+fragment NestedUnknown on MissingType {
+  child(filter: {term : "nested"}) {
+    id
+  }
+}
+
+fragment UnknownFields on MissingType {
+  child(filter: {term : "fragment"}) {
+    id
+    ...NestedUnknown
+  }
+}
+'''
+    }
+
+    def "signature with input sorts unnamed executable operation selections and fragments"() {
+        expect:
+        signatureWithInput('''
+            {
+                search(term: "secret") {
+                    ... on SearchResult {
+                        id
+                    }
+                    ... {
+                        child {
+                            id
+                        }
+                    }
+                    ...ZFields
+                    ...AFields
+                    alias: child(filter: { term: "child" }) {
+                        id
+                    }
+                    id
+                }
+            }
+
+            fragment ZFields on SearchResult {
+                id
+            }
+
+            fragment AFields on SearchResult {
+                child(filter: { nested: { max: 2, min: 1 } }) {
+                    id
+                }
+            }
+        ''', [:], null) == '''{
+  search(term: "") {
+    child(filter: {term : ""}) {
+      id
+    }
+    id
+    ...AFields
+    ...ZFields
+    ... {
+      child {
+        id
+      }
+    }
+    ... on SearchResult {
+      id
+    }
+  }
+}
+
+fragment AFields on SearchResult {
+  child(filter: {nested : {max : 0, min : 0}}) {
+    id
+  }
+}
+
+fragment ZFields on SearchResult {
+  id
+}
+'''
+    }
+
     def "signature with input can retain fragments when no operation matches"() {
         expect:
         signatureWithInput('''
