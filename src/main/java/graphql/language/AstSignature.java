@@ -1,11 +1,11 @@
 package graphql.language;
 
+import graphql.AssertException;
 import graphql.PublicApi;
 import graphql.Scalars;
 import graphql.collect.ImmutableKit;
 import graphql.execution.CoercedVariables;
 import graphql.execution.TypeFromAST;
-import graphql.introspection.Introspection;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLDirective;
@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
@@ -104,6 +105,11 @@ public class AstSignature {
      *
      * Omitted arguments and omitted input object fields stay omitted.  This means two operations with different input
      * shapes can be categorised differently without exposing the values that were supplied.
+     * <p>
+     * The document's schema references are expected to match the supplied schema.  This method does not attempt to
+     * recover from schema mismatches such as unknown fields, arguments, directives, input object fields, variable types
+     * or fragment type conditions.  If such a mismatch is encountered, an {@link graphql.AssertException} is thrown
+     * immediately.
      *
      * @param document      the document to make a signature query from
      * @param operationName the name of the operation to do it for (since only one query can be run at a time)
@@ -118,7 +124,7 @@ public class AstSignature {
         Document wantedDocument = dropUnusedQueryDefinitions(document, operationName);
         AstSignatureReferenceCollector referenceCollector = new AstSignatureReferenceCollector();
         Document signatureDocument = redactInputValues(wantedDocument, operationName, schema, variables, variableRemapping, variableCount, referenceCollector);
-        Document sortedDocument = sortAST(removeAliases(signatureDocument));
+        Document sortedDocument = sortExecutableAst(signatureDocument);
         AstSignatureInputReferences references = referenceCollector.toReferences();
         return AstSignatureWithInputResult.newAstSignatureWithInputResult()
                 .document(sortedDocument)
@@ -193,9 +199,10 @@ public class AstSignature {
                                                        AtomicInteger variableCount,
                                                        AstSignatureInputReferences references,
                                                        Set<String> fragmentSpreads) {
-        GraphQLOutputType outputType = outputType(schema, fragmentDefinition.getTypeCondition());
+        TypeName typeCondition = fragmentDefinition.getTypeCondition();
+        GraphQLOutputType outputType = outputType(schema, typeCondition);
         if (outputType == null) {
-            return fragmentDefinition;
+            throw schemaMismatch("fragment type condition '%s' must be present in the schema as an output type", typeCondition.getName());
         }
         return fragmentDefinition.transform(builder -> {
             builder.directives(redactDirectives(fragmentDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
@@ -280,16 +287,48 @@ public class AstSignature {
                               AstSignatureInputReferences references,
                               Set<String> fragmentSpreads) {
         GraphQLCompositeType compositeType = (GraphQLCompositeType) unwrapAll(parentType);
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, compositeType, field.getName());
+        GraphQLFieldDefinition fieldDefinition = fieldDefinition(schema, compositeType, field.getName());
+        if (fieldDefinition == null) {
+            throw schemaMismatch("field '%s.%s' must be present in the schema", compositeType.getName(), field.getName());
+        }
         return field.transform(builder -> {
             String fieldCoordinate = fieldCoordinate(compositeType, field);
             if (fieldCoordinate != null) {
                 references.addFieldCoordinate(fieldCoordinate);
             }
+            builder.alias(null);
             builder.arguments(redactFieldArguments(fieldCoordinate, field.getArguments(), fieldDefinition.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount, references));
             builder.directives(redactDirectives(field.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
             builder.selectionSet(redactFieldSelectionSet(field, fieldDefinition.getType(), schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
         });
+    }
+
+    private @Nullable GraphQLFieldDefinition fieldDefinition(GraphQLSchema schema, GraphQLCompositeType compositeType, String fieldName) {
+        GraphQLFieldDefinition systemFieldDefinition = systemFieldDefinition(schema, compositeType, fieldName);
+        if (systemFieldDefinition != null) {
+            return systemFieldDefinition;
+        }
+        if (!(compositeType instanceof GraphQLFieldsContainer)) {
+            return null;
+        }
+        GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) compositeType;
+        return schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
+    }
+
+    private @Nullable GraphQLFieldDefinition systemFieldDefinition(GraphQLSchema schema, GraphQLCompositeType compositeType, String fieldName) {
+        if (fieldName.equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
+            return schema.getIntrospectionTypenameFieldDefinition();
+        }
+        if (schema.getQueryType() != compositeType) {
+            return null;
+        }
+        if (fieldName.equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
+            return schema.getIntrospectionSchemaFieldDefinition();
+        }
+        if (fieldName.equals(schema.getIntrospectionTypeFieldDefinition().getName())) {
+            return schema.getIntrospectionTypeFieldDefinition();
+        }
+        return null;
     }
 
     private @Nullable String fieldCoordinate(GraphQLCompositeType compositeType, Field field) {
@@ -326,16 +365,23 @@ public class AstSignature {
                                                 AtomicInteger variableCount,
                                                 AstSignatureInputReferences references,
                                                 Set<String> fragmentSpreads) {
-        GraphQLOutputType outputType = inlineFragment.getTypeCondition() == null
-                ? parentType
-                : outputType(schema, inlineFragment.getTypeCondition());
-        if (outputType == null) {
-            return inlineFragment;
-        }
+        TypeName typeCondition = inlineFragment.getTypeCondition();
+        GraphQLOutputType outputType = inlineFragmentOutputType(parentType, schema, typeCondition);
         return inlineFragment.transform(builder -> {
             builder.directives(redactDirectives(inlineFragment.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
             builder.selectionSet(redactSelectionSet(inlineFragment.getSelectionSet(), outputType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
         });
+    }
+
+    private GraphQLOutputType inlineFragmentOutputType(GraphQLOutputType parentType, GraphQLSchema schema, @Nullable TypeName typeCondition) {
+        if (typeCondition == null) {
+            return parentType;
+        }
+        GraphQLOutputType outputType = outputType(schema, typeCondition);
+        if (outputType != null) {
+            return outputType;
+        }
+        throw schemaMismatch("inline fragment type condition '%s' must be present in the schema as an output type", typeCondition.getName());
     }
 
     private FragmentSpread redactFragmentSpread(FragmentSpread fragmentSpread,
@@ -376,7 +422,7 @@ public class AstSignature {
                                       AtomicInteger variableCount,
                                       AstSignatureInputReferences references) {
         if (directiveDefinition == null) {
-            return directive.transform(builder -> builder.arguments(redactArgumentsWithoutTypes(directive.getArguments(), schema, variables, variableTypes, variableRemapping, variableCount)));
+            throw schemaMismatch("directive '@%s' must be present in the schema", directive.getName());
         }
         String usedDirective = "@" + directive.getName();
         references.addUsedDirective(usedDirective);
@@ -445,9 +491,12 @@ public class AstSignature {
         List<Argument> result = new ArrayList<>(arguments.size());
         for (Argument argument : arguments) {
             GraphQLArgument argumentDefinition = argumentDefinitionByName.get(argument.getName());
+            if (argumentDefinition == null) {
+                throw schemaMismatch("argument '%s' must be present in the schema", argument.getName());
+            }
             Argument redactedArgument = redactArgument(argument, argumentDefinition, schema, variables, variableTypes, variableRemapping, variableCount, references);
             if (redactedArgument != null) {
-                collectArgumentReference(fieldCoordinate, usedDirective, redactedArgument, argumentDefinition, references);
+                collectArgumentReference(fieldCoordinate, usedDirective, redactedArgument, references);
                 result.add(redactedArgument);
             }
         }
@@ -457,11 +506,7 @@ public class AstSignature {
     private void collectArgumentReference(@Nullable String fieldCoordinate,
                                           @Nullable String usedDirective,
                                           Argument argument,
-                                          @Nullable GraphQLArgument argumentDefinition,
                                           AstSignatureInputReferences references) {
-        if (argumentDefinition == null) {
-            return;
-        }
         if (fieldCoordinate != null) {
             references.addFieldArgumentCoordinate(fieldCoordinate + "(" + argument.getName() + ":)");
         }
@@ -470,22 +515,8 @@ public class AstSignature {
         }
     }
 
-    private List<Argument> redactArgumentsWithoutTypes(List<Argument> arguments,
-                                                       GraphQLSchema schema,
-                                                       CoercedVariables variables,
-                                                       Map<String, GraphQLInputType> variableTypes,
-                                                       Map<String, String> variableRemapping,
-                                                       AtomicInteger variableCount) {
-        List<Argument> result = new ArrayList<>(arguments.size());
-        for (Argument argument : arguments) {
-            Value value = redactValueWithoutType(argument.getValue(), schema, variables, variableTypes, variableRemapping, variableCount);
-            result.add(argument.transform(builder -> builder.value(value)));
-        }
-        return result;
-    }
-
     private @Nullable Argument redactArgument(Argument argument,
-                                              @Nullable GraphQLArgument argumentDefinition,
+                                              GraphQLArgument argumentDefinition,
                                               GraphQLSchema schema,
                                               CoercedVariables variables,
                                               Map<String, GraphQLInputType> variableTypes,
@@ -494,10 +525,6 @@ public class AstSignature {
                                               AstSignatureInputReferences references) {
         if (isAbsentVariableReference(argument.getValue(), variables)) {
             return null;
-        }
-        if (argumentDefinition == null) {
-            Value value = redactValueWithoutType(argument.getValue(), schema, variables, variableTypes, variableRemapping, variableCount);
-            return argument.transform(builder -> builder.value(value));
         }
         Value redactedValue = redactValue(argument.getValue(), argumentDefinition.getType(), schema, variables, variableRemapping, variableCount, references);
         return argument.transform(builder -> builder.value(redactedValue));
@@ -522,16 +549,18 @@ public class AstSignature {
         if (isList(inputType)) {
             return redactListValue(value, (GraphQLList) inputType, schema, variables, variableRemapping, variableCount, references);
         }
-        if (inputType instanceof GraphQLInputObjectType && value instanceof ObjectValue) {
-            return redactObjectValue((ObjectValue) value, (GraphQLInputObjectType) inputType, schema, variables, variableRemapping, variableCount, references);
+        if (inputType instanceof GraphQLInputObjectType) {
+            GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) inputType;
+            if (value instanceof ObjectValue) {
+                return redactObjectValue((ObjectValue) value, inputObjectType, schema, variables, variableRemapping, variableCount, references);
+            }
+            throw schemaMismatch("input value for type '%s' must be an object", inputObjectType.getName());
         }
         if (inputType instanceof GraphQLEnumType) {
             return EnumValue.of("REDACTED");
         }
-        if (inputType instanceof GraphQLScalarType) {
-            return redactedScalarValue((GraphQLScalarType) inputType);
-        }
-        return redactValueWithoutType(value, schema, variables, Collections.emptyMap(), variableRemapping, variableCount);
+        assertTrue(inputType instanceof GraphQLScalarType, "input type '%s' must be a scalar, enum, input object, list or non-null type", inputType);
+        return redactedScalarValue((GraphQLScalarType) inputType);
     }
 
     private Value redactVariableReference(VariableReference variableReference,
@@ -594,8 +623,7 @@ public class AstSignature {
             return null;
         }
         if (fieldDefinition == null) {
-            Value redactedValue = redactValueWithoutType(objectField.getValue(), schema, variables, Collections.emptyMap(), variableRemapping, variableCount);
-            return objectField.transform(builder -> builder.value(redactedValue));
+            throw schemaMismatch("input object field '%s.%s' must be present in the schema", inputObjectType.getName(), objectField.getName());
         }
         references.addInputObjectFieldCoordinate(inputObjectType.getName() + "." + objectField.getName());
         Value redactedValue = redactValue(objectField.getValue(), fieldDefinition.getType(), schema, variables, variableRemapping, variableCount, references);
@@ -675,71 +703,6 @@ public class AstSignature {
         return StringValue.of("");
     }
 
-    private Value redactValueWithoutType(Value value,
-                                         GraphQLSchema schema,
-                                         CoercedVariables variables,
-                                         Map<String, GraphQLInputType> variableTypes,
-                                         Map<String, String> variableRemapping,
-                                         AtomicInteger variableCount) {
-        if (value instanceof VariableReference) {
-            VariableReference variableReference = (VariableReference) value;
-            GraphQLInputType variableType = variableTypes.get(variableReference.getName());
-            if (variableType != null) {
-                return redactVariableReference(variableReference, variableType, schema, variables, new AstSignatureInputReferences());
-            }
-            return variableReference.transform(builder -> builder.name(remapVariable(variableReference.getName(), variableRemapping, variableCount)));
-        }
-        if (value instanceof ArrayValue) {
-            return redactArrayValueWithoutType((ArrayValue) value, schema, variables, variableTypes, variableRemapping, variableCount);
-        }
-        if (value instanceof ObjectValue) {
-            return redactObjectValueWithoutType((ObjectValue) value, schema, variables, variableTypes, variableRemapping, variableCount);
-        }
-        if (value instanceof IntValue) {
-            return IntValue.of(0);
-        }
-        if (value instanceof FloatValue) {
-            return FloatValue.newFloatValue(BigDecimal.ZERO).build();
-        }
-        if (value instanceof StringValue) {
-            return StringValue.of("");
-        }
-        if (value instanceof BooleanValue) {
-            return BooleanValue.of(false);
-        }
-        if (value instanceof EnumValue) {
-            return EnumValue.of("REDACTED");
-        }
-        return NullValue.of();
-    }
-
-    private ArrayValue redactArrayValueWithoutType(ArrayValue arrayValue,
-                                                   GraphQLSchema schema,
-                                                   CoercedVariables variables,
-                                                   Map<String, GraphQLInputType> variableTypes,
-                                                   Map<String, String> variableRemapping,
-                                                   AtomicInteger variableCount) {
-        List<Value> values = new ArrayList<>(arrayValue.getValues().size());
-        for (Value item : arrayValue.getValues()) {
-            values.add(redactValueWithoutType(item, schema, variables, variableTypes, variableRemapping, variableCount));
-        }
-        return arrayValue.transform(builder -> builder.values(values));
-    }
-
-    private ObjectValue redactObjectValueWithoutType(ObjectValue objectValue,
-                                                     GraphQLSchema schema,
-                                                     CoercedVariables variables,
-                                                     Map<String, GraphQLInputType> variableTypes,
-                                                     Map<String, String> variableRemapping,
-                                                     AtomicInteger variableCount) {
-        List<ObjectField> objectFields = new ArrayList<>(objectValue.getObjectFields().size());
-        for (ObjectField objectField : objectValue.getObjectFields()) {
-            Value value = redactValueWithoutType(objectField.getValue(), schema, variables, variableTypes, variableRemapping, variableCount);
-            objectFields.add(objectField.transform(builder -> builder.value(value)));
-        }
-        return objectValue.transform(builder -> builder.objectFields(objectFields));
-    }
-
     private boolean isAbsentVariableReference(Value value, CoercedVariables variables) {
         if (!(value instanceof VariableReference)) {
             return false;
@@ -772,11 +735,16 @@ public class AstSignature {
         Map<String, GraphQLInputType> result = new HashMap<>();
         for (VariableDefinition variableDefinition : operationDefinition.getVariableDefinitions()) {
             GraphQLType graphQLType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
-            if (graphQLType instanceof GraphQLInputType) {
-                result.put(variableDefinition.getName(), (GraphQLInputType) graphQLType);
+            if (!(graphQLType instanceof GraphQLInputType)) {
+                throw schemaMismatch("variable type '%s' must be present in the schema as an input type", variableDefinition.getType());
             }
+            result.put(variableDefinition.getName(), (GraphQLInputType) graphQLType);
         }
         return result;
+    }
+
+    private AssertException schemaMismatch(String msgFmt, Object... args) {
+        return new AssertException(String.format(msgFmt, args));
     }
 
     private @Nullable OperationDefinition findOperationDefinition(Document document, @Nullable String operationName) {
@@ -883,27 +851,211 @@ public class AstSignature {
         return new AstSorter().sort(document);
     }
 
-    private Document dropUnusedQueryDefinitions(Document document, final @Nullable String operationName) {
-        NodeVisitorStub visitor = new NodeVisitorStub() {
-            @Override
-            public TraversalControl visitDocument(Document node, TraverserContext<Node> context) {
-                List<Definition> wantedDefinitions = ImmutableKit.filter(node.getDefinitions(),
-                        d -> {
-                            if (d instanceof OperationDefinition) {
-                                OperationDefinition operationDefinition = (OperationDefinition) d;
-                                return isThisOperation(operationDefinition, operationName);
-                            }
-                            return d instanceof FragmentDefinition;
-                            // SDL in a query makes no sense - its gone should it be present
-                        });
-
-                Document changedNode = node.transform(builder -> {
-                    builder.definitions(wantedDefinitions);
-                });
-                return changeNode(context, changedNode);
+    // signatureWithInput has already pruned the document to at most one operation plus fragments.
+    // Avoid the generic AstSorter here because it pays AstTransformer visitor overhead and supports
+    // SDL/node kinds that cannot be present on this hot path.
+    private Document sortExecutableAst(Document document) {
+        List<Definition> definitions = new ArrayList<>(document.getDefinitions().size());
+        List<FragmentDefinition> fragments = new ArrayList<>();
+        for (Definition definition : document.getDefinitions()) {
+            if (definition instanceof FragmentDefinition) {
+                fragments.add(sortFragmentDefinition((FragmentDefinition) definition));
+                continue;
             }
-        };
-        return transformDoc(document, visitor);
+            definitions.add(sortOperationDefinition((OperationDefinition) definition));
+        }
+        fragments.sort((left, right) -> left.getName().compareTo(right.getName()));
+        definitions.addAll(fragments);
+        return document.transform(builder -> builder.definitions(definitions));
+    }
+
+    private OperationDefinition sortOperationDefinition(OperationDefinition operationDefinition) {
+        return operationDefinition.transform(builder -> {
+            builder.variableDefinitions(sortVariableDefinitions(operationDefinition.getVariableDefinitions()));
+            builder.directives(sortDirectives(operationDefinition.getDirectives()));
+            builder.selectionSet(sortSelectionSet(operationDefinition.getSelectionSet()));
+        });
+    }
+
+    private FragmentDefinition sortFragmentDefinition(FragmentDefinition fragmentDefinition) {
+        return fragmentDefinition.transform(builder -> {
+            builder.directives(sortDirectives(fragmentDefinition.getDirectives()));
+            builder.selectionSet(sortSelectionSet(fragmentDefinition.getSelectionSet()));
+        });
+    }
+
+    private SelectionSet sortSelectionSet(SelectionSet selectionSet) {
+        List<Selection> selections = new ArrayList<>(selectionSet.getSelections().size());
+        for (Selection selection : selectionSet.getSelections()) {
+            selections.add(sortSelection(selection));
+        }
+        selections.sort(this::compareSelections);
+        return selectionSet.transform(builder -> builder.selections(selections));
+    }
+
+    private Selection sortSelection(Selection selection) {
+        if (selection instanceof Field) {
+            return sortField((Field) selection);
+        }
+        if (selection instanceof InlineFragment) {
+            return sortInlineFragment((InlineFragment) selection);
+        }
+        return sortFragmentSpread((FragmentSpread) selection);
+    }
+
+    private Field sortField(Field field) {
+        return field.transform(builder -> {
+            builder.alias(null);
+            builder.arguments(sortArguments(field.getArguments()));
+            builder.directives(sortDirectives(field.getDirectives()));
+            SelectionSet selectionSet = field.getSelectionSet();
+            if (selectionSet != null) {
+                builder.selectionSet(sortSelectionSet(selectionSet));
+            }
+        });
+    }
+
+    private InlineFragment sortInlineFragment(InlineFragment inlineFragment) {
+        return inlineFragment.transform(builder -> {
+            builder.directives(sortDirectives(inlineFragment.getDirectives()));
+            builder.selectionSet(sortSelectionSet(inlineFragment.getSelectionSet()));
+        });
+    }
+
+    private FragmentSpread sortFragmentSpread(FragmentSpread fragmentSpread) {
+        return fragmentSpread.transform(builder -> builder.directives(sortDirectives(fragmentSpread.getDirectives())));
+    }
+
+    private List<VariableDefinition> sortVariableDefinitions(List<VariableDefinition> variableDefinitions) {
+        List<VariableDefinition> result = new ArrayList<>(variableDefinitions.size());
+        for (VariableDefinition variableDefinition : variableDefinitions) {
+            result.add(sortVariableDefinition(variableDefinition));
+        }
+        result.sort((left, right) -> left.getName().compareTo(right.getName()));
+        return result;
+    }
+
+    private VariableDefinition sortVariableDefinition(VariableDefinition variableDefinition) {
+        return variableDefinition.transform(builder -> {
+            Value defaultValue = variableDefinition.getDefaultValue();
+            if (defaultValue != null) {
+                builder.defaultValue(sortValue(defaultValue));
+            }
+            builder.directives(sortDirectives(variableDefinition.getDirectives()));
+        });
+    }
+
+    private List<Directive> sortDirectives(List<Directive> directives) {
+        List<Directive> result = new ArrayList<>(directives.size());
+        for (Directive directive : directives) {
+            result.add(sortDirective(directive));
+        }
+        result.sort((left, right) -> left.getName().compareTo(right.getName()));
+        return result;
+    }
+
+    private Directive sortDirective(Directive directive) {
+        return directive.transform(builder -> builder.arguments(sortArguments(directive.getArguments())));
+    }
+
+    private List<Argument> sortArguments(List<Argument> arguments) {
+        List<Argument> result = new ArrayList<>(arguments.size());
+        for (Argument argument : arguments) {
+            result.add(sortArgument(argument));
+        }
+        result.sort((left, right) -> left.getName().compareTo(right.getName()));
+        return result;
+    }
+
+    private Argument sortArgument(Argument argument) {
+        return argument.transform(builder -> builder.value(sortValue(argument.getValue())));
+    }
+
+    private Value sortValue(Value value) {
+        if (value instanceof ObjectValue) {
+            return sortObjectValue((ObjectValue) value);
+        }
+        if (value instanceof ArrayValue) {
+            return sortArrayValue((ArrayValue) value);
+        }
+        return value;
+    }
+
+    private ArrayValue sortArrayValue(ArrayValue arrayValue) {
+        List<Value> values = new ArrayList<>(arrayValue.getValues().size());
+        for (Value value : arrayValue.getValues()) {
+            values.add(sortValue(value));
+        }
+        return arrayValue.transform(builder -> builder.values(values));
+    }
+
+    private ObjectValue sortObjectValue(ObjectValue objectValue) {
+        List<ObjectField> objectFields = new ArrayList<>(objectValue.getObjectFields().size());
+        for (ObjectField objectField : objectValue.getObjectFields()) {
+            objectFields.add(sortObjectField(objectField));
+        }
+        objectFields.sort((left, right) -> left.getName().compareTo(right.getName()));
+        return objectValue.transform(builder -> builder.objectFields(objectFields));
+    }
+
+    private ObjectField sortObjectField(ObjectField objectField) {
+        return objectField.transform(builder -> builder.value(sortValue(objectField.getValue())));
+    }
+
+    private int compareSelections(Selection left, Selection right) {
+        int typeComparison = Integer.compare(selectionSortType(left), selectionSortType(right));
+        if (typeComparison != 0) {
+            return typeComparison;
+        }
+        return selectionSortName(left).compareTo(selectionSortName(right));
+    }
+
+    private int selectionSortType(Selection selection) {
+        if (selection instanceof Field) {
+            return 1;
+        }
+        if (selection instanceof FragmentSpread) {
+            return 2;
+        }
+        return 3;
+    }
+
+    private String selectionSortName(Selection selection) {
+        if (selection instanceof Field) {
+            return ((Field) selection).getName();
+        }
+        if (selection instanceof FragmentSpread) {
+            return ((FragmentSpread) selection).getName();
+        }
+        TypeName typeCondition = ((InlineFragment) selection).getTypeCondition();
+        return typeCondition == null ? "" : typeCondition.getName();
+    }
+
+    private Document dropUnusedQueryDefinitions(Document document, final @Nullable String operationName) {
+        List<Definition> definitions = document.getDefinitions();
+        List<Definition> wantedDefinitions = new ArrayList<>(definitions.size());
+        boolean changed = false;
+        for (Definition definition : definitions) {
+            if (definition instanceof OperationDefinition) {
+                OperationDefinition operationDefinition = (OperationDefinition) definition;
+                if (isThisOperation(operationDefinition, operationName)) {
+                    wantedDefinitions.add(definition);
+                    continue;
+                }
+                changed = true;
+                continue;
+            }
+            if (definition instanceof FragmentDefinition) {
+                wantedDefinitions.add(definition);
+                continue;
+            }
+            changed = true;
+            // SDL in a query makes no sense - its gone should it be present
+        }
+        if (!changed) {
+            return document;
+        }
+        return document.transform(builder -> builder.definitions(wantedDefinitions));
     }
 
     private boolean isThisOperation(OperationDefinition operationDefinition, @Nullable String operationName) {
