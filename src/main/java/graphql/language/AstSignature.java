@@ -39,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
@@ -558,10 +559,8 @@ public class AstSignature {
         if (inputType instanceof GraphQLEnumType) {
             return EnumValue.of("REDACTED");
         }
-        if (inputType instanceof GraphQLScalarType) {
-            return redactedScalarValue((GraphQLScalarType) inputType);
-        }
-        throw schemaMismatch("input type '%s' must be a scalar, enum, input object, list or non-null type", inputType);
+        assertTrue(inputType instanceof GraphQLScalarType, "input type '%s' must be a scalar, enum, input object, list or non-null type", inputType);
+        return redactedScalarValue((GraphQLScalarType) inputType);
     }
 
     private Value redactVariableReference(VariableReference variableReference,
@@ -846,42 +845,6 @@ public class AstSignature {
             }
         };
         return transformDoc(document, visitor);
-    }
-
-    private FragmentDefinition removeAliases(FragmentDefinition fragmentDefinition) {
-        return fragmentDefinition.transform(builder -> builder.selectionSet(removeAliases(fragmentDefinition.getSelectionSet())));
-    }
-
-    private InlineFragment removeAliases(InlineFragment inlineFragment) {
-        return inlineFragment.transform(builder -> builder.selectionSet(removeAliases(inlineFragment.getSelectionSet())));
-    }
-
-    private SelectionSet removeAliases(SelectionSet selectionSet) {
-        List<Selection> selections = new ArrayList<>(selectionSet.getSelections().size());
-        for (Selection selection : selectionSet.getSelections()) {
-            selections.add(removeAliases(selection));
-        }
-        return selectionSet.transform(builder -> builder.selections(selections));
-    }
-
-    private Selection removeAliases(Selection selection) {
-        if (selection instanceof Field) {
-            return removeAliases((Field) selection);
-        }
-        if (selection instanceof InlineFragment) {
-            return removeAliases((InlineFragment) selection);
-        }
-        return selection;
-    }
-
-    private Field removeAliases(Field field) {
-        return field.transform(builder -> {
-            builder.alias(null);
-            SelectionSet selectionSet = field.getSelectionSet();
-            if (selectionSet != null) {
-                builder.selectionSet(removeAliases(selectionSet));
-            }
-        });
     }
 
     private Document sortAST(Document document) {

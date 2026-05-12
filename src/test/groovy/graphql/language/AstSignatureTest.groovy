@@ -1,7 +1,7 @@
 package graphql.language
 
-import graphql.TestUtil
 import graphql.AssertException
+import graphql.TestUtil
 import graphql.execution.CoercedVariables
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -286,6 +286,22 @@ fragment X on SomeType {
 '''
     }
 
+    def "signature with input redacts absent nested variable references as null"() {
+        expect:
+        signatureWithInput('''
+            query Test($id: ID) {
+                search(ids: [$id]) {
+                    id
+                }
+            }
+        ''') == '''query Test($var1: ID) {
+  search(ids: [null]) {
+    id
+  }
+}
+'''
+    }
+
     def "signature with input redacts null variables as explicit null values"() {
         expect:
         signatureWithInput('''
@@ -412,6 +428,23 @@ fragment X on SomeType {
         then:
         def e = thrown(AssertException)
         e.message.contains("field 'SearchResult.missingField' must be present in the schema")
+    }
+
+    def "signature with input throws on unknown union fields"() {
+        when:
+        signatureWithInput('''
+            query Test {
+                lookup {
+                    ... on SearchUnion {
+                        missingField
+                    }
+                }
+            }
+        ''')
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("field 'SearchUnion.missingField' must be present in the schema")
     }
 
     def "signature with input throws on unknown input object fields"() {
@@ -617,6 +650,32 @@ fragment AFields on SearchResult {
 
 fragment ZFields on SearchResult {
   id
+}
+'''
+    }
+
+    def "signature with input handles query root introspection fields"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                __type(name: "SearchResult") {
+                    name
+                }
+                __schema {
+                    queryType {
+                        name
+                    }
+                }
+            }
+        ''') == '''query Test {
+  __schema {
+    queryType {
+      name
+    }
+  }
+  __type(name: "") {
+    name
+  }
 }
 '''
     }
