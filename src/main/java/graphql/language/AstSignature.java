@@ -920,6 +920,9 @@ public class AstSignature {
         return new AstSorter().sort(document);
     }
 
+    // signatureWithInput has already pruned the document to at most one operation plus fragments.
+    // Avoid the generic AstSorter here because it pays AstTransformer visitor overhead and supports
+    // SDL/node kinds that cannot be present on this hot path.
     private Document sortExecutableAst(Document document) {
         List<Definition> definitions = new ArrayList<>(document.getDefinitions().size());
         List<FragmentDefinition> fragments = new ArrayList<>();
