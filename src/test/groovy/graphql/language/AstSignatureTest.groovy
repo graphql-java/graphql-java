@@ -632,6 +632,150 @@ fragment ZFields on SearchResult {
 '''
     }
 
+    def "signature with input sorter sorts field arguments by name"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                search(term: "secret", count: 12) {
+                    id
+                }
+            }
+        ''') == '''query Test {
+  search(count: 0, term: "") {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input sorter sorts directives and directive arguments by name"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                search @skip(if: true) @searchMeta(meta: { term: "field" }, enabled: true) @include(if: true) {
+                    id
+                }
+            }
+        ''') == '''query Test {
+  search @include(if: false) @searchMeta(enabled: false, meta: {term : ""}) @skip(if: false) {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input sorter sorts input object fields recursively"() {
+        expect:
+        signatureWithInput('''
+            query Test {
+                search(filter: {
+                    term: "filter"
+                    nested: { min: 1, max: 2 }
+                    ranges: [{ min: 3, max: 4 }, { flag: true }]
+                    tags: ["b", "a"]
+                }) {
+                    id
+                }
+            }
+        ''') == '''query Test {
+  search(filter: {nested : {max : 0, min : 0}, ranges : [{max : 0, min : 0}, {flag : false}], tags : ["", ""], term : ""}) {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input sorter sorts variable definition directives and default object fields"() {
+        expect:
+        signatureWithInput('''
+            query Test(
+                $filter: FilterInput = {
+                    term: "default"
+                    nested: { min: 1, max: 2 }
+                } @skip(if: true) @searchMeta(meta: { term: "variable", nested: { min: 1, max: 2 } }, enabled: true) @include(if: true)
+            ) {
+                search(filter: $filter) {
+                    id
+                }
+            }
+        ''') == '''query Test($var1: FilterInput = {nested : {max : 0, min : 0}, term : ""}@include(if: false) @searchMeta(enabled: false, meta: {nested : {max : 0, min : 0}, term : ""}) @skip(if: false)) {
+  search {
+    id
+  }
+}
+'''
+    }
+
+    def "signature with input sorter sorts mutation selections"() {
+        expect:
+        signatureWithInput('''
+            mutation Test {
+                update(term: "secret") {
+                    ...ZFields
+                    id
+                    child(filter: { term: "child" }) {
+                        id
+                    }
+                    ...AFields
+                }
+            }
+
+            fragment ZFields on SearchResult {
+                id
+            }
+
+            fragment AFields on SearchResult {
+                child(filter: { nested: { min: 1, max: 2 } }) {
+                    id
+                }
+                id
+            }
+        ''') == '''mutation Test {
+  update(term: "") {
+    child(filter: {term : ""}) {
+      id
+    }
+    id
+    ...AFields
+    ...ZFields
+  }
+}
+
+fragment AFields on SearchResult {
+  child(filter: {nested : {max : 0, min : 0}}) {
+    id
+  }
+  id
+}
+
+fragment ZFields on SearchResult {
+  id
+}
+'''
+    }
+
+    def "signature with input sorter sorts subscription selections"() {
+        expect:
+        signatureWithInput('''
+            subscription Test {
+                updates(term: "secret") {
+                    id
+                    child(filter: { term: "child" }) {
+                        id
+                    }
+                }
+            }
+        ''') == '''subscription Test {
+  updates(term: "") {
+    child(filter: {term : ""}) {
+      id
+    }
+    id
+  }
+}
+'''
+    }
+
     def "signature with input can retain fragments when no operation matches"() {
         expect:
         signatureWithInput('''
