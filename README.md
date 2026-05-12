@@ -23,6 +23,19 @@ If you're looking to learn more, we (the maintainers) have written a book! [Grap
 
 Please take a look at our [list of releases](https://github.com/graphql-java/graphql-java/releases) if you want to learn more about new releases and the changelog.
 
+## Federation
+
+GraphQL Java is the foundation for building GraphQL services on the JVM. For 
+teams adopting GraphQL Federation, [feddi](https://feddi.dev) is the first 
+JVM-native GraphQL federation gateway and platform built on GraphQL Java, 
+implementing the [GraphQL Composite Schemas Specification](https://graphql.github.io/composite-schemas-spec/draft/).
+
+The open-source gateway — [feddi-gateway](https://github.com/feddi-dev/feddi-gateway) 
+— runs as a standalone federation gateway inside existing Java and Spring GraphQL 
+environments.
+
+feddi is developed independently from GraphQL Java.
+
 ### Code of Conduct
 
 Please note that this project is released with a [Contributor Code of Conduct](CODE_OF_CONDUCT.md).
