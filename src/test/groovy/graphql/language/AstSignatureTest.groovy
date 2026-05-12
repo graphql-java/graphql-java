@@ -1,6 +1,7 @@
 package graphql.language
 
 import graphql.TestUtil
+import graphql.AssertException
 import graphql.execution.CoercedVariables
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -220,20 +221,19 @@ fragment X on SomeType {
 '''
     }
 
-    def "signature with input redacts malformed input object literals without schema shape"() {
-        expect:
+    def "signature with input throws on malformed input object literals"() {
+        when:
         signatureWithInput('''
             query Test {
                 search(filter: "secret") {
                     id
                 }
             }
-        ''') == '''query Test {
-  search(filter: "") {
-    id
-  }
-}
-'''
+        ''')
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("input value for type 'FilterInput' must be an object")
     }
 
     def "signature with input redacts non null argument and variable values"() {
@@ -384,58 +384,95 @@ fragment X on SomeType {
 '''
     }
 
-    def "signature with input redacts unknown arguments and unknown input object fields without schema types"() {
-        expect:
+    def "signature with input throws on unknown field arguments"() {
+        when:
         signatureWithInput('''
             query Test {
-                search(filter: { term: "secret", unknownField: "secret" }, unknownArg: { inner: "secret" }) {
+                search(unknownArg: { inner: "secret" }) {
                     id
                 }
             }
-        ''') == '''query Test {
-  search(filter: {term : "", unknownField : ""}, unknownArg: {inner : ""}) {
-    id
-  }
-}
-'''
+        ''')
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("argument 'unknownArg' must be present in the schema")
     }
 
-    def "signature with input redacts unknown directive arguments without schema types"() {
-        expect:
+    def "signature with input throws on unknown fields"() {
+        when:
         signatureWithInput('''
-            query Test($known: FilterInput) {
-                search @unknown(
-                    array: [1, 2.5, "secret", true, DESC, null, { inner: "secret" }]
-                    known: $known
-                    unknown: $unknown
-                ) {
-                    id
+            query Test {
+                search {
+                    missingField
                 }
             }
-        ''', [
-                known: [term: "secret"]
-        ]) == '''query Test($var1: FilterInput) {
-  search @unknown(array: [0, 0, "", false, REDACTED, null, {inner : ""}], known: {term : ""}, unknown: $var2) {
-    id
-  }
-}
-'''
+        ''')
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("field 'SearchResult.missingField' must be present in the schema")
     }
 
-    def "signature with input redacts absent typed variables in unknown directive arguments as null"() {
-        expect:
+    def "signature with input throws on unknown input object fields"() {
+        when:
         signatureWithInput('''
-            query Test($term: String) {
-                search @unknown(term: $term) {
+            query Test {
+                search(filter: { term: "secret", unknownField: "secret" }) {
                     id
                 }
             }
-        ''') == '''query Test($var1: String) {
-  search @unknown(term: null) {
-    id
-  }
-}
-'''
+        ''')
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("input object field 'FilterInput.unknownField' must be present in the schema")
+    }
+
+    def "signature with input throws on unknown directives"() {
+        when:
+        signatureWithInput('''
+            query Test {
+                search @unknown(term: "secret") {
+                    id
+                }
+            }
+        ''')
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("directive '@unknown' must be present in the schema")
+    }
+
+    def "signature with input throws on unknown directive arguments"() {
+        when:
+        signatureWithInput('''
+            query Test {
+                search @searchMeta(meta: { term: "secret" }, unknown: "secret") {
+                    id
+                }
+            }
+        ''')
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("argument 'unknown' must be present in the schema")
+    }
+
+    def "signature with input throws on unknown variable types"() {
+        when:
+        signatureWithInput('''
+            query Test($filter: MissingInput) {
+                search(optional: "secret") {
+                    id
+                }
+            }
+        ''')
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("variable type")
+        e.message.contains("must be present in the schema as an input type")
     }
 
     def "signature with input handles mutation and subscription root operation types"() {
@@ -482,8 +519,8 @@ fragment X on SomeType {
 '''
     }
 
-    def "signature with input leaves unknown inline fragment type conditions unchanged"() {
-        expect:
+    def "signature with input throws on unknown inline fragment type conditions"() {
+        when:
         signatureWithInput('''
             query Test {
                 node(filter: { term: "root" }) {
@@ -494,80 +531,32 @@ fragment X on SomeType {
                     }
                 }
             }
-        ''') == '''query Test {
-  node(filter: {term : ""}) {
-    ... on MissingType {
-      child(filter: {term : "secret"}) {
-        id
-      }
-    }
-  }
-}
-'''
+        ''')
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("inline fragment type condition 'MissingType' must be present in the schema as an output type")
     }
 
-    def "signature with input removes aliases from unknown type conditions without redacting unknown values"() {
-        expect:
+    def "signature with input throws on unknown fragment definition type conditions"() {
+        when:
         signatureWithInput('''
             query Test {
                 node(filter: { term: "root" }) {
                     ...UnknownFields
-                    ... on MissingType {
-                        inlineAlias: child(filter: { term: "inline" }) {
-                            leafAlias: id
-                            ...NestedUnknown
-                        }
-                        ... {
-                            nestedInlineAlias: child(filter: { term: "nested inline" }) {
-                                leafAlias: id
-                            }
-                        }
-                    }
                 }
             }
 
             fragment UnknownFields on MissingType {
                 fragmentAlias: child(filter: { term: "fragment" }) {
-                    leafAlias: id
-                    ...NestedUnknown
+                    id
                 }
             }
+        ''')
 
-            fragment NestedUnknown on MissingType {
-                nestedAlias: child(filter: { term: "nested" }) {
-                    leafAlias: id
-                }
-            }
-        ''') == '''query Test {
-  node(filter: {term : ""}) {
-    ...UnknownFields
-    ... on MissingType {
-      child(filter: {term : "inline"}) {
-        id
-        ...NestedUnknown
-      }
-      ... {
-        child(filter: {term : "nested inline"}) {
-          id
-        }
-      }
-    }
-  }
-}
-
-fragment NestedUnknown on MissingType {
-  child(filter: {term : "nested"}) {
-    id
-  }
-}
-
-fragment UnknownFields on MissingType {
-  child(filter: {term : "fragment"}) {
-    id
-    ...NestedUnknown
-  }
-}
-'''
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("fragment type condition 'MissingType' must be present in the schema as an output type")
     }
 
     def "signature with input sorts unnamed executable operation selections and fragments"() {
@@ -785,13 +774,13 @@ fragment ZFields on SearchResult {
                 }
             }
 
-            fragment MissingFields on MissingType {
+            fragment MissingFields on SearchResult {
                 child(filter: { term: "secret" }) {
                     id
                 }
             }
-        ''', [:], "DoesNotExist") == '''fragment MissingFields on MissingType {
-  child(filter: {term : "secret"}) {
+        ''', [:], "DoesNotExist") == '''fragment MissingFields on SearchResult {
+  child(filter: {term : ""}) {
     id
   }
 }
@@ -950,9 +939,9 @@ fragment ResultFields on SearchResult {
         result.inputObjectFieldCoordinates == []
     }
 
-    def "signature with input result ignores unknown reference definitions"() {
+    def "signature with input result throws on unknown reference definitions"() {
         when:
-        def result = signatureWithInputResult('''
+        signatureWithInputResult('''
             query Test {
                 search(unknownArg: { term: "secret" }) @unknown(meta: { term: "secret" }) {
                     id
@@ -961,11 +950,7 @@ fragment ResultFields on SearchResult {
         ''')
 
         then:
-        result.fieldCoordinates == ["Query.search", "SearchResult.id"]
-        result.fieldArgumentCoordinates == []
-        result.usedDirectives == []
-        result.directiveArgumentCoordinates == []
-        result.inputObjectFieldCoordinates == []
+        thrown(AssertException)
     }
 
     def "signature with input result omits absent variable reference coordinates"() {
@@ -1003,9 +988,9 @@ fragment ResultFields on SearchResult {
         result.directiveArgumentCoordinates == ["@include(if:)"]
     }
 
-    def "signature with input result collects known directives but ignores unknown directive arguments"() {
+    def "signature with input result throws on unknown directive arguments"() {
         when:
-        def result = signatureWithInputResult('''
+        signatureWithInputResult('''
             query Test {
                 search @searchMeta(meta: { term: "secret" }, unknown: "secret") {
                     id
@@ -1014,9 +999,8 @@ fragment ResultFields on SearchResult {
         ''')
 
         then:
-        result.usedDirectives == ["@searchMeta"]
-        result.directiveArgumentCoordinates == ["@searchMeta(meta:)"]
-        result.inputObjectFieldCoordinates == ["FilterInput.term"]
+        def e = thrown(AssertException)
+        e.message.contains("argument 'unknown' must be present in the schema")
     }
 
     def "signature with input result ignores missing and recursive fragment references"() {
@@ -1025,7 +1009,6 @@ fragment ResultFields on SearchResult {
             query Test {
                 search {
                     ...Missing @include(if: true)
-                    ...MissingTypeFields
                     ...A
                 }
             }
@@ -1040,10 +1023,6 @@ fragment ResultFields on SearchResult {
                     ...A
                 }
             }
-
-            fragment MissingTypeFields on MissingType {
-                id
-            }
         ''')
 
         then:
@@ -1052,9 +1031,9 @@ fragment ResultFields on SearchResult {
         result.directiveArgumentCoordinates == ["@include(if:)"]
     }
 
-    def "signature with input result ignores non selectable type conditions"() {
+    def "signature with input result throws on non selectable type conditions"() {
         when:
-        def result = signatureWithInputResult('''
+        signatureWithInputResult('''
             query Test {
                 search {
                     ...InputFields
@@ -1071,9 +1050,8 @@ fragment ResultFields on SearchResult {
         ''')
 
         then:
-        result.fieldCoordinates == ["Query.search", "SearchResult.id"]
-        result.fieldArgumentCoordinates == []
-        result.inputObjectFieldCoordinates == []
+        def e = thrown(AssertException)
+        e.message.contains("inline fragment type condition 'FilterInput' must be present in the schema as an output type")
     }
 
     def "signature with input result collects interface and union field references"() {
