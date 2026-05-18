@@ -180,14 +180,20 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         ));
 
 
-        executionContext.getDataLoaderDispatcherStrategy().newSubscriptionExecution(newParameters.getDeferredCallContext());
+        AlternativeCallContext alternativeCallContext = assertNotNull(
+                newParameters.getAlternativeCallContext(),
+                "alternativeCallContext must not be null");
+        executionContext.getDataLoaderDispatcherStrategy().newSubscriptionExecution(alternativeCallContext);
         Object fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, newParameters, eventPayload);
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
-        executionContext.getDataLoaderDispatcherStrategy().subscriptionEventCompletionDone(newParameters.getDeferredCallContext());
+        executionContext.getDataLoaderDispatcherStrategy().subscriptionEventCompletionDone(alternativeCallContext);
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
-                .thenApply(val -> new ExecutionResultImpl(val, assertNotNull(newParameters.getDeferredCallContext(), "deferredCallContext must not be null").getErrors()))
-                .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
+                .thenApply(val -> new ExecutionResultImpl(val, alternativeCallContext.getErrors()))
+                .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult))
+                .whenComplete((executionResult, throwable) -> {
+                    executionContext.getDataLoaderDispatcherStrategy().subscriptionEventExecutionDone(alternativeCallContext);
+                });
 
         // dispatch instrumentation so they can know about each subscription event
         subscribedFieldCtx.onDispatched();
@@ -230,7 +236,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                     .path(fieldPath)
                     .nonNullFieldValidator(nonNullableFieldValidator);
             if (newCallContext) {
-                builder.deferredCallContext(new AlternativeCallContext(1, 1));
+                builder.alternativeCallContext(new AlternativeCallContext(1, 1));
             }
         });
 
