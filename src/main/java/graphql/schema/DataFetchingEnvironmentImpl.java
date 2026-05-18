@@ -458,7 +458,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
-        public Builder deferredCallContext(AlternativeCallContext alternativeCallContext) {
+        public Builder alternativeCallContext(AlternativeCallContext alternativeCallContext) {
             this.alternativeCallContext = alternativeCallContext;
             return this;
         }
@@ -499,7 +499,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return dataLoaderDispatchStrategy;
         }
 
-        public AlternativeCallContext getDeferredCallContext() {
+        public AlternativeCallContext getAlternativeCallContext() {
             return alternativeCallContext;
         }
 

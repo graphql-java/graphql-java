@@ -155,7 +155,7 @@ public interface DeferredExecutionSupport {
                     {
                         MergedSelectionSet mergedSelectionSet = MergedSelectionSet.newMergedSelectionSet().subFields(fields).build();
                         ResultPath path = parameters.getPath().segment(currentField.getResultKey());
-                        builder.deferredCallContext(alternativeCallContext)
+                        builder.alternativeCallContext(alternativeCallContext)
                                 .field(currentField)
                                 .fields(mergedSelectionSet)
                                 .path(path)
