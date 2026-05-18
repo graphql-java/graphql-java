@@ -14,6 +14,7 @@ import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
+import graphql.execution.incremental.AlternativeCallContext;
 import graphql.execution.incremental.DeferredExecutionSupport;
 import graphql.execution.incremental.IncrementalExecutionContextKeys;
 import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
@@ -457,7 +458,7 @@ public abstract class ExecutionStrategy {
                     .parentType(parentType)
                     .selectionSet(fieldCollector)
                     .queryDirectives(queryDirectives)
-                    .deferredCallContext(parameters.getDeferredCallContext())
+                    .alternativeCallContext(parameters.getAlternativeCallContext())
                     .level(parameters.getPath().getLevel())
                     .build();
         });
@@ -1122,18 +1123,20 @@ public abstract class ExecutionStrategy {
         return FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
     }
 
-    // Errors that result from the execution of deferred fields are kept in the deferred context only.
+    // Errors in alternative execution paths are kept in the alternative call context.
     private static void addErrorToRightContext(GraphQLError error, ExecutionStrategyParameters parameters, ExecutionContext executionContext) {
-        if (parameters.getDeferredCallContext() != null) {
-            parameters.getDeferredCallContext().addError(error);
+        AlternativeCallContext alternativeCallContext = parameters.getAlternativeCallContext();
+        if (alternativeCallContext != null) {
+            alternativeCallContext.addError(error);
         } else {
             executionContext.addError(error);
         }
     }
 
     private static void addErrorsToRightContext(List<GraphQLError> errors, ExecutionStrategyParameters parameters, ExecutionContext executionContext) {
-        if (parameters.getDeferredCallContext() != null) {
-            parameters.getDeferredCallContext().addErrors(errors);
+        AlternativeCallContext alternativeCallContext = parameters.getAlternativeCallContext();
+        if (alternativeCallContext != null) {
+            alternativeCallContext.addErrors(errors);
         } else {
             executionContext.addErrors(errors);
         }

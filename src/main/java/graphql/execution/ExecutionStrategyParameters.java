@@ -77,28 +77,13 @@ public class ExecutionStrategyParameters {
     }
 
     /**
-     * Returns the deferred call context if we're in the scope of a deferred call.
-     * A new DeferredCallContext is created for each @defer block, and is passed down to all fields within the deferred call.
-     *
-     * <pre>
-     *     query {
-     *        ... @defer {
-     *            field1 {        # new DeferredCallContext created here
-     *                field1a     # DeferredCallContext passed down to this field
-     *            }
-     *        }
-     *
-     *        ... @defer {
-     *            field2          # new DeferredCallContext created here
-     *        }
-     *     }
-     * </pre>
-     *
-     * @return the deferred call context or null if we're not in the scope of a deferred call
+     * Returns the alternative call context if this execution is scoped to an alternative execution path.
+     * This is used for deferred fragment execution and subscription event execution.
+     * @return the alternative call context or null if execution is not scoped to an alternative execution path
      */
     @Nullable
     @Internal
-    public AlternativeCallContext getDeferredCallContext() {
+    public AlternativeCallContext getAlternativeCallContext() {
         return alternativeCallContext;
     }
 
@@ -293,7 +278,7 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder deferredCallContext(AlternativeCallContext alternativeCallContext) {
+        public Builder alternativeCallContext(AlternativeCallContext alternativeCallContext) {
             this.alternativeCallContext = alternativeCallContext;
             return this;
         }
