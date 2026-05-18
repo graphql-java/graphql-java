@@ -12,4 +12,11 @@ public class DirectiveIllegalReferenceError extends BaseError {
                         directive.getName(), location.getName(), lineCol(location)
                 ));
     }
+
+    public DirectiveIllegalReferenceError(DirectiveDefinition directive, NamedNode location, String cyclePath) {
+        super(directive,
+                String.format("'%s' must not reference itself via directive cycle '%s' on '%s''%s'",
+                        directive.getName(), cyclePath, location.getName(), lineCol(location)
+                ));
+    }
 }
