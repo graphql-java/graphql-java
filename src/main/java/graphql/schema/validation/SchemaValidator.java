@@ -19,6 +19,7 @@ public class SchemaValidator {
 
     public SchemaValidator() {
         rules.add(new NoUnbrokenInputCycles());
+        rules.add(new NoDefaultValueCircularRefs());
         rules.add(new TypesImplementInterfaces());
         rules.add(new TypeAndFieldRule());
         rules.add(new DefaultValuesAreValid());
