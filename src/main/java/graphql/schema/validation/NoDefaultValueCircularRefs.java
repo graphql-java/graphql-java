@@ -92,14 +92,19 @@ public class NoDefaultValueCircularRefs extends GraphQLTypeVisitorStub {
 
         // "For each field in inputObject: if InputFieldDefaultValueHasCycle(...)"
         for (GraphQLInputObjectField field : inputObject.getFieldDefinitions()) {
+            String fieldName = field.getName();
+            boolean hasDefaultValue = defaultValueMap.containsKey(fieldName);
+            if (!hasDefaultValue && field.getInputFieldDefaultValue().isNotSet()) {
+                continue;
+            }
+
             GraphQLType namedFieldType = unwrapAll(field.getType());
             if (!(namedFieldType instanceof GraphQLInputObjectType)) {
                 continue;
             }
 
             GraphQLInputObjectType fieldInputObject = (GraphQLInputObjectType) namedFieldType;
-            String fieldName = field.getName();
-            if (defaultValueMap.containsKey(fieldName)) {
+            if (hasDefaultValue) {
                 // "Let fieldDefaultValue be the value for fieldName in defaultValue.
                 //  If fieldDefaultValue exists: InputObjectDefaultValueHasCycle(namedFieldType, fieldDefaultValue, visitedFields)"
                 inputObjectDefaultValueHasCycle(fieldInputObject, defaultValueMap.get(fieldName), errorCollector);
@@ -139,14 +144,19 @@ public class NoDefaultValueCircularRefs extends GraphQLTypeVisitorStub {
 
         // "For each field in inputObject: if InputFieldDefaultValueHasCycle(...)"
         for (GraphQLInputObjectField field : inputObject.getFieldDefinitions()) {
+            String fieldName = field.getName();
+            boolean hasDefaultValue = defaultValueMap.containsKey(fieldName);
+            if (!hasDefaultValue && field.getInputFieldDefaultValue().isNotSet()) {
+                continue;
+            }
+
             GraphQLType namedFieldType = unwrapAll(field.getType());
             if (!(namedFieldType instanceof GraphQLInputObjectType)) {
                 continue;
             }
 
             GraphQLInputObjectType fieldInputObject = (GraphQLInputObjectType) namedFieldType;
-            String fieldName = field.getName();
-            if (defaultValueMap.containsKey(fieldName)) {
+            if (hasDefaultValue) {
                 // "Let fieldDefaultValue be the value for fieldName in defaultValue.
                 //  If fieldDefaultValue exists: InputObjectDefaultValueHasCycle(namedFieldType, fieldDefaultValue, visitedFields)"
                 Object fieldDefaultValue = defaultValueMap.get(fieldName);
