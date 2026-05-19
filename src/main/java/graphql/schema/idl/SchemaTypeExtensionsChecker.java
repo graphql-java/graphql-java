@@ -16,6 +16,7 @@ import graphql.language.ScalarTypeDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
+import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.NonUniqueArgumentError;
 import graphql.schema.idl.errors.NonUniqueNameError;
@@ -158,24 +159,62 @@ class SchemaTypeExtensionsChecker {
         typeRegistry.unionTypeExtensions()
                 .forEach((name, extensions) -> {
                     checkTypeExtensionHasCorrespondingType(errors, typeRegistry, name, extensions, UnionTypeDefinition.class);
+                    Set<String> previousMemberTypes = unionMemberTypes(typeRegistry, name);
 
-                    extensions.forEach(extension -> {
-                        List<TypeName> memberTypes = extension.getMemberTypes().stream()
-                                .map(t -> TypeInfo.typeInfo(t).getTypeName()).collect(Collectors.toList());
-
-                        checkNamedUniqueness(errors, memberTypes, TypeName::getName,
-                                (namedMember, memberType) -> new NonUniqueNameError(extension, namedMember));
-
-                        memberTypes.forEach(
-                                memberType -> {
-                                    ObjectTypeDefinition unionTypeDefinition = typeRegistry.getTypeOrNull(memberType, ObjectTypeDefinition.class);
-                                    if (unionTypeDefinition == null) {
-                                        errors.add(new MissingTypeError("union member", extension, memberType));
-                                    }
-                                }
-                        );
-                    });
+                    extensions.forEach(extension -> checkUnionTypeExtension(errors, typeRegistry, previousMemberTypes, extension));
                 });
+    }
+
+    private void checkUnionTypeExtension(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, Set<String> previousMemberTypes, UnionTypeExtensionDefinition extension) {
+        List<TypeName> memberTypes = extension.getMemberTypes().stream()
+                .map(t -> TypeInfo.typeInfo(t).getTypeName()).collect(Collectors.toList());
+
+        checkNamedUniqueness(errors, memberTypes, TypeName::getName,
+                (namedMember, memberType) -> new NonUniqueNameError(extension, namedMember));
+
+        memberTypes.forEach(memberType -> checkUnionMemberTypeExists(errors, typeRegistry, extension, memberType));
+        checkUnionMemberTypesAreNew(errors, previousMemberTypes, extension, memberTypes);
+    }
+
+    private void checkUnionMemberTypeExists(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, UnionTypeExtensionDefinition extension, TypeName memberType) {
+        ObjectTypeDefinition unionTypeDefinition = typeRegistry.getTypeOrNull(memberType, ObjectTypeDefinition.class);
+        if (unionTypeDefinition != null) {
+            return;
+        }
+        errors.add(new MissingTypeError("union member", extension, memberType));
+    }
+
+    private void checkUnionMemberTypesAreNew(List<GraphQLError> errors, Set<String> previousMemberTypes, UnionTypeExtensionDefinition extension, List<TypeName> memberTypes) {
+        Set<String> duplicateMemberTypes = duplicateMemberTypes(memberTypes);
+        memberTypes.stream()
+                .filter(memberType -> !duplicateMemberTypes.contains(memberType.getName()))
+                .filter(memberType -> previousMemberTypes.contains(memberType.getName()))
+                .forEach(memberType -> errors.add(new NonUniqueNameError(extension, memberType.getName())));
+
+        memberTypes.forEach(memberType -> previousMemberTypes.add(memberType.getName()));
+    }
+
+    private Set<String> duplicateMemberTypes(List<TypeName> memberTypes) {
+        Set<String> seen = new HashSet<>();
+        Set<String> duplicates = new HashSet<>();
+        memberTypes.forEach(memberType -> {
+            if (!seen.add(memberType.getName())) {
+                duplicates.add(memberType.getName());
+            }
+        });
+        return duplicates;
+    }
+
+    private Set<String> unionMemberTypes(TypeDefinitionRegistry typeRegistry, String name) {
+        Set<String> memberTypes = new HashSet<>();
+        UnionTypeDefinition baseTypeDef = typeRegistry.getTypeOrNull(name, UnionTypeDefinition.class);
+        if (baseTypeDef == null) {
+            return memberTypes;
+        }
+        baseTypeDef.getMemberTypes().stream()
+                .map(t -> TypeInfo.typeInfo(t).getTypeName().getName())
+                .forEach(memberTypes::add);
+        return memberTypes;
     }
 
     /*
