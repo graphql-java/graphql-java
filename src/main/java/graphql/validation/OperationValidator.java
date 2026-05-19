@@ -125,6 +125,7 @@ import static graphql.validation.ValidationErrorType.UnknownOperation;
 import static graphql.validation.ValidationErrorType.UnknownType;
 import static graphql.validation.ValidationErrorType.UnusedFragment;
 import static graphql.validation.ValidationErrorType.UnusedVariable;
+import static graphql.validation.ValidationErrorType.VariableNotAllowed;
 import static graphql.validation.ValidationErrorType.VariableTypeMismatch;
 import static graphql.validation.ValidationErrorType.WrongType;
 import static java.lang.System.arraycopy;
@@ -472,7 +473,7 @@ public class OperationValidator implements DocumentVisitor {
         } else if (node instanceof OperationDefinition) {
             checkOperationDefinition((OperationDefinition) node);
         } else if (node instanceof VariableReference) {
-            checkVariable((VariableReference) node);
+            checkVariable((VariableReference) node, ancestors);
         } else if (node instanceof SelectionSet) {
             checkSelectionSet();
         } else if (node instanceof ObjectValue) {
@@ -831,7 +832,12 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
-    private void checkVariable(VariableReference variableReference) {
+    private void checkVariable(VariableReference variableReference, List<Node> ancestors) {
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.VARIABLES_NOT_ALLOWED_IN_DIRECTIVES_ON_VARIABLE_DEFINITIONS)) {
+                validateVariableNotAllowedInConstantDirective(variableReference, ancestors);
+            }
+        }
         if (shouldRunOperationScopedRules()) {
             if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
                 validateNoUndefinedVariables(variableReference);
@@ -1130,6 +1136,30 @@ public class OperationValidator implements DocumentVisitor {
         if (!definedVariableNames.contains(variableReference.getName())) {
             String message = i18n(UndefinedVariable, "NoUndefinedVariables.undefinedVariable", variableReference.getName());
             addError(UndefinedVariable, variableReference.getSourceLocation(), message);
+        }
+    }
+
+    // --- VariablesNotAllowedInDirectivesOnVariableDefinitions ---
+    /**
+     * Per the GraphQL spec, directives applied to variable definitions accept only constant values.
+     * Variable references like {@code $v} are not allowed in directive arguments on variable definitions.
+     *
+     * <p>For example, {@code query ($v:Int @dir(arg:$v)) { ... }} is invalid because {@code $v}
+     * is used in a directive argument on a variable definition.
+     */
+    private void validateVariableNotAllowedInConstantDirective(VariableReference variableReference, List<Node> ancestors) {
+        // Walk the ancestor list to check if this variable reference is inside a directive
+        // that is applied to a variable definition.
+        // The ancestor path would be: ... > VariableDefinition > Directive > Argument > [ObjectValue > ObjectField >]* VariableReference
+        for (int i = ancestors.size() - 1; i > 0; i--) {
+            Node ancestor = ancestors.get(i);
+            if (ancestor instanceof Directive) {
+                if (ancestors.get(i - 1) instanceof VariableDefinition) {
+                    String message = i18n(VariableNotAllowed, "VariableNotAllowedInConstantDirective.variableNotAllowed", variableReference.getName());
+                    addError(VariableNotAllowed, variableReference.getSourceLocation(), message);
+                }
+                return;
+            }
         }
     }
 
