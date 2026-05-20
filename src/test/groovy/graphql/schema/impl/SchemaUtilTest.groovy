@@ -239,6 +239,40 @@ class SchemaUtilTest extends Specification {
         transformedSchema.getObjectType("Person").interfaces == [node]
     }
 
+    @Issue("https://github.com/graphql-java/graphql-java/issues/3384")
+    def "can rebuild schema after removing root type that made a union member reachable"() {
+        given:
+        def schema = issue3384UnionSchema()
+        def cat = schema.getObjectType("Cat")
+
+        when:
+        def rebuiltSchema = newSchema(schema)
+                .mutation((GraphQLObjectType) null)
+                .build()
+
+        then:
+        rebuiltSchema.getMutationType() == null
+        rebuiltSchema.getType("Cat") == cat
+        rebuiltSchema.getType("Pet").types == [cat]
+    }
+
+    @Issue("https://github.com/graphql-java/graphql-java/issues/3384")
+    def "can rebuild schema after removing root type that made an interface implemented by another interface reachable"() {
+        given:
+        def schema = issue3384InterfaceInheritanceSchema()
+        def node = schema.getType("Node")
+
+        when:
+        def rebuiltSchema = newSchema(schema)
+                .mutation((GraphQLObjectType) null)
+                .build()
+
+        then:
+        rebuiltSchema.getMutationType() == null
+        rebuiltSchema.getType("Node") == node
+        rebuiltSchema.getType("NamedNode").interfaces == [node]
+    }
+
     private GraphQLSchema issue3384Schema() {
         def node = newInterface()
                 .name("Node")
@@ -259,6 +293,63 @@ class SchemaUtilTest extends Specification {
                 .build()
         def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .typeResolver(node, { env -> person })
+                .build()
+        return newSchema()
+                .query(query)
+                .mutation(mutation)
+                .codeRegistry(codeRegistry)
+                .build()
+    }
+
+    private GraphQLSchema issue3384UnionSchema() {
+        def cat = newObject()
+                .name("Cat")
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .build()
+        def pet = GraphQLUnionType.newUnionType()
+                .name("Pet")
+                .possibleType(typeRef("Cat"))
+                .build()
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("pet").type(pet))
+                .build()
+        def mutation = newObject()
+                .name("Mutation")
+                .field(newFieldDefinition().name("cat").type(cat))
+                .build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(pet, { env -> cat })
+                .build()
+        return newSchema()
+                .query(query)
+                .mutation(mutation)
+                .codeRegistry(codeRegistry)
+                .build()
+    }
+
+    private GraphQLSchema issue3384InterfaceInheritanceSchema() {
+        def node = newInterface()
+                .name("Node")
+                .field(newFieldDefinition().name("id").type(GraphQLString))
+                .build()
+        def namedNode = newInterface()
+                .name("NamedNode")
+                .withInterface(typeRef("Node"))
+                .field(newFieldDefinition().name("id").type(GraphQLString))
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .build()
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("node").type(namedNode))
+                .build()
+        def mutation = newObject()
+                .name("Mutation")
+                .field(newFieldDefinition().name("node").type(node))
+                .build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(node, { env -> null })
+                .typeResolver(namedNode, { env -> null })
                 .build()
         return newSchema()
                 .query(query)
