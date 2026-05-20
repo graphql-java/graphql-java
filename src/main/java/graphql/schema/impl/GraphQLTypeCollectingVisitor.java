@@ -27,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.function.Supplier;
 
 import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.util.TraversalControl.CONTINUE;
@@ -43,8 +42,9 @@ import static java.lang.String.format;
  * themselves are not collected - only concrete type instances are stored in the result map.
  * <p>
  * Because type references are not followed, this visitor also tracks "indirect strong references"
- * - types that are directly referenced (not via type reference) by fields, arguments, and input
- * fields. This handles edge cases where schema transformations replace type references with
+ * - types that are directly referenced (not via type reference) by fields, arguments,
+ * input fields, implemented interfaces, and union members. This handles edge cases where
+ * schema transformations replace type references with
  * actual types, which would otherwise be missed during traversal.
  *
  * @see SchemaUtil#visitPartiallySchema
@@ -77,6 +77,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
         assertTypeUniqueness(node, result);
         save(node.getName(), node);
+        saveIndirectStrongReferences(node.getInterfaces());
         return CONTINUE;
     }
 
@@ -91,6 +92,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
         assertTypeUniqueness(node, result);
         save(node.getName(), node);
+        saveIndirectStrongReferences(node.getInterfaces());
         return CONTINUE;
     }
 
@@ -98,37 +100,44 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
         assertTypeUniqueness(node, result);
         save(node.getName(), node);
+        saveIndirectStrongReferences(node.getTypes());
         return CONTINUE;
     }
 
     @Override
     public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
-        saveIndirectStrongReference(node::getType);
+        saveIndirectStrongReference(node.getType());
         return CONTINUE;
     }
 
     @Override
     public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLSchemaElement> context) {
-        saveIndirectStrongReference(node::getType);
+        saveIndirectStrongReference(node.getType());
         return CONTINUE;
     }
 
     @Override
     public TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context) {
-        saveIndirectStrongReference(node::getType);
+        saveIndirectStrongReference(node.getType());
         return CONTINUE;
     }
 
     @Override
     public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
-        saveIndirectStrongReference(node::getType);
+        saveIndirectStrongReference(node.getType());
         return CONTINUE;
     }
 
-    private void saveIndirectStrongReference(Supplier<GraphQLType> typeSupplier) {
-        GraphQLNamedType type = unwrapAllAs(typeSupplier.get());
+    private void saveIndirectStrongReference(GraphQLType graphQLType) {
+        GraphQLNamedType type = unwrapAllAs(graphQLType);
         if (!(type instanceof GraphQLTypeReference)) {
             indirectStrongReferences.put(type.getName(), type);
+        }
+    }
+
+    private void saveIndirectStrongReferences(List<? extends GraphQLType> types) {
+        for (GraphQLType type : types) {
+            saveIndirectStrongReference(type);
         }
     }
 
