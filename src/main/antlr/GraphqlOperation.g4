@@ -3,11 +3,11 @@ import GraphqlCommon;
 
 operationDefinition:
 selectionSet |
-operationType  name? variableDefinitions? directives? selectionSet;
+description? operationType  name? variableDefinitions? directives? selectionSet;
 
 variableDefinitions : '(' variableDefinition+ ')';
 
-variableDefinition : variable ':' type defaultValue? directives?;
+variableDefinition : description? variable ':' type defaultValue? directives?;
 
 
 selectionSet :  '{' selection+ '}';
@@ -27,7 +27,7 @@ fragmentSpread : '...' fragmentName directives?;
 
 inlineFragment : '...' typeCondition? directives? selectionSet;
 
-fragmentDefinition : FRAGMENT fragmentName typeCondition directives? selectionSet;
+fragmentDefinition : description? FRAGMENT fragmentName typeCondition directives? selectionSet;
 
 
 typeCondition : ON_KEYWORD typeName;

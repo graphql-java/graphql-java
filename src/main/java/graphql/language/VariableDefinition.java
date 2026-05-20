@@ -21,7 +21,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
-public class VariableDefinition extends AbstractNode<VariableDefinition> implements DirectivesContainer<VariableDefinition>, NamedNode<VariableDefinition> {
+public class VariableDefinition extends AbstractDescribedNode<VariableDefinition> implements DirectivesContainer<VariableDefinition>, NamedNode<VariableDefinition> {
 
     private final String name;
     private final Type type;
@@ -37,11 +37,12 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                                  Type type,
                                  Value defaultValue,
                                  List<Directive> directives,
+                                 Description description,
                                  SourceLocation sourceLocation,
                                  List<Comment> comments,
                                  IgnoredChars ignoredChars,
                                  Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.type = type;
         this.defaultValue = defaultValue;
@@ -58,7 +59,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
     public VariableDefinition(String name,
                               Type type,
                               Value defaultValue) {
-        this(name, type, defaultValue, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, defaultValue, emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -69,7 +70,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
      */
     public VariableDefinition(String name,
                               Type type) {
-        this(name, type, null, emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
+        this(name, type, null, emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public Value getDefaultValue() {
@@ -154,6 +155,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                 deepCopy(type),
                 deepCopy(defaultValue),
                 deepCopy(directives.getDirectives()),
+                description,
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -204,6 +206,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
         private ImmutableList<Comment> comments = emptyList();
         private Type type;
         private Value defaultValue;
+        private Description description;
         private ImmutableList<Directive> directives = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -217,6 +220,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
             this.name = existing.getName();
             this.type = existing.getType();
             this.defaultValue = existing.getDefaultValue();
+            this.description = existing.getDescription();
             this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -244,6 +248,11 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
 
         public Builder defaultValue(Value defaultValue) {
             this.defaultValue = defaultValue;
+            return this;
+        }
+
+        public Builder description(Description description) {
+            this.description = description;
             return this;
         }
 
@@ -279,6 +288,7 @@ public class VariableDefinition extends AbstractNode<VariableDefinition> impleme
                     type,
                     defaultValue,
                     directives,
+                    description,
                     sourceLocation,
                     comments,
                     ignoredChars,
