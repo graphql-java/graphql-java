@@ -200,7 +200,7 @@ class SchemaUtilTest extends Specification {
 
     def "can rebuild schema after removing root type that made an implemented interface reachable"() {
         given:
-        def schema = issue3384Schema()
+        def schema = schemaWithObjectImplementingInterfaceThroughTypeReference()
         def node = schema.getType("Node")
 
         when:
@@ -216,7 +216,7 @@ class SchemaUtilTest extends Specification {
 
     def "can transform schema after deleting root type that made an implemented interface reachable"() {
         given:
-        def schema = issue3384Schema()
+        def schema = schemaWithObjectImplementingInterfaceThroughTypeReference()
         def node = schema.getType("Node")
 
         when:
@@ -238,7 +238,7 @@ class SchemaUtilTest extends Specification {
 
     def "can rebuild schema after removing root type that made a union member reachable"() {
         given:
-        def schema = issue3384UnionSchema()
+        def schema = schemaWithUnionMemberThroughTypeReference()
         def cat = schema.getObjectType("Cat")
 
         when:
@@ -254,7 +254,7 @@ class SchemaUtilTest extends Specification {
 
     def "can rebuild schema after removing root type that made an interface implemented by another interface reachable"() {
         given:
-        def schema = issue3384InterfaceInheritanceSchema()
+        def schema = schemaWithInterfaceImplementingInterfaceThroughTypeReference()
         def node = schema.getType("Node")
 
         when:
@@ -268,7 +268,7 @@ class SchemaUtilTest extends Specification {
         rebuiltSchema.getType("NamedNode").interfaces == [node]
     }
 
-    private GraphQLSchema issue3384Schema() {
+    private GraphQLSchema schemaWithObjectImplementingInterfaceThroughTypeReference() {
         def node = newInterface()
                 .name("Node")
                 .field(newFieldDefinition().name("id").type(GraphQLString))
@@ -296,7 +296,7 @@ class SchemaUtilTest extends Specification {
                 .build()
     }
 
-    private GraphQLSchema issue3384UnionSchema() {
+    private GraphQLSchema schemaWithUnionMemberThroughTypeReference() {
         def cat = newObject()
                 .name("Cat")
                 .field(newFieldDefinition().name("name").type(GraphQLString))
@@ -323,7 +323,7 @@ class SchemaUtilTest extends Specification {
                 .build()
     }
 
-    private GraphQLSchema issue3384InterfaceInheritanceSchema() {
+    private GraphQLSchema schemaWithInterfaceImplementingInterfaceThroughTypeReference() {
         def node = newInterface()
                 .name("Node")
                 .field(newFieldDefinition().name("id").type(GraphQLString))
