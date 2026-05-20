@@ -607,11 +607,13 @@ tasks.register('markGeneratedEqualsHashCode') {
     def jacocoDir = layout.buildDirectory.dir('classes-jacoco/java/main')
 
     inputs.dir(originalDir)
+    inputs.property("generatedAnnotationTaskVersion", 2)
     outputs.dir(jacocoDir)
 
     doLast {
         def src = originalDir.get().asFile
         def dest = jacocoDir.get().asFile
+        project.delete(dest)
         if (!src.exists()) return
 
         // Copy all class files to a separate directory for JaCoCo
@@ -635,8 +637,10 @@ tasks.register('markGeneratedEqualsHashCode') {
                     if (method.invisibleAnnotations == null) {
                         method.invisibleAnnotations = []
                     }
-                    method.invisibleAnnotations.add(new org.objectweb.asm.tree.AnnotationNode(ANNOTATION))
-                    modified = true
+                    if (!method.invisibleAnnotations.any { it.desc == ANNOTATION }) {
+                        method.invisibleAnnotations.add(new org.objectweb.asm.tree.AnnotationNode(ANNOTATION))
+                        modified = true
+                    }
                 }
             }
 
@@ -797,6 +801,5 @@ tasks.withType(PublishToMavenRepository) {
 tasks.withType(GenerateModuleMetadata) {
     enabled = false
 }
-
 
 
