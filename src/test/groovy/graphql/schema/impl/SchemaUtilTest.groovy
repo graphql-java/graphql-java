@@ -19,7 +19,6 @@ import graphql.schema.GraphQLUnionType
 import graphql.schema.SchemaTransformer
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
-import spock.lang.Issue
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -199,7 +198,6 @@ class SchemaUtilTest extends Specification {
         !(cacheEnabled.getType() instanceof GraphQLTypeReference)
     }
 
-    @Issue("https://github.com/graphql-java/graphql-java/issues/3384")
     def "can rebuild schema after removing root type that made an implemented interface reachable"() {
         given:
         def schema = issue3384Schema()
@@ -216,7 +214,6 @@ class SchemaUtilTest extends Specification {
         rebuiltSchema.getObjectType("Person").interfaces == [node]
     }
 
-    @Issue("https://github.com/graphql-java/graphql-java/issues/3384")
     def "can transform schema after deleting root type that made an implemented interface reachable"() {
         given:
         def schema = issue3384Schema()
@@ -239,7 +236,6 @@ class SchemaUtilTest extends Specification {
         transformedSchema.getObjectType("Person").interfaces == [node]
     }
 
-    @Issue("https://github.com/graphql-java/graphql-java/issues/3384")
     def "can rebuild schema after removing root type that made a union member reachable"() {
         given:
         def schema = issue3384UnionSchema()
@@ -256,7 +252,6 @@ class SchemaUtilTest extends Specification {
         rebuiltSchema.getType("Pet").types == [cat]
     }
 
-    @Issue("https://github.com/graphql-java/graphql-java/issues/3384")
     def "can rebuild schema after removing root type that made an interface implemented by another interface reachable"() {
         given:
         def schema = issue3384InterfaceInheritanceSchema()
