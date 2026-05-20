@@ -26,7 +26,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition>, NamedNode<OperationDefinition> {
+public class OperationDefinition extends AbstractDescribedNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition>, NamedNode<OperationDefinition> {
 
     public enum Operation {
         QUERY, MUTATION, SUBSCRIPTION
@@ -49,11 +49,12 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                                   List<VariableDefinition> variableDefinitions,
                                   List<Directive> directives,
                                   SelectionSet selectionSet,
+                                  @Nullable Description description,
                                   @Nullable SourceLocation sourceLocation,
                                   List<Comment> comments,
                                   IgnoredChars ignoredChars,
                                   Map<String, String> additionalData) {
-        super(sourceLocation, comments, ignoredChars, additionalData);
+        super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
         this.operation = operation;
         this.variableDefinitions = ImmutableList.copyOf(variableDefinitions);
@@ -147,6 +148,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                 assertNotNull(deepCopy(variableDefinitions), "variableDefinitions deepCopy should not return null"),
                 assertNotNull(deepCopy(directives.getDirectives()), "directives deepCopy should not return null"),
                 assertNotNull(deepCopy(selectionSet), "selectionSet deepCopy should not return null"),
+                description,
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -185,6 +187,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
         private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Operation operation = Operation.QUERY;
+        private Description description;
         private ImmutableList<VariableDefinition> variableDefinitions = emptyList();
         private ImmutableList<Directive> directives = emptyList();
         private SelectionSet selectionSet;
@@ -199,6 +202,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
             this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.operation = existing.getOperation();
+            this.description = existing.getDescription();
             this.variableDefinitions = ImmutableList.copyOf(existing.getVariableDefinitions());
             this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.selectionSet = existing.getSelectionSet();
@@ -224,6 +228,11 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
 
         public Builder operation(Operation operation) {
             this.operation = operation;
+            return this;
+        }
+
+        public Builder description(Description description) {
+            this.description = description;
             return this;
         }
 
@@ -275,6 +284,7 @@ public class OperationDefinition extends AbstractNode<OperationDefinition> imple
                     variableDefinitions,
                     directives,
                     selectionSet,
+                    description,
                     sourceLocation,
                     comments,
                     ignoredChars,

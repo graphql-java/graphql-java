@@ -406,6 +406,45 @@ query HeroNameAndFriends($episode: Episode = "JEDI") {
 '''
     }
 
+    def "ast printing of executable descriptions"() {
+        def query = '''
+"Fetches a hero"
+query getHero(
+  "The hero id"
+  $id: ID!
+) {
+  hero(id: $id) {
+    ...heroFields
+  }
+}
+
+"Reusable hero fields"
+fragment heroFields on Hero {
+  name
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''"Fetches a hero"
+query getHero(
+  "The hero id"
+  $id: ID!
+) {
+  hero(id: $id) {
+    ...heroFields
+  }
+}
+
+"Reusable hero fields"
+fragment heroFields on Hero {
+  name
+}
+'''
+        isParseableAst(output)
+    }
+
 //-------------------------------------------------
     def "ast printing of null"() {
         def query = '''
