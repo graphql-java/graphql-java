@@ -232,6 +232,25 @@ class GraphQLSchemaTest extends Specification {
         schema.getDirective("dir2") == directive2
     }
 
+    @SuppressWarnings("deprecation")
+    def "additionalDirectives accepts deprecated set overload"() {
+        given:
+        def directive1 = directive("setDir1", DirectiveLocation.FIELD)
+        def directive2 = directive("setDir2", DirectiveLocation.OBJECT)
+        Set<GraphQLDirective> directives = new LinkedHashSet<>()
+        directives.add(directive1)
+        directives.add(directive2)
+
+        when:
+        def schema = basicSchemaBuilder()
+                .additionalDirectives(directives)
+                .build()
+
+        then:
+        schema.getDirective("setDir1") == directive1
+        schema.getDirective("setDir2") == directive2
+    }
+
     def "additionalDirectives rejects duplicate directive names in collection"() {
         given:
         def directive1 = directive("duplicate", DirectiveLocation.FIELD)
