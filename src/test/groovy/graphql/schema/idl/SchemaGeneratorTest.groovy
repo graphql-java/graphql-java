@@ -30,6 +30,7 @@ import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.visibility.GraphqlFieldVisibility
+import spock.lang.Issue
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -1529,6 +1530,64 @@ class SchemaGeneratorTest extends Specification {
         unionType.types.stream().anyMatch({ t -> (t.getName() == "Bar") })
         unionType.types.stream().anyMatch({ t -> (t.getName() == "Baz") })
         unionType.directivesByName.containsKey("directive")
+    }
+
+    @Issue("https://github.com/graphql-java/graphql-java/issues/4200")
+    def "empty union base definition gets member types from extension"() {
+        def spec = """
+            type Cat {
+                meow: String
+            }
+
+            type Dog {
+                bark: String
+            }
+
+            union Pet
+
+            extend union Pet = Cat | Dog
+
+            type Query {
+                pet: Pet
+            }
+        """
+
+        when:
+        def schema = schema(spec)
+        GraphQLUnionType unionType = schema.getType("Pet") as GraphQLUnionType
+
+        then:
+        unionType.types*.name == ["Cat", "Dog"]
+    }
+
+    @Issue("https://github.com/graphql-java/graphql-java/issues/4200")
+    def "empty union base definition gets member types from multiple extensions"() {
+        def spec = """
+            type Cat {
+                meow: String
+            }
+
+            type Dog {
+                bark: String
+            }
+
+            union Pet
+
+            extend union Pet = | Cat
+
+            extend union Pet = Dog
+
+            type Query {
+                pet: Pet
+            }
+        """
+
+        when:
+        def schema = schema(spec)
+        GraphQLUnionType unionType = schema.getType("Pet") as GraphQLUnionType
+
+        then:
+        unionType.types*.name == ["Cat", "Dog"]
     }
 
     def "enum extension types are combined"() {
