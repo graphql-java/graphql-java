@@ -198,13 +198,39 @@ public class ChainedInstrumentation implements Instrumentation {
         if (instrumentations.isEmpty()) {
             return FieldFetchingInstrumentationContext.NOOP;
         }
-        BiFunction<Instrumentation, InstrumentationState, FieldFetchingInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginFieldFetching(parameters, specificState);
         ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
         if (instrumentations.size() == 1) {
-            return mapper.apply(instrumentations.get(0), chainedInstrumentationState.getState(0));
+            return instrumentations.get(0).beginFieldFetching(parameters, chainedInstrumentationState.getState(0));
         }
-        ImmutableList<FieldFetchingInstrumentationContext> objects = chainedMapAndDropNulls(chainedInstrumentationState, mapper);
-        return new ChainedFieldFetchingInstrumentationContext(objects);
+        return chainedFieldFetchingCtx(parameters, chainedInstrumentationState);
+    }
+
+    private FieldFetchingInstrumentationContext chainedFieldFetchingCtx(InstrumentationFieldFetchParameters parameters, ChainedInstrumentationState chainedInstrumentationState) {
+        @Nullable FieldFetchingInstrumentationContext firstContext = null;
+        ImmutableList.Builder<FieldFetchingInstrumentationContext> builder = null;
+        for (int i = 0; i < instrumentations.size(); i++) {
+            Instrumentation instrumentation = instrumentations.get(i);
+            FieldFetchingInstrumentationContext context = instrumentation.beginFieldFetching(parameters, chainedInstrumentationState.getState(i));
+            if (context == null || context == FieldFetchingInstrumentationContext.NOOP) {
+                continue;
+            }
+            if (firstContext == null) {
+                firstContext = context;
+                continue;
+            }
+            if (builder == null) {
+                builder = ImmutableList.builder();
+                builder.add(firstContext);
+            }
+            builder.add(context);
+        }
+        if (builder != null) {
+            return new ChainedFieldFetchingInstrumentationContext(builder.build());
+        }
+        if (firstContext != null) {
+            return firstContext;
+        }
+        return FieldFetchingInstrumentationContext.NOOP;
     }
 
     @Override
@@ -414,4 +440,3 @@ public class ChainedInstrumentation implements Instrumentation {
 
 
 }
-
