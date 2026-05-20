@@ -187,6 +187,65 @@ class GraphQLSchemaTest extends Specification {
         schema.getDirective("custom") != null
     }
 
+    def "duplicate directive with different instance throws error"() {
+        given:
+        def directive1 = directive("duplicate", DirectiveLocation.FIELD)
+        def directive2 = directive("duplicate", DirectiveLocation.OBJECT)
+
+        when:
+        basicSchemaBuilder()
+                .additionalDirective(directive1)
+                .additionalDirective(directive2)
+
+        then:
+        def exception = thrown(AssertException)
+        exception.message == "Directive 'duplicate' already exists with a different instance"
+    }
+
+    def "same directive instance can be added multiple times"() {
+        given:
+        def directive = directive("myDir", DirectiveLocation.FIELD)
+
+        when:
+        def schema = basicSchemaBuilder()
+                .additionalDirective(directive)
+                .additionalDirective(directive)
+                .build()
+
+        then:
+        schema.getDirective("myDir") == directive
+        schema.directives.findAll { it.name == "myDir" }.size() == 1
+    }
+
+    def "additionalDirectives accepts collection"() {
+        given:
+        def directive1 = directive("dir1", DirectiveLocation.FIELD)
+        def directive2 = directive("dir2", DirectiveLocation.OBJECT)
+
+        when:
+        def schema = basicSchemaBuilder()
+                .additionalDirectives([directive1, directive2])
+                .build()
+
+        then:
+        schema.getDirective("dir1") == directive1
+        schema.getDirective("dir2") == directive2
+    }
+
+    def "additionalDirectives rejects duplicate directive names in collection"() {
+        given:
+        def directive1 = directive("duplicate", DirectiveLocation.FIELD)
+        def directive2 = directive("duplicate", DirectiveLocation.OBJECT)
+
+        when:
+        basicSchemaBuilder()
+                .additionalDirectives([directive1, directive2])
+
+        then:
+        def exception = thrown(AssertException)
+        exception.message == "Directive 'duplicate' already exists with a different instance"
+    }
+
     def "clearDirectives supports replacing non-built-in directives in a schema transform"() {
         given: "a schema with a custom directive"
         def originalDirective = GraphQLDirective.newDirective()
@@ -209,7 +268,7 @@ class GraphQLSchemaTest extends Specification {
             def nonBuiltIns = schema.getDirectives().findAll { !Directives.isBuiltInDirective(it) }
                     .collect { it.getName() == "custom" ? replacementDirective : it }
             builder.clearDirectives()
-                    .additionalDirectives(new LinkedHashSet<>(nonBuiltIns))
+                    .additionalDirectives(nonBuiltIns)
         })
 
         then: "all 7 built-in directives are still present"
@@ -246,6 +305,13 @@ class GraphQLSchemaTest extends Specification {
 
         and: "the customized skip directive retains its custom description"
         schema.getDirective("skip").description == "custom skip description"
+    }
+
+    private static GraphQLDirective directive(String name, DirectiveLocation directiveLocation) {
+        GraphQLDirective.newDirective()
+                .name(name)
+                .validLocations(directiveLocation)
+                .build()
     }
 
     def "clear additional types works as expected"() {

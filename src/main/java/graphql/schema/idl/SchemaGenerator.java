@@ -11,6 +11,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.idl.errors.SchemaProblem;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -128,7 +129,7 @@ public class SchemaGenerator {
 
         GraphQLSchema.Builder schemaBuilder = GraphQLSchema.newSchema();
 
-        Set<GraphQLDirective> additionalDirectives = schemaGeneratorHelper.buildAdditionalDirectiveDefinitions(buildCtx);
+        Collection<GraphQLDirective> additionalDirectives = schemaGeneratorHelper.buildAdditionalDirectiveDefinitions(buildCtx);
         schemaBuilder.additionalDirectives(additionalDirectives);
 
         schemaGeneratorHelper.buildSchemaDirectivesAndExtensions(buildCtx, schemaBuilder);
