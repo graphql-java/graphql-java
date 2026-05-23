@@ -244,10 +244,49 @@ public class PropertyFetchingImpl {
                     return method;
                 }
             }
+            // Check public interfaces implemented by this class (handles non-public classes
+            // like TreeMap.Entry that implement public interfaces like Map.Entry)
+            Method method = findMethodOnPublicInterfaces(cacheKey, currentClass.getInterfaces(), methodName, dfeInUse, allowStaticMethods);
+            if (method != null) {
+                return method;
+            }
             currentClass = currentClass.getSuperclass();
         }
         assert rootClass != null;
         return rootClass.getMethod(methodName);
+    }
+
+    private Method findMethodOnPublicInterfaces(CacheKey cacheKey, Class<?>[] interfaces, String methodName, boolean dfeInUse, boolean allowStaticMethods) {
+        for (Class<?> iface : interfaces) {
+            if (Modifier.isPublic(iface.getModifiers())) {
+                if (dfeInUse) {
+                    try {
+                        Method method = iface.getMethod(methodName, singleArgumentType);
+                        if (isSuitablePublicMethod(method, allowStaticMethods)) {
+                            METHOD_CACHE.putIfAbsent(cacheKey, new CachedMethod(method));
+                            return method;
+                        }
+                    } catch (NoSuchMethodException e) {
+                        // ok try the next approach
+                    }
+                }
+                try {
+                    Method method = iface.getMethod(methodName);
+                    if (isSuitablePublicMethod(method, allowStaticMethods)) {
+                        METHOD_CACHE.putIfAbsent(cacheKey, new CachedMethod(method));
+                        return method;
+                    }
+                } catch (NoSuchMethodException e) {
+                    // continue searching
+                }
+            }
+            // Also search super-interfaces of non-public interfaces
+            Method method = findMethodOnPublicInterfaces(cacheKey, iface.getInterfaces(), methodName, dfeInUse, allowStaticMethods);
+            if (method != null) {
+                return method;
+            }
+        }
+        return null;
     }
 
     private boolean isSuitablePublicMethod(Method method, boolean allowStaticMethods) {

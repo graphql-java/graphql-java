@@ -14,6 +14,7 @@ import graphql.language.IntValue
 import graphql.language.ScalarTypeDefinition
 import graphql.language.SchemaDefinition
 import graphql.language.StringValue
+import graphql.language.TypeName
 import graphql.schema.Coercing
 import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLCodeRegistry
@@ -2743,7 +2744,7 @@ input Gun {
                 .description(" custom directive 'example' description 1")
                 .definition(DirectiveDefinition.newDirectiveDefinition().comments(makeComments(" custom directive 'example' comment 1")).build()).build()
         def asteroidType = newScalar().name("Asteroid").description("desc")
-                .definition(ScalarTypeDefinition.newScalarTypeDefinition().comments(makeComments(" scalar Asteroid comment 1")).build())
+                .definition(ScalarTypeDefinition.newScalarTypeDefinition().name("Asteroid").comments(makeComments(" scalar Asteroid comment 1")).build())
                 .coercing(TestUtil.mockCoercing())
                 .build()
         def nodeType = newInterface().name("Node")
@@ -2754,11 +2755,11 @@ input Gun {
                 .field(newFieldDefinition().name("name").type(GraphQLString).build())
                 .build()
         def episodeType = newEnum().name("Episode")
-                .definition(newEnumTypeDefinition().comments(
+                .definition(newEnumTypeDefinition().name("Episode").comments(
                         makeComments(" enum Episode comment 1", " enum Episode comment 2")).build())
                 .values(List.of(
                         GraphQLEnumValueDefinition.newEnumValueDefinition().name("EMPIRE")
-                                .definition(EnumValueDefinition.newEnumValueDefinition().comments(makeComments(" enum value EMPIRE comment 1")).build()).build(),
+                                .definition(EnumValueDefinition.newEnumValueDefinition().name("EMPIRE").comments(makeComments(" enum value EMPIRE comment 1")).build()).build(),
                         GraphQLEnumValueDefinition.newEnumValueDefinition().name("JEDI").build(),
                         GraphQLEnumValueDefinition.newEnumValueDefinition().name("NEWHOPE").withDirective(exampleDirective).build()))
                 .build()
@@ -2792,11 +2793,11 @@ input Gun {
         def queryType = newObject().name("Query")
                 .definition(newObjectTypeDefinition().comments(makeComments(" type query comment 1", " type query comment 2")).build())
                 .field(newFieldDefinition().name("hero").type(characterType)
-                        .definition(FieldDefinition.newFieldDefinition().comments(makeComments(" query field 'hero' comment")).build())
+                        .definition(FieldDefinition.newFieldDefinition().name("hero").type(new TypeName("Character")).comments(makeComments(" query field 'hero' comment")).build())
                         .argument(newArgument().name("episode").type(episodeType).build())
                         .build())
                 .field(newFieldDefinition().name("humanoid").type(humanoidType)
-                        .definition(FieldDefinition.newFieldDefinition().comments(makeComments(" query field 'humanoid' comment")).build())
+                        .definition(FieldDefinition.newFieldDefinition().name("humanoid").type(new TypeName("Humanoid")).comments(makeComments(" query field 'humanoid' comment")).build())
                         .argument(newArgument().name("id").type(nonNull(GraphQLID)).build())
                         .build())
                 .build()

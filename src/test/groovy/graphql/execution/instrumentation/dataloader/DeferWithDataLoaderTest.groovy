@@ -389,6 +389,183 @@ class DeferWithDataLoaderTest extends Specification {
     }
 
     @Unroll
+    def "multiple separate defer fragments with dataloader fields dispatch correctly"() {
+        given:
+        def query = """
+            query {
+                shops {
+                    id
+                    name
+                    ... @defer(label: "deferred1") {
+                        departments {
+                            name
+                        }
+                    }
+                    ... @defer(label: "deferred2") {
+                        expensiveDepartments {
+                            name
+                        }
+                    }
+                }
+            }
+        """
+
+        def expectedInitialData = [
+                data   : [
+                        shops: [
+                                [id: "shop-1", name: "Shop 1"],
+                                [id: "shop-2", name: "Shop 2"],
+                                [id: "shop-3", name: "Shop 3"],
+                        ]
+                ],
+                hasNext: true
+        ]
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
+                .build()
+        executionInput.getGraphQLContext().putAll(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
+
+        IncrementalExecutionResult result = graphQL.execute(executionInput)
+
+        then:
+        result.toSpecification() == expectedInitialData
+
+        when:
+        def incrementalResults = getIncrementalResults(result)
+
+        then:
+        assertIncrementalResults(incrementalResults, [["shops", 0], ["shops", 1], ["shops", 2], ["shops", 0], ["shops", 1], ["shops", 2]])
+
+        when:
+        def combined = combineExecutionResults(result.toSpecification(), incrementalResults)
+        then:
+        combined.errors == null
+        combined.data == [
+                shops: [
+                        [id                  : "shop-1", name: "Shop 1",
+                         departments         : [[name: "Department 1"],
+                                                [name: "Department 2"],
+                                                [name: "Department 3"]],
+                         expensiveDepartments: [[name: "Department 1"],
+                                                [name: "Department 2"],
+                                                [name: "Department 3"]]],
+                        [id                  : "shop-2", name: "Shop 2",
+                         departments         : [[name: "Department 4"],
+                                                [name: "Department 5"],
+                                                [name: "Department 6"]],
+                         expensiveDepartments: [[name: "Department 4"],
+                                                [name: "Department 5"],
+                                                [name: "Department 6"]]],
+                        [id                  : "shop-3", name: "Shop 3",
+                         departments         : [[name: "Department 7"],
+                                                [name: "Department 8"],
+                                                [name: "Department 9"]],
+                         expensiveDepartments: [[name: "Department 7"],
+                                                [name: "Department 8"],
+                                                [name: "Department 9"]]]]
+        ]
+
+        where:
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
+    }
+
+    @Unroll
+    def "mixed deferred and non-deferred fields with dataloaders dispatch correctly"() {
+        given:
+        def query = """
+            query {
+                shops {
+                    id
+                    name
+                    departments {
+                        name
+                    }
+                    ... @defer(label: "deferred1") {
+                        expensiveDepartments {
+                            name
+                        }
+                    }
+                }
+            }
+        """
+
+        def expectedInitialData = [
+                data   : [
+                        shops: [
+                                [id: "shop-1", name: "Shop 1",
+                                 departments: [[name: "Department 1"],
+                                               [name: "Department 2"],
+                                               [name: "Department 3"]]],
+                                [id: "shop-2", name: "Shop 2",
+                                 departments: [[name: "Department 4"],
+                                               [name: "Department 5"],
+                                               [name: "Department 6"]]],
+                                [id: "shop-3", name: "Shop 3",
+                                 departments: [[name: "Department 7"],
+                                               [name: "Department 8"],
+                                               [name: "Department 9"]]],
+                        ]
+                ],
+                hasNext: true
+        ]
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
+                .build()
+        executionInput.getGraphQLContext().putAll(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
+
+        IncrementalExecutionResult result = graphQL.execute(executionInput)
+
+        then:
+        result.toSpecification() == expectedInitialData
+
+        when:
+        def incrementalResults = getIncrementalResults(result)
+
+        then:
+        assertIncrementalResults(incrementalResults, [["shops", 0], ["shops", 1], ["shops", 2]])
+
+        when:
+        def combined = combineExecutionResults(result.toSpecification(), incrementalResults)
+        then:
+        combined.errors == null
+        combined.data == [
+                shops: [
+                        [id                  : "shop-1", name: "Shop 1",
+                         departments         : [[name: "Department 1"],
+                                                [name: "Department 2"],
+                                                [name: "Department 3"]],
+                         expensiveDepartments: [[name: "Department 1"],
+                                                [name: "Department 2"],
+                                                [name: "Department 3"]]],
+                        [id                  : "shop-2", name: "Shop 2",
+                         departments         : [[name: "Department 4"],
+                                                [name: "Department 5"],
+                                                [name: "Department 6"]],
+                         expensiveDepartments: [[name: "Department 4"],
+                                                [name: "Department 5"],
+                                                [name: "Department 6"]]],
+                        [id                  : "shop-3", name: "Shop 3",
+                         departments         : [[name: "Department 7"],
+                                                [name: "Department 8"],
+                                                [name: "Department 9"]],
+                         expensiveDepartments: [[name: "Department 7"],
+                                                [name: "Department 8"],
+                                                [name: "Department 9"]]]]
+        ]
+
+        where:
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
+    }
+
+    @Unroll
     @RepeatUntilFailure(maxAttempts = 20, ignoreRest = false)
     def "dataloader in initial result and chained dataloader inside nested defer block"() {
         given:

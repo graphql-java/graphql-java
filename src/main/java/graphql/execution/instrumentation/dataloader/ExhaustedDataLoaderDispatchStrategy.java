@@ -9,6 +9,7 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.incremental.AlternativeCallContext;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import graphql.VisibleForTesting;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -31,7 +32,8 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     private final Map<AlternativeCallContext, CallStack> alternativeCallContextMap = new ConcurrentHashMap<>();
 
 
-    private static class CallStack {
+    @VisibleForTesting
+    static class CallStack {
 
         // 30 bits for objectRunningCount
         // 1 bit for dataLoaderToDispatch
@@ -127,7 +129,12 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     }
 
     public ExhaustedDataLoaderDispatchStrategy(ExecutionContext executionContext) {
-        this.initialCallStack = new CallStack();
+        this(executionContext, new CallStack());
+    }
+
+    @VisibleForTesting
+    ExhaustedDataLoaderDispatchStrategy(ExecutionContext executionContext, CallStack callStack) {
+        this.initialCallStack = callStack;
         this.executionContext = executionContext;
 
         this.profiler = executionContext.getProfiler();
@@ -167,11 +174,16 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     }
 
     @Override
+    public void subscriptionEventExecutionDone(AlternativeCallContext alternativeCallContext) {
+        alternativeCallContextMap.remove(alternativeCallContext);
+    }
+
+    @Override
     public void deferFieldFetched(ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         int deferredFragmentRootFieldsCompleted = callStack.deferredFragmentRootFieldsCompleted.incrementAndGet();
-        Assert.assertNotNull(parameters.getDeferredCallContext());
-        if (deferredFragmentRootFieldsCompleted == parameters.getDeferredCallContext().getFields()) {
+        Assert.assertNotNull(parameters.getAlternativeCallContext());
+        if (deferredFragmentRootFieldsCompleted == parameters.getAlternativeCallContext().getFields()) {
             decrementObjectRunningAndMaybeDispatch(callStack);
         }
     }
@@ -188,7 +200,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     }
 
     private CallStack getCallStack(ExecutionStrategyParameters parameters) {
-        return getCallStack(parameters.getDeferredCallContext());
+        return getCallStack(parameters.getAlternativeCallContext());
     }
 
     private CallStack getCallStack(@Nullable AlternativeCallContext alternativeCallContext) {
@@ -274,4 +286,3 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
 
 
 }
-

@@ -2,6 +2,7 @@ package graphql.language;
 
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * A interface for named Schema Definition Language (SDL) definition.
@@ -9,6 +10,7 @@ import graphql.PublicApi;
  * @param <T> the actual Node type
  */
 @PublicApi
+@NullMarked
 public interface SDLNamedDefinition<T extends SDLNamedDefinition> extends SDLDefinition<T> {
 
     /**

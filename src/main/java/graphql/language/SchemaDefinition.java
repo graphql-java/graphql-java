@@ -69,10 +69,6 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
         return operationTypeDefinitions;
     }
 
-    public Description getDescription() {
-        return description;
-    }
-
     @Override
     public List<Node> getChildren() {
         return FpKit.concat(directives.getDirectives(), operationTypeDefinitions);

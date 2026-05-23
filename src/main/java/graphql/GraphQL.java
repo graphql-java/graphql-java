@@ -23,9 +23,12 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.introspection.GoodFaithIntrospection;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
+import graphql.validation.GoodFaithIntrospectionExceeded;
 import graphql.validation.OperationValidationRule;
+import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationError;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
@@ -562,12 +565,17 @@ public class GraphQL {
         if (parseResult.isFailure()) {
             return new PreparsedDocumentEntry(assertNotNull(parseResult.getSyntaxException(), "Parse result syntax exception cannot be null when failed").toInvalidSyntaxError());
         } else {
-            final Document document = parseResult.getDocument();
+            final Document document = assertNotNull(parseResult.getDocument(), "Document cannot be null when parse succeeded");
             // they may have changed the document and the variables via instrumentation so update the reference to it
             executionInput = executionInput.transform(builder -> builder.variables(parseResult.getVariables()));
             executionInputRef.set(executionInput);
 
-            final List<ValidationError> errors = validate(executionInput, assertNotNull(document, "Document cannot be null when parse succeeded"), graphQLSchema, instrumentationState);
+            final List<ValidationError> errors;
+            try {
+                errors = validate(executionInput, document, graphQLSchema, instrumentationState);
+            } catch (GoodFaithIntrospectionExceeded e) {
+                return new PreparsedDocumentEntry(document, List.of(e.toBadFaithError()));
+            }
             if (!errors.isEmpty()) {
                 return new PreparsedDocumentEntry(document, errors);
             }
@@ -601,7 +609,15 @@ public class GraphQL {
 
         Predicate<OperationValidationRule> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
         Locale locale = executionInput.getLocale();
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale);
+        QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
+
+        // Good Faith Introspection: disable the rule if good faith is off
+        if (!GoodFaithIntrospection.isEnabled(executionInput.getGraphQLContext())) {
+            Predicate<OperationValidationRule> existing = validationRulePredicate;
+            validationRulePredicate = rule -> rule != OperationValidationRule.GOOD_FAITH_INTROSPECTION && existing.test(rule);
+        }
+
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale, limits);
 
         validationCtx.onCompleted(validationErrors, null);
         return validationErrors;

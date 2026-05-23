@@ -47,9 +47,39 @@ function parseJacocoXml(jacocoFile) {
         else if (cntMatch[1] === 'BRANCH') counters.branch = entry;
         else if (cntMatch[1] === 'METHOD') counters.method = entry;
       }
+      // Extract per-method counters within this class.
+      // JaCoCo XML contains <method name="..." desc="..." line="..."> elements
+      // each with their own <counter> children.
+      const methods = [];
+      const methodRe = /<method\s+name="([^"]+)"\s+desc="([^"]+)"(?:\s+line="(\d+)")?[^>]*>([\s\S]*?)<\/method>/g;
+      let methodMatch;
+      while ((methodMatch = methodRe.exec(classBody)) !== null) {
+        const mCounters = { line: { ...zeroCov }, branch: { ...zeroCov }, method: { ...zeroCov } };
+        const mCntRe = /<counter type="(\w+)" missed="(\d+)" covered="(\d+)"\/>/g;
+        let mCntMatch;
+        while ((mCntMatch = mCntRe.exec(methodMatch[4])) !== null) {
+          const entry = { covered: parseInt(mCntMatch[3]), missed: parseInt(mCntMatch[2]) };
+          if (mCntMatch[1] === 'LINE') mCounters.line = entry;
+          else if (mCntMatch[1] === 'BRANCH') mCounters.branch = entry;
+          else if (mCntMatch[1] === 'METHOD') mCounters.method = entry;
+        }
+        const totalLines = mCounters.line.covered + mCounters.line.missed;
+        if (totalLines > 0) {
+          methods.push({
+            name: methodMatch[1],
+            desc: methodMatch[2],
+            line: methodMatch[3] ? parseInt(methodMatch[3]) : null,
+            counters: mCounters,
+          });
+        }
+      }
+
       // Skip classes with 0 total lines (empty interfaces, annotations)
       if (counters.line.covered + counters.line.missed > 0) {
         result.classes[className] = counters;
+        if (methods.length > 0) {
+          result.classes[className].methods = methods;
+        }
       }
     }
   }
@@ -62,4 +92,12 @@ function pct(covered, missed) {
   return total === 0 ? 0 : (covered / total * 100);
 }
 
-module.exports = { parseJacocoXml, pct, zeroCov };
+// A coverage metric is a "real regression" when BOTH the percentage drops
+// beyond the tolerance AND the absolute number of missed items increases.
+// This avoids false positives when well-covered code is extracted/moved out
+// of a class (which lowers the percentage without actually losing coverage).
+function isRegression(currPct, basePct, currMissed, baseMissed, tolerance = 0.05) {
+  return currPct < basePct - tolerance && currMissed > baseMissed;
+}
+
+module.exports = { parseJacocoXml, pct, zeroCov, isRegression };

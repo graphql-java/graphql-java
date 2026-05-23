@@ -40,6 +40,8 @@ The pre-commit hook will automatically check for:
   - Splitting them into smaller parts (`.part1`, `.part2`, etc.)
   - Reducing the file size
 
+- **Dangerous Unicode characters**: Files containing invisible or rendering-altering Unicode characters will be rejected. This protects against [Trojan Source](https://trojansource.codes/) (BiDi override) and glassworm-style attacks. Blocked character categories include C0/C1 control characters, zero-width characters, and BiDi overrides.
+
 To bypass the hooks temporarily (not recommended), use `git commit --no-verify`.
 
 ### CI Validation

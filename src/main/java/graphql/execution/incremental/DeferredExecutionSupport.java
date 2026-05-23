@@ -128,9 +128,8 @@ public interface DeferredExecutionSupport {
 
         private DeferredFragmentCall createDeferredFragmentCall(DeferredExecution deferredExecution) {
             int level = parameters.getPath().getLevel() + 1;
-            AlternativeCallContext alternativeCallContext = new AlternativeCallContext(level, deferredFields.size());
-
             List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
+            AlternativeCallContext alternativeCallContext = new AlternativeCallContext(level, mergedFields.size());
 
             List<Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> calls = FpKit.arrayListSizedTo(mergedFields);
             for (MergedField currentField : mergedFields) {
@@ -156,7 +155,7 @@ public interface DeferredExecutionSupport {
                     {
                         MergedSelectionSet mergedSelectionSet = MergedSelectionSet.newMergedSelectionSet().subFields(fields).build();
                         ResultPath path = parameters.getPath().segment(currentField.getResultKey());
-                        builder.deferredCallContext(alternativeCallContext)
+                        builder.alternativeCallContext(alternativeCallContext)
                                 .field(currentField)
                                 .fields(mergedSelectionSet)
                                 .path(path)

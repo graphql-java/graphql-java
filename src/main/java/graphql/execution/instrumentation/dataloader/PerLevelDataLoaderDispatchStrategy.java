@@ -13,6 +13,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import graphql.VisibleForTesting;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -30,7 +31,8 @@ import java.util.function.Supplier;
 @NullMarked
 public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStrategy {
 
-    private final CallStack initialCallStack;
+    @VisibleForTesting
+    final CallStack initialCallStack;
     private final ExecutionContext executionContext;
     private final boolean enableDataLoaderChaining;
 
@@ -145,7 +147,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     }
 
-    private static class CallStack {
+    // package-private for testing
+    static class CallStack {
 
         /**
          * We track three things per level:
@@ -177,8 +180,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
          */
 
         static class StateForLevel {
-            private final int happenedCompletionFinishedCount;
-            private final int happenedExecuteObjectCalls;
+            @VisibleForTesting
+            final int happenedCompletionFinishedCount;
+            @VisibleForTesting
+            final int happenedExecuteObjectCalls;
 
 
             public StateForLevel() {
@@ -216,7 +221,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         private final Map<Integer, AtomicReference<StateForLevel>> stateForLevelMap = new ConcurrentHashMap<>();
 
-        private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
+        @VisibleForTesting
+        final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
 
         public ChainedDLStack chainedDLStack = new ChainedDLStack();
 
@@ -356,8 +362,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
         CallStack callStack = getCallStack(executionStrategyParameters);
         int level = executionStrategyParameters.getPath().getLevel();
-        AlternativeCallContext deferredCallContext = executionStrategyParameters.getDeferredCallContext();
-        if (level == 1 || (deferredCallContext != null && level == deferredCallContext.getStartLevel())) {
+        AlternativeCallContext alternativeCallContext = executionStrategyParameters.getAlternativeCallContext();
+        if (level == 1 || (alternativeCallContext != null && level == alternativeCallContext.getStartLevel())) {
             int happenedFirstLevelFetchCount = callStack.happenedFirstLevelFetchCount.incrementAndGet();
             if (happenedFirstLevelFetchCount == callStack.expectedFirstLevelFetchCount) {
                 callStack.dispatchedLevels.add(level);
@@ -390,19 +396,24 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     @Override
+    public void subscriptionEventExecutionDone(AlternativeCallContext alternativeCallContext) {
+        alternativeCallContextMap.remove(alternativeCallContext);
+    }
+
+    @Override
     public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable throwable, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         int deferredFragmentRootFieldsCompleted = callStack.deferredFragmentRootFieldsCompleted.incrementAndGet();
-        Assert.assertNotNull(parameters.getDeferredCallContext());
-        if (deferredFragmentRootFieldsCompleted == parameters.getDeferredCallContext().getFields()) {
-            onCompletionFinished(parameters.getDeferredCallContext().getStartLevel() - 1, callStack);
+        Assert.assertNotNull(parameters.getAlternativeCallContext());
+        if (deferredFragmentRootFieldsCompleted == parameters.getAlternativeCallContext().getFields()) {
+            onCompletionFinished(parameters.getAlternativeCallContext().getStartLevel() - 1, callStack);
         }
 
     }
 
 
     private CallStack getCallStack(ExecutionStrategyParameters parameters) {
-        return getCallStack(parameters.getDeferredCallContext());
+        return getCallStack(parameters.getAlternativeCallContext());
     }
 
     private CallStack getCallStack(@Nullable AlternativeCallContext alternativeCallContext) {
@@ -439,7 +450,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
 
-    private boolean markLevelAsDispatchedIfReady(int level, CallStack callStack) {
+    @VisibleForTesting
+    boolean markLevelAsDispatchedIfReady(int level, CallStack callStack) {
         boolean ready = isLevelReady(level, callStack);
         if (ready) {
             if (!callStack.dispatchedLevels.add(level)) {
@@ -513,4 +525,3 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
 }
-

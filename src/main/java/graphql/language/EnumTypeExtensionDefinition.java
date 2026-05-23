@@ -4,6 +4,9 @@ import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -14,14 +17,15 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
+@NullMarked
 public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
     protected EnumTypeExtensionDefinition(String name,
                                           List<EnumValueDefinition> enumValueDefinitions,
                                           List<Directive> directives,
-                                          Description description,
-                                          SourceLocation sourceLocation,
+                                          @Nullable Description description,
+                                          @Nullable SourceLocation sourceLocation,
                                           List<Comment> comments,
                                           IgnoredChars ignoredChars,
                                           Map<String, String> additionalData) {
@@ -32,8 +36,8 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
     @Override
     public EnumTypeExtensionDefinition deepCopy() {
         return new EnumTypeExtensionDefinition(getName(),
-                deepCopy(getEnumValueDefinitions()),
-                deepCopy(getDirectives()),
+                assertNotNull(deepCopy(getEnumValueDefinitions())),
+                assertNotNull(deepCopy(getDirectives())),
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
@@ -67,6 +71,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
@@ -144,7 +149,7 @@ public class EnumTypeExtensionDefinition extends EnumTypeDefinition implements S
 
 
         public EnumTypeExtensionDefinition build() {
-            return new EnumTypeExtensionDefinition(name,
+            return new EnumTypeExtensionDefinition(assertNotNull(name),
                     enumValueDefinitions,
                     directives,
                     description,

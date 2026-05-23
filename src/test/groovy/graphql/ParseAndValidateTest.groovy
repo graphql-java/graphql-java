@@ -59,6 +59,33 @@ class ParseAndValidateTest extends Specification {
         errors.isEmpty()
     }
 
+    def "executable descriptions do not affect validation"() {
+        def input = ExecutionInput.newExecutionInput('''
+            "Fetches a hero"
+            query HeroName(
+                "The target episode"
+                $episode: Episode = JEDI
+            ) {
+                hero(episode: $episode) {
+                    ...heroFields
+                }
+            }
+
+            "Reusable hero fields"
+            fragment heroFields on Character {
+                name
+            }
+        ''').build()
+        def result = ParseAndValidate.parse(input)
+
+        when:
+        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument(), input.getLocale())
+
+        then:
+        !result.isFailure()
+        errors.isEmpty()
+    }
+
     def "will validate documents with actual problems"() {
 
         def input = ExecutionInput.newExecutionInput("query { hero }").variables([var1: 1]).build()

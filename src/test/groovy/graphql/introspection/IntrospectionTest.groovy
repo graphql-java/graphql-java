@@ -316,6 +316,49 @@ class IntrospectionTest extends Specification {
         inputFields.size() == 2
     }
 
+    @Issue("https://github.com/graphql-java/graphql-java/issues/3897")
+    def "includeDeprecated arguments are non-null booleans with default false"() {
+        def graphQL = TestUtil.graphQL("type Query { field: String }").build()
+
+        when:
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        def types = executionResult.data["__schema"]["types"] as List
+        def typeFields = types.find { it["name"] == "__Type" }["fields"] as List
+        assertIncludeDeprecatedArgument(typeFields.find { it["name"] == "fields" })
+        assertIncludeDeprecatedArgument(typeFields.find { it["name"] == "enumValues" })
+        assertIncludeDeprecatedArgument(typeFields.find { it["name"] == "inputFields" })
+
+        def fieldFields = types.find { it["name"] == "__Field" }["fields"] as List
+        assertIncludeDeprecatedArgument(fieldFields.find { it["name"] == "args" })
+
+        def directiveFields = types.find { it["name"] == "__Directive" }["fields"] as List
+        assertIncludeDeprecatedArgument(directiveFields.find { it["name"] == "args" })
+    }
+
+    @Issue("https://github.com/graphql-java/graphql-java/issues/3897")
+    def "includeDeprecated arguments reject explicit null values for #fieldName"() {
+        def graphQL = TestUtil.graphQL("type Query { field: String }").build()
+
+        when:
+        def executionResult = graphQL.execute(query)
+
+        then:
+        executionResult.errors.size() == 1
+        executionResult.errors.every { it.message.contains("includeDeprecated") && it.message.contains("must not be null") }
+
+        where:
+        fieldName                | query
+        "__Type.fields"         | "{ __type(name: \"__Type\") { fields(includeDeprecated: null) { name } } }"
+        "__Type.enumValues"     | "{ __type(name: \"__Type\") { enumValues(includeDeprecated: null) { name } } }"
+        "__Type.inputFields"    | "{ __type(name: \"__Type\") { inputFields(includeDeprecated: null) { name } } }"
+        "__Field.args"          | "{ __type(name: \"__Type\") { fields(includeDeprecated: true) { args(includeDeprecated: null) { name } } } }"
+        "__Directive.args"      | "{ __schema { directives { args(includeDeprecated: null) { name } } } }"
+    }
+
     def "can change data fetchers for introspection types"() {
         def sdl = '''
             type Query {
@@ -802,6 +845,15 @@ class IntrospectionTest extends Specification {
 
         then:
         er.errors.isEmpty()
+    }
+
+    private static void assertIncludeDeprecatedArgument(Map field) {
+        def argument = (field["args"] as List).find { it["name"] == "includeDeprecated" }
+        assert argument["defaultValue"] == "false"
+        assert argument["type"]["kind"] == "NON_NULL"
+        assert argument["type"]["name"] == null
+        assert argument["type"]["ofType"]["kind"] == "SCALAR"
+        assert argument["type"]["ofType"]["name"] == "Boolean"
     }
 
 }

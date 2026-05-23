@@ -1,6 +1,8 @@
 package graphql.language;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -12,6 +14,7 @@ import java.util.Objects;
  * This costs more memory but for certain use cases (like editors) this maybe be useful
  */
 @PublicApi
+@NullMarked
 public class IgnoredChar implements Serializable {
 
     public enum IgnoredCharKind {
@@ -51,7 +54,7 @@ public class IgnoredChar implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }

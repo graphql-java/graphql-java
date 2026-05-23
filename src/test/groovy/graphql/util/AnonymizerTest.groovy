@@ -79,6 +79,27 @@ type Object2 {
 
     }
 
+    def "query with inline fragment without type condition"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar1: String
+            bar2: ID
+        }
+        """)
+        def query = "{foo {... {bar1 bar2}}}"
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newQuery = result.queries[0]
+
+        then:
+        newQuery == "{field1{...{field2 field3}}}"
+    }
+
     def "query with arguments"() {
         given:
         def schema = TestUtil.schema("""

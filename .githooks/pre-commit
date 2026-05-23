@@ -1,11 +1,14 @@
 #!/bin/bash
 
-# Pre-commit hook to enforce Windows compatibility and file size limits
+# Pre-commit hook to enforce Windows compatibility, file size limits,
+# and dangerous Unicode character detection.
 #
 # 1. Windows filenames: prevents characters that are reserved on Windows (< > : " | ? * \)
 #    so the repo can be cloned on Windows systems.
 # 2. File size: rejects files larger than 10 MB. Many enterprise users mirror graphql-java
 #    into internal repositories that enforce file size limits.
+# 3. Dangerous Unicode: detects invisible/control characters that can be used for
+#    "Trojan Source" (BiDi override), homoglyph, or glassworm-style attacks.
 
 # ANSI color codes for better output readability
 RED='\033[0;31m'
@@ -72,6 +75,45 @@ if [ -n "$LARGE_FILES" ]; then
     echo -e "${YELLOW}Please consider one of these options:${NC}"
     echo -e "${YELLOW}  1. Split the file into smaller parts with suffixes .part1, .part2, etc.${NC}"
     echo -e "${YELLOW}  2. Remove unnecessary content from the file${NC}"
+    ERRORS_FOUND=1
+fi
+
+# Check 3: Dangerous Unicode characters (Trojan Source / glassworm attacks)
+# Detects: C0/C1 control chars (except TAB, LF, CR), zero-width characters,
+# BiDi override/embedding/isolate chars.
+# Uses perl for macOS compatibility (grep -P is not available on macOS).
+echo "  Checking for dangerous Unicode characters..."
+
+UNICODE_FILES=""
+if [ -n "$STAGED_FILES" ]; then
+    while IFS= read -r file; do
+        if [ ! -f "$file" ]; then
+            continue
+        fi
+        # Skip binary files
+        if file --mime-type "$file" 2>/dev/null | grep -qv 'text/'; then
+            continue
+        fi
+        MATCHES=$(perl -CSD -ne '
+            if (/[\x{0000}-\x{0008}\x{000B}\x{000C}\x{000E}-\x{001F}\x{007F}-\x{009F}\x{200B}-\x{200D}\x{FEFF}\x{202A}-\x{202E}\x{2066}-\x{2069}]/) {
+                print "    line $.: $_";
+            }
+        ' "$file" 2>/dev/null || true)
+        if [ -n "$MATCHES" ]; then
+            UNICODE_FILES="${UNICODE_FILES}  - ${file}\n${MATCHES}\n"
+        fi
+    done <<< "$STAGED_FILES"
+fi
+
+if [ -n "$UNICODE_FILES" ]; then
+    echo -e "${RED}Error: The following files contain dangerous Unicode characters:${NC}"
+    echo -e "$UNICODE_FILES"
+    echo -e "${YELLOW}These characters are invisible or alter text rendering and can be used for${NC}"
+    echo -e "${YELLOW}Trojan Source or glassworm-style attacks. Detected character categories:${NC}"
+    echo -e "${YELLOW}  - C0/C1 control characters (U+0000-001F, U+007F-009F, except TAB/LF/CR)${NC}"
+    echo -e "${YELLOW}  - Zero-width characters (U+200B-200D, U+FEFF)${NC}"
+    echo -e "${YELLOW}  - BiDi override/isolate (U+202A-202E, U+2066-2069)${NC}"
+    echo -e "${YELLOW}Please remove these characters from the affected files.${NC}"
     ERRORS_FOUND=1
 fi
 

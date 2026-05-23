@@ -9,6 +9,7 @@ import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.OperationDefinition
+import graphql.language.SelectionSet
 import graphql.language.StringValue
 import graphql.language.TypeName
 import org.dataloader.BatchLoader
@@ -26,10 +27,13 @@ import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironm
 
 class DataFetchingEnvironmentImplTest extends Specification {
 
-    def frag = FragmentDefinition.newFragmentDefinition().name("frag").typeCondition(new TypeName("t")).build()
+    def frag = FragmentDefinition.newFragmentDefinition().name("frag").typeCondition(new TypeName("t")).selectionSet(SelectionSet.newSelectionSet().build()).build()
 
     def dataLoader = DataLoaderFactory.newDataLoader({ keys -> CompletableFuture.completedFuture(keys) } as BatchLoader)
-    def operationDefinition = new OperationDefinition("q")
+    def operationDefinition = OperationDefinition.newOperationDefinition()
+            .name("q")
+            .selectionSet(SelectionSet.newSelectionSet().selection(new Field("f")).build())
+            .build()
     def document = toDocument("{ f }")
     def executionId = ExecutionId.from("123")
     def fragmentByName = [frag: frag]

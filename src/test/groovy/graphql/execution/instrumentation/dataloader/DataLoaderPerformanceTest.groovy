@@ -60,6 +60,8 @@ class DataLoaderPerformanceTest extends Specification {
 
         when:
 
+        batchCompareDataFetchers.useSynchronizedFetching(2)
+
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
                 .dataLoaderRegistry(dataLoaderRegistry)
@@ -71,8 +73,8 @@ class DataLoaderPerformanceTest extends Specification {
         then:
         result.data == expectedExpensiveData
 
-        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() <= 2
-        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
         where:
         incrementalSupport | contextKey
@@ -123,6 +125,7 @@ class DataLoaderPerformanceTest extends Specification {
         when:
 
         batchCompareDataFetchers.useAsyncBatchLoading(true)
+        batchCompareDataFetchers.useSynchronizedFetching(2)
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
@@ -136,8 +139,8 @@ class DataLoaderPerformanceTest extends Specification {
         then:
         result.data == expectedExpensiveData
 
-        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() <= 2
-        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
         where:
         incrementalSupport | contextKey

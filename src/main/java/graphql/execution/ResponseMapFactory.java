@@ -2,6 +2,8 @@ package graphql.execution;
 
 import graphql.ExperimentalApi;
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +14,7 @@ import java.util.Map;
  */
 @ExperimentalApi
 @PublicSpi
+@NullMarked
 public interface ResponseMapFactory {
 
     /**
@@ -27,6 +30,6 @@ public interface ResponseMapFactory {
      * @param values the values  like v1, v2, ..., vn
      * @return a new or reused map instance with (k1,v1), (k2, v2), ... (kn, vn)
      */
-    Map<String, Object> createInsertionOrdered(List<String> keys, List<Object> values);
+    Map<String, @Nullable Object> createInsertionOrdered(List<String> keys, List<@Nullable Object> values);
 
 }

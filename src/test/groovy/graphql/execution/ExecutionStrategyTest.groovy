@@ -140,9 +140,9 @@ class ExecutionStrategyTest extends Specification {
         def parameters = newParameters()
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(result)
-                .fields(mergedSelectionSet(["fld": [Field.newField().build()]]))
+                .fields(mergedSelectionSet(["fld": [Field.newField().name("dummy").build()]]))
                 .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
-                .field(mergedField(Field.newField().build()))
+                .field(mergedField(Field.newField().name("dummy").build()))
                 .build()
 
         when:
@@ -770,8 +770,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(executionStepInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
-                .field(mergedField(Field.newField().build()))
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().name("dummy").build())]]))
+                .field(mergedField(Field.newField().name("dummy").build()))
                 .build()
 
         when:
@@ -794,8 +794,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(executionStepInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
-                .field(mergedField(Field.newField().build()))
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().name("dummy").build())]]))
+                .field(mergedField(Field.newField().name("dummy").build()))
                 .build()
 
         when:
@@ -818,8 +818,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(executionStepInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
-                .field(mergedField(Field.newField().build()))
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().name("dummy").build())]]))
+                .field(mergedField(Field.newField().name("dummy").build()))
                 .build()
 
         when:
@@ -942,8 +942,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(executionStepInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
-                .field(mergedField(Field.newField().build()))
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().name("dummy").build())]]))
+                .field(mergedField(Field.newField().name("dummy").build()))
                 .build()
 
         when:
@@ -966,8 +966,8 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(typeInfo)
                 .source(result)
                 .nonNullFieldValidator(nullableFieldValidator)
-                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().build())]]))
-                .field(mergedField(Field.newField().build()))
+                .fields(mergedSelectionSet(["fld": [mergedField(Field.newField().name("dummy").build())]]))
+                .field(mergedField(Field.newField().name("dummy").build()))
                 .build()
 
         when:

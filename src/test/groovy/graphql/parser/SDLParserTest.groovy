@@ -309,6 +309,66 @@ schema @d1 @d2 {
         isEqual(document.definitions[0], schema.build())
     }
 
+    def "schema definition can have a description"() {
+        given:
+        def input = '''
+"Schema description"
+schema {
+    query: OpType1
+}
+'''
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        SchemaDefinition schemaDefinition = document.definitions[0] as SchemaDefinition
+        schemaDefinition.description.content == "Schema description"
+        schemaDefinition.operationTypeDefinitions[0].name == "query"
+        schemaDefinition.operationTypeDefinitions[0].typeName.name == "OpType1"
+    }
+
+    def "schema root operation type mapping cannot have a description"() {
+        given:
+        def input = '''
+schema {
+    "Query root operation mapping"
+    query: Query
+}
+'''
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 3
+        e.location.column == 5
+        e.offendingToken == '"Query root operation mapping"'
+    }
+
+    def "schema extension root operation type mapping cannot have a description"() {
+        given:
+        def input = '''
+extend schema {
+    "Query root operation mapping"
+    query: Query
+}
+'''
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 3
+        e.location.column == 5
+        e.offendingToken == '"Query root operation mapping"'
+    }
+
     def "extend schema"() {
         given:
         def input = """
@@ -1069,4 +1129,3 @@ directive @myDirective on
         e.offendingToken == "<EOF>"
     }
 }
-

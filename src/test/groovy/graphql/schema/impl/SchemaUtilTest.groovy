@@ -6,12 +6,19 @@ import graphql.NestedInputSchema
 import graphql.introspection.Introspection
 import graphql.schema.GraphQLAppliedDirectiveArgument
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLType
+import graphql.schema.GraphQLTypeVisitorStub
 import graphql.schema.GraphQLTypeReference
 import graphql.schema.GraphQLUnionType
+import graphql.schema.SchemaTransformer
+import graphql.util.TraversalControl
+import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -41,6 +48,7 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
@@ -188,6 +196,161 @@ class SchemaUtilTest extends Specification {
         pet.types.findIndexOf { it instanceof GraphQLTypeReference } == -1
         person.interfaces.findIndexOf { it instanceof GraphQLTypeReference } == -1
         !(cacheEnabled.getType() instanceof GraphQLTypeReference)
+    }
+
+    def "can rebuild schema after removing root type that made an implemented interface reachable"() {
+        given:
+        def schema = schemaWithObjectImplementingInterfaceThroughTypeReference()
+        def node = schema.getType("Node")
+
+        when:
+        def rebuiltSchema = newSchema(schema)
+                .mutation((GraphQLObjectType) null)
+                .build()
+
+        then:
+        rebuiltSchema.getMutationType() == null
+        rebuiltSchema.getType("Node") == node
+        rebuiltSchema.getObjectType("Person").interfaces == [node]
+    }
+
+    def "can transform schema after deleting root type that made an implemented interface reachable"() {
+        given:
+        def schema = schemaWithObjectImplementingInterfaceThroughTypeReference()
+        def node = schema.getType("Node")
+
+        when:
+        def transformedSchema = SchemaTransformer.transformSchemaWithDeletes(schema, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType graphQLObjectType, TraverserContext<GraphQLSchemaElement> context) {
+                if (graphQLObjectType.name == "Mutation") {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+        })
+
+        then:
+        transformedSchema.getMutationType() == null
+        transformedSchema.getType("Node") == node
+        transformedSchema.getObjectType("Person").interfaces == [node]
+    }
+
+    def "can rebuild schema after removing root type that made a union member reachable"() {
+        given:
+        def schema = schemaWithUnionMemberThroughTypeReference()
+        def cat = schema.getObjectType("Cat")
+
+        when:
+        def rebuiltSchema = newSchema(schema)
+                .mutation((GraphQLObjectType) null)
+                .build()
+
+        then:
+        rebuiltSchema.getMutationType() == null
+        rebuiltSchema.getType("Cat") == cat
+        rebuiltSchema.getType("Pet").types == [cat]
+    }
+
+    def "can rebuild schema after removing root type that made an interface implemented by another interface reachable"() {
+        given:
+        def schema = schemaWithInterfaceImplementingInterfaceThroughTypeReference()
+        def node = schema.getType("Node")
+
+        when:
+        def rebuiltSchema = newSchema(schema)
+                .mutation((GraphQLObjectType) null)
+                .build()
+
+        then:
+        rebuiltSchema.getMutationType() == null
+        rebuiltSchema.getType("Node") == node
+        rebuiltSchema.getType("NamedNode").interfaces == [node]
+    }
+
+    private GraphQLSchema schemaWithObjectImplementingInterfaceThroughTypeReference() {
+        def node = newInterface()
+                .name("Node")
+                .field(newFieldDefinition().name("id").type(GraphQLString))
+                .build()
+        def person = newObject()
+                .name("Person")
+                .withInterface(typeRef("Node"))
+                .field(newFieldDefinition().name("id").type(GraphQLString))
+                .build()
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("person").type(person))
+                .build()
+        def mutation = newObject()
+                .name("Mutation")
+                .field(newFieldDefinition().name("node").type(node))
+                .build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(node, { env -> person })
+                .build()
+        return newSchema()
+                .query(query)
+                .mutation(mutation)
+                .codeRegistry(codeRegistry)
+                .build()
+    }
+
+    private GraphQLSchema schemaWithUnionMemberThroughTypeReference() {
+        def cat = newObject()
+                .name("Cat")
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .build()
+        def pet = GraphQLUnionType.newUnionType()
+                .name("Pet")
+                .possibleType(typeRef("Cat"))
+                .build()
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("pet").type(pet))
+                .build()
+        def mutation = newObject()
+                .name("Mutation")
+                .field(newFieldDefinition().name("cat").type(cat))
+                .build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(pet, { env -> cat })
+                .build()
+        return newSchema()
+                .query(query)
+                .mutation(mutation)
+                .codeRegistry(codeRegistry)
+                .build()
+    }
+
+    private GraphQLSchema schemaWithInterfaceImplementingInterfaceThroughTypeReference() {
+        def node = newInterface()
+                .name("Node")
+                .field(newFieldDefinition().name("id").type(GraphQLString))
+                .build()
+        def namedNode = newInterface()
+                .name("NamedNode")
+                .withInterface(typeRef("Node"))
+                .field(newFieldDefinition().name("id").type(GraphQLString))
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .build()
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("node").type(namedNode))
+                .build()
+        def mutation = newObject()
+                .name("Mutation")
+                .field(newFieldDefinition().name("node").type(node))
+                .build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(node, { env -> null })
+                .typeResolver(namedNode, { env -> null })
+                .build()
+        return newSchema()
+                .query(query)
+                .mutation(mutation)
+                .codeRegistry(codeRegistry)
+                .build()
     }
 
     def "redefined types are caught"() {

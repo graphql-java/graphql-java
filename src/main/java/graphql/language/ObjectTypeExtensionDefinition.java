@@ -5,6 +5,9 @@ import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -16,6 +19,7 @@ import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.emptyMap;
 
 @PublicApi
+@NullMarked
 public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
@@ -23,8 +27,8 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition implemen
                                             List<Type> implementz,
                                             List<Directive> directives,
                                             List<FieldDefinition> fieldDefinitions,
-                                            Description description,
-                                            SourceLocation sourceLocation,
+                                            @Nullable Description description,
+                                            @Nullable SourceLocation sourceLocation,
                                             List<Comment> comments,
                                             IgnoredChars ignoredChars,
                                             Map<String, String> additionalData) {
@@ -44,9 +48,9 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition implemen
     @Override
     public ObjectTypeExtensionDefinition deepCopy() {
         return new ObjectTypeExtensionDefinition(getName(),
-                deepCopy(getImplements()),
-                deepCopy(getDirectives()),
-                deepCopy(getFieldDefinitions()),
+                assertNotNull(deepCopy(getImplements()), "implementz deepCopy should not return null"),
+                assertNotNull(deepCopy(getDirectives()), "directives deepCopy should not return null"),
+                assertNotNull(deepCopy(getFieldDefinitions()), "fieldDefinitions deepCopy should not return null"),
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
@@ -81,6 +85,7 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition implemen
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();

@@ -118,7 +118,6 @@ public class Introspection {
     public static Optional<ExecutionResult> isIntrospectionSensible(MergedSelectionSet mergedSelectionSet, ExecutionContext executionContext) {
         GraphQLContext graphQLContext = executionContext.getGraphQLContext();
 
-        boolean isIntrospection = false;
         for (String key : mergedSelectionSet.getKeys()) {
             MergedField subField = Assert.assertNotNull(mergedSelectionSet.getSubField(key), "subField for key '%s' should not be null", key);
             String fieldName = subField.getName();
@@ -127,12 +126,8 @@ public class Introspection {
                 if (!isIntrospectionEnabled(graphQLContext)) {
                     return mkDisabledError(subField);
                 }
-                isIntrospection = true;
                 break;
             }
-        }
-        if (isIntrospection) {
-            return GoodFaithIntrospection.checkIntrospection(executionContext);
         }
         return Optional.empty();
     }
@@ -340,7 +335,7 @@ public class Introspection {
                     .type(nonNull(list(nonNull(__InputValue))))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("type")
@@ -507,7 +502,7 @@ public class Introspection {
                     .type(list(nonNull(__Field)))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("interfaces")
@@ -520,14 +515,14 @@ public class Introspection {
                     .type(list(nonNull(__EnumValue)))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("inputFields")
                     .type(list(nonNull(__InputValue)))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("ofType")
@@ -635,7 +630,7 @@ public class Introspection {
                     .type(nonNull(list(nonNull(__InputValue))))
                     .argument(newArgument()
                             .name("includeDeprecated")
-                            .type(GraphQLBoolean)
+                            .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
             .build();
 

@@ -175,6 +175,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @ExperimentalApi
+    @Nullable
     default InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return noOp();
     }
@@ -240,6 +241,9 @@ public interface Instrumentation {
     @Nullable
     default FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         InstrumentationContext<Object> ctx = beginFieldFetch(parameters, state);
+        if (ctx == noOp()) {
+            return FieldFetchingInstrumentationContext.NOOP;
+        }
         return FieldFetchingInstrumentationContext.adapter(ctx);
     }
 

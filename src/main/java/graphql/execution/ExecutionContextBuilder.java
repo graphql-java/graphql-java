@@ -10,6 +10,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.Profiler;
 import graphql.collect.ImmutableKit;
+import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -19,6 +20,7 @@ import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -55,6 +57,7 @@ public class ExecutionContextBuilder {
     EngineRunningState engineRunningState;
     ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
     Profiler profiler;
+    Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives = Collections::emptyMap;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -168,6 +171,7 @@ public class ExecutionContextBuilder {
 
     /**
      * @param variables map of already coerced variables
+     *
      * @return this builder
      *
      * @deprecated use {@link #coercedVariables(CoercedVariables)} instead
@@ -246,13 +250,6 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-
-    public ExecutionContext build() {
-        // preconditions
-        assertNotNull(executionId, "You must provide a query identifier");
-        return new ExecutionContext(this);
-    }
-
     public ExecutionContextBuilder engineRunningState(EngineRunningState engineRunningState) {
         this.engineRunningState = engineRunningState;
         return this;
@@ -261,5 +258,17 @@ public class ExecutionContextBuilder {
     public ExecutionContextBuilder profiler(Profiler profiler) {
         this.profiler = profiler;
         return this;
+    }
+
+    public ExecutionContextBuilder operationDirectives(Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives) {
+        this.allOperationsDirectives = allOperationsDirectives;
+        return this;
+    }
+
+
+    public ExecutionContext build() {
+        // preconditions
+        assertNotNull(executionId, "You must provide a query identifier");
+        return new ExecutionContext(this);
     }
 }

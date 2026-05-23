@@ -2,6 +2,8 @@ package graphql.language;
 
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -20,6 +22,7 @@ import static graphql.util.EscapeUtil.escapeJsonStringTo;
  */
 @SuppressWarnings("UnnecessaryLocalVariable")
 @PublicApi
+@NullMarked
 public class AstPrinter {
 
     /**
@@ -246,8 +249,13 @@ public class AstPrinter {
         return false;
     }
 
+    private static boolean hasDescription(List<? extends Node<?>> nodes) {
+        return nodes.stream().anyMatch(AstPrinter::hasDescription);
+    }
+
     private NodePrinter<FragmentDefinition> fragmentDefinition() {
         return (out, node) -> {
+            description(out, node);
             out.append("fragment ");
             out.append(node.getName());
             out.append(" on ");
@@ -364,23 +372,17 @@ public class AstPrinter {
             String name = node.getName();
             // Anonymous queries with no directives or variable definitions can use
             // the query short form.
-            if (isEmpty(name) && isEmpty(node.getDirectives()) && isEmpty(node.getVariableDefinitions())
-                    && node.getOperation() == OperationDefinition.Operation.QUERY) {
+            if (canUseQueryShortForm(node)) {
                 node(out, node.getSelectionSet());
             } else {
-                out.append(node.getOperation().toString().toLowerCase());
+                description(out, node);
+                OperationDefinition.Operation op = node.getOperation();
+                out.append(op.toString().toLowerCase());
                 if (!isEmpty(name)) {
                     out.append(' ');
                     out.append(name);
                 }
-                if (!isEmpty(node.getVariableDefinitions())) {
-                    if (isEmpty(name)) {
-                        out.append(' ');
-                    }
-                    out.append('(');
-                    join(out, node.getVariableDefinitions(), argSep);
-                    out.append(')');
-                }
+                variableDefinitions(out, node, argSep);
                 if (!isEmpty(node.getDirectives())) {
                     out.append(' ');
                     directives(out, node.getDirectives());
@@ -391,6 +393,34 @@ public class AstPrinter {
                 node(out, node.getSelectionSet());
             }
         };
+    }
+
+    private boolean canUseQueryShortForm(OperationDefinition node) {
+        return (compactMode || !hasDescription(node))
+                && isEmpty(node.getName())
+                && isEmpty(node.getDirectives())
+                && isEmpty(node.getVariableDefinitions())
+                && node.getOperation() == OperationDefinition.Operation.QUERY;
+    }
+
+    private void variableDefinitions(StringBuilder out, OperationDefinition node, String argSep) {
+        if (isEmpty(node.getVariableDefinitions())) {
+            return;
+        }
+        if (isEmpty(node.getName())) {
+            out.append(' ');
+        }
+        if (!compactMode && hasDescription(node.getVariableDefinitions())) {
+            int offset = out.length();
+            out.append("(\n");
+            join(out, node.getVariableDefinitions(), "\n");
+            indent(out, offset);
+            out.append("\n)");
+            return;
+        }
+        out.append('(');
+        join(out, node.getVariableDefinitions(), argSep);
+        out.append(')');
     }
 
     private NodePrinter<OperationTypeDefinition> operationTypeDefinition() {
@@ -542,6 +572,7 @@ public class AstPrinter {
         String nameTypeSep = compactMode ? ":" : ": ";
         String defaultValueEquals = compactMode ? "=" : " = ";
         return (out, node) -> {
+            description(out, node);
             out.append('$');
             out.append(node.getName());
             out.append(nameTypeSep);
@@ -566,13 +597,13 @@ public class AstPrinter {
         node(out, node, null);
     }
 
-    private String node(Node<?> node, Class<?> startClass) {
+    private String node(Node<?> node, @Nullable Class<?> startClass) {
         StringBuilder builder = new StringBuilder();
         node(builder, node, startClass);
         return builder.toString();
     }
 
-    private void node(StringBuilder out, Node<?> node, Class<?> startClass) {
+    private void node(StringBuilder out, Node<?> node, @Nullable Class<?> startClass) {
         if (startClass != null) {
             assertTrue(startClass.isInstance(node), "The starting class must be in the inherit tree");
         }
@@ -585,16 +616,12 @@ public class AstPrinter {
         return _findPrinter(node, null);
     }
 
-    <T extends Node> NodePrinter<T> _findPrinter(Node node, Class startClass) {
-        if (node == null) {
-            return (out, type) -> {
-            };
-        }
+    <T extends Node> NodePrinter<T> _findPrinter(Node node, @Nullable Class<?> startClass) {
         Class<?> clazz = startClass != null ? startClass : node.getClass();
         while (clazz != Object.class) {
             NodePrinter nodePrinter = printers.get(clazz);
             if (nodePrinter != null) {
-                //noinspection unchecked
+                // noinspection unchecked
                 return nodePrinter;
             }
             clazz = clazz.getSuperclass();
@@ -602,15 +629,15 @@ public class AstPrinter {
         return assertShouldNeverHappen("We have a missing printer implementation for %s : report a bug!", clazz);
     }
 
-    private static <T> boolean isEmpty(List<T> list) {
+    private static <T> boolean isEmpty(@Nullable List<T> list) {
         return list == null || list.isEmpty();
     }
 
-    private static boolean isEmpty(String s) {
+    private static boolean isEmpty(@Nullable String s) {
         return s == null || s.isBlank();
     }
 
-    private static <T> List<T> nvl(List<T> list) {
+    private static <T> List<T> nvl(@Nullable List<T> list) {
         return list != null ? list : ImmutableKit.emptyList();
     }
 
@@ -745,7 +772,7 @@ public class AstPrinter {
     }
 
     @SuppressWarnings("SameParameterValue")
-    String wrap(String start, Node maybeNode, String end) {
+    String wrap(String start, @Nullable Node maybeNode, String end) {
         if (maybeNode == null) {
             return "";
         }

@@ -2,10 +2,13 @@ package graphql.introspection
 
 import graphql.ExecutionInput
 import graphql.ExecutionResult
+import graphql.ParseAndValidate
 import graphql.TestUtil
 import graphql.execution.CoercedVariables
 import graphql.language.Document
 import graphql.normalized.ExecutableNormalizedOperationFactory
+import graphql.validation.OperationValidationRule
+import graphql.validation.QueryComplexityLimits
 import spock.lang.Specification
 
 class GoodFaithIntrospectionTest extends Specification {
@@ -142,6 +145,24 @@ class GoodFaithIntrospectionTest extends Specification {
         er.errors.isEmpty()
     }
 
+    def "disabling good faith composes with custom validation rule predicates"() {
+        given:
+        // Custom predicate that disables a specific rule
+        def customPredicate = { OperationValidationRule rule -> rule != OperationValidationRule.KNOWN_ARGUMENT_NAMES } as java.util.function.Predicate
+
+        when:
+        def context = [
+                (GoodFaithIntrospection.GOOD_FAITH_INTROSPECTION_DISABLED)    : true,
+                (ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT)         : customPredicate
+        ]
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput("{ normalField }")
+                .graphQLContext(context).build()
+        ExecutionResult er = graphql.execute(executionInput)
+
+        then:
+        er.errors.isEmpty()
+    }
+
     def "can be disabled per request"() {
         when:
         def context = [(GoodFaithIntrospection.GOOD_FAITH_INTROSPECTION_DISABLED): true]
@@ -186,6 +207,100 @@ class GoodFaithIntrospectionTest extends Specification {
         25  | GoodFaithIntrospection.BadFaithIntrospectionError.class
         50  | GoodFaithIntrospection.BadFaithIntrospectionError.class
         100 | GoodFaithIntrospection.BadFaithIntrospectionError.class
+    }
+
+    def "introspection via inline fragment on Query is detected as bad faith"() {
+        def query = """
+            query badActor {
+                ...on Query {
+                    __schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}
+                }
+            }
+        """
+
+        when:
+        ExecutionResult er = graphql.execute(query)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+    }
+
+    def "introspection via fragment spread is detected as bad faith"() {
+        def query = """
+            query badActor {
+                ...IntrospectionFragment
+            }
+            fragment IntrospectionFragment on Query {
+                __schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}
+            }
+        """
+
+        when:
+        ExecutionResult er = graphql.execute(query)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+    }
+
+    def "good faith limits are applied on top of custom user limits"() {
+        given:
+        def limits = QueryComplexityLimits.newLimits().maxFieldsCount(200).maxDepth(15).build()
+        def executionInput = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
+                .graphQLContext([(QueryComplexityLimits.KEY): limits])
+                .build()
+
+        when:
+        ExecutionResult er = graphql.execute(executionInput)
+
+        then:
+        er.errors.isEmpty()
+    }
+
+    def "introspection query exceeding field count limit is detected as bad faith"() {
+        given:
+        // Build a wide introspection query that exceeds GOOD_FAITH_MAX_FIELDS_COUNT (500)
+        // using non-cycle-forming fields (aliases of 'name') so the tooManyFields check
+        // does not fire first, exercising the tooBigOperation code path instead
+        def sb = new StringBuilder()
+        sb.append("query { __schema { types { ")
+        for (int i = 0; i < 510; i++) {
+            sb.append("a${i}: name ")
+        }
+        sb.append("} } }")
+
+        when:
+        ExecutionResult er = graphql.execute(sb.toString())
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0].message.contains("too big")
+    }
+
+    def "introspection query exceeding depth limit is detected as bad faith"() {
+        given:
+        // Build a deep introspection query using ofType (not a cycle-forming field)
+        // that exceeds GOOD_FAITH_MAX_DEPTH_COUNT (20)
+        def sb = new StringBuilder()
+        sb.append("query { __schema { types { ")
+        for (int i = 0; i < 20; i++) {
+            sb.append("ofType { ")
+        }
+        sb.append("name ")
+        for (int i = 0; i < 20; i++) {
+            sb.append("} ")
+        }
+        sb.append("} } }")
+
+        when:
+        ExecutionResult er = graphql.execute(sb.toString())
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0].message.contains("too big")
     }
 
     String createDeepQuery(int depth = 25) {
