@@ -63,12 +63,12 @@ public class NodeTraverser {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return assertNotNull(context.thisNode()).accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
             @Override
             public TraversalControl leave(TraverserContext<Node> context) {
-                return assertNotNull(context.thisNode()).accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
         };
         return doTraverse(roots, nodeTraverserVisitor);
@@ -99,7 +99,7 @@ public class NodeTraverser {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return assertNotNull(context.thisNode()).accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
             @Override
@@ -141,7 +141,7 @@ public class NodeTraverser {
 
             @Override
             public TraversalControl leave(TraverserContext<Node> context) {
-                return assertNotNull(context.thisNode()).accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
         };

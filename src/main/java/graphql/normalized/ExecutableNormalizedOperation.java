@@ -30,8 +30,8 @@ import java.util.Map;
 @NullMarked
 public class ExecutableNormalizedOperation {
     private final OperationDefinition.Operation operation;
-    private final Map<String, ImmutableList<QueryAppliedDirective>> operationDirectives;
     private final @Nullable String operationName;
+    private final Map<String, ImmutableList<QueryAppliedDirective>> operationDirectives;
     private final List<ExecutableNormalizedField> topLevelFields;
     private final ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField;
     private final Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField;

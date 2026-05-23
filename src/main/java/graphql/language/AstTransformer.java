@@ -1,7 +1,6 @@
 package graphql.language;
 
 import graphql.PublicApi;
-import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
@@ -29,9 +28,9 @@ public class AstTransformer {
      * Transforms the input tree using the Visitor Pattern.
      * @param root the root node of the input tree.
      * @param nodeVisitor the visitor which will transform the input tree.
-     * @return the transformed tree.
+     * @return the transformed tree, or null if the root node was deleted.
      */
-    public Node transform(Node root, NodeVisitor nodeVisitor) {
+    public @Nullable Node transform(Node root, NodeVisitor nodeVisitor) {
         assertNotNull(root);
         assertNotNull(nodeVisitor);
 
@@ -48,15 +47,17 @@ public class AstTransformer {
      *                 object to your visitor by adding it to this map such that such that the key
      *                 is the class of the object, and the value is the object itself. The object
      *                 can be retrieved within the visitor by calling context.getVarFromParents().
-     * @return the transformed tree.
+     * @return the transformed tree, or null if the root node was deleted.
      */
-    public Node transform(Node root, NodeVisitor nodeVisitor, @Nullable Map<Class<?>, Object> rootVars) {
+    public @Nullable Node transform(Node root, NodeVisitor nodeVisitor, @Nullable Map<Class<?>, Object> rootVars) {
         assertNotNull(root);
         assertNotNull(nodeVisitor);
 
         TraverserVisitor<Node> traverserVisitor = getNodeTraverserVisitor(nodeVisitor);
         TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
-        return assertNotNull(treeTransformer.transform(root, traverserVisitor, rootVars == null ? ImmutableKit.emptyMap() : rootVars));
+        return rootVars == null
+                ? treeTransformer.transform(root, traverserVisitor)
+                : treeTransformer.transform(root, traverserVisitor, rootVars);
     }
 
     public Node transformParallel(Node root, NodeVisitor nodeVisitor) {
@@ -70,7 +71,7 @@ public class AstTransformer {
         TraverserVisitor<Node> traverserVisitor = new TraverserVisitorStub<Node>() {
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return assertNotNull(context.thisNode()).accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
         };
@@ -83,7 +84,7 @@ public class AstTransformer {
         return new TraverserVisitor<Node>() {
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return assertNotNull(context.thisNode()).accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
             @Override
