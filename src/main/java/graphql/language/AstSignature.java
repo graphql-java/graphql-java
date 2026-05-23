@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.util.TreeTransformerUtil.changeNode;
 
 /**
@@ -180,7 +181,7 @@ public class AstSignature {
 
     private Document transformDoc(Document document, NodeVisitorStub visitor) {
         AstTransformer astTransformer = new AstTransformer();
-        Node<?> newDoc = astTransformer.transform(document, visitor);
+        Node<?> newDoc = assertNotNull(astTransformer.transform(document, visitor));
         return (Document) newDoc;
     }
 
