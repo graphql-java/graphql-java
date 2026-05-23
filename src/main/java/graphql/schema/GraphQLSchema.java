@@ -96,7 +96,7 @@ public class GraphQLSchema {
         this.introspectionSchemaType = builder.introspectionSchemaType;
         this.introspectionSchemaField = Introspection.buildSchemaField(builder.introspectionSchemaType);
         this.introspectionTypeField = Introspection.buildTypeField(builder.introspectionSchemaType);
-        this.directiveDefinitionsHolder = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives, emptyList());
+        this.directiveDefinitionsHolder = new DirectivesUtil.DirectivesHolder(builder.additionalDirectives.values(), emptyList());
         this.schemaAppliedDirectivesHolder = new DirectivesUtil.DirectivesHolder(builder.schemaDirectives, builder.schemaAppliedDirectives);
         this.definition = builder.definition;
         this.extensionDefinitions = nonNullCopyOf(builder.extensionDefinitions);
@@ -763,7 +763,7 @@ public class GraphQLSchema {
                 .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
                 .codeRegistry(existingSchema.getCodeRegistry())
                 .clearAdditionalTypes()
-                .additionalDirectives(new LinkedHashSet<>(existingSchema.getDirectives()))
+                .additionalDirectives(existingSchema.getDirectives())
                 .clearSchemaDirectives()
                 .withSchemaDirectives(schemaDirectivesArray(existingSchema))
                 .withSchemaAppliedDirectives(schemaAppliedDirectivesArray(existingSchema))
@@ -813,7 +813,7 @@ public class GraphQLSchema {
         private List<SchemaExtensionDefinition> extensionDefinitions;
         private String description;
 
-        private final Set<GraphQLDirective> additionalDirectives = new LinkedHashSet<>();
+        private final Map<String, GraphQLDirective> additionalDirectives = new LinkedHashMap<>();
         private final Set<GraphQLNamedType> additionalTypes = new LinkedHashSet<>();
         private final List<GraphQLDirective> schemaDirectives = new ArrayList<>();
         private final List<GraphQLAppliedDirective> schemaAppliedDirectives = new ArrayList<>();
@@ -921,19 +921,49 @@ public class GraphQLSchema {
             return this;
         }
 
+        /**
+         * Adds multiple directive definitions to the schema.
+         *
+         * @param additionalDirectives the directive definitions to add
+         *
+         * @return this builder
+         *
+         * @deprecated use {@link #additionalDirectives(Collection)} instead
+         */
+        @Deprecated(since = "2026-05-20")
         public Builder additionalDirectives(Set<GraphQLDirective> additionalDirectives) {
-            this.additionalDirectives.addAll(additionalDirectives);
+            return additionalDirectives((Collection<? extends GraphQLDirective>) additionalDirectives);
+        }
+
+        /**
+         * Adds multiple directive definitions to the schema.
+         *
+         * @param additionalDirectives the directive definitions to add
+         *
+         * @return this builder
+         */
+        public Builder additionalDirectives(Collection<? extends GraphQLDirective> additionalDirectives) {
+            for (GraphQLDirective additionalDirective : additionalDirectives) {
+                additionalDirective(additionalDirective);
+            }
             return this;
         }
 
         public Builder additionalDirective(GraphQLDirective additionalDirective) {
-            this.additionalDirectives.add(additionalDirective);
+            String name = additionalDirective.getName();
+            GraphQLDirective existing = additionalDirectives.get(name);
+            if (existing != null && existing != additionalDirective) {
+                throw new AssertException(String.format("Directive '%s' already exists with a different instance", name));
+            }
+            if (existing == null) {
+                additionalDirectives.put(name, additionalDirective);
+            }
             return this;
         }
 
         /**
          * Clears all directives from this builder, including any that were previously added
-         * via {@link #additionalDirective(GraphQLDirective)} or {@link #additionalDirectives(Set)}.
+         * via {@link #additionalDirective(GraphQLDirective)} or {@link #additionalDirectives(Collection)}.
          * Built-in directives ({@code @include}, {@code @skip}, {@code @deprecated}, etc.) will
          * always be added back automatically at build time by {@code ensureBuiltInDirectives()}.
          * <p>
@@ -1073,19 +1103,15 @@ public class GraphQLSchema {
 
         private void ensureBuiltInDirectives() {
             // put built-in directives first, preserving user-supplied overrides by name
-            Set<String> userDirectiveNames = new LinkedHashSet<>();
-            for (GraphQLDirective d : additionalDirectives) {
-                userDirectiveNames.add(d.getName());
-            }
-            LinkedHashSet<GraphQLDirective> ordered = new LinkedHashSet<>();
+            Map<String, GraphQLDirective> ordered = new LinkedHashMap<>();
             for (GraphQLDirective builtIn : Directives.BUILT_IN_DIRECTIVES) {
-                if (!userDirectiveNames.contains(builtIn.getName())) {
-                    ordered.add(builtIn);
+                if (!additionalDirectives.containsKey(builtIn.getName())) {
+                    ordered.put(builtIn.getName(), builtIn);
                 }
             }
-            ordered.addAll(additionalDirectives);
+            ordered.putAll(additionalDirectives);
             additionalDirectives.clear();
-            additionalDirectives.addAll(ordered);
+            additionalDirectives.putAll(ordered);
         }
 
         private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema) {

@@ -19,7 +19,7 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "9.3.2"
+    id "com.gradleup.shadow" version "9.4.1"
     id "biz.aQute.bnd.builder" version "7.1.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
@@ -144,7 +144,7 @@ dependencies {
     testImplementation 'org.objenesis:objenesis:3.5'
     testImplementation 'org.apache.groovy:groovy:5.0.5'
     testImplementation 'org.apache.groovy:groovy-json:5.0.5'
-    testImplementation 'com.google.code.gson:gson:2.13.2'
+    testImplementation 'com.google.code.gson:gson:2.14.0'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.26'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.21.1'
     testImplementation 'org.awaitility:awaitility-groovy:4.3.0'
@@ -152,10 +152,10 @@ dependencies {
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.8.4"
+    testImplementation "io.projectreactor:reactor-core:3.8.5"
 
     testImplementation 'org.testng:testng:7.12.0' // use for reactive streams test inheritance
-    testImplementation "com.tngtech.archunit:archunit-junit5:1.4.1"
+    testImplementation "com.tngtech.archunit:archunit-junit5:1.4.2"
     testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
     
     // JUnit Platform launcher required for Gradle 9
@@ -166,12 +166,12 @@ dependencies {
     // this is needed for the idea jmh plugin to work correctly
     jmh 'org.openjdk.jmh:jmh-core:1.37'
     jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
-    jmh 'me.bechberger:ap-loader-all:4.3-13'
+    jmh 'me.bechberger:ap-loader-all:4.4-13'
 
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
-    errorprone 'com.uber.nullaway:nullaway:0.12.10'
+    errorprone 'com.uber.nullaway:nullaway:0.13.4'
     errorprone 'com.google.errorprone:error_prone_core:2.48.0'
 
     // just tests - no Kotlin otherwise
@@ -607,11 +607,13 @@ tasks.register('markGeneratedEqualsHashCode') {
     def jacocoDir = layout.buildDirectory.dir('classes-jacoco/java/main')
 
     inputs.dir(originalDir)
+    inputs.property("generatedAnnotationTaskVersion", 2)
     outputs.dir(jacocoDir)
 
     doLast {
         def src = originalDir.get().asFile
         def dest = jacocoDir.get().asFile
+        project.delete(dest)
         if (!src.exists()) return
 
         // Copy all class files to a separate directory for JaCoCo
@@ -635,8 +637,10 @@ tasks.register('markGeneratedEqualsHashCode') {
                     if (method.invisibleAnnotations == null) {
                         method.invisibleAnnotations = []
                     }
-                    method.invisibleAnnotations.add(new org.objectweb.asm.tree.AnnotationNode(ANNOTATION))
-                    modified = true
+                    if (!method.invisibleAnnotations.any { it.desc == ANNOTATION }) {
+                        method.invisibleAnnotations.add(new org.objectweb.asm.tree.AnnotationNode(ANNOTATION))
+                        modified = true
+                    }
                 }
             }
 
@@ -797,6 +801,5 @@ tasks.withType(PublishToMavenRepository) {
 tasks.withType(GenerateModuleMetadata) {
     enabled = false
 }
-
 
 

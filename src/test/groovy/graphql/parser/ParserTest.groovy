@@ -5,6 +5,7 @@ import graphql.language.ArrayValue
 import graphql.language.AstComparator
 import graphql.language.AstPrinter
 import graphql.language.BooleanValue
+import graphql.language.DescribedNode
 import graphql.language.Description
 import graphql.language.Directive
 import graphql.language.DirectiveDefinition
@@ -107,6 +108,53 @@ class ParserTest extends Specification {
         Document document = new Parser().parseDocument(input)
         then:
         isEqual(document, expectedResult.build())
+    }
+
+    def "parse executable descriptions"() {
+        given:
+        def input = '''
+            "Fetches a hero"
+            query getHero(
+                "The hero id"
+                $id: ID!
+            ) {
+                hero(id: $id) {
+                    ...heroFields
+                }
+            }
+
+            "Reusable hero fields"
+            fragment heroFields on Hero {
+                name
+            }
+        '''
+
+        when:
+        Document document = new Parser().parseDocument(input)
+        OperationDefinition operationDefinition = document.definitions[0] as OperationDefinition
+        VariableDefinition variableDefinition = operationDefinition.variableDefinitions[0]
+        FragmentDefinition fragmentDefinition = document.definitions[1] as FragmentDefinition
+
+        then:
+        (operationDefinition as DescribedNode).description.content == "Fetches a hero"
+        (variableDefinition as DescribedNode).description.content == "The hero id"
+        (fragmentDefinition as DescribedNode).description.content == "Reusable hero fields"
+    }
+
+    def "description is not allowed on query shorthand"() {
+        given:
+        def input = '''
+            "Shorthand descriptions are not part of the executable grammar"
+            {
+                hero
+            }
+        '''
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        thrown(InvalidSyntaxException)
     }
 
     def "parse mutation"() {

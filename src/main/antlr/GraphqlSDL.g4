@@ -19,7 +19,7 @@ schemaExtension :
     EXTEND SCHEMA directives
 ;
 
-operationTypeDefinition : description? operationType ':' typeName;
+operationTypeDefinition : operationType ':' typeName;
 
 typeDefinition:
 scalarTypeDefinition |

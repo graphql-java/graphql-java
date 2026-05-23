@@ -742,7 +742,7 @@ public class SchemaTransformer {
                     .mutation(this.mutation)
                     .subscription(this.subscription)
                     .additionalTypes(this.additionalTypes)
-                    .additionalDirectives(this.directives)
+                    .additionalDirectives(new ArrayList<>(this.directives))
                     .introspectionSchemaType(this.introspectionSchemaType)
                     .withSchemaDirectives(this.schemaDirectives)
                     .withSchemaAppliedDirectives(this.schemaAppliedDirectives)

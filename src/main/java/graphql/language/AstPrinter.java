@@ -249,8 +249,13 @@ public class AstPrinter {
         return false;
     }
 
+    private static boolean hasDescription(List<? extends Node<?>> nodes) {
+        return nodes.stream().anyMatch(AstPrinter::hasDescription);
+    }
+
     private NodePrinter<FragmentDefinition> fragmentDefinition() {
         return (out, node) -> {
+            description(out, node);
             out.append("fragment ");
             out.append(node.getName());
             out.append(" on ");
@@ -367,24 +372,17 @@ public class AstPrinter {
             String name = node.getName();
             // Anonymous queries with no directives or variable definitions can use
             // the query short form.
-            if (isEmpty(name) && isEmpty(node.getDirectives()) && isEmpty(node.getVariableDefinitions())
-                    && node.getOperation() == OperationDefinition.Operation.QUERY) {
+            if (canUseQueryShortForm(node)) {
                 node(out, node.getSelectionSet());
             } else {
+                description(out, node);
                 OperationDefinition.Operation op = node.getOperation();
                 out.append(op.toString().toLowerCase());
                 if (!isEmpty(name)) {
                     out.append(' ');
                     out.append(name);
                 }
-                if (!isEmpty(node.getVariableDefinitions())) {
-                    if (isEmpty(name)) {
-                        out.append(' ');
-                    }
-                    out.append('(');
-                    join(out, node.getVariableDefinitions(), argSep);
-                    out.append(')');
-                }
+                variableDefinitions(out, node, argSep);
                 if (!isEmpty(node.getDirectives())) {
                     out.append(' ');
                     directives(out, node.getDirectives());
@@ -395,6 +393,34 @@ public class AstPrinter {
                 node(out, node.getSelectionSet());
             }
         };
+    }
+
+    private boolean canUseQueryShortForm(OperationDefinition node) {
+        return (compactMode || !hasDescription(node))
+                && isEmpty(node.getName())
+                && isEmpty(node.getDirectives())
+                && isEmpty(node.getVariableDefinitions())
+                && node.getOperation() == OperationDefinition.Operation.QUERY;
+    }
+
+    private void variableDefinitions(StringBuilder out, OperationDefinition node, String argSep) {
+        if (isEmpty(node.getVariableDefinitions())) {
+            return;
+        }
+        if (isEmpty(node.getName())) {
+            out.append(' ');
+        }
+        if (!compactMode && hasDescription(node.getVariableDefinitions())) {
+            int offset = out.length();
+            out.append("(\n");
+            join(out, node.getVariableDefinitions(), "\n");
+            indent(out, offset);
+            out.append("\n)");
+            return;
+        }
+        out.append('(');
+        join(out, node.getVariableDefinitions(), argSep);
+        out.append(')');
     }
 
     private NodePrinter<OperationTypeDefinition> operationTypeDefinition() {
@@ -546,6 +572,7 @@ public class AstPrinter {
         String nameTypeSep = compactMode ? ":" : ": ";
         String defaultValueEquals = compactMode ? "=" : " = ";
         return (out, node) -> {
+            description(out, node);
             out.append('$');
             out.append(node.getName());
             out.append(nameTypeSep);
