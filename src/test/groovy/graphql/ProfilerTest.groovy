@@ -232,7 +232,6 @@ class ProfilerTest extends Specification {
 
     }
 
-    @Ignore("not available for performance reasons at the moment")
     def "cached dataloader values"() {
         given:
         def sdl = '''
@@ -520,7 +519,6 @@ class ProfilerTest extends Specification {
 
     }
 
-    @Ignore("not available for performance reasons at the moment")
     def "dataloader usage"() {
         given:
         def sdl = '''

@@ -67,10 +67,11 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
     private void newDataLoaderInvocation() {
         DataFetchingEnvironmentImpl dfeImpl = (DataFetchingEnvironmentImpl) dfe;
         DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfeImpl.toInternal();
+        dfeInternalState.getProfiler().dataLoaderUsed(dataLoaderName);
         if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof PerLevelDataLoaderDispatchStrategy) {
             AlternativeCallContext alternativeCallContext = dfeInternalState.getAlternativeCallContext();
             int level = dfeImpl.getLevel();
-            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderInvocation(level, delegate, alternativeCallContext);
+            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderInvocation(level, delegate, dataLoaderName, alternativeCallContext);
         } else if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof ExhaustedDataLoaderDispatchStrategy) {
             AlternativeCallContext alternativeCallContext = dfeInternalState.getAlternativeCallContext();
             ((ExhaustedDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderInvocation(alternativeCallContext);

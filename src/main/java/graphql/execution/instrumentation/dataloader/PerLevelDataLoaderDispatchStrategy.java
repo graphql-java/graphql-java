@@ -49,17 +49,20 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         // all the invocations that are linked together are the relevant invocations for the next dispatch
         private static class StateForLevel {
             final @Nullable DataLoader dataLoader;
+            final @Nullable String dataLoaderName;
             final boolean dispatchingStarted;
             final boolean dispatchingFinished;
             final boolean currentlyDelayedDispatching;
             final @Nullable StateForLevel prev;
 
             public StateForLevel(@Nullable DataLoader dataLoader,
+                                 @Nullable String dataLoaderName,
                                  boolean dispatchingStarted,
                                  boolean dispatchingFinished,
                                  boolean currentlyDelayedDispatching,
                                  @Nullable StateForLevel prev) {
                 this.dataLoader = dataLoader;
+                this.dataLoaderName = dataLoaderName;
                 this.dispatchingStarted = dispatchingStarted;
                 this.dispatchingFinished = dispatchingFinished;
                 this.currentlyDelayedDispatching = currentlyDelayedDispatching;
@@ -101,7 +104,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                     }
                 }
 
-                StateForLevel newState = new StateForLevel(null, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching, null);
+                StateForLevel newState = new StateForLevel(null, null, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching, null);
 
                 if (currentStateRef.compareAndSet(currentState, newState)) {
                     return currentState;
@@ -110,7 +113,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
 
 
-        public boolean newDataLoaderInvocation(int level, DataLoader dataLoader) {
+        public boolean newDataLoaderInvocation(int level, DataLoader dataLoader, String dataLoaderName) {
             AtomicReference<@Nullable StateForLevel> currentStateRef = stateMapPerLevel.computeIfAbsent(level, __ -> new AtomicReference<>());
             while (true) {
                 StateForLevel currentState = currentStateRef.get();
@@ -133,7 +136,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                     currentlyDelayedDispatching = true;
                 }
 
-                StateForLevel newState = new StateForLevel(dataLoader, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching, currentState);
+                StateForLevel newState = new StateForLevel(dataLoader, dataLoaderName, dispatchingStarted, dispatchingFinished, currentlyDelayedDispatching, currentState);
 
                 if (currentStateRef.compareAndSet(currentState, newState)) {
                     return newDelayedInvocation;
@@ -485,7 +488,16 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     private void dispatchAll(DataLoaderRegistry dataLoaderRegistry, int level) {
-        dataLoaderRegistry.dispatchAll();
+        for (String key : dataLoaderRegistry.getKeys()) {
+            DataLoader<?, ?> dl = dataLoaderRegistry.getDataLoader(key);
+            if (dl != null) {
+                int count = dl.dispatchDepth();
+                dl.dispatch();
+                if (count > 0) {
+                    profiler.batchLoadedOldStrategy(key, level, count);
+                }
+            }
+        }
     }
 
     private void dispatchDLCFImpl(Integer level, CallStack callStack, boolean normalOrDelayed, boolean chained) {
@@ -495,9 +507,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             return;
         }
 
+        boolean delayed = !normalOrDelayed;
         List<CompletableFuture> allDispatchedCFs = new ArrayList<>();
         while (stateForLevel != null && stateForLevel.dataLoader != null) {
+            int count = stateForLevel.dataLoader.dispatchDepth();
             CompletableFuture<List> dispatch = stateForLevel.dataLoader.dispatch();
+            if (count > 0 && stateForLevel.dataLoaderName != null) {
+                profiler.batchLoadedNewStrategy(stateForLevel.dataLoaderName, level, count, delayed, chained);
+            }
             allDispatchedCFs.add(dispatch);
             stateForLevel = stateForLevel.prev;
         }
@@ -512,12 +529,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     public void newDataLoaderInvocation(int level,
                                         DataLoader dataLoader,
+                                        String dataLoaderName,
                                         @Nullable AlternativeCallContext alternativeCallContext) {
         if (!enableDataLoaderChaining) {
             return;
         }
         CallStack callStack = getCallStack(alternativeCallContext);
-        boolean newDelayedInvocation = callStack.chainedDLStack.newDataLoaderInvocation(level, dataLoader);
+        boolean newDelayedInvocation = callStack.chainedDLStack.newDataLoaderInvocation(level, dataLoader, dataLoaderName);
         if (newDelayedInvocation) {
             dispatchDLCFImpl(level, callStack, false, false);
         }
