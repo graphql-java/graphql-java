@@ -5,6 +5,7 @@ import graphql.DuckTyped;
 import graphql.EngineRunningState;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicSpi;
@@ -58,6 +59,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CAPTURE_PARTIAL_RESULTS_ON_CANCEL;
 import static graphql.execution.Async.exceptionallyCompletedFuture;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
@@ -218,6 +220,7 @@ public abstract class ExecutionStrategy {
 
         resolveObjectCtx.onDispatched();
 
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
         Object fieldValueInfosResult = resolvedFieldFutures.awaitPolymorphic();
         if (fieldValueInfosResult instanceof CompletableFuture) {
             CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
@@ -232,7 +235,7 @@ public abstract class ExecutionStrategy {
                 Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
                 dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
                 resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
-                resultFutures.await().whenComplete(handleResultsConsumer);
+                resultFutures.await(graphQLContext).whenComplete(handleResultsConsumer);
             }).exceptionally((ex) -> {
                 // if there are any issues with combining/handling the field results,
                 // complete the future at all costs and bubble up any thrown exception so
@@ -273,17 +276,33 @@ public abstract class ExecutionStrategy {
         return resultFutures;
     }
 
+    protected boolean capturePartialResults(ExecutionContext executionContext) {
+        return executionContext.getGraphQLContext().getBoolean(CAPTURE_PARTIAL_RESULTS_ON_CANCEL);
+    }
+
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
         return (List<Object> results, Throwable exception) -> {
             exception = executionContext.possibleCancellation(exception);
 
             if (exception != null) {
+                Throwable cause = exception instanceof CompletionException ? exception.getCause() : exception;
+                if (cause instanceof AbortExecutionException && results != null
+                        && capturePartialResults(executionContext)) {
+                    // partial results mode: results already has harvested values from completed CFs
+                    executionContext.addError((AbortExecutionException) cause);
+                    completeFieldValueMap(overallResult, executionContext, fieldNames, results);
+                    return;
+                }
                 handleValueException(overallResult, exception, executionContext);
                 return;
             }
-            Map<String, Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldNames, results);
-            overallResult.complete(resolvedValuesByField);
+            completeFieldValueMap(overallResult, executionContext, fieldNames, results);
         };
+    }
+
+    protected void completeFieldValueMap(CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext, List<String> fieldNames, List<Object> results) {
+        Map<String, Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldNames, results);
+        overallResult.complete(resolvedValuesByField);
     }
 
     DeferredExecutionSupport createDeferredExecutionSupport(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {

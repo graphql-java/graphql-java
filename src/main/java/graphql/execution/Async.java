@@ -1,7 +1,9 @@
 package graphql.execution;
 
 import graphql.Assert;
+import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.GraphQLUnusualConfiguration;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -21,6 +23,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
+import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CANCELLATION_FUTURE_KEY;
+import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CAPTURE_PARTIAL_RESULTS_ON_CANCEL;
 import static java.util.stream.Collectors.toList;
 
 @Internal
@@ -56,6 +60,17 @@ public class Async {
          * @return a CompletableFuture to a List of values
          */
         CompletableFuture<List<T>> await();
+
+        /**
+         * Like {@link #await()} but when {@link GraphQLUnusualConfiguration.CancellationConfig#CAPTURE_PARTIAL_RESULTS_ON_CANCEL}
+         * is enabled in the context and an {@link AbortExecutionException} causes a CF to fail, the already-completed
+         * CFs will have their values harvested and returned as partial results rather than completing exceptionally.
+         *
+         * @param graphQLContext the context to check for the partial results flag
+         *
+         * @return a CompletableFuture to a List of values (possibly partial on cancellation)
+         */
+        CompletableFuture<List<T>> await(GraphQLContext graphQLContext);
 
         /**
          * This will return a {@code CompletableFuture<List<T>>} if ANY of the input values are async
@@ -105,6 +120,11 @@ public class Async {
         }
 
         @Override
+        public CompletableFuture<List<T>> await(GraphQLContext graphQLContext) {
+            return await();
+        }
+
+        @Override
         public Object awaitPolymorphic() {
             Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
             return Collections.emptyList();
@@ -147,6 +167,11 @@ public class Async {
             }
             //noinspection unchecked
             return CompletableFuture.completedFuture(Collections.singletonList((T) value));
+        }
+
+        @Override
+        public CompletableFuture<List<T>> await(GraphQLContext graphQLContext) {
+            return await();
         }
 
         @Override
@@ -230,6 +255,101 @@ public class Async {
                         });
             }
             return overallResult;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public CompletableFuture<List<T>> await(GraphQLContext graphQLContext) {
+            commonSizeAssert();
+            if (cfCount == 0) {
+                return CompletableFuture.completedFuture(materialisedList(array));
+            }
+            if (!graphQLContext.getBoolean(CAPTURE_PARTIAL_RESULTS_ON_CANCEL)) {
+                return await();
+            }
+
+            CompletableFuture<Void> cancellationFuture = graphQLContext.get(CANCELLATION_FUTURE_KEY);
+            if (cancellationFuture == null) {
+                return await();
+            }
+
+            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+            CompletableFuture<T>[] cfsArr = copyOnlyCFsToArray();
+            CompletableFuture<Void> allOf = CompletableFuture.allOf(cfsArr);
+
+            // race: either all CFs complete normally, or cancellation fires first
+            CompletableFuture.anyOf(allOf, cancellationFuture)
+                    .whenComplete((ignored, exception) -> {
+                        if (overallResult.isDone()) {
+                            return;
+                        }
+                        if (exception != null) {
+                            // a CF failed — not our abort path, propagate
+                            overallResult.completeExceptionally(exception);
+                            return;
+                        }
+                        if (!allOf.isDone()) {
+                            // cancellation fired before allOf: harvest already-completed CFs
+                            List<T> partialResults = harvestPartialResults(array);
+                            overallResult.complete(partialResults);
+                            return;
+                        }
+                        // allOf finished normally: collect all results
+                        overallResult.complete(collectAllResults(array, cfsArr));
+                    });
+
+            // also handle when allOf completes (either normally or exceptionally) after the race
+            allOf.whenComplete((ignored, exception) -> {
+                if (overallResult.isDone()) {
+                    return;
+                }
+                if (exception != null) {
+                    // a CF in allOf failed — propagate
+                    overallResult.completeExceptionally(exception);
+                    return;
+                }
+                overallResult.complete(collectAllResults(array, cfsArr));
+            });
+
+            return overallResult;
+        }
+
+        @SuppressWarnings("unchecked")
+        private List<T> harvestPartialResults(Object[] array) {
+            List<T> partialResults = new ArrayList<>(array.length);
+            for (Object object : array) {
+                if (object instanceof CompletableFuture) {
+                    CompletableFuture<T> cf = (CompletableFuture<T>) object;
+                    if (cf.isDone() && !cf.isCompletedExceptionally()) {
+                        partialResults.add(cf.join());
+                    } else {
+                        partialResults.add(null);
+                    }
+                } else {
+                    partialResults.add((T) object);
+                }
+            }
+            return partialResults;
+        }
+
+        @SuppressWarnings("unchecked")
+        private List<T> collectAllResults(Object[] array, CompletableFuture<T>[] cfsArr) {
+            List<T> results = new ArrayList<>(array.length);
+            if (cfsArr.length == array.length) {
+                for (CompletableFuture<T> cf : cfsArr) {
+                    results.add(cf.join());
+                }
+            } else {
+                for (Object object : array) {
+                    if (object instanceof CompletableFuture) {
+                        CompletableFuture<T> cf = (CompletableFuture<T>) object;
+                        results.add(cf.join());
+                    } else {
+                        results.add((T) object);
+                    }
+                }
+            }
+            return results;
         }
 
         @SuppressWarnings("unchecked")

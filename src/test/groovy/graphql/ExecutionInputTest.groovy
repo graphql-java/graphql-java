@@ -451,6 +451,178 @@ class ExecutionInputTest extends Specification {
 
     }
 
+    def "capturePartialResultsOnCancel configuration is accessible via unusualConfiguration"() {
+        // Smoke test: verify the configuration API works correctly
+
+        def sdl = '''
+            type Query {
+                field1 : String
+                field2 : String
+            }
+        '''
+
+        DataFetcher df = { DataFetchingEnvironment env -> "value" }
+
+        def fetcherMap = ["Query": ["field1": df, "field2": df]]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when: "capturePartialResultsOnCancel is enabled and execution completes normally"
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("{ field1 field2 }")
+                .graphQLContext({ c ->
+                    GraphQL.unusualConfiguration(c).cancellation().capturePartialResultsOnCancel(true)
+                })
+                .build()
+
+        def er = graphQL.execute(executionInput)
+
+        then: "normal results are returned unchanged"
+        er.errors.isEmpty()
+        er.data == [field1: "value", field2: "value"]
+
+        when: "capturePartialResultsOnCancel is enabled but cancel is called before execution"
+        ExecutionInput cancelledInput = ExecutionInput.newExecutionInput()
+                .query("{ field1 field2 }")
+                .graphQLContext({ c ->
+                    GraphQL.unusualConfiguration(c).cancellation().capturePartialResultsOnCancel(true)
+                })
+                .build()
+        cancelledInput.cancel()
+
+        er = graphQL.execute(cancelledInput)
+
+        then: "cancel error is returned"
+        !er.errors.isEmpty()
+        er.errors.any { it["message"].contains("Execution has been asked to be cancelled") }
+    }
+
+    def "capturePartialResultsOnCancel returns fast field value when slow field is cancelled"() {
+        // The partial-results harvest happens at the fieldValuesFutures.await(graphQLContext) level.
+        // FieldValueInfo.getFieldValueObject() for async object fields is a CompletableFuture<Map>.
+        // When the slow object's CF hasn't completed yet and cancel fires, await(graphQLContext)
+        // harvests the already-done fast CF and returns partial data.
+        def sdl = '''
+            type Query {
+                fast : Inner
+                slow : Inner
+            }
+            type Inner {
+                value : String
+            }
+        '''
+
+        CountDownLatch slowStarted = new CountDownLatch(1)
+        CountDownLatch slowRelease = new CountDownLatch(1)
+
+        DataFetcher fastInnerDf = { DataFetchingEnvironment env ->
+            return CompletableFuture.completedFuture([value: "fast-value"])
+        }
+
+        DataFetcher slowInnerDf = { DataFetchingEnvironment env ->
+            return CompletableFuture.supplyAsync {
+                slowStarted.countDown()
+                slowRelease.await()
+                return [value: "slow-value"]
+            }
+        }
+
+        DataFetcher innerValueDf = { DataFetchingEnvironment env ->
+            return env.source["value"]
+        }
+
+        def fetcherMap = [
+                "Query": ["fast": fastInnerDf, "slow": slowInnerDf],
+                "Inner": ["value": innerValueDf]
+        ]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("{ fast { value } slow { value } }")
+                .graphQLContext({ c ->
+                    GraphQL.unusualConfiguration(c).cancellation().capturePartialResultsOnCancel(true)
+                })
+                .build()
+
+        def cf = graphQL.executeAsync(executionInput)
+
+        // wait for slow DF to have started; by this point fast has already completed
+        slowStarted.await()
+
+        // cancel while slow is still blocked; fast's fieldValue CF is already done
+        executionInput.cancel()
+
+        // unblock slow so it doesn't hang forever
+        slowRelease.countDown()
+
+        await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
+        def er = cf.join()
+
+        then:
+        !cf.isCompletedExceptionally()
+        !er.errors.isEmpty()
+        er.errors.any { it["message"].contains("Execution has been asked to be cancelled") }
+        // fast field completed before cancel — its data should be present
+        er.data != null
+        er.data["fast"] != null
+        er.data["fast"]["value"] == "fast-value"
+        // slow field was cancelled — should be null
+        er.data["slow"] == null
+    }
+
+    def "without capturePartialResultsOnCancel only the cancel error is returned"() {
+        def sdl = '''
+            type Query {
+                fast : String
+                slow : String
+            }
+        '''
+
+        CountDownLatch fastDone = new CountDownLatch(1)
+        CountDownLatch slowLatch = new CountDownLatch(1)
+
+        DataFetcher fastDf = { DataFetchingEnvironment env ->
+            return CompletableFuture.supplyAsync {
+                fastDone.countDown()
+                return "fast-value"
+            }
+        }
+
+        DataFetcher slowDf = { DataFetchingEnvironment env ->
+            return CompletableFuture.supplyAsync {
+                slowLatch.await()
+                return "slow-value"
+            }
+        }
+
+        def fetcherMap = ["Query": ["fast": fastDf, "slow": slowDf]]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("{ fast slow }")
+                .build()
+
+        def cf = graphQL.executeAsync(executionInput)
+
+        fastDone.await()
+        executionInput.cancel()
+        slowLatch.countDown()
+
+        await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
+        def er = cf.join()
+
+        then:
+        !cf.isCompletedExceptionally()
+        !er.errors.isEmpty()
+        er.errors[0]["message"] == "Execution has been asked to be cancelled"
+        // no partial data - old behaviour
+        er.data == null
+    }
+
     private static ExecutionResult awaitAsync(GraphQL graphQL, ExecutionInput executionInput) {
         def cf = graphQL.executeAsync(executionInput)
         await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
