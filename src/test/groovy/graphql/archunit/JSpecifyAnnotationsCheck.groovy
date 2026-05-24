@@ -11,7 +11,6 @@ import spock.lang.Specification
 class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
-            "graphql.analysis.QueryTraverser"
     ] as Set
 
     def "ensure all public API and experimental API classes have @NullMarked annotation"() {

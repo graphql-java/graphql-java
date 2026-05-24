@@ -36,7 +36,7 @@ public class AstTransformer {
 
         TraverserVisitor<Node> traverserVisitor = getNodeTraverserVisitor(nodeVisitor);
         TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
-        return assertNotNull(treeTransformer.transform(root, traverserVisitor));
+        return treeTransformer.transform(root, traverserVisitor);
     }
 
     /**
