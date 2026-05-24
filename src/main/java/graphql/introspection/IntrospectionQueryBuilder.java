@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.language.AstPrinter;
 import graphql.language.BooleanValue;
 import graphql.language.Document;
@@ -223,9 +224,8 @@ public class IntrospectionQueryBuilder {
         }
     }
 
-    @SuppressWarnings("NullAway")
     @SafeVarargs
-    private static <T> List<T> filter(T... args) {
+    private static <T> List<T> filter(@Nullable T... args) {
         return ImmutableKit.filterVarArgs(Objects::nonNull, args);
     }
 
@@ -236,7 +236,6 @@ public class IntrospectionQueryBuilder {
      *
      * @return an introspection query in document form
      */
-    @SuppressWarnings("NullAway")
     public static Document buildDocument(Options options) {
         SelectionSet schemaSelectionSet = newSelectionSet().selections(filter(
                         options.schemaDescription ? newField("description").build() : null,
