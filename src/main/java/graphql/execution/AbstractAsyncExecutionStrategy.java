@@ -2,7 +2,6 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQLContext;
 import graphql.PublicSpi;
 
 import java.util.concurrent.CompletionException;

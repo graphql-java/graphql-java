@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
-import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredExecutionSupport;
 import org.jspecify.annotations.NullMarked;
@@ -68,8 +67,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched();
 
-        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
-        futures.await(graphQLContext).whenComplete((completeValueInfos, throwable) -> {
+        CompletableFuture<Void> cancelCF = getCancellationFuture(executionContext);
+        futures.await(cancelCF).whenComplete((completeValueInfos, throwable) -> {
             List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
 
             throwable = executionContext.possibleCancellation(throwable);
@@ -93,7 +92,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                     executionStrategyCtx.onFieldValuesInfo(nonNullValueInfos);
                     // Let handleResultsWithPartialData add the error to avoid duplication
                     BiConsumer<List<Object>, Throwable> fieldValuesConsumer = handleResultsWithPartialData(executionContext, fieldsExecutedOnInitialResult, overallResult);
-                    fieldValuesFutures.await(graphQLContext).whenComplete(fieldValuesConsumer);
+                    fieldValuesFutures.await(cancelCF).whenComplete(fieldValuesConsumer);
                     return;
                 }
                 Throwable cause = throwable instanceof CompletionException ? throwable.getCause() : throwable;
@@ -109,7 +108,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
 
             BiConsumer<List<Object>, Throwable> fieldValuesConsumer = handleResultsWithPartialData(executionContext, fieldsExecutedOnInitialResult, overallResult);
-            fieldValuesFutures.await(graphQLContext).whenComplete(fieldValuesConsumer);
+            fieldValuesFutures.await(cancelCF).whenComplete(fieldValuesConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so

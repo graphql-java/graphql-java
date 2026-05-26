@@ -47,6 +47,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.LightDataFetcher;
 import graphql.util.FpKit;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -59,6 +60,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CANCELLATION_FUTURE_KEY;
 import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CAPTURE_PARTIAL_RESULTS_ON_CANCEL;
 import static graphql.execution.Async.exceptionallyCompletedFuture;
 import static graphql.execution.FieldCollectorParameters.newParameters;
@@ -220,7 +222,7 @@ public abstract class ExecutionStrategy {
 
         resolveObjectCtx.onDispatched();
 
-        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
+        CompletableFuture<Void> cancelCF = getCancellationFuture(executionContext);
         Object fieldValueInfosResult = resolvedFieldFutures.awaitPolymorphic();
         if (fieldValueInfosResult instanceof CompletableFuture) {
             CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
@@ -235,7 +237,7 @@ public abstract class ExecutionStrategy {
                 Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
                 dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
                 resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
-                resultFutures.await(graphQLContext).whenComplete(handleResultsConsumer);
+                resultFutures.await(cancelCF).whenComplete(handleResultsConsumer);
             }).exceptionally((ex) -> {
                 // if there are any issues with combining/handling the field results,
                 // complete the future at all costs and bubble up any thrown exception so
@@ -278,6 +280,23 @@ public abstract class ExecutionStrategy {
 
     protected boolean capturePartialResults(ExecutionContext executionContext) {
         return executionContext.getGraphQLContext().getBoolean(CAPTURE_PARTIAL_RESULTS_ON_CANCEL);
+    }
+
+    /**
+     * Returns the cancellation future from the execution context if partial result capture is enabled,
+     * or {@code null} otherwise. This is used to pass into {@link Async.CombinedBuilder#await(CompletableFuture)}
+     * so that the generic utility can race against cancellation without needing to know about GraphQL context.
+     *
+     * @param executionContext the execution context
+     *
+     * @return the cancellation future, or {@code null} if partial results on cancel is not enabled
+     */
+    protected @Nullable CompletableFuture<Void> getCancellationFuture(ExecutionContext executionContext) {
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
+        if (!graphQLContext.getBoolean(CAPTURE_PARTIAL_RESULTS_ON_CANCEL)) {
+            return null;
+        }
+        return graphQLContext.get(CANCELLATION_FUTURE_KEY);
     }
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {

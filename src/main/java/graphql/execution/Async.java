@@ -1,9 +1,7 @@
 package graphql.execution;
 
 import graphql.Assert;
-import graphql.GraphQLContext;
 import graphql.Internal;
-import graphql.GraphQLUnusualConfiguration;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -23,8 +21,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
-import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CANCELLATION_FUTURE_KEY;
-import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CAPTURE_PARTIAL_RESULTS_ON_CANCEL;
 import static java.util.stream.Collectors.toList;
 
 @Internal
@@ -62,15 +58,18 @@ public class Async {
         CompletableFuture<List<T>> await();
 
         /**
-         * Like {@link #await()} but when {@link GraphQLUnusualConfiguration.CancellationConfig#CAPTURE_PARTIAL_RESULTS_ON_CANCEL}
-         * is enabled in the context and an {@link AbortExecutionException} causes a CF to fail, the already-completed
-         * CFs will have their values harvested and returned as partial results rather than completing exceptionally.
+         * Like {@link #await()} but races against the given cancellation future. If the cancellation future
+         * completes before all the tracked futures complete, the already-completed futures will have their
+         * values harvested and returned as partial results (with {@code null} for incomplete entries)
+         * rather than completing exceptionally.
          *
-         * @param graphQLContext the context to check for the partial results flag
+         * <p>If {@code cancellationFuture} is {@code null}, this behaves identically to {@link #await()}.
+         *
+         * @param cancellationFuture a future that, when completed, signals cancellation; may be {@code null}
          *
          * @return a CompletableFuture to a List of values (possibly partial on cancellation)
          */
-        CompletableFuture<List<T>> await(GraphQLContext graphQLContext);
+        CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture);
 
         /**
          * This will return a {@code CompletableFuture<List<T>>} if ANY of the input values are async
@@ -120,7 +119,7 @@ public class Async {
         }
 
         @Override
-        public CompletableFuture<List<T>> await(GraphQLContext graphQLContext) {
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
             return await();
         }
 
@@ -170,7 +169,7 @@ public class Async {
         }
 
         @Override
-        public CompletableFuture<List<T>> await(GraphQLContext graphQLContext) {
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
             return await();
         }
 
@@ -259,16 +258,11 @@ public class Async {
 
         @SuppressWarnings("unchecked")
         @Override
-        public CompletableFuture<List<T>> await(GraphQLContext graphQLContext) {
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
             commonSizeAssert();
             if (cfCount == 0) {
                 return CompletableFuture.completedFuture(materialisedList(array));
             }
-            if (!graphQLContext.getBoolean(CAPTURE_PARTIAL_RESULTS_ON_CANCEL)) {
-                return await();
-            }
-
-            CompletableFuture<Void> cancellationFuture = graphQLContext.get(CANCELLATION_FUTURE_KEY);
             if (cancellationFuture == null) {
                 return await();
             }
