@@ -74,7 +74,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             throwable = executionContext.possibleCancellation(throwable);
 
             if (throwable != null) {
-                if (capturePartialResults(executionContext) && completeValueInfos != null) {
+                if (completeValueInfos != null && capturePartialResults(executionContext)) {
                     // partial results: some FieldValueInfos completed before cancel - build with those
                     // null entries mean that FieldValueInfo CF wasn't done yet (field was cancelled)
                     Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());

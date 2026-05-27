@@ -508,8 +508,14 @@ class AsyncTest extends Specification {
 
         def list = resultCF.join()
 
-        then:
+        then: "full results returned despite cancel firing after"
         list == ["X", "Y"]
+
+        when: "cancelCF completes after all CFs - should not affect result"
+        cancelCF.complete(null)
+
+        then: "result is unchanged"
+        resultCF.join() == ["X", "Y"]
     }
 
     def "await with cancelCF propagates exception if a CF fails before cancellation"() {
@@ -553,10 +559,21 @@ class AsyncTest extends Specification {
     }
 
     def "await with cancelCF on single builder delegates to plain await"() {
-        when:
+        when: "single builder with a completed CF"
         def cancelCF = new CompletableFuture<Void>()
         def asyncBuilder = Async.ofExpectedSize(1)
         asyncBuilder.add(completedFuture("A"))
+        def list = asyncBuilder.await(cancelCF).join()
+
+        then: "result is returned normally - cancellation is not raced for single elements"
+        list == ["A"]
+    }
+
+    def "await with cancelCF on single builder with materialised value delegates to plain await"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.addObject("A")
         def list = asyncBuilder.await(cancelCF).join()
 
         then:
