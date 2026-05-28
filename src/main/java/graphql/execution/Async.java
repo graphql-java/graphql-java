@@ -268,79 +268,35 @@ public class Async {
             }
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
-            CompletableFuture<T>[] cfsArr = copyOnlyCFsToArray();
-            CompletableFuture<Void> allOf = CompletableFuture.allOf(cfsArr);
+            CompletableFuture<Void> allOf = CompletableFuture.allOf(copyOnlyCFsToArray());
 
-            // race: either all CFs complete normally, or cancellation fires first
-            CompletableFuture.anyOf(allOf, cancellationFuture)
-                    .whenComplete((ignored, exception) -> {
-                        if (overallResult.isDone()) {
-                            return;
-                        }
-                        if (exception != null) {
-                            // a CF failed — not our abort path, propagate
-                            overallResult.completeExceptionally(exception);
-                            return;
-                        }
-                        if (!allOf.isDone()) {
-                            // cancellation fired before allOf: harvest already-completed CFs
-                            List<T> partialResults = harvestPartialResults(array);
-                            overallResult.complete(partialResults);
-                            return;
-                        }
-                        // allOf finished normally: collect all results
-                        overallResult.complete(collectAllResults(array, cfsArr));
-                    });
-
-            // also handle when allOf completes (either normally or exceptionally) after the race
-            allOf.whenComplete((ignored, exception) -> {
-                if (overallResult.isDone()) {
-                    return;
-                }
+            // Race "all field futures complete" against cancellation. The cancellation future always
+            // completes normally (see ExecutionInput#cancel), so anyOf can only complete exceptionally
+            // when a field future fails - in which case we propagate that failure.
+            CompletableFuture.anyOf(allOf, cancellationFuture).whenComplete((ignored, exception) -> {
                 if (exception != null) {
-                    // a CF in allOf failed — propagate
                     overallResult.completeExceptionally(exception);
                     return;
                 }
-                overallResult.complete(collectAllResults(array, cfsArr));
+                // Either every field future is done (allOf won) or cancellation won the race. In both
+                // cases we harvest whatever has completed; field futures that are not yet done become
+                // null. join() is safe here: if allOf is not done then no field future has failed (a
+                // failure would have completed allOf exceptionally and taken the branch above).
+                overallResult.complete(harvestResults(array));
             });
 
             return overallResult;
         }
 
         @SuppressWarnings("unchecked")
-        private List<T> harvestPartialResults(Object[] array) {
-            List<T> partialResults = new ArrayList<>(array.length);
+        private List<T> harvestResults(Object[] array) {
+            List<T> results = new ArrayList<>(array.length);
             for (Object object : array) {
                 if (object instanceof CompletableFuture) {
                     CompletableFuture<T> cf = (CompletableFuture<T>) object;
-                    if (cf.isDone() && !cf.isCompletedExceptionally()) {
-                        partialResults.add(cf.join());
-                    } else {
-                        partialResults.add(null);
-                    }
+                    results.add(cf.isDone() ? cf.join() : null);
                 } else {
-                    partialResults.add((T) object);
-                }
-            }
-            return partialResults;
-        }
-
-        @SuppressWarnings("unchecked")
-        private List<T> collectAllResults(Object[] array, CompletableFuture<T>[] cfsArr) {
-            List<T> results = new ArrayList<>(array.length);
-            if (cfsArr.length == array.length) {
-                for (CompletableFuture<T> cf : cfsArr) {
-                    results.add(cf.join());
-                }
-            } else {
-                for (Object object : array) {
-                    if (object instanceof CompletableFuture) {
-                        CompletableFuture<T> cf = (CompletableFuture<T>) object;
-                        results.add(cf.join());
-                    } else {
-                        results.add((T) object);
-                    }
+                    results.add((T) object);
                 }
             }
             return results;

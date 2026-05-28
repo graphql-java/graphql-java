@@ -548,6 +548,17 @@ class AsyncTest extends Specification {
         list == ["A", "B", "C"]
     }
 
+    def "await with null cancelCF delegates to plain await"() {
+        when: "a many builder is awaited with a null cancellation future"
+        def asyncBuilder = Async.ofExpectedSize(2)
+        asyncBuilder.add(completedFuture("A"))
+        asyncBuilder.add(completedFuture("B"))
+        def list = asyncBuilder.await((CompletableFuture<Void>) null).join()
+
+        then: "it behaves identically to await() and returns all results"
+        list == ["A", "B"]
+    }
+
     def "await with cancelCF on empty builder returns empty list"() {
         when:
         def cancelCF = new CompletableFuture<Void>()
