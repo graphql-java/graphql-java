@@ -164,8 +164,7 @@ public class Async {
                 CompletableFuture<T> cf = (CompletableFuture<T>) value;
                 return cf.thenApply(Collections::singletonList);
             }
-            //noinspection unchecked
-            return CompletableFuture.completedFuture(Collections.singletonList((T) value));
+            return materialisedValue();
         }
 
         @Override
@@ -176,19 +175,22 @@ public class Async {
             }
 
             if (value instanceof CompletableFuture) {
-                @SuppressWarnings("unchecked")
-                CompletableFuture<T> cf = (CompletableFuture<T>) value;
-
                 CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
-                CompletableFuture.anyOf(cf, cancellationFuture).whenComplete((ignored, exception) -> {
+                //noinspection unchecked
+                CompletableFuture<T> valueCF = (CompletableFuture<T>) value;
+                CompletableFuture.anyOf(valueCF, cancellationFuture).whenComplete((ignored, exception) -> {
                     if (exception != null) {
                         overallResult.completeExceptionally(exception);
                         return;
                     }
-                    overallResult.complete(Collections.singletonList(cf.isDone() ? cf.join() : null));
+                    overallResult.complete(Collections.singletonList(doneOrNull(valueCF)));
                 });
                 return overallResult;
             }
+            return materialisedValue();
+        }
+
+        private @NonNull CompletableFuture<List<T>> materialisedValue() {
             //noinspection unchecked
             return CompletableFuture.completedFuture(Collections.singletonList((T) value));
         }
@@ -276,7 +278,6 @@ public class Async {
             return overallResult;
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
             commonSizeAssert();
@@ -314,7 +315,7 @@ public class Async {
             for (Object object : array) {
                 if (object instanceof CompletableFuture) {
                     CompletableFuture<T> cf = (CompletableFuture<T>) object;
-                    results.add(cf.isDone() ? cf.join() : null);
+                    results.add(doneOrNull(cf));
                 } else {
                     results.add((T) object);
                 }
@@ -361,6 +362,10 @@ public class Async {
             Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
         }
 
+    }
+
+    private static <T> @Nullable T doneOrNull(CompletableFuture<T> valueCF) {
+        return valueCF.isDone() ? valueCF.join() : null;
     }
 
     @SuppressWarnings("unchecked")
