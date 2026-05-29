@@ -584,6 +584,26 @@ class AsyncTest extends Specification {
         list == ["A"]
     }
 
+    def "await with null cancelCF on single builder will return completed values"() {
+        when: "single builder with a completed CF"
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.add(completedFuture("A"))
+        def list = asyncBuilder.await(null).join()
+
+        then: "result is returned normally"
+        list == ["A"]
+    }
+
+    def "await with null cancelCF on single builder will return materialised value"() {
+        when: "single builder with a completed CF"
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.addObject("A")
+        def list = asyncBuilder.await(null).join()
+
+        then: "result is returned normally"
+        list == ["A"]
+    }
+
     def "await with cancelCF on single builder can be cancelled"() {
         when: "single builder with a completed CF"
         def cancelCF = new CompletableFuture<Void>()
