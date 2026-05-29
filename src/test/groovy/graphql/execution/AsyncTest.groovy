@@ -584,6 +584,23 @@ class AsyncTest extends Specification {
         list == ["A"]
     }
 
+    def "await with cancelCF on single builder can return exceptions"() {
+        when: "single builder with a completed CF"
+        def cancelCF = new CompletableFuture<Void>()
+        def failing = new CompletableFuture<String>()
+        failing.completeExceptionally(new RuntimeException("boom"))
+
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.add(failing)
+
+        // make cancel happen soon but off thread
+        offThreadRun({ -> cancelCF.complete(null) })
+        def list = asyncBuilder.await(cancelCF).join()
+
+        then: "result is exceptional"
+        thrown(CompletionException)
+    }
+
     def "await with null cancelCF on single builder will return completed values"() {
         when: "single builder with a completed CF"
         def asyncBuilder = Async.ofExpectedSize(1)
