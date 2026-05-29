@@ -9,6 +9,7 @@ import java.util.function.BiFunction
 import java.util.function.Function
 
 import static java.util.concurrent.CompletableFuture.completedFuture
+import static java.util.concurrent.CompletableFuture.runAsync
 
 class AsyncTest extends Specification {
 
@@ -543,7 +544,7 @@ class AsyncTest extends Specification {
         asyncBuilder.addObject("B")
         asyncBuilder.addObject("C")
         // make cancel happen soon but off thread
-        offThreadRun({ -> cancelCF.complete(null) })
+        runAsync({ -> cancelCF.complete(null) })
         def list = asyncBuilder.await(cancelCF).join()
 
         then:
@@ -577,7 +578,7 @@ class AsyncTest extends Specification {
         def asyncBuilder = Async.ofExpectedSize(1)
         asyncBuilder.add(completedFuture("A"))
         // make cancel happen soon but off thread
-        offThreadRun({ -> cancelCF.complete(null) })
+        runAsync({ -> cancelCF.complete(null) })
         def list = asyncBuilder.await(cancelCF).join()
 
         then: "result is returned normally"
@@ -594,7 +595,7 @@ class AsyncTest extends Specification {
         asyncBuilder.add(failing)
 
         // make cancel happen soon but off thread
-        offThreadRun({ -> cancelCF.complete(null) })
+        runAsync({ -> cancelCF.complete(null) })
         def list = asyncBuilder.await(cancelCF).join()
 
         then: "result is exceptional"
@@ -628,7 +629,7 @@ class AsyncTest extends Specification {
         asyncBuilder.add(new CompletableFuture<Object>())
 
         // make cancel happen soon but off thread
-        offThreadRun({ -> cancelCF.complete(null) })
+        runAsync({ -> cancelCF.complete(null) })
 
         def list = asyncBuilder.await(cancelCF).join()
 
@@ -643,7 +644,7 @@ class AsyncTest extends Specification {
         asyncBuilder.addObject("A")
 
         // make cancel happen soon but off thread
-        offThreadRun({ -> cancelCF.complete(null) })
+        runAsync({ -> cancelCF.complete(null) })
 
         def list = asyncBuilder.await(cancelCF).join()
 
@@ -660,9 +661,5 @@ class AsyncTest extends Specification {
 
         then:
         list == ["A"]
-    }
-
-    void offThreadRun(Runnable runnable) {
-        CompletableFuture.runAsync(runnable)
     }
 }
