@@ -619,7 +619,7 @@ class AsyncTest extends Specification {
         list == [null]
     }
 
-    def "await with cancelCF on single builder with materialised value delegates to plain await"() {
+    def "await with cancelCF on single builder with materialised value returns it"() {
         when:
         def cancelCF = new CompletableFuture<Void>()
         def asyncBuilder = Async.ofExpectedSize(1)
@@ -629,6 +629,17 @@ class AsyncTest extends Specification {
         offThreadRun({ -> cancelCF.complete(null) })
 
         def list = asyncBuilder.await(cancelCF).join()
+
+        then:
+        list == ["A"]
+    }
+
+    def "await with null cancelCF on single builder with materialised value returns it"() {
+        when:
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.addObject("A")
+
+        def list = asyncBuilder.await(null).join()
 
         then:
         list == ["A"]
