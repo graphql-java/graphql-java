@@ -58,6 +58,20 @@ public class Async {
         CompletableFuture<List<T>> await();
 
         /**
+         * Like {@link #await()} but races against the given cancellation future. If the cancellation future
+         * completes before all the tracked futures complete, the already-completed futures will have their
+         * values harvested and returned as partial results (with {@code null} for incomplete entries)
+         * rather than completing exceptionally.
+         *
+         * <p>If {@code cancellationFuture} is {@code null}, this behaves identically to {@link #await()}.
+         *
+         * @param cancellationFuture a future that, when completed, signals cancellation; may be {@code null}
+         *
+         * @return a CompletableFuture to a List of values (possibly partial on cancellation)
+         */
+        CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture);
+
+        /**
          * This will return a {@code CompletableFuture<List<T>>} if ANY of the input values are async
          * otherwise it just return a materialised {@code List<T>}
          *
@@ -105,6 +119,11 @@ public class Async {
         }
 
         @Override
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
+            return await();
+        }
+
+        @Override
         public Object awaitPolymorphic() {
             Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
             return Collections.emptyList();
@@ -144,6 +163,31 @@ public class Async {
                 @SuppressWarnings("unchecked")
                 CompletableFuture<T> cf = (CompletableFuture<T>) value;
                 return cf.thenApply(Collections::singletonList);
+            }
+            //noinspection unchecked
+            return CompletableFuture.completedFuture(Collections.singletonList((T) value));
+        }
+
+        @Override
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
+            commonSizeAssert();
+            if (cancellationFuture == null) {
+                return await();
+            }
+
+            if (value instanceof CompletableFuture) {
+                @SuppressWarnings("unchecked")
+                CompletableFuture<T> cf = (CompletableFuture<T>) value;
+
+                CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+                CompletableFuture.anyOf(cf, cancellationFuture).whenComplete((ignored, exception) -> {
+                    if (exception != null) {
+                        overallResult.completeExceptionally(exception);
+                        return;
+                    }
+                    overallResult.complete(Collections.singletonList(cf.isDone() ? cf.join() : null));
+                });
+                return overallResult;
             }
             //noinspection unchecked
             return CompletableFuture.completedFuture(Collections.singletonList((T) value));
@@ -230,6 +274,52 @@ public class Async {
                         });
             }
             return overallResult;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
+            commonSizeAssert();
+            if (cfCount == 0) {
+                return CompletableFuture.completedFuture(materialisedList(array));
+            }
+            if (cancellationFuture == null) {
+                return await();
+            }
+
+            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+            CompletableFuture<Void> allOf = CompletableFuture.allOf(copyOnlyCFsToArray());
+
+            // Race "all field futures complete" against cancellation. The cancellation future always
+            // completes normally (see ExecutionInput#cancel), so anyOf can only complete exceptionally
+            // when a field future fails - in which case we propagate that failure.
+            CompletableFuture.anyOf(allOf, cancellationFuture).whenComplete((ignored, exception) -> {
+                if (exception != null) {
+                    overallResult.completeExceptionally(exception);
+                    return;
+                }
+                // Either every field future is done (allOf won) or cancellation won the race. In both
+                // cases we harvest whatever has completed; field futures that are not yet done become
+                // null. join() is safe here: if allOf is not done then no field future has failed (a
+                // failure would have completed allOf exceptionally and taken the branch above).
+                overallResult.complete(harvestResults(array));
+            });
+
+            return overallResult;
+        }
+
+        @SuppressWarnings("unchecked")
+        private List<T> harvestResults(Object[] array) {
+            List<T> results = new ArrayList<>(array.length);
+            for (Object object : array) {
+                if (object instanceof CompletableFuture) {
+                    CompletableFuture<T> cf = (CompletableFuture<T>) object;
+                    results.add(cf.isDone() ? cf.join() : null);
+                } else {
+                    results.add((T) object);
+                }
+            }
+            return results;
         }
 
         @SuppressWarnings("unchecked")
