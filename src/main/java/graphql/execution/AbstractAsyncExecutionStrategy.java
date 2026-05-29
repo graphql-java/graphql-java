@@ -4,8 +4,6 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicSpi;
 
-import java.util.concurrent.CompletionException;
-
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -37,28 +35,18 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
 
     protected BiConsumer<List<Object>, Throwable> handleResultsWithPartialData(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
         return (List<Object> results, Throwable exception) -> {
-            // when partial results on cancel is enabled the results list will already have partial data
-            // (already-completed fields) so we can build a partial response even if exception is set
             if (exception != null) {
-                Throwable cause = exception instanceof CompletionException ? exception.getCause() : exception;
-                if (cause instanceof AbortExecutionException && results != null
-                        && capturePartialResults(executionContext)) {
-                    executionContext.addError((AbortExecutionException) cause);
-                    completeResultFuture(overallResult, executionContext, fieldNames, results);
-                    return;
-                }
                 handleNonNullException(executionContext, overallResult, exception);
                 return;
             }
 
-            // check if cancel fired while results were being gathered (no exception, but cancelled)
+            // No exception, but cancellation may have fired while the already-completed field values
+            // were being gathered. When it has, the results list already holds the partial data from
+            // the fields that completed before cancellation, so we can return it alongside the error.
             Throwable cancelException = executionContext.possibleCancellation(null);
             if (cancelException != null) {
-                Throwable cancelCause = cancelException instanceof CompletionException ? cancelException.getCause() : cancelException;
-                if (cancelCause instanceof AbortExecutionException && results != null
-                        && capturePartialResults(executionContext)) {
-                    // we have partial data from already-completed CFs — use it
-                    executionContext.addError((AbortExecutionException) cancelCause);
+                if (capturePartialResults(executionContext)) {
+                    executionContext.addError((AbortExecutionException) cancelException);
                     completeResultFuture(overallResult, executionContext, fieldNames, results);
                 } else {
                     handleNonNullException(executionContext, overallResult, cancelException);
