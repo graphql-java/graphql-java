@@ -9,6 +9,7 @@ import java.util.function.BiFunction
 import java.util.function.Function
 
 import static java.util.concurrent.CompletableFuture.completedFuture
+import static java.util.concurrent.CompletableFuture.runAsync
 
 class AsyncTest extends Specification {
 
@@ -420,5 +421,245 @@ class AsyncTest extends Specification {
         } else {
             return awaited
         }
+    }
+
+    def "await with null cancelCF behaves like plain await"() {
+        when:
+        def asyncBuilder = Async.ofExpectedSize(3)
+        asyncBuilder.add(completedFuture("A"))
+        asyncBuilder.add(completedFuture("B"))
+        asyncBuilder.add(completedFuture("C"))
+        def list = asyncBuilder.await((CompletableFuture) null).join()
+
+        then:
+        list == ["A", "B", "C"]
+    }
+
+    def "await with cancelCF returns all results when all CFs complete before cancellation"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def asyncBuilder = Async.ofExpectedSize(3)
+        asyncBuilder.add(completedFuture("A"))
+        asyncBuilder.add(completedFuture("B"))
+        asyncBuilder.add(completedFuture("C"))
+        def list = asyncBuilder.await(cancelCF).join()
+
+        then:
+        list == ["A", "B", "C"]
+    }
+
+    def "await with cancelCF returns partial results when cancellation fires before all CFs complete"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def pending1 = new CompletableFuture<String>()
+        def pending2 = new CompletableFuture<String>()
+
+        def asyncBuilder = Async.ofExpectedSize(4)
+        asyncBuilder.add(completedFuture("A"))
+        asyncBuilder.add(pending1)
+        asyncBuilder.add(completedFuture("C"))
+        asyncBuilder.add(pending2)
+
+        def resultCF = asyncBuilder.await(cancelCF)
+
+        // cancel before pending CFs complete
+        cancelCF.complete(null)
+
+        def list = resultCF.join()
+
+        then:
+        list == ["A", null, "C", null]
+    }
+
+    def "await with cancelCF returns partial results with mixed objects and CFs"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def pending = new CompletableFuture<String>()
+
+        def asyncBuilder = Async.ofExpectedSize(4)
+        asyncBuilder.addObject("A")
+        asyncBuilder.add(completedFuture("B"))
+        asyncBuilder.add(pending)
+        asyncBuilder.addObject("D")
+
+        def resultCF = asyncBuilder.await(cancelCF)
+
+        cancelCF.complete(null)
+        def list = resultCF.join()
+
+        then:
+        list == ["A", "B", null, "D"]
+    }
+
+    def "await with cancelCF returns full results when all CFs complete even if cancelCF completes later"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def cf1 = new CompletableFuture<String>()
+        def cf2 = new CompletableFuture<String>()
+
+        def asyncBuilder = Async.ofExpectedSize(2)
+        asyncBuilder.add(cf1)
+        asyncBuilder.add(cf2)
+
+        def resultCF = asyncBuilder.await(cancelCF)
+
+        // complete all CFs before cancellation
+        cf1.complete("X")
+        cf2.complete("Y")
+
+        def list = resultCF.join()
+
+        then: "full results returned despite cancel firing after"
+        list == ["X", "Y"]
+
+        when: "cancelCF completes after all CFs - should not affect result"
+        cancelCF.complete(null)
+
+        then: "result is unchanged"
+        resultCF.join() == ["X", "Y"]
+    }
+
+    def "await with cancelCF propagates exception if a CF fails before cancellation"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def failing = new CompletableFuture<String>()
+        failing.completeExceptionally(new RuntimeException("boom"))
+
+        def asyncBuilder = Async.ofExpectedSize(2)
+        asyncBuilder.add(completedFuture("A"))
+        asyncBuilder.add(failing)
+
+        def resultCF = asyncBuilder.await(cancelCF)
+        resultCF.join()
+
+        then:
+        thrown(CompletionException)
+    }
+
+    def "await with cancelCF works with all materialised values"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def asyncBuilder = Async.ofExpectedSize(3)
+        asyncBuilder.addObject("A")
+        asyncBuilder.addObject("B")
+        asyncBuilder.addObject("C")
+        // make cancel happen soon but off thread
+        runAsync({ -> cancelCF.complete(null) })
+        def list = asyncBuilder.await(cancelCF).join()
+
+        then:
+        list == ["A", "B", "C"]
+    }
+
+    def "await with null cancelCF delegates to plain await"() {
+        when: "a many builder is awaited with a null cancellation future"
+        def asyncBuilder = Async.ofExpectedSize(2)
+        asyncBuilder.add(completedFuture("A"))
+        asyncBuilder.add(completedFuture("B"))
+        def list = asyncBuilder.await((CompletableFuture<Void>) null).join()
+
+        then: "it behaves identically to await() and returns all results"
+        list == ["A", "B"]
+    }
+
+    def "await with cancelCF on empty builder returns empty list"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def asyncBuilder = Async.ofExpectedSize(0)
+        def list = asyncBuilder.await(cancelCF).join()
+
+        then:
+        list == []
+    }
+
+    def "await with cancelCF on single builder can return completed values"() {
+        when: "single builder with a completed CF"
+        def cancelCF = new CompletableFuture<Void>()
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.add(completedFuture("A"))
+        // make cancel happen soon but off thread
+        runAsync({ -> cancelCF.complete(null) })
+        def list = asyncBuilder.await(cancelCF).join()
+
+        then: "result is returned normally"
+        list == ["A"]
+    }
+
+    def "await with cancelCF on single builder can return exceptions"() {
+        when: "single builder with a completed CF"
+        def cancelCF = new CompletableFuture<Void>()
+        def failing = new CompletableFuture<String>()
+        failing.completeExceptionally(new RuntimeException("boom"))
+
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.add(failing)
+
+        // make cancel happen soon but off thread
+        runAsync({ -> cancelCF.complete(null) })
+        def list = asyncBuilder.await(cancelCF).join()
+
+        then: "result is exceptional"
+        thrown(CompletionException)
+    }
+
+    def "await with null cancelCF on single builder will return completed values"() {
+        when: "single builder with a completed CF"
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.add(completedFuture("A"))
+        def list = asyncBuilder.await(null).join()
+
+        then: "result is returned normally"
+        list == ["A"]
+    }
+
+    def "await with null cancelCF on single builder will return materialised value"() {
+        when: "single builder with a completed CF"
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.addObject("A")
+        def list = asyncBuilder.await(null).join()
+
+        then: "result is returned normally"
+        list == ["A"]
+    }
+
+    def "await with cancelCF on single builder can be cancelled"() {
+        when: "single builder with a completed CF"
+        def cancelCF = new CompletableFuture<Void>()
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.add(new CompletableFuture<Object>())
+
+        // make cancel happen soon but off thread
+        runAsync({ -> cancelCF.complete(null) })
+
+        def list = asyncBuilder.await(cancelCF).join()
+
+        then: "the single value is null since it never completed"
+        list == [null]
+    }
+
+    def "await with cancelCF on single builder with materialised value returns it"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.addObject("A")
+
+        // make cancel happen soon but off thread
+        runAsync({ -> cancelCF.complete(null) })
+
+        def list = asyncBuilder.await(cancelCF).join()
+
+        then:
+        list == ["A"]
+    }
+
+    def "await with null cancelCF on single builder with materialised value returns it"() {
+        when:
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.addObject("A")
+
+        def list = asyncBuilder.await(null).join()
+
+        then:
+        list == ["A"]
     }
 }
