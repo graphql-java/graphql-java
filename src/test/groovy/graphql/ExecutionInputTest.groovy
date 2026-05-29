@@ -623,6 +623,60 @@ class ExecutionInputTest extends Specification {
         er.data == null
     }
 
+    def "without capturePartialResultsOnCancel a late cancel discards even fully gathered nested data"() {
+        // capture is OFF, so there is no cancellation race; the top-level 'outer' field value info
+        // completes quickly while its nested 'value' is still resolving. Cancelling at that point and
+        // then letting 'value' finish means the field values are fully gathered, but because capture
+        // is disabled the gathered data must be discarded and only the cancel error returned.
+        def sdl = '''
+            type Query {
+                outer : Inner
+            }
+            type Inner {
+                value : String
+            }
+        '''
+
+        CountDownLatch valueStarted = new CountDownLatch(1)
+        CountDownLatch valueRelease = new CountDownLatch(1)
+
+        DataFetcher outerDf = { DataFetchingEnvironment env -> [:] }
+        DataFetcher valueDf = { DataFetchingEnvironment env ->
+            return CompletableFuture.supplyAsync {
+                valueStarted.countDown()
+                valueRelease.await()
+                return "value"
+            }
+        }
+
+        def fetcherMap = ["Query": ["outer": outerDf], "Inner": ["value": valueDf]]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("{ outer { value } }")
+                .build() // capturePartialResultsOnCancel NOT enabled
+
+        def cf = graphQL.executeAsync(executionInput)
+
+        // the nested value DF has started, so 'outer' field value info is already done
+        valueStarted.await()
+        // cancel while the nested value is still resolving, then let it finish
+        executionInput.cancel()
+        valueRelease.countDown()
+
+        await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
+        def er = cf.join()
+
+        then:
+        !cf.isCompletedExceptionally()
+        !er.errors.isEmpty()
+        er.errors[0]["message"] == "Execution has been asked to be cancelled"
+        // capture disabled - even though the data was fully gathered, it is discarded
+        er.data == null
+    }
+
     private static ExecutionResult awaitAsync(GraphQL graphQL, ExecutionInput executionInput) {
         def cf = graphQL.executeAsync(executionInput)
         await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })

@@ -25,32 +25,16 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
             exception = executionContext.possibleCancellation(exception);
 
             if (exception != null) {
-                handleNonNullException(executionContext, overallResult, exception);
-                return;
-            }
-
-            completeResultFuture(overallResult, executionContext, fieldNames, results);
-        };
-    }
-
-    protected BiConsumer<List<Object>, Throwable> handleResultsWithPartialData(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
-        return (List<Object> results, Throwable exception) -> {
-            if (exception != null) {
-                handleNonNullException(executionContext, overallResult, exception);
-                return;
-            }
-
-            // No exception, but cancellation may have fired while the already-completed field values
-            // were being gathered. When it has, the results list already holds the partial data from
-            // the fields that completed before cancellation, so we can return it alongside the error.
-            Throwable cancelException = executionContext.possibleCancellation(null);
-            if (cancelException != null) {
-                if (capturePartialResults(executionContext)) {
-                    executionContext.addError((AbortExecutionException) cancelException);
+                // A cancellation that fired after some fields already completed arrives here as a
+                // synthesised AbortExecutionException with a non-null results list (a real field
+                // failure always has null results). When partial capture is enabled we keep those
+                // results and attach the cancellation error; otherwise we report the error as usual.
+                if (results != null && capturePartialResults(executionContext)) {
+                    executionContext.addError((AbortExecutionException) exception);
                     completeResultFuture(overallResult, executionContext, fieldNames, results);
-                } else {
-                    handleNonNullException(executionContext, overallResult, cancelException);
+                    return;
                 }
+                handleNonNullException(executionContext, overallResult, exception);
                 return;
             }
 

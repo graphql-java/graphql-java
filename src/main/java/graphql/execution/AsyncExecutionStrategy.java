@@ -4,6 +4,7 @@ import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredExecutionSupport;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -13,8 +14,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
@@ -73,42 +72,17 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
             throwable = executionContext.possibleCancellation(throwable);
 
-            if (throwable != null) {
-                if (completeValueInfos != null && capturePartialResults(executionContext)) {
-                    // partial results: some FieldValueInfos completed before cancel - build with those
-                    // null entries mean that FieldValueInfo CF wasn't done yet (field was cancelled)
-                    Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
-                    for (FieldValueInfo completeValueInfo : completeValueInfos) {
-                        if (completeValueInfo != null) {
-                            fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
-                        } else {
-                            fieldValuesFutures.addObject((Object) null);
-                        }
-                    }
-                    List<FieldValueInfo> nonNullValueInfos = completeValueInfos.stream()
-                            .filter(Objects::nonNull)
-                            .collect(Collectors.toList());
-                    dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(nonNullValueInfos, parameters);
-                    executionStrategyCtx.onFieldValuesInfo(nonNullValueInfos);
-                    // Let handleResultsWithPartialData add the error to avoid duplication
-                    BiConsumer<List<Object>, Throwable> fieldValuesConsumer = handleResultsWithPartialData(executionContext, fieldsExecutedOnInitialResult, overallResult);
-                    fieldValuesFutures.await(cancelCF).whenComplete(fieldValuesConsumer);
-                    return;
-                }
-                Throwable cause = throwable instanceof CompletionException ? throwable.getCause() : throwable;
-                handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult).accept(null, cause);
+            if (throwable != null && !(completeValueInfos != null && capturePartialResults(executionContext))) {
+                // a genuine field failure, or a cancellation we cannot surface partial results for:
+                // there is nothing usable to return, so just report the error
+                handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult).accept(null, throwable);
                 return;
             }
 
-            Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
-            for (FieldValueInfo completeValueInfo : completeValueInfos) {
-                fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
-            }
-            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
-            executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
-
-            BiConsumer<List<Object>, Throwable> fieldValuesConsumer = handleResultsWithPartialData(executionContext, fieldsExecutedOnInitialResult, overallResult);
-            fieldValuesFutures.await(cancelCF).whenComplete(fieldValuesConsumer);
+            // normal completion, or partial-results-on-cancel: completeValueInfos holds the
+            // FieldValueInfos that completed (with null entries for any cancelled before completing)
+            completeFieldValues(executionContext, parameters, executionStrategyCtx, dataLoaderDispatcherStrategy,
+                    completeValueInfos, fieldsExecutedOnInitialResult, cancelCF, overallResult);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
@@ -121,6 +95,42 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
+    }
+
+    /**
+     * Turns the completed {@link FieldValueInfo}s into field values and completes the {@code overallResult}.
+     * <p>
+     * When partial-results-on-cancel is in play {@code completeValueInfos} may contain {@code null}
+     * entries for fields that were cancelled before they completed; those become {@code null} field
+     * values and are excluded from the instrumentation callbacks.
+     */
+    @SuppressWarnings("FutureReturnValueIgnored")
+    private void completeFieldValues(ExecutionContext executionContext,
+                                     ExecutionStrategyParameters parameters,
+                                     ExecutionStrategyInstrumentationContext executionStrategyCtx,
+                                     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy,
+                                     List<FieldValueInfo> completeValueInfos,
+                                     List<String> fieldNames,
+                                     @Nullable CompletableFuture<Void> cancelCF,
+                                     CompletableFuture<ExecutionResult> overallResult) {
+        Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
+        boolean hasNulls = false;
+        for (FieldValueInfo completeValueInfo : completeValueInfos) {
+            if (completeValueInfo != null) {
+                fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
+            } else {
+                hasNulls = true;
+                fieldValuesFutures.addObject((Object) null);
+            }
+        }
+        // null entries only occur for partial-results-on-cancel; the instrumentation callbacks should
+        // not see them, so filter only when needed and otherwise pass the list straight through
+        List<FieldValueInfo> valueInfosForInstrumentation = hasNulls
+                ? completeValueInfos.stream().filter(Objects::nonNull).collect(Collectors.toList())
+                : completeValueInfos;
+        dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(valueInfosForInstrumentation, parameters);
+        executionStrategyCtx.onFieldValuesInfo(valueInfosForInstrumentation);
+        fieldValuesFutures.await(cancelCF).whenComplete(handleResults(executionContext, fieldNames, overallResult));
     }
 
 }
