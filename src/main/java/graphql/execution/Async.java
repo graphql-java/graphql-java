@@ -196,11 +196,6 @@ public class Async {
         }
 
         @Override
-        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
-            return await();
-        }
-
-        @Override
         public Object awaitPolymorphic() {
             commonSizeAssert();
             if (value instanceof CompletableFuture) {
@@ -321,52 +316,6 @@ public class Async {
                 if (object instanceof CompletableFuture) {
                     CompletableFuture<T> cf = (CompletableFuture<T>) object;
                     results.add(doneOrNull(cf));
-                } else {
-                    results.add((T) object);
-                }
-            }
-            return results;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
-            commonSizeAssert();
-            if (cfCount == 0) {
-                return CompletableFuture.completedFuture(materialisedList(array));
-            }
-            if (cancellationFuture == null) {
-                return await();
-            }
-
-            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
-            CompletableFuture<Void> allOf = CompletableFuture.allOf(copyOnlyCFsToArray());
-
-            // Race "all field futures complete" against cancellation. The cancellation future always
-            // completes normally (see ExecutionInput#cancel), so anyOf can only complete exceptionally
-            // when a field future fails - in which case we propagate that failure.
-            CompletableFuture.anyOf(allOf, cancellationFuture).whenComplete((ignored, exception) -> {
-                if (exception != null) {
-                    overallResult.completeExceptionally(exception);
-                    return;
-                }
-                // Either every field future is done (allOf won) or cancellation won the race. In both
-                // cases we harvest whatever has completed; field futures that are not yet done become
-                // null. join() is safe here: if allOf is not done then no field future has failed (a
-                // failure would have completed allOf exceptionally and taken the branch above).
-                overallResult.complete(harvestResults(array));
-            });
-
-            return overallResult;
-        }
-
-        @SuppressWarnings("unchecked")
-        private List<T> harvestResults(Object[] array) {
-            List<T> results = new ArrayList<>(array.length);
-            for (Object object : array) {
-                if (object instanceof CompletableFuture) {
-                    CompletableFuture<T> cf = (CompletableFuture<T>) object;
-                    results.add(cf.isDone() ? cf.join() : null);
                 } else {
                     results.add((T) object);
                 }
