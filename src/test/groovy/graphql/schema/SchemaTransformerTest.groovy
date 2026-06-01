@@ -1510,6 +1510,7 @@ type Rental {
         newSchema.getDirective("specifiedBy") != null
         newSchema.getDirective("oneOf") != null
         newSchema.getDirective("defer") != null
+        newSchema.getDirective("experimental_disableErrorPropagation") != null
         newSchema.getDirectives().size() == schema.getDirectives().size()
     }
 }

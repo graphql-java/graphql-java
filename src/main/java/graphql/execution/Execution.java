@@ -2,6 +2,7 @@ package graphql.execution;
 
 
 import com.google.common.collect.ImmutableList;
+import graphql.Directives;
 import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
@@ -28,6 +29,7 @@ import graphql.execution.reactive.ReactiveSupport;
 import graphql.extensions.ExtensionsBuilder;
 import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalExecutionResultImpl;
+import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
@@ -47,6 +49,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import static graphql.Directives.EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -101,7 +104,13 @@ public class Execution {
             return completedFuture(abortExecutionException.toExecutionResult());
         }
 
-        OnError onError = isExperimentalOnErrorEnabled()? executionInput.getOnError() : OnError.PROPAGATE;
+        OnError onError = isExperimentalOnErrorEnabled() ? executionInput.getOnError() : OnError.PROPAGATE;
+
+        // The `@experimental_disableErrorPropagation` directive remains supported and, when present on the
+        // operation, is equivalent to requesting `onError: NULL`.
+        if (!propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives())) {
+            onError = OnError.NULL;
+        }
 
         GraphQLContext graphQLContext = executionInput.getGraphQLContext();
         Locale locale = executionInput.getLocale();
@@ -313,6 +322,15 @@ public class Execution {
             executionResult = extensionsBuilder.setExtensions(executionResult);
         }
         return executionResult;
+    }
+
+    private boolean propagateErrorsOnNonNullContractFailure(List<Directive> directives) {
+        boolean jvmWideEnabled = Directives.isExperimentalDisableErrorPropagationDirectiveEnabled();
+        if (!jvmWideEnabled) {
+            return true;
+        }
+        Directive foundDirective = NodeUtil.findNodeByName(directives, EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
+        return foundDirective == null;
     }
 
     private static final AtomicBoolean EXPERIMENTAL_ON_ERROR_ENABLED = new AtomicBoolean(true);
