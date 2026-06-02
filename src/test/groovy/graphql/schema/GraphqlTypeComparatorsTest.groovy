@@ -75,7 +75,7 @@ class GraphqlTypeComparatorsTest extends Specification {
     def schemaAsIs = TestUtil.schema(spec, runtimeWiringAsIs)
 
     def "test that types sorted from the schema"() {
-        def expectedNames = ["Bar", "Boolean", "EnumType", "Foo", "InputType", "Query", "String", "XInterface", "XUnion", "YInterface", "ZInterface", "ZType",
+        def expectedNames = ["Bar", "Boolean", "EnumType", "Foo", "InputType", "Int", "Query", "String", "XInterface", "XUnion", "YInterface", "ZInterface", "ZType",
                              "__Directive", "__DirectiveLocation", "__EnumValue", "__Field", "__InputValue", "__Schema", "__Type", "__TypeKind"]
         when:
         def names = schemaByName.getAllTypesAsList().collect({ thing -> thing.getName() })

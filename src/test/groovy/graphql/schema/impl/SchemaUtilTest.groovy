@@ -22,6 +22,7 @@ import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
+import static graphql.Scalars.GraphQLID
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.characterInterface
@@ -62,7 +63,7 @@ class SchemaUtilTest extends Specification {
         SchemaUtil.visitPartiallySchema(starWarsSchema, collectingVisitor)
         Map<String, GraphQLType> types = collectingVisitor.getResult()
         then:
-        types.size() == 17
+        types.size() == 18
         types == [(droidType.name)                        : droidType,
                   (humanType.name)                        : humanType,
                   (queryType.name)                        : queryType,
@@ -71,6 +72,7 @@ class SchemaUtilTest extends Specification {
                   (inputHumanType.name)                   : inputHumanType,
                   (episodeEnum.name)                      : episodeEnum,
                   (GraphQLString.name)                    : GraphQLString,
+                  (GraphQLInt.name)                       : GraphQLInt,
                   (Introspection.__Schema.name)           : Introspection.__Schema,
                   (Introspection.__Type.name)             : Introspection.__Type,
                   (Introspection.__TypeKind.name)         : Introspection.__TypeKind,
@@ -114,7 +116,7 @@ class SchemaUtilTest extends Specification {
         Map<String, GraphQLType> types = collectingVisitor.getResult()
 
         then:
-        types.size() == 30
+        types.size() == 31
         types.containsValue(UnionDirectiveInput)
         types.containsValue(InputObjectDirectiveInput)
         types.containsValue(ObjectDirectiveInput)
