@@ -21,7 +21,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::637423498965:role/GitHubActionGrahQLJava
           aws-region: "ap-southeast-2"
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v6.0.2
         with:
           ref: ${{ github.event.inputs.branch }}
       - run: |
