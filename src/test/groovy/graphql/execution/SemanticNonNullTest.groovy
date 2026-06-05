@@ -91,6 +91,7 @@ class SemanticNonNullTest extends Specification {
         er.data.bar.foo == null
         er.errors.size() == 1
         er.errors[0].path.toList() == ["bar", "foo"]
+        er.errors[0].message.contains("semantically non null")
     }
 
     def "honours the levels argument for list elements"() {
@@ -109,6 +110,7 @@ class SemanticNonNullTest extends Specification {
         er.data.foo == [1, null, 3]
         er.errors.size() == 1
         er.errors[0].path.toList() == ["foo", 1]
+        er.errors[0].message.contains("semantically non null")
     }
 
     def "does not synthesize an error for a null list element when only the list itself is semantically non null"() {
@@ -144,6 +146,7 @@ class SemanticNonNullTest extends Specification {
         er.data.foo == null
         er.errors.size() == 1
         er.errors[0].path.toList() == ["foo"]
+        er.errors[0].message.contains("semantically non null")
     }
 
     def "does nothing when the JVM wide flag is disabled"() {
