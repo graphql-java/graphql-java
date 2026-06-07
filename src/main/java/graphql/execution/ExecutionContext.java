@@ -119,7 +119,10 @@ public class ExecutionContext {
 
     private Supplier<ExecutableNormalizedOperation> mkExecutableNormalizedOperation() {
         return FpKit.interThreadMemoize(() -> {
-            Options options = Options.defaultOptions().graphQLContext(graphQLContext).locale(locale);
+            Options options = Options.defaultOptions()
+                    .graphQLContext(graphQLContext)
+                    .locale(locale)
+                    .deferSupport(hasIncrementalSupport());
             return createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables, options);
         });
     }

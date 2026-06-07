@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.ExperimentalApi;
 import graphql.PublicApi;
 
 import java.util.List;
@@ -212,4 +213,25 @@ public interface DataFetchingFieldSelectionSet {
      * @return a map of selected fields grouped by result key or an empty map if none match
      */
     Map<String, List<SelectedField>> getFieldsGroupedByResultKey(String fieldGlobPattern, String... fieldGlobPatterns);
+
+    /**
+     * This will return all immediate child fields that have been deferred via the {@code @defer} directive.
+     * These fields will be executed later by the engine and data fetchers can use this information
+     * to avoid pre-fetching data for them.
+     *
+     * @return a list of deferred immediate child fields or empty list if none are deferred
+     */
+    @ExperimentalApi
+    List<SelectedField> getImmediateDeferredFields();
+
+    /**
+     * This will return all selected fields that have been deferred via the {@code @defer} directive,
+     * at all levels of the selection set.
+     * These fields will be executed later by the engine and data fetchers can use this information
+     * to avoid pre-fetching data for them.
+     *
+     * @return a list of all deferred fields or empty list if none are deferred
+     */
+    @ExperimentalApi
+    List<SelectedField> getDeferredFields();
 }

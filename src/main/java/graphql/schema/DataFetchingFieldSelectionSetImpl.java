@@ -77,6 +77,16 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         public Map<String, List<SelectedField>> getFieldsGroupedByResultKey(String fieldGlobPattern, String... fieldGlobPatterns) {
             return ImmutableKit.emptyMap();
         }
+
+        @Override
+        public List<SelectedField> getImmediateDeferredFields() {
+            return emptyList();
+        }
+
+        @Override
+        public List<SelectedField> getDeferredFields() {
+            return emptyList();
+        }
     };
 
     public static DataFetchingFieldSelectionSet newCollector(GraphQLSchema schema, GraphQLOutputType fieldType, Supplier<ExecutableNormalizedField> normalizedFieldSupplier) {
@@ -205,6 +215,30 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     @Override
     public Map<String, List<SelectedField>> getFieldsGroupedByResultKey(String fieldGlobPattern, String... fieldGlobPatterns) {
         return getFields(fieldGlobPattern, fieldGlobPatterns).stream().collect(Collectors.groupingBy(SelectedField::getResultKey));
+    }
+
+    @Override
+    public List<SelectedField> getImmediateDeferredFields() {
+        computeValuesLazily(true);
+        ImmutableList.Builder<SelectedField> builder = ImmutableList.builder();
+        for (SelectedField field : immediateFields) {
+            if (field.isDeferred()) {
+                builder.add(field);
+            }
+        }
+        return builder.build();
+    }
+
+    @Override
+    public List<SelectedField> getDeferredFields() {
+        computeValuesLazily(false);
+        ImmutableList.Builder<SelectedField> builder = ImmutableList.builder();
+        for (SelectedField field : toSetSemanticsList(normalisedSelectionSetFields.values().stream().flatMap(Collection::stream))) {
+            if (field.isDeferred()) {
+                builder.add(field);
+            }
+        }
+        return builder.build();
     }
 
     private void computeValuesLazily(boolean immediate) {
@@ -401,6 +435,11 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         @Override
         public DataFetchingFieldSelectionSet getSelectionSet() {
             return selectionSet;
+        }
+
+        @Override
+        public boolean isDeferred() {
+            return !executableNormalizedField.getDeferredExecutions().isEmpty();
         }
 
         // a selected field is the same as another selected field if it's the same ExecutableNF

@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.ExperimentalApi;
 import graphql.PublicApi;
 
 import java.util.List;
@@ -92,4 +93,10 @@ public interface SelectedField {
      * @return a sub selection set (if it has any)
      */
     DataFetchingFieldSelectionSet getSelectionSet();
+
+    /**
+     * @return true if this field is deferred via the {@code @defer} directive
+     */
+    @ExperimentalApi
+    boolean isDeferred();
 }
