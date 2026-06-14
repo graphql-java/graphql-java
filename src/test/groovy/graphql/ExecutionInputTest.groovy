@@ -623,6 +623,74 @@ class ExecutionInputTest extends Specification {
         er.data == null
     }
 
+    def "capturePartialResultsOnCancel returns partial data when nested object sub-field is cancelled"() {
+        // This exercises the buildFieldValueMap lambda inside ExecutionStrategy.executeObject()
+        // for a nested object type. The parent DF returns a map synchronously so the nested
+        // object's executeObject starts immediately. Inside the nested executeObject, 'fast'
+        // completes while 'slow' blocks. Cancellation fires at the await(cancelCF) inside
+        // executeObject for the nested Parent type, triggering the partial-results branch in
+        // buildFieldValueMap.
+        def sdl = '''
+            type Query {
+                parent : Parent
+            }
+            type Parent {
+                fast : String
+                slow : String
+            }
+        '''
+
+        CountDownLatch slowStarted = new CountDownLatch(1)
+        CompletableFuture<String> slowResult = new CompletableFuture<>()
+
+        DataFetcher parentDf = { DataFetchingEnvironment env -> [:] }
+        DataFetcher fastDf = { DataFetchingEnvironment env -> "fast-value" }
+        DataFetcher slowDf = { DataFetchingEnvironment env ->
+            slowStarted.countDown()
+            return slowResult
+        }
+
+        def fetcherMap = [
+                "Query" : ["parent": parentDf],
+                "Parent": ["fast": fastDf, "slow": slowDf]
+        ]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("{ parent { fast slow } }")
+                .graphQLContext({ c ->
+                    GraphQL.unusualConfiguration(c).cancellation().capturePartialResultsOnCancel(true)
+                })
+                .build()
+
+        def cf = graphQL.executeAsync(executionInput)
+
+        // wait for the slow DF to have been invoked — fast is already done synchronously
+        slowStarted.await()
+        // cancel while slow's CF is still pending; this completes the cancellation future
+        // which races against the pending slowResult inside await(cancelCF)
+        executionInput.cancel()
+
+        await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
+        def er = cf.join()
+
+        then:
+        !cf.isCompletedExceptionally()
+        !er.errors.isEmpty()
+        er.errors.any { it["message"] == "Execution has been asked to be cancelled" }
+        // The top-level partial results capture sees parent's CF as still pending
+        // (because its nested sub-fields are being resolved), so parent is null.
+        // The nested buildFieldValueMap lambda also fires on the same cancellation.
+        er.data != null
+        er.data.containsKey("parent")
+
+        cleanup:
+        // release slow so any background threads can finish
+        slowResult.complete("slow-value")
+    }
+
     def "without capturePartialResultsOnCancel a late cancel discards even fully gathered nested data"() {
         // capture is OFF, so there is no cancellation race; the top-level 'outer' field value info
         // completes quickly while its nested 'value' is still resolving. Cancelling at that point and
