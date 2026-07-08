@@ -100,6 +100,7 @@ public class TreeParallelTransformer<T> {
         public void compute() {
             currentContext.setPhase(TraverserContext.Phase.ENTER);
             currentContext.setVar(List.class, myZippers);
+            currentContext.setVar(NodeAdapter.class, nodeAdapter);
             TraversalControl traversalControl = visitor.enter(currentContext);
             assertNotNull(traversalControl, "result of enter must not be null");
             assertTrue(QUIT != traversalControl, "can't return QUIT for parallel traversing");

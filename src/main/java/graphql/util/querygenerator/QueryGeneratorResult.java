@@ -1,11 +1,13 @@
 package graphql.util.querygenerator;
 
 import graphql.ExperimentalApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents the result of a query generation process.
  */
 @ExperimentalApi
+@NullMarked
 public class QueryGeneratorResult {
     private final String query;
     private final String usedType;

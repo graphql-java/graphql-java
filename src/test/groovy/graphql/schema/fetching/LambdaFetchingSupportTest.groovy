@@ -151,7 +151,7 @@ class LambdaFetchingSupportTest extends Specification {
         return GraphQLFieldDefinition.newFieldDefinition().name(fldName).type(Scalars.GraphQLString).build()
     }
 
-    @IgnoreIf({ System.getProperty("java.version").split('\\.')[0] as Integer > 11 })
+    @IgnoreIf({ Runtime.version().feature() > 11 })
     def "different class loaders induce certain behaviours"() {
         String sourceCode = '''
         package com.dynamic;

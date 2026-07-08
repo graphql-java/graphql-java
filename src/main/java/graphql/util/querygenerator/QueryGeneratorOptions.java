@@ -3,6 +3,8 @@ package graphql.util.querygenerator;
 import graphql.ExperimentalApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.function.Predicate;
 
@@ -10,6 +12,7 @@ import java.util.function.Predicate;
  * Options for the {@link QueryGenerator} class.
  */
 @ExperimentalApi
+@NullMarked
 public class QueryGeneratorOptions {
     private final int maxFieldCount;
     private final Predicate<GraphQLFieldsContainer> filterFieldContainerPredicate;
@@ -62,6 +65,7 @@ public class QueryGeneratorOptions {
      * Builder for {@link QueryGeneratorOptions}.
      */
     @ExperimentalApi
+    @NullUnmarked
     public static class QueryGeneratorOptionsBuilder {
         private int maxFieldCount = MAX_FIELD_COUNT_LIMIT;
 

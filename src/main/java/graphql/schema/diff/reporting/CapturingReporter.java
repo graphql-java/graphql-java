@@ -2,6 +2,7 @@ package graphql.schema.diff.reporting;
 
 import graphql.PublicApi;
 import graphql.schema.diff.DiffEvent;
+import org.jspecify.annotations.NullMarked;
 import graphql.schema.diff.DiffLevel;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.List;
  * A reporter that captures all the difference events as they occur
  */
 @PublicApi
+@NullMarked
 public class CapturingReporter implements DifferenceReporter {
     private final List<DiffEvent> events = new ArrayList<>();
     private final List<DiffEvent> infos = new ArrayList<>();

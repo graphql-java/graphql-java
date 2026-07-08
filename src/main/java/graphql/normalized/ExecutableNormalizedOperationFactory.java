@@ -45,6 +45,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.impl.SchemaUtil;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -68,6 +69,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
 import static graphql.util.FpKit.intersection;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toCollection;
@@ -78,6 +80,7 @@ import static java.util.stream.Collectors.toSet;
  * during a given graphql operation.
  */
 @PublicApi
+@NullMarked
 public class ExecutableNormalizedOperationFactory {
 
     public static class Options {
@@ -487,8 +490,9 @@ public class ExecutableNormalizedOperationFactory {
             buildEnfsRecursively(null, null, 0);
 
             for (PossibleMerger possibleMerger : possibleMergerList) {
-                List<ExecutableNormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
-                ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema, options.deferSupport);
+                ExecutableNormalizedField mergerParent = assertNotNull(possibleMerger.parent, "possibleMerger.parent should not be null");
+                List<ExecutableNormalizedField> childrenWithSameResultKey = mergerParent.getChildrenWithSameResultKey(possibleMerger.resultKey);
+                ENFMerger.merge(mergerParent, childrenWithSameResultKey, graphQLSchema, options.deferSupport);
             }
 
             Map<String, ImmutableList<QueryAppliedDirective>> operationDirectives = directivesResolver.resolveDirectivesByName(operationDefinition,
@@ -546,7 +550,7 @@ public class ExecutableNormalizedOperationFactory {
                     return;
                 }
                 collectedFields = new ArrayList<>();
-                for (CollectedField fieldAndAstParent : fieldAndAstParents) {
+                for (CollectedField fieldAndAstParent : assertNotNull(fieldAndAstParents, "fieldAndAstParents should not be null")) {
                     if (fieldAndAstParent.field.getSelectionSet() == null) {
                         continue;
                     }
@@ -633,7 +637,7 @@ public class ExecutableNormalizedOperationFactory {
                                Map<String, List<CollectedField>> fieldsByName,
                                ImmutableListMultimap.Builder<ExecutableNormalizedField, CollectedField> normalizedFieldToAstFields,
                                int level,
-                               ExecutableNormalizedField parent) {
+                               @Nullable ExecutableNormalizedField parent) {
             for (String resultKey : fieldsByName.keySet()) {
                 List<CollectedField> fieldsWithSameResultKey = fieldsByName.get(resultKey);
                 List<CollectedFieldGroup> commonParentsGroups = groupByCommonParents(fieldsWithSameResultKey);
@@ -660,7 +664,7 @@ public class ExecutableNormalizedOperationFactory {
         // new single ENF
         private ExecutableNormalizedField createNF(CollectedFieldGroup collectedFieldGroup,
                                                    int level,
-                                                   ExecutableNormalizedField parent) {
+                                                   @Nullable ExecutableNormalizedField parent) {
 
             this.fieldCount++;
             if (this.fieldCount > this.options.getMaxFieldsCount()) {
@@ -706,12 +710,12 @@ public class ExecutableNormalizedOperationFactory {
             Set<GraphQLObjectType> allRelevantObjects = objectTypes.build();
             Map<GraphQLType, ImmutableList<CollectedField>> groupByAstParent = groupingBy(fields, fieldAndType -> fieldAndType.astTypeCondition);
             if (groupByAstParent.size() == 1) {
-                return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects, null));
+                return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects, emptySet()));
             }
             ImmutableList.Builder<CollectedFieldGroup> result = ImmutableList.builder();
             for (GraphQLObjectType objectType : allRelevantObjects) {
                 Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
-                result.add(new CollectedFieldGroup(relevantFields, singleton(objectType), null));
+                result.add(new CollectedFieldGroup(relevantFields, singleton(objectType), emptySet()));
             }
             return result.build();
         }
@@ -782,7 +786,7 @@ public class ExecutableNormalizedOperationFactory {
                                              List<CollectedField> result,
                                              GraphQLCompositeType astTypeCondition,
                                              Set<GraphQLObjectType> possibleObjects,
-                                             NormalizedDeferredExecution deferredExecution
+                                             @Nullable NormalizedDeferredExecution deferredExecution
         ) {
             for (Selection<?> selection : selectionSet.getSelections()) {
                 if (selection instanceof Field) {
@@ -835,7 +839,7 @@ public class ExecutableNormalizedOperationFactory {
             GraphQLCompositeType newAstTypeCondition = astTypeCondition;
 
             if (inlineFragment.getTypeCondition() != null) {
-                newAstTypeCondition = (GraphQLCompositeType) this.graphQLSchema.getType(inlineFragment.getTypeCondition().getName());
+                newAstTypeCondition = (GraphQLCompositeType) assertNotNull(this.graphQLSchema.getType(inlineFragment.getTypeCondition().getName()), "type should not be null");
                 newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newAstTypeCondition);
 
             }
@@ -866,7 +870,7 @@ public class ExecutableNormalizedOperationFactory {
                                   Field field,
                                   Set<GraphQLObjectType> possibleObjectTypes,
                                   GraphQLCompositeType astTypeCondition,
-                                  NormalizedDeferredExecution deferredExecution
+                                  @Nullable NormalizedDeferredExecution deferredExecution
         ) {
             if (!conditionalNodes.shouldInclude(field,
                     this.coercedVariableValues.toMap(),
@@ -920,10 +924,10 @@ public class ExecutableNormalizedOperationFactory {
         }
 
         private static class PossibleMerger {
-            ExecutableNormalizedField parent;
+            @Nullable ExecutableNormalizedField parent;
             String resultKey;
 
-            public PossibleMerger(ExecutableNormalizedField parent, String resultKey) {
+            public PossibleMerger(@Nullable ExecutableNormalizedField parent, String resultKey) {
                 this.parent = parent;
                 this.resultKey = resultKey;
             }
@@ -933,9 +937,9 @@ public class ExecutableNormalizedOperationFactory {
             Field field;
             Set<GraphQLObjectType> objectTypes;
             GraphQLCompositeType astTypeCondition;
-            NormalizedDeferredExecution deferredExecution;
+            @Nullable NormalizedDeferredExecution deferredExecution;
 
-            public CollectedField(Field field, Set<GraphQLObjectType> objectTypes, GraphQLCompositeType astTypeCondition, NormalizedDeferredExecution deferredExecution) {
+            public CollectedField(Field field, Set<GraphQLObjectType> objectTypes, GraphQLCompositeType astTypeCondition, @Nullable NormalizedDeferredExecution deferredExecution) {
                 this.field = field;
                 this.objectTypes = objectTypes;
                 this.astTypeCondition = astTypeCondition;

@@ -18,7 +18,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -46,6 +46,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * has the same schema as the one provided.
  */
 @ExperimentalApi
+@NullMarked
 public class NormalizedOperationToAstCompiler {
 
     /**
@@ -54,9 +55,9 @@ public class NormalizedOperationToAstCompiler {
      */
     public static class CompilerResult {
         private final Document document;
-        private final Map<String, Object> variables;
+        private final @Nullable Map<String, Object> variables;
 
-        public CompilerResult(Document document, Map<String, Object> variables) {
+        public CompilerResult(Document document, @Nullable Map<String, Object> variables) {
             this.document = document;
             this.variables = variables;
         }
@@ -65,7 +66,7 @@ public class NormalizedOperationToAstCompiler {
             return document;
         }
 
-        public Map<String, Object> getVariables() {
+        public @Nullable Map<String, Object> getVariables() {
             return variables;
         }
     }
@@ -92,14 +93,15 @@ public class NormalizedOperationToAstCompiler {
 
     public static CompilerResult compileToDocument(GraphQLSchema schema,
                                                    NormalizedOperation normalizedOperation) {
-        GraphQLObjectType operationType = getOperationType(schema, normalizedOperation.getOperation());
+        OperationDefinition.Operation operation = Assert.assertNotNull(normalizedOperation.getOperation(), () -> "operation must not be null for compilation");
+        GraphQLObjectType operationType = getOperationType(schema, operation);
 
         return compileToDocumentImpl(
                 schema,
                 operationType,
                 normalizedOperation.getRootFields(),
                 normalizedOperation.getOperationName(),
-                normalizedOperation.getOperation()
+                operation
         );
     }
 
@@ -129,7 +131,7 @@ public class NormalizedOperationToAstCompiler {
 
 
     private static List<Selection<?>> subSelectionsForNormalizedFields(GraphQLSchema schema,
-                                                                       @NonNull String parentOutputType,
+                                                                       String parentOutputType,
                                                                        List<NormalizedField> normalizedFields
     ) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
@@ -223,23 +225,22 @@ public class NormalizedOperationToAstCompiler {
     }
 
 
-    @NonNull
     private static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema,
                                                              String parentType,
                                                              NormalizedField nf) {
-        return Introspection.getFieldDef(schema, (GraphQLCompositeType) schema.getType(parentType), nf.getName());
+        return Introspection.getFieldDef(schema, (GraphQLCompositeType) Assert.assertNotNull(schema.getType(parentType)), nf.getName());
     }
 
 
-    private static GraphQLObjectType getOperationType(@NonNull GraphQLSchema schema,
-                                                      OperationDefinition.@NonNull Operation operationKind) {
+    private static GraphQLObjectType getOperationType(GraphQLSchema schema,
+                                                      OperationDefinition.Operation operationKind) {
         switch (operationKind) {
             case QUERY:
                 return schema.getQueryType();
             case MUTATION:
-                return schema.getMutationType();
+                return Assert.assertNotNull(schema.getMutationType());
             case SUBSCRIPTION:
-                return schema.getSubscriptionType();
+                return Assert.assertNotNull(schema.getSubscriptionType());
         }
 
         return Assert.assertShouldNeverHappen("Unknown operation kind " + operationKind);

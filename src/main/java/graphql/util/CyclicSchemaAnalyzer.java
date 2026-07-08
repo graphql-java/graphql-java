@@ -8,6 +8,8 @@ import graphql.schema.diffing.Edge;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.SchemaGraphFactory;
 import graphql.schema.diffing.Vertex;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
  * Cycles caused by built-in introspection types are filtered out.
  */
 @ExperimentalApi
+@NullMarked
 public class CyclicSchemaAnalyzer {
 
     public static class SchemaCycle {
@@ -121,19 +124,19 @@ public class CyclicSchemaAnalyzer {
         private final SchemaGraph graph;
 
         // The main state of the algorithm.
-        private Vertex[] iToV = null;
-        private Map<Vertex, Integer> vToI = null;
-        private Set<Vertex> blocked = null;
-        private Map<Vertex, Set<Vertex>> bSets = null;
-        private ArrayDeque<Vertex> stack = null;
+        private Vertex[] iToV;
+        private Map<Vertex, Integer> vToI;
+        private Set<Vertex> blocked;
+        private Map<Vertex, Set<Vertex>> bSets;
+        private ArrayDeque<Vertex> stack;
 
         // The state of the embedded Tarjan SCC algorithm.
-        private List<Set<Vertex>> foundSCCs = null;
+        private List<Set<Vertex>> foundSCCs = new ArrayList<>();
         private int index = 0;
-        private Map<Vertex, Integer> vIndex = null;
-        private Map<Vertex, Integer> vLowlink = null;
-        private ArrayDeque<Vertex> path = null;
-        private Set<Vertex> pathSet = null;
+        private Map<Vertex, Integer> vIndex = new LinkedHashMap<>();
+        private Map<Vertex, Integer> vLowlink = new LinkedHashMap<>();
+        private ArrayDeque<Vertex> path = new ArrayDeque<>();
+        private Set<Vertex> pathSet = new LinkedHashSet<>();
 
         private List<List<Vertex>> foundCycles = new ArrayList<>();
 
@@ -176,7 +179,7 @@ public class CyclicSchemaAnalyzer {
             return this.foundCycles;
         }
 
-        private GraphAndIndex findMinSCSG(int startIndex) {
+        private @Nullable GraphAndIndex findMinSCSG(int startIndex) {
             /*
              * Per Johnson : "adjacency structure of strong component $K$ with least vertex in subgraph
              * of $G$ induced by $(s, s + 1, n)$". Or in contemporary terms: the strongly connected
@@ -242,7 +245,7 @@ public class CyclicSchemaAnalyzer {
                 }
             }
             List<Set<Vertex>> result = foundSCCs;
-            foundSCCs = null;
+            foundSCCs = new ArrayList<>();
             return result;
         }
 
@@ -263,12 +266,12 @@ public class CyclicSchemaAnalyzer {
                 }
                 if (!vIndex.containsKey(successor)) {
                     getSCCs(startIndex, successorIndex);
-                    vLowlink.put(vertex, Math.min(vLowlink.get(vertex), vLowlink.get(successor)));
+                    vLowlink.put(vertex, Math.min(Assert.assertNotNull(vLowlink.get(vertex)), Assert.assertNotNull(vLowlink.get(successor))));
                 } else if (pathSet.contains(successor)) {
-                    vLowlink.put(vertex, Math.min(vLowlink.get(vertex), vIndex.get(successor)));
+                    vLowlink.put(vertex, Math.min(Assert.assertNotNull(vLowlink.get(vertex)), Assert.assertNotNull(vIndex.get(successor))));
                 }
             }
-            if (vLowlink.get(vertex).equals(vIndex.get(vertex))) {
+            if (Assert.assertNotNull(vLowlink.get(vertex)).equals(vIndex.get(vertex))) {
                 Set<Vertex> result = new LinkedHashSet<>();
                 Vertex temp;
                 do {
@@ -346,15 +349,15 @@ public class CyclicSchemaAnalyzer {
 
         private void clearMinSCCState() {
             index = 0;
-            foundSCCs = null;
-            vIndex = null;
-            vLowlink = null;
-            path = null;
-            pathSet = null;
+            foundSCCs = new ArrayList<>();
+            vIndex = new LinkedHashMap<>();
+            vLowlink = new LinkedHashMap<>();
+            path = new ArrayDeque<>();
+            pathSet = new LinkedHashSet<>();
         }
 
-        private Integer toI(Vertex vertex) {
-            return vToI.get(vertex);
+        private int toI(Vertex vertex) {
+            return Assert.assertNotNull(vToI.get(vertex));
         }
 
         private Vertex toV(Integer i) {

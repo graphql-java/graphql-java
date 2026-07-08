@@ -6,6 +6,9 @@ import graphql.PublicApi;
 import graphql.language.DirectiveDefinition;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.EnumSet;
@@ -33,24 +36,25 @@ import static graphql.util.FpKit.getByName;
  * as opposed to its schema definition itself.
  */
 @PublicApi
+@NullMarked
 public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     private final String name;
     private final boolean repeatable;
-    private final String description;
+    private final @Nullable String description;
     private final EnumSet<DirectiveLocation> locations;
     private final ImmutableList<GraphQLArgument> arguments;
-    private final DirectiveDefinition definition;
+    private final @Nullable DirectiveDefinition definition;
 
 
     public static final String CHILD_ARGUMENTS = "arguments";
 
     private GraphQLDirective(String name,
-                             String description,
+                             @Nullable String description,
                              boolean repeatable,
                              EnumSet<DirectiveLocation> locations,
                              List<GraphQLArgument> arguments,
-                             DirectiveDefinition definition) {
+                             @Nullable DirectiveDefinition definition) {
         assertValidName(name);
         assertNotNull(arguments, "arguments can't be null");
         assertNotEmpty(locations, "locations can't be empty");
@@ -79,7 +83,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return arguments;
     }
 
-    public GraphQLArgument getArgument(String name) {
+    public @Nullable GraphQLArgument getArgument(String name) {
         for (GraphQLArgument argument : arguments) {
             if (argument.getName().equals(name)) {
                 return argument;
@@ -92,11 +96,11 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return EnumSet.copyOf(locations);
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
-    public DirectiveDefinition getDefinition() {
+    public @Nullable DirectiveDefinition getDefinition() {
         return definition;
     }
 
@@ -192,6 +196,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return new Builder(existing);
     }
 
+    @NullUnmarked
     public static class Builder extends GraphqlTypeBuilder<Builder> {
 
         private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
