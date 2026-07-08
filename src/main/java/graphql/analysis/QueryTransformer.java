@@ -84,7 +84,7 @@ public class QueryTransformer {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
             @Override
@@ -93,7 +93,7 @@ public class QueryTransformer {
                 return TraversalControl.CONTINUE;
             }
         };
-        return new TreeTransformer<>(AST_NODE_ADAPTER).transform(root, nodeTraverserVisitor, rootVars);
+        return assertNotNull(new TreeTransformer<>(AST_NODE_ADAPTER).transform(root, nodeTraverserVisitor, rootVars), "transform result should not be null");
     }
 
     public static Builder newQueryTransformer() {

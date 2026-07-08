@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.util.TreeTransformerUtil.changeNode;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Comparator.nullsLast;
@@ -225,7 +226,7 @@ public class AstSorter {
         };
 
         AstTransformer astTransformer = new AstTransformer();
-        Node newDoc = astTransformer.transform(nodeToBeSorted, visitor);
+        Node newDoc = assertNotNull(astTransformer.transform(nodeToBeSorted, visitor));
         //noinspection unchecked
         return (T) newDoc;
     }

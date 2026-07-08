@@ -1,6 +1,8 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +25,7 @@ import static graphql.collect.ImmutableKit.emptyList;
  * @see graphql.language.DirectiveDefinition#isRepeatable()
  */
 @PublicApi
+@NullMarked
 public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
 
     String CHILD_DIRECTIVES = "directives";
@@ -52,7 +55,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      *
      * @return the directive or null if there is not one with that name
      */
-    GraphQLAppliedDirective getAppliedDirective(String directiveName);
+    @Nullable GraphQLAppliedDirective getAppliedDirective(String directiveName);
 
 
     /**
@@ -135,7 +138,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated(since = "2022-02-24")
-    GraphQLDirective getDirective(String directiveName);
+    @Nullable GraphQLDirective getDirective(String directiveName);
 
     /**
      * Returns all of the directives with the provided name, including repeatable and non repeatable directives.

@@ -1,6 +1,7 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Map;
  * @param <T> the generic type of object
  */
 @PublicApi
+@NullMarked
 public interface NodeAdapter<T> {
 
     Map<String, List<T>> getNamedChildren(T node);

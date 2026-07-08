@@ -2,6 +2,8 @@ package graphql.introspection;
 
 import graphql.ExecutionResult;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.language.Argument;
 import graphql.language.Description;
 import graphql.language.Directive;
@@ -45,6 +47,7 @@ import static graphql.Directives.isBuiltInDirective;
 
 @SuppressWarnings("unchecked")
 @PublicApi
+@NullMarked
 public class IntrospectionResultToSchema {
 
     /**
@@ -54,12 +57,12 @@ public class IntrospectionResultToSchema {
      *
      * @return a IDL Document of the schema
      */
-    public Document createSchemaDefinition(ExecutionResult introspectionResult) {
+    public @Nullable Document createSchemaDefinition(ExecutionResult introspectionResult) {
         if (!introspectionResult.isDataPresent()) {
             return null;
         }
 
-        Map<String, Object> introspectionResultMap = introspectionResult.getData();
+        Map<String, Object> introspectionResultMap = assertNotNull(introspectionResult.getData(), "data expected");
         return createSchemaDefinition(introspectionResultMap);
     }
 
@@ -71,14 +74,11 @@ public class IntrospectionResultToSchema {
      *
      * @return a IDL Document of the schema
      */
-    @SuppressWarnings("unchecked")
     public Document createSchemaDefinition(Map<String, Object> introspectionResult) {
-        Map<String, Object> schema = (Map<String, Object>) introspectionResult.get("__schema");
-        assertNotNull(schema, "__schema expected");
+        Map<String, Object> schema = assertNotNull((Map<String, Object>) introspectionResult.get("__schema"), "__schema expected");
 
-        Map<String, Object> queryType = (Map<String, Object>) schema.get("queryType");
-        assertNotNull(queryType, "queryType expected");
-        TypeName query = TypeName.newTypeName().name((String) queryType.get("name")).build();
+        Map<String, Object> queryType = assertNotNull((Map<String, Object>) schema.get("queryType"), "queryType expected");
+        TypeName query = TypeName.newTypeName().name(assertNotNull((String) queryType.get("name"), "query name expected")).build();
         boolean nonDefaultQueryName = !"Query".equals(query.getName());
 
         SchemaDefinition.Builder schemaDefinition = SchemaDefinition.newSchemaDefinition();
@@ -88,7 +88,7 @@ public class IntrospectionResultToSchema {
         Map<String, Object> mutationType = (Map<String, Object>) schema.get("mutationType");
         boolean nonDefaultMutationName = false;
         if (mutationType != null) {
-            TypeName mutation = TypeName.newTypeName().name((String) mutationType.get("name")).build();
+            TypeName mutation = TypeName.newTypeName().name(assertNotNull((String) mutationType.get("name"), "mutation name expected")).build();
             nonDefaultMutationName = !"Mutation".equals(mutation.getName());
             schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("mutation").typeName(mutation).build());
         }
@@ -96,7 +96,7 @@ public class IntrospectionResultToSchema {
         Map<String, Object> subscriptionType = (Map<String, Object>) schema.get("subscriptionType");
         boolean nonDefaultSubscriptionName = false;
         if (subscriptionType != null) {
-            TypeName subscription = TypeName.newTypeName().name(((String) subscriptionType.get("name"))).build();
+            TypeName subscription = TypeName.newTypeName().name(assertNotNull((String) subscriptionType.get("name"), "subscription name expected")).build();
             nonDefaultSubscriptionName = !"Subscription".equals(subscription.getName());
             schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("subscription").typeName(subscription).build());
         }
@@ -106,7 +106,7 @@ public class IntrospectionResultToSchema {
             document.definition(schemaDefinition.build());
         }
 
-        List<Map<String, Object>> types = (List<Map<String, Object>>) schema.get("types");
+        List<Map<String, Object>> types = assertNotNull((List<Map<String, Object>>) schema.get("types"), "types expected");
         for (Map<String, Object> type : types) {
             TypeDefinition typeDefinition = createTypeDefinition(type);
             if (typeDefinition == null) {
@@ -129,8 +129,8 @@ public class IntrospectionResultToSchema {
         return document.build();
     }
 
-    private DirectiveDefinition createDirective(Map<String, Object> input) {
-        String directiveName = (String) input.get("name");
+    private @Nullable DirectiveDefinition createDirective(Map<String, Object> input) {
+        String directiveName = assertNotNull((String) input.get("name"), "directive name expected");
         if (isBuiltInDirective(directiveName)) {
             return null;
         }
@@ -140,12 +140,12 @@ public class IntrospectionResultToSchema {
                 .name(directiveName)
                 .description(toDescription(input));
 
-        List<Object> locations = (List<Object>) input.get("locations");
+        List<Object> locations = assertNotNull((List<Object>) input.get("locations"), "locations expected");
         List<DirectiveLocation> directiveLocations = createDirectiveLocations(locations);
         directiveDefBuilder.directiveLocations(directiveLocations);
 
 
-        List<Map<String, Object>> args = (List<Map<String, Object>>) input.get("args");
+        List<Map<String, Object>> args = assertNotNull((List<Map<String, Object>>) input.get("args"), "args expected");
         List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(args);
         directiveDefBuilder.inputValueDefinitions(inputValueDefinitions);
         Optional.ofNullable((Boolean) input.get("isRepeatable")).ifPresent(value -> directiveDefBuilder.repeatable(value));
@@ -163,9 +163,9 @@ public class IntrospectionResultToSchema {
         return result;
     }
 
-    private TypeDefinition createTypeDefinition(Map<String, Object> type) {
-        String kind = (String) type.get("kind");
-        String name = (String) type.get("name");
+    private @Nullable TypeDefinition createTypeDefinition(Map<String, Object> type) {
+        String kind = assertNotNull((String) type.get("kind"), "kind expected");
+        String name = assertNotNull((String) type.get("name"), "name expected");
         if (name.startsWith("__")) {
             return null;
         }
@@ -187,8 +187,8 @@ public class IntrospectionResultToSchema {
         }
     }
 
-    private TypeDefinition createScalar(Map<String, Object> input) {
-        String name = (String) input.get("name");
+    private @Nullable TypeDefinition createScalar(Map<String, Object> input) {
+        String name = assertNotNull((String) input.get("name"), "name expected");
         if (ScalarInfo.isGraphqlSpecifiedScalar(name)) {
             return null;
         }
@@ -199,36 +199,34 @@ public class IntrospectionResultToSchema {
     }
 
 
-    @SuppressWarnings("unchecked")
     UnionTypeDefinition createUnion(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("UNION"), "wrong input");
+        assertTrue("UNION".equals(input.get("kind")), "wrong input");
 
         UnionTypeDefinition.Builder unionTypeDefinition = UnionTypeDefinition.newUnionTypeDefinition();
-        unionTypeDefinition.name((String) input.get("name"));
+        unionTypeDefinition.name(assertNotNull((String) input.get("name"), "name expected"));
         unionTypeDefinition.description(toDescription(input));
 
-        List<Map<String, Object>> possibleTypes = (List<Map<String, Object>>) input.get("possibleTypes");
+        List<Map<String, Object>> possibleTypes = assertNotNull((List<Map<String, Object>>) input.get("possibleTypes"), "possibleTypes expected");
 
         for (Map<String, Object> possibleType : possibleTypes) {
-            TypeName typeName = TypeName.newTypeName().name((String) possibleType.get("name")).build();
+            TypeName typeName = TypeName.newTypeName().name(assertNotNull((String) possibleType.get("name"), "possibleType name expected")).build();
             unionTypeDefinition.memberType(typeName);
         }
 
         return unionTypeDefinition.build();
     }
 
-    @SuppressWarnings("unchecked")
     EnumTypeDefinition createEnum(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("ENUM"), "wrong input");
+        assertTrue("ENUM".equals(input.get("kind")), "wrong input");
 
-        EnumTypeDefinition.Builder enumTypeDefinition = EnumTypeDefinition.newEnumTypeDefinition().name((String) input.get("name"));
+        EnumTypeDefinition.Builder enumTypeDefinition = EnumTypeDefinition.newEnumTypeDefinition().name(assertNotNull((String) input.get("name"), "name expected"));
         enumTypeDefinition.description(toDescription(input));
 
-        List<Map<String, Object>> enumValues = (List<Map<String, Object>>) input.get("enumValues");
+        List<Map<String, Object>> enumValues = assertNotNull((List<Map<String, Object>>) input.get("enumValues"), "enumValues expected");
 
         for (Map<String, Object> enumValue : enumValues) {
 
-            EnumValueDefinition.Builder enumValueDefinition = EnumValueDefinition.newEnumValueDefinition().name((String) enumValue.get("name"));
+            EnumValueDefinition.Builder enumValueDefinition = EnumValueDefinition.newEnumValueDefinition().name(assertNotNull((String) enumValue.get("name"), "enumValue name expected"));
             enumValueDefinition.description(toDescription(enumValue));
 
             createDeprecatedDirective(enumValue, enumValueDefinition);
@@ -239,54 +237,50 @@ public class IntrospectionResultToSchema {
         return enumTypeDefinition.build();
     }
 
-    @SuppressWarnings("unchecked")
     InterfaceTypeDefinition createInterface(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("INTERFACE"), "wrong input");
+        assertTrue("INTERFACE".equals(input.get("kind")), "wrong input");
 
-        InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name((String) input.get("name"));
+        InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name(assertNotNull((String) input.get("name"), "name expected"));
         interfaceTypeDefinition.description(toDescription(input));
-        if (input.containsKey("interfaces") && input.get("interfaces") != null) {
+        List<Map<String, Object>> interfaces = (List<Map<String, Object>>) input.get("interfaces");
+        if (interfaces != null) {
             interfaceTypeDefinition.implementz(
-                    map(
-                            (List<Map<String, Object>>) input.get("interfaces"),
-                            this::createTypeIndirection
-                    )
+                    map(interfaces, this::createTypeIndirection)
             );
         }
-        List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
+        List<Map<String, Object>> fields = assertNotNull((List<Map<String, Object>>) input.get("fields"), "fields expected");
         interfaceTypeDefinition.definitions(createFields(fields));
 
         return interfaceTypeDefinition.build();
 
     }
 
-    @SuppressWarnings("unchecked")
     InputObjectTypeDefinition createInputObject(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("INPUT_OBJECT"), "wrong input");
+        assertTrue("INPUT_OBJECT".equals(input.get("kind")), "wrong input");
 
         InputObjectTypeDefinition.Builder inputObjectTypeDefinition = InputObjectTypeDefinition.newInputObjectDefinition()
-                .name((String) input.get("name"))
+                .name(assertNotNull((String) input.get("name"), "name expected"))
                 .description(toDescription(input));
 
-        List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("inputFields");
+        List<Map<String, Object>> fields = assertNotNull((List<Map<String, Object>>) input.get("inputFields"), "inputFields expected");
         List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(fields);
         inputObjectTypeDefinition.inputValueDefinitions(inputValueDefinitions);
 
         return inputObjectTypeDefinition.build();
     }
 
-    @SuppressWarnings("unchecked")
     ObjectTypeDefinition createObject(Map<String, Object> input) {
-        assertTrue(input.get("kind").equals("OBJECT"), "wrong input");
+        assertTrue("OBJECT".equals(input.get("kind")), "wrong input");
 
-        ObjectTypeDefinition.Builder objectTypeDefinition = ObjectTypeDefinition.newObjectTypeDefinition().name((String) input.get("name"));
+        ObjectTypeDefinition.Builder objectTypeDefinition = ObjectTypeDefinition.newObjectTypeDefinition().name(assertNotNull((String) input.get("name"), "name expected"));
         objectTypeDefinition.description(toDescription(input));
-        if (input.containsKey("interfaces")) {
+        List<Map<String, Object>> interfaces = (List<Map<String, Object>>) input.get("interfaces");
+        if (interfaces != null) {
             objectTypeDefinition.implementz(
-                    map((List<Map<String, Object>>) input.get("interfaces"), this::createTypeIndirection)
+                    map(interfaces, this::createTypeIndirection)
             );
         }
-        List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("fields");
+        List<Map<String, Object>> fields = assertNotNull((List<Map<String, Object>>) input.get("fields"), "fields expected");
 
         objectTypeDefinition.fieldDefinitions(createFields(fields));
 
@@ -296,13 +290,13 @@ public class IntrospectionResultToSchema {
     private List<FieldDefinition> createFields(List<Map<String, Object>> fields) {
         List<FieldDefinition> result = new ArrayList<>(fields.size());
         for (Map<String, Object> field : fields) {
-            FieldDefinition.Builder fieldDefinition = FieldDefinition.newFieldDefinition().name((String) field.get("name"));
+            FieldDefinition.Builder fieldDefinition = FieldDefinition.newFieldDefinition().name(assertNotNull((String) field.get("name"), "field name expected"));
             fieldDefinition.description(toDescription(field));
-            fieldDefinition.type(createTypeIndirection((Map<String, Object>) field.get("type")));
+            fieldDefinition.type(createTypeIndirection(assertNotNull((Map<String, Object>) field.get("type"), "field type expected")));
 
             createDeprecatedDirective(field, fieldDefinition);
 
-            List<Map<String, Object>> args = (List<Map<String, Object>>) field.get("args");
+            List<Map<String, Object>> args = assertNotNull((List<Map<String, Object>>) field.get("args"), "field args expected");
             List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(args);
             fieldDefinition.inputValueDefinitions(inputValueDefinitions);
             result.add(fieldDefinition.build());
@@ -322,12 +316,11 @@ public class IntrospectionResultToSchema {
         }
     }
 
-    @SuppressWarnings("unchecked")
     private List<InputValueDefinition> createInputValueDefinitions(List<Map<String, Object>> args) {
         List<InputValueDefinition> result = new ArrayList<>(args.size());
         for (Map<String, Object> arg : args) {
-            Type argType = createTypeIndirection((Map<String, Object>) arg.get("type"));
-            InputValueDefinition.Builder inputValueDefinition = InputValueDefinition.newInputValueDefinition().name((String) arg.get("name")).type(argType);
+            Type argType = createTypeIndirection(assertNotNull((Map<String, Object>) arg.get("type"), "arg type expected"));
+            InputValueDefinition.Builder inputValueDefinition = InputValueDefinition.newInputValueDefinition().name(assertNotNull((String) arg.get("name"), "arg name expected")).type(argType);
             inputValueDefinition.description(toDescription(arg));
 
             String valueLiteral = (String) arg.get("defaultValue");
@@ -340,9 +333,8 @@ public class IntrospectionResultToSchema {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
     private Type createTypeIndirection(Map<String, Object> type) {
-        String kind = (String) type.get("kind");
+        String kind = assertNotNull((String) type.get("kind"), "kind expected");
         switch (kind) {
             case "INTERFACE":
             case "OBJECT":
@@ -350,17 +342,17 @@ public class IntrospectionResultToSchema {
             case "ENUM":
             case "INPUT_OBJECT":
             case "SCALAR":
-                return TypeName.newTypeName().name((String) type.get("name")).build();
+                return TypeName.newTypeName().name(assertNotNull((String) type.get("name"), "name expected")).build();
             case "NON_NULL":
-                return NonNullType.newNonNullType().type(createTypeIndirection((Map<String, Object>) type.get("ofType"))).build();
+                return NonNullType.newNonNullType().type(createTypeIndirection(assertNotNull((Map<String, Object>) type.get("ofType"), "ofType expected"))).build();
             case "LIST":
-                return ListType.newListType().type(createTypeIndirection((Map<String, Object>) type.get("ofType"))).build();
+                return ListType.newListType().type(createTypeIndirection(assertNotNull((Map<String, Object>) type.get("ofType"), "ofType expected"))).build();
             default:
                 return assertShouldNeverHappen("Unknown kind %s", kind);
         }
     }
 
-    private Description toDescription(Map<String, Object> input) {
+    private @Nullable Description toDescription(Map<String, Object> input) {
         String description = (String) input.get("description");
         if (description == null) {
             return null;

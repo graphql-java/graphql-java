@@ -6,6 +6,8 @@ import graphql.Internal;
 import graphql.InvalidSyntaxError;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
@@ -14,15 +16,16 @@ import java.util.List;
  * This exception is thrown by the {@link Parser} if the graphql syntax is not valid
  */
 @PublicApi
+@NullMarked
 public class InvalidSyntaxException extends GraphQLException {
 
-    private final String message;
-    private final String sourcePreview;
-    private final String offendingToken;
-    private final SourceLocation location;
+    private final @Nullable String message;
+    private final @Nullable String sourcePreview;
+    private final @Nullable String offendingToken;
+    private final @Nullable SourceLocation location;
 
     @Internal
-    protected InvalidSyntaxException(String msg, SourceLocation location, String offendingToken, String sourcePreview, Exception cause) {
+    protected InvalidSyntaxException(@Nullable String msg, @Nullable SourceLocation location, @Nullable String offendingToken, @Nullable String sourcePreview, @Nullable Exception cause) {
         super(cause);
         this.message = msg;
         this.sourcePreview = sourcePreview;
@@ -31,24 +34,24 @@ public class InvalidSyntaxException extends GraphQLException {
     }
 
     public InvalidSyntaxError toInvalidSyntaxError() {
-        List<SourceLocation> sourceLocations = location == null ? null : Collections.singletonList(location);
+        @Nullable List<SourceLocation> sourceLocations = location == null ? null : Collections.singletonList(location);
         return new InvalidSyntaxError(sourceLocations, message, sourcePreview, offendingToken);
     }
 
     @Override
-    public String getMessage() {
+    public @Nullable String getMessage() {
         return message;
     }
 
-    public SourceLocation getLocation() {
+    public @Nullable SourceLocation getLocation() {
         return location;
     }
 
-    public String getSourcePreview() {
+    public @Nullable String getSourcePreview() {
         return sourcePreview;
     }
 
-    public String getOffendingToken() {
+    public @Nullable String getOffendingToken() {
         return offendingToken;
     }
 

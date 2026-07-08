@@ -2,7 +2,7 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.language.Value;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
@@ -11,6 +11,7 @@ import static graphql.Assert.assertNotNull;
  * Used by @{@link GraphQLArgument} and {@link GraphQLInputObjectField} to represent different value states.
  */
 @PublicApi
+@NullMarked
 public class InputValueWithState {
     private enum State {
         /**
@@ -35,16 +36,16 @@ public class InputValueWithState {
     }
 
     private final State state;
-    private final Object value;
+    private final @Nullable Object value;
 
-    private InputValueWithState(State state, Object value) {
+    private InputValueWithState(State state, @Nullable Object value) {
         this.state = state;
         this.value = value;
     }
 
     public static final InputValueWithState NOT_SET = new InputValueWithState(State.NOT_SET, null);
 
-    public static InputValueWithState newLiteralValue(@NonNull Value value) {
+    public static InputValueWithState newLiteralValue(Value value) {
         assertNotNull(value, "value literal can't be null");
         return new InputValueWithState(State.LITERAL, value);
     }

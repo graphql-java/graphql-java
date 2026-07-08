@@ -1,6 +1,8 @@
 package graphql.parser;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.function.Consumer;
 
@@ -10,6 +12,7 @@ import static graphql.Assert.assertNotNull;
  * Options that control how the {@link Parser} behaves.
  */
 @PublicApi
+@NullMarked
 public class ParserOptions {
     /**
      * A graphql hacking vector is to send nonsensical queries with large tokens that contain a repeated characters
@@ -323,6 +326,7 @@ public class ParserOptions {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
 
         private boolean captureIgnoredChars = false;
