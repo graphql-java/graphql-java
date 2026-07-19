@@ -680,15 +680,91 @@ class ExecutionInputTest extends Specification {
         !cf.isCompletedExceptionally()
         !er.errors.isEmpty()
         er.errors.any { it["message"] == "Execution has been asked to be cancelled" }
-        // The top-level partial results capture sees parent's CF as still pending
-        // (because its nested sub-fields are being resolved), so parent is null.
-        // The nested buildFieldValueMap lambda also fires on the same cancellation.
+        // The nested object's already-completed sub-field ('fast') is captured as partial data,
+        // and the top-level value harvest waits for that cancellation-aware nested CF to settle
+        // rather than discarding it as null. The still-pending 'slow' sub-field becomes null.
         er.data != null
-        er.data.containsKey("parent")
+        er.data["parent"] != null
+        er.data["parent"]["fast"] == "fast-value"
+        er.data["parent"]["slow"] == null
 
         cleanup:
         // release slow so any background threads can finish
         slowResult.complete("slow-value")
+    }
+
+    def "capturePartialResultsOnCancel returns partial data when a list element sub-field is cancelled"() {
+        // A list of objects where one element has a fast sub-field (completed) and one element has a
+        // slow sub-field (still pending on cancel). Without racing cancellation while awaiting the list
+        // element values, one slow element would block the whole list and produce no partial data.
+        // We expect the completed element to be captured and the pending one's field to be null.
+        def sdl = '''
+            type Query {
+                items : [Item]
+            }
+            type Item {
+                fast : String
+                slow : String
+            }
+        '''
+
+        // we depend on three sub-fields completing before we cancel: item0.fast, item0.slow, item1.fast
+        CountDownLatch shouldCompleteDone = new CountDownLatch(3)
+        CompletableFuture<String> slowResult = new CompletableFuture<>()
+
+        DataFetcher itemsDf = { DataFetchingEnvironment env -> [[id: "0"], [id: "1"]] }
+        DataFetcher fastDf = { DataFetchingEnvironment env ->
+            return CompletableFuture.completedFuture("fast-value")
+                    .whenComplete { r, t -> shouldCompleteDone.countDown() }
+        }
+        // element 0's slow completes immediately; element 1's slow stays pending until after cancel
+        DataFetcher slowDf = { DataFetchingEnvironment env ->
+            def id = (env.getSource() as Map)["id"]
+            return id == "0"
+                    ? CompletableFuture.completedFuture("slow-value-0").whenComplete { r, t -> shouldCompleteDone.countDown() }
+                    : slowResult
+        }
+
+        def fetcherMap = [
+                "Query": ["items": itemsDf],
+                "Item" : ["fast": fastDf, "slow": slowDf]
+        ]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("{ items { fast slow } }")
+                .graphQLContext({ c ->
+                    GraphQL.unusualConfiguration(c).cancellation().capturePartialResultsOnCancel(true)
+                })
+                .build()
+
+        def cf = graphQL.executeAsync(executionInput)
+
+        // all the sub-fields we assert on are done; cancel while element 1's slow is still pending
+        shouldCompleteDone.await()
+        executionInput.cancel()
+
+        await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
+        def er = cf.join()
+
+        then:
+        !cf.isCompletedExceptionally()
+        !er.errors.isEmpty()
+        er.errors.any { it["message"] == "Execution has been asked to be cancelled" }
+        er.data != null
+        er.data["items"] != null
+        er.data["items"].size() == 2
+        // both elements' fast sub-field completed
+        er.data["items"][0]["fast"] == "fast-value"
+        er.data["items"][1]["fast"] == "fast-value"
+        // element 0's slow completed, element 1's slow was still pending -> null
+        er.data["items"][0]["slow"] == "slow-value-0"
+        er.data["items"][1]["slow"] == null
+
+        cleanup:
+        slowResult.complete("slow-value-1")
     }
 
     def "without capturePartialResultsOnCancel a late cancel discards even fully gathered nested data"() {
