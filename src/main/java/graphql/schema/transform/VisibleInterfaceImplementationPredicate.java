@@ -1,7 +1,6 @@
 package graphql.schema.transform;
 
 import graphql.PublicSpi;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Predicate used during a {@link FieldVisibilitySchemaTransformation} to test whether an interface implementation
@@ -12,7 +11,6 @@ import org.jspecify.annotations.NullMarked;
  */
 @PublicSpi
 @FunctionalInterface
-@NullMarked
 public interface VisibleInterfaceImplementationPredicate {
 
     /**

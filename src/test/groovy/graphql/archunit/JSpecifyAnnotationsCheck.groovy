@@ -1,5 +1,6 @@
 package graphql.archunit
 
+import com.tngtech.archunit.core.domain.JavaClass
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.core.importer.ImportOption
 import spock.lang.Specification
@@ -122,8 +123,6 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.idl.TypeRuntimeWiring",
             "graphql.schema.idl.errors.SchemaProblem",
             "graphql.schema.idl.errors.StrictModeWiringException",
-            "graphql.schema.transform.FieldVisibilitySchemaTransformation",
-            "graphql.schema.transform.VisibleFieldPredicateEnvironment",
             "graphql.schema.usage.SchemaUsage",
             "graphql.schema.usage.SchemaUsageSupport",
             "graphql.schema.validation.OneOfInputObjectRules",
@@ -160,7 +159,7 @@ class JSpecifyAnnotationsCheck extends Specification {
         when:
         def classesMissingAnnotation = classes
                 .stream()
-                .filter { !it.isAnnotatedWith("org.jspecify.annotations.NullMarked") && !it.isAnnotatedWith("org.jspecify.annotations.NullUnmarked") }
+                .filter { !isJSpecifyAnnotated(it) }
                 .map { it.name }
                 .filter { it -> !JSPECIFY_EXEMPTION_LIST.contains(it) }
                 .collect()
@@ -183,7 +182,7 @@ Add @NullMarked or @NullUnmarked to these public API classes. See documentation 
         when:
         def annotatedButExempted = classes.stream()
                 .filter { JSPECIFY_EXEMPTION_LIST.contains(it.name) }
-                .filter { it.isAnnotatedWith("org.jspecify.annotations.NullMarked") || it.isAnnotatedWith("org.jspecify.annotations.NullUnmarked") }
+                .filter { isJSpecifyAnnotated(it) }
                 .map { it.name }
                 .collect()
 
@@ -194,5 +193,12 @@ ${annotatedButExempted.sort().join("\n")}
 
 Please remove them from the exemption list in ${JSpecifyAnnotationsCheck.class.simpleName}.groovy.""")
         }
+    }
+
+    private static boolean isJSpecifyAnnotated(JavaClass javaClass) {
+        return javaClass.isAnnotatedWith("org.jspecify.annotations.NullMarked") ||
+                javaClass.isAnnotatedWith("org.jspecify.annotations.NullUnmarked") ||
+                javaClass.package.isAnnotatedWith("org.jspecify.annotations.NullMarked") ||
+                javaClass.package.isAnnotatedWith("org.jspecify.annotations.NullUnmarked")
     }
 }

@@ -3,12 +3,10 @@ package graphql.schema.transform;
 import graphql.Internal;
 import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInterfaceType;
-import org.jspecify.annotations.NullMarked;
 
 import static graphql.Assert.assertNotNull;
 
 @Internal
-@NullMarked
 public final class VisibleInterfaceImplementationPredicateEnvironmentImpl implements VisibleInterfaceImplementationPredicateEnvironment {
 
     private final GraphQLImplementingType implementingType;
