@@ -8,8 +8,10 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
@@ -33,17 +35,38 @@ import java.util.stream.Stream;
 import static graphql.schema.SchemaTransformer.transformSchemaWithDeletes;
 
 /**
- * Transforms a schema by applying a visibility predicate to every field.
+ * Transforms a schema by applying visibility predicates to fields and interface implementation relationships.
+ * <p>
+ * Field and interface implementation visibility are independent. Callers are responsible for ensuring that their
+ * combined visibility decisions produce a valid schema. An invalid transformed schema causes schema construction to
+ * fail with an {@link graphql.schema.validation.InvalidSchemaException}.
  */
 @PublicApi
 public class FieldVisibilitySchemaTransformation {
 
+    private static final VisibleInterfaceImplementationPredicate ALL_INTERFACE_IMPLEMENTATIONS_VISIBLE = environment -> true;
+
     private final VisibleFieldPredicate visibleFieldPredicate;
+    private final VisibleInterfaceImplementationPredicate visibleInterfaceImplementationPredicate;
     private final Runnable beforeTransformationHook;
     private final Runnable afterTransformationHook;
 
     public FieldVisibilitySchemaTransformation(VisibleFieldPredicate visibleFieldPredicate) {
-        this(visibleFieldPredicate, () -> {
+        this(visibleFieldPredicate, ALL_INTERFACE_IMPLEMENTATIONS_VISIBLE, () -> {
+        }, () -> {
+        });
+    }
+
+    /**
+     * Creates a schema transformation with independent visibility predicates for fields and interface implementation
+     * relationships.
+     *
+     * @param visibleFieldPredicate                   controls field visibility
+     * @param visibleInterfaceImplementationPredicate controls interface implementation relationship visibility
+     */
+    public FieldVisibilitySchemaTransformation(VisibleFieldPredicate visibleFieldPredicate,
+                                               VisibleInterfaceImplementationPredicate visibleInterfaceImplementationPredicate) {
+        this(visibleFieldPredicate, visibleInterfaceImplementationPredicate, () -> {
         }, () -> {
         });
     }
@@ -51,7 +74,23 @@ public class FieldVisibilitySchemaTransformation {
     public FieldVisibilitySchemaTransformation(VisibleFieldPredicate visibleFieldPredicate,
                                                Runnable beforeTransformationHook,
                                                Runnable afterTransformationHook) {
+        this(visibleFieldPredicate, ALL_INTERFACE_IMPLEMENTATIONS_VISIBLE, beforeTransformationHook, afterTransformationHook);
+    }
+
+    /**
+     * Creates a schema transformation with independent visibility predicates and lifecycle hooks.
+     *
+     * @param visibleFieldPredicate                   controls field visibility
+     * @param visibleInterfaceImplementationPredicate controls interface implementation relationship visibility
+     * @param beforeTransformationHook                runs before transformation
+     * @param afterTransformationHook                 runs after transformation
+     */
+    public FieldVisibilitySchemaTransformation(VisibleFieldPredicate visibleFieldPredicate,
+                                               VisibleInterfaceImplementationPredicate visibleInterfaceImplementationPredicate,
+                                               Runnable beforeTransformationHook,
+                                               Runnable afterTransformationHook) {
         this.visibleFieldPredicate = visibleFieldPredicate;
+        this.visibleInterfaceImplementationPredicate = visibleInterfaceImplementationPredicate;
         this.beforeTransformationHook = beforeTransformationHook;
         this.afterTransformationHook = afterTransformationHook;
     }
@@ -64,10 +103,10 @@ public class FieldVisibilitySchemaTransformation {
         // These are types that exist in the schema but are NOT reachable from operation types + directives
         Set<String> rootUnusedTypes = findRootUnusedTypes(schema);
 
-        // we delete all fields that should be deleted
-        // this assumes the field remove itself is semantically valid
+        // we delete all fields and interface implementation relationships that should be deleted
+        // this assumes the combined removals are semantically valid
         GraphQLSchema interimSchema = transformSchemaWithDeletes(schema,
-                new FieldRemovalVisitor(visibleFieldPredicate));
+                new ElementRemovalVisitor(visibleFieldPredicate, visibleInterfaceImplementationPredicate));
 
 
         // cleanup schema
@@ -174,44 +213,71 @@ public class FieldVisibilitySchemaTransformation {
         }
     }
 
-    private static class FieldRemovalVisitor extends GraphQLTypeVisitorStub {
+    private static class ElementRemovalVisitor extends GraphQLTypeVisitorStub {
 
-        private final VisibleFieldPredicate visibilityPredicate;
+        private final VisibleFieldPredicate fieldVisibilityPredicate;
+        private final VisibleInterfaceImplementationPredicate interfaceImplementationPredicate;
 
         private final Set<GraphQLFieldDefinition> fieldDefinitionsToActuallyRemove = new LinkedHashSet<>();
         private final Set<GraphQLInputObjectField> inputObjectFieldsToDelete = new LinkedHashSet<>();
 
-        private FieldRemovalVisitor(VisibleFieldPredicate visibilityPredicate) {
-            this.visibilityPredicate = visibilityPredicate;
+        private ElementRemovalVisitor(VisibleFieldPredicate fieldVisibilityPredicate,
+                                      VisibleInterfaceImplementationPredicate interfaceImplementationPredicate) {
+            this.fieldVisibilityPredicate = fieldVisibilityPredicate;
+            this.interfaceImplementationPredicate = interfaceImplementationPredicate;
         }
 
         @Override
         public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
-            return visitFieldsContainer(objectType, context);
+            if (markInvisibleFields(objectType)) {
+                return deleteNode(context);
+            }
+            List<GraphQLInterfaceType> visibleInterfaces = getVisibleInterfaces(objectType);
+            if (visibleInterfaces.size() == objectType.getInterfaces().size()) {
+                return TraversalControl.CONTINUE;
+            }
+            GraphQLObjectType changedObjectType = objectType.transform(builder -> builder.replaceInterfaces(visibleInterfaces));
+            return changeNode(context, changedObjectType);
         }
 
         @Override
-        public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType objectType, TraverserContext<GraphQLSchemaElement> context) {
-            return visitFieldsContainer(objectType, context);
+        public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType interfaceType, TraverserContext<GraphQLSchemaElement> context) {
+            if (markInvisibleFields(interfaceType)) {
+                return deleteNode(context);
+            }
+            List<GraphQLInterfaceType> visibleInterfaces = getVisibleInterfaces(interfaceType);
+            if (visibleInterfaces.size() == interfaceType.getInterfaces().size()) {
+                return TraversalControl.CONTINUE;
+            }
+            GraphQLInterfaceType changedInterfaceType = interfaceType.transform(builder -> builder.replaceInterfaces(visibleInterfaces));
+            return changeNode(context, changedInterfaceType);
         }
 
-        private TraversalControl visitFieldsContainer(GraphQLFieldsContainer fieldsContainer, TraverserContext<GraphQLSchemaElement> context) {
+        private boolean markInvisibleFields(GraphQLFieldsContainer fieldsContainer) {
             boolean allFieldsDeleted = true;
             for (GraphQLFieldDefinition fieldDefinition : fieldsContainer.getFieldDefinitions()) {
                 VisibleFieldPredicateEnvironment environment = new VisibleFieldPredicateEnvironmentImpl(
                         fieldDefinition, fieldsContainer);
-                if (!visibilityPredicate.isVisible(environment)) {
+                if (!fieldVisibilityPredicate.isVisible(environment)) {
                     fieldDefinitionsToActuallyRemove.add(fieldDefinition);
                 } else {
                     allFieldsDeleted = false;
                 }
             }
-            if (allFieldsDeleted) {
-                // we are deleting the whole interface type because all fields are supposed to be deleted
-                return deleteNode(context);
-            } else {
-                return TraversalControl.CONTINUE;
+            return allFieldsDeleted;
+        }
+
+        private List<GraphQLInterfaceType> getVisibleInterfaces(GraphQLImplementingType implementingType) {
+            List<GraphQLInterfaceType> visibleInterfaces = new ArrayList<>();
+            for (GraphQLNamedOutputType namedInterface : implementingType.getInterfaces()) {
+                GraphQLInterfaceType interfaceType = (GraphQLInterfaceType) namedInterface;
+                VisibleInterfaceImplementationPredicateEnvironment environment =
+                        new VisibleInterfaceImplementationPredicateEnvironmentImpl(implementingType, interfaceType);
+                if (interfaceImplementationPredicate.isVisible(environment)) {
+                    visibleInterfaces.add(interfaceType);
+                }
             }
+            return visibleInterfaces;
         }
 
         @Override
@@ -220,7 +286,7 @@ public class FieldVisibilitySchemaTransformation {
             for (GraphQLInputObjectField inputField : inputObjectType.getFieldDefinitions()) {
                 VisibleFieldPredicateEnvironment environment = new VisibleFieldPredicateEnvironmentImpl(
                         inputField, inputObjectType);
-                if (!visibilityPredicate.isVisible(environment)) {
+                if (!fieldVisibilityPredicate.isVisible(environment)) {
                     inputObjectFieldsToDelete.add(inputField);
                 } else {
                     allFieldsDeleted = false;
