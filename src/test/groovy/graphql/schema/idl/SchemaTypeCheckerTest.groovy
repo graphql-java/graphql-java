@@ -1337,6 +1337,171 @@ class SchemaTypeCheckerTest extends Specification {
 
     }
 
+    def "covariant object type implemented through an extension is supported"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            interface Pet {
+              id: ID
+            }
+
+            type Dog {
+              id: ID
+            }
+
+            extend type Dog implements Pet
+
+            type Base {
+              foo: String
+            }
+
+            interface PetContainer {
+              pet: Pet
+            }
+
+            extend type Base implements PetContainer {
+              pet: Dog
+            }
+        '''
+
+        def result = check(spec, ["Pet", "PetContainer"])
+
+        expect:
+        result.isEmpty()
+    }
+
+    def "covariant interface type implemented through an extension is supported"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            interface Pet {
+              id: ID
+            }
+
+            interface WorkingPet {
+              id: ID
+            }
+
+            extend interface WorkingPet implements Pet
+
+            interface PetContainer {
+              pet: Pet
+            }
+
+            type Base implements PetContainer {
+              pet: WorkingPet
+            }
+        '''
+
+        def result = check(spec, ["Pet", "WorkingPet", "PetContainer"])
+
+        expect:
+        result.isEmpty()
+    }
+
+    def "covariant union member added through an extension is supported"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            type Cat {
+              id: ID
+            }
+
+            type Dog {
+              id: ID
+            }
+
+            union Pets = Cat
+
+            extend union Pets = Dog
+
+            interface PetContainer {
+              pet: Pets
+            }
+
+            type Base implements PetContainer {
+              pet: Dog
+            }
+        '''
+
+        def result = check(spec, ["Pets", "PetContainer"])
+
+        expect:
+        result.isEmpty()
+    }
+
+    def "wrapped covariant object type implemented through an extension is supported"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            interface Pet {
+              id: ID
+            }
+
+            type Dog {
+              id: ID
+            }
+
+            extend type Dog implements Pet
+
+            interface PetContainer {
+              pets: [Pet]!
+            }
+
+            type Base implements PetContainer {
+              pets: [Dog!]!
+            }
+        '''
+
+        def result = check(spec, ["Pet", "PetContainer"])
+
+        expect:
+        result.isEmpty()
+    }
+
+    def "unrelated type remains invalid when other interface relationships use extensions"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            interface Pet {
+              id: ID
+            }
+
+            interface Vehicle {
+              id: ID
+            }
+
+            type Car {
+              id: ID
+            }
+
+            extend type Car implements Vehicle
+
+            interface PetContainer {
+              pet: Pet
+            }
+
+            type Base implements PetContainer {
+              pet: Car
+            }
+        '''
+
+        def result = check(spec, ["Pet", "Vehicle", "PetContainer"])
+
+        expect:
+        errorContaining(result, "has tried to redefine field 'pet' defined via interface 'PetContainer'")
+    }
+
     def "deviant covariant object types are detected"() {
 
         def spec = '''
