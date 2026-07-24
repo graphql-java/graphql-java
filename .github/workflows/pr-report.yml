@@ -16,7 +16,7 @@ jobs:
        github.event.workflow_run.conclusion == 'failure')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6.0.2
+      - uses: actions/checkout@v7.0.0
       - name: Download Test Stats
         uses: actions/download-artifact@v8
         continue-on-error: true
