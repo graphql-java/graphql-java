@@ -1,11 +1,10 @@
 package benchmark;
 
-import graphql.ExecutionResult;
-import graphql.GraphQL;
 import graphql.language.Document;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
+import graphql.validation.ValidationError;
 import graphql.validation.Validator;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -18,11 +17,9 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-
-import static graphql.Assert.assertTrue;
-
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
@@ -61,11 +58,6 @@ public class ValidatorBenchmark {
                 String query = BenchmarkUtils.loadResource(queryPath);
                 GraphQLSchema schema = SchemaGenerator.createdMockedSchema(schemaString);
                 Document document = Parser.parse(query);
-
-                // make sure this is a valid query overall
-                GraphQL graphQL = GraphQL.newGraphQL(schema).build();
-                ExecutionResult executionResult = graphQL.execute(query);
-                assertTrue(executionResult.getErrors().size() == 0);
                 return new Scenario(schema, document);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -74,23 +66,23 @@ public class ValidatorBenchmark {
 
     }
 
-    private void run(Scenario scenario) {
+    private List<ValidationError> run(Scenario scenario) {
         Validator validator = new Validator();
-        validator.validateDocument(scenario.schema, scenario.document, Locale.ENGLISH);
+        return validator.validateDocument(scenario.schema, scenario.document, Locale.ENGLISH);
     }
 
     @Benchmark
-    public void largeSchema1(MyState state) {
-        run(state.largeSchema1);
+    public List<ValidationError> largeSchema1(MyState state) {
+        return run(state.largeSchema1);
     }
 
     @Benchmark
-    public void largeSchema4(MyState state) {
-        run(state.largeSchema4);
+    public List<ValidationError> largeSchema4(MyState state) {
+        return run(state.largeSchema4);
     }
 
     @Benchmark
-    public void manyFragments(MyState state) {
-        run(state.manyFragments);
+    public List<ValidationError> manyFragments(MyState state) {
+        return run(state.manyFragments);
     }
 }
