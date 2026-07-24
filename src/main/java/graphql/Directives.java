@@ -1,21 +1,27 @@
 package graphql;
 
 
+import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
 import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
+import graphql.language.IntValue;
+import graphql.language.ListType;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
 import org.jspecify.annotations.NullMarked;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static graphql.Scalars.GraphQLBoolean;
+import static graphql.Scalars.GraphQLInt;
 import static graphql.Scalars.GraphQLString;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
@@ -34,6 +40,7 @@ import static graphql.language.InputValueDefinition.newInputValueDefinition;
 import static graphql.language.NonNullType.newNonNullType;
 import static graphql.language.TypeName.newTypeName;
 import static graphql.schema.GraphQLArgument.newArgument;
+import static graphql.schema.GraphQLList.list;
 import static graphql.schema.GraphQLNonNull.nonNull;
 
 /**
@@ -50,6 +57,8 @@ public class Directives {
     private static final String ONE_OF = "oneOf";
     private static final String DEFER = "defer";
     private static final String EXPERIMENTAL_DISABLE_ERROR_PROPAGATION = "experimental_disableErrorPropagation";
+    private static final String SEMANTIC_NON_NULL = "semanticNonNull";
+    private static final String INT = "Int";
 
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition INCLUDE_DIRECTIVE_DEFINITION;
@@ -61,6 +70,8 @@ public class Directives {
     public static final DirectiveDefinition DEFER_DIRECTIVE_DEFINITION;
     @ExperimentalApi
     public static final DirectiveDefinition EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
+    @ExperimentalApi
+    public static final DirectiveDefinition SEMANTIC_NON_NULL_DIRECTIVE_DEFINITION;
 
     public static final String BOOLEAN = "Boolean";
     public static final String STRING = "String";
@@ -154,6 +165,21 @@ public class Directives {
                 .directiveLocation(newDirectiveLocation().name(MUTATION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(SUBSCRIPTION.name()).build())
                 .description(createDescription("This directive allows returning null in non-null positions that have an associated error"))
+                .build();
+
+        SEMANTIC_NON_NULL_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(SEMANTIC_NON_NULL)
+                .directiveLocation(newDirectiveLocation().name(FIELD_DEFINITION.name()).build())
+                .description(createDescription("Indicates that a position is semantically non null: it is only null if there is a matching error in the `errors` array."))
+                .inputValueDefinition(
+                        newInputValueDefinition()
+                                .name("levels")
+                                .description(createDescription("The list dimensions that are semantically non null, with 0 being the outermost position."))
+                                .type(newNonNullType(new ListType(newNonNullType(newTypeName().name(INT).build()).build())).build())
+                                .defaultValue(ArrayValue.newArrayValue()
+                                        .value(IntValue.newIntValue(BigInteger.ZERO).build())
+                                        .build())
+                                .build())
                 .build();
     }
 
@@ -257,6 +283,27 @@ public class Directives {
             .build();
 
     /**
+     * The "@semanticNonNull" directive indicates that a field is semantically non-null: it is only null if there is a
+     * matching error in the `errors` array.
+     * <p>
+     * See <a href="https://specs.apollo.dev/nullability/v0.4/">the Apollo nullability specification</a>
+     */
+    @ExperimentalApi
+    public static final GraphQLDirective SemanticNonNullDirective = GraphQLDirective.newDirective()
+            .name(SEMANTIC_NON_NULL)
+            .description("Indicates that a position is semantically non null: it is only null if there is a matching error in the `errors` array.")
+            .argument(newArgument()
+                    .name("levels")
+                    .type(nonNull(list(nonNull(GraphQLInt))))
+                    .defaultValueLiteral(ArrayValue.newArrayValue()
+                            .value(IntValue.newIntValue(BigInteger.ZERO).build())
+                            .build())
+                    .description("The list dimensions that are semantically non null, with 0 being the outermost position."))
+            .validLocations(FIELD_DEFINITION)
+            .definition(SEMANTIC_NON_NULL_DIRECTIVE_DEFINITION)
+            .build();
+
+    /**
      * The set of all built-in directives that are always present in a graphql schema.
      * The iteration order is stable and meaningful.
      */
@@ -276,6 +323,7 @@ public class Directives {
         directives.add(OneOfDirective);
         directives.add(DeferDirective);
         directives.add(ExperimentalDisableErrorPropagationDirective);
+        directives.add(SemanticNonNullDirective);
         BUILT_IN_DIRECTIVES = Collections.unmodifiableSet(directives);
 
         LinkedHashMap<String, GraphQLDirective> map = new LinkedHashMap<>();
@@ -329,5 +377,26 @@ public class Directives {
      */
     public static void setExperimentalDisableErrorPropagationEnabled(boolean flag) {
         EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_ENABLED.set(flag);
+    }
+
+    private static final AtomicBoolean SEMANTIC_NON_NULL_DIRECTIVE_ENABLED = new AtomicBoolean(true);
+
+    /**
+     * This can be used to get the state of the `@semanticNonNull` directive support on a JVM wide basis.
+     *
+     * @return true if the `@semanticNonNull` directive will be respected.
+     */
+    public static boolean isSemanticNonNullEnabled() {
+        return SEMANTIC_NON_NULL_DIRECTIVE_ENABLED.get();
+    }
+
+    /**
+     * This can be used to disable the `@semanticNonNull` directive support on a JVM wide basis in case your server
+     * implementation does NOT want to return an error when a semantically non null position resolves to null.
+     *
+     * @param flag the desired state of the flag
+     */
+    public static void setSemanticNonNullEnabled(boolean flag) {
+        SEMANTIC_NON_NULL_DIRECTIVE_ENABLED.set(flag);
     }
 }
