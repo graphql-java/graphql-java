@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.Assert;
 import graphql.Directives;
 import graphql.DirectivesUtil;
+import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.ValuesResolver;
@@ -49,6 +50,7 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorEnvironment;
 import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.InputValueWithState;
+import graphql.schema.universe.SUSchema;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.io.PrintWriter;
@@ -506,6 +508,12 @@ public class SchemaPrinter {
      * @return the logical schema definition
      */
     public String print(GraphQLSchema schema) {
+        if (!options.isUseAstDefinitions()) {
+            return new SchemaPrinterWriter(
+                    new GraphQLSchemaPrintAccess(schema, options),
+                    options)
+                    .print();
+        }
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
@@ -529,6 +537,25 @@ public class SchemaPrinter {
         }
 
         return trimNewLineChars(sw.toString());
+    }
+
+    /**
+     * Prints a schema-universe snapshot directly without materializing a {@link GraphQLSchema}.
+     *
+     * <p>Schema-universe extensions are flattened into their semantic topology, so this always
+     * produces canonical semantic SDL even when {@link Options#useAstDefinitions(boolean)} is
+     * enabled.</p>
+     *
+     * @param schema the schema-universe snapshot
+     *
+     * @return the logical schema definition
+     */
+    @ExperimentalApi
+    public String print(SUSchema schema) {
+        return new SchemaPrinterWriter(
+                new SUSchemaPrintAccess(schema, options),
+                options)
+                .print();
     }
 
     private interface SchemaElementPrinter<T> {
