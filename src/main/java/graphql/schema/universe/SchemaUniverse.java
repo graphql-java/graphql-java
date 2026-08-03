@@ -30,10 +30,11 @@ import static graphql.Assert.assertValidName;
 import static graphql.util.Interning.intern;
 
 /**
- * An append-only store of schema vertices shared by many immutable schema snapshots.
+ * A store of append-only schema vertices shared by many immutable schema snapshots.
  *
  * <p>A universe is safe for concurrent readers. Vertex creation is serialized, while reading a
- * published vertex or schema does not require locking.</p>
+ * published vertex or schema does not require locking. Schemas can be removed from the universe's
+ * registry, but removing a schema does not remove its vertices from the universe.</p>
  */
 @ExperimentalApi
 @NullMarked
@@ -73,6 +74,39 @@ public final class SchemaUniverse {
 
     public @Nullable SUSchema getSchema(String name) {
         return schemasByName.get(assertNotNull(name));
+    }
+
+    /**
+     * Removes and returns the registered schema with the given name.
+     *
+     * <p>This only removes the schema from this universe's registry. The schema remains usable if
+     * it is referenced elsewhere, and its vertices remain stored in this universe.</p>
+     *
+     * @return the removed schema, or {@code null} if no schema has that name
+     */
+    public synchronized @Nullable SUSchema removeSchema(String name) {
+        SUSchema removed = schemasByName.remove(assertNotNull(name));
+        if (removed != null) {
+            assertTrue(schemas.remove(removed), "Schema registry is inconsistent");
+        }
+        return removed;
+    }
+
+    /**
+     * Removes the exact schema instance from this universe's registry.
+     *
+     * <p>If its name has since been reused by another schema, that replacement is not removed.</p>
+     *
+     * @return {@code true} if the schema was registered and removed
+     */
+    public synchronized boolean removeSchema(SUSchema schema) {
+        SUSchema ownedSchema = assertNotNull(schema);
+        assertTrue(ownedSchema.getUniverse() == this, "Schema belongs to another universe");
+        boolean removed = schemasByName.remove(ownedSchema.getName(), ownedSchema);
+        if (removed) {
+            assertTrue(schemas.remove(ownedSchema), "Schema registry is inconsistent");
+        }
+        return removed;
     }
 
     public List<SUSchema> getSchemas() {

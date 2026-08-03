@@ -131,6 +131,75 @@ class SUTest extends Specification {
         universe.schemas == [first, second]
     }
 
+    def "schemas can be removed from the universe registry"() {
+        given:
+        def universe = new SchemaUniverse()
+        def query = universe.newObjectType("Query")
+        def first = universe.newSchema("first")
+                .queryType(query)
+                .build()
+        def second = first.transform("second", builder -> {})
+
+        when:
+        def removed = universe.removeSchema("first")
+
+        then:
+        removed.is(first)
+        universe.getSchema("first") == null
+        universe.schemas == [second]
+        universe.schemasByName == [second: second]
+        first.queryType.is(query)
+        universe.removeSchema("missing") == null
+
+        when:
+        def replacement = second.transform("first", builder -> {})
+
+        then:
+        universe.schemas == [second, replacement]
+        universe.getSchema("first").is(replacement)
+
+        when:
+        def removedOldInstance = universe.removeSchema(first)
+
+        then:
+        !removedOldInstance
+        universe.getSchema("first").is(replacement)
+
+        when:
+        def removedReplacement = universe.removeSchema(replacement)
+
+        then:
+        removedReplacement
+        universe.schemas == [second]
+        universe.schemasByName == [second: second]
+    }
+
+    def "removing a schema does not remove its vertices"() {
+        given:
+        def universe = new SchemaUniverse()
+        def query = universe.newObjectType("Query")
+        def field = universe.newField("foo")
+        def string = universe.newScalarType("String")
+        def schema = universe.newSchema("schema")
+                .queryType(query)
+                .addField(query, field)
+                .setFieldType(field, string)
+                .build()
+        def root = schema.root
+        def vertexCount = universe.vertexCount
+
+        when:
+        universe.removeSchema(schema)
+
+        then:
+        universe.schemas.isEmpty()
+        universe.vertexCount == vertexCount
+        universe.getVertex(root.id).is(root)
+        universe.getVertex(query.id).is(query)
+        universe.getVertex(field.id).is(field)
+        universe.getVertex(string.id).is(string)
+    }
+
     def "exact duplicate edges are folded but duplicate child names are rejected"() {
         given:
         def universe = new SchemaUniverse()
