@@ -8,7 +8,7 @@ import java.util.Arrays;
 import static graphql.Assert.assertTrue;
 
 /**
- * The immutable, sorted outgoing adjacency of one source vertex.
+ * The immutable outgoing adjacency of one source vertex.
  *
  * <p>Each edge occupies one {@code long} with this layout:</p>
  *
@@ -20,8 +20,9 @@ import static graphql.Assert.assertTrue;
  * +--------------+----------------------+-----------------------+
  * </pre>
  *
- * <p>The packed values are sorted by kind, name ID, and target ID. Edges of one kind are therefore
- * contiguous, while exact and name-based lookups can use binary search. Instances are values in
+ * <p>The packed values are grouped by kind. Unordered kinds are sorted by name ID and target ID,
+ * while ordered kinds retain attachment order. Exact and name-based lookups use binary search for
+ * unordered kinds and scan the normally small ordered ranges. Instances are values in
  * {@link PersistentEdgeMap}; unchanged source vertices share the same instance across schema
  * snapshots.</p>
  */
@@ -37,12 +38,12 @@ public final class PackedEdgeSet {
     private final long[] edges;
 
     /**
-     * Creates a set that takes ownership of an already sorted and validated edge array.
+     * Creates a set that takes ownership of an already grouped and validated edge array.
      *
      * <p>The array is not copied and must not be modified after construction. General callers
      * should build through {@link MutablePackedEdgeSet#freeze()}.</p>
      *
-     * @param edges sorted, unique packed edges
+     * @param edges kind-grouped, unique packed edges
      */
     public PackedEdgeSet(long[] edges) {
         this.edges = edges;
@@ -102,14 +103,25 @@ public final class PackedEdgeSet {
      * @return {@code true} when the exact edge exists
      */
     public boolean contains(SUEdgeKind kind, int nameId, int targetId) {
-        return Arrays.binarySearch(edges, pack(kind, nameId, targetId)) >= 0;
+        long edge = pack(kind, nameId, targetId);
+        int start = firstIndex(kind);
+        int end = endIndex(kind);
+        if (!kind.isOrdered()) {
+            return Arrays.binarySearch(edges, start, end, edge) >= 0;
+        }
+        for (int i = start; i < end; i++) {
+            if (edges[i] == edge) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
      * Finds a target by relationship kind and target name.
      *
-     * <p>For edge kinds that permit duplicate names, this returns the first target in target-ID
-     * order.</p>
+     * <p>For edge kinds that permit duplicate names, this returns the first target in attachment
+     * order for ordered kinds and target-ID order for unordered kinds.</p>
      *
      * @param kind the relationship kind
      * @param nameId the target name ID
@@ -117,9 +129,19 @@ public final class PackedEdgeSet {
      * @return the target vertex ID, or {@code -1} when absent
      */
     public int targetByName(SUEdgeKind kind, int nameId) {
+        int start = firstIndex(kind);
+        int end = endIndex(kind);
+        if (kind.isOrdered()) {
+            for (int i = start; i < end; i++) {
+                if (edgeNameId(edges[i]) == nameId) {
+                    return targetId(edges[i]);
+                }
+            }
+            return -1;
+        }
         long prefix = prefix(kind, nameId);
-        int index = lowerBound(prefix);
-        if (index == edges.length || edgePrefix(edges[index]) != prefix) {
+        int index = lowerBound(prefix, start, end);
+        if (index == end || edgePrefix(edges[index]) != prefix) {
             return -1;
         }
         return targetId(edges[index]);
@@ -226,8 +248,12 @@ public final class PackedEdgeSet {
     }
 
     private int lowerBound(long value) {
-        int low = 0;
-        int high = edges.length;
+        return lowerBound(value, 0, edges.length);
+    }
+
+    private int lowerBound(long value, int start, int end) {
+        int low = start;
+        int high = end;
         while (low < high) {
             int middle = (low + high) >>> 1;
             if (edges[middle] < value) {

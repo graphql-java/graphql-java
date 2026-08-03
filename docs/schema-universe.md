@@ -71,11 +71,14 @@ An edge is packed into one primitive `long`:
 ```
 
 The source ID is the key of the adjacency map, so it is not repeated per edge. Immutable outgoing
-arrays are sorted by kind and target-name ID. This provides:
+arrays group edges by kind. Most kind ranges are sorted by target-name ID and target ID. Applied
+directive ranges retain attachment order so schema and SDL round trips preserve directive order.
+This provides:
 
 - 8 bytes per stored edge in an adjacency array;
-- binary search by relationship and GraphQL name;
-- deterministic iteration;
+- binary search by relationship and GraphQL name for unordered edge kinds;
+- a linear scan over the normally small applied-directive range;
+- deterministic iteration with directive attachment order preserved;
 - no edge objects or boxed endpoint IDs.
 
 The 24-bit name ID limits one universe to 16,777,215 distinct names. Vertex IDs are non-negative
@@ -94,8 +97,8 @@ adjacency:
 | Operation | Time | New retained storage |
 | --- | --- | --- |
 | Read outgoing adjacency | `O(log32 V)` | none |
-| Child lookup by name | `O(log32 V + log d)` | none |
-| Add/remove edge | `O(d)` transient, then sort at build | one changed primitive array |
+| Child lookup by name | `O(log32 V + log d)` unordered, `O(log32 V + d)` ordered | none |
+| Add/remove edge | `O(d)` transient, then canonicalize at build | one changed primitive array |
 | Publish `k` changed sources | `O(k log32 V)` | copied trie paths plus `k` arrays |
 | Derive with no type edits | effectively root replacement | one root array and two copied trie paths |
 

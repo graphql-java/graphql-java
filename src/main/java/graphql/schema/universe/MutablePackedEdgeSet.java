@@ -45,6 +45,25 @@ public final class MutablePackedEdgeSet {
     }
 
     /**
+     * Replaces the first exact occurrence of a packed edge without changing its position.
+     *
+     * @param currentEdge the edge to replace
+     * @param replacementEdge the replacement edge
+     *
+     * @return {@code true} when the current edge was present
+     */
+    public boolean replace(long currentEdge, long replacementEdge) {
+        for (int i = 0; i < size; i++) {
+            if (edges[i] != currentEdge) {
+                continue;
+            }
+            edges[i] = replacementEdge;
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Removes the first exact occurrence of a packed edge.
      *
      * @param edge the packed edge
@@ -98,8 +117,8 @@ public final class MutablePackedEdgeSet {
     /**
      * Produces a canonical immutable edge set.
      *
-     * <p>The result is sorted, exact duplicates are removed, single-valued edge kinds are checked,
-     * and kinds requiring unique target names are validated.</p>
+     * <p>The result is grouped by edge kind. Unordered kinds are sorted, ordered kinds retain first
+     * encounter order, exact duplicates are removed, and cardinality rules are validated.</p>
      *
      * @return the immutable edge set
      */
@@ -107,11 +126,13 @@ public final class MutablePackedEdgeSet {
         if (size == 0) {
             return PackedEdgeSet.empty();
         }
-        long[] sorted = Arrays.copyOf(edges, size);
-        Arrays.sort(sorted);
-        int uniqueSize = removeExactDuplicates(sorted);
-        validateCardinality(sorted, uniqueSize);
-        return new PackedEdgeSet(Arrays.copyOf(sorted, uniqueSize));
+        long[] canonical = Arrays.copyOf(edges, size);
+        Arrays.sort(canonical);
+        int uniqueSize = removeExactDuplicates(canonical);
+        canonical = Arrays.copyOf(canonical, uniqueSize);
+        restoreOrderedRanges(canonical);
+        validateCardinality(canonical);
+        return new PackedEdgeSet(canonical);
     }
 
     private int removeExactDuplicates(long[] sorted) {
@@ -125,10 +146,62 @@ public final class MutablePackedEdgeSet {
         return writeIndex;
     }
 
-    private void validateCardinality(long[] sorted, int uniqueSize) {
-        for (int i = 1; i < uniqueSize; i++) {
-            long previous = sorted[i - 1];
-            long current = sorted[i];
+    private void restoreOrderedRanges(long[] canonical) {
+        for (SUEdgeKind kind : SUEdgeKind.values()) {
+            if (!kind.isOrdered()) {
+                continue;
+            }
+            restoreOrderedRange(canonical, kind);
+        }
+    }
+
+    private void restoreOrderedRange(long[] canonical, SUEdgeKind kind) {
+        int start = firstIndex(canonical, kind);
+        if (start == canonical.length) {
+            return;
+        }
+        int end = endIndex(canonical, start, kind);
+        long[] sortedRange = Arrays.copyOfRange(canonical, start, end);
+        boolean[] emitted = new boolean[sortedRange.length];
+        int writeIndex = start;
+        for (int i = 0; i < size; i++) {
+            long edge = edges[i];
+            if (PackedEdgeSet.edgeKind(edge) != kind) {
+                continue;
+            }
+            int sortedIndex = Arrays.binarySearch(sortedRange, edge);
+            assertTrue(sortedIndex >= 0, "Ordered edge is missing from its canonical range");
+            if (emitted[sortedIndex]) {
+                continue;
+            }
+            canonical[writeIndex++] = edge;
+            emitted[sortedIndex] = true;
+        }
+        assertTrue(writeIndex == end, "Ordered edge range was not completely restored");
+    }
+
+    private int firstIndex(long[] canonical, SUEdgeKind kind) {
+        for (int i = 0; i < canonical.length; i++) {
+            if (PackedEdgeSet.edgeKind(canonical[i]) == kind) {
+                return i;
+            }
+        }
+        return canonical.length;
+    }
+
+    private int endIndex(long[] canonical, int start, SUEdgeKind kind) {
+        int index = start;
+        while (index < canonical.length
+                && PackedEdgeSet.edgeKind(canonical[index]) == kind) {
+            index++;
+        }
+        return index;
+    }
+
+    private void validateCardinality(long[] canonical) {
+        for (int i = 1; i < canonical.length; i++) {
+            long previous = canonical[i - 1];
+            long current = canonical[i];
             SUEdgeKind kind = PackedEdgeSet.edgeKind(current);
             if (kind != PackedEdgeSet.edgeKind(previous)) {
                 continue;

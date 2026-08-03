@@ -6,6 +6,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -117,6 +118,17 @@ public final class SUSchemaBuilder {
 
     public SUSchemaBuilder clearSchemaAppliedDirectives() {
         return clearAppliedDirectives(root);
+    }
+
+    public SUSchemaBuilder replaceSchemaAppliedDirective(
+            SUAppliedDirective current,
+            SUAppliedDirective replacement) {
+        return replaceAppliedDirective(root, current, replacement);
+    }
+
+    public SUSchemaBuilder replaceSchemaAppliedDirectives(
+            List<SUAppliedDirective> directives) {
+        return replaceAppliedDirectives(root, directives);
     }
 
     public SUSchemaBuilder addField(SUObjectType objectType, SUField field) {
@@ -310,6 +322,50 @@ public final class SUSchemaBuilder {
 
     public SUSchemaBuilder clearAppliedDirectives(SUAppliedDirectiveContainer container) {
         return removeEdges(containerVertex(container), SUEdgeKind.APPLIED_DIRECTIVE);
+    }
+
+    public SUSchemaBuilder replaceAppliedDirective(
+            SUAppliedDirectiveContainer container,
+            SUAppliedDirective current,
+            SUAppliedDirective replacement) {
+        assertCanChange();
+        SUVertex source = containerVertex(container);
+        assertOwned(current);
+        assertEdgeShape(source, SUEdgeKind.APPLIED_DIRECTIVE, replacement);
+        long currentEdge = PackedEdgeSet.pack(
+                SUEdgeKind.APPLIED_DIRECTIVE,
+                current.getNameId(),
+                current.getId());
+        long replacementEdge = PackedEdgeSet.pack(
+                SUEdgeKind.APPLIED_DIRECTIVE,
+                replacement.getNameId(),
+                replacement.getId());
+        assertTrue(
+                mutableEdges(source).replace(currentEdge, replacementEdge),
+                "Applied directive %s is not attached to container %s",
+                current,
+                source);
+        return this;
+    }
+
+    public SUSchemaBuilder replaceAppliedDirectives(
+            SUAppliedDirectiveContainer container,
+            List<SUAppliedDirective> directives) {
+        assertCanChange();
+        SUVertex source = containerVertex(container);
+        List<SUAppliedDirective> replacements = assertNotNull(directives);
+        for (SUAppliedDirective directive : replacements) {
+            assertEdgeShape(source, SUEdgeKind.APPLIED_DIRECTIVE, directive);
+        }
+        MutablePackedEdgeSet edges = mutableEdges(source);
+        edges.removeKind(SUEdgeKind.APPLIED_DIRECTIVE);
+        for (SUAppliedDirective directive : replacements) {
+            edges.add(PackedEdgeSet.pack(
+                    SUEdgeKind.APPLIED_DIRECTIVE,
+                    directive.getNameId(),
+                    directive.getId()));
+        }
+        return this;
     }
 
     public SUSchemaBuilder setWrappedType(SUListType listType, SUType wrappedType) {
