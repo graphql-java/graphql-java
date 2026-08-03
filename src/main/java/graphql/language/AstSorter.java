@@ -216,14 +216,7 @@ public class AstSorter {
 
             @Override
             public TraversalControl visitDirectiveDefinition(DirectiveDefinition node, TraverserContext<Node> context) {
-                if (node instanceof DirectiveExtensionDefinition) {
-                    DirectiveExtensionDefinition extension = (DirectiveExtensionDefinition) node;
-                    DirectiveExtensionDefinition changedExtension = extension.transformExtension(builder ->
-                            builder.directives(sort(node.getDirectives(), comparing(Directive::getName))));
-                    return changeNode(context, changedExtension);
-                }
                 DirectiveDefinition changedNode = node.transform(builder -> {
-                    builder.directives(sort(node.getDirectives(), comparing(Directive::getName)));
                     builder.inputValueDefinitions(sort(node.getInputValueDefinitions(), comparing(InputValueDefinition::getName)));
                     builder.directiveLocations(sort(node.getDirectiveLocations(), comparing(DirectiveLocation::getName)));
                 });

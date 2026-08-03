@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.language.DirectiveDefinition;
-import graphql.language.DirectiveExtensionDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
@@ -44,7 +43,6 @@ public class ImmutableTypeDefinitionRegistry extends TypeDefinitionRegistry {
                 copyOf(registry.enumTypeExtensions),
                 copyOf(registry.scalarTypeExtensions),
                 copyOf(registry.inputObjectTypeExtensions),
-                copyOf(registry.directiveExtensions),
                 copyOf(registry.types),
                 copyOf(registry.scalars()), // has an extra side effect
                 copyOf(registry.directiveDefinitions),
@@ -122,11 +120,6 @@ public class ImmutableTypeDefinitionRegistry extends TypeDefinitionRegistry {
     @Override
     public Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions() {
         return inputObjectTypeExtensions;
-    }
-
-    @Override
-    public Map<String, List<DirectiveExtensionDefinition>> directiveExtensions() {
-        return directiveExtensions;
     }
 
     @Override

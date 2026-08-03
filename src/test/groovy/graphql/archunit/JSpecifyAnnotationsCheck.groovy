@@ -68,6 +68,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.schema.GraphQLAppliedDirectiveArgument",
             "graphql.schema.GraphQLArgument",
             "graphql.schema.GraphQLCompositeType",
+            "graphql.schema.GraphQLDirective",
             "graphql.schema.GraphQLDirectiveContainer",
             "graphql.schema.GraphQLEnumValueDefinition",
             "graphql.schema.GraphQLFieldDefinition",

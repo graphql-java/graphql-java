@@ -13,7 +13,6 @@ import graphql.language.Definition;
 import graphql.language.Description;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
-import graphql.language.DirectiveExtensionDefinition;
 import graphql.language.DirectiveLocation;
 import graphql.language.Document;
 import graphql.language.EnumTypeDefinition;
@@ -273,8 +272,6 @@ public class GraphqlAntlrToLanguage {
             return createTypeExtension(ctx.typeExtension());
         } else if (ctx.schemaExtension() != null) {
             return creationSchemaExtension(ctx.schemaExtension());
-        } else if (ctx.directiveExtension() != null) {
-            return createDirectiveExtensionDefinition(ctx.directiveExtension());
         } else {
             return assertShouldNeverHappen();
         }
@@ -646,7 +643,6 @@ public class GraphqlAntlrToLanguage {
         def.name(ctx.name().getText());
         addCommonData(def, ctx);
         def.description(newDescription(ctx.description()));
-        def.directives(createDirectives(ctx.directives()));
 
         def.repeatable(ctx.REPEATABLE() != null);
 
@@ -660,14 +656,6 @@ public class GraphqlAntlrToLanguage {
         if (ctx.argumentsDefinition() != null) {
             def.inputValueDefinitions(createInputValueDefinitions(ctx.argumentsDefinition().inputValueDefinition()));
         }
-        return captureRuleContext(def.build(), ctx);
-    }
-
-    protected DirectiveExtensionDefinition createDirectiveExtensionDefinition(GraphqlParser.DirectiveExtensionContext ctx) {
-        DirectiveExtensionDefinition.Builder def = DirectiveExtensionDefinition.newDirectiveExtensionDefinition();
-        def.name(ctx.name().getText());
-        addCommonData(def, ctx);
-        def.directives(createDirectives(ctx.directives()));
         return captureRuleContext(def.build(), ctx);
     }
 

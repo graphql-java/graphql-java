@@ -896,7 +896,7 @@ public class Anonymizer {
                     GraphQLFieldDefinition graphQLFieldDefinition = assertNotNull(context.getVarFromParents(GraphQLFieldDefinition.class));
                     graphQLArgumentDefinition = graphQLFieldDefinition.getArgument(argument.getName());
                 }
-                GraphQLInputType argumentType = assertNotNull(graphQLArgumentDefinition).getType();
+                GraphQLInputType argumentType = graphQLArgumentDefinition.getType();
                 String newName = assertNotNull(astNodeToNewName.get(argument));
                 Value newValue = replaceValue(argument.getValue(), argumentType, newNames, defaultStringValueCounter, defaultIntValueCounter);
                 return changeNode(context, argument.transform(builder -> builder.name(newName).value(newValue)));

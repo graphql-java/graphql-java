@@ -5,7 +5,6 @@ import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
-import graphql.language.DirectiveExtensionDefinition;
 import graphql.language.InputValueDefinition;
 import graphql.language.StringValue;
 import graphql.language.Type;
@@ -33,7 +32,6 @@ import static graphql.collect.ImmutableKit.map;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
 import static graphql.util.Pair.pair;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 /**
@@ -228,20 +226,11 @@ class SchemaGeneratorAppliedDirectiveHelper {
     }
 
     static GraphQLDirective buildDirectiveDefinitionFromAst(SchemaGeneratorHelper.BuildContext buildCtx, DirectiveDefinition directiveDefinition, Function<Type<?>, GraphQLInputType> inputTypeFactory) {
-        List<DirectiveExtensionDefinition> extensions = buildCtx.getTypeRegistry()
-                .directiveExtensions()
-                .getOrDefault(directiveDefinition.getName(), emptyList());
-        List<Directive> extensionDirectives = extensions.stream()
-                .flatMap(extension -> extension.getDirectives().stream())
-                .collect(toList());
 
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(directiveDefinition.getName())
                 .definition(buildCtx.isCaptureAstDefinitions() ? directiveDefinition : null)
-                .extensionDefinitions(buildCtx.isCaptureAstDefinitions() ? extensions : emptyList())
                 .repeatable(directiveDefinition.isRepeatable())
-                .deprecate(buildDeprecationReason(combineDirectives(directiveDefinition.getDirectives(), extensionDirectives)))
-                .comparatorRegistry(buildCtx.getComparatorRegistry())
                 .description(buildDescription(buildCtx, directiveDefinition, directiveDefinition.getDescription()));
 
 
@@ -251,23 +240,7 @@ class SchemaGeneratorAppliedDirectiveHelper {
         List<GraphQLArgument> arguments = map(directiveDefinition.getInputValueDefinitions(),
                 arg -> buildDirectiveArgumentDefinitionFromAst(buildCtx, arg, inputTypeFactory));
         arguments.forEach(builder::argument);
-
-        Pair<List<GraphQLDirective>, List<GraphQLAppliedDirective>> appliedDirectives = buildAppliedDirectives(
-                buildCtx,
-                inputTypeFactory,
-                directiveDefinition.getDirectives(),
-                extensionDirectives,
-                Introspection.DirectiveLocation.DIRECTIVE_DEFINITION,
-                buildCtx.getDirectives(),
-                buildCtx.getComparatorRegistry());
-        buildAppliedDirectives(buildCtx, builder, appliedDirectives);
         return builder.build();
-    }
-
-    private static List<Directive> combineDirectives(List<Directive> directives, List<Directive> extensionDirectives) {
-        List<Directive> combined = new ArrayList<>(directives);
-        combined.addAll(extensionDirectives);
-        return combined;
     }
 
     private static List<Introspection.DirectiveLocation> buildLocations(DirectiveDefinition directiveDefinition) {

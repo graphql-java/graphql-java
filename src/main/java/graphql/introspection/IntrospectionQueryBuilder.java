@@ -40,8 +40,6 @@ public class IntrospectionQueryBuilder {
 
         private final boolean inputValueDeprecation;
 
-        private final boolean directiveDeprecation;
-
         private final int typeRefFragmentDepth;
 
         private Options(boolean descriptions,
@@ -50,7 +48,6 @@ public class IntrospectionQueryBuilder {
                         boolean directiveIsRepeatable,
                         boolean schemaDescription,
                         boolean inputValueDeprecation,
-                        boolean directiveDeprecation,
                         int typeRefFragmentDepth) {
             this.descriptions = descriptions;
             this.specifiedByUrl = specifiedByUrl;
@@ -58,7 +55,6 @@ public class IntrospectionQueryBuilder {
             this.directiveIsRepeatable = directiveIsRepeatable;
             this.schemaDescription = schemaDescription;
             this.inputValueDeprecation = inputValueDeprecation;
-            this.directiveDeprecation = directiveDeprecation;
             this.typeRefFragmentDepth = typeRefFragmentDepth;
         }
 
@@ -86,10 +82,6 @@ public class IntrospectionQueryBuilder {
             return inputValueDeprecation;
         }
 
-        public boolean isDirectiveDeprecation() {
-            return directiveDeprecation;
-        }
-
         public int getTypeRefFragmentDepth() {
             return typeRefFragmentDepth;
         }
@@ -101,7 +93,6 @@ public class IntrospectionQueryBuilder {
                     true,
                     true,
                     false,
-                    true,
                     true,
                     7
             );
@@ -121,7 +112,6 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
-                    this.directiveDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -139,7 +129,6 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
-                    this.directiveDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -160,7 +149,6 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
-                    this.directiveDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -178,7 +166,6 @@ public class IntrospectionQueryBuilder {
                     flag,
                     this.schemaDescription,
                     this.inputValueDeprecation,
-                    this.directiveDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -196,7 +183,6 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     flag,
                     this.inputValueDeprecation,
-                    this.directiveDeprecation,
                     this.typeRefFragmentDepth);
         }
 
@@ -213,25 +199,6 @@ public class IntrospectionQueryBuilder {
                     this.isOneOf,
                     this.directiveIsRepeatable,
                     this.schemaDescription,
-                    flag,
-                    this.directiveDeprecation,
-                    this.typeRefFragmentDepth);
-        }
-
-        /**
-         * This will allow you to include deprecated directives in the introspection query.
-         *
-         * @param flag whether to include them
-         *
-         * @return options
-         */
-        public Options directiveDeprecation(boolean flag) {
-            return new Options(this.descriptions,
-                    this.specifiedByUrl,
-                    this.isOneOf,
-                    this.directiveIsRepeatable,
-                    this.schemaDescription,
-                    this.inputValueDeprecation,
                     flag,
                     this.typeRefFragmentDepth);
         }
@@ -250,7 +217,6 @@ public class IntrospectionQueryBuilder {
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
-                    this.directiveDeprecation,
                     typeRefFragmentDepth);
         }
     }
@@ -303,14 +269,11 @@ public class IntrospectionQueryBuilder {
                                                                 .build()
                                                         )
                                                         .build(),
-                                                options.directiveIsRepeatable ? newField("isRepeatable").build() : null,
-                                                options.directiveDeprecation ? newField("isDeprecated").build() : null,
-                                                options.directiveDeprecation ? newField("deprecationReason").build() : null
-                                        )).build())
-                                        .arguments(filter(
-                                                options.directiveDeprecation ? newArgument("includeDeprecated", BooleanValue.of(true)).build() : null
+                                                options.directiveIsRepeatable ? newField("isRepeatable").build() : null
                                         ))
                                         .build()
+                        )
+                                .build()
                 )
         ).build();
 

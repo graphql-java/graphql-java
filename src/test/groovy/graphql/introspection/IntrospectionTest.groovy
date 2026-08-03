@@ -97,10 +97,10 @@ class IntrospectionTest extends Specification {
     }
 
     @See("https://spec.graphql.org/October2021/#sec-Schema-Introspection.Schema-Introspection-Schema")
-    def "Introspection#__DirectiveLocation(GraphQLEnumType) should have 20 distinct values"() {
+    def "Introspection#__DirectiveLocation(GraphQLEnumType) should have 19 distinct values"() {
         given:
         def directiveLocationValues = Introspection.__DirectiveLocation.values
-        def numValues = 20
+        def numValues = 19
 
         expect:
         directiveLocationValues.size() == numValues
@@ -500,7 +500,7 @@ class IntrospectionTest extends Specification {
                 "      types {\n" +
                 "        ...FullType\n" +
                 "      }\n" +
-                "      directives(includeDeprecated: true) {\n" +
+                "      directives {\n" +
                 "        name\n" +
                 "        description\n" +
                 "        locations\n" +
@@ -508,8 +508,6 @@ class IntrospectionTest extends Specification {
                 "          ...InputValue\n" +
                 "        }\n" +
                 "        isRepeatable\n" +
-                "        isDeprecated\n" +
-                "        deprecationReason\n" +
                 "      }\n" +
                 "    }\n" +
                 "  }\n" +

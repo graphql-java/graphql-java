@@ -9,8 +9,7 @@ directiveDefinition
 
 typeSystemExtension :
 schemaExtension |
-typeExtension |
-directiveExtension
+typeExtension
 ;
 
 schemaDefinition : description? SCHEMA directives? '{' operationTypeDefinition+ '}';
@@ -122,9 +121,7 @@ inputObjectValueDefinitions : '{' inputValueDefinition* '}';
 extensionInputObjectValueDefinitions : '{' inputValueDefinition+ '}';
 
 
-directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? directives? REPEATABLE? ON_KEYWORD directiveLocations;
-
-directiveExtension : EXTEND DIRECTIVE '@' name directives;
+directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? REPEATABLE? ON_KEYWORD directiveLocations;
 
 directiveLocation : name;
 

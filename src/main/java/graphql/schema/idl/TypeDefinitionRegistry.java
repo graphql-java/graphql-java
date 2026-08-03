@@ -5,7 +5,6 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.language.DirectiveDefinition;
-import graphql.language.DirectiveExtensionDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.ImplementingTypeDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
@@ -63,7 +62,6 @@ public class TypeDefinitionRegistry implements Serializable {
     protected final Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions;
     protected final Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions;
     protected final Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions;
-    protected final Map<String, List<DirectiveExtensionDefinition>> directiveExtensions;
 
     protected final Map<String, TypeDefinition> types;
     protected final Map<String, ScalarTypeDefinition> scalarTypes;
@@ -79,7 +77,6 @@ public class TypeDefinitionRegistry implements Serializable {
         enumTypeExtensions = new LinkedHashMap<>();
         scalarTypeExtensions = new LinkedHashMap<>();
         inputObjectTypeExtensions = new LinkedHashMap<>();
-        directiveExtensions = new LinkedHashMap<>();
         types = new LinkedHashMap<>();
         scalarTypes = new LinkedHashMap<>();
         directiveDefinitions = new LinkedHashMap<>();
@@ -93,7 +90,6 @@ public class TypeDefinitionRegistry implements Serializable {
                                      Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions,
                                      Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions,
                                      Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions,
-                                     Map<String, List<DirectiveExtensionDefinition>> directiveExtensions,
                                      Map<String, TypeDefinition> types,
                                      Map<String, ScalarTypeDefinition> scalarTypes,
                                      Map<String, DirectiveDefinition> directiveDefinitions,
@@ -106,7 +102,6 @@ public class TypeDefinitionRegistry implements Serializable {
         this.enumTypeExtensions = enumTypeExtensions;
         this.scalarTypeExtensions = scalarTypeExtensions;
         this.inputObjectTypeExtensions = inputObjectTypeExtensions;
-        this.directiveExtensions = directiveExtensions;
         this.types = types;
         this.scalarTypes = scalarTypes;
         this.directiveDefinitions = directiveDefinitions;
@@ -210,12 +205,6 @@ public class TypeDefinitionRegistry implements Serializable {
                     .computeIfAbsent(key, k -> new ArrayList<>());
             currentList.addAll(value);
         });
-        typeRegistry.directiveExtensions.forEach((key, value) -> {
-            List<DirectiveExtensionDefinition> currentList = this.directiveExtensions
-                    .computeIfAbsent(key, k -> new ArrayList<>());
-            currentList.addAll(value);
-            value.forEach(schemaParseOrder::addDefinition);
-        });
 
         return this;
     }
@@ -287,9 +276,6 @@ public class TypeDefinitionRegistry implements Serializable {
         } else if (definition instanceof InputObjectTypeExtensionDefinition) {
             InputObjectTypeExtensionDefinition newEntry = (InputObjectTypeExtensionDefinition) definition;
             return defineExt(inputObjectTypeExtensions, newEntry, InputObjectTypeExtensionDefinition::getName);
-        } else if (definition instanceof DirectiveExtensionDefinition) {
-            DirectiveExtensionDefinition newEntry = (DirectiveExtensionDefinition) definition;
-            return defineDirectiveExt(newEntry);
         } else if (definition instanceof SchemaExtensionDefinition) {
             schemaExtensionDefinitions.add((SchemaExtensionDefinition) definition);
             schemaParseOrder.addDefinition(definition);
@@ -344,8 +330,6 @@ public class TypeDefinitionRegistry implements Serializable {
             removeFromList(scalarTypeExtensions, (TypeDefinition) definition);
         } else if (definition instanceof InputObjectTypeExtensionDefinition) {
             removeFromList(inputObjectTypeExtensions, (TypeDefinition) definition);
-        } else if (definition instanceof DirectiveExtensionDefinition) {
-            removeDirectiveExtension((DirectiveExtensionDefinition) definition);
         } else if (definition instanceof ScalarTypeDefinition) {
             scalarTypes.remove(((ScalarTypeDefinition) definition).getName());
         } else if (definition instanceof TypeDefinition) {
@@ -395,8 +379,6 @@ public class TypeDefinitionRegistry implements Serializable {
             removeFromMap(scalarTypeExtensions, key);
         } else if (definition instanceof InputObjectTypeExtensionDefinition) {
             removeFromMap(inputObjectTypeExtensions, key);
-        } else if (definition instanceof DirectiveExtensionDefinition) {
-            removeFromMap(directiveExtensions, key);
         } else if (definition instanceof ScalarTypeDefinition) {
             removeFromMap(scalarTypes, key);
         } else if (definition instanceof TypeDefinition) {
@@ -417,17 +399,6 @@ public class TypeDefinitionRegistry implements Serializable {
             return;
         }
         source.remove(key);
-    }
-
-    private void removeDirectiveExtension(DirectiveExtensionDefinition extension) {
-        List<DirectiveExtensionDefinition> extensions = directiveExtensions.get(extension.getName());
-        if (extensions == null) {
-            return;
-        }
-        extensions.remove(extension);
-        if (extensions.isEmpty()) {
-            directiveExtensions.remove(extension.getName());
-        }
     }
 
 
@@ -459,13 +430,6 @@ public class TypeDefinitionRegistry implements Serializable {
 
     private <T extends TypeDefinition> Optional<GraphQLError> defineExt(Map<String, List<T>> typeExtensions, T newEntry, Function<T, String> namerFunc) {
         List<T> currentList = typeExtensions.computeIfAbsent(namerFunc.apply(newEntry), k -> new ArrayList<>());
-        currentList.add(newEntry);
-        schemaParseOrder.addDefinition(newEntry);
-        return Optional.empty();
-    }
-
-    private Optional<GraphQLError> defineDirectiveExt(DirectiveExtensionDefinition newEntry) {
-        List<DirectiveExtensionDefinition> currentList = directiveExtensions.computeIfAbsent(newEntry.getName(), key -> new ArrayList<>());
         currentList.add(newEntry);
         schemaParseOrder.addDefinition(newEntry);
         return Optional.empty();
@@ -503,10 +467,6 @@ public class TypeDefinitionRegistry implements Serializable {
 
     public Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions() {
         return new LinkedHashMap<>(inputObjectTypeExtensions);
-    }
-
-    public Map<String, List<DirectiveExtensionDefinition>> directiveExtensions() {
-        return new LinkedHashMap<>(directiveExtensions);
     }
 
     public Optional<SchemaDefinition> schemaDefinition() {

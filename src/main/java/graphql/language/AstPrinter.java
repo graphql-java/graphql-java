@@ -50,7 +50,6 @@ public class AstPrinter {
         printers.put(BooleanValue.class, value());
         printers.put(NullValue.class, value());
         printers.put(Directive.class, directive());
-        printers.put(DirectiveExtensionDefinition.class, directiveExtensionDefinition());
         printers.put(DirectiveDefinition.class, directiveDefinition());
         printers.put(DirectiveLocation.class, directiveLocation());
         printers.put(Document.class, document());
@@ -138,25 +137,12 @@ public class AstPrinter {
                 join(out, node.getInputValueDefinitions(), argSep);
                 out.append(')');
             }
-            if (!isEmpty(node.getDirectives())) {
-                out.append(' ');
-                directives(out, node.getDirectives());
-            }
-            out.append(' ');
+            out.append(" ");
             if (node.isRepeatable()) {
                 out.append("repeatable ");
             }
             out.append("on ");
             join(out, node.getDirectiveLocations(), " | ");
-        };
-    }
-
-    private NodePrinter<DirectiveExtensionDefinition> directiveExtensionDefinition() {
-        return (out, node) -> {
-            out.append("extend directive @");
-            out.append(node.getName());
-            out.append(' ');
-            directives(out, node.getDirectives());
         };
     }
 

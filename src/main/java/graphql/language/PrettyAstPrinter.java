@@ -43,7 +43,6 @@ public class PrettyAstPrinter extends AstPrinter {
         this.commentParser = new CommentParser(parserContext);
         this.options = options;
 
-        this.replacePrinter(DirectiveExtensionDefinition.class, directiveExtensionDefinition());
         this.replacePrinter(DirectiveDefinition.class, directiveDefinition());
         this.replacePrinter(Document.class, document());
         this.replacePrinter(EnumTypeDefinition.class, enumTypeDefinition("enum"));
@@ -103,25 +102,11 @@ public class PrettyAstPrinter extends AstPrinter {
             String repeatable = node.isRepeatable() ? "repeatable " : "";
             out.append("directive @")
                     .append(node.getName())
-                    .append(block(node.getInputValueDefinitions(), node, "(", ")", "\n", ", ", ""));
-            if (!node.getDirectives().isEmpty()) {
-                out.append(" ").append(directives(node.getDirectives()));
-            }
-            out.append(" ")
+                    .append(block(node.getInputValueDefinitions(), node, "(", ")", "\n", ", ", ""))
+                    .append(" ")
                     .append(repeatable)
                     .append("on ")
                     .append(locations);
-        };
-    }
-
-    private NodePrinter<DirectiveExtensionDefinition> directiveExtensionDefinition() {
-        return (out, node) -> {
-            out.append(outset(node));
-            out.append(spaced(
-                    "extend directive",
-                    "@" + node.getName(),
-                    directives(node.getDirectives())
-            ));
         };
     }
 

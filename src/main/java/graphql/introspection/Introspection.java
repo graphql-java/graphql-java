@@ -578,8 +578,7 @@ public class Introspection {
         ENUM,
         ENUM_VALUE,
         INPUT_OBJECT,
-        INPUT_FIELD_DEFINITION,
-        DIRECTIVE_DEFINITION
+        INPUT_FIELD_DEFINITION
     }
 
     public static final GraphQLEnumType __DirectiveLocation = GraphQLEnumType.newEnum()
@@ -607,7 +606,6 @@ public class Introspection {
             .value("ENUM_VALUE", DirectiveLocation.ENUM_VALUE, "Indicates the directive is valid on an enum value SDL definition.")
             .value("INPUT_OBJECT", DirectiveLocation.INPUT_OBJECT, "Indicates the directive is valid on an input object SDL definition.")
             .value("INPUT_FIELD_DEFINITION", DirectiveLocation.INPUT_FIELD_DEFINITION, "Indicates the directive is valid on an input object field SDL definition.")
-            .value("DIRECTIVE_DEFINITION", DirectiveLocation.DIRECTIVE_DEFINITION, "Indicates the directive is valid on a directive SDL definition.")
             .build();
 
 
@@ -633,12 +631,6 @@ public class Introspection {
                             .name("includeDeprecated")
                             .type(nonNull(GraphQLBoolean))
                             .defaultValueProgrammatic(false)))
-            .field(newFieldDefinition()
-                    .name("isDeprecated")
-                    .type(nonNull(GraphQLBoolean)))
-            .field(newFieldDefinition()
-                    .name("deprecationReason")
-                    .type(GraphQLString))
             .build();
 
     static {
@@ -657,8 +649,6 @@ public class Introspection {
         register(__Directive, "isRepeatable", GraphQLDirective.class, GraphQLDirective::isRepeatable);
         register(__Directive, "locations", locationsDataFetcher);
         register(__Directive, "args", argsDataFetcher);
-        register(__Directive, "isDeprecated", GraphQLDirective.class, GraphQLDirective::isDeprecated);
-        register(__Directive, "deprecationReason", GraphQLDirective.class, GraphQLDirective::getDeprecationReason);
     }
 
     public static final GraphQLObjectType __Schema = newObject()
@@ -684,11 +674,7 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("directives")
                     .description("A list of all directives supported by this server.")
-                    .type(nonNull(list(nonNull(__Directive))))
-                    .argument(newArgument()
-                            .name("includeDeprecated")
-                            .type(nonNull(GraphQLBoolean))
-                            .defaultValueProgrammatic(false)))
+                    .type(nonNull(list(nonNull(__Directive)))))
             .field(newFieldDefinition()
                     .name("subscriptionType")
                     .description("If this server support subscription, the type that subscription operations will be rooted at.")
@@ -702,12 +688,7 @@ public class Introspection {
         register(__Schema, "types", GraphQLSchema.class, GraphQLSchema::getAllTypesAsList);
         register(__Schema, "queryType", GraphQLSchema.class, GraphQLSchema::getQueryType);
         register(__Schema, "mutationType", GraphQLSchema.class, GraphQLSchema::getMutationType);
-        IntrospectionDataFetcher<?> directivesDataFetcher = environment -> {
-            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
-            return ImmutableKit.filter(environment.getGraphQLSchema().getDirectives(),
-                    directive -> includeDeprecated || !directive.isDeprecated());
-        };
-        register(__Schema, "directives", directivesDataFetcher);
+        register(__Schema, "directives", GraphQLSchema.class, GraphQLSchema::getDirectives);
         register(__Schema, "subscriptionType", GraphQLSchema.class, GraphQLSchema::getSubscriptionType);
     }
 

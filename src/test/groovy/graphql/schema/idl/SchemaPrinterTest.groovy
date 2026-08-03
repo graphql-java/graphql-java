@@ -978,7 +978,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @enumTypeDirective on ENUM
 
@@ -1165,7 +1165,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
@@ -1272,7 +1272,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @example on FIELD_DEFINITION
 
@@ -1351,7 +1351,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @example on FIELD_DEFINITION
 
@@ -1459,7 +1459,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
@@ -1556,7 +1556,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
@@ -1707,7 +1707,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @directive1 on SCALAR
 
@@ -1952,7 +1952,7 @@ type Query {
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 type Query {
   fieldX: String @deprecated(reason : "No longer supported")
@@ -2254,7 +2254,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
@@ -2492,7 +2492,7 @@ directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTI
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "This directive allows results to be deferred during execution"
 directive @defer(
@@ -2624,7 +2624,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 " custom directive 'example' description 1"
 # custom directive 'example' comment 1
@@ -2872,7 +2872,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 " custom directive 'example' description 1"
 directive @example on ENUM_VALUE
@@ -3071,7 +3071,7 @@ directive @defer(
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
