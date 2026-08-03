@@ -753,7 +753,7 @@ directive @Directive1(argument1: String! = "stringValue4") repeatable on SCHEMA 
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 interface Interface1 @Directive1(argument1 : "stringValue12") {
   field2: String
