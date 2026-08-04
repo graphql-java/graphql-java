@@ -32,6 +32,10 @@ Every successfully built snapshot registers itself with its universe under its u
 `getSchemasByName()` return immutable views in registration order. Imports and transformations use
 the same registration path. Reusing a schema name in one universe is rejected.
 
+Registry membership defines a snapshot's supported lifetime. Removing a snapshot ends that lifetime
+even if application code still holds a reference to the `SUSchema`. Removal does not immediately
+reclaim its vertices, but no traversal, export, or transformation is guaranteed after removal.
+
 The snapshot can retain adjacency for a currently unreachable vertex. This dormant adjacency is not
 part of the effective rooted graph; it allows a later derived schema to reattach an unchanged
 subgraph at constant edit scope. Consequently, `getStoredEdgeCount()` is a storage count rather than
@@ -182,15 +186,20 @@ intrinsic payloads before round-trip conversion can be lossless.
 
 ## Lifecycle and compaction
 
-The prototype is append-only and retains history. Production lifecycle support should use one of
-these policies:
+The prototype currently retains vertex history after schemas are removed. A schema is live exactly
+while its exact instance is present in the universe registry; holding an external Java reference
+does not extend its lifetime. Production lifecycle support should use one of these policies:
 
 1. Retain all versions for a bounded universe.
-2. Reference-count snapshots and periodically mark vertices/adjacency reachable from live roots.
+2. Periodically mark vertices and stored adjacency used by registered snapshots, then reclaim the
+   remainder.
 3. Compact live schemas into a new universe, optionally using CSR or a succinct frozen format.
 
-Compaction is preferable to per-edit reference counting unless schema deletion is frequent, because
-reference counts add writes and contention to every transformation.
+Marking must include dormant adjacency retained by a registered snapshot, not only the effective
+graph reachable from its root. Otherwise cleanup would break the supported constant-scope
+reattachment of unchanged subgraphs. Compaction is preferable to per-edit reference counting unless
+schema deletion is frequent, because reference counts add writes and contention to every
+transformation.
 
 ## Required measurements
 

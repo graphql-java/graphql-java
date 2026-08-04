@@ -148,8 +148,13 @@ class SUTest extends Specification {
         universe.getSchema("first") == null
         universe.schemas == [second]
         universe.schemasByName == [second: second]
-        first.queryType.is(query)
         universe.removeSchema("missing") == null
+
+        when:
+        first.transform("fromRemoved", builder -> {})
+
+        then:
+        thrown(AssertException)
 
         when:
         def replacement = second.transform("first", builder -> {})
@@ -174,7 +179,7 @@ class SUTest extends Specification {
         universe.schemasByName == [second: second]
     }
 
-    def "removing a schema does not remove its vertices"() {
+    def "removing a schema leaves its vertices stored until cleanup"() {
         given:
         def universe = new SchemaUniverse()
         def query = universe.newObjectType("Query")

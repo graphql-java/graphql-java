@@ -17,7 +17,11 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 
 /**
- * An immutable graph view selecting one schema from a {@link SchemaUniverse}.
+ * An immutable graph view selecting one registered schema from a {@link SchemaUniverse}.
+ *
+ * <p>This schema is supported only while its exact instance remains registered in its universe.
+ * Removing it ends that supported lifetime even if application code retains a reference. Methods
+ * are not guaranteed to remain usable after removal, and its vertices may later be reclaimed.</p>
  */
 @ExperimentalApi
 @NullMarked

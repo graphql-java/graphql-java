@@ -33,8 +33,9 @@ import static graphql.util.Interning.intern;
  * A store of append-only schema vertices shared by many immutable schema snapshots.
  *
  * <p>A universe is safe for concurrent readers. Vertex creation is serialized, while reading a
- * published vertex or schema does not require locking. Schemas can be removed from the universe's
- * registry, but removing a schema does not remove its vertices from the universe.</p>
+ * published vertex or schema does not require locking. A schema is supported only while its exact
+ * instance is registered in the universe. Removing a schema ends that supported lifetime, although
+ * its vertices are not reclaimed by the removal operation itself.</p>
  */
 @ExperimentalApi
 @NullMarked
@@ -79,8 +80,9 @@ public final class SchemaUniverse {
     /**
      * Removes and returns the registered schema with the given name.
      *
-     * <p>This only removes the schema from this universe's registry. The schema remains usable if
-     * it is referenced elsewhere, and its vertices remain stored in this universe.</p>
+     * <p>Removal ends the schema's supported lifetime. Holding another reference to the returned
+     * schema does not keep it usable. Its vertices remain stored until a separate cleanup operation
+     * reclaims vertices that are unused by every registered schema.</p>
      *
      * @return the removed schema, or {@code null} if no schema has that name
      */
@@ -95,7 +97,9 @@ public final class SchemaUniverse {
     /**
      * Removes the exact schema instance from this universe's registry.
      *
-     * <p>If its name has since been reused by another schema, that replacement is not removed.</p>
+     * <p>If its name has since been reused by another schema, that replacement is not removed.
+     * Successful removal ends the removed schema's supported lifetime. Holding another reference
+     * to it does not keep it usable.</p>
      *
      * @return {@code true} if the schema was registered and removed
      */
@@ -406,6 +410,9 @@ public final class SchemaUniverse {
     @Internal
     public SUSchemaBuilder transformBuilder(SUSchema schema, String name) {
         assertTrue(schema.getUniverse() == this, "Schema belongs to another universe");
+        assertTrue(
+                schemasByName.get(schema.getName()) == schema,
+                "Schema is not registered in this universe");
         return new SUSchemaBuilder(
                 this,
                 newSchemaRoot(name, schema.getRoot().getDescription()),
