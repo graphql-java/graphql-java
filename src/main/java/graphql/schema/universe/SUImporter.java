@@ -136,9 +136,15 @@ public final class SUImporter {
                     directive.getDefinition());
             elementVertices.put(directive, vertex);
             builder().addDirectiveDefinition(vertex);
+        }
+        for (GraphQLDirective directive : directives) {
+            SUDirective vertex = directiveVertex(directive);
             for (GraphQLArgument argument : directive.getArguments()) {
                 addArgument(vertex, argument);
             }
+        }
+        for (GraphQLDirective directive : directives) {
+            addAppliedDirectives(directive, directiveVertex(directive));
         }
     }
 
@@ -356,6 +362,9 @@ public final class SUImporter {
         if (container instanceof GraphQLArgument) {
             return ((GraphQLArgument) container).getDeprecationReason();
         }
+        if (container instanceof GraphQLDirective) {
+            return ((GraphQLDirective) container).getDeprecationReason();
+        }
         return null;
     }
 
@@ -472,6 +481,13 @@ public final class SUImporter {
                 argument.getDefinition());
         appliedArgumentValues.put(argument, value);
         return value;
+    }
+
+    private SUDirective directiveVertex(GraphQLDirective directive) {
+        return (SUDirective) assertNotNull(
+                elementVertices.get(directive),
+                "Directive '%s' is not part of the imported schema",
+                directive.getName());
     }
 
     private SUNamedType namedType(GraphQLNamedType type) {

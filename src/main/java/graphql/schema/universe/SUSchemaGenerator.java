@@ -9,6 +9,7 @@ import graphql.language.Comment;
 import graphql.language.Description;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
+import graphql.language.DirectiveExtensionDefinition;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.EnumValueDefinition;
@@ -99,6 +100,7 @@ public final class SUSchemaGenerator {
         createNamedTypes(definitions);
         createDirectiveDefinitions(definitions);
         expandDirectiveDefinitions(definitions);
+        addDirectiveDefinitionDirectives(definitions);
         expandNamedTypes(definitions);
         addOperationRoots(definitions);
         addSchemaDirectives(definitions);
@@ -217,6 +219,20 @@ public final class SUSchemaGenerator {
                 builder().addArgument(directive, argument);
                 builder().setArgumentType(argument, type);
                 addAppliedDirectives(argumentDefinition.getDirectives(), argument);
+            }
+        }
+    }
+
+    private void addDirectiveDefinitionDirectives(
+            ImmutableTypeDefinitionRegistry registry) {
+        for (DirectiveDefinition definition : registry.getDirectiveDefinitions().values()) {
+            SUDirective directive = assertNotNull(
+                    directiveDefinitions.get(definition.getName()));
+            addAppliedDirectives(definition.getDirectives(), directive);
+            for (DirectiveExtensionDefinition extension :
+                    registry.directiveExtensions()
+                            .getOrDefault(definition.getName(), List.of())) {
+                addAppliedDirectives(extension.getDirectives(), directive);
             }
         }
     }

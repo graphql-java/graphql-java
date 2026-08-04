@@ -266,13 +266,18 @@ public final class SUExporter {
         GraphQLDirective.Builder builder = GraphQLDirective.newDirective()
                 .name(requiredName(directive))
                 .description(directive.getDescription())
-                .repeatable(directive.isRepeatable());
+                .repeatable(directive.isRepeatable())
+                .replaceAppliedDirectives(exportAppliedDirectives(directive));
         directive.validLocations().forEach(builder::validLocation);
         for (SUArgument argument : schema.getArguments(directive)) {
             builder.argument(exportArgument(argument));
         }
         if (directive.getDefinition() != null) {
             builder.definition(directive.getDefinition());
+        }
+        String deprecationReason = deprecationReason(directive);
+        if (deprecationReason != null) {
+            builder.deprecate(deprecationReason);
         }
         return builder.build();
     }

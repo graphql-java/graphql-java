@@ -140,11 +140,14 @@ class SUSchemaRoundTripTest extends Specification {
               text: String = "fallback"
               count: Int
               flags: [Boolean!] = [true, false]
-              config: MetaInput = {enabled: true, mode: FIRST}
               unset: String
             ) repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION |
               ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE |
-              INPUT_OBJECT | INPUT_FIELD_DEFINITION
+              INPUT_OBJECT | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+
+            directive @target @meta(text: "definition")
+              @deprecated(reason: "Use @replacement") on FIELD_DEFINITION
+            extend directive @target @meta(text: "extension")
 
             schema @meta(text: "schema") @meta(count: 2) {
               query: Query

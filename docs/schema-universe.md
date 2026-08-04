@@ -52,7 +52,7 @@ The current API assumes callers traverse from the root or another known-reachabl
 directly. It provides typed helpers for:
 
 - operation roots, all named types, and lookup by type name;
-- directive definitions and schema-applied directives;
+- directive definitions, including their applied directives, and schema-applied directives;
 - object and interface fields;
 - field and directive arguments;
 - declared types and list/non-null wrapped types;

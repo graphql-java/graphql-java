@@ -115,6 +115,48 @@ class SUSchemaGeneratorTest extends Specification {
         schema.types*.name.containsAll(["Query", "Mutation", "Subscription"])
     }
 
+    def "preserves applied directives on directive definitions and extensions"() {
+        given:
+        def sdl = '''
+            directive @meta(value: String!) repeatable on DIRECTIVE_DEFINITION
+            directive @target @meta(value: "definition")
+              @deprecated(reason: "Use @replacement") on FIELD_DEFINITION
+            extend directive @target @meta(value: "extension")
+
+            type Query {
+              value: String
+            }
+        '''
+
+        when:
+        def generated = new SchemaUniverse().parseSchema("generated", sdl)
+        def target = generated.getDirectiveDefinition("target")
+        def exported = generated.toGraphQLSchema()
+        def imported = new SchemaUniverse().importSchema("imported", exported)
+        def importedTarget = imported.getDirectiveDefinition("target")
+
+        then:
+        generated.getAppliedDirectives(target)*.name ==
+                ["meta", "deprecated", "meta"]
+        generated.getAppliedDirectives(target, "meta")
+                *.getArgument("value")*.argumentValue*.value*.value ==
+                ["definition", "extension"]
+
+        and:
+        exported.getDirective("target").deprecated
+        exported.getDirective("target").deprecationReason == "Use @replacement"
+        exported.getDirective("target").getAppliedDirectives("meta")
+                *.getArgument("value")*.argumentValue*.value*.value ==
+                ["definition", "extension"]
+
+        and:
+        imported.getAppliedDirectives(importedTarget)*.name ==
+                ["meta", "deprecated", "meta"]
+        imported.getAppliedDirectives(importedTarget, "meta")
+                *.getArgument("value")*.argumentValue*.value*.value ==
+                ["definition", "extension"]
+    }
+
     def "preserves input defaults and all applied directive argument states"() {
         given:
         def sdl = '''

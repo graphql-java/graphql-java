@@ -311,9 +311,13 @@ public final class SchemaPrinterWriter {
         }
         printComments(out, directive, "");
         out.format(
-                "directive @%s%s",
+                "directive @%s%s%s",
                 access.getName(directive),
-                argsString(directive));
+                argsString(directive),
+                directivesString(
+                        directive,
+                        access.getAppliedDirectives(directive),
+                        false));
         if (access.isRepeatable(directive)) {
             out.print(" repeatable");
         }

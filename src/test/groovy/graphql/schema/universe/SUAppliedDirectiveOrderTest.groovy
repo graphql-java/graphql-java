@@ -15,6 +15,7 @@ class SUAppliedDirectiveOrderTest extends Specification {
         def firstZ = universe.newAppliedDirective("z")
         def secondZ = universe.newAppliedDirective("z")
         def b = universe.newAppliedDirective("b")
+        def definition = universe.newDirective("definition")
         def query = universe.newObjectType("Query")
         def field = universe.newField("value")
         def string = universe.newScalarType("String")
@@ -22,10 +23,15 @@ class SUAppliedDirectiveOrderTest extends Specification {
                 .queryType(query)
                 .addField(query, field)
                 .setFieldType(field, string)
+                .addDirectiveDefinition(definition)
                 .addAppliedDirective(query, firstZ)
                 .addAppliedDirective(query, a)
                 .addAppliedDirective(query, secondZ)
                 .addAppliedDirective(query, m)
+                .addAppliedDirective(definition, firstZ)
+                .addAppliedDirective(definition, a)
+                .addAppliedDirective(definition, secondZ)
+                .addAppliedDirective(definition, m)
                 .addSchemaAppliedDirective(m)
                 .addSchemaAppliedDirective(a)
                 .build()
@@ -35,6 +41,7 @@ class SUAppliedDirectiveOrderTest extends Specification {
         base.getAppliedDirectives(query, "z") == [firstZ, secondZ]
         base.getChild(query, SUEdgeKind.APPLIED_DIRECTIVE, "z").is(firstZ)
         base.containsEdge(query, SUEdgeKind.APPLIED_DIRECTIVE, secondZ)
+        base.getAppliedDirectives(definition) == [firstZ, a, secondZ, m]
         base.schemaAppliedDirectives == [m, a]
 
         when:
@@ -48,6 +55,9 @@ class SUAppliedDirectiveOrderTest extends Specification {
                         .replaceSchemaAppliedDirective(m, firstZ))
         def reordered = base.transform("reordered", builder ->
                 builder.replaceAppliedDirectives(query, [m, secondZ, a, firstZ])
+                        .replaceAppliedDirectives(
+                                definition,
+                                [m, secondZ, a, firstZ])
                         .replaceSchemaAppliedDirectives([a, m]))
 
         then:
@@ -57,6 +67,7 @@ class SUAppliedDirectiveOrderTest extends Specification {
         replaced.getAppliedDirectives(query) == [firstZ, a, b, m]
         replaced.schemaAppliedDirectives == [firstZ, a]
         reordered.getAppliedDirectives(query) == [m, secondZ, a, firstZ]
+        reordered.getAppliedDirectives(definition) == [m, secondZ, a, firstZ]
         reordered.schemaAppliedDirectives == [a, m]
 
         and:
@@ -114,6 +125,8 @@ class SUAppliedDirectiveOrderTest extends Specification {
         def filter = schema.getInputObjectType("Filter")
         return [
                 schema           : schema.schemaAppliedDirectives*.name,
+                directive        : schema.getAppliedDirectives(
+                        schema.getDirectiveDefinition("target"))*.name,
                 scalar           : schema.getAppliedDirectives(
                         schema.getScalarType("Custom"))*.name,
                 object           : schema.getAppliedDirectives(query)*.name,
@@ -141,13 +154,14 @@ class SUAppliedDirectiveOrderTest extends Specification {
         return '''
             directive @a on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION |
               ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE |
-              INPUT_OBJECT | INPUT_FIELD_DEFINITION
+              INPUT_OBJECT | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
             directive @m on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION |
               ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE |
-              INPUT_OBJECT | INPUT_FIELD_DEFINITION
+              INPUT_OBJECT | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
             directive @z repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION |
               ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE |
-              INPUT_OBJECT | INPUT_FIELD_DEFINITION
+              INPUT_OBJECT | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
+            directive @target @z @a @z @m on FIELD_DEFINITION
 
             schema @z @a @z @m {
               query: Query

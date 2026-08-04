@@ -15,7 +15,7 @@ import static graphql.Assert.assertTrue;
 
 @ExperimentalApi
 @NullMarked
-public final class SUDirective extends SUVertex {
+public final class SUDirective extends SUVertex implements SUAppliedDirectiveContainer {
 
     private final boolean repeatable;
     private final long locationMask;

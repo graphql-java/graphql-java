@@ -878,6 +878,7 @@ public final class SUSchemaBuilder {
 
     private boolean isDirectiveContainer(SUVertexKind kind) {
         return kind == SUVertexKind.SCHEMA
+                || kind == SUVertexKind.DIRECTIVE
                 || kind == SUVertexKind.OBJECT
                 || kind == SUVertexKind.FIELD
                 || kind == SUVertexKind.INTERFACE
