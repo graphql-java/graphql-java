@@ -32,7 +32,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"

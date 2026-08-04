@@ -749,7 +749,7 @@ type Object1 {
 
 directive @Directive1(argument1: String! = "stringValue4") repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"

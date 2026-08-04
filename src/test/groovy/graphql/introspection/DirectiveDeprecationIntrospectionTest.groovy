@@ -26,6 +26,7 @@ class DirectiveDeprecationIntrospectionTest extends Specification {
                     }
                     allDirectives: directives(includeDeprecated: true) {
                         name
+                        description
                         isDeprecated
                         deprecationReason
                         locations
@@ -44,6 +45,7 @@ class DirectiveDeprecationIntrospectionTest extends Specification {
         old.isDeprecated
         old.deprecationReason == "Use @active"
         def deprecated = result.data.__schema.allDirectives.find { it.name == "deprecated" }
+        deprecated.description == "Marks an element of a GraphQL schema as no longer supported."
         deprecated.locations.contains("DIRECTIVE_DEFINITION")
     }
 

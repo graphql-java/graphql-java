@@ -974,7 +974,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1161,7 +1161,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1268,7 +1268,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1347,7 +1347,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1455,7 +1455,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1552,7 +1552,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1703,7 +1703,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1948,7 +1948,7 @@ type Query {
         def result = new SchemaPrinter(printOptions).print(schema)
 
         then:
-        result == '''"Marks the field, argument, input field or enum value as deprecated"
+        result == '''"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -2250,7 +2250,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -2488,7 +2488,7 @@ directive @include(
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -2620,7 +2620,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -2868,7 +2868,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -3067,7 +3067,7 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
