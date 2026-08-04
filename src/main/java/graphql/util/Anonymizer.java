@@ -891,12 +891,16 @@ public class Anonymizer {
                 // An argument is either from a applied query directive or from a field
                 if (context.getVarFromParents(GraphQLDirective.class) != null) {
                     GraphQLDirective directiveDefinition = context.getVarFromParents(GraphQLDirective.class);
-                    graphQLArgumentDefinition = directiveDefinition.getArgument(argument.getName());
+                    graphQLArgumentDefinition = assertNotNull(
+                            directiveDefinition.getArgument(argument.getName()),
+                            "Directive '%s' argument '%s' not found",
+                            directiveDefinition.getName(),
+                            argument.getName());
                 } else {
                     GraphQLFieldDefinition graphQLFieldDefinition = assertNotNull(context.getVarFromParents(GraphQLFieldDefinition.class));
                     graphQLArgumentDefinition = graphQLFieldDefinition.getArgument(argument.getName());
                 }
-                GraphQLInputType argumentType = assertNotNull(graphQLArgumentDefinition).getType();
+                GraphQLInputType argumentType = graphQLArgumentDefinition.getType();
                 String newName = assertNotNull(astNodeToNewName.get(argument));
                 Value newValue = replaceValue(argument.getValue(), argumentType, newNames, defaultStringValueCounter, defaultIntValueCounter);
                 return changeNode(context, argument.transform(builder -> builder.name(newName).value(newValue)));
