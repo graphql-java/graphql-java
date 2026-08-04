@@ -30,18 +30,18 @@ class SchemaDiffingTest extends Specification {
         schemaGraph.getVerticesByType(SchemaGraph.SCHEMA).size() == 1
         schemaGraph.getVerticesByType(SchemaGraph.OBJECT).size() == 7
         schemaGraph.getVerticesByType(SchemaGraph.ENUM).size() == 2
-        schemaGraph.getVerticesByType(SchemaGraph.ENUM_VALUE).size() == 27
+        schemaGraph.getVerticesByType(SchemaGraph.ENUM_VALUE).size() == 28
         schemaGraph.getVerticesByType(SchemaGraph.INTERFACE).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.UNION).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.SCALAR).size() == 2
-        schemaGraph.getVerticesByType(SchemaGraph.FIELD).size() == 40
-        schemaGraph.getVerticesByType(SchemaGraph.ARGUMENT).size() == 11
+        schemaGraph.getVerticesByType(SchemaGraph.FIELD).size() == 42
+        schemaGraph.getVerticesByType(SchemaGraph.ARGUMENT).size() == 12
         schemaGraph.getVerticesByType(SchemaGraph.INPUT_FIELD).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.INPUT_OBJECT).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.DIRECTIVE).size() == 7
         schemaGraph.getVerticesByType(SchemaGraph.APPLIED_ARGUMENT).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.APPLIED_DIRECTIVE).size() == 0
-        schemaGraph.size() == 97
+        schemaGraph.size() == 101
 
     }
 
@@ -1592,5 +1592,3 @@ class SchemaDiffingTest extends Specification {
     }
 
 }
-
-

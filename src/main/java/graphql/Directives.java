@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.DIRECTIVE_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
@@ -73,7 +74,8 @@ public class Directives {
                 .directiveLocation(newDirectiveLocation().name(ENUM_VALUE.name()).build())
                 .directiveLocation(newDirectiveLocation().name(ARGUMENT_DEFINITION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(INPUT_FIELD_DEFINITION.name()).build())
-                .description(createDescription("Marks the field, argument, input field or enum value as deprecated"))
+                .directiveLocation(newDirectiveLocation().name(DIRECTIVE_DEFINITION.name()).build())
+                .description(createDescription("Marks an element of a GraphQL schema as no longer supported."))
                 .inputValueDefinition(
                         newInputValueDefinition()
                                 .name("reason")
@@ -216,13 +218,13 @@ public class Directives {
      */
     public static final GraphQLDirective DeprecatedDirective = GraphQLDirective.newDirective()
             .name(DEPRECATED)
-            .description("Marks the field, argument, input field or enum value as deprecated")
+            .description("Marks an element of a GraphQL schema as no longer supported.")
             .argument(newArgument()
                     .name("reason")
                     .type(nonNull(GraphQLString))
                     .defaultValueProgrammatic(NO_LONGER_SUPPORTED)
                     .description("The reason for the deprecation"))
-            .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION)
+            .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION, DIRECTIVE_DEFINITION)
             .definition(DEPRECATED_DIRECTIVE_DEFINITION)
             .build();
 

@@ -1132,6 +1132,9 @@ public class SchemaPrinter {
         } else if (directiveContainer instanceof GraphQLArgument) {
             GraphQLArgument type = (GraphQLArgument) directiveContainer;
             return type.getDeprecationReason();
+        } else if (directiveContainer instanceof GraphQLDirective) {
+            GraphQLDirective type = (GraphQLDirective) directiveContainer;
+            return type.getDeprecationReason();
         } else {
             return Assert.assertShouldNeverHappen();
         }
@@ -1165,6 +1168,7 @@ public class SchemaPrinter {
                 .collect(toList());
 
         sb.append(argsString(GraphQLDirective.class, args));
+        sb.append(directivesString(GraphQLDirective.class, directive.isDeprecated(), directive));
 
         if (directive.isRepeatable()) {
             sb.append(" repeatable");

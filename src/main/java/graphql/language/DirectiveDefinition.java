@@ -25,13 +25,15 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
 @NullMarked
-public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefinition> implements SDLNamedDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
+public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefinition> implements SDLNamedDefinition<DirectiveDefinition>, DirectivesContainer<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
     private final boolean repeatable;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;
+    private final NodeUtil.DirectivesHolder directives;
     private final ImmutableList<DirectiveLocation> directiveLocations;
 
     public static final String CHILD_INPUT_VALUE_DEFINITIONS = "inputValueDefinitions";
+    public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_DIRECTIVE_LOCATION = "directiveLocation";
 
     @Internal
@@ -39,6 +41,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
                                   boolean repeatable,
                                   @Nullable Description description,
                                   List<InputValueDefinition> inputValueDefinitions,
+                                  List<Directive> directives,
                                   List<DirectiveLocation> directiveLocations,
                                   @Nullable SourceLocation sourceLocation,
                                   List<Comment> comments,
@@ -48,6 +51,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         this.name = name;
         this.repeatable = repeatable;
         this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
         this.directiveLocations = ImmutableList.copyOf(directiveLocations);
     }
 
@@ -57,7 +61,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
      * @param name of the directive definition
      */
     public DirectiveDefinition(String name) {
-        this(name, false, null, emptyList(), emptyList(), null, emptyList(), IgnoredChars.EMPTY, ImmutableKit.emptyMap());
+        this(name, false, null, emptyList(), emptyList(), emptyList(), null, emptyList(), IgnoredChars.EMPTY, ImmutableKit.emptyMap());
     }
 
     @Override
@@ -79,6 +83,26 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         return inputValueDefinitions;
     }
 
+    @Override
+    public List<Directive> getDirectives() {
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
+    }
+
     public List<DirectiveLocation> getDirectiveLocations() {
         return directiveLocations;
     }
@@ -87,6 +111,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     public List<Node> getChildren() {
         List<Node> result = new ArrayList<>();
         result.addAll(inputValueDefinitions);
+        result.addAll(directives.getDirectives());
         result.addAll(directiveLocations);
         return result;
     }
@@ -95,6 +120,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
                 .children(CHILD_INPUT_VALUE_DEFINITIONS, inputValueDefinitions)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_DIRECTIVE_LOCATION, directiveLocations)
                 .build();
     }
@@ -103,6 +129,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     public DirectiveDefinition withNewChildren(NodeChildrenContainer newChildren) {
         return transform(builder -> builder
                 .inputValueDefinitions(newChildren.getChildren(CHILD_INPUT_VALUE_DEFINITIONS))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
                 .directiveLocations(newChildren.getChildren(CHILD_DIRECTIVE_LOCATION))
         );
     }
@@ -127,6 +154,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
                 repeatable,
                 description,
                 assertNotNull(deepCopy(inputValueDefinitions), "inputValueDefinitions cannot be null"),
+                assertNotNull(deepCopy(directives.getDirectives()), "directives cannot be null"),
                 assertNotNull(deepCopy(directiveLocations), "directiveLocations cannot be null"),
                 getSourceLocation(),
                 getComments(),
@@ -139,6 +167,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         return "DirectiveDefinition{" +
                 "name='" + name + "'" +
                 ", inputValueDefinitions=" + inputValueDefinitions +
+                ", directives=" + directives +
                 ", directiveLocations=" + directiveLocations +
                 "}";
     }
@@ -159,13 +188,14 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
     }
 
     @NullUnmarked
-    public static final class Builder implements NodeBuilder {
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
         private String name;
         private boolean repeatable = false;
         private Description description;
         private ImmutableList<InputValueDefinition> inputValueDefinitions = emptyList();
+        private ImmutableList<Directive> directives = emptyList();
         private ImmutableList<DirectiveLocation> directiveLocations = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -180,6 +210,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
             this.repeatable = existing.isRepeatable();
             this.description = existing.getDescription();
             this.inputValueDefinitions = ImmutableList.copyOf(existing.getInputValueDefinitions());
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.directiveLocations = ImmutableList.copyOf(existing.getDirectiveLocations());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -220,6 +251,17 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
             return this;
         }
 
+        @Override
+        public Builder directives(List<Directive> directives) {
+            this.directives = ImmutableList.copyOf(directives);
+            return this;
+        }
+
+        @Override
+        public Builder directive(Directive directive) {
+            this.directives = addToList(directives, directive);
+            return this;
+        }
 
         public Builder directiveLocations(List<DirectiveLocation> directiveLocations) {
             this.directiveLocations = ImmutableList.copyOf(directiveLocations);
@@ -248,7 +290,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
 
 
         public DirectiveDefinition build() {
-            return new DirectiveDefinition(name, repeatable, description, inputValueDefinitions, directiveLocations, sourceLocation, comments, ignoredChars, additionalData);
+            return new DirectiveDefinition(name, repeatable, description, inputValueDefinitions, directives, directiveLocations, sourceLocation, comments, ignoredChars, additionalData);
         }
     }
 }
