@@ -533,7 +533,7 @@ public class SchemaUniverseBenchmark {
                     SUObjectType syntheticType =
                             universe.newObjectType(mutation.syntheticTypeName);
                     SUField valueField = universe.newField("value");
-                    builder.addAdditionalType(syntheticType)
+                    builder.addType(syntheticType)
                             .addField(syntheticType, valueField)
                             .setFieldType(valueField, stringType);
                     break;
@@ -559,7 +559,7 @@ public class SchemaUniverseBenchmark {
                             .setFieldType(replacementField, stringType);
                     break;
                 case REMOVE_SYNTHETIC_TYPE:
-                    builder.removeAdditionalType(mutation.syntheticTypeName);
+                    builder.removeType(mutation.syntheticTypeName);
                     break;
                 default:
                     throw new IllegalStateException("Unhandled mutation " + mutation.kind);

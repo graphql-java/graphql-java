@@ -8,7 +8,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -29,21 +29,27 @@ public final class SUSchema {
 
     private final SchemaUniverse universe;
     private final SUSchemaRoot root;
+    private final PersistentIntMap<SUNamedType> namedTypesByNameId;
     private final PersistentEdgeMap edgeMap;
     private final PersistentIntMap<Map<String, Object>> vertexMetadata;
+    private final int namedTypeCount;
     private final int storedEdgeCount;
 
     @Internal
     public SUSchema(
             SchemaUniverse universe,
             SUSchemaRoot root,
+            PersistentIntMap<SUNamedType> namedTypesByNameId,
             PersistentEdgeMap edgeMap,
             PersistentIntMap<Map<String, Object>> vertexMetadata,
+            int namedTypeCount,
             int storedEdgeCount) {
         this.universe = assertNotNull(universe);
         this.root = assertNotNull(root);
+        this.namedTypesByNameId = assertNotNull(namedTypesByNameId);
         this.edgeMap = assertNotNull(edgeMap);
         this.vertexMetadata = assertNotNull(vertexMetadata);
+        this.namedTypeCount = namedTypeCount;
         this.storedEdgeCount = storedEdgeCount;
     }
 
@@ -119,29 +125,16 @@ public final class SUSchema {
         return Collections.unmodifiableList(result);
     }
 
-    public List<SUNamedType> getAdditionalTypes() {
-        return getTypedChildren(root, SUEdgeKind.ADDITIONAL_TYPE, SUNamedType.class);
-    }
-
     public List<SUNamedType> getTypes() {
-        Map<Integer, SUNamedType> result = new LinkedHashMap<>();
-        for (SUObjectType rootType : getRootTypes()) {
-            result.put(rootType.getId(), rootType);
-        }
-        for (SUNamedType additionalType : getAdditionalTypes()) {
-            result.put(additionalType.getId(), additionalType);
-        }
-        return Collections.unmodifiableList(new ArrayList<>(result.values()));
+        List<SUNamedType> result = new ArrayList<>(namedTypeCount);
+        namedTypesByNameId.forEachEntry((nameId, type) -> result.add(type));
+        result.sort(Comparator.comparing(type -> assertNotNull(type.getName())));
+        return Collections.unmodifiableList(result);
     }
 
     public @Nullable SUNamedType getType(String name) {
-        assertNotNull(name);
-        for (SUObjectType rootType : getRootTypes()) {
-            if (name.equals(rootType.getName())) {
-                return rootType;
-            }
-        }
-        return (SUNamedType) getChild(root, SUEdgeKind.ADDITIONAL_TYPE, name);
+        int nameId = universe.getNameId(assertNotNull(name));
+        return nameId < 0 ? null : namedTypesByNameId.get(nameId);
     }
 
     public @Nullable SUObjectType getObjectType(String name) {
@@ -385,6 +378,16 @@ public final class SUSchema {
     @Internal
     public PersistentEdgeMap getEdgeMap() {
         return edgeMap;
+    }
+
+    @Internal
+    public PersistentIntMap<SUNamedType> getNamedTypesByNameId() {
+        return namedTypesByNameId;
+    }
+
+    @Internal
+    public int getNamedTypeCount() {
+        return namedTypeCount;
     }
 
     @Internal

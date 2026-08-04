@@ -84,4 +84,29 @@ class PersistentIntMapTest extends Specification {
                 [3, "third"]
         ] as Set
     }
+
+    def "entry traversal visits every mapping without changing the map"() {
+        given:
+        def map = PersistentIntMap.empty()
+                .put(37, "thirty-seven")
+                .put(-1, "negative")
+                .put(0, "zero")
+        def entries = [:]
+
+        when:
+        PersistentIntMap.empty().forEachEntry(
+                (key, value) -> entries[key] = value)
+        map.forEachEntry(
+                (key, value) -> entries[key] = value)
+
+        then:
+        entries == [
+                (37): "thirty-seven",
+                (-1): "negative",
+                (0): "zero"
+        ]
+        map.get(37) == "thirty-seven"
+        map.get(-1) == "negative"
+        map.get(0) == "zero"
+    }
 }

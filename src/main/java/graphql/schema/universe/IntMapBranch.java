@@ -115,6 +115,13 @@ public final class IntMapBranch<V> implements IntMapNode<V> {
         }
     }
 
+    @Override
+    public void forEachEntry(IntMapEntryVisitor<V> visitor) {
+        for (IntMapNode<V> child : children) {
+            child.forEachEntry(visitor);
+        }
+    }
+
     private IntMapNode<V> insert(
             int bit,
             int index,

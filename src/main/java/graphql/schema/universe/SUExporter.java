@@ -81,16 +81,24 @@ public final class SUExporter {
         if (subscriptionType != null) {
             builder.subscription(objectType(subscriptionType));
         }
-        for (SUVertex additionalType : schema.getAdditionalTypes()) {
-            if (!Introspection.isIntrospectionTypes(requiredName(additionalType))) {
-                builder.additionalType(namedType(additionalType));
+        for (SUNamedType type : schema.getTypes()) {
+            if (isOperationType(type)
+                    || Introspection.isIntrospectionTypes(requiredName(type))) {
+                continue;
             }
+            builder.additionalType(namedType(type));
         }
         for (SUDirective directive : schema.getDirectiveDefinitions()) {
             builder.additionalDirective(exportDirectiveDefinition(directive));
         }
         builder.withSchemaAppliedDirectives(exportAppliedDirectives(schema.getRoot()));
         return builder.build();
+    }
+
+    private boolean isOperationType(SUNamedType type) {
+        return type == schema.getQueryType()
+                || type == schema.getMutationType()
+                || type == schema.getSubscriptionType();
     }
 
     private GraphQLCodeRegistry exportCodeRegistry() {

@@ -66,6 +66,11 @@ public final class IntMapLeaf<V> implements IntMapNode<V> {
         visitor.visit(key, value);
     }
 
+    @Override
+    public void forEachEntry(IntMapEntryVisitor<V> visitor) {
+        visitor.visit(key, value);
+    }
+
     /**
      * Returns the mixed hash used to place this leaf in the trie.
      *

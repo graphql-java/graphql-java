@@ -62,4 +62,11 @@ public interface IntMapNode<V> {
     void visitEntries(
             Set<IntMapNode<V>> visitedNodes,
             IntMapEntryVisitor<V> visitor);
+
+    /**
+     * Visits every entry below this node.
+     *
+     * @param visitor the entry visitor
+     */
+    void forEachEntry(IntMapEntryVisitor<V> visitor);
 }

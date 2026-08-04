@@ -26,6 +26,8 @@ public final class SUSchemaBuilder {
     private final Map<Integer, MutablePackedEdgeSet> changedEdges = new LinkedHashMap<>();
     private final Map<Integer, LinkedHashMap<String, Object>> changedVertexMetadata =
             new LinkedHashMap<>();
+    private PersistentIntMap<SUNamedType> namedTypesByNameId;
+    private int namedTypeCount;
     private boolean built;
 
     @Internal
@@ -36,6 +38,10 @@ public final class SUSchemaBuilder {
         this.universe = assertNotNull(universe);
         this.root = assertNotNull(root);
         this.baseSchema = baseSchema;
+        this.namedTypesByNameId = baseSchema == null
+                ? PersistentIntMap.empty()
+                : baseSchema.getNamedTypesByNameId();
+        this.namedTypeCount = baseSchema == null ? 0 : baseSchema.getNamedTypeCount();
         copyRootEdges(baseSchema);
         copyRootMetadata(baseSchema);
     }
@@ -161,24 +167,82 @@ public final class SUSchemaBuilder {
         return setOptionalEdge(SUEdgeKind.SUBSCRIPTION_TYPE, subscriptionType);
     }
 
-    public SUSchemaBuilder additionalType(SUNamedType type) {
-        return addAdditionalType(type);
+    public SUSchemaBuilder type(SUNamedType type) {
+        return addType(type);
     }
 
-    public SUSchemaBuilder addAdditionalType(SUNamedType type) {
-        return addEdge(root, SUEdgeKind.ADDITIONAL_TYPE, type);
+    /**
+     * Adds a named type to this schema.
+     *
+     * @param type the named type
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder addType(SUNamedType type) {
+        assertCanChange();
+        assertOwned(type);
+        int nameId = type.getNameId();
+        SUNamedType existing = namedTypesByNameId.get(nameId);
+        assertTrue(
+                existing == null || existing == type,
+                "Schema already contains a different type named '%s'",
+                assertNotNull(type.getName()));
+        if (existing == null) {
+            namedTypesByNameId = namedTypesByNameId.put(nameId, type);
+            namedTypeCount++;
+        }
+        return this;
     }
 
-    public SUSchemaBuilder removeAdditionalType(SUNamedType type) {
-        return removeEdge(root, SUEdgeKind.ADDITIONAL_TYPE, type);
+    /**
+     * Removes a named type from this schema.
+     *
+     * @param type the named type
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder removeType(SUNamedType type) {
+        assertCanChange();
+        assertOwned(type);
+        int nameId = type.getNameId();
+        if (namedTypesByNameId.get(nameId) == type) {
+            namedTypesByNameId = namedTypesByNameId.remove(nameId);
+            namedTypeCount--;
+        }
+        return this;
     }
 
-    public SUSchemaBuilder removeAdditionalType(String name) {
-        return removeEdge(root, SUEdgeKind.ADDITIONAL_TYPE, name);
+    /**
+     * Removes the named type with the given name from this schema.
+     *
+     * @param name the type name
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder removeType(String name) {
+        assertCanChange();
+        int nameId = universe.getNameId(assertNotNull(name));
+        if (nameId >= 0 && namedTypesByNameId.get(nameId) != null) {
+            namedTypesByNameId = namedTypesByNameId.remove(nameId);
+            namedTypeCount--;
+        }
+        return this;
     }
 
-    public SUSchemaBuilder clearAdditionalTypes() {
-        return removeEdges(root, SUEdgeKind.ADDITIONAL_TYPE);
+    /**
+     * Removes every named type except the current operation types.
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder clearTypes() {
+        assertCanChange();
+        PackedEdgeSet rootEdges = mutableEdges(root).freeze();
+        namedTypesByNameId = PersistentIntMap.empty();
+        namedTypeCount = 0;
+        retainOperationType(rootEdges, SUEdgeKind.QUERY_TYPE);
+        retainOperationType(rootEdges, SUEdgeKind.MUTATION_TYPE);
+        retainOperationType(rootEdges, SUEdgeKind.SUBSCRIPTION_TYPE);
+        return this;
     }
 
     public SUSchemaBuilder directiveDefinition(SUDirective directive) {
@@ -479,6 +543,8 @@ public final class SUSchemaBuilder {
             SUVertex target) {
         assertCanChange();
         assertEdgeShape(source, kind, target);
+        addNamedEndpoint(source);
+        addNamedEndpoint(target);
         mutableEdges(source).add(PackedEdgeSet.pack(kind, target.getNameId(), target.getId()));
         return this;
     }
@@ -490,10 +556,18 @@ public final class SUSchemaBuilder {
         assertCanChange();
         assertTrue(kind.isSingle(), "Edge kind %s is not single-valued", kind);
         assertEdgeShape(source, kind, target);
+        addNamedEndpoint(source);
+        addNamedEndpoint(target);
         MutablePackedEdgeSet edges = mutableEdges(source);
         edges.removeKind(kind);
         edges.add(PackedEdgeSet.pack(kind, target.getNameId(), target.getId()));
         return this;
+    }
+
+    private void addNamedEndpoint(SUVertex vertex) {
+        if (vertex instanceof SUNamedType) {
+            addType((SUNamedType) vertex);
+        }
     }
 
     private SUSchemaBuilder removeEdge(
@@ -555,11 +629,14 @@ public final class SUSchemaBuilder {
         }
         assertTrue(edgeMap.get(root.getId()).firstTarget(SUEdgeKind.QUERY_TYPE) >= 0,
                 "A schema universe schema requires a query type");
+        assertOperationTypesRegistered(edgeMap);
         SUSchema schema = new SUSchema(
                 universe,
                 root,
+                namedTypesByNameId,
                 edgeMap,
                 metadataMap,
+                namedTypeCount,
                 edgeCount);
         universe.registerSchema(schema);
         return schema;
@@ -572,6 +649,35 @@ public final class SUSchemaBuilder {
             return removeEdges(root, kind);
         }
         return setEdge(root, kind, target);
+    }
+
+    private void assertOperationTypesRegistered(PersistentEdgeMap edgeMap) {
+        assertOperationTypeRegistered(edgeMap, SUEdgeKind.QUERY_TYPE);
+        assertOperationTypeRegistered(edgeMap, SUEdgeKind.MUTATION_TYPE);
+        assertOperationTypeRegistered(edgeMap, SUEdgeKind.SUBSCRIPTION_TYPE);
+    }
+
+    private void retainOperationType(
+            PackedEdgeSet rootEdges,
+            SUEdgeKind kind) {
+        int targetId = rootEdges.firstTarget(kind);
+        if (targetId >= 0) {
+            addType((SUNamedType) universe.getVertex(targetId));
+        }
+    }
+
+    private void assertOperationTypeRegistered(
+            PersistentEdgeMap edgeMap,
+            SUEdgeKind kind) {
+        int targetId = edgeMap.get(root.getId()).firstTarget(kind);
+        if (targetId < 0) {
+            return;
+        }
+        SUNamedType type = (SUNamedType) universe.getVertex(targetId);
+        assertTrue(
+                namedTypesByNameId.get(type.getNameId()) == type,
+                "Operation type '%s' is not part of the schema",
+                assertNotNull(type.getName()));
     }
 
     private void copyRootEdges(@Nullable SUSchema base) {
@@ -720,8 +826,6 @@ public final class SUSchemaBuilder {
             case SUBSCRIPTION_TYPE:
                 return sourceKind == SUVertexKind.SCHEMA
                         && targetKind == SUVertexKind.OBJECT;
-            case ADDITIONAL_TYPE:
-                return sourceKind == SUVertexKind.SCHEMA && isNamedType(targetKind);
             case DIRECTIVE_DEFINITION:
                 return sourceKind == SUVertexKind.SCHEMA
                         && targetKind == SUVertexKind.DIRECTIVE;

@@ -92,6 +92,18 @@ public final class PersistentIntMap<V> {
     }
 
     /**
+     * Visits every entry.
+     *
+     * @param visitor the entry visitor
+     */
+    public void forEachEntry(IntMapEntryVisitor<V> visitor) {
+        assertNotNull(visitor);
+        if (root != null) {
+            root.forEachEntry(visitor);
+        }
+    }
+
+    /**
      * Visits entries not already covered by a structurally shared node.
      *
      * @param visitedNodes identity-based set of previously visited nodes

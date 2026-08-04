@@ -80,6 +80,7 @@ public final class SUImporter {
             SUNamedType vertex = createNamedTypeVertex(type);
             namedTypes.put(type.getName(), vertex);
             elementVertices.put(type, vertex);
+            builder().addType(vertex);
         }
     }
 
@@ -121,18 +122,6 @@ public final class SUImporter {
         GraphQLObjectType subscriptionType = schema.getSubscriptionType();
         if (subscriptionType != null) {
             builder().subscriptionType((SUObjectType) namedType(subscriptionType));
-        }
-        addNonRootTypes(schema, query);
-    }
-
-    private void addNonRootTypes(GraphQLSchema schema, SUObjectType query) {
-        SUNamedType mutation = nullableNamedType(schema.getMutationType());
-        SUNamedType subscription = nullableNamedType(schema.getSubscriptionType());
-        for (SUNamedType type : namedTypes.values()) {
-            if (type == query || type == mutation || type == subscription) {
-                continue;
-            }
-            builder().addAdditionalType(type);
         }
     }
 
@@ -487,10 +476,6 @@ public final class SUImporter {
 
     private SUNamedType namedType(GraphQLNamedType type) {
         return assertNotNull(namedTypes.get(type.getName()), "Type '%s' is not part of the imported schema", type.getName());
-    }
-
-    private @Nullable SUNamedType nullableNamedType(@Nullable GraphQLNamedType type) {
-        return type == null ? null : namedType(type);
     }
 
     private SUSchemaRoot schemaBuilderRoot() {

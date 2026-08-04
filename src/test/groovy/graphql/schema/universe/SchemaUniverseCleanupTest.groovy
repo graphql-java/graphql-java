@@ -71,13 +71,13 @@ class SchemaUniverseCleanupTest extends Specification {
         def string = universe.newScalarType("String")
         def base = universe.newSchema("base")
                 .queryType(query)
-                .addAdditionalType(extra)
+                .addType(extra)
                 .addField(extra, field)
                 .setFieldType(field, string)
                 .build()
         def withoutExtra = base.transform(
                 "withoutExtra",
-                builder -> builder.removeAdditionalType(extra))
+                builder -> builder.removeType(extra))
         def baseRoot = base.root
 
         expect:
@@ -98,7 +98,7 @@ class SchemaUniverseCleanupTest extends Specification {
         when:
         def reattached = withoutExtra.transform(
                 "reattached",
-                builder -> builder.addAdditionalType(extra))
+                builder -> builder.addType(extra))
 
         then:
         reattached.getObjectType("Extra").is(extra)
@@ -131,6 +131,32 @@ class SchemaUniverseCleanupTest extends Specification {
         universe.owns(string)
         schema.getType(argument).is(string)
         schema.getAppliedDirectives(query) == [appliedDirective]
+    }
+
+    def "cleanup retains isolated registered types until their schema is removed"() {
+        given:
+        def universe = new SchemaUniverse()
+        def query = universe.newObjectType("Query")
+        def isolated = universe.newEnumType("Isolated")
+        def schema = universe.newSchema("schema")
+                .queryType(query)
+                .addType(isolated)
+                .build()
+        def root = schema.root
+
+        expect:
+        universe.cleanupUnusedVertices() == 0
+        universe.owns(isolated)
+        schema.getEnumType("Isolated").is(isolated)
+
+        when:
+        universe.removeSchema(schema)
+
+        then:
+        universe.cleanupUnusedVertices() == 3
+        !universe.owns(root)
+        !universe.owns(query)
+        !universe.owns(isolated)
     }
 
     def "cleanup releases empty chunks and allocation continues above reclaimed ids"() {

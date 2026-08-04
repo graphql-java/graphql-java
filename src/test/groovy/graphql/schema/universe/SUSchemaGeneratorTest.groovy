@@ -60,7 +60,8 @@ class SUSchemaGeneratorTest extends Specification {
         schema.queryType.name == "Root"
         schema.mutationType.name == "Changes"
         schema.subscriptionType == null
-        schema.additionalTypes*.name.containsAll(["Node", "Filter", "Choice", "String", "ID", "Boolean"])
+        schema.types*.name.containsAll(
+                ["Root", "Changes", "Node", "Filter", "Choice", "String", "ID", "Boolean"])
 
         and:
         def root = schema.getObjectType("Root")
@@ -111,9 +112,7 @@ class SUSchemaGeneratorTest extends Specification {
         schema.queryType.name == "Query"
         schema.mutationType.name == "Mutation"
         schema.subscriptionType.name == "Subscription"
-        !schema.additionalTypes*.name.contains("Query")
-        !schema.additionalTypes*.name.contains("Mutation")
-        !schema.additionalTypes*.name.contains("Subscription")
+        schema.types*.name.containsAll(["Query", "Mutation", "Subscription"])
     }
 
     def "preserves input defaults and all applied directive argument states"() {

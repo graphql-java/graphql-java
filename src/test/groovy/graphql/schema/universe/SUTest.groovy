@@ -273,6 +273,71 @@ class SUTest extends Specification {
         thrown(AssertException)
     }
 
+    def "edge endpoints register every named type directly on the schema"() {
+        given:
+        def universe = new SchemaUniverse()
+        def query = universe.newObjectType("Query")
+        def user = universe.newObjectType("User")
+        def field = universe.newField("user")
+        def name = universe.newField("name")
+        def string = universe.newScalarType("String")
+
+        when:
+        def schema = universe.newSchema("schema")
+                .queryType(query)
+                .addField(query, field)
+                .setFieldType(field, user)
+                .addField(user, name)
+                .setFieldType(name, string)
+                .build()
+
+        then:
+        schema.types == [query, string, user]
+        schema.getType("Query").is(query)
+        schema.getObjectType("User").is(user)
+        schema.getScalarType("String").is(string)
+    }
+
+    def "named type registry is structurally shared across schema transforms"() {
+        given:
+        def universe = new SchemaUniverse()
+        def query = universe.newObjectType("Query")
+        def string = universe.newScalarType("String")
+        def integer = universe.newScalarType("Int")
+        def base = universe.newSchema("base")
+                .queryType(query)
+                .addType(string)
+                .build()
+
+        when:
+        def unchanged = base.transform("unchanged", builder -> builder.addType(string))
+        def changed = base.transform("changed", builder -> builder.addType(integer))
+
+        then:
+        unchanged.namedTypesByNameId.is(base.namedTypesByNameId)
+        !changed.namedTypesByNameId.is(base.namedTypesByNameId)
+        changed.getType("Query").is(query)
+        changed.getType("String").is(string)
+        changed.getType("Int").is(integer)
+        base.getType("Int") == null
+    }
+
+    def "a schema rejects different named type vertices with the same name"() {
+        given:
+        def universe = new SchemaUniverse()
+        def query = universe.newObjectType("Query")
+        def duplicate = universe.newScalarType("Query")
+
+        when:
+        universe.newSchema("invalid")
+                .queryType(query)
+                .addType(duplicate)
+
+        then:
+        def exception = thrown(AssertException)
+        exception.message.contains("different type named 'Query'")
+    }
+
     def "typed builder helpers cover every schema relationship"() {
         given:
         def universe = new SchemaUniverse()
@@ -305,14 +370,14 @@ class SUTest extends Specification {
                 .setQueryType(query)
                 .setMutationType(mutation)
                 .setSubscriptionType(subscription)
-                .addAdditionalType(user)
-                .addAdditionalType(node)
-                .addAdditionalType(resource)
-                .addAdditionalType(searchResult)
-                .addAdditionalType(status)
-                .addAdditionalType(filter)
-                .addAdditionalType(string)
-                .addAdditionalType(integer)
+                .addType(user)
+                .addType(node)
+                .addType(resource)
+                .addType(searchResult)
+                .addType(status)
+                .addType(filter)
+                .addType(string)
+                .addType(integer)
                 .addDirectiveDefinition(tag)
                 .addField(query, search)
                 .addField(node, id)
@@ -369,7 +434,7 @@ class SUTest extends Specification {
                 .removeAppliedDirective(user, firstTag)
                 .removeSchemaAppliedDirective(schemaTag)
                 .removeDirectiveDefinition(tag)
-                .removeAdditionalType(integer))
+                .removeType(integer))
 
         then:
         removed.getFields(query).isEmpty()
@@ -404,7 +469,7 @@ class SUTest extends Specification {
                 .clearAppliedDirectives(user)
                 .clearSchemaAppliedDirectives()
                 .clearDirectiveDefinitions()
-                .clearAdditionalTypes())
+                .clearTypes())
 
         then:
         withoutTags.getAppliedDirectives(user).isEmpty()
@@ -422,7 +487,7 @@ class SUTest extends Specification {
         cleared.getAppliedDirectives(user).isEmpty()
         cleared.schemaAppliedDirectives.isEmpty()
         cleared.directiveDefinitions.isEmpty()
-        cleared.additionalTypes.isEmpty()
+        cleared.types == [query]
 
         and:
         schema.getFields(query) == [search]
@@ -687,7 +752,7 @@ class SUTest extends Specification {
                 universe.newAppliedDirective("tag", [originalArgument])
         def base = universe.newSchema("base")
                 .queryType(query)
-                .addAdditionalType(integer)
+                .addType(integer)
                 .addAppliedDirective(query, originalDirective)
                 .build()
 
@@ -710,8 +775,8 @@ class SUTest extends Specification {
 
         and:
         universe.vertexCount == 6
-        base.storedEdgeCount == 3
-        changed.storedEdgeCount == 3
+        base.storedEdgeCount == 2
+        changed.storedEdgeCount == 2
     }
 
     def "applied directive payload rejects duplicate names and foreign universes"() {
@@ -860,7 +925,7 @@ class SUTest extends Specification {
         schema.getType("missing") == null
         schema.getObjectType("Role") == null
         schema.getScalarType("String").name == "String"
-        schema.additionalTypes.contains(user)
+        schema.types.contains(user)
 
         and:
         schema.getFields(user)*.name == ["id", "name"]

@@ -102,7 +102,7 @@ public final class SUSchemaGenerator {
         expandNamedTypes(definitions);
         addOperationRoots(definitions);
         addSchemaDirectives(definitions);
-        addAdditionalTypes();
+        addTypes();
         return builder().build();
     }
 
@@ -483,7 +483,7 @@ public final class SUSchemaGenerator {
         }
     }
 
-    private void addAdditionalTypes() {
+    private void addTypes() {
         for (SUNamedType type : namedTypes.values()) {
             if (type == queryType || type == mutationType || type == subscriptionType) {
                 continue;
@@ -493,7 +493,7 @@ public final class SUSchemaGenerator {
                     && !referencedTypeNames.contains(type.getName())) {
                 continue;
             }
-            builder().addAdditionalType(type);
+            builder().addType(type);
         }
     }
 

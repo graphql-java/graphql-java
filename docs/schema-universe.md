@@ -24,9 +24,11 @@ ID. Cleanup can reclaim unused vertices and leave holes, but IDs are never reuse
 vertex type for each supported GraphQL schema-element kind. A vertex contains intrinsic scalar
 properties such as kind, name, and description, but no child references.
 
-`SUSchema` is an immutable adjacency snapshot plus a schema-specific root vertex and sparse
-user-controlled metadata keyed by vertex ID. The effective schema is the graph reachable from that
-root. Root edges identify operation roots, non-root named types, and directive definitions.
+`SUSchema` is an immutable adjacency snapshot plus a schema-specific root vertex, a persistent
+registry of every named type keyed by universe name ID, and sparse user-controlled metadata keyed
+by vertex ID. Root edges identify operation roots and directive definitions. Named-type membership
+is independent of reachability, so a schema can retain disconnected types without representing
+membership as graph edges.
 
 Every successfully built snapshot registers itself with its universe under its unique name.
 `SchemaUniverse.getSchema(name)` selects one snapshot directly, while `getSchemas()` and
@@ -49,7 +51,7 @@ The current API assumes callers traverse from the root or another known-reachabl
 `SUSchema` is the primary traversal API. Callers normally do not need to inspect edge kinds
 directly. It provides typed helpers for:
 
-- operation roots, additional types, all named types, and lookup by type name;
+- operation roots, all named types, and lookup by type name;
 - directive definitions and schema-applied directives;
 - object and interface fields;
 - field and directive arguments;
@@ -91,23 +93,26 @@ Java integers.
 
 ## Persistent snapshots
 
-Outgoing arrays and metadata associations are stored in persistent hash-array mapped tries keyed by
-vertex ID. A transform batches changes, freezes each changed value once, and path-copies only the
-affected trie branches. All unchanged branches, outgoing arrays, and metadata maps are shared by
-identity with the parent schema.
+Outgoing arrays, named types, and metadata associations are stored in persistent hash-array mapped
+tries. Adjacency and metadata use vertex IDs as keys, while the type registry uses universe name
+IDs. A transform batches edge changes, freezes each changed value once, and path-copies only the
+affected trie branches. All unchanged branches, outgoing arrays, named types, and metadata maps are
+shared by identity with the parent schema.
 
-Approximate operation costs, where `d` is source out-degree and `V` is the number of sources with
-adjacency:
+Approximate operation costs, where `d` is source out-degree, `V` is the number of sources with
+adjacency, and `T` is the number of named types:
 
 | Operation | Time | New retained storage |
 | --- | --- | --- |
 | Read outgoing adjacency | `O(log32 V)` | none |
 | Child lookup by name | `O(log32 V + log d)` unordered, `O(log32 V + d)` ordered | none |
+| Read named type by name | `O(log32 T)` | none |
 | Read vertex metadata | `O(log32 M)` plus metadata-map lookup | none |
 | Add/remove edge | `O(d)` transient, then canonicalize at build | one changed primitive array |
+| Add/remove named type | `O(log32 T)` | one trie path |
 | Edit vertex metadata | `O(log32 M + keys(vertex))` | one trie path and metadata map |
 | Publish `k` changed sources | `O(k log32 V)` | copied trie paths plus `k` arrays |
-| Derive with no type edits | effectively root replacement | root edge paths, plus metadata paths when the root is annotated |
+| Derive with no type edits | effectively root replacement | root edge paths; type registry is shared |
 
 Here `M` is the number of vertices with metadata in the snapshot.
 
@@ -197,7 +202,7 @@ wrapper targets.
 - object, interface, union, enum, scalar, and input-object types;
 - fields, arguments, enum values, and input fields;
 - list and non-null wrappers;
-- operation roots, non-root named types, implementations, and union membership;
+- operation roots, complete named-type membership, implementations, and union membership;
 - argument and input-field defaults, preserving all `InputValueWithState` states;
 - directive repeatability, valid locations, definitions, and modern applied-directive topology;
 - applied-directive argument values, exact input types, and application AST nodes.
@@ -213,11 +218,11 @@ exact instance is present in the universe registry; holding an external Java ref
 extend its lifetime. `cleanupUnusedVertices()` periodically reclaims vertices unused by registered
 schemas.
 
-Cleanup marks every registered root, every source and target in the registered snapshots' complete
-persistent edge maps, and every vertex ID with schema metadata. It identity-deduplicates
-structurally shared HAMT nodes, so unchanged subtrees are scanned once rather than once per schema.
-Applied-directive argument type IDs are marked separately because those references are intrinsic
-values rather than edges.
+Cleanup marks every registered root, every registered named type, every source and target in the
+registered snapshots' complete persistent edge maps, and every vertex ID with schema metadata. It
+identity-deduplicates structurally shared HAMT nodes, so unchanged subtrees are scanned once rather
+than once per schema. Applied-directive argument type IDs are marked separately because those
+references are intrinsic values rather than edges.
 
 Marking must include dormant adjacency retained by a registered snapshot, not only the effective
 graph reachable from its root. Otherwise cleanup would break the supported constant-scope
