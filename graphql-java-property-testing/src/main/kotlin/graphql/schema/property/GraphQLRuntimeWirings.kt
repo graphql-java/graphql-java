@@ -21,6 +21,7 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLTypeUtil
 import graphql.schema.GraphQLUnionType
+import graphql.schema.idl.RuntimeWiring
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.int
@@ -52,6 +53,48 @@ fun arbitraryGraphQL(
         builder.codeRegistry(arbitraryCodeRegistry(schema, seed, config))
     }
     return GraphQL.newGraphQL(executableSchema).build()
+}
+
+/**
+ * Create a RuntimeWiring that serves arbitrary data for a schema.
+ *
+ * Though the data returned by this wiring is arbitrarily generated, the wiring
+ * guarantees that for a given [seed] value it will always return the same data for a
+ * given graphql document.
+ *
+ * The properties of the generated values can be configured in [cfg]. Supported [ConfigKey]s
+ * are [ExplicitNullValueWeight], [ListValueSize], [NullNonNullableWeight],
+ * [ResolverExceptionWeight], [ScalarValueOverrides], and [StringValueSize].
+ */
+fun arbRuntimeWiring(
+    sdl: String,
+    seed: Long,
+    cfg: Config = Config.default
+): RuntimeWiring {
+    val schema = sdl.asSchema
+    val codeRegistry = arbitraryCodeRegistry(schema, seed, cfg)
+    val builder = RuntimeWiring.newRuntimeWiring()
+    schema.allTypesAsList.forEach { type ->
+        when (type) {
+            is GraphQLObjectType -> builder.type(type.name) { typeBuilder ->
+                type.fieldDefinitions.fold(typeBuilder) { current, field ->
+                    current.dataFetcher(
+                        field.name,
+                        codeRegistry.getDataFetcher(FieldCoordinates.coordinates(type.name, field.name), field)
+                    )
+                }
+            }
+
+            is GraphQLInterfaceType -> builder.type(type.name) {
+                it.typeResolver(codeRegistry.getTypeResolver(type))
+            }
+
+            is GraphQLUnionType -> builder.type(type.name) {
+                it.typeResolver(codeRegistry.getTypeResolver(type))
+            }
+        }
+    }
+    return builder.build()
 }
 
 private class ArbitraryCodeRegistryGenerator(

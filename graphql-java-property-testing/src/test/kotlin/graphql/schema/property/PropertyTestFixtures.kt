@@ -13,3 +13,20 @@ internal fun parseTestSchema(
         SchemaParser().parse(sdl),
         runtimeWiring
     )
+
+/**
+ * Build the incomplete schema snippets used by Viaduct's original unit tests without depending on
+ * Viaduct's permissive SchemaFactory. Missing operation roots are supplied only for test setup.
+ */
+internal val String.asPermissiveTestSchema: GraphQLSchema
+    get() {
+        val normalized = replace("extend type Query", "type Query")
+            .replace("extend type Mutation", "type Mutation")
+            .replace("extend type Subscription", "type Subscription")
+        val withQuery = if (Regex("(?m)^\\s*type\\s+Query\\b").containsMatchIn(normalized)) {
+            normalized
+        } else {
+            "$normalized\ntype Query { propertyTestPlaceholder: Boolean }"
+        }
+        return parseTestSchema(withQuery)
+    }

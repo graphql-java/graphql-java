@@ -13,12 +13,16 @@ import graphql.schema.GraphQLTypeUtil
  * defined by the factory method that created this instance (e.g., [mandatoryInputCycles] or [allInputCycles]).
  * Each group represents a Strongly Connected Component (SCC) in the input object dependency graph.
  */
-internal class CycleGroups(private val groups: Map<String, Set<String>>) {
-    operator fun get(name: String): Set<String> = groups[name].orEmpty()
+internal class CycleGroups(val map: Map<String, Set<String>>) {
+    operator fun get(name: String): Set<String> = map[name].orEmpty()
 
-    fun isEmpty(): Boolean = groups.isEmpty()
+    fun isEmpty(): Boolean = map.isEmpty()
+
+    override fun toString(): String = map.toString()
 
     companion object {
+        val Empty: CycleGroups = CycleGroups(emptyMap())
+
         /**
          * Returns a [CycleGroups] that identifies cycles formed by mandatory input edges.
          *
@@ -73,7 +77,8 @@ internal class CycleGroups(private val groups: Map<String, Set<String>>) {
         ): CycleGroups {
             val inputTypes = schema.allTypesAsList.filterIsInstance<GraphQLInputObjectType>()
             val adjacency = inputTypes.associate { it.name to neighbors(it) }
-            return CycleGroups(stronglyConnectedCycles(adjacency))
+            val cycles = stronglyConnectedCycles(adjacency)
+            return if (cycles.isEmpty()) Empty else CycleGroups(cycles)
         }
 
         private fun stronglyConnectedCycles(

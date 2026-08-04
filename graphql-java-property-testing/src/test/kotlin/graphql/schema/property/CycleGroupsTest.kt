@@ -1,69 +1,155 @@
+@file:Suppress("ForbiddenImport")
+
 package graphql.schema.property
 
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.string
+import io.kotest.property.forAll
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
 
-class CycleGroupsTest : FunSpec({
-    test("schemas without recursive input types have no cycle groups") {
-        val schemas = listOf(
-            "type Query { x: Int }",
-            "input A { x: Int } input B { a: A } type Query { x(input: B): Int }"
-        )
-        schemas.forEach { sdl ->
-            val schema = parseTestSchema(sdl)
-            CycleGroups.allInputCycles(schema).isEmpty().shouldBe(true)
-            CycleGroups.mandatoryInputCycles(schema).isEmpty().shouldBe(true)
+class CycleGroupsTest : KotestPropertyBase() {
+    @Test
+    fun `Empty`(): Unit =
+        runBlocking {
+            Arb.string().forAll { CycleGroups.Empty[it].isEmpty() }
         }
-    }
 
-    test("nullable self loops are optional cycles") {
-        val schema = parseTestSchema("input Inp { inp: Inp } type Query { x(inp: Inp): Int }")
-        CycleGroups.allInputCycles(schema)["Inp"].shouldBe(setOf("Inp"))
-        CycleGroups.mandatoryInputCycles(schema)["Inp"].shouldBeEmpty()
-    }
-
-    test("nullable mutually recursive types share a cycle group") {
-        val schema = parseTestSchema(
-            "input A { b: B } input B { a: A } input C { a: A } type Query { x(c: C): Int }"
-        )
+    @Test
+    fun `no input types`() {
+        val schema = "type Foo { x: Int }".asPermissiveTestSchema
         val all = CycleGroups.allInputCycles(schema)
-        all["A"].shouldBe(setOf("A", "B"))
-        all["B"].shouldBe(setOf("A", "B"))
-        all["C"].shouldBeEmpty()
-        CycleGroups.mandatoryInputCycles(schema).isEmpty().shouldBe(true)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(CycleGroups.Empty, all)
+        assertEquals(CycleGroups.Empty, hard)
     }
 
-    test("non-null lists break mandatory recursion") {
-        val schema = parseTestSchema(
-            "input A { b: [B!]! } input B { a: A! } type Query { x(a: A): Int }"
-        )
-        CycleGroups.allInputCycles(schema)["A"].shouldBe(setOf("A", "B"))
-        CycleGroups.mandatoryInputCycles(schema).isEmpty().shouldBe(true)
+    @Test
+    fun `acyclic input types`() {
+        val schema = """
+            input A { x: Int }
+            input B { a: A }
+        """.asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(CycleGroups.Empty, all)
+        assertEquals(CycleGroups.Empty, hard)
     }
 
-    test("mixed-nullability recursion is not mandatory") {
-        val schema = parseTestSchema(
-            "input A { b: B! } input B { a: A } type Query { x(a: A): Int }"
-        )
-        CycleGroups.allInputCycles(schema)["A"].shouldBe(setOf("A", "B"))
-        CycleGroups.mandatoryInputCycles(schema).isEmpty().shouldBe(true)
+    @Test
+    fun `nullable self-loop`() {
+        val schema = "input Inp { inp: Inp }".asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(mapOf("Inp" to setOf("Inp")), all.map)
+        assertEquals(CycleGroups.Empty, hard)
     }
 
-    test("nullable oneOf recursion is optional") {
-        val schema = parseTestSchema(
-            "input A @oneOf { b: B } input B { a: A } type Query { x(a: A): Int }"
-        )
-        CycleGroups.allInputCycles(schema)["A"].shouldBe(setOf("A", "B"))
-        CycleGroups.mandatoryInputCycles(schema).isEmpty().shouldBe(true)
+    @Test
+    fun `nullable 2-type cycle`() {
+        val schema = """
+            input A { b: B }
+            input B { a: A }
+        """.asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")), all.map)
+        assertEquals(CycleGroups.Empty, hard)
     }
 
-    test("oneOf fields participate in mandatory cycles when their host is required") {
-        val schema = parseTestSchema(
-            "input A @oneOf { b: B, escape: Int } input B { a: A! } type Query { x(a: A): Int }"
-        )
-        val mandatory = CycleGroups.mandatoryInputCycles(schema)
-        mandatory["A"].shouldBe(setOf("A", "B"))
-        mandatory["B"].shouldBe(setOf("A", "B"))
+    @Test
+    fun `nullable 2-type cycle with observer`() {
+        val schema = """
+            input A { b: B }
+            input B { a: A }
+            input C { a: A }
+        """.asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")), all.map)
+        assertEquals(CycleGroups.Empty, hard)
     }
-})
+
+    @Test
+    fun `non-nullable cycle with lists`() {
+        val schema = """
+            input A { b: [B!]! }
+            input B { a: A! }
+        """.asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")), all.map)
+        assertEquals(CycleGroups.Empty, hard)
+    }
+
+    @Test
+    fun `non-null recursion`() {
+        // note that this type is schematically invalid
+        val schema = "input Inp { inp: Inp! }".asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(mapOf("Inp" to setOf("Inp")), all.map)
+        assertEquals(mapOf("Inp" to setOf("Inp")), hard.map)
+    }
+
+    @Test
+    fun `non-null co-recursion`() {
+        // note that these types are schematically invalid
+        val schema = """
+            input A { b: B! }
+            input B { a: A! }
+        """.asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")), all.map)
+        assertEquals(mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")), hard.map)
+    }
+
+    @Test
+    fun `co-recursion with mixed nullability`() {
+        val schema = """
+            input A { b: B! }
+            input B { a: A }
+        """.asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")), all.map)
+        assertEquals(CycleGroups.Empty, hard)
+    }
+
+    @Test
+    fun `co-recursion with nullable oneof`() {
+        val schema = """
+            input A @oneOf { b: B }
+            input B { a: A }
+        """.asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")), all.map)
+        assertEquals(CycleGroups.Empty, hard)
+    }
+
+    @Test
+    fun `co-recursion with non-nullable oneof`() {
+        val schema = """
+            input A @oneOf { b:B, escape:Int }
+            input B { a:A! }
+        """.asPermissiveTestSchema
+        val all = CycleGroups.allInputCycles(schema)
+        val hard = CycleGroups.mandatoryInputCycles(schema)
+
+        assertEquals(mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")), all.map)
+        assertEquals(mapOf("A" to setOf("A", "B"), "B" to setOf("A", "B")), hard.map)
+    }
+}

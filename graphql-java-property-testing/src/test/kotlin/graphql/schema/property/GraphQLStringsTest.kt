@@ -1,4 +1,4 @@
-@file:OptIn(io.kotest.common.ExperimentalKotest::class)
+@file:Suppress("ForbiddenImport")
 
 package graphql.schema.property
 
@@ -6,61 +6,121 @@ import graphql.Scalars
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
-import io.kotest.property.PropTestConfig
-import io.kotest.property.checkAll
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Test
 
-class GraphQLStringsTest : FunSpec({
-    test("graphQLName generates spec-compliant non-introspection names") {
-        val pattern = Regex("^[_A-Za-z][_0-9A-Za-z]*$")
-        checkAll(PropTestConfig(iterations = 500), Arb.graphQLName(1..40)) { name ->
-            name.matches(pattern).shouldBe(true)
-            name.startsWith("__").shouldBe(false)
-        }
-    }
-
-    test("graphQLName produces valid type names") {
-        val placeholder = GraphQLFieldDefinition.newFieldDefinition()
-            .name("placeholder")
-            .type(Scalars.GraphQLInt)
-            .build()
-        checkAll(PropTestConfig(iterations = 100), Arb.graphQLName()) { name ->
-            val query = GraphQLObjectType.newObject().name(name).field(placeholder).build()
-            runCatching { GraphQLSchema.newSchema().query(query).build() }.isSuccess.shouldBe(true)
-        }
-    }
-
-    test("field and argument names are valid and start lower-case when alphabetic") {
-        val generators = listOf(Arb.graphQLFieldName(), Arb.graphQLArgumentName())
-        generators.forEach { generator ->
-            checkAll(PropTestConfig(iterations = 100), generator) { name ->
-                name.startsWith("__").shouldBe(false)
-                val first = name.first()
-                (!first.isLetter() || first.isLowerCase()).shouldBe(true)
+class GraphQLStringsTest : KotestPropertyBase() {
+    @Test
+    fun `Arb_graphQLName produces spec-compliant names`(): Unit =
+        runBlocking {
+            val patt = Regex("^[a-z,A-Z,_][a-z,A-Z,_,0-9,]*")
+            Arb.graphQLName().forAll {
+                it.matches(patt)
             }
         }
-    }
 
-    test("enum value names exclude reserved values") {
-        checkAll(PropTestConfig(iterations = 200), Arb.graphQLEnumValueName()) { name ->
-            (name !in setOf("true", "false", "null") && !name.startsWith("__")).shouldBe(true)
-        }
-    }
+    @Test
+    fun `Arb_graphQLName produces names that are valid GraphQL type names`(): Unit =
+        runBlocking {
+            val placeholder =
+                GraphQLFieldDefinition
+                    .newFieldDefinition()
+                    .name("placeholder")
+                    .type(Scalars.GraphQLInt)
+                    .build()
 
-    test("BanFieldNames affects all field-like name generators") {
-        val banned = ('a'..'m').flatMap { listOf(it.toString(), it.uppercase()) }.toSet()
-        val config = Config.default + (BanFieldNames to banned) + (FieldNameLength to 1..2)
-        val generators = listOf(
-            Arb.graphQLFieldName(config),
-            Arb.graphQLArgumentName(config),
-            Arb.graphQLEnumValueName(config)
-        )
-        generators.forEach { generator ->
-            checkAll(PropTestConfig(iterations = 100), generator) { name ->
-                (name !in banned).shouldBe(true)
+            Arb.graphQLName().forAll { typeName ->
+                val query =
+                    GraphQLObjectType
+                        .newObject()
+                        .name(typeName)
+                        .field(placeholder)
+                        .build()
+                val result =
+                    Result.runCatching {
+                        GraphQLSchema.newSchema().query(query).build()
+                    }
+
+                result.isSuccess
             }
         }
-    }
-})
+
+    @Test
+    fun `Arb_graphQLName does not produce introspection names`(): Unit =
+        runBlocking {
+            Arb.graphQLName(1..4).forNone { it.startsWith("__") }
+        }
+
+    @Test
+    fun `Arb_graphQLFieldName produces names that are valid GraphQL field names`(): Unit =
+        runBlocking {
+            val query =
+                GraphQLObjectType
+                    .newObject()
+                    .name("Query")
+                    .build()
+
+            Arb.graphQLFieldName().forAll { fieldName ->
+                val newQuery =
+                    query.transform {
+                        val field =
+                            GraphQLFieldDefinition
+                                .newFieldDefinition()
+                                .name(fieldName)
+                                .type(Scalars.GraphQLInt)
+                                .build()
+                        it.clearFields().field(field)
+                    }
+
+                val result =
+                    Result.runCatching {
+                        GraphQLSchema.newSchema().query(newQuery).build()
+                    }
+
+                result.isSuccess
+            }
+        }
+
+    @Test
+    fun `Arb_graphQLFieldName does not produce introspection names`(): Unit =
+        runBlocking {
+            Arb.graphQLFieldName().forNone { it.startsWith("__") }
+        }
+
+    @Test
+    fun `Arb_graphQLEnumValueName does not produce invalid names`(): Unit =
+        runBlocking {
+            Arb.graphQLEnumValueName().forNone {
+                it.startsWith("__") ||
+                    it == "true" ||
+                    it == "false" ||
+                    it == "null"
+            }
+        }
+
+    @Test
+    fun `BanFieldNames`(): Unit =
+        runBlocking {
+            // create a ban list of single-letter field names, a-m and A-M
+            val banned = CharRange('a', 'm').fold(emptySet<String>()) { acc, ch ->
+                acc + ch.toString() + ch.uppercase()
+            }
+
+            // create a set of single-char names
+            val cfg = Config.default +
+                (BanFieldNames to banned) +
+                (FieldNameLength to 1..2) +
+                (SchemaSize to 1)
+
+            val arbs = listOf(
+                Arb.graphQLFieldName(cfg),
+                Arb.graphQLEnumValueName(cfg),
+                Arb.graphQLArgumentName(cfg)
+            )
+
+            arbs.forEach { arb ->
+                arb.forNone { banned.contains(it) }
+            }
+        }
+}

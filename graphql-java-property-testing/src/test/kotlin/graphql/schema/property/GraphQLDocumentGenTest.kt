@@ -1,4 +1,4 @@
-@file:OptIn(io.kotest.common.ExperimentalKotest::class)
+@file:Suppress("ForbiddenImport")
 
 package graphql.schema.property
 
@@ -19,398 +19,663 @@ import graphql.language.OperationDefinition
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import graphql.schema.GraphQLSchema
-import graphql.schema.idl.FastSchemaGenerator
-import graphql.schema.idl.RuntimeWiring
-import graphql.schema.idl.SchemaParser
-import io.kotest.assertions.withClue
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.collections.shouldNotBeEmpty
-import io.kotest.matchers.shouldBe
+import graphql.validation.ValidationError
 import io.kotest.property.Arb
-import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.flatMap
+import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
-import io.kotest.property.checkAll
+import io.kotest.property.arbitrary.take
+import io.kotest.property.assume
+import kotlin.math.sqrt
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 
-class GraphQLDocumentGenTest : FunSpec({
-    test("generates valid documents for a trivial schema with minimal config") {
-        assertAllDocumentsValid(schema("type Query { x: Int }"), minimalDocumentConfig)
+class GraphQLDocumentGenTest : KotestPropertyBase(
+    iterations = 5_000
+) {
+    private val schema =
+        """
+            directive @dir(arg:Int!) repeatable on QUERY | MUTATION | SUBSCRIPTION | FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | VARIABLE_DEFINITION
+            input Input { a:Int, b:[Int!]!, c:[[[Int]]] }
+            type Foo implements I1 { x:Int, next:Union, i1(inp:Input!):I1! }
+            type Bar implements I1 & I2 { x:Int, y:Int, next:Union }
+            union Union = Foo | Bar
+            interface I1 { x:Int }
+            interface I2 { y:Int }
+            type Query { x(a:Int!):Int, u:Union, y(inp:Input!): Union }
+            type Mutation { x:Int, y:Int }
+            type Subscription { x:Int, y:Int }
+        """.trimIndent().asSchema
+
+    private fun mkConfig(
+        aliasWeight: Double = 0.0,
+        anonymousOperationWeight: Double = 0.0,
+        banDirectiveNames: Set<String> = emptySet(),
+        banSelectionCoordinates: Set<TypeOrFieldCoordinate> = emptySet(),
+        documentUncoercedValueWeight: Double = 0.0,
+        directiveWeight: CompoundingWeight = CompoundingWeight.Never,
+        explicitNullValueWeight: Double = 0.0,
+        fieldNameLength: Int = 4,
+        fieldSelectionWeight: CompoundingWeight = CompoundingWeight.Once,
+        fragmentDefinitionWeight: Double = 0.0,
+        fragmentSpreadWeight: CompoundingWeight = CompoundingWeight.Never,
+        implicitNullValueWeight: Double = 0.0,
+        inlineFragmentWeight: CompoundingWeight = CompoundingWeight.Never,
+        maxSelectionSetDepth: Int = 1,
+        operationCount: Int = 1,
+        typeNameLength: Int = 4,
+        untypedInlineFragmentWeight: Double = 0.0,
+        variableWeight: Double = 0.0,
+    ): Config =
+        Config.default +
+            (AliasWeight to aliasWeight) +
+            (AnonymousOperationWeight to anonymousOperationWeight) +
+            (AppliedDirectiveWeight to directiveWeight) +
+            (BanDirectiveNames to banDirectiveNames) +
+            (BanSelectionCoordinates to banSelectionCoordinates) +
+            (DocumentUncoercedValueWeight to documentUncoercedValueWeight) +
+            (ExplicitNullValueWeight to explicitNullValueWeight) +
+            (FieldNameLength to fieldNameLength.asIntRange()) +
+            (FieldSelectionWeight to fieldSelectionWeight) +
+            (FragmentDefinitionWeight to fragmentDefinitionWeight) +
+            (FragmentSpreadWeight to fragmentSpreadWeight) +
+            (ImplicitNullValueWeight to implicitNullValueWeight) +
+            (InlineFragmentWeight to inlineFragmentWeight) +
+            (MaxSelectionSetDepth to maxSelectionSetDepth) +
+            (OperationCount to operationCount.asIntRange()) +
+            (TypeNameLength to typeNameLength.asIntRange()) +
+            (UntypedInlineFragmentWeight to untypedInlineFragmentWeight) +
+            (VariableWeight to variableWeight)
+
+    @Test
+    fun `manual inspection`(): Unit =
+        // this test makes no assertions but is useful for visually inspecting
+        // the generated documents to see that they are being generated as we
+        // expect
+        runBlocking {
+            Arb.graphQLDocument(schema).checkAll(10) { doc ->
+                assertEquals(emptyList<Any>(), validate(schema, doc))
+
+                val docString = AstPrinter.printAst(doc)
+                print(docString)
+                println("-----")
+                // set a breakpoint on the next line
+                markSuccess()
+            }
+        }
+
+    @Test
+    fun `Arb_graphQLDocument -- generates valid documents with minimal config for trivial schema`() {
+        assertAllDocumentsValid("type Query { x:Int }", mkConfig())
     }
 
-    test("generates valid documents for a trivial schema with default config") {
-        assertAllDocumentsValid(schema("type Query { x: Int }"), Config.default)
+    @Test
+    fun `Arb_graphQLDocument -- generates valid documents with default config for trivial schema`() {
+        assertAllDocumentsValid("type Query { x:Int }", Config.default)
     }
 
-    test("generates valid documents for a representative schema with minimal config") {
-        assertAllDocumentsValid(documentTestSchema, minimalDocumentConfig)
-    }
-
-    test("generates valid documents for a representative schema with default config") {
-        assertAllDocumentsValid(documentTestSchema, Config.default)
-    }
-
-    test("generates valid documents for schemas with default values") {
-        val schema = schema(
-            """
-                directive @dir(inp: Inp = {x: 2}) repeatable on QUERY | FIELD
-                input Inp { x: Int = 1, y: Int! = 2, z: Int = null }
-                type Query { x(inp: Inp = {y: 3, z: 0}): Int }
-            """.trimIndent()
-        )
+    @Test
+    fun `Arb_graphQLDocument -- generates valid documents with default config`() {
         assertAllDocumentsValid(schema, Config.default)
     }
 
-    test("generates valid documents for arbitrary generated schemas") {
-        val config = Config.default +
+    @Test
+    fun `Arb_graphQLDocument -- generates valid documents for schemas with default values`() {
+        val schema = """
+            directive @dir(inp:Inp = {x:2}) repeatable on QUERY | MUTATION | SUBSCRIPTION | FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | VARIABLE_DEFINITION
+            input Inp { x:Int = 1, y:Int! = 2, z:Int = null }
+            type Query {
+                x(inp: Inp = { y: 3, z:0 }): Int
+            }
+        """.trimIndent().asSchema
+        assertAllDocumentsValid(schema, Config.default)
+    }
+
+    @Test
+    fun `Arb_graphQLDocument -- generates valid documents for arbitrary schemas`() {
+        // use the default config, but dial it down to keep this test from being too slow
+        val cfg = Config.default +
             (SchemaSize to 20) +
             (FragmentSpreadWeight to CompoundingWeight(.2, 1)) +
             (InlineFragmentWeight to CompoundingWeight(.2, 1))
-        val cases = Arb.graphQLSchema(config).flatMap { schema ->
-            Arb.graphQLDocument(schema, config).map { document -> schema to document }
-        }
-        checkAll(PropTestConfig(iterations = 500), cases) { (schema, document) ->
-            assertValid(schema, document)
-        }
+
+        // our test matrix is N schemas by M documents. To get good coverage while being in
+        // the ballpark of `iterations`, let's use a square root value for each M/N dimension
+        val iter = sqrt(iterations.toDouble()).toInt()
+
+        // GJ schemas
+        Arb
+            .graphQLSchema(cfg)
+            .take(iter, randomSource)
+            .forEach { schema ->
+                assertAllDocumentsValid(schema, cfg, iter)
+            }
+
     }
 
-    test("handles merged selections, unions, and recursive types") {
-        val schemas = listOf(
+    @Test
+    fun `Arb_graphQLDocument -- generates valid documents with minimal config`() {
+        assertAllDocumentsValid(schema, mkConfig())
+    }
+
+    @Test
+    fun `Arb_graphQLDocument -- merged field subselections`() =
+        assertAllDocumentsValid(
             """
-                type Obj { x: Int, next: Obj, others: [Obj] }
-                type Query { obj: Obj }
-            """.trimIndent(),
+                type Obj { x:Int, next:Obj, others: [Obj] }
+                type Query { obj:Obj }
+            """.trimIndent()
+        )
+
+    @Test
+    fun `Arb_graphQLDocument -- merged field subselections with interfaces`() =
+        assertAllDocumentsValid(
             """
-                interface I { i: I }
-                type Obj implements I { x: Int, i: I }
+                interface I { i:I }
+                type Obj implements I { x:Int, i:I }
                 type Query { i: I }
-            """.trimIndent(),
+            """.trimIndent()
+        )
+
+    @Test
+    fun `Arb_graphQLDocument -- union selections`() =
+        assertAllDocumentsValid(
             """
-                type Foo { x: Int, u: U }
-                type Bar { y: Int, u: U }
+                type Foo { x:Int, u:U }
+                type Bar { y:Int, u:U }
                 union U = Foo | Bar
-                type Query { u: U }
+                type Query { u:U }
             """.trimIndent(),
+            cfg = Config.default + (FragmentSpreadWeight to CompoundingWeight.Never)
+        )
+
+    @Test
+    fun `Arb_graphQLDocument -- cyclic input objects`() =
+        assertAllDocumentsValid(
             """
-                input Input { x: Int, input: Input }
-                type Query { x(input: Input!): Int }
-            """.trimIndent(),
-            """
-                type Obj { obj: Obj! }
-                type Query { obj: Obj! }
+                input Input { x:Int, i:Input }
+                type Query { x(inp:Input!):Int }
             """.trimIndent()
         )
-        schemas.forEach { sdl -> assertAllDocumentsValid(schema(sdl), Config.default, 100) }
-    }
 
-    test("generates valid subscription documents") {
-        val schema = schema(
+    @Test
+    fun `Arb_graphQLDocument -- cyclic output objects`() =
+        assertAllDocumentsValid(
             """
-                type Obj { x: Int, child: Obj }
-                type Subscription { x: Int, obj: Obj }
-                type Query { x: Int }
+                type Obj { obj:Obj! }
+                type Query { obj:Obj! }
             """.trimIndent()
         )
-        assertAllDocumentsValid(schema, Config.default)
-    }
 
-    test("AliasWeight controls aliases") {
-        val schema = schema("type Query { x: Int }")
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, minimalDocumentConfig + (AliasWeight to 0.0))) { document ->
-            document.allChildrenOfType<Field>().all { it.alias == null }.shouldBe(true)
-        }
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, minimalDocumentConfig + (AliasWeight to 1.0))) { document ->
-            document.allChildrenOfType<Field>().all { it.alias != null }.shouldBe(true)
-        }
-    }
-
-    test("FieldNameLength controls generated alias names") {
-        val schema = schema("type Query { x: Int }")
-        val cases = Arb.int(1..10).flatMap { length ->
-            val config = minimalDocumentConfig +
-                (AliasWeight to 1.0) +
-                (FieldNameLength to length..length)
-            Arb.graphQLDocument(schema, config).map { length to it }
-        }
-        checkAll(documentPropertyConfig, cases) { (length, document) ->
-            document.allChildrenOfType<Field>()
-                .filter { it.alias != "x" && it.alias != "__typename" }
-                .all { it.alias?.length == length }
-                .shouldBe(true)
-        }
-    }
-
-    test("AnonymousOperationWeight controls anonymous operations") {
-        val schema = schema("type Query { x: Int }")
-        val named = minimalDocumentConfig + (AnonymousOperationWeight to 0.0)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, named)) { document ->
-            document.getDefinitionsOfType(OperationDefinition::class.java).all { it.name != null }.shouldBe(true)
-        }
-
-        val anonymous = minimalDocumentConfig + (AnonymousOperationWeight to 1.0)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, anonymous)) { document ->
-            val operations = document.getDefinitionsOfType(OperationDefinition::class.java)
-            operations.size.shouldBe(1)
-            operations.single().name.shouldBe(null)
-        }
-    }
-
-    test("BanSelectionCoordinates excludes configured fields") {
-        val schema = schema("type Query { x: Int, y: Int }")
-        val config = minimalDocumentConfig +
-            (BanSelectionCoordinates to setOf("Query" to "x"))
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, config)) { document ->
-            document.allChildrenOfType<Field>().none { it.name == "x" }.shouldBe(true)
-        }
-    }
-
-    test("AppliedDirectiveWeight and BanDirectiveNames control document directives") {
-        val schema = schema(
+    @Test
+    fun `Arb_graphQLDocument -- schemas with subscriptions`() =
+        assertAllDocumentsValid(
             """
-                directive @dir(arg: Int) repeatable on QUERY | FIELD
-                type Query { x: Int }
+                type Obj { x:Int, y:Obj }
+                type Subscription { x:Int, obj:Obj }
+                type Query { x:Int }
             """.trimIndent()
         )
-        val enabled = minimalDocumentConfig +
-            (AppliedDirectiveWeight to CompoundingWeight.Once) +
-            (BanDirectiveNames to builtinDirectives.keys)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, enabled)) { document ->
-            document.allChildrenOfType<Directive>().filter { it.name == "dir" }.shouldNotBeEmpty()
+
+    @Test
+    fun `Arb_graphQLDocument -- schemas with subscriptions and incremental directives`(): Unit =
+        runBlocking {
+            mkConfig(directiveWeight = CompoundingWeight.Always).let { cfg ->
+                val schema = """
+                    directive @defer(if: Boolean = true, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+                    directive @stream(if: Boolean = true, label: String, initialCount: Int = 0) on FIELD
+                    type Obj { x:Int, y:Obj }
+                    type Subscription { x:Int, obj:Obj }
+                    type Query { x:Int }
+                """.trimIndent().asSchema
+
+                // incremental directives may not appear anywhere in a subscription operation
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    doc
+                        .getDefinitionsOfType(OperationDefinition::class.java)
+                        .filter { it.operation == OperationDefinition.Operation.SUBSCRIPTION }
+                        .all { op ->
+                            op.allChildrenOfType<Directive>().none { it.name == "defer" || it.name == "stream" }
+                        }
+                }
+            }
         }
 
-        val disabled = enabled + (AppliedDirectiveWeight to CompoundingWeight.Never)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, disabled)) { document ->
-            document.allChildrenOfType<Directive>().shouldBeEmpty()
+    @Test
+    fun `Arb_graphQLDocument -- schemas with mutations and incremental directives`(): Unit =
+        runBlocking {
+            mkConfig(directiveWeight = CompoundingWeight.Always).let { cfg ->
+                val schema = """
+                directive @defer(if: Boolean = true, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+                directive @stream(if: Boolean = true, label: String, initialCount: Int = 0) on FIELD
+                type Obj { x:Int, y:Obj }
+                type Mutation { x:Int, obj:Obj }
+                type Query { x:Int }
+                """.trimIndent().asSchema
+
+                // incremental directives may not be used on a mutation root selection
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    doc
+                        .getDefinitionsOfType(OperationDefinition::class.java)
+                        .filter { it.operation == OperationDefinition.Operation.MUTATION }
+                        .flatMap { it.selectionSet.selections }
+                        .mapNotNull { it as? DirectivesContainer<*> }
+                        .all { sel ->
+                            sel.directives.none { it.name == "defer" || it.name == "stream" }
+                        }
+                }
+            }
         }
 
-        val banned = enabled + (BanDirectiveNames to (builtinDirectives.keys + "dir"))
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, banned)) { document ->
-            document.allChildrenOfType<Directive>().none { it.name == "dir" }.shouldBe(true)
+    @Test
+    fun AliasWeight() {
+        runBlocking {
+            // disabled
+            mkConfig(aliasWeight = 0.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    doc.allChildrenOfType<Field>().all { it.alias == null }
+                }
+            }
+
+            // enabled
+            mkConfig(aliasWeight = 1.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    doc.allChildrenOfType<Field>().all { it.alias != null }
+                }
+            }
         }
     }
 
-    test("DocumentUncoercedValueWeight controls coercible literals") {
-        val schema = schema("type Query { field(arg: Float!): Int }")
-        val base = minimalDocumentConfig +
-            (BanSelectionCoordinates to setOf("Query" to "__typename"))
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, base + (DocumentUncoercedValueWeight to 0.0))) { document ->
-            document.allChildrenOfType<Argument>().all { it.value is FloatValue }.shouldBe(true)
-        }
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, base + (DocumentUncoercedValueWeight to 1.0))) { document ->
-            document.allChildrenOfType<Argument>().all { it.value is IntValue }.shouldBe(true)
+    @Test
+    fun AnonymousOperationWeight() {
+        runBlocking {
+            // disabled
+            mkConfig(anonymousOperationWeight = 0.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll {
+                    val operations = it.getDefinitionsOfType(OperationDefinition::class.java)
+                    operations.isNotEmpty() && operations.all { op -> op.name != null }
+                }
+            }
+
+            // enabled
+            mkConfig(anonymousOperationWeight = 1.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll {
+                    val operations = it.getDefinitionsOfType(OperationDefinition::class.java)
+                    operations.size == 1 && operations[0].name == null
+                }
+            }
         }
     }
 
-    test("fragment configuration generates valid named and inline fragments") {
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(documentTestSchema, minimalDocumentConfig)) { document ->
-            document.allChildrenOfType<FragmentSpread>().shouldBeEmpty()
-            document.allChildrenOfType<InlineFragment>().shouldBeEmpty()
+    @Test
+    fun BanSelectionCoordinates(): Unit =
+        runBlocking {
+            val schema = "type Query { x:Int }".asSchema
+
+            // disabled
+            mkConfig(banSelectionCoordinates = emptySet()).let { cfg ->
+                Arb.graphQLDocument(schema, cfg)
+                    .asSequence(randomSource)
+                    .take(1000)
+                    .any {
+                        val fields = it.allChildrenOfType<Field>()
+                        fields.any { it.name == "x" }
+                    }
+            }
+
+            // enabled
+            mkConfig(banSelectionCoordinates = setOf("Query" to "x")).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll {
+                    val fields = it.allChildrenOfType<Field>()
+                    fields.none { it.name == "x" }
+                }
+            }
         }
 
-        val namedConfig = minimalDocumentConfig +
-            (FieldSelectionWeight to CompoundingWeight.Never) +
-            (FragmentSpreadWeight to CompoundingWeight.Once) +
-            (FragmentDefinitionWeight to 1.0)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(documentTestSchema, namedConfig)) { document ->
-            val spreads = document.allChildrenOfType<FragmentSpread>()
-            val definitions = document.getDefinitionsOfType(FragmentDefinition::class.java)
-            spreads.shouldNotBeEmpty()
-            definitions.shouldNotBeEmpty()
-            spreads.size.shouldBe(definitions.size)
-            assertValid(documentTestSchema, document)
+    @Test
+    fun DirectiveWeight(): Unit =
+        runBlocking {
+            // disabled
+            mkConfig(directiveWeight = CompoundingWeight.Never).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll {
+                    it.allChildrenOfType<DirectivesContainer<*>>().all { child -> child.directives.isEmpty() }
+                }
+            }
+
+            // enabled
+            mkConfig(directiveWeight = CompoundingWeight.Once).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll {
+                    it.allChildrenOfType<DirectivesContainer<*>>().all { child -> child.directives.isNotEmpty() }
+                }
+            }
         }
 
-        val inlineConfig = minimalDocumentConfig +
-            (FieldSelectionWeight to CompoundingWeight.Never) +
-            (InlineFragmentWeight to CompoundingWeight.Once)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(documentTestSchema, inlineConfig)) { document ->
-            document.allChildrenOfType<InlineFragment>().shouldNotBeEmpty()
-            assertValid(documentTestSchema, document)
-        }
-    }
+    @Test
+    fun `DocumentUncoercedValueWeight`(): Unit =
+        runBlocking {
+            val schema = "extend type Query { field(arg: Float!):Int }".asPermissiveTestSchema
 
-    test("UntypedInlineFragmentWeight controls type conditions") {
-        val schema = schema("type Query { x: Int }")
-        val base = minimalDocumentConfig +
-            (FieldSelectionWeight to CompoundingWeight.Never) +
-            (InlineFragmentWeight to CompoundingWeight.Once)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, base + (UntypedInlineFragmentWeight to 0.0))) { document ->
-            document.allChildrenOfType<InlineFragment>().all { it.typeCondition != null }.shouldBe(true)
-        }
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, base + (UntypedInlineFragmentWeight to 1.0))) { document ->
-            document.allChildrenOfType<InlineFragment>().all { it.typeCondition == null }.shouldBe(true)
-        }
-    }
+            // disabled
+            mkConfig(documentUncoercedValueWeight = 0.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll {
+                    it.allChildrenOfType<Argument>().all { arg -> arg.value is FloatValue }
+                }
+            }
 
-    test("ImplicitNullValueWeight controls optional arguments") {
-        val schema = schema("type Query { x(a: Int, b: Int! = 0, c: Int = 0): Int }")
-        val base = minimalDocumentConfig +
-            (BanSelectionCoordinates to setOf("Query" to "__typename"))
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, base + (ImplicitNullValueWeight to 0.0))) { document ->
-            document.allChildrenOfType<Field>().filter { it.name == "x" }.all { it.arguments.size == 3 }.shouldBe(true)
-        }
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, base + (ImplicitNullValueWeight to 1.0))) { document ->
-            document.allChildrenOfType<Field>().filter { it.name == "x" }.all { it.arguments.isEmpty() }.shouldBe(true)
-        }
-    }
-
-    test("OperationCount controls operation definitions") {
-        val cases = Arb.int(1..5).flatMap { count ->
-            val config = minimalDocumentConfig +
-                (AnonymousOperationWeight to 0.0) +
-                (OperationCount to count..count)
-            Arb.graphQLDocument(documentTestSchema, config).map { count to it }
-        }
-        checkAll(documentPropertyConfig, cases) { (count, document) ->
-            document.getDefinitionsOfType(OperationDefinition::class.java).size.shouldBe(count)
-        }
-    }
-
-    test("VariableWeight controls variable generation") {
-        val schema = schema("type Query { x(a: Int!): Int }")
-        val disabled = minimalDocumentConfig +
-            (BanSelectionCoordinates to setOf("Query" to "__typename")) +
-            (VariableWeight to 0.0)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, disabled)) { document ->
-            document.allChildrenOfType<VariableDefinition>().shouldBeEmpty()
-            document.allChildrenOfType<VariableReference>().shouldBeEmpty()
+            // enabled
+            mkConfig(documentUncoercedValueWeight = 1.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll {
+                    it.allChildrenOfType<Argument>().all { arg -> arg.value is IntValue }
+                }
+            }
         }
 
-        val config = minimalDocumentConfig +
-            (BanSelectionCoordinates to setOf("Query" to "__typename")) +
-            (VariableWeight to 1.0)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, config)) { document ->
-            document.allChildrenOfType<VariableDefinition>().shouldNotBeEmpty()
-            document.allChildrenOfType<VariableReference>().shouldNotBeEmpty()
-            assertValid(schema, document)
+    @Test
+    fun BanDirectiveNames(): Unit =
+        runBlocking {
+            // enabled
+            mkConfig(directiveWeight = CompoundingWeight.Once, banDirectiveNames = setOf("dir")).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll {
+                    it.allChildrenOfType<Directive>().none { d -> d.name == "dir" }
+                }
+            }
         }
-    }
 
-    test("reuses variables safely across operations and fragments") {
-        val schema = schema("type Query { x(a: Int!): Int }")
-        val config = Config.default +
+    @Test
+    fun `FieldNameLength -- alias names`(): Unit =
+        runBlocking {
+            val schema = "type Query { x: Int }".asSchema
+
+            arbitrary {
+                val length = Arb.int(1..10).bind()
+                val cfg = mkConfig(aliasWeight = 1.0, fieldNameLength = length)
+                length to Arb.graphQLDocument(schema, cfg).bind()
+            }.forAll { (length, doc) ->
+                val fields = doc
+                    .allChildrenOfType<Field>()
+                    // the alias generator will try to generate some alias names that collide with field names
+                    // which will ignore the FieldNameLength config. Filter these out
+                    .filter { it.alias != "x" && it.alias != "__typename" }
+
+                fields.all { it.alias?.length == length }
+            }
+        }
+
+    @Test
+    fun FragmentDefinitionWeight(): Unit =
+        runBlocking {
+            val schema = "type Query { x:Int }".asSchema
+
+            // enabled: bias to new fragments
+            mkConfig(
+                fragmentDefinitionWeight = 1.0,
+                fragmentSpreadWeight = CompoundingWeight.Once
+            ).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    val spreads = doc.allChildrenOfType<FragmentSpread>()
+                    val defs = doc.allChildrenOfType<FragmentDefinition>()
+                    spreads.size == defs.size
+                }
+            }
+        }
+
+    @Test
+    fun FragmentSpreadWeight(): Unit =
+        runBlocking {
+            // disabled
+            mkConfig(fragmentSpreadWeight = CompoundingWeight.Never).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    doc.allChildrenOfType<FragmentSpread>().isEmpty()
+                }
+            }
+
+            // enabled
+            mkConfig(fragmentSpreadWeight = CompoundingWeight.Once).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    doc.allChildrenOfType<FragmentSpread>().isNotEmpty()
+                }
+            }
+        }
+
+    @Test
+    fun ImplicitNullValueWeight(): Unit =
+        runBlocking {
+            val schema = "type Query { x(a:Int, b:Int!=0, c:Int=0):Int }".asSchema
+
+            // disabled
+            mkConfig(
+                fieldSelectionWeight = CompoundingWeight.Once,
+                implicitNullValueWeight = 0.0
+            ).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    val fields = doc
+                        .allChildrenOfType<Field>()
+                        .filter { it.name == "x" }
+                    assume(fields.isNotEmpty())
+                    fields.all { it.arguments.size == 3 }
+                }
+            }
+
+            // enabled
+            mkConfig(
+                fieldSelectionWeight = CompoundingWeight.Once,
+                implicitNullValueWeight = 1.0
+            ).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    val fields = doc.allChildrenOfType<Field>()
+                    fields.all { it.arguments.isEmpty() }
+                }
+            }
+        }
+
+    @Test
+    fun InlineFragmentWeight(): Unit =
+        runBlocking {
+            // disabled
+            mkConfig(inlineFragmentWeight = CompoundingWeight.Never).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    doc.allChildrenOfType<InlineFragment>().isEmpty()
+                }
+            }
+
+            // enabled
+            mkConfig(
+                fieldSelectionWeight = CompoundingWeight.Never,
+                inlineFragmentWeight = CompoundingWeight.Once
+            ).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    doc.allChildrenOfType<InlineFragment>().isNotEmpty()
+                }
+            }
+        }
+
+    @Test
+    fun OperationCount(): Unit =
+        runBlocking {
+            arbitrary {
+                val operationCount = Arb.int(1..10).bind()
+                val cfg = mkConfig(operationCount = operationCount)
+                val doc = Arb.graphQLDocument(schema, cfg).bind()
+                operationCount to doc
+            }.forAll { (operationCount, doc) ->
+                doc.allChildrenOfType<OperationDefinition>().size == operationCount
+            }
+        }
+
+    @Test
+    fun UntypedInlineFragmentWeight(): Unit =
+        runBlocking {
+            val schema = "type Query { x:Int }".asSchema
+
+            // disabled
+            mkConfig(inlineFragmentWeight = CompoundingWeight.Once, untypedInlineFragmentWeight = 0.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    val inlineFragments = doc.allChildrenOfType<InlineFragment>()
+                    assume(inlineFragments.isNotEmpty())
+                    inlineFragments.all { it.typeCondition != null }
+                }
+            }
+
+            // enabled
+            mkConfig(inlineFragmentWeight = CompoundingWeight.Once, untypedInlineFragmentWeight = 1.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    val inlineFragments = doc.allChildrenOfType<InlineFragment>()
+                    assume(inlineFragments.isNotEmpty())
+                    inlineFragments.all { it.typeCondition == null }
+                }
+            }
+        }
+
+    @Test
+    fun VariableWeight(): Unit =
+        runBlocking {
+            val schema = "type Query { x(a:Int!):Int }".asSchema
+
+            // disabled
+            mkConfig(variableWeight = 0.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    val defs = doc.allChildrenOfType<VariableDefinition>()
+                    val refs = doc.allChildrenOfType<VariableReference>()
+                    defs.isEmpty() && refs.isEmpty()
+                }
+            }
+
+            // enabled
+            mkConfig(variableWeight = 1.0).let { cfg ->
+                Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                    // skip over any generations don't select the 'x' field
+                    assume(doc.allChildrenOfType<Field>().any { it.name == "x" })
+
+                    val defs = doc.allChildrenOfType<VariableDefinition>()
+                    val refs = doc.allChildrenOfType<VariableReference>()
+                    defs.isNotEmpty() && refs.isNotEmpty()
+                }
+            }
+        }
+
+    @Test
+    fun `VariableWeight -- variable reuse stress test`() {
+        // Multi-operation documents can have variable reconciliation problems.
+        // For example, when building operation B, we may spread a fragment that was originally
+        // generated for use in operation A. If that fragment makes use of variables, then those
+        // variables need to be reconciled with any existing variables for operation B.
+        val cfg = Config.default +
             (OperationCount to 2..2) +
             (FragmentSpreadWeight to CompoundingWeight(.4, 1)) +
             (VariableWeight to .3)
-        assertAllDocumentsValid(schema, config)
+        assertAllDocumentsValid("type Query { x(a:Int!):Int }", cfg)
     }
 
-    test("directives on variable definitions do not reference variables") {
-        val config = Config.default +
-            (AppliedDirectiveWeight to CompoundingWeight.Once) +
-            (VariableWeight to 1.0)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(documentTestSchema, config)) { document ->
-            document.allChildrenOfType<VariableDefinition>()
-                .flatMap { it.allChildrenOfType<Directive>() }
-                .flatMap { it.allChildrenOfType<VariableReference>() }
-                .shouldBeEmpty()
-        }
-    }
+    @Test
+    fun `VariableWeight -- no variables-in-directives-on-variables`(): Unit =
+        runBlocking {
+            // VariableDefinitions may have directives, though those directives may not use variables.
+            // A validation hole in graphql-java allows documents with this pattern to pass validation
+            // and be executed even though they are not valid according to the spec:
+            //    https://github.com/graphql-java/graphql-java/issues/3927
+            //
+            // This test ensures that we are not generating this pattern
+            val cfg = Config.default +
+                (AppliedDirectiveWeight to CompoundingWeight.Once) +
+                (VariableWeight to 1.0)
+            val schema = "type Query { x(a:Int!):Int }".asSchema
 
-    test("nullable variables are not used in non-null positions") {
-        val schema = schema("type Query { x(a: Int, b: Int! = 0): Int }")
-        val config = minimalDocumentConfig +
-            (BanSelectionCoordinates to setOf("Query" to "__typename")) +
-            (VariableWeight to 1.0)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, config)) { document ->
-            val definitions = document.allChildrenOfType<VariableDefinition>().associateBy { it.name }
-            document.allChildrenOfType<Argument>()
-                .filter { it.name == "b" }
-                .flatMap { it.allChildrenOfType<VariableReference>() }
-                .all { definitions.getValue(it.name).type is NonNullType }
-                .shouldBe(true)
-        }
-    }
+            Arb
+                .graphQLDocument(schema, cfg)
+                .forAll { doc ->
+                    val badVariableRefs = doc
+                        .allChildrenOfType<VariableDefinition>()
+                        .flatMap { it.allChildrenOfType<Directive>() }
+                        .flatMap { it.allChildrenOfType<VariableReference>() }
 
-    test("incremental directives are excluded from subscription operations and mutation roots") {
-        val schema = schema(
-            """
-                directive @defer(if: Boolean = true, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
-                directive @stream(if: Boolean = true, label: String, initialCount: Int = 0) on FIELD
-                type Obj { x: Int, child: Obj }
-                type Mutation { x: Int, obj: Obj }
-                type Subscription { x: Int, obj: Obj }
-                type Query { x: Int }
-            """.trimIndent()
-        )
-        val config = minimalDocumentConfig +
-            (AppliedDirectiveWeight to CompoundingWeight.Once) +
-            (OperationCount to 3..3)
-        checkAll(documentPropertyConfig, Arb.graphQLDocument(schema, config)) { document ->
-            document.getDefinitionsOfType(OperationDefinition::class.java)
-                .filter { it.operation == OperationDefinition.Operation.SUBSCRIPTION }
-                .all { operation ->
-                    operation.allChildrenOfType<Directive>().none { it.name == "defer" || it.name == "stream" }
+                    badVariableRefs.isEmpty()
                 }
-                .shouldBe(true)
-
-            document.getDefinitionsOfType(OperationDefinition::class.java)
-                .filter { it.operation == OperationDefinition.Operation.MUTATION }
-                .flatMap { it.selectionSet.selections }
-                .filterIsInstance<DirectivesContainer<*>>()
-                .all { selection -> selection.directives.none { it.name == "defer" || it.name == "stream" } }
-                .shouldBe(true)
         }
-    }
-})
 
-private val documentPropertyConfig = PropTestConfig(iterations = 100)
+    @Test
+    fun `VariableWeight -- nullable variables are not used in non-nullable positions`(): Unit =
+        runBlocking {
+            val cfg = mkConfig(variableWeight = 1.0)
+            val schema = "type Query { x(a:Int, b:Int!=0):Int }".asSchema
+            Arb.graphQLDocument(schema, cfg).forAll { doc ->
+                val bargs = doc.allChildrenOfType<Argument>().filter { it.name == "b" }
+                assume(bargs.isNotEmpty())
 
-private val minimalDocumentConfig = Config.default +
-    (AliasWeight to 0.0) +
-    (AnonymousOperationWeight to 0.0) +
-    (AppliedDirectiveWeight to CompoundingWeight.Never) +
-    (DocumentUncoercedValueWeight to 0.0) +
-    (ExplicitNullValueWeight to 0.0) +
-    (FieldNameLength to 4..4) +
-    (FieldSelectionWeight to CompoundingWeight.Once) +
-    (FragmentDefinitionWeight to 0.0) +
-    (FragmentSpreadWeight to CompoundingWeight.Never) +
-    (ImplicitNullValueWeight to 0.0) +
-    (InlineFragmentWeight to CompoundingWeight.Never) +
-    (MaxSelectionSetDepth to 1) +
-    (OperationCount to 1..1) +
-    (TypeNameLength to 4..4) +
-    (UntypedInlineFragmentWeight to 0.0) +
-    (VariableWeight to 0.0)
+                val vdefs = doc.allChildrenOfType<VariableDefinition>().associateBy { it.name }
+                bargs
+                    .flatMap { it.allChildrenOfType<VariableReference>() }
+                    .map { vdefs[it.name]!!.type }
+                    .all { it is NonNullType }
+            }
+        }
 
-private val documentTestSchema = schema(
-    """
-        directive @dir(arg: Int!) repeatable on QUERY | MUTATION | SUBSCRIPTION | FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | VARIABLE_DEFINITION
-        input Input { a: Int, b: [Int!]!, c: [[[Int]]] }
-        type Foo implements I1 { x: Int, next: Union, i1(input: Input!): I1! }
-        type Bar implements I1 & I2 { x: Int, y: Int, next: Union }
-        union Union = Foo | Bar
-        interface I1 { x: Int }
-        interface I2 { y: Int }
-        type Query { x(a: Int!): Int, union: Union, y(input: Input!): Union }
-        type Mutation { x: Int, y: Int }
-        type Subscription { x: Int, y: Int }
-    """.trimIndent()
-)
+    private fun assertAllDocumentsValid(
+        sdl: String,
+        cfg: Config = Config.default
+    ) = assertAllDocumentsValid(sdl.asSchema, cfg)
 
-private fun schema(sdl: String): GraphQLSchema =
-    FastSchemaGenerator().makeExecutableSchema(
-        SchemaParser().parse(sdl),
-        RuntimeWiring.MOCKED_WIRING
-    )
+    private fun assertAllDocumentsValid(
+        schema: GraphQLSchema,
+        cfg: Config = Config.default,
+        iter: Int = iterations
+    ): Unit =
+        runBlocking {
+            Arb.graphQLDocument(schema, cfg).assertAllValid(schema, iter)
+        }
 
-private suspend fun assertAllDocumentsValid(
-    schema: GraphQLSchema,
-    config: Config,
-    iterations: Int = 250
-) {
-    checkAll(PropTestConfig(iterations = iterations), Arb.graphQLDocument(schema, config)) { document ->
-        assertValid(schema, document)
+    private fun Arb<Document>.assertAllValid(
+        schema: GraphQLSchema,
+        iter: Int = iterations
+    ): Unit =
+        runBlocking {
+            minInvalid(schema, iter)?.let { doc ->
+                val errors = validate(schema, doc)
+                debug(schema, doc, errors)
+                fail(
+                    buildString {
+                        append("Testing failed with seed: $seed\n")
+                        append("Document is not valid:\n")
+                        errors.forEach { append(" - $it\n") }
+                        append("Document:\n")
+                        append(AstPrinter.printAst(doc))
+                        append("\n")
+                    }
+                )
+            }
+        }
+
+    private fun Arb<Document>.minInvalid(
+        schema: GraphQLSchema,
+        iter: Int = iterations
+    ): Document? {
+        return withCheck { assertTrue(validate(schema, it).isEmpty()) }
+            .minViolation(DocumentComparator, randomSource, iter)
+            ?.value
     }
 }
 
-private fun assertValid(
+private fun validate(
     schema: GraphQLSchema,
-    document: Document
+    doc: Document
+): List<ValidationError> = ParseAndValidate.validate(schema, doc)
+
+// Tests in this suite can be tricky to debug. This method is useful for inspecting the state of a
+// tests input in a non-suspending context
+@Suppress("UNUSED", "UNUSED_PARAMETER", "UNUSED_VARIABLE")
+private fun debug(
+    schema: GraphQLSchema,
+    doc: Document,
+    vararg extras: Any,
 ) {
-    withClue(AstPrinter.printAst(document)) {
-        ParseAndValidate.validate(schema, document).shouldBeEmpty()
-    }
+    val rels = SchemaRelationships(schema)
+    val docString = AstPrinter.printAst(doc)
+    println(docString)
+    val operations = doc.getDefinitionsOfType(OperationDefinition::class.java)
+    val children = doc.children
+    val allChildren = doc.allChildren
+
+    // set a breakpoint on this assignment:
+    val x = 1
 }

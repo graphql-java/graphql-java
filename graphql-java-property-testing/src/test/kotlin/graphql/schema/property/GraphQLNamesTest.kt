@@ -1,76 +1,132 @@
-@file:OptIn(io.kotest.common.ExperimentalKotest::class)
+@file:Suppress("ForbiddenImport")
 
 package graphql.schema.property
 
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
-import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.bind
+import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.pair
-import io.kotest.property.checkAll
+import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
-class GraphQLNamesTest : FunSpec({
-    test("allNames is the union of every name bucket") {
-        checkAll(PropTestConfig(iterations = 100), Arb.int(1..200)) { count ->
-            val names = Arb.graphQLNames(Config.default + (SchemaSize to count)).bind()
-            val union = names.interfaces + names.objects + names.inputs + names.unions +
-                names.scalars + names.enums + names.directives
-            names.allNames.shouldBe(union)
+class GraphQLNamesTest : KotestPropertyBase() {
+    @Test
+    fun `Arb_graphQLNames`(): Unit =
+        runBlocking {
+            Arb
+                .int(min = 1, max = 1000)
+                .forAll { count ->
+                    val cfg = Config.default + (SchemaSize to count)
+                    val names = Arb.graphQLNames(cfg).bind()
+
+                    val subtotal =
+                        names.interfaces.size +
+                            names.objects.size +
+                            names.inputs.size +
+                            names.unions.size +
+                            names.scalars.size +
+                            names.enums.size +
+                            names.directives.size
+
+                    subtotal == names.allNames.size
+                }
         }
-    }
 
-    test("GenCustomScalars controls generated custom scalar names") {
-        listOf(true, false).forEach { include ->
-            val config = Config.default + (GenCustomScalars to include)
-            checkAll(PropTestConfig(iterations = 50), Arb.graphQLNames(config)) { names ->
-                if (!include) (names.scalars - builtinScalars.keys).shouldBeEmpty()
+    @Test
+    fun `Arb_graphQLNames -- IncludeCustomScalars`(): Unit =
+        runBlocking {
+            Arb
+                .of(true, false)
+                .flatMap { incl ->
+                    val cfg = Config.default + (GenCustomScalars to incl)
+                    Arb
+                        .graphQLNames(cfg)
+                        .map { names -> incl to names.scalars - builtinScalars.keys }
+                }.checkInvariants { (incl, scalars), check ->
+                    if (!incl) {
+                        check.isTrue(
+                            scalars.isEmpty(),
+                            "Found ${scalars.size} scalars when IncludeCustomScalars is $incl"
+                        )
+                    }
+                }
+        }
+
+    @Test
+    fun `Arb_graphQLNames -- TypeTypeWeights -- zero`(): Unit =
+        runBlocking {
+            // all weights are 0
+            val cfg = Config.default +
+                (TypeTypeWeights to TypeTypeWeights.zero) +
+                (IncludeBuiltinScalars to false) +
+                (IncludeBuiltinDirectives to false)
+
+            Arb.graphQLNames(cfg).forAll { names -> names.allNames.isEmpty() }
+        }
+
+    @Test
+    fun `Arb_graphQLNames -- TypeTypeWeights -- skewed weights`(): Unit =
+        runBlocking {
+            val ttw = TypeTypeWeights.default + (TypeType.Enum to 10.0) + (TypeType.Union to 0.0)
+            Arb
+                .int(0 until 1_000)
+                .flatMap { schemaSize ->
+                    val cfg = Config.default + (TypeTypeWeights to ttw) + (SchemaSize to schemaSize)
+                    Arb.graphQLNames(cfg)
+                }.forAll { names ->
+                    names.unions.isEmpty() && names.enums.size >= names.objects.size
+                }
+        }
+
+    @Test
+    fun `Arb_graphqlNames -- BanDirectiveNames`(): Unit =
+        runBlocking {
+            val dirName = "Directive_a"
+
+            val cfg = Config.default +
+                (TypeNameLength to 1.asIntRange()) +
+                (SchemaSize to 10) +
+                (TypeTypeWeights to (TypeTypeWeights.zero) + (TypeType.Directive to 1.0))
+
+            // sanity check that a "Directive_a" name *can* be generated
+            assertTrue(
+                Arb.graphQLNames(cfg)
+                    .asSequence()
+                    .take(100)
+                    .any { names -> dirName in names.directives }
+            )
+
+            // assert that the name never gets generated when banned
+            Arb.graphQLNames(cfg + (BanDirectiveNames to setOf(dirName)))
+                .forAll { names ->
+                    dirName !in names.directives
+                }
+        }
+
+    @Test
+    fun `graphQLNames plus`(): Unit =
+        runBlocking {
+            Arb
+                .pair(
+                    Arb.graphQLNames(),
+                    Arb.graphQLNames()
+                ).forAll { (a, b) ->
+                    (a.allNames + b.allNames) == (a + b).allNames
+                }
+        }
+
+    @Test
+    fun `filter`(): Unit =
+        runBlocking {
+            Arb.graphQLNames().forAll { names ->
+                names.filter { false } == GraphQLNames.empty
+            }
+
+            Arb.graphQLNames().forAll { names ->
+                names.filter { true } == names
             }
         }
-    }
-
-    test("zero weights produce no custom names") {
-        val config = Config.default +
-            (TypeTypeWeights to TypeTypeWeights.zero) +
-            (IncludeBuiltinScalars to false) +
-            (IncludeBuiltinDirectives to false)
-        checkAll(PropTestConfig(iterations = 20), Arb.graphQLNames(config)) { names ->
-            names.allNames.shouldBeEmpty()
-        }
-    }
-
-    test("skewed weights control bucket populations") {
-        val weights = TypeTypeWeights.zero + (TypeType.Enum to 10.0) + (TypeType.Object to 1.0)
-        val configs = Arb.int(10..200).map { size ->
-            Config.default + (SchemaSize to size) + (TypeTypeWeights to weights)
-        }
-        checkAll(PropTestConfig(iterations = 100), configs) { config ->
-            val names = Arb.graphQLNames(config).bind()
-            names.unions.shouldBeEmpty()
-            (names.enums.size >= names.objects.size).shouldBe(true)
-        }
-    }
-
-    test("BanDirectiveNames removes matching generated names") {
-        val config = Config.default +
-            (SchemaSize to 20) +
-            (TypeNameLength to 1..1) +
-            (TypeTypeWeights to (TypeTypeWeights.zero + (TypeType.Directive to 1.0))) +
-            (BanDirectiveNames to setOf("Directive_a", "Directive_b"))
-        checkAll(PropTestConfig(iterations = 100), Arb.graphQLNames(config)) { names ->
-            names.directives.intersect(config[BanDirectiveNames]).shouldBeEmpty()
-        }
-    }
-
-    test("plus unions buckets and filter retains matching names") {
-        val pairs = Arb.pair(Arb.graphQLNames(), Arb.graphQLNames())
-        checkAll(PropTestConfig(iterations = 100), pairs) { (first, second) ->
-            (first + second).allNames.shouldBe(first.allNames + second.allNames)
-            first.filter { true }.shouldBe(first)
-            first.filter { false }.shouldBe(GraphQLNames.empty)
-        }
-    }
-})
+}

@@ -7,206 +7,492 @@ import graphql.language.AstPrinter
 import graphql.language.IntValue
 import graphql.language.NullValue
 import graphql.language.OperationDefinition
-import graphql.parser.Parser
 import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCompositeType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
-import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
+import graphql.schema.GraphQLOutputType
+import graphql.schema.GraphQLScalarType
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
 
-class DocumentBuilderTest : FunSpec({
-    test("ArgumentKey compares the printed value instead of AST identity") {
-        val first = Argument("arg", NullValue.of())
-        val second = Argument("arg", NullValue.of())
-        first.shouldNotBe(second)
-        ArgumentKey(first).shouldBe(ArgumentKey(second))
-        ArgumentKey(first).hashCode().shouldBe(ArgumentKey(second).hashCode())
-        ArgumentKey(first).arg.shouldBe(first)
-    }
+class DocumentBuilderTest {
+    private class Fixture(
+        sdl: String,
+        fn: Fixture.() -> Unit = {}
+    ) {
+        val schema = sdl.asSchema
+        val query = schema.queryType
+        val schemas = Schemas(schema)
+        val fragments = Fragments(schemas)
+        val sb = SelectionsBuilder()
+        val __typename = Introspection.TypeNameMetaFieldDef
 
-    test("FieldKey equality includes arguments and wrapper structure") {
-        DocumentBuilderFixture("type Query { x(arg: Int): Int }").run {
-            val first = FieldKey("x", null, setOf(ArgumentKey(Argument("arg", IntValue.of(1)))), typeExpr("Int"))
-            val same = FieldKey("x", null, setOf(ArgumentKey(Argument("arg", IntValue.of(1)))), typeExpr("Int"))
-            val different = FieldKey("x", null, setOf(ArgumentKey(Argument("arg", NullValue.of()))), typeExpr("Int"))
-            first.shouldBe(same)
-            first.shouldNotBe(different)
+        init {
+            fn(this)
+        }
+
+        fun field(
+            type: String,
+            fieldName: String
+        ): GraphQLFieldDefinition =
+            if (fieldName == __typename.name) {
+                __typename
+            } else {
+                requireNotNull(schema.getFieldDefinition(FieldCoordinates.coordinates(type, fieldName)))
+            }
+
+        fun key(
+            type: String,
+            fieldName: String,
+            alias: String? = null,
+            vararg arguments: Argument
+        ): FieldKey = field(type, fieldName).key(alias, arguments.toSet())
+
+        val String.compositeType: GraphQLCompositeType get() = requireNotNull(schema.getTypeAs(this))
+        val String.outputType: GraphQLOutputType get() = requireNotNull(schema.getTypeAs(this))
+        val String.scalarType: GraphQLScalarType get() = requireNotNull(schema.getTypeAs(this))
+        val String.typeExpr: TypeExpr get() = TypeExpr(requireNotNull(schema.getTypeAs<GraphQLOutputType>(this)))
+
+        fun assertDocument(expected: String) {
+            val db = DocumentBuilder(schemas, fragments)
+            val op = OperationDefinition
+                .newOperationDefinition()
+                .operation(OperationDefinition.Operation.QUERY)
+                .selectionSet(sb.build())
+                .build()
+            db.add(op)
+
+            val doc = db.build()
+
+            val normExpected = AstPrinter.printAst(expected.asDocument)
+            val actual = AstPrinter.printAst(doc)
+            assertEquals(normExpected, actual)
         }
     }
 
-    test("TypeExpr hashes list and null wrappers in order") {
-        TypeExpr(GraphQLInt).listNullHash.shouldBe(1)
-        TypeExpr(GraphQLList.list(GraphQLInt)).listNullHash.shouldBe(2)
-        TypeExpr(GraphQLNonNull.nonNull(GraphQLInt)).listNullHash.shouldBe(3)
-        TypeExpr(GraphQLList.list(GraphQLList.list(GraphQLInt))).listNullHash.shouldBe(4)
-        TypeExpr(GraphQLList.list(GraphQLNonNull.nonNull(GraphQLInt))).listNullHash.shouldBe(5)
-        TypeExpr(GraphQLNonNull.nonNull(GraphQLList.list(GraphQLInt))).listNullHash.shouldBe(6)
-        TypeExpr(GraphQLList.list(GraphQLNonNull.nonNull(GraphQLInt)))
-            .shouldNotBe(TypeExpr(GraphQLNonNull.nonNull(GraphQLList.list(GraphQLInt))))
+    @Test
+    fun `ArgumentKey -- equals and hashCode`() {
+        val a1 = Argument("arg", NullValue.of())
+        val a2 = Argument("arg", NullValue.of())
+        // sanity
+        assertNotEquals(a1, a2)
+
+        val ak1 = ArgumentKey(a1)
+        val ak2 = ArgumentKey(a2)
+        assertEquals(ak1, ak2)
+        assertEquals(ak1.hashCode(), ak2.hashCode())
+
+        assertEquals(a1, ak1.arg)
     }
 
-    test("KeyTree creates scalar leaves and composite branches") {
-        DocumentBuilderFixture("type Query { x: Int, q: Query }").run {
-            val scalarKey = key("Query", "x")
-            val objectKey = key("Query", "q")
-            KeyTree(scalarKey)[scalarKey].shouldBe(null)
-            (KeyTree(objectKey)[objectKey] != null).shouldBe(true)
+    @Test
+    fun `FieldKey -- equality`() {
+        Fixture("type Query { x(arg:Int): Int }") {
+            val fk1 = FieldKey(
+                fieldName = "x",
+                alias = null,
+                arguments = setOf(
+                    ArgumentKey(Argument("arg", IntValue.of(1)))
+                ),
+                fieldType = "Int".typeExpr
+            )
+
+            val fk2 = FieldKey(
+                fieldName = "x",
+                alias = null,
+                arguments = setOf(
+                    ArgumentKey(Argument("arg", IntValue.of(1)))
+                ),
+                fieldType = "Int".typeExpr
+            )
+
+            assertEquals(fk1, fk2)
+
+            val fk3 = FieldKey(
+                fieldName = "x",
+                alias = null,
+                arguments = setOf(
+                    ArgumentKey(Argument("arg", NullValue.of()))
+                ),
+                fieldType = "Int".typeExpr
+            )
+            assertNotEquals(fk1, fk3)
         }
     }
 
-    test("KeyTree detects merge-compatible and conflicting response keys") {
-        DocumentBuilderFixture("type Query { x: Int, q: Query }").run {
-            val x = key("Query", "x")
-            val q = key("Query", "q")
-            KeyTree().canMerge(KeyTree()).shouldBe(true)
-            KeyTree(x).canMerge(KeyTree(x)).shouldBe(true)
-            KeyTree(x).canMerge(KeyTree(q)).shouldBe(true)
-            KeyTree(x).canMerge(KeyTree(key("Query", "q", "x"))).shouldBe(false)
+    @Test
+    fun `TypeExpr -- hash`() {
+        // Int
+        assertEquals(1, TypeExpr(GraphQLInt).listNullHash)
 
-            val first = KeyTree(q).apply { merge(q, KeyTree(x)) }
-            val compatible = KeyTree(q).apply { merge(q, KeyTree(key("Query", "__typename"))) }
-            val conflicting = KeyTree(q).apply { merge(q, KeyTree(key("Query", "q", "x"))) }
-            first.canMerge(compatible).shouldBe(true)
-            first.canMerge(conflicting).shouldBe(false)
+        // [Int]
+        assertEquals(2, TypeExpr(GraphQLList(GraphQLInt)).listNullHash)
+
+        // Int!
+        assertEquals(3, TypeExpr(GraphQLNonNull(GraphQLInt)).listNullHash)
+
+        // [[Int]]
+        assertEquals(
+            4,
+            TypeExpr(
+                GraphQLList(GraphQLList(GraphQLInt))
+            ).listNullHash
+        )
+
+        // [Int!]
+        assertEquals(
+            5,
+            TypeExpr(
+                GraphQLList(GraphQLNonNull(GraphQLInt))
+            ).listNullHash
+        )
+
+        // [Int]!
+        assertEquals(
+            6,
+            TypeExpr(
+                GraphQLNonNull(GraphQLList(GraphQLInt))
+            ).listNullHash
+        )
+    }
+
+    @Test
+    fun `TypeExpr -- equality`() {
+        // no wrappers
+        assertEquals(
+            TypeExpr(GraphQLInt),
+            TypeExpr(GraphQLInt),
+        )
+
+        // with wrappers
+        assertEquals(
+            TypeExpr(GraphQLList(GraphQLNonNull(GraphQLInt))),
+            TypeExpr(GraphQLList(GraphQLNonNull(GraphQLInt))),
+        )
+
+        // wrappers in diff order are not equal
+        assertNotEquals(
+            TypeExpr(GraphQLNonNull(GraphQLList(GraphQLInt))),
+            TypeExpr(GraphQLList(GraphQLNonNull(GraphQLInt))),
+        )
+    }
+
+    @Test
+    fun `KeyTree -- create from field key`() {
+        Fixture("type Query { x:Int, q:Query }") {
+            val xk = key("Query", "x")
+            val xkt = KeyTree(xk)
+            assertNull(xkt[xk])
+
+            val qk = key("Query", "q")
+            val qkt = KeyTree(qk)
+            assertNotNull(qkt[qk])
         }
     }
 
-    test("KeyTree merge recursively combines compatible branches") {
-        DocumentBuilderFixture("type Query { x: Int, q: Query }").run {
-            val x = key("Query", "x")
-            val q = key("Query", "q")
-            val typename = key("Query", "__typename")
-            KeyTree(x).merge(KeyTree(typename)).toMap().shouldBe(mapOf(x to null, typename to null))
+    @Test
+    fun `KeyTree -- canMerge`() {
+        Fixture("type Query { x:Int, q:Query }") {
+            val xk = key("Query", "x")
+            val qk = key("Query", "q")
+            val tk = key("Query", "__typename")
 
-            val first = KeyTree(q).apply { merge(q, KeyTree(x)) }
-            val second = KeyTree(q).apply { merge(q, KeyTree(typename)) }
-            first.merge(second).toMap().shouldBe(mapOf(q to mapOf(x to null, typename to null)))
+            // empty-empty
+            assertTrue(KeyTree().canMerge(KeyTree()))
+
+            // same selections
+            assertTrue(
+                KeyTree(xk).canMerge(KeyTree(xk))
+            )
+
+            // different selections
+            assertTrue(
+                KeyTree(xk).canMerge(KeyTree(qk))
+            )
+
+            // conflicting selections
+            assertFalse(
+                KeyTree(xk).canMerge(
+                    KeyTree(key("Query", "q", "x"))
+                )
+            )
+
+            // compatible nested selections
+            let {
+                val a = KeyTree(qk).apply {
+                    merge(qk, KeyTree(xk))
+                }
+                val b = KeyTree(qk).apply {
+                    merge(qk, KeyTree(tk))
+                }
+                assertTrue(a.canMerge(b))
+            }
+
+            // incompatible nested selections
+            let {
+                val a = KeyTree(qk).apply {
+                    merge(qk, KeyTree(xk))
+                }
+                val b = KeyTree(qk).apply {
+                    merge(qk, KeyTree(key("Query", "q", "x")))
+                }
+                assertFalse(a.canMerge(b))
+            }
         }
     }
 
-    test("KeyTree clone is independent") {
-        DocumentBuilderFixture("type Query { x: Int, y: Int }").run {
-            val x = key("Query", "x")
-            val y = key("Query", "y")
-            val original = KeyTree(x)
-            val clone = original.clone()
-            original.toMap().shouldBe(clone.toMap())
-            original.merge(KeyTree(y))
-            original.toMap().shouldNotBe(clone.toMap())
+    @Test
+    fun `KeyTree -- merge`() {
+        Fixture("type Query { x:Int, q:Query }") {
+            val xk = key("Query", "x")
+            val qk = key("Query", "q")
+            val tk = key("Query", "__typename")
+
+            // empty
+            assertEquals(
+                emptyMap<FieldKey, Any?>(),
+                KeyTree().merge(KeyTree()).toMap()
+            )
+
+            // same selections
+            assertEquals(
+                mapOf(xk to null),
+                KeyTree(xk).merge(KeyTree(xk)).toMap()
+            )
+
+            // compatible selections
+            assertEquals(
+                mapOf(xk to null, tk to null),
+                KeyTree(xk).merge(KeyTree(tk)).toMap()
+            )
+
+            // nested selections
+            let {
+                val a = KeyTree(qk).also { tree -> tree.merge(qk, KeyTree(xk)) }
+                val b = KeyTree(qk).also { tree -> tree.merge(qk, KeyTree(tk)) }
+
+                val result = a.merge(b).toMap()
+                assertEquals(
+                    mapOf(
+                        qk to mapOf(xk to null, tk to null)
+                    ),
+                    result
+                )
+            }
         }
     }
 
-    test("SelectionsBuilder emits scalar and aliased fields") {
-        DocumentBuilderFixture("type Query { x: Int }").run {
-            selections.add(FieldSelection(key("Query", "x")))
-            assertDocument("{ x }")
-        }
-        DocumentBuilderFixture("type Query { x: Int }").run {
-            selections.add(FieldSelection(key("Query", "x", "alias")))
-            assertDocument("{ alias: x }")
+    @Test
+    fun `KeyTree -- clone`() {
+        Fixture("type Query { x:Int y:Int}") {
+            val xk = key("Query", "x")
+            val yk = key("Query", "y")
+
+            val t1 = KeyTree(xk)
+            val t2 = t1.clone()
+            assertEquals(t1.toMap(), t2.toMap())
+
+            t1.merge(KeyTree(yk))
+            assertNotEquals(t1.toMap(), t2.toMap())
         }
     }
 
-    test("SelectionsBuilder emits nested object selections") {
-        DocumentBuilderFixture("type Obj { y: Int } type Query { obj: Obj }").run {
-            val objectKey = key("Query", "obj")
-            val scope = selections.newFieldScope(objectKey)
-            scope.add(FieldSelection(key("Obj", "y")))
-            selections.add(FieldSelection(objectKey, scope))
+    @Test
+    fun `SelectionsBuilder -- add scalar field`() {
+        Fixture("type Query { x:Int }") {
+            sb.add(FieldSelection(key("Query", "x")))
+            assertDocument("{x}")
+        }
+    }
+
+    @Test
+    fun `SelectionsBuilder -- add aliased scalar`() {
+        Fixture("type Query { x:Int }") {
+            val xKey = field("Query", "x").key("alias")
+            sb.add(FieldSelection(xKey))
+            assertDocument("{alias: x}")
+        }
+    }
+
+    @Test
+    fun `SelectionsBuilder -- add object field`() {
+        Fixture(
+            """
+                type Obj { y:Int }
+                type Query { obj:Obj }
+            """.trimIndent()
+        ) {
+            val objk = key("Query", "obj")
+            val yk = key("Obj", "y")
+            val objs = sb.newFieldScope(objk)
+            objs.add(FieldSelection(yk))
+            sb.add(FieldSelection(objk, objs))
+
             assertDocument("{ obj { y } }")
         }
     }
 
-    test("SelectionsBuilder emits typed and untyped inline fragments") {
-        DocumentBuilderFixture("type Query { x: Int }").run {
-            selections.add(InlineFragmentSelection(null, listOf(FieldSelection(key("Query", "x")))))
+    @Test
+    fun `SelectionsBuilder -- add untyped inline fragment`() {
+        Fixture("type Query { x:Int }") {
+            sb.add(
+                InlineFragmentSelection(
+                    null,
+                    listOf(
+                        FieldSelection(key("Query", "x"))
+                    )
+                )
+            )
             assertDocument("{ ... { x } }")
         }
-        DocumentBuilderFixture("type Query { x: Int }").run {
-            selections.add(InlineFragmentSelection("Query", listOf(FieldSelection(key("Query", "x")))))
+    }
+
+    @Test
+    fun `SelectionsBuilder -- add typed inline fragment`() {
+        Fixture("type Query { x:Int }") {
+            sb.add(
+                InlineFragmentSelection(
+                    "Query",
+                    listOf(
+                        FieldSelection(key("Query", "x"))
+                    )
+                )
+            )
             assertDocument("{ ... on Query { x } }")
         }
     }
 
-    test("DocumentBuilder emits reusable fragment definitions") {
-        DocumentBuilderFixture("type Query { x: Int }").run {
-            val scope = selections.newSpreadScope()
-            scope.add(FieldSelection(key("Query", "x")))
-            fragments += FragmentDef("Frag", schema.queryType, scope, emptyList(), emptyList())
-            selections.add(FragmentSpreadSelection("Frag", scope.selections))
-            selections.add(FragmentSpreadSelection("Frag", scope.selections))
-            selections.add(FieldSelection(key("Query", "x")))
-            assertDocument("{ ... Frag ... Frag x } fragment Frag on Query { x }")
+    @Test
+    fun `SelectionsBuilder -- add fragment spread`() {
+        Fixture("type Query { x:Int }") {
+            val defScope = sb.newSpreadScope()
+            defScope.add(FieldSelection(key("Query", "x")))
+            val frag = FragmentDef(
+                "Frag",
+                query,
+                defScope,
+                emptyList(),
+                emptyList()
+            )
+            fragments += frag
+            FragmentSpreadSelection("Frag", defScope.selections)
+
+            sb.add(FragmentSpreadSelection("Frag", defScope.selections))
+            sb.add(FragmentSpreadSelection("Frag", defScope.selections))
+            sb.add(FieldSelection(key("Query", "x")))
+
+            assertDocument(
+                """
+                    {
+                        ... Frag
+                        ... Frag
+                        x
+                    }
+                    fragment Frag on Query { x }
+                """.trimIndent()
+            )
         }
     }
 
-    test("SelectionsBuilder checks aliases and arguments before adding fields") {
-        DocumentBuilderFixture("type Query { x(arg: Int): Int }").run {
-            val x = field("Query", "x").key()
-            selections.canAdd(x).shouldBe(true)
-            selections.add(FieldSelection(x))
-            selections.canAdd(x.copy()).shouldBe(true)
-            selections.canAdd(x.copy(alias = "alias")).shouldBe(true)
-            val withNull = setOf(ArgumentKey(Argument("arg", NullValue.of())))
-            selections.canAdd(x.copy(arguments = withNull)).shouldBe(false)
-            selections.canAdd(x.copy(alias = "alias", arguments = withNull)).shouldBe(true)
+    @Test
+    fun `SelectionsBuilder -- canAdd key`() {
+        Fixture("type Query { x(arg:Int):Int }") {
+            val xk = field("Query", "x").key()
+            assertTrue(sb.canAdd(xk))
+            sb.add(FieldSelection(xk))
+
+            // can add key with same key values
+            assertTrue(sb.canAdd(xk.copy()))
+
+            // can add key with an unused alias
+            assertTrue(sb.canAdd(xk.copy(alias = "alias")))
+
+            // cannot add key with different arguments
+            assertFalse(sb.canAdd(xk.copy(arguments = setOf(ArgumentKey(Argument("arg", NullValue.of()))))))
+
+            // can add key with an unused alias and different arguments
+            assertTrue(sb.canAdd(xk.copy(alias = "alias", arguments = setOf(ArgumentKey(Argument("arg", NullValue.of()))))))
         }
     }
 
-    test("field scopes share merge constraints without losing local selections") {
-        DocumentBuilderFixture("type Obj { x: Int, y: Int, z: Int } type Query { obj: Obj }").run {
-            val objectKey = key("Query", "obj")
-            val firstScope = SelectionsBuilder(listOf(FieldSelection(key("Obj", "x"))))
-            selections.add(FieldSelection(objectKey, firstScope))
+    @Test
+    fun `SelectionsBuilder -- canAdd fieldScope`() {
+        Fixture(
+            """
+                type Obj { x:Int, y:Int, z:Int }
+                type Query { obj:Obj }
+            """.trimIndent()
+        ) {
+            // construct a selection set like:
+            //    {
+            //      obj { x }
+            //      obj { y }
+            //      obj { z }
+            //    }
+            val objk = key("Query", "obj")
+            sb.add(
+                FieldSelection(
+                    objk,
+                    SelectionsBuilder(
+                        listOf(
+                            FieldSelection(key("Obj", "x"), null)
+                        )
+                    )
+                )
+            )
 
-            val secondScope = selections.newFieldScope(objectKey)
-            secondScope.canAdd(key("Obj", "x", "__typename")).shouldBe(true)
-            secondScope.canAdd(key("Obj", "__typename", "x")).shouldBe(false)
-            secondScope.add(FieldSelection(key("Obj", "y")))
-            selections.add(FieldSelection(objectKey, secondScope))
+            assertDocument("{ obj { x } }")
 
-            val thirdScope = selections.newFieldScope(objectKey)
-            thirdScope.canAdd(key("Obj", "__typename", "x")).shouldBe(false)
-            thirdScope.canAdd(key("Obj", "__typename", "y")).shouldBe(false)
-            thirdScope.add(FieldSelection(key("Obj", "z")))
-            selections.add(FieldSelection(objectKey, thirdScope))
-            assertDocument("{ obj { x } obj { y } obj { z } }")
+            sb.newFieldScope(objk).also { obj2 ->
+                // can add `x`, which is mergeable with selection x above
+                assertTrue(obj2.canAdd(key("Obj", "x", "__typename")))
+                // cannot add `x:__typename`, which would conflict with selection above
+                assertFalse(obj2.canAdd(key("Obj", "__typename", "x")))
+                obj2.add(FieldSelection(key("Obj", "y")))
+
+                FieldSelection(objk, obj2).also {
+                    assertTrue(sb.canAdd(it))
+                    sb.add(it)
+                }
+            }
+
+            assertDocument(
+                """
+                    {
+                        obj { x }
+                        obj { y }
+                    }
+                """.trimIndent()
+            )
+
+            sb.newFieldScope(objk).also { obj3 ->
+                // cannot add `x:__typename`, which would conflict with selection above
+                assertFalse(obj3.canAdd(key("Obj", "__typename", "x")))
+                assertFalse(obj3.canAdd(key("Obj", "__typename", "y")))
+                obj3.add(FieldSelection(key("Obj", "z")))
+
+                FieldSelection(objk, obj3).also {
+                    assertTrue(sb.canAdd(it))
+                    sb.add(it)
+                }
+            }
+
+            assertDocument(
+                """
+                    {
+                        obj { x }
+                        obj { y }
+                        obj { z }
+                    }
+                """.trimIndent()
+            )
         }
-    }
-})
-
-private class DocumentBuilderFixture(sdl: String) {
-    val schema = parseTestSchema(sdl)
-    private val schemas = Schemas(schema)
-    val fragments = Fragments(schemas)
-    val selections = SelectionsBuilder()
-
-    fun field(type: String, fieldName: String): GraphQLFieldDefinition {
-        if (fieldName == Introspection.TypeNameMetaFieldDef.name) return Introspection.TypeNameMetaFieldDef
-        return requireNotNull(schema.getFieldDefinition(FieldCoordinates.coordinates(type, fieldName)))
-    }
-
-    fun key(
-        type: String,
-        fieldName: String,
-        alias: String? = null,
-        vararg arguments: Argument
-    ): FieldKey = field(type, fieldName).key(alias, arguments.toSet())
-
-    fun typeExpr(name: String): TypeExpr = TypeExpr(requireNotNull(schema.getType(name)) as graphql.schema.GraphQLOutputType)
-
-    fun assertDocument(expected: String) {
-        val builder = DocumentBuilder(schemas, fragments)
-        builder.add(
-            OperationDefinition.newOperationDefinition()
-                .operation(OperationDefinition.Operation.QUERY)
-                .selectionSet(selections.build())
-                .build()
-        )
-        val expectedDocument = Parser().parseDocument(expected)
-        AstPrinter.printAst(builder.build()).shouldBe(AstPrinter.printAst(expectedDocument))
     }
 }
