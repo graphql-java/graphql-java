@@ -4,6 +4,8 @@ import graphql.Internal;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Set;
+
 /**
  * An immutable terminal mapping from one source vertex ID to its outgoing edges.
  *
@@ -49,6 +51,16 @@ public final class EdgeMapLeaf implements EdgeMapNode {
     @Override
     public @Nullable EdgeMapNode remove(int requestedKey, int requestedHash, int shift) {
         return key == requestedKey ? null : this;
+    }
+
+    @Override
+    public void visitEntries(
+            Set<EdgeMapNode> visitedNodes,
+            EdgeMapEntryVisitor visitor) {
+        if (!visitedNodes.add(this)) {
+            return;
+        }
+        visitor.visit(key, value);
     }
 
     /**

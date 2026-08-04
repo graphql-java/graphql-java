@@ -5,6 +5,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Set;
 
 /**
  * An immutable, bitmap-compressed 32-way branch in the persistent edge map.
@@ -106,6 +107,18 @@ public final class EdgeMapBranch implements EdgeMapNode {
             return new EdgeMapBranch(bitmap, newChildren);
         }
         return removeChild(bit, index);
+    }
+
+    @Override
+    public void visitEntries(
+            Set<EdgeMapNode> visitedNodes,
+            EdgeMapEntryVisitor visitor) {
+        if (!visitedNodes.add(this)) {
+            return;
+        }
+        for (EdgeMapNode child : children) {
+            child.visitEntries(visitedNodes, visitor);
+        }
     }
 
     private EdgeMapNode insert(int bit, int index, EdgeMapNode child) {

@@ -4,6 +4,10 @@ import graphql.Internal;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Set;
+
+import static graphql.Assert.assertNotNull;
+
 /**
  * An immutable map from source vertex IDs to complete outgoing {@link PackedEdgeSet}s.
  *
@@ -92,6 +96,25 @@ public final class PersistentEdgeMap {
         }
         EdgeMapNode newRoot = root.remove(key, mix(key), 0);
         return root == newRoot ? this : new PersistentEdgeMap(newRoot);
+    }
+
+    /**
+     * Visits every entry not already covered by a structurally shared node in another map.
+     *
+     * <p>The supplied set must use identity equality. Reusing it across schema snapshots avoids
+     * revisiting unchanged HAMT subtrees.</p>
+     *
+     * @param visitedNodes identity-based set of previously visited nodes
+     * @param visitor the entry visitor
+     */
+    public void visitUniqueEntries(
+            Set<EdgeMapNode> visitedNodes,
+            EdgeMapEntryVisitor visitor) {
+        assertNotNull(visitedNodes);
+        assertNotNull(visitor);
+        if (root != null) {
+            root.visitEntries(visitedNodes, visitor);
+        }
     }
 
     private static int mix(int value) {

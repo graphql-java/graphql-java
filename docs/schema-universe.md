@@ -19,9 +19,10 @@ small edits. This is materially different from reconciling unrelated schemas.
 
 ## Model
 
-`SchemaUniverse` is an append-only vertex arena. Every vertex receives a dense integer ID. There is
-one Java vertex type for each supported GraphQL schema-element kind. A vertex contains intrinsic
-scalar properties such as kind, name, and description, but no child references.
+`SchemaUniverse` is a chunked vertex arena. Every vertex receives a monotonically increasing integer
+ID. Cleanup can reclaim unused vertices and leave holes, but IDs are never reused. There is one Java
+vertex type for each supported GraphQL schema-element kind. A vertex contains intrinsic scalar
+properties such as kind, name, and description, but no child references.
 
 `SUSchema` is an immutable adjacency snapshot plus a schema-specific root vertex. The
 effective schema is the graph reachable from that root. Root edges identify operation roots,
@@ -106,8 +107,8 @@ adjacency:
 | Publish `k` changed sources | `O(k log32 V)` | copied trie paths plus `k` arrays |
 | Derive with no type edits | effectively root replacement | one root array and two copied trie paths |
 
-The append-only vertex arena uses chunked arrays. Vertex creation is serialized; published vertex
-and schema reads are lock-free.
+The vertex arena uses chunked arrays. Vertex creation and cleanup are serialized; published vertex
+and registered-schema reads are lock-free.
 
 ## Why this representation
 
@@ -186,20 +187,25 @@ intrinsic payloads before round-trip conversion can be lossless.
 
 ## Lifecycle and compaction
 
-The prototype currently retains vertex history after schemas are removed. A schema is live exactly
-while its exact instance is present in the universe registry; holding an external Java reference
-does not extend its lifetime. Production lifecycle support should use one of these policies:
+Removing a schema does not immediately scan or reclaim vertices. A schema is live exactly while its
+exact instance is present in the universe registry; holding an external Java reference does not
+extend its lifetime. `cleanupUnusedVertices()` periodically reclaims vertices unused by registered
+schemas.
 
-1. Retain all versions for a bounded universe.
-2. Periodically mark vertices and stored adjacency used by registered snapshots, then reclaim the
-   remainder.
-3. Compact live schemas into a new universe, optionally using CSR or a succinct frozen format.
+Cleanup marks every registered root and every source and target in the registered snapshots'
+complete persistent edge maps. It identity-deduplicates structurally shared HAMT nodes, so unchanged
+subtrees are scanned once rather than once per schema. Applied-directive argument type IDs are
+marked separately because those references are intrinsic values rather than edges.
 
 Marking must include dormant adjacency retained by a registered snapshot, not only the effective
 graph reachable from its root. Otherwise cleanup would break the supported constant-scope
-reattachment of unchanged subgraphs. Compaction is preferable to per-edit reference counting unless
-schema deletion is frequent, because reference counts add writes and contention to every
-transformation.
+reattachment of unchanged subgraphs. The sweep clears unmarked arena slots and releases empty
+chunks. Reclaimed IDs remain invalid permanently, while `getVertexCount()` reports retained
+vertices. Cleanup must not overlap schema construction, import, or transformation; reads through
+registered schemas can continue.
+
+For long-lived universes with enough churn that sparse IDs or the monotonic ID limit become
+material, compacting registered schemas into a new universe remains a possible archival operation.
 
 ## Required measurements
 

@@ -4,6 +4,8 @@ import graphql.Internal;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Set;
+
 /**
  * A node in the persistent map from source vertex IDs to their complete outgoing edge sets.
  *
@@ -53,4 +55,13 @@ public interface EdgeMapNode {
      * @return this node when the key is absent, a replacement node, or {@code null} if empty
      */
     @Nullable EdgeMapNode remove(int key, int hash, int shift);
+
+    /**
+     * Visits entries below this node unless the node was already visited through another
+     * structurally shared map.
+     *
+     * @param visitedNodes identity-based set of previously visited nodes
+     * @param visitor the entry visitor
+     */
+    void visitEntries(Set<EdgeMapNode> visitedNodes, EdgeMapEntryVisitor visitor);
 }

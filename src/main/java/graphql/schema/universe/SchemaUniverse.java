@@ -1,5 +1,6 @@
 package graphql.schema.universe;
 
+import graphql.AssertException;
 import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
@@ -15,8 +16,10 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,12 +33,13 @@ import static graphql.Assert.assertValidName;
 import static graphql.util.Interning.intern;
 
 /**
- * A store of append-only schema vertices shared by many immutable schema snapshots.
+ * A store of schema vertices shared by many immutable schema snapshots.
  *
  * <p>A universe is safe for concurrent readers. Vertex creation is serialized, while reading a
  * published vertex or schema does not require locking. A schema is supported only while its exact
  * instance is registered in the universe. Removing a schema ends that supported lifetime, although
- * its vertices are not reclaimed by the removal operation itself.</p>
+ * its vertices are not reclaimed by the removal operation itself. Vertex IDs increase
+ * monotonically and are never reused, including after unused vertices are reclaimed.</p>
  */
 @ExperimentalApi
 @NullMarked
@@ -49,8 +53,10 @@ public final class SchemaUniverse {
     private final Map<String, Integer> nameIds = new ConcurrentHashMap<>();
     private final Map<String, SUSchema> schemasByName = new ConcurrentHashMap<>();
     private final ConcurrentLinkedQueue<SUSchema> schemas = new ConcurrentLinkedQueue<>();
-    private volatile SUVertex[][] vertexChunks = new SUVertex[1][];
+    private volatile VertexChunk[] vertexChunks =
+            new VertexChunk[]{VertexChunk.empty()};
     private volatile int vertexCount;
+    private volatile int nextVertexId;
     private int nextNameId = 1;
 
     public SUSchemaBuilder newSchema(String name) {
@@ -125,13 +131,39 @@ public final class SchemaUniverse {
         return Collections.unmodifiableMap(result);
     }
 
+    /**
+     * Reclaims vertices that are unused by every registered schema.
+     *
+     * <p>Liveness includes each registered schema root, every source and target in its complete
+     * stored adjacency, and input types referenced by applied-directive arguments. Complete stored
+     * adjacency is considered so dormant subgraphs remain available for later transformations.</p>
+     *
+     * <p>Reclaimed vertex IDs are never reused. This operation may therefore leave holes in the
+     * chunked vertex arena. It must not run concurrently with schema construction, importing, or
+     * transformation. Registered schemas may be read concurrently.</p>
+     *
+     * @return the number of vertices reclaimed
+     */
+    public synchronized int cleanupUnusedVertices() {
+        BitSet liveVertexIds = new BitSet();
+        Set<EdgeMapNode> visitedNodes =
+                Collections.newSetFromMap(new IdentityHashMap<>());
+        for (SUSchema schema : schemas) {
+            markVertex(liveVertexIds, schema.getRoot().getId());
+            schema.getEdgeMap().visitUniqueEntries(
+                    visitedNodes,
+                    (sourceId, edges) -> markEdgeBinding(liveVertexIds, sourceId, edges));
+        }
+        return sweepUnusedVertices(liveVertexIds);
+    }
+
     public synchronized SUObjectType newObjectType(String name) {
         return newObjectType(name, null);
     }
 
     public synchronized SUObjectType newObjectType(String name, @Nullable String description) {
         String validName = named(name);
-        SUObjectType vertex = new SUObjectType(vertexCount, nameId(validName), validName, description);
+        SUObjectType vertex = new SUObjectType(nextVertexId, nameId(validName), validName, description);
         return append(vertex);
     }
 
@@ -141,7 +173,7 @@ public final class SchemaUniverse {
 
     public synchronized SUField newField(String name, @Nullable String description) {
         String validName = named(name);
-        SUField vertex = new SUField(vertexCount, nameId(validName), validName, description);
+        SUField vertex = new SUField(nextVertexId, nameId(validName), validName, description);
         return append(vertex);
     }
 
@@ -151,7 +183,7 @@ public final class SchemaUniverse {
 
     public synchronized SUInterfaceType newInterfaceType(String name, @Nullable String description) {
         String validName = named(name);
-        SUInterfaceType vertex = new SUInterfaceType(vertexCount, nameId(validName), validName, description);
+        SUInterfaceType vertex = new SUInterfaceType(nextVertexId, nameId(validName), validName, description);
         return append(vertex);
     }
 
@@ -161,7 +193,7 @@ public final class SchemaUniverse {
 
     public synchronized SUUnionType newUnionType(String name, @Nullable String description) {
         String validName = named(name);
-        SUUnionType vertex = new SUUnionType(vertexCount, nameId(validName), validName, description);
+        SUUnionType vertex = new SUUnionType(nextVertexId, nameId(validName), validName, description);
         return append(vertex);
     }
 
@@ -171,7 +203,7 @@ public final class SchemaUniverse {
 
     public synchronized SUEnumType newEnumType(String name, @Nullable String description) {
         String validName = named(name);
-        SUEnumType vertex = new SUEnumType(vertexCount, nameId(validName), validName, description);
+        SUEnumType vertex = new SUEnumType(nextVertexId, nameId(validName), validName, description);
         return append(vertex);
     }
 
@@ -181,7 +213,7 @@ public final class SchemaUniverse {
 
     public synchronized SUEnumValue newEnumValue(String name, @Nullable String description) {
         String validName = named(name);
-        SUEnumValue vertex = new SUEnumValue(vertexCount, nameId(validName), validName, description);
+        SUEnumValue vertex = new SUEnumValue(nextVertexId, nameId(validName), validName, description);
         return append(vertex);
     }
 
@@ -191,7 +223,7 @@ public final class SchemaUniverse {
 
     public synchronized SUScalarType newScalarType(String name, @Nullable String description) {
         String validName = named(name);
-        SUScalarType vertex = new SUScalarType(vertexCount, nameId(validName), validName, description);
+        SUScalarType vertex = new SUScalarType(nextVertexId, nameId(validName), validName, description);
         return append(vertex);
     }
 
@@ -201,7 +233,7 @@ public final class SchemaUniverse {
 
     public synchronized SUInputObjectType newInputObjectType(String name, @Nullable String description) {
         String validName = named(name);
-        SUInputObjectType vertex = new SUInputObjectType(vertexCount, nameId(validName), validName, description);
+        SUInputObjectType vertex = new SUInputObjectType(nextVertexId, nameId(validName), validName, description);
         return append(vertex);
     }
 
@@ -227,7 +259,7 @@ public final class SchemaUniverse {
             @Nullable InputValueDefinition definition) {
         String validName = named(name);
         SUInputField vertex = new SUInputField(
-                vertexCount,
+                nextVertexId,
                 nameId(validName),
                 validName,
                 description,
@@ -258,7 +290,7 @@ public final class SchemaUniverse {
             @Nullable InputValueDefinition definition) {
         String validName = named(name);
         SUArgument vertex = new SUArgument(
-                vertexCount,
+                nextVertexId,
                 nameId(validName),
                 validName,
                 description,
@@ -291,7 +323,7 @@ public final class SchemaUniverse {
             @Nullable DirectiveDefinition definition) {
         String validName = named(name);
         SUDirective vertex = new SUDirective(
-                vertexCount,
+                nextVertexId,
                 nameId(validName),
                 validName,
                 description,
@@ -336,7 +368,7 @@ public final class SchemaUniverse {
         }
         SUAppliedDirective vertex =
                 new SUAppliedDirective(
-                        vertexCount,
+                        nextVertexId,
                         nameId(validName),
                         validName,
                         definition,
@@ -377,22 +409,41 @@ public final class SchemaUniverse {
     }
 
     public synchronized SUListType newListType() {
-        return append(new SUListType(vertexCount));
+        return append(new SUListType(nextVertexId));
     }
 
     public synchronized SUNonNullType newNonNullType() {
-        return append(new SUNonNullType(vertexCount));
+        return append(new SUNonNullType(nextVertexId));
     }
 
+    /**
+     * Returns the number of vertices currently retained by this universe.
+     *
+     * <p>This is not an ID allocation bound because cleanup can leave holes and IDs are never
+     * reused.</p>
+     *
+     * @return the number of retained vertices
+     */
     public int getVertexCount() {
         return vertexCount;
     }
 
+    /**
+     * Returns a retained vertex by its stable ID.
+     *
+     * @param id the vertex ID
+     *
+     * @return the retained vertex
+     *
+     * @throws AssertException if the ID is unknown or has been reclaimed
+     */
     public SUVertex getVertex(int id) {
-        int currentSize = vertexCount;
-        assertTrue(id >= 0 && id < currentSize, "Unknown schema universe vertex id %s", id);
-        SUVertex[][] chunks = vertexChunks;
-        return assertNotNull(chunks[id >>> VERTEX_CHUNK_SHIFT][id & VERTEX_CHUNK_MASK]);
+        int currentLimit = nextVertexId;
+        assertTrue(id >= 0 && id < currentLimit, "Unknown schema universe vertex id %s", id);
+        return assertNotNull(
+                vertexOrNull(id),
+                "Schema universe vertex id %s has been reclaimed",
+                id);
     }
 
     @Internal
@@ -404,7 +455,7 @@ public final class SchemaUniverse {
     @Internal
     public boolean owns(SUVertex vertex) {
         int id = vertex.getId();
-        return id >= 0 && id < vertexCount && getVertex(id) == vertex;
+        return id >= 0 && id < nextVertexId && vertexOrNull(id) == vertex;
     }
 
     @Internal
@@ -431,7 +482,7 @@ public final class SchemaUniverse {
 
     private synchronized SUSchemaRoot newSchemaRoot(String name, @Nullable String description) {
         String validName = named(name);
-        SUSchemaRoot root = new SUSchemaRoot(vertexCount, nameId(validName), validName, description);
+        SUSchemaRoot root = new SUSchemaRoot(nextVertexId, nameId(validName), validName, description);
         return append(root);
     }
 
@@ -460,21 +511,92 @@ public final class SchemaUniverse {
 
     private <T extends SUVertex> T append(T vertex) {
         int id = vertex.getId();
+        assertTrue(id == nextVertexId, "Unexpected schema universe vertex id %s", id);
         int chunkIndex = id >>> VERTEX_CHUNK_SHIFT;
         ensureChunk(chunkIndex);
-        vertexChunks[chunkIndex][id & VERTEX_CHUNK_MASK] = vertex;
-        vertexCount = id + 1;
+        vertexChunks[chunkIndex].set(id & VERTEX_CHUNK_MASK, vertex);
+        nextVertexId = id + 1;
+        vertexCount++;
         return vertex;
     }
 
-    private void ensureChunk(int chunkIndex) {
-        SUVertex[][] chunks = vertexChunks;
+    private void markEdgeBinding(
+            BitSet liveVertexIds,
+            int sourceId,
+            PackedEdgeSet edges) {
+        markVertex(liveVertexIds, sourceId);
+        for (int i = 0; i < edges.size(); i++) {
+            markVertex(liveVertexIds, edges.targetIdAt(i));
+        }
+    }
+
+    private void markVertex(BitSet liveVertexIds, int id) {
+        if (liveVertexIds.get(id)) {
+            return;
+        }
+        SUVertex vertex = getVertex(id);
+        liveVertexIds.set(id);
+        if (!(vertex instanceof SUAppliedDirective)) {
+            return;
+        }
+        SUAppliedDirective directive = (SUAppliedDirective) vertex;
+        for (SUAppliedDirectiveArgument argument : directive.getArguments()) {
+            markVertex(liveVertexIds, argument.getTypeId());
+        }
+    }
+
+    private int sweepUnusedVertices(BitSet liveVertexIds) {
+        VertexChunk[] chunks = vertexChunks;
+        int removed = 0;
+        int lastOccupiedChunk = -1;
+        for (int chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
+            VertexChunk chunk = chunks[chunkIndex];
+            if (!chunk.isAllocated()) {
+                continue;
+            }
+            int firstId = chunkIndex << VERTEX_CHUNK_SHIFT;
+            int slotCount = Math.min(VERTEX_CHUNK_SIZE, nextVertexId - firstId);
+            removed += chunk.reclaimUnmarked(liveVertexIds, firstId, slotCount);
+            if (chunk.hasVertices()) {
+                lastOccupiedChunk = chunkIndex;
+                continue;
+            }
+            chunks[chunkIndex] = VertexChunk.empty();
+        }
+        int retainedChunkCount = Math.max(1, lastOccupiedChunk + 1);
+        if (retainedChunkCount < chunks.length) {
+            chunks = Arrays.copyOf(chunks, retainedChunkCount);
+        }
+        vertexCount -= removed;
+        vertexChunks = chunks;
+        return removed;
+    }
+
+    private @Nullable SUVertex vertexOrNull(int id) {
+        VertexChunk[] chunks = vertexChunks;
+        int chunkIndex = id >>> VERTEX_CHUNK_SHIFT;
         if (chunkIndex >= chunks.length) {
-            chunks = Arrays.copyOf(chunks, Math.max(chunkIndex + 1, chunks.length * 2));
+            return null;
+        }
+        VertexChunk chunk = chunks[chunkIndex];
+        if (!chunk.isAllocated()) {
+            return null;
+        }
+        return chunk.get(id & VERTEX_CHUNK_MASK);
+    }
+
+    private void ensureChunk(int chunkIndex) {
+        VertexChunk[] chunks = vertexChunks;
+        if (chunkIndex >= chunks.length) {
+            int oldLength = chunks.length;
+            chunks = Arrays.copyOf(
+                    chunks,
+                    Math.max(chunkIndex + 1, chunks.length * 2));
+            Arrays.fill(chunks, oldLength, chunks.length, VertexChunk.empty());
             vertexChunks = chunks;
         }
-        if (chunks[chunkIndex] == null) {
-            chunks[chunkIndex] = new SUVertex[VERTEX_CHUNK_SIZE];
+        if (!chunks[chunkIndex].isAllocated()) {
+            chunks[chunkIndex] = new VertexChunk(VERTEX_CHUNK_SIZE);
         }
     }
 }
