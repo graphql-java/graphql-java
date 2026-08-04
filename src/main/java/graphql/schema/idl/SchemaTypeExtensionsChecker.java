@@ -3,7 +3,9 @@ package graphql.schema.idl;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.language.Argument;
+import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
+import graphql.language.DirectiveExtensionDefinition;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
@@ -17,6 +19,8 @@ import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
+import graphql.schema.idl.errors.DirectiveExtensionDirectiveRedefinitionError;
+import graphql.schema.idl.errors.DirectiveExtensionMissingBaseError;
 import graphql.schema.idl.errors.MissingTypeError;
 import graphql.schema.idl.errors.NonUniqueArgumentError;
 import graphql.schema.idl.errors.NonUniqueNameError;
@@ -44,12 +48,51 @@ class SchemaTypeExtensionsChecker {
 
     void checkTypeExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         Map<String, DirectiveDefinition> directiveDefinitionMap = typeRegistry.getDirectiveDefinitions();
+        checkDirectiveExtensions(errors, typeRegistry, directiveDefinitionMap);
         checkObjectTypeExtensions(errors, typeRegistry, directiveDefinitionMap);
         checkInterfaceTypeExtensions(errors, typeRegistry, directiveDefinitionMap);
         checkUnionTypeExtensions(errors, typeRegistry, directiveDefinitionMap);
         checkEnumTypeExtensions(errors, typeRegistry, directiveDefinitionMap);
         checkScalarTypeExtensions(errors, typeRegistry, directiveDefinitionMap);
         checkInputObjectTypeExtensions(errors, typeRegistry, directiveDefinitionMap);
+    }
+
+    private void checkDirectiveExtensions(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, Map<String, DirectiveDefinition> directiveDefinitions) {
+        typeRegistry.directiveExtensions().forEach((name, extensions) -> {
+            if (!directiveDefinitions.containsKey(name)) {
+                errors.add(new DirectiveExtensionMissingBaseError(extensions.get(0)));
+            }
+        });
+
+        directiveDefinitions.values().forEach(definition ->
+                checkDirectiveApplicationsAreUnique(errors, definition, typeRegistry.directiveExtensions()
+                        .getOrDefault(definition.getName(), List.of()), directiveDefinitions));
+    }
+
+    private void checkDirectiveApplicationsAreUnique(List<GraphQLError> errors,
+                                                     DirectiveDefinition definition,
+                                                     List<DirectiveExtensionDefinition> extensions,
+                                                     Map<String, DirectiveDefinition> directiveDefinitions) {
+        Set<String> seen = new HashSet<>();
+        checkDirectiveApplicationsAreUnique(errors, definition, definition.getDirectives(), directiveDefinitions, seen);
+        extensions.forEach(extension ->
+                checkDirectiveApplicationsAreUnique(errors, extension, extension.getDirectives(), directiveDefinitions, seen));
+    }
+
+    private void checkDirectiveApplicationsAreUnique(List<GraphQLError> errors,
+                                                     DirectiveDefinition owner,
+                                                     List<Directive> directives,
+                                                     Map<String, DirectiveDefinition> directiveDefinitions,
+                                                     Set<String> seen) {
+        directives.forEach(directive -> {
+            DirectiveDefinition appliedDefinition = directiveDefinitions.get(directive.getName());
+            if (appliedDefinition == null || appliedDefinition.isRepeatable()) {
+                return;
+            }
+            if (!seen.add(directive.getName())) {
+                errors.add(new DirectiveExtensionDirectiveRedefinitionError(owner, directive));
+            }
+        });
     }
 
 

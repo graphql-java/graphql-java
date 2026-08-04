@@ -1388,6 +1388,24 @@ public interface SchemaDifference {
         }
     }
 
+    class AppliedDirectiveDirectiveLocation implements AppliedDirectiveLocationDetail {
+        private final String directiveDefinitionName;
+        private final String directiveName;
+
+        public AppliedDirectiveDirectiveLocation(String directiveDefinitionName, String directiveName) {
+            this.directiveDefinitionName = directiveDefinitionName;
+            this.directiveName = directiveName;
+        }
+
+        public String getDirectiveDefinitionName() {
+            return directiveDefinitionName;
+        }
+
+        public String getDirectiveName() {
+            return directiveName;
+        }
+    }
+
     class AppliedDirectiveDirectiveArgumentLocation implements AppliedDirectiveLocationDetail {
         // this is the applied directive name
         private final String directiveName;

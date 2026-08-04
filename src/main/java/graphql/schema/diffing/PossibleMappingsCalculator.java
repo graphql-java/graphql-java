@@ -417,6 +417,8 @@ public class PossibleMappingsCalculator {
                     case ARGUMENT:
                         Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(container);
                         return fieldOrDirective.getType() + "." + fieldOrDirective.getName();
+                    case DIRECTIVE:
+                        return DIRECTIVE;
                     case INPUT_OBJECT:
                         return INPUT_OBJECT;
                     case ENUM:
@@ -454,6 +456,7 @@ public class PossibleMappingsCalculator {
                     case ENUM_VALUE:
                     case UNION:
                     case SCALAR:
+                    case DIRECTIVE:
                         return "";
                     case ARGUMENT:
                         Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(container);
@@ -550,6 +553,8 @@ public class PossibleMappingsCalculator {
                     case ARGUMENT:
                         Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(container);
                         return fieldOrDirective.getType() + "." + fieldOrDirective.getName();
+                    case DIRECTIVE:
+                        return DIRECTIVE;
                     case INPUT_OBJECT:
                         return INPUT_OBJECT;
                     case ENUM:
@@ -588,6 +593,7 @@ public class PossibleMappingsCalculator {
                     case ENUM_VALUE:
                     case UNION:
                     case SCALAR:
+                    case DIRECTIVE:
                         return "";
                     case ARGUMENT:
                         Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(container);
