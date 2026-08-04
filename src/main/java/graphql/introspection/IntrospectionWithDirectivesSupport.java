@@ -32,6 +32,7 @@ import java.util.Set;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Scalars.GraphQLString;
+import static graphql.introspection.Introspection.__Directive;
 import static graphql.introspection.Introspection.__EnumValue;
 import static graphql.introspection.Introspection.__Field;
 import static graphql.introspection.Introspection.__InputValue;
@@ -82,7 +83,7 @@ public class IntrospectionWithDirectivesSupport {
     private final String typePrefix;
 
     private final Set<String> INTROSPECTION_ELEMENTS = ImmutableSet.of(
-            __Schema.getName(), __Type.getName(), __Field.getName(), __EnumValue.getName(), __InputValue.getName()
+            __Schema.getName(), __Type.getName(), __Field.getName(), __EnumValue.getName(), __InputValue.getName(), __Directive.getName()
     );
 
 
@@ -172,8 +173,10 @@ public class IntrospectionWithDirectivesSupport {
 
     private GraphQLSchema addDirectiveDefinitionFilter(GraphQLSchema schema) {
         DataFetcher<?> df = env -> {
-            List<GraphQLDirective> definedDirectives = env.getGraphQLSchema().getDirectives();
-            return filterDirectives(schema, true, null, definedDirectives);
+            GraphQLSchema graphQLSchema = env.getGraphQLSchema();
+            Boolean includeDeprecated = env.getArgument("includeDeprecated");
+            List<GraphQLDirective> definedDirectives = graphQLSchema.getDirectives();
+            return filterDirectives(graphQLSchema, true, null, definedDirectives, Boolean.TRUE.equals(includeDeprecated));
         };
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry().transform(bld ->
                 bld.dataFetcher(coordinates(__Schema, "directives"), df));
@@ -224,9 +227,12 @@ public class IntrospectionWithDirectivesSupport {
         return objectType;
     }
 
-    private List<GraphQLDirective> filterDirectives(GraphQLSchema schema, boolean isDefinedDirective, GraphQLDirectiveContainer container, List<GraphQLDirective> directives) {
+    private List<GraphQLDirective> filterDirectives(GraphQLSchema schema, boolean isDefinedDirective, GraphQLDirectiveContainer container, List<GraphQLDirective> directives, boolean includeDeprecated) {
         return ImmutableKit.filter(directives,
                 directive -> {
+                    if (!includeDeprecated && directive.isDeprecated()) {
+                        return false;
+                    }
                     DirectivePredicateEnvironment env = buildDirectivePredicateEnv(schema, isDefinedDirective, container, directive.getName());
                     return directivePredicate.isDirectiveIncluded(env);
                 });

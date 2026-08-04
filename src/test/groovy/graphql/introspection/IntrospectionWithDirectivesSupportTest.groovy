@@ -179,6 +179,56 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
         ]
     }
 
+    def "can find directives applied to directive definitions in introspection"() {
+        def sdl = '''
+            directive @meta(argName: String = "default") on DIRECTIVE_DEFINITION
+            directive @active on FIELD_DEFINITION
+            directive @old @deprecated on FIELD_DEFINITION
+            directive @target @meta(argName: "onDirective") on FIELD_DEFINITION
+
+            type Query {
+                hello: String
+            }
+        '''
+
+        def schema = TestUtil.schema(sdl)
+        schema = new IntrospectionWithDirectivesSupport().apply(schema)
+        def graphql = GraphQL.newGraphQL(schema).build()
+
+        def query = '''
+        {
+            __schema {
+                defaultDirectives: directives {
+                    name
+                }
+                allDirectives: directives(includeDeprecated: true) {
+                    name
+                    appliedDirectives {
+                        name
+                        args {
+                            name
+                            value
+                        }
+                    }
+                }
+            }
+        }
+        '''
+
+        when:
+        def er = graphql.execute(query)
+
+        then:
+        er.errors.isEmpty()
+        !er.data["__schema"]["defaultDirectives"]*.name.contains("old")
+        er.data["__schema"]["defaultDirectives"]*.name.contains("target")
+
+        def allDirectives = er.data["__schema"]["allDirectives"]
+        allDirectives*.name.contains("old")
+        def target = allDirectives.find { directive -> directive["name"] == "target" }
+        target["appliedDirectives"] == [[name: "meta", args: [[name: "argName", value: '"onDirective"']]]]
+    }
+
     def "can set prefixes onto the Applied types"() {
         def sdl = '''
             type Query {
