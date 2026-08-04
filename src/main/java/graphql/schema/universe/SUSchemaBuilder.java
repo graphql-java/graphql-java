@@ -1,5 +1,6 @@
 package graphql.schema.universe;
 
+import com.google.common.collect.ImmutableMap;
 import graphql.ExperimentalApi;
 import graphql.Internal;
 import org.jspecify.annotations.NullMarked;
@@ -23,6 +24,8 @@ public final class SUSchemaBuilder {
     private final SUSchemaRoot root;
     private final @Nullable SUSchema baseSchema;
     private final Map<Integer, MutablePackedEdgeSet> changedEdges = new LinkedHashMap<>();
+    private final Map<Integer, LinkedHashMap<String, Object>> changedVertexMetadata =
+            new LinkedHashMap<>();
     private boolean built;
 
     @Internal
@@ -34,6 +37,7 @@ public final class SUSchemaBuilder {
         this.root = assertNotNull(root);
         this.baseSchema = baseSchema;
         copyRootEdges(baseSchema);
+        copyRootMetadata(baseSchema);
     }
 
     public SUSchemaBuilder queryType(SUObjectType queryType) {
@@ -46,6 +50,99 @@ public final class SUSchemaBuilder {
 
     public SUSchemaRoot getRoot() {
         return root;
+    }
+
+    /**
+     * Replaces this snapshot's user-controlled metadata for a vertex.
+     *
+     * <p>The map is copied immediately. An empty map removes the metadata binding.</p>
+     *
+     * @param vertex the vertex
+     * @param metadata the metadata
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder vertexMetadata(
+            SUVertex vertex,
+            Map<String, Object> metadata) {
+        assertCanChange();
+        assertOwned(vertex);
+        changedVertexMetadata.put(
+                vertex.getId(),
+                copyMetadata(metadata));
+        return this;
+    }
+
+    /**
+     * Adds or replaces one user-controlled metadata value.
+     *
+     * @param vertex the vertex
+     * @param key the metadata key
+     * @param value the metadata value
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder vertexMetadata(
+            SUVertex vertex,
+            String key,
+            Object value) {
+        assertCanChange();
+        assertOwned(vertex);
+        mutableVertexMetadata(vertex).put(
+                assertNotNull(key),
+                assertNotNull(value));
+        return this;
+    }
+
+    /**
+     * Removes one user-controlled metadata value.
+     *
+     * @param vertex the vertex
+     * @param key the metadata key
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder removeVertexMetadata(
+            SUVertex vertex,
+            String key) {
+        assertCanChange();
+        assertOwned(vertex);
+        mutableVertexMetadata(vertex).remove(assertNotNull(key));
+        return this;
+    }
+
+    /**
+     * Removes all user-controlled metadata for a vertex.
+     *
+     * @param vertex the vertex
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder clearVertexMetadata(SUVertex vertex) {
+        assertCanChange();
+        assertOwned(vertex);
+        changedVertexMetadata.put(vertex.getId(), new LinkedHashMap<>());
+        return this;
+    }
+
+    /**
+     * Copies user-controlled metadata between vertices in this snapshot.
+     *
+     * @param source the source vertex
+     * @param target the target vertex
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder copyVertexMetadata(
+            SUVertex source,
+            SUVertex target) {
+        assertCanChange();
+        assertOwned(source);
+        assertOwned(target);
+        changedVertexMetadata.put(
+                target.getId(),
+                new LinkedHashMap<>(currentVertexMetadata(source)));
+        return this;
     }
 
     public SUSchemaBuilder mutationType(@Nullable SUObjectType mutationType) {
@@ -436,6 +533,8 @@ public final class SUSchemaBuilder {
         assertCanChange();
         built = true;
         PersistentEdgeMap edgeMap = baseEdgeMap();
+        PersistentIntMap<Map<String, Object>> metadataMap =
+                baseVertexMetadataMap();
         int edgeCount = baseEdgeCount();
         for (Map.Entry<Integer, MutablePackedEdgeSet> entry : changedEdges.entrySet()) {
             int sourceId = entry.getKey();
@@ -444,9 +543,24 @@ public final class SUSchemaBuilder {
             edgeCount += newEdges.size() - oldEdges.size();
             edgeMap = edgeMap.put(sourceId, newEdges);
         }
+        for (Map.Entry<Integer, LinkedHashMap<String, Object>> entry
+                : changedVertexMetadata.entrySet()) {
+            int vertexId = entry.getKey();
+            Map<String, Object> metadata = ImmutableMap.copyOf(entry.getValue());
+            if (metadata.isEmpty()) {
+                metadataMap = metadataMap.remove(vertexId);
+                continue;
+            }
+            metadataMap = metadataMap.put(vertexId, metadata);
+        }
         assertTrue(edgeMap.get(root.getId()).firstTarget(SUEdgeKind.QUERY_TYPE) >= 0,
                 "A schema universe schema requires a query type");
-        SUSchema schema = new SUSchema(universe, root, edgeMap, edgeCount);
+        SUSchema schema = new SUSchema(
+                universe,
+                root,
+                edgeMap,
+                metadataMap,
+                edgeCount);
         universe.registerSchema(schema);
         return schema;
     }
@@ -468,6 +582,22 @@ public final class SUSchemaBuilder {
         changedEdges.put(root.getId(), new MutablePackedEdgeSet(base.getPackedEdges(base.getRoot())));
     }
 
+    private void copyRootMetadata(@Nullable SUSchema base) {
+        if (base == null) {
+            return;
+        }
+        Map<String, Object> metadata = base.getVertexMetadata(base.getRoot());
+        if (metadata.isEmpty()) {
+            return;
+        }
+        changedVertexMetadata.put(
+                base.getRoot().getId(),
+                new LinkedHashMap<>());
+        changedVertexMetadata.put(
+                root.getId(),
+                new LinkedHashMap<>(metadata));
+    }
+
     private MutablePackedEdgeSet mutableEdges(SUVertex source) {
         assertOwned(source);
         MutablePackedEdgeSet changed = changedEdges.get(source.getId());
@@ -486,8 +616,49 @@ public final class SUSchemaBuilder {
         return baseSchema == null ? PersistentEdgeMap.empty() : baseSchema.getEdgeMap();
     }
 
+    private PersistentIntMap<Map<String, Object>> baseVertexMetadataMap() {
+        return baseSchema == null
+                ? PersistentIntMap.empty()
+                : baseSchema.getVertexMetadataMap();
+    }
+
     private int baseEdgeCount() {
         return baseSchema == null ? 0 : baseSchema.getStoredEdgeCount();
+    }
+
+    private LinkedHashMap<String, Object> mutableVertexMetadata(SUVertex vertex) {
+        LinkedHashMap<String, Object> changed =
+                changedVertexMetadata.get(vertex.getId());
+        if (changed != null) {
+            return changed;
+        }
+        LinkedHashMap<String, Object> mutable =
+                new LinkedHashMap<>(currentVertexMetadata(vertex));
+        changedVertexMetadata.put(vertex.getId(), mutable);
+        return mutable;
+    }
+
+    private Map<String, Object> currentVertexMetadata(SUVertex vertex) {
+        LinkedHashMap<String, Object> changed =
+                changedVertexMetadata.get(vertex.getId());
+        if (changed != null) {
+            return changed;
+        }
+        return baseSchema == null
+                ? ImmutableMap.of()
+                : baseSchema.getVertexMetadata(vertex);
+    }
+
+    private LinkedHashMap<String, Object> copyMetadata(
+            Map<String, Object> metadata) {
+        Map<String, Object> nonNullMetadata = assertNotNull(metadata);
+        LinkedHashMap<String, Object> copy = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : nonNullMetadata.entrySet()) {
+            copy.put(
+                    assertNotNull(entry.getKey()),
+                    assertNotNull(entry.getValue()));
+        }
+        return copy;
     }
 
     private void assertCanChange() {

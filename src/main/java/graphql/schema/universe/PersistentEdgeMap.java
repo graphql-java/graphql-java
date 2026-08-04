@@ -26,14 +26,14 @@ public final class PersistentEdgeMap {
 
     private static final PersistentEdgeMap EMPTY = new PersistentEdgeMap(null);
 
-    private final @Nullable EdgeMapNode root;
+    private final @Nullable IntMapNode<PackedEdgeSet> root;
 
     /**
      * Creates a map around an immutable trie root.
      *
      * @param root the trie root, or {@code null} for an empty map
      */
-    public PersistentEdgeMap(@Nullable EdgeMapNode root) {
+    public PersistentEdgeMap(@Nullable IntMapNode<PackedEdgeSet> root) {
         this.root = root;
     }
 
@@ -57,7 +57,7 @@ public final class PersistentEdgeMap {
         if (root == null) {
             return PackedEdgeSet.empty();
         }
-        PackedEdgeSet result = root.get(key, mix(key), 0);
+        PackedEdgeSet result = root.get(key, PersistentIntMap.mix(key), 0);
         return result == null ? PackedEdgeSet.empty() : result;
     }
 
@@ -76,9 +76,9 @@ public final class PersistentEdgeMap {
         if (value.isEmpty()) {
             return remove(key);
         }
-        int hash = mix(key);
-        EdgeMapNode newRoot = root == null
-                ? new EdgeMapLeaf(key, hash, value)
+        int hash = PersistentIntMap.mix(key);
+        IntMapNode<PackedEdgeSet> newRoot = root == null
+                ? new IntMapLeaf<>(key, hash, value)
                 : root.put(key, hash, value, 0);
         return root == newRoot ? this : new PersistentEdgeMap(newRoot);
     }
@@ -94,7 +94,8 @@ public final class PersistentEdgeMap {
         if (root == null) {
             return this;
         }
-        EdgeMapNode newRoot = root.remove(key, mix(key), 0);
+        IntMapNode<PackedEdgeSet> newRoot =
+                root.remove(key, PersistentIntMap.mix(key), 0);
         return root == newRoot ? this : new PersistentEdgeMap(newRoot);
     }
 
@@ -108,22 +109,12 @@ public final class PersistentEdgeMap {
      * @param visitor the entry visitor
      */
     public void visitUniqueEntries(
-            Set<EdgeMapNode> visitedNodes,
-            EdgeMapEntryVisitor visitor) {
+            Set<IntMapNode<PackedEdgeSet>> visitedNodes,
+            IntMapEntryVisitor<PackedEdgeSet> visitor) {
         assertNotNull(visitedNodes);
         assertNotNull(visitor);
         if (root != null) {
             root.visitEntries(visitedNodes, visitor);
         }
-    }
-
-    private static int mix(int value) {
-        int result = value;
-        result ^= result >>> 16;
-        result *= 0x7feb352d;
-        result ^= result >>> 15;
-        result *= 0x846ca68b;
-        result ^= result >>> 16;
-        return result;
     }
 }

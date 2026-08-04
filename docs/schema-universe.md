@@ -24,9 +24,9 @@ ID. Cleanup can reclaim unused vertices and leave holes, but IDs are never reuse
 vertex type for each supported GraphQL schema-element kind. A vertex contains intrinsic scalar
 properties such as kind, name, and description, but no child references.
 
-`SUSchema` is an immutable adjacency snapshot plus a schema-specific root vertex. The
-effective schema is the graph reachable from that root. Root edges identify operation roots,
-non-root named types, and directive definitions.
+`SUSchema` is an immutable adjacency snapshot plus a schema-specific root vertex and sparse
+user-controlled metadata keyed by vertex ID. The effective schema is the graph reachable from that
+root. Root edges identify operation roots, non-root named types, and directive definitions.
 
 Every successfully built snapshot registers itself with its universe under its unique name.
 `SchemaUniverse.getSchema(name)` selects one snapshot directly, while `getSchemas()` and
@@ -91,10 +91,10 @@ Java integers.
 
 ## Persistent snapshots
 
-Outgoing arrays are stored in a specialized persistent hash-array mapped trie keyed by source
-vertex ID. A transform batches changes by source, freezes each changed outgoing array once, and
-path-copies only the affected trie branches. All unchanged branches and outgoing arrays are shared
-by identity with the parent schema.
+Outgoing arrays and metadata associations are stored in persistent hash-array mapped tries keyed by
+vertex ID. A transform batches changes, freezes each changed value once, and path-copies only the
+affected trie branches. All unchanged branches, outgoing arrays, and metadata maps are shared by
+identity with the parent schema.
 
 Approximate operation costs, where `d` is source out-degree and `V` is the number of sources with
 adjacency:
@@ -103,9 +103,13 @@ adjacency:
 | --- | --- | --- |
 | Read outgoing adjacency | `O(log32 V)` | none |
 | Child lookup by name | `O(log32 V + log d)` unordered, `O(log32 V + d)` ordered | none |
+| Read vertex metadata | `O(log32 M)` plus metadata-map lookup | none |
 | Add/remove edge | `O(d)` transient, then canonicalize at build | one changed primitive array |
+| Edit vertex metadata | `O(log32 M + keys(vertex))` | one trie path and metadata map |
 | Publish `k` changed sources | `O(k log32 V)` | copied trie paths plus `k` arrays |
-| Derive with no type edits | effectively root replacement | one root array and two copied trie paths |
+| Derive with no type edits | effectively root replacement | root edge paths, plus metadata paths when the root is annotated |
+
+Here `M` is the number of vertices with metadata in the snapshot.
 
 The vertex arena uses chunked arrays. Vertex creation and cleanup are serialized; published vertex
 and registered-schema reads are lock-free.
@@ -163,6 +167,23 @@ with respect to a mutable value supplied by an application.
 Directive repeatability and valid locations are also intrinsic. Locations are stored as a compact
 bit mask. Directive-definition and applied-directive AST nodes are retained when available.
 
+## User metadata
+
+Each `SUSchema` can associate an immutable `Map<String, Object>` with any vertex in its universe.
+The association belongs to the schema snapshot, so schemas sharing the same vertex may expose
+different metadata. Transformations structurally share unchanged metadata and automatically move
+schema-root metadata to the derived schema's new root.
+
+The map is copied when supplied and rejects null keys and values. Values are retained by reference,
+so immutability is shallow with respect to mutable application objects. Metadata has no GraphQL
+semantics, is not included in SDL or `GraphQLSchema` export, and is never interpreted by the
+universe. Metadata values containing vertices do not create liveness references.
+
+A metadata entry itself does keep its keyed vertex live while the schema is registered. Removing
+an edge does not remove metadata, allowing an annotation to remain dormant for later reattachment;
+applications can explicitly clear metadata when that retention is unwanted. Applied-directive
+arguments are embedded values rather than vertices and therefore cannot have independent metadata.
+
 The unresolved policy question is whether a field's `TYPE` edge is part of field identity. The
 prototype permits a schema snapshot to select a different single `TYPE` edge for the same field
 vertex. If "specific element" includes its type, this operation should instead be rejected globally
@@ -192,10 +213,11 @@ exact instance is present in the universe registry; holding an external Java ref
 extend its lifetime. `cleanupUnusedVertices()` periodically reclaims vertices unused by registered
 schemas.
 
-Cleanup marks every registered root and every source and target in the registered snapshots'
-complete persistent edge maps. It identity-deduplicates structurally shared HAMT nodes, so unchanged
-subtrees are scanned once rather than once per schema. Applied-directive argument type IDs are
-marked separately because those references are intrinsic values rather than edges.
+Cleanup marks every registered root, every source and target in the registered snapshots' complete
+persistent edge maps, and every vertex ID with schema metadata. It identity-deduplicates
+structurally shared HAMT nodes, so unchanged subtrees are scanned once rather than once per schema.
+Applied-directive argument type IDs are marked separately because those references are intrinsic
+values rather than edges.
 
 Marking must include dormant adjacency retained by a registered snapshot, not only the effective
 graph reachable from its root. Otherwise cleanup would break the supported constant-scope

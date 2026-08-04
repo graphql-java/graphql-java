@@ -13,7 +13,8 @@ class PersistentEdgeMapTest extends Specification {
                 .put(1, firstEdges)
                 .put(2, secondEdges)
         def changed = base.put(3, thirdEdges)
-        def visitedNodes = Collections.newSetFromMap(new IdentityHashMap<EdgeMapNode, Boolean>())
+        def visitedNodes = Collections.newSetFromMap(
+                new IdentityHashMap<IntMapNode<PackedEdgeSet>, Boolean>())
         def visitedEntries = []
 
         when:

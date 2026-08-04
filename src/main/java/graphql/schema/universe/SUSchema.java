@@ -30,6 +30,7 @@ public final class SUSchema {
     private final SchemaUniverse universe;
     private final SUSchemaRoot root;
     private final PersistentEdgeMap edgeMap;
+    private final PersistentIntMap<Map<String, Object>> vertexMetadata;
     private final int storedEdgeCount;
 
     @Internal
@@ -37,10 +38,12 @@ public final class SUSchema {
             SchemaUniverse universe,
             SUSchemaRoot root,
             PersistentEdgeMap edgeMap,
+            PersistentIntMap<Map<String, Object>> vertexMetadata,
             int storedEdgeCount) {
         this.universe = assertNotNull(universe);
         this.root = assertNotNull(root);
         this.edgeMap = assertNotNull(edgeMap);
+        this.vertexMetadata = assertNotNull(vertexMetadata);
         this.storedEdgeCount = storedEdgeCount;
     }
 
@@ -53,10 +56,38 @@ public final class SUSchema {
     }
 
     /**
+     * Returns this snapshot's user-controlled metadata for a vertex.
+     *
+     * <p>The returned map is immutable, although values supplied by the application may themselves
+     * be mutable. Metadata has no GraphQL semantics and is not exported.</p>
+     *
+     * @param vertex the vertex
+     *
+     * @return the metadata, or an empty map when none is stored
+     */
+    public Map<String, Object> getVertexMetadata(SUVertex vertex) {
+        assertOwned(vertex);
+        Map<String, Object> metadata = vertexMetadata.get(vertex.getId());
+        return metadata == null ? Collections.emptyMap() : metadata;
+    }
+
+    /**
+     * Returns one user-controlled metadata value for a vertex.
+     *
+     * @param vertex the vertex
+     * @param key the metadata key
+     *
+     * @return the value, or {@code null} when absent
+     */
+    public @Nullable Object getVertexMetadata(SUVertex vertex, String key) {
+        return getVertexMetadata(vertex).get(assertNotNull(key));
+    }
+
+    /**
      * Exports this snapshot as an unexecutable {@link GraphQLSchema}.
      *
-     * <p>The result preserves the type-system topology and metadata represented by this schema.
-     * Runtime wiring is not retained by a schema universe and therefore cannot be exported.</p>
+     * <p>The result preserves the GraphQL type-system topology and metadata represented by this
+     * schema. User-controlled vertex metadata and runtime wiring are not exported.</p>
      */
     public GraphQLSchema toGraphQLSchema() {
         return new SUExporter(this).exportSchema();
@@ -354,6 +385,11 @@ public final class SUSchema {
     @Internal
     public PersistentEdgeMap getEdgeMap() {
         return edgeMap;
+    }
+
+    @Internal
+    public PersistentIntMap<Map<String, Object>> getVertexMetadataMap() {
+        return vertexMetadata;
     }
 
     @Internal

@@ -135,8 +135,9 @@ public final class SchemaUniverse {
      * Reclaims vertices that are unused by every registered schema.
      *
      * <p>Liveness includes each registered schema root, every source and target in its complete
-     * stored adjacency, and input types referenced by applied-directive arguments. Complete stored
-     * adjacency is considered so dormant subgraphs remain available for later transformations.</p>
+     * stored adjacency, vertices with user metadata, and input types referenced by
+     * applied-directive arguments. Complete stored adjacency is considered so dormant subgraphs
+     * remain available for later transformations.</p>
      *
      * <p>Reclaimed vertex IDs are never reused. This operation may therefore leave holes in the
      * chunked vertex arena. It must not run concurrently with schema construction, importing, or
@@ -146,13 +147,18 @@ public final class SchemaUniverse {
      */
     public synchronized int cleanupUnusedVertices() {
         BitSet liveVertexIds = new BitSet();
-        Set<EdgeMapNode> visitedNodes =
+        Set<IntMapNode<PackedEdgeSet>> visitedEdgeNodes =
+                Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<IntMapNode<Map<String, Object>>> visitedMetadataNodes =
                 Collections.newSetFromMap(new IdentityHashMap<>());
         for (SUSchema schema : schemas) {
             markVertex(liveVertexIds, schema.getRoot().getId());
             schema.getEdgeMap().visitUniqueEntries(
-                    visitedNodes,
+                    visitedEdgeNodes,
                     (sourceId, edges) -> markEdgeBinding(liveVertexIds, sourceId, edges));
+            schema.getVertexMetadataMap().visitUniqueEntries(
+                    visitedMetadataNodes,
+                    (vertexId, metadata) -> markVertex(liveVertexIds, vertexId));
         }
         return sweepUnusedVertices(liveVertexIds);
     }
