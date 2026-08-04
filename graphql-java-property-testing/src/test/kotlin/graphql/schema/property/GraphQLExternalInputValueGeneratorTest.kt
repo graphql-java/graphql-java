@@ -6,14 +6,15 @@ import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLScalarType
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.constant
+import org.junit.jupiter.api.Test
 
-class GraphQLExternalInputValueGeneratorTest : FunSpec({
-    test("nullable and non-null inputs honor ExplicitNullValueWeight") {
+class GraphQLExternalInputValueGeneratorTest {
+    @Test
+    fun `nullable and non-null inputs honor ExplicitNullValueWeight`() {
         val schema = parseTestSchema("type Query { x: Int }")
         val scalar = schema.getType("Int") as GraphQLScalarType
         val config = Config.default + (ExplicitNullValueWeight to 1.0)
@@ -24,7 +25,8 @@ class GraphQLExternalInputValueGeneratorTest : FunSpec({
         (nonNull.generate(GraphQLNonNull.nonNull(scalar)) is Int).shouldBe(true)
     }
 
-    test("lists honor configured size and item nullability") {
+    @Test
+    fun `lists honor configured size and item nullability`() {
         val schema = parseTestSchema("type Query { x: Int }")
         val scalar = schema.getType("Int") as GraphQLInputType
         val type = GraphQLNonNull.nonNull(GraphQLList.list(GraphQLNonNull.nonNull(scalar)))
@@ -37,7 +39,8 @@ class GraphQLExternalInputValueGeneratorTest : FunSpec({
         value.all { it is Int }.shouldBe(true)
     }
 
-    test("oneOf values contain exactly one non-null member") {
+    @Test
+    fun `oneOf values contain exactly one non-null member`() {
         val schema = parseTestSchema(
             "input Choice @oneOf { text: String, number: Int } type Query { x(choice: Choice): Int }"
         )
@@ -49,7 +52,8 @@ class GraphQLExternalInputValueGeneratorTest : FunSpec({
         (value.values.single() != null).shouldBe(true)
     }
 
-    test("recursive input values stop at MaxValueDepth") {
+    @Test
+    fun `recursive input values stop at MaxValueDepth`() {
         val schema = parseTestSchema(
             "input Recursive { next: Recursive } type Query { x(value: Recursive): Int }"
         )
@@ -64,7 +68,8 @@ class GraphQLExternalInputValueGeneratorTest : FunSpec({
         nested.shouldBe(mapOf("next" to null))
     }
 
-    test("custom scalars require and use ScalarValueOverrides") {
+    @Test
+    fun `custom scalars require and use ScalarValueOverrides`() {
         val schema = parseTestSchema("scalar Custom type Query { x(value: Custom): Int }")
         val scalar = schema.getType("Custom") as GraphQLScalarType
         shouldThrow<UnsupportedOperationException> {
@@ -79,4 +84,4 @@ class GraphQLExternalInputValueGeneratorTest : FunSpec({
             .generate(scalar)
             .shouldBe("custom-value")
     }
-})
+}

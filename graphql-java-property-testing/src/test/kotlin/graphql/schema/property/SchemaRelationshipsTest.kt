@@ -2,12 +2,12 @@ package graphql.schema.property
 
 import graphql.introspection.Introspection.DirectiveLocation
 import graphql.schema.GraphQLCompositeType
-import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import org.junit.jupiter.api.Test
 
-class SchemaRelationshipsTest : FunSpec({
-    val schema = parseTestSchema(
+class SchemaRelationshipsTest {
+    private val schema = parseTestSchema(
         """
             directive @fieldDirective on FIELD
             interface I { x: Int }
@@ -18,9 +18,10 @@ class SchemaRelationshipsTest : FunSpec({
             type Query { i: I, u: U }
         """.trimIndent()
     )
-    val relationships = SchemaRelationships(schema)
+    private val relationships = SchemaRelationships(schema)
 
-    test("possibleObjectTypes expands objects, interfaces, and unions") {
+    @Test
+    fun `possibleObjectTypes expands objects, interfaces, and unions`() {
         val interfaceType = schema.getType("I") as GraphQLCompositeType
         val unionType = schema.getType("U") as GraphQLCompositeType
         val objectType = schema.getType("A") as GraphQLCompositeType
@@ -29,7 +30,8 @@ class SchemaRelationshipsTest : FunSpec({
         relationships.possibleObjectTypes(objectType).map { it.name }.shouldBe(setOf("A"))
     }
 
-    test("spreadability follows overlap of possible concrete types") {
+    @Test
+    fun `spreadability follows overlap of possible concrete types`() {
         val interfaceType = schema.getType("I") as GraphQLCompositeType
         val unionType = schema.getType("U") as GraphQLCompositeType
         val a = schema.getType("A") as GraphQLCompositeType
@@ -40,10 +42,11 @@ class SchemaRelationshipsTest : FunSpec({
         relationships.spreadableTypes(a).shouldContain(interfaceType)
     }
 
-    test("Schemas indexes directives by valid location") {
+    @Test
+    fun `Schemas indexes directives by valid location`() {
         val schemas = Schemas(schema)
         schemas.directivesByLocation.getValue(DirectiveLocation.FIELD)
             .map { it.name }
             .shouldContain("fieldDirective")
     }
-})
+}
