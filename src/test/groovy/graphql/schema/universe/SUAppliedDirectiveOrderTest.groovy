@@ -83,6 +83,38 @@ class SUAppliedDirectiveOrderTest extends Specification {
         thrown(AssertException)
     }
 
+    def "replacing applied directives registers named containers"() {
+        given:
+        def universe = new SchemaUniverse()
+        def query = universe.newObjectType("Query")
+        def custom = universe.newScalarType("Custom")
+        def unused = universe.newScalarType("Unused")
+        def first = universe.newAppliedDirective("first")
+        def second = universe.newAppliedDirective("second")
+        def replacement = universe.newAppliedDirective("replacement")
+
+        when:
+        def base = universe.newSchema("base")
+                .queryType(query)
+                .replaceAppliedDirectives(custom, [first, second])
+                .replaceAppliedDirectives(unused, [])
+                .build()
+
+        then:
+        base.getScalarType("Custom").is(custom)
+        base.getType("Unused") == null
+        base.getAppliedDirectives(custom) == [first, second]
+
+        when:
+        def changed = base.transform("changed", builder -> builder
+                .removeType(custom)
+                .replaceAppliedDirective(custom, first, replacement))
+
+        then:
+        changed.getScalarType("Custom").is(custom)
+        changed.getAppliedDirectives(custom) == [replacement, second]
+    }
+
     def "SDL and GraphQLSchema round trips retain order on every directive container"() {
         given:
         def registry = new SchemaParser().parse(directivesEverywhereSdl())

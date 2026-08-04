@@ -501,11 +501,13 @@ public final class SUSchemaBuilder {
                 SUEdgeKind.APPLIED_DIRECTIVE,
                 replacement.getNameId(),
                 replacement.getId());
+        boolean replaced = mutableEdges(source).replace(currentEdge, replacementEdge);
         assertTrue(
-                mutableEdges(source).replace(currentEdge, replacementEdge),
+                replaced,
                 "Applied directive %s is not attached to container %s",
                 current,
                 source);
+        addNamedEndpoint(source);
         return this;
     }
 
@@ -517,6 +519,9 @@ public final class SUSchemaBuilder {
         List<SUAppliedDirective> replacements = assertNotNull(directives);
         for (SUAppliedDirective directive : replacements) {
             assertEdgeShape(source, SUEdgeKind.APPLIED_DIRECTIVE, directive);
+        }
+        if (!replacements.isEmpty()) {
+            addNamedEndpoint(source);
         }
         MutablePackedEdgeSet edges = mutableEdges(source);
         edges.removeKind(SUEdgeKind.APPLIED_DIRECTIVE);
