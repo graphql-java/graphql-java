@@ -1,6 +1,12 @@
 package graphql.execution.instrumentation
 
+import graphql.ExecutionResult
+import graphql.GraphQL
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.schema.idl.RuntimeWiring
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.SchemaParser
 import spock.lang.Specification
 
 class InstrumentationDefaultMethodsTest extends Specification {
@@ -137,6 +143,44 @@ class InstrumentationDefaultMethodsTest extends Specification {
                 "first-completed-complete",
                 "second-completed-complete",
         ]
+    }
+
+    def "simple performant instrumentation createState is null by default and begin hooks accept null state"() {
+        when:
+        def created = SimplePerformantInstrumentation.INSTANCE.createState(null)
+        def beginCtx = SimplePerformantInstrumentation.INSTANCE.beginExecution(null, null)
+
+        then:
+        created == null
+        beginCtx != null
+        // null state must not throw (optional-state contract; Kotlin sees @Nullable after #4433)
+        noExceptionThrown()
+    }
+
+    def "stateless SimplePerformantInstrumentation subclass executes with null state"() {
+        given:
+        def seenStates = []
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                seenStates << state
+                return SimpleInstrumentationContext.noOp()
+            }
+        }
+        def typeRegistry = new SchemaParser().parse("""
+            type Query {
+              hello: String
+            }
+        """)
+        def schema = new SchemaGenerator().makeExecutableSchema(typeRegistry, RuntimeWiring.MOCKED_WIRING)
+        def graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
+
+        when:
+        def result = graphQL.execute("{ hello }")
+
+        then:
+        result.errors.isEmpty()
+        seenStates == [null]
     }
 
     private static Instrumentation instrumentationReturning(FieldFetchingInstrumentationContext context) {

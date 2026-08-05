@@ -51,78 +51,78 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
         super(instrumentations);
     }
 
-    private <T> @Nullable T runAll(InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
+    private <T> @Nullable T runAll(@Nullable InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
         chainedConsume(state, stateConsumer);
         return null;
     }
 
     @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginExecution(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginParse(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginValidation(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginExecuteOperation(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<Void> beginReactiveResults(InstrumentationReactiveResultsParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Void> beginReactiveResults(InstrumentationReactiveResultsParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginReactiveResults(parameters, specificState));
     }
 
     @Override
-    public @Nullable ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+    public @Nullable ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginExecutionStrategy(parameters, specificState));
     }
 
     @Override
-    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginExecuteObject(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginDeferredField(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginSubscribedFieldEvent(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldExecution(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldFetch(parameters, specificState));
     }
 
     @Override
-    public @Nullable FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    public @Nullable FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldFetching(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldCompletion(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, @Nullable InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldListCompletion(parameters, specificState));
     }
 

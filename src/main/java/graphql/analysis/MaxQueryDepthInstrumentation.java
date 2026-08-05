@@ -49,7 +49,7 @@ public class MaxQueryDepthInstrumentation extends SimplePerformantInstrumentatio
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, @Nullable InstrumentationState state) {
         QueryTraverser queryTraverser = newQueryTraverser(parameters.getExecutionContext());
         int depth = queryTraverser.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
         if (depth > maxDepth) {
