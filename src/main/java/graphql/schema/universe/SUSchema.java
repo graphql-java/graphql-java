@@ -30,6 +30,7 @@ public final class SUSchema {
     private final SchemaUniverse universe;
     private final SUSchemaRoot root;
     private final PersistentIntMap<SUNamedType> namedTypesByNameId;
+    private final PersistentIntMap<List<SUObjectType>> implementationsByInterfaceId;
     private final PersistentEdgeMap edgeMap;
     private final PersistentIntMap<Map<String, Object>> vertexMetadata;
     private final int namedTypeCount;
@@ -40,6 +41,7 @@ public final class SUSchema {
             SchemaUniverse universe,
             SUSchemaRoot root,
             PersistentIntMap<SUNamedType> namedTypesByNameId,
+            PersistentIntMap<List<SUObjectType>> implementationsByInterfaceId,
             PersistentEdgeMap edgeMap,
             PersistentIntMap<Map<String, Object>> vertexMetadata,
             int namedTypeCount,
@@ -47,6 +49,7 @@ public final class SUSchema {
         this.universe = assertNotNull(universe);
         this.root = assertNotNull(root);
         this.namedTypesByNameId = assertNotNull(namedTypesByNameId);
+        this.implementationsByInterfaceId = assertNotNull(implementationsByInterfaceId);
         this.edgeMap = assertNotNull(edgeMap);
         this.vertexMetadata = assertNotNull(vertexMetadata);
         this.namedTypeCount = namedTypeCount;
@@ -238,6 +241,20 @@ public final class SUSchema {
         return getTypedChildren(interfaceType, SUEdgeKind.IMPLEMENTS, SUInterfaceType.class);
     }
 
+    /**
+     * Returns the object types that directly implement an interface, sorted by name.
+     *
+     * @param interfaceType the interface
+     *
+     * @return the immutable implementation list
+     */
+    public List<SUObjectType> getImplementations(SUInterfaceType interfaceType) {
+        assertOwned(interfaceType);
+        List<SUObjectType> implementations =
+                implementationsByInterfaceId.get(interfaceType.getId());
+        return implementations == null ? Collections.emptyList() : implementations;
+    }
+
     public @Nullable SUInterfaceType getInterface(SUObjectType objectType, String name) {
         return getTypedChild(objectType, SUEdgeKind.IMPLEMENTS, name, SUInterfaceType.class);
     }
@@ -383,6 +400,11 @@ public final class SUSchema {
     @Internal
     public PersistentIntMap<SUNamedType> getNamedTypesByNameId() {
         return namedTypesByNameId;
+    }
+
+    @Internal
+    public PersistentIntMap<List<SUObjectType>> getImplementationsByInterfaceId() {
+        return implementationsByInterfaceId;
     }
 
     @Internal

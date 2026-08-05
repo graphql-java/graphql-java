@@ -198,6 +198,18 @@ public final class PackedEdgeSet {
     }
 
     /**
+     * Extracts the target name ID at an array index.
+     *
+     * @param index an index between {@link #firstIndex(SUEdgeKind)} and
+     *              {@link #endIndex(SUEdgeKind)}
+     *
+     * @return the target name ID
+     */
+    public int targetNameIdAt(int index) {
+        return edgeNameId(edges[index]);
+    }
+
+    /**
      * Copies the packed edge array for mutable editing.
      *
      * @return a new array containing all packed edges

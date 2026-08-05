@@ -6,6 +6,8 @@ import graphql.Internal;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +27,8 @@ public final class SUSchemaBuilder {
     private final @Nullable SUSchema baseSchema;
     private final Map<Integer, MutablePackedEdgeSet> changedEdges = new LinkedHashMap<>();
     private final Map<Integer, LinkedHashMap<String, Object>> changedVertexMetadata =
+            new LinkedHashMap<>();
+    private final Map<Integer, LinkedHashMap<Integer, SUObjectType>> changedImplementations =
             new LinkedHashMap<>();
     private PersistentIntMap<SUNamedType> namedTypesByNameId;
     private int namedTypeCount;
@@ -561,6 +565,8 @@ public final class SUSchemaBuilder {
         assertCanChange();
         built = true;
         PersistentEdgeMap edgeMap = baseEdgeMap();
+        PersistentIntMap<List<SUObjectType>> implementationsByInterfaceId =
+                baseImplementationsByInterfaceId();
         PersistentIntMap<Map<String, Object>> metadataMap =
                 baseVertexMetadataMap();
         int edgeCount = baseEdgeCount();
@@ -568,9 +574,12 @@ public final class SUSchemaBuilder {
             int sourceId = entry.getKey();
             PackedEdgeSet oldEdges = edgeMap.get(sourceId);
             PackedEdgeSet newEdges = entry.getValue().freeze();
+            updateImplementations(sourceId, oldEdges, newEdges);
             edgeCount += newEdges.size() - oldEdges.size();
             edgeMap = edgeMap.put(sourceId, newEdges);
         }
+        implementationsByInterfaceId =
+                freezeImplementations(implementationsByInterfaceId);
         for (Map.Entry<Integer, LinkedHashMap<String, Object>> entry
                 : changedVertexMetadata.entrySet()) {
             int vertexId = entry.getKey();
@@ -588,6 +597,7 @@ public final class SUSchemaBuilder {
                 universe,
                 root,
                 namedTypesByNameId,
+                implementationsByInterfaceId,
                 edgeMap,
                 metadataMap,
                 namedTypeCount,
@@ -667,6 +677,12 @@ public final class SUSchemaBuilder {
         return baseSchema == null ? PersistentEdgeMap.empty() : baseSchema.getEdgeMap();
     }
 
+    private PersistentIntMap<List<SUObjectType>> baseImplementationsByInterfaceId() {
+        return baseSchema == null
+                ? PersistentIntMap.empty()
+                : baseSchema.getImplementationsByInterfaceId();
+    }
+
     private PersistentIntMap<Map<String, Object>> baseVertexMetadataMap() {
         return baseSchema == null
                 ? PersistentIntMap.empty()
@@ -675,6 +691,95 @@ public final class SUSchemaBuilder {
 
     private int baseEdgeCount() {
         return baseSchema == null ? 0 : baseSchema.getStoredEdgeCount();
+    }
+
+    private void updateImplementations(
+            int sourceId,
+            PackedEdgeSet oldEdges,
+            PackedEdgeSet newEdges) {
+        SUVertex source = universe.getVertex(sourceId);
+        if (!(source instanceof SUObjectType)) {
+            return;
+        }
+        SUObjectType objectType = (SUObjectType) source;
+        removeMissingImplementationTargets(objectType, oldEdges, newEdges);
+        addMissingImplementationTargets(objectType, oldEdges, newEdges);
+    }
+
+    private void removeMissingImplementationTargets(
+            SUObjectType objectType,
+            PackedEdgeSet oldEdges,
+            PackedEdgeSet newEdges) {
+        int start = oldEdges.firstIndex(SUEdgeKind.IMPLEMENTS);
+        int end = oldEdges.endIndex(SUEdgeKind.IMPLEMENTS);
+        for (int i = start; i < end; i++) {
+            int interfaceId = oldEdges.targetIdAt(i);
+            int interfaceNameId = oldEdges.targetNameIdAt(i);
+            if (newEdges.contains(
+                    SUEdgeKind.IMPLEMENTS,
+                    interfaceNameId,
+                    interfaceId)) {
+                continue;
+            }
+            mutableImplementations(interfaceId).remove(objectType.getId());
+        }
+    }
+
+    private void addMissingImplementationTargets(
+            SUObjectType objectType,
+            PackedEdgeSet oldEdges,
+            PackedEdgeSet newEdges) {
+        int start = newEdges.firstIndex(SUEdgeKind.IMPLEMENTS);
+        int end = newEdges.endIndex(SUEdgeKind.IMPLEMENTS);
+        for (int i = start; i < end; i++) {
+            int interfaceId = newEdges.targetIdAt(i);
+            int interfaceNameId = newEdges.targetNameIdAt(i);
+            if (oldEdges.contains(
+                    SUEdgeKind.IMPLEMENTS,
+                    interfaceNameId,
+                    interfaceId)) {
+                continue;
+            }
+            mutableImplementations(interfaceId)
+                    .put(objectType.getId(), objectType);
+        }
+    }
+
+    private LinkedHashMap<Integer, SUObjectType> mutableImplementations(
+            int interfaceId) {
+        LinkedHashMap<Integer, SUObjectType> changed =
+                changedImplementations.get(interfaceId);
+        if (changed != null) {
+            return changed;
+        }
+        LinkedHashMap<Integer, SUObjectType> mutable = new LinkedHashMap<>();
+        List<SUObjectType> current = baseImplementationsByInterfaceId().get(interfaceId);
+        if (current != null) {
+            for (SUObjectType objectType : current) {
+                mutable.put(objectType.getId(), objectType);
+            }
+        }
+        changedImplementations.put(interfaceId, mutable);
+        return mutable;
+    }
+
+    private PersistentIntMap<List<SUObjectType>> freezeImplementations(
+            PersistentIntMap<List<SUObjectType>> implementationsByInterfaceId) {
+        PersistentIntMap<List<SUObjectType>> result = implementationsByInterfaceId;
+        for (Map.Entry<Integer, LinkedHashMap<Integer, SUObjectType>> entry
+                : changedImplementations.entrySet()) {
+            int interfaceId = entry.getKey();
+            List<SUObjectType> implementations =
+                    new ArrayList<>(entry.getValue().values());
+            if (implementations.isEmpty()) {
+                result = result.remove(interfaceId);
+                continue;
+            }
+            implementations.sort(Comparator.comparing(
+                    objectType -> assertNotNull(objectType.getName())));
+            result = result.put(interfaceId, List.copyOf(implementations));
+        }
+        return result;
     }
 
     private LinkedHashMap<String, Object> mutableVertexMetadata(SUVertex vertex) {

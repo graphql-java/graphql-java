@@ -25,10 +25,11 @@ vertex type for each supported GraphQL schema-element kind. A vertex contains in
 properties such as kind, name, and description, but no child references.
 
 `SUSchema` is an immutable adjacency snapshot plus a schema-specific root vertex, a persistent
-registry of every named type keyed by universe name ID, and sparse user-controlled metadata keyed
-by vertex ID. Root edges identify operation roots and directive definitions. Named-type membership
-is independent of reachability, so a schema can retain disconnected types without representing
-membership as graph edges.
+registry of every named type keyed by universe name ID, a persistent reverse index from interface
+vertex ID to implementing object types, and sparse user-controlled metadata keyed by vertex ID.
+Root edges identify operation roots and directive definitions. Named-type membership is independent
+of reachability, so a schema can retain disconnected types without representing membership as graph
+edges.
 
 Every successfully built snapshot registers itself with its universe under its unique name.
 `SchemaUniverse.getSchema(name)` selects one snapshot directly, while `getSchemas()` and
@@ -93,20 +94,22 @@ Java integers.
 
 ## Persistent snapshots
 
-Outgoing arrays, named types, and metadata associations are stored in persistent hash-array mapped
-tries. Adjacency and metadata use vertex IDs as keys, while the type registry uses universe name
-IDs. A transform batches edge changes, freezes each changed value once, and path-copies only the
-affected trie branches. All unchanged branches, outgoing arrays, named types, and metadata maps are
-shared by identity with the parent schema.
+Outgoing arrays, named types, interface implementations, and metadata associations are stored in
+persistent hash-array mapped tries. Adjacency, implementations, and metadata use vertex IDs as keys,
+while the type registry uses universe name IDs. A transform batches edge changes, freezes each
+changed value once, and path-copies only the affected trie branches. All unchanged branches,
+outgoing arrays, implementation lists, named types, and metadata maps are shared by identity with
+the parent schema.
 
 Approximate operation costs, where `d` is source out-degree, `V` is the number of sources with
-adjacency, and `T` is the number of named types:
+adjacency, `T` is the number of named types, and `I` is the number of indexed interfaces:
 
 | Operation | Time | New retained storage |
 | --- | --- | --- |
 | Read outgoing adjacency | `O(log32 V)` | none |
 | Child lookup by name | `O(log32 V + log d)` unordered, `O(log32 V + d)` ordered | none |
 | Read named type by name | `O(log32 T)` | none |
+| Read interface implementations | `O(log32 I)` | none |
 | Read vertex metadata | `O(log32 M)` plus metadata-map lookup | none |
 | Add/remove edge | `O(d)` transient, then canonicalize at build | one changed primitive array |
 | Add named type | `O(log32 T)` | one trie path |
