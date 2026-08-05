@@ -4,13 +4,11 @@ import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.schema.InputValueWithState;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
 
 @ExperimentalApi
-@NullMarked
 public final class SUAppliedDirectiveArgument {
 
     private final SchemaUniverse universe;

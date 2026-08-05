@@ -1,7 +1,6 @@
 package graphql.schema.universe;
 
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Visits one binding in a persistent integer map.
@@ -9,7 +8,6 @@ import org.jspecify.annotations.NullMarked;
  * @param <V> the stored value type
  */
 @Internal
-@NullMarked
 @FunctionalInterface
 public interface IntMapEntryVisitor<V> {
 

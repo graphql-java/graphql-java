@@ -2,11 +2,9 @@ package graphql.schema.universe;
 
 import graphql.ExperimentalApi;
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 @ExperimentalApi
-@NullMarked
 public final class SUScalarType extends SUNamedType {
 
     @Internal

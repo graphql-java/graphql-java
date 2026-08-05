@@ -49,11 +49,10 @@ class GraphQLSchemaTest extends Specification {
         starWarsSchema.isPossibleType(characterInterface, humanType)
     }
 
-    def "isPossibleType when wrong abstract type is passed expect exception"() {
-        when:
+    def "isPossibleType supports object types"() {
+        expect:
         starWarsSchema.isPossibleType(humanType, humanType)
-        then:
-        thrown(AssertException)
+        !starWarsSchema.isPossibleType(humanType, droidType)
     }
 
     def "#698 interfaces copied as expected"() {

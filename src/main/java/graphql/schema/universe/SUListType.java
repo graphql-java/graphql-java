@@ -2,10 +2,8 @@ package graphql.schema.universe;
 
 import graphql.ExperimentalApi;
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 
 @ExperimentalApi
-@NullMarked
 public final class SUListType extends SUType {
 
     @Internal

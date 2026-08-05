@@ -30,7 +30,6 @@ import graphql.schema.InputValueWithState;
 import graphql.schema.TypeResolver;
 import graphql.schema.idl.EchoingWiringFactory;
 import graphql.schema.idl.ScalarInfo;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -48,7 +47,6 @@ import static java.util.stream.Collectors.toList;
  * scalar coercing implementations, or other runtime wiring.</p>
  */
 @ExperimentalApi
-@NullMarked
 public final class SUExporter {
 
     private static final TypeResolver UNEXECUTABLE_TYPE_RESOLVER = environment -> null;

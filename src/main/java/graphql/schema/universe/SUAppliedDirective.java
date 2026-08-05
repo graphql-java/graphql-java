@@ -3,7 +3,6 @@ package graphql.schema.universe;
 import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.language.Directive;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
@@ -13,7 +12,6 @@ import java.util.List;
 import static graphql.Assert.assertNotNull;
 
 @ExperimentalApi
-@NullMarked
 public final class SUAppliedDirective extends SUVertex {
 
     private final @Nullable Directive definition;

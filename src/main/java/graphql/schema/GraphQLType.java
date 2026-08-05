@@ -11,5 +11,5 @@ import org.jspecify.annotations.NullMarked;
  */
 @PublicApi
 @NullMarked
-public interface GraphQLType extends GraphQLSchemaElement {
+public interface GraphQLType extends GraphQLSchemaElement, SchemaType {
 }

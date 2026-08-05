@@ -52,7 +52,7 @@ import static java.util.Collections.singletonList;
  */
 @PublicApi
 @NullMarked
-public class GraphQLSchema {
+public class GraphQLSchema implements ExecutableSchema {
 
     private final GraphQLObjectType queryType;
     private final @Nullable GraphQLObjectType mutationType;
@@ -458,6 +458,69 @@ public class GraphQLSchema {
         return null;
     }
 
+    @Override
+    public @Nullable GraphQLFieldDefinition getField(
+            SchemaComposite parentType,
+            String fieldName) {
+        assertNotNull(parentType);
+        assertNotNull(fieldName);
+        if (parentType == queryType
+                && fieldName.equals(introspectionSchemaField.getName())) {
+            return introspectionSchemaField;
+        }
+        if (parentType == queryType
+                && fieldName.equals(introspectionTypeField.getName())) {
+            return introspectionTypeField;
+        }
+        if (fieldName.equals(__typename.getName())) {
+            return __typename;
+        }
+        if (!(parentType instanceof GraphQLFieldsContainer)) {
+            return null;
+        }
+        return codeRegistry
+                .getFieldVisibility()
+                .getFieldDefinition(
+                        (GraphQLFieldsContainer) parentType,
+                        fieldName);
+    }
+
+    @Override
+    public List<GraphQLFieldDefinition> getFields(
+            SchemaFieldsContainer parentType) {
+        assertTrue(
+                parentType instanceof GraphQLFieldsContainer,
+                "The field container must belong to this GraphQLSchema");
+        return codeRegistry
+                .getFieldVisibility()
+                .getFieldDefinitions((GraphQLFieldsContainer) parentType);
+    }
+
+    @Override
+    public @Nullable GraphQLInputObjectField getInputField(
+            SchemaInputObject parentType,
+            String fieldName) {
+        assertTrue(
+                parentType instanceof GraphQLInputObjectType,
+                "The input object must belong to this GraphQLSchema");
+        return codeRegistry
+                .getFieldVisibility()
+                .getFieldDefinition(
+                        (GraphQLInputObjectType) parentType,
+                        assertNotNull(fieldName));
+    }
+
+    @Override
+    public List<GraphQLInputObjectField> getInputFields(
+            SchemaInputObject parentType) {
+        assertTrue(
+                parentType instanceof GraphQLInputObjectType,
+                "The input object must belong to this GraphQLSchema");
+        return codeRegistry
+                .getFieldVisibility()
+                .getFieldDefinitions((GraphQLInputObjectType) parentType);
+    }
+
     /**
      * @return all the named types in the scheme as a map from name to named type
      */
@@ -501,11 +564,9 @@ public class GraphQLSchema {
 
     /**
      * Returns true if a specified concrete type is a possible type of a provided abstract type.
-     * If the provided abstract type is:
-     * - an interface, it checks whether the concrete type is one of its implementations.
-     * - a union, it checks whether the concrete type is one of its possible types.
+     * An interface represents its implementations and a union represents its members.
      *
-     * @param abstractType abstract type either interface or union
+     * @param abstractType interface or union type
      * @param concreteType concrete type
      *
      * @return true if possible type, false otherwise.
@@ -517,7 +578,79 @@ public class GraphQLSchema {
         } else if (abstractType instanceof GraphQLUnionType) {
             return ((GraphQLUnionType) abstractType).isPossibleType(concreteType);
         }
-        return assertShouldNeverHappen("Unsupported abstract type %s. Abstract types supported are Union and Interface.", abstractType.getName());
+        return assertShouldNeverHappen(
+                "Unsupported abstract type %s. Abstract types supported are Union and Interface.",
+                abstractType.getName());
+    }
+
+    /**
+     * Returns whether an object type is represented by a GraphQL composite type.
+     *
+     * <p>This overload preserves unambiguous source calls alongside the existing
+     * {@link #isPossibleType(GraphQLNamedType, GraphQLObjectType)} method and the generic
+     * {@link ExecutableSchema} contract.</p>
+     *
+     * @param compositeType object, interface, or union type
+     * @param objectType concrete object type
+     *
+     * @return true if the object is a possible type
+     */
+    public boolean isPossibleType(
+            GraphQLCompositeType compositeType,
+            GraphQLObjectType objectType) {
+        if (compositeType instanceof GraphQLObjectType) {
+            return compositeType == objectType;
+        }
+        return isPossibleType(
+                (GraphQLNamedType) compositeType,
+                objectType);
+    }
+
+    @Override
+    public List<GraphQLObjectType> getPossibleTypes(
+            SchemaComposite compositeType) {
+        if (compositeType instanceof GraphQLObjectType) {
+            return singletonList((GraphQLObjectType) compositeType);
+        }
+        if (compositeType instanceof GraphQLInterfaceType) {
+            return assertNotNull(
+                    getImplementations((GraphQLInterfaceType) compositeType));
+        }
+        assertTrue(
+                compositeType instanceof GraphQLUnionType,
+                "The composite type must belong to this GraphQLSchema");
+        List<GraphQLObjectType> result = new ArrayList<>();
+        for (GraphQLNamedOutputType type :
+                ((GraphQLUnionType) compositeType).getTypes()) {
+            assertTrue(
+                    type instanceof GraphQLObjectType,
+                    "Union type references must be resolved");
+            result.add((GraphQLObjectType) type);
+        }
+        return ImmutableList.copyOf(result);
+    }
+
+    @Override
+    public boolean isPossibleType(
+            SchemaComposite compositeType,
+            SchemaObject objectType) {
+        assertTrue(
+                objectType instanceof GraphQLObjectType,
+                "The object type must belong to this GraphQLSchema");
+        assertTrue(
+                compositeType instanceof GraphQLCompositeType,
+                "The composite type must belong to this GraphQLSchema");
+        return isPossibleType(
+                (GraphQLCompositeType) compositeType,
+                (GraphQLObjectType) objectType);
+    }
+
+    @Override
+    public Coercing<?, ?> getScalarCoercing(SchemaScalar scalarType) {
+        assertTrue(
+                scalarType instanceof GraphQLScalarType,
+                "The scalar type must belong to this GraphQLSchema");
+        return ((GraphQLScalarType) scalarType).getCoercing();
     }
 
     /**

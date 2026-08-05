@@ -4,7 +4,6 @@ import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.DirectiveDefinition;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.EnumSet;
@@ -14,7 +13,6 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 
 @ExperimentalApi
-@NullMarked
 public final class SUDirective extends SUVertex implements SUAppliedDirectiveContainer {
 
     private final boolean repeatable;

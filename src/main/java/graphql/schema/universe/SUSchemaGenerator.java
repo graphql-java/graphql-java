@@ -42,7 +42,6 @@ import graphql.schema.idl.ScalarInfo;
 import graphql.schema.idl.SchemaTypeChecker;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import graphql.schema.idl.errors.SchemaProblem;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -64,7 +63,6 @@ import static graphql.Assert.assertTrue;
  * Compiles parsed type-system definitions directly into a {@link SUSchema}.
  */
 @ExperimentalApi
-@NullMarked
 public final class SUSchemaGenerator {
 
     private static final List<DirectiveDefinition> BUILT_IN_DIRECTIVE_DEFINITIONS =

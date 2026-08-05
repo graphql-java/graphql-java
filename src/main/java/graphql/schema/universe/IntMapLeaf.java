@@ -1,7 +1,6 @@
 package graphql.schema.universe;
 
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
@@ -12,7 +11,6 @@ import java.util.Set;
  * @param <V> the stored value type
  */
 @Internal
-@NullMarked
 public final class IntMapLeaf<V> implements IntMapNode<V> {
 
     private final int key;

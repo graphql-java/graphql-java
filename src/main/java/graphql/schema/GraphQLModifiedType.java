@@ -10,7 +10,7 @@ import graphql.PublicApi;
  * @see graphql.schema.GraphQLList
  */
 @PublicApi
-public interface GraphQLModifiedType extends GraphQLType {
+public interface GraphQLModifiedType extends GraphQLType, SchemaModifiedType {
 
     GraphQLType getWrappedType();
 }

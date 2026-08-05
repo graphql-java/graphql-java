@@ -29,7 +29,6 @@ import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTraverser;
 import graphql.schema.impl.GraphQLTypeCollectingVisitor;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -50,7 +49,6 @@ import static graphql.Assert.assertTrue;
  * part of this topology import.</p>
  */
 @ExperimentalApi
-@NullMarked
 public final class SUImporter {
 
     private final SchemaUniverse universe;

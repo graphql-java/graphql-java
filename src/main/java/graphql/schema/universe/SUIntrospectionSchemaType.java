@@ -2,7 +2,6 @@ package graphql.schema.universe;
 
 import graphql.Internal;
 import graphql.introspection.Introspection;
-import org.jspecify.annotations.NullMarked;
 
 import static graphql.Assert.assertNotNull;
 
@@ -10,7 +9,6 @@ import static graphql.Assert.assertNotNull;
  * Imports the canonical GraphQL introspection type graph into a schema universe schema.
  */
 @Internal
-@NullMarked
 public final class SUIntrospectionSchemaType {
 
     private final SchemaUniverse universe;

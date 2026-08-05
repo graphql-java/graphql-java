@@ -12,7 +12,8 @@ import java.util.List;
  * @see graphql.schema.GraphQLInterfaceType
  */
 @PublicApi
-public interface GraphQLFieldsContainer extends GraphQLCompositeType {
+public interface GraphQLFieldsContainer
+        extends GraphQLCompositeType, SchemaFieldsContainer {
 
     GraphQLFieldDefinition getFieldDefinition(String name);
 

@@ -12,7 +12,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.InputValueWithState;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
@@ -42,7 +41,6 @@ import static graphql.util.Interning.intern;
  * monotonically and are never reused, including after unused vertices are reclaimed.</p>
  */
 @ExperimentalApi
-@NullMarked
 public final class SchemaUniverse {
 
     private static final int VERTEX_CHUNK_SHIFT = 10;

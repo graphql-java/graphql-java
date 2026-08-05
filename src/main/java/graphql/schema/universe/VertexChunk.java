@@ -1,7 +1,6 @@
 package graphql.schema.universe;
 
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.BitSet;
@@ -10,7 +9,6 @@ import java.util.BitSet;
  * A fixed-size arena chunk whose vertex slots may be reclaimed.
  */
 @Internal
-@NullMarked
 public final class VertexChunk {
 
     private static final VertexChunk EMPTY = new VertexChunk(0);

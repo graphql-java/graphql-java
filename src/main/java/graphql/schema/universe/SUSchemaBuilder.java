@@ -3,7 +3,6 @@ package graphql.schema.universe;
 import com.google.common.collect.ImmutableMap;
 import graphql.ExperimentalApi;
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -19,7 +18,6 @@ import static graphql.Assert.assertTrue;
  * Builds an immutable schema snapshot, optionally by changing an existing snapshot.
  */
 @ExperimentalApi
-@NullMarked
 public final class SUSchemaBuilder {
 
     private final SchemaUniverse universe;

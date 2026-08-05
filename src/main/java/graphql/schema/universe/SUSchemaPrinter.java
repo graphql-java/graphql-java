@@ -2,7 +2,6 @@ package graphql.schema.universe;
 
 import graphql.ExperimentalApi;
 import graphql.schema.idl.SchemaPrinter;
-import org.jspecify.annotations.NullMarked;
 
 import static graphql.Assert.assertNotNull;
 
@@ -14,7 +13,6 @@ import static graphql.Assert.assertNotNull;
  * a schema universe does not retain scalar coercing implementations.</p>
  */
 @ExperimentalApi
-@NullMarked
 public final class SUSchemaPrinter {
 
     private final SchemaPrinter schemaPrinter;

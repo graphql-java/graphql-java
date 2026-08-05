@@ -1,7 +1,6 @@
 package graphql.schema.universe;
 
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 
 import static graphql.Assert.assertTrue;
 
@@ -15,7 +14,6 @@ import static graphql.Assert.assertTrue;
  * because repeatable directive occurrences must remain distinct.</p>
  */
 @Internal
-@NullMarked
 public enum SUEdgeKind {
     QUERY_TYPE(1, true, true, false),
     MUTATION_TYPE(2, true, true, false),

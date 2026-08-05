@@ -1,7 +1,6 @@
 package graphql.schema.universe;
 
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 
 import java.util.Arrays;
 
@@ -27,7 +26,6 @@ import static graphql.Assert.assertTrue;
  * snapshots.</p>
  */
 @Internal
-@NullMarked
 public final class PackedEdgeSet {
 
     private static final int MAX_NAME_ID = 0x00ff_ffff;

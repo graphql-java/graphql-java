@@ -43,7 +43,7 @@ import static graphql.util.FpKit.getByName;
  */
 @PublicApi
 @NullMarked
-public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, SchemaEnum {
 
     private final String name;
     private final String description;

@@ -20,7 +20,7 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 @NullMarked
-public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
+public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType, SchemaList {
 
     private final GraphQLType originalWrappedType;
     private @Nullable GraphQLType replacedWrappedType;

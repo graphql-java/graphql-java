@@ -1,7 +1,6 @@
 package graphql.schema.universe;
 
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
@@ -21,7 +20,6 @@ import static graphql.Assert.assertNotNull;
  * {@code 2^32}. Distinct source IDs therefore cannot produce a full-hash collision.</p>
  */
 @Internal
-@NullMarked
 public final class PersistentEdgeMap {
 
     private static final PersistentEdgeMap EMPTY = new PersistentEdgeMap(null);

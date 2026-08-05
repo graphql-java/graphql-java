@@ -1,7 +1,6 @@
 package graphql.schema.universe;
 
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
@@ -17,7 +16,6 @@ import static graphql.Assert.assertNotNull;
  * @param <V> the stored value type
  */
 @Internal
-@NullMarked
 public final class PersistentIntMap<V> {
 
     private static final PersistentIntMap<Object> EMPTY = new PersistentIntMap<>(null);

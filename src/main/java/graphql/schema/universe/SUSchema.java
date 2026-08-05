@@ -3,7 +3,6 @@ package graphql.schema.universe;
 import graphql.ExperimentalApi;
 import graphql.schema.GraphQLSchema;
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -24,7 +23,6 @@ import static graphql.Assert.assertTrue;
  * are not guaranteed to remain usable after removal, and its vertices may later be reclaimed.</p>
  */
 @ExperimentalApi
-@NullMarked
 public final class SUSchema {
 
     private final SchemaUniverse universe;

@@ -2,7 +2,6 @@ package graphql.schema.universe;
 
 import graphql.ExperimentalApi;
 import graphql.Internal;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
@@ -14,7 +13,6 @@ import static graphql.Assert.assertNotNull;
  * elements are stored by each {@link SUSchema}.</p>
  */
 @ExperimentalApi
-@NullMarked
 public abstract class SUVertex {
 
     private final int id;

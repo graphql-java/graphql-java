@@ -41,7 +41,7 @@ import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChil
  */
 @PublicApi
 @NullMarked
-public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, SchemaScalar {
 
     private final String name;
     private final @Nullable String description;

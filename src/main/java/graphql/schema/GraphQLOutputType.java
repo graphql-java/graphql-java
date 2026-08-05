@@ -8,5 +8,5 @@ import graphql.PublicApi;
  * to {@link graphql.schema.GraphQLInputType}s which can only be used as graphql mutation input.
  */
 @PublicApi
-public interface GraphQLOutputType extends GraphQLType {
+public interface GraphQLOutputType extends GraphQLType, SchemaOutputType {
 }
