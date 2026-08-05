@@ -40,6 +40,7 @@ class SUTest extends Specification {
                 .addField(query, foo)
                 .setFieldType(foo, string)
                 .build()
+        def baseVertexCount = universe.vertexCount
 
         when:
         def schema2 = schema1.transform("S2", builder -> builder
@@ -75,7 +76,7 @@ class SUTest extends Specification {
         schema1.sharesOutgoingEdgesWith(schema3, foo)
         !schema1.sharesOutgoingEdgesWith(schema2, query)
 
-        universe.vertexCount == 7
+        universe.vertexCount == baseVertexCount + 2
     }
 
     def "transforming one branch does not change its parent or sibling"() {
@@ -292,7 +293,8 @@ class SUTest extends Specification {
                 .build()
 
         then:
-        schema.types == [query, string, user]
+        schema.types.containsAll([query, string, user])
+        schema.getObjectType("__Schema").is(schema.introspectionSchemaType)
         schema.getType("Query").is(query)
         schema.getObjectType("User").is(user)
         schema.getScalarType("String").is(string)
@@ -753,6 +755,7 @@ class SUTest extends Specification {
                 .addType(integer)
                 .addAppliedDirective(query, originalDirective)
                 .build()
+        def baseVertexCount = universe.vertexCount
 
         when:
         def changedArgument = universe.newAppliedDirectiveArgument(
@@ -772,9 +775,8 @@ class SUTest extends Specification {
         changed.getType(changedArgument).is(integer)
 
         and:
-        universe.vertexCount == 6
-        base.storedEdgeCount == 2
-        changed.storedEdgeCount == 2
+        universe.vertexCount == baseVertexCount + 2
+        changed.storedEdgeCount == base.storedEdgeCount
     }
 
     def "applied directive payload rejects duplicate names and foreign universes"() {

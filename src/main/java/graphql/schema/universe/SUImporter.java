@@ -3,6 +3,7 @@ package graphql.schema.universe;
 import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.ExperimentalApi;
+import graphql.Internal;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLAppliedDirectiveArgument;
@@ -26,6 +27,8 @@ import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.SchemaTraverser;
+import graphql.schema.impl.GraphQLTypeCollectingVisitor;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -37,6 +40,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Assert.assertTrue;
 
 /**
  * Imports the type-system topology of an existing {@link GraphQLSchema} into a universe.
@@ -65,6 +69,8 @@ public final class SUImporter {
         schemaBuilder = universe.newSchema(name, schema.getDescription());
         createNamedTypeVertices(schema.getAllTypesAsList());
         addRootTypes(schema);
+        builder().introspectionSchemaType(
+                (SUObjectType) namedType(schema.getIntrospectionSchemaType()));
         addDirectiveDefinitions(schema.getDirectives());
         expandNamedTypes(schema.getAllTypesAsList());
         addAppliedDirectives(
@@ -75,13 +81,72 @@ public final class SUImporter {
         return builder().build();
     }
 
+    @Internal
+    public SUObjectType importIntrospectionSchemaType(
+            SUSchemaBuilder targetBuilder,
+            GraphQLObjectType introspectionSchemaType) {
+        assertTrue(schemaBuilder == null, "This schema universe importer has already been used");
+        schemaBuilder = assertNotNull(targetBuilder);
+        for (GraphQLDirective directive : Directives.BUILT_IN_DIRECTIVES) {
+            directiveDefinitions.put(directive.getName(), directive);
+        }
+        List<GraphQLNamedType> types =
+                collectNamedTypes(assertNotNull(introspectionSchemaType));
+        createNamedTypeVertices(types);
+        expandNamedTypes(types);
+        SUObjectType imported =
+                (SUObjectType) namedType(introspectionSchemaType);
+        builder().introspectionSchemaType(imported);
+        return imported;
+    }
+
+    private List<GraphQLNamedType> collectNamedTypes(
+            GraphQLObjectType introspectionSchemaType) {
+        GraphQLTypeCollectingVisitor collectingVisitor =
+                new GraphQLTypeCollectingVisitor();
+        SchemaTraverser traverser =
+                new SchemaTraverser(GraphQLSchemaElement::getChildren);
+        traverser.depthFirst(
+                collectingVisitor,
+                List.of(introspectionSchemaType));
+        return new ArrayList<>(
+                collectingVisitor.getResult().values());
+    }
+
     private void createNamedTypeVertices(List<GraphQLNamedType> types) {
         for (GraphQLNamedType type : types) {
-            SUNamedType vertex = createNamedTypeVertex(type);
+            SUNamedType vertex = builder().getNamedType(type.getName());
+            if (vertex == null) {
+                vertex = createNamedTypeVertex(type);
+            } else {
+                assertCompatibleNamedType(type, vertex);
+            }
             namedTypes.put(type.getName(), vertex);
             elementVertices.put(type, vertex);
             builder().addType(vertex);
         }
+    }
+
+    private void assertCompatibleNamedType(
+            GraphQLNamedType graphQLType,
+            SUNamedType universeType) {
+        boolean compatible =
+                graphQLType instanceof GraphQLObjectType
+                        && universeType instanceof SUObjectType
+                        || graphQLType instanceof GraphQLInterfaceType
+                        && universeType instanceof SUInterfaceType
+                        || graphQLType instanceof GraphQLUnionType
+                        && universeType instanceof SUUnionType
+                        || graphQLType instanceof GraphQLEnumType
+                        && universeType instanceof SUEnumType
+                        || graphQLType instanceof GraphQLScalarType
+                        && universeType instanceof SUScalarType
+                        || graphQLType instanceof GraphQLInputObjectType
+                        && universeType instanceof SUInputObjectType;
+        assertTrue(
+                compatible,
+                "Type '%s' has an incompatible schema universe kind",
+                graphQLType.getName());
     }
 
     private SUNamedType createNamedTypeVertex(GraphQLNamedType type) {

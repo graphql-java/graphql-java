@@ -2,7 +2,6 @@ package graphql.schema.universe;
 
 import graphql.Directives;
 import graphql.ExperimentalApi;
-import graphql.introspection.Introspection;
 import graphql.language.StringValue;
 import graphql.language.Value;
 import graphql.schema.GraphQLAppliedDirective;
@@ -56,20 +55,30 @@ public final class SUExporter {
 
     private final SUSchema schema;
     private final Map<Integer, GraphQLNamedType> namedTypes = new LinkedHashMap<>();
+    private boolean resolveKnownNamedTypes;
 
     public SUExporter(SUSchema schema) {
         this.schema = assertNotNull(schema);
     }
 
     public GraphQLSchema exportSchema() {
-        for (SUVertex type : schema.getTypes()) {
-            if (!Introspection.isIntrospectionTypes(requiredName(type))) {
+        SUObjectType introspectionSchemaType =
+                schema.getIntrospectionSchemaType();
+        for (SUNamedType type : schema.getTypes()) {
+            if (type != introspectionSchemaType) {
                 namedTypes.put(type.getId(), exportNamedType(type));
             }
         }
+        resolveKnownNamedTypes = true;
+        namedTypes.put(
+                introspectionSchemaType.getId(),
+                exportNamedType(introspectionSchemaType));
+        resolveKnownNamedTypes = false;
 
         GraphQLSchema.Builder builder = GraphQLSchema.newSchema()
                 .query(objectType(schema.getQueryType()))
+                .introspectionSchemaType(
+                        objectType(introspectionSchemaType))
                 .description(schema.getRoot().getDescription())
                 .codeRegistry(exportCodeRegistry());
 
@@ -83,7 +92,7 @@ public final class SUExporter {
         }
         for (SUNamedType type : schema.getTypes()) {
             if (isOperationType(type)
-                    || Introspection.isIntrospectionTypes(requiredName(type))) {
+                    || type == introspectionSchemaType) {
                 continue;
             }
             builder.additionalType(namedType(type));
@@ -314,6 +323,10 @@ public final class SUExporter {
         }
         if (type instanceof SUNonNullType) {
             return GraphQLNonNull.nonNull(exportType(requiredWrappedType((SUNonNullType) type)));
+        }
+        GraphQLNamedType knownType = namedTypes.get(type.getId());
+        if (resolveKnownNamedTypes && knownType != null) {
+            return knownType;
         }
         return typeReference(type);
     }

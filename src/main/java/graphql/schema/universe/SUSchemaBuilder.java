@@ -171,6 +171,26 @@ public final class SUSchemaBuilder {
         return setOptionalEdge(SUEdgeKind.SUBSCRIPTION_TYPE, subscriptionType);
     }
 
+    /**
+     * Replaces the default introspection schema type for this snapshot.
+     *
+     * @param introspectionSchemaType the introspection graph root
+     *
+     * @return this builder
+     */
+    public SUSchemaBuilder introspectionSchemaType(
+            SUObjectType introspectionSchemaType) {
+        return setIntrospectionSchemaType(introspectionSchemaType);
+    }
+
+    public SUSchemaBuilder setIntrospectionSchemaType(
+            SUObjectType introspectionSchemaType) {
+        return setEdge(
+                root,
+                SUEdgeKind.INTROSPECTION_SCHEMA_TYPE,
+                introspectionSchemaType);
+    }
+
     public SUSchemaBuilder type(SUNamedType type) {
         return addType(type);
     }
@@ -563,6 +583,7 @@ public final class SUSchemaBuilder {
 
     public SUSchema build() {
         assertCanChange();
+        ensureIntrospectionSchemaType();
         built = true;
         PersistentEdgeMap edgeMap = baseEdgeMap();
         PersistentIntMap<List<SUObjectType>> implementationsByInterfaceId =
@@ -592,7 +613,11 @@ public final class SUSchemaBuilder {
         }
         assertTrue(edgeMap.get(root.getId()).firstTarget(SUEdgeKind.QUERY_TYPE) >= 0,
                 "A schema universe schema requires a query type");
-        assertOperationTypesRegistered(edgeMap);
+        assertTrue(
+                edgeMap.get(root.getId())
+                        .firstTarget(SUEdgeKind.INTROSPECTION_SCHEMA_TYPE) >= 0,
+                "A schema universe schema requires an introspection schema type");
+        assertRootTypesRegistered(edgeMap);
         SUSchema schema = new SUSchema(
                 universe,
                 root,
@@ -606,6 +631,16 @@ public final class SUSchemaBuilder {
         return schema;
     }
 
+    private void ensureIntrospectionSchemaType() {
+        int targetId = mutableEdges(root)
+                .freeze()
+                .firstTarget(SUEdgeKind.INTROSPECTION_SCHEMA_TYPE);
+        if (targetId >= 0) {
+            return;
+        }
+        new SUIntrospectionSchemaType(universe).addTo(this);
+    }
+
     private SUSchemaBuilder setOptionalEdge(
             SUEdgeKind kind,
             @Nullable SUObjectType target) {
@@ -615,13 +650,16 @@ public final class SUSchemaBuilder {
         return setEdge(root, kind, target);
     }
 
-    private void assertOperationTypesRegistered(PersistentEdgeMap edgeMap) {
-        assertOperationTypeRegistered(edgeMap, SUEdgeKind.QUERY_TYPE);
-        assertOperationTypeRegistered(edgeMap, SUEdgeKind.MUTATION_TYPE);
-        assertOperationTypeRegistered(edgeMap, SUEdgeKind.SUBSCRIPTION_TYPE);
+    private void assertRootTypesRegistered(PersistentEdgeMap edgeMap) {
+        assertRootTypeRegistered(edgeMap, SUEdgeKind.QUERY_TYPE);
+        assertRootTypeRegistered(edgeMap, SUEdgeKind.MUTATION_TYPE);
+        assertRootTypeRegistered(edgeMap, SUEdgeKind.SUBSCRIPTION_TYPE);
+        assertRootTypeRegistered(
+                edgeMap,
+                SUEdgeKind.INTROSPECTION_SCHEMA_TYPE);
     }
 
-    private void assertOperationTypeRegistered(
+    private void assertRootTypeRegistered(
             PersistentEdgeMap edgeMap,
             SUEdgeKind kind) {
         int targetId = edgeMap.get(root.getId()).firstTarget(kind);
@@ -631,7 +669,7 @@ public final class SUSchemaBuilder {
         SUNamedType type = (SUNamedType) universe.getVertex(targetId);
         assertTrue(
                 namedTypesByNameId.get(type.getNameId()) == type,
-                "Operation type '%s' is not part of the schema",
+                "Root type '%s' is not part of the schema",
                 assertNotNull(type.getName()));
     }
 
@@ -821,6 +859,12 @@ public final class SUSchemaBuilder {
         assertTrue(!built, "This schema universe builder has already built a schema");
     }
 
+    @Internal
+    public @Nullable SUNamedType getNamedType(String name) {
+        int nameId = universe.getNameId(assertNotNull(name));
+        return nameId < 0 ? null : namedTypesByNameId.get(nameId);
+    }
+
     private void assertOwned(SUVertex vertex) {
         assertTrue(universe.owns(vertex), "Vertex %s belongs to another schema universe", vertex);
     }
@@ -874,6 +918,7 @@ public final class SUSchemaBuilder {
             case QUERY_TYPE:
             case MUTATION_TYPE:
             case SUBSCRIPTION_TYPE:
+            case INTROSPECTION_SCHEMA_TYPE:
                 return sourceKind == SUVertexKind.SCHEMA
                         && targetKind == SUVertexKind.OBJECT;
             case DIRECTIVE_DEFINITION:

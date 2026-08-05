@@ -20,6 +20,7 @@ public enum SUEdgeKind {
     QUERY_TYPE(1, true, true, false),
     MUTATION_TYPE(2, true, true, false),
     SUBSCRIPTION_TYPE(3, true, true, false),
+    INTROSPECTION_SCHEMA_TYPE(4, true, true, false),
     DIRECTIVE_DEFINITION(5, false, true, false),
     FIELD(6, false, true, false),
     ARGUMENT(7, false, true, false),

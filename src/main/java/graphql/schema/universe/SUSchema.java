@@ -114,6 +114,16 @@ public final class SUSchema {
         return (SUObjectType) getSingleTarget(root, SUEdgeKind.SUBSCRIPTION_TYPE);
     }
 
+    /**
+     * Returns the root of this schema's introspection type graph.
+     *
+     * @return the introspection schema object type
+     */
+    public SUObjectType getIntrospectionSchemaType() {
+        return (SUObjectType) assertNotNull(
+                getSingleTarget(root, SUEdgeKind.INTROSPECTION_SCHEMA_TYPE));
+    }
+
     public List<SUObjectType> getRootTypes() {
         List<SUObjectType> result = new ArrayList<>(3);
         result.add(getQueryType());

@@ -91,6 +91,7 @@ class SUSchemaImplementationsTest extends Specification {
         def string = universe.newScalarType("String")
         def base = universe.newSchema("base")
                 .queryType(query)
+                .addType(string)
                 .addInterface(object, node)
                 .build()
 

@@ -31,8 +31,7 @@ class SUSchemaPrinterTest extends Specification {
         directSdl == graphQLSdl
 
         and:
-        def expectedTypeNames = graphQLSchema.allTypesAsList*.name
-                .findAll { !it.startsWith("__") } as Set
+        def expectedTypeNames = graphQLSchema.allTypesAsList*.name as Set
         (direct.types*.name as Set) == expectedTypeNames
     }
 

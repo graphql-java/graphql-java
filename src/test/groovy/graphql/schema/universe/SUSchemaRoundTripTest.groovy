@@ -65,9 +65,7 @@ class SUSchemaRoundTripTest extends Specification {
                 query     : schema.queryType.name,
                 mutation  : schema.mutationType?.name,
                 subscription: schema.subscriptionType?.name,
-                types     : schema.allTypesAsList*.name
-                        .findAll { !it.startsWith("__") }
-                        .toSorted(),
+                types     : schema.allTypesAsList*.name.toSorted(),
                 directives: schema.directives*.name.toSorted()
         ]
     }

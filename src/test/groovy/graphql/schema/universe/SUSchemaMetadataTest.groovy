@@ -132,10 +132,11 @@ class SUSchemaMetadataTest extends Specification {
         schema.getType(argument).is(string)
 
         when:
+        def retainedVertexCount = universe.vertexCount
         universe.removeSchema(schema)
 
         then:
-        universe.cleanupUnusedVertices() == 5
+        universe.cleanupUnusedVertices() == retainedVertexCount
         universe.vertexCount == 0
     }
 
