@@ -1,0 +1,153 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
+plugins {
+    id 'java-library'
+    id 'org.jetbrains.kotlin.jvm'
+    id 'org.jetbrains.dokka-javadoc'
+    id 'maven-publish'
+    id 'signing'
+}
+
+def kotlinVersion = '2.4.0'
+def kotestVersion = '6.2.3'
+
+group = rootProject.group
+version = rootProject.version
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+    withSourcesJar()
+}
+
+kotlin {
+    compilerOptions {
+        apiVersion = KotlinVersion.KOTLIN_2_0
+        languageVersion = KotlinVersion.KOTLIN_2_0
+        jvmTarget = JvmTarget.JVM_11
+        javaParameters = true
+        freeCompilerArgs = [
+                '-Xemit-jvm-type-annotations',
+                '-Xjspecify-annotations=strict',
+        ]
+    }
+}
+
+dependencies {
+    api project(':')
+    api "org.jetbrains.kotlin:kotlin-stdlib:${kotlinVersion}"
+    api "io.kotest:kotest-property:${kotestVersion}"
+
+    testImplementation "io.kotest:kotest-assertions-core:${kotestVersion}"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
+}
+
+jar {
+    from rootProject.file('LICENSE.md')
+    from(rootProject.file('additionallicenses/APACHE-LICENSE-2.0.txt')) {
+        into 'additionallicenses'
+    }
+    from 'README.md'
+    manifest {
+        attributes('Automatic-Module-Name': 'com.graphqljava.propertytesting')
+    }
+}
+
+tasks.named('sourcesJar') {
+    from rootProject.file('LICENSE.md')
+    from(rootProject.file('additionallicenses/APACHE-LICENSE-2.0.txt')) {
+        into 'additionallicenses'
+    }
+    from 'README.md'
+}
+
+def dokkaJavadocJar = tasks.register('dokkaJavadocJar', Jar) {
+    dependsOn tasks.named('dokkaGeneratePublicationJavadoc')
+    from(tasks.named('dokkaGeneratePublicationJavadoc').flatMap { it.outputDirectory })
+    archiveClassifier = 'javadoc'
+}
+
+tasks.withType(Test).configureEach {
+    useJUnitPlatform()
+    maxHeapSize = '1g'
+    systemProperty 'junit.jupiter.execution.parallel.enabled', 'true'
+    systemProperty 'junit.jupiter.execution.parallel.mode.default', 'concurrent'
+    systemProperty 'junit.jupiter.execution.parallel.mode.classes.default', 'concurrent'
+    testLogging {
+        events 'FAILED', 'SKIPPED'
+        exceptionFormat = 'FULL'
+    }
+}
+
+[11, 17, 21].each { javaVersion ->
+    tasks.register("testWithJava${javaVersion}", Test) {
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(javaVersion)
+        }
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        dependsOn tasks.named('testClasses')
+    }
+}
+
+publishing {
+    publications {
+        propertyTesting(MavenPublication) {
+            artifactId = 'graphql-java-property-testing'
+            from components.java
+            artifact dokkaJavadocJar
+            pom {
+                name = 'graphql-java property testing'
+                description = 'Kotest property generators for graphql-java schemas, documents, and values'
+                url = 'https://github.com/graphql-java/graphql-java'
+                scm {
+                    url = 'https://github.com/graphql-java/graphql-java'
+                    connection = 'https://github.com/graphql-java/graphql-java'
+                    developerConnection = 'https://github.com/graphql-java/graphql-java'
+                }
+                licenses {
+                    license {
+                        name = 'MIT'
+                        url = 'https://github.com/graphql-java/graphql-java/blob/master/LICENSE.md'
+                        distribution = 'repo'
+                    }
+                    license {
+                        name = 'Apache License 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                        distribution = 'repo'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'andimarek'
+                        name = 'Andreas Marek'
+                    }
+                }
+            }
+        }
+    }
+}
+
+signing {
+    setRequired { !rootProject.hasProperty('publishToMavenLocal') }
+    def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
+    useInMemoryPgpKeys(signingKey, '')
+    sign publishing.publications
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    dependsOn tasks.named('build')
+}
+
+tasks.withType(GenerateModuleMetadata).configureEach {
+    enabled = false
+}
