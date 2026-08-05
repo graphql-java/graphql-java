@@ -40,7 +40,7 @@ public class FieldValidationInstrumentation extends SimplePerformantInstrumentat
     }
 
     @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, @Nullable InstrumentationState state) {
         List<GraphQLError> errors = FieldValidationSupport.validateFieldsAndArguments(fieldValidation, parameters.getExecutionContext());
         if (errors != null && !errors.isEmpty()) {
             throw new AbortExecutionException(errors);
