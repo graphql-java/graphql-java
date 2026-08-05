@@ -433,8 +433,7 @@ class SUTest extends Specification {
                 .removeInputField(filter, term)
                 .removeAppliedDirective(user, firstTag)
                 .removeSchemaAppliedDirective(schemaTag)
-                .removeDirectiveDefinition(tag)
-                .removeType(integer))
+                .removeDirectiveDefinition(tag))
 
         then:
         removed.getFields(query).isEmpty()
@@ -449,7 +448,7 @@ class SUTest extends Specification {
         removed.getAppliedDirectives(user) == [secondTag]
         removed.schemaAppliedDirectives.isEmpty()
         removed.getDirectiveDefinition("tag") == null
-        removed.getScalarType("Int") == null
+        removed.getScalarType("Int").is(integer)
 
         when:
         def withoutTags = schema.transform("withoutTags", builder ->
@@ -468,8 +467,7 @@ class SUTest extends Specification {
                 .clearInputFields(filter)
                 .clearAppliedDirectives(user)
                 .clearSchemaAppliedDirectives()
-                .clearDirectiveDefinitions()
-                .clearTypes())
+                .clearDirectiveDefinitions())
 
         then:
         withoutTags.getAppliedDirectives(user).isEmpty()
@@ -487,7 +485,7 @@ class SUTest extends Specification {
         cleared.getAppliedDirectives(user).isEmpty()
         cleared.schemaAppliedDirectives.isEmpty()
         cleared.directiveDefinitions.isEmpty()
-        cleared.types == [query]
+        cleared.types == schema.types
 
         and:
         schema.getFields(query) == [search]

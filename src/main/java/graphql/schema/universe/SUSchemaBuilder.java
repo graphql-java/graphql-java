@@ -194,57 +194,6 @@ public final class SUSchemaBuilder {
         return this;
     }
 
-    /**
-     * Removes a named type from this schema.
-     *
-     * @param type the named type
-     *
-     * @return this builder
-     */
-    public SUSchemaBuilder removeType(SUNamedType type) {
-        assertCanChange();
-        assertOwned(type);
-        int nameId = type.getNameId();
-        if (namedTypesByNameId.get(nameId) == type) {
-            namedTypesByNameId = namedTypesByNameId.remove(nameId);
-            namedTypeCount--;
-        }
-        return this;
-    }
-
-    /**
-     * Removes the named type with the given name from this schema.
-     *
-     * @param name the type name
-     *
-     * @return this builder
-     */
-    public SUSchemaBuilder removeType(String name) {
-        assertCanChange();
-        int nameId = universe.getNameId(assertNotNull(name));
-        if (nameId >= 0 && namedTypesByNameId.get(nameId) != null) {
-            namedTypesByNameId = namedTypesByNameId.remove(nameId);
-            namedTypeCount--;
-        }
-        return this;
-    }
-
-    /**
-     * Removes every named type except the current operation types.
-     *
-     * @return this builder
-     */
-    public SUSchemaBuilder clearTypes() {
-        assertCanChange();
-        PackedEdgeSet rootEdges = mutableEdges(root).freeze();
-        namedTypesByNameId = PersistentIntMap.empty();
-        namedTypeCount = 0;
-        retainOperationType(rootEdges, SUEdgeKind.QUERY_TYPE);
-        retainOperationType(rootEdges, SUEdgeKind.MUTATION_TYPE);
-        retainOperationType(rootEdges, SUEdgeKind.SUBSCRIPTION_TYPE);
-        return this;
-    }
-
     public SUSchemaBuilder directiveDefinition(SUDirective directive) {
         return addDirectiveDefinition(directive);
     }
@@ -660,15 +609,6 @@ public final class SUSchemaBuilder {
         assertOperationTypeRegistered(edgeMap, SUEdgeKind.QUERY_TYPE);
         assertOperationTypeRegistered(edgeMap, SUEdgeKind.MUTATION_TYPE);
         assertOperationTypeRegistered(edgeMap, SUEdgeKind.SUBSCRIPTION_TYPE);
-    }
-
-    private void retainOperationType(
-            PackedEdgeSet rootEdges,
-            SUEdgeKind kind) {
-        int targetId = rootEdges.firstTarget(kind);
-        if (targetId >= 0) {
-            addType((SUNamedType) universe.getVertex(targetId));
-        }
     }
 
     private void assertOperationTypeRegistered(

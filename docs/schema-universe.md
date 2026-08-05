@@ -109,10 +109,10 @@ adjacency, and `T` is the number of named types:
 | Read named type by name | `O(log32 T)` | none |
 | Read vertex metadata | `O(log32 M)` plus metadata-map lookup | none |
 | Add/remove edge | `O(d)` transient, then canonicalize at build | one changed primitive array |
-| Add/remove named type | `O(log32 T)` | one trie path |
+| Add named type | `O(log32 T)` | one trie path |
 | Edit vertex metadata | `O(log32 M + keys(vertex))` | one trie path and metadata map |
 | Publish `k` changed sources | `O(k log32 V)` | copied trie paths plus `k` arrays |
-| Derive with no type edits | effectively root replacement | root edge paths; type registry is shared |
+| Derive with no named-type additions | effectively root replacement | root edge paths; type registry is shared |
 
 Here `M` is the number of vertices with metadata in the snapshot.
 

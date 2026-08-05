@@ -56,8 +56,8 @@ import static java.util.Objects.requireNonNull;
  *
  * <p>Every version replaces a versioned applied directive on 1,000 object types distributed across
  * the source schema. Each five-step cycle additionally adds a detached object type, adds and removes
- * a field, adds a replacement field, and removes the type. The {@code retain100...} methods print
- * exact JOL object-graph footprints. Run the {@code profileRetained100...} methods separately with
+ * a field, then adds and removes a replacement field. The {@code retain100...} methods print exact
+ * JOL object-graph footprints. Run the {@code profileRetained100...} methods separately with
  * async-profiler's sampled live-allocation mode to attribute surviving allocations; use the JOL
  * values, not the sampled profile totals, for exact retained byte counts:</p>
  *
@@ -419,8 +419,12 @@ public class SchemaUniverseBenchmark {
                                     newStringField(current, mutation.replacementFieldName));
                             changed = true;
                             break;
-                        case REMOVE_SYNTHETIC_TYPE:
-                            return deleteNode(context);
+                        case REMOVE_REPLACEMENT_FIELD:
+                            changedObject = withRemovedField(
+                                    changedObject,
+                                    mutation.replacementFieldName);
+                            changed = true;
+                            break;
                         default:
                             break;
                     }
@@ -443,8 +447,6 @@ public class SchemaUniverseBenchmark {
                     current,
                     visitor,
                     builder -> builder.additionalType(syntheticType));
-        } else if (mutation.kind == EditKind.REMOVE_SYNTHETIC_TYPE) {
-            transformed = SchemaTransformer.transformSchemaWithDeletes(current, visitor);
         } else {
             transformed = SchemaTransformer.transformSchema(current, visitor);
         }
@@ -558,8 +560,12 @@ public class SchemaUniverseBenchmark {
                     builder.addField(typeForReplacement, replacementField)
                             .setFieldType(replacementField, stringType);
                     break;
-                case REMOVE_SYNTHETIC_TYPE:
-                    builder.removeType(mutation.syntheticTypeName);
+                case REMOVE_REPLACEMENT_FIELD:
+                    SUObjectType typeForReplacementRemoval =
+                            requireNonNull(current.getObjectType(mutation.syntheticTypeName));
+                    builder.removeField(
+                            typeForReplacementRemoval,
+                            mutation.replacementFieldName);
                     break;
                 default:
                     throw new IllegalStateException("Unhandled mutation " + mutation.kind);
@@ -643,9 +649,8 @@ public class SchemaUniverseBenchmark {
             MutationPlan plan) {
         int mutationCount = plan.mutations.size();
         int finalCycle = (mutationCount - 1) / EditKind.values().length;
-        boolean shouldBePresent = mutationCount % EditKind.values().length != 0;
         boolean isPresent = schema.getType(SYNTHETIC_PREFIX + "Type" + finalCycle) != null;
-        if (isPresent != shouldBePresent) {
+        if (!isPresent) {
             throw new IllegalStateException("Final synthetic GraphQLSchema type state differs");
         }
     }
@@ -655,9 +660,8 @@ public class SchemaUniverseBenchmark {
             MutationPlan plan) {
         int mutationCount = plan.mutations.size();
         int finalCycle = (mutationCount - 1) / EditKind.values().length;
-        boolean shouldBePresent = mutationCount % EditKind.values().length != 0;
         boolean isPresent = schema.getType(SYNTHETIC_PREFIX + "Type" + finalCycle) != null;
-        if (isPresent != shouldBePresent) {
+        if (!isPresent) {
             throw new IllegalStateException("Final synthetic SUSchema type state differs");
         }
     }
@@ -857,7 +861,7 @@ public class SchemaUniverseBenchmark {
         ADD_SYNTHETIC_FIELD,
         REMOVE_SYNTHETIC_FIELD,
         ADD_REPLACEMENT_FIELD,
-        REMOVE_SYNTHETIC_TYPE
+        REMOVE_REPLACEMENT_FIELD
     }
 
     private static final class Mutation {

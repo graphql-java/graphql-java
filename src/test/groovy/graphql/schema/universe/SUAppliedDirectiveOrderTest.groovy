@@ -83,7 +83,7 @@ class SUAppliedDirectiveOrderTest extends Specification {
         thrown(AssertException)
     }
 
-    def "replacing applied directives registers named containers"() {
+    def "replacing applied directives preserves named container registration"() {
         given:
         def universe = new SchemaUniverse()
         def query = universe.newObjectType("Query")
@@ -106,9 +106,8 @@ class SUAppliedDirectiveOrderTest extends Specification {
         base.getAppliedDirectives(custom) == [first, second]
 
         when:
-        def changed = base.transform("changed", builder -> builder
-                .removeType(custom)
-                .replaceAppliedDirective(custom, first, replacement))
+        def changed = base.transform("changed", builder ->
+                builder.replaceAppliedDirective(custom, first, replacement))
 
         then:
         changed.getScalarType("Custom").is(custom)

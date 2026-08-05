@@ -75,9 +75,9 @@ class SchemaUniverseCleanupTest extends Specification {
                 .addField(extra, field)
                 .setFieldType(field, string)
                 .build()
-        def withoutExtra = base.transform(
-                "withoutExtra",
-                builder -> builder.removeType(extra))
+        def withoutField = base.transform(
+                "withoutField",
+                builder -> builder.removeField(extra, field))
         def baseRoot = base.root
 
         expect:
@@ -93,12 +93,12 @@ class SchemaUniverseCleanupTest extends Specification {
         universe.owns(extra)
         universe.owns(field)
         universe.owns(string)
-        withoutExtra.getType("Extra") == null
+        withoutField.getField(extra, "value") == null
 
         when:
-        def reattached = withoutExtra.transform(
+        def reattached = withoutField.transform(
                 "reattached",
-                builder -> builder.addType(extra))
+                builder -> builder.addField(extra, field))
 
         then:
         reattached.getObjectType("Extra").is(extra)
