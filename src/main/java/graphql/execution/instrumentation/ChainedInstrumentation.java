@@ -67,21 +67,30 @@ public class ChainedInstrumentation implements Instrumentation {
         return instrumentations;
     }
 
-    private <T> @Nullable InstrumentationContext<T> chainedCtx(InstrumentationState state, BiFunction<Instrumentation, InstrumentationState, InstrumentationContext<T>> mapper) {
+    /**
+     * Chained instrumentation always materializes a {@link ChainedInstrumentationState} via
+     * {@link #createStateAsync(InstrumentationCreateStateParameters)}. Callback {@code state} is still
+     * {@link Nullable} to match the optional-state contract of {@link Instrumentation}.
+     */
+    private static ChainedInstrumentationState asChainedState(@Nullable InstrumentationState state) {
+        return (ChainedInstrumentationState) assertNotNull(state);
+    }
+
+    private <T> @Nullable InstrumentationContext<T> chainedCtx(@Nullable InstrumentationState state, BiFunction<Instrumentation, InstrumentationState, InstrumentationContext<T>> mapper) {
         // if we have zero or 1 instrumentations (and 1 is the most common), then we can avoid an object allocation
         // of the ChainedInstrumentationContext since it won't be needed
         if (instrumentations.isEmpty()) {
             return SimpleInstrumentationContext.noOp();
         }
-        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
+        ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         if (instrumentations.size() == 1) {
             return mapper.apply(instrumentations.get(0), chainedInstrumentationState.getState(0));
         }
         return new ChainedInstrumentationContext<>(chainedMapAndDropNulls(chainedInstrumentationState, mapper));
     }
 
-    private <T> T chainedInstrument(InstrumentationState state, T input, ChainedInstrumentationFunction<Instrumentation, InstrumentationState, T, T> mapper) {
-        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
+    private <T> T chainedInstrument(@Nullable InstrumentationState state, T input, ChainedInstrumentationFunction<Instrumentation, InstrumentationState, T, T> mapper) {
+        ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         for (int i = 0; i < instrumentations.size(); i++) {
             Instrumentation instrumentation = instrumentations.get(i);
             InstrumentationState specificState = chainedInstrumentationState.getState(i);
@@ -90,8 +99,8 @@ public class ChainedInstrumentation implements Instrumentation {
         return input;
     }
 
-    protected <T> ImmutableList<T> chainedMapAndDropNulls(InstrumentationState state, BiFunction<Instrumentation, InstrumentationState, T> mapper) {
-        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
+    protected <T> ImmutableList<T> chainedMapAndDropNulls(@Nullable InstrumentationState state, BiFunction<Instrumentation, InstrumentationState, T> mapper) {
+        ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         ImmutableList.Builder<T> result = ImmutableList.builderWithExpectedSize(instrumentations.size());
         for (int i = 0; i < instrumentations.size(); i++) {
             Instrumentation instrumentation = instrumentations.get(i);
@@ -104,8 +113,8 @@ public class ChainedInstrumentation implements Instrumentation {
         return result.build();
     }
 
-    protected void chainedConsume(InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
-        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
+    protected void chainedConsume(@Nullable InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
+        ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         for (int i = 0; i < instrumentations.size(); i++) {
             Instrumentation instrumentation = instrumentations.get(i);
             InstrumentationState specificState = chainedInstrumentationState.getState(i);
@@ -119,39 +128,39 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginExecution(parameters, specificState));
     }
 
 
     @Override
-    public @Nullable InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginParse(parameters, specificState));
     }
 
 
     @Override
-    public @Nullable InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginValidation(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginExecuteOperation(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<Void> beginReactiveResults(InstrumentationReactiveResultsParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Void> beginReactiveResults(InstrumentationReactiveResultsParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginReactiveResults(parameters, specificState));
     }
 
     @Override
-    public @Nullable ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+    public @Nullable ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, @Nullable InstrumentationState state) {
         if (instrumentations.isEmpty()) {
             return ExecutionStrategyInstrumentationContext.NOOP;
         }
         BiFunction<Instrumentation, InstrumentationState, ExecutionStrategyInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginExecutionStrategy(parameters, specificState);
-        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
+        ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         if (instrumentations.size() == 1) {
             return mapper.apply(instrumentations.get(0), chainedInstrumentationState.getState(0));
         }
@@ -159,12 +168,12 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, @Nullable InstrumentationState state) {
         if (instrumentations.isEmpty()) {
             return ExecuteObjectInstrumentationContext.NOOP;
         }
         BiFunction<Instrumentation, InstrumentationState, ExecuteObjectInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginExecuteObject(parameters, specificState);
-        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
+        ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         if (instrumentations.size() == 1) {
             return mapper.apply(instrumentations.get(0), chainedInstrumentationState.getState(0));
         }
@@ -173,32 +182,32 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @ExperimentalApi
     @Override
-    public @Nullable InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginDeferredField(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginSubscribedFieldEvent(parameters, specificState));
     }
 
     @Override
-    public @Nullable InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldExecution(parameters, specificState));
     }
 
     @SuppressWarnings("deprecation")
     @Override
-    public @Nullable InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldFetch(parameters, specificState));
     }
 
     @Override
-    public @Nullable FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    public @Nullable FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
         if (instrumentations.isEmpty()) {
             return FieldFetchingInstrumentationContext.NOOP;
         }
-        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
+        ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         if (instrumentations.size() == 1) {
             return instrumentations.get(0).beginFieldFetching(parameters, chainedInstrumentationState.getState(0));
         }
@@ -234,47 +243,47 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldCompletion(parameters, specificState));
     }
 
 
     @Override
-    public @Nullable InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+    public @Nullable InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, @Nullable InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldListCompletion(parameters, specificState));
     }
 
     @Override
-    public ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    public ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return chainedInstrument(state, executionInput, (instrumentation, specificState, accumulator) -> instrumentation.instrumentExecutionInput(accumulator, parameters, specificState));
     }
 
     @Override
-    public DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    public DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return chainedInstrument(state, documentAndVariables, (instrumentation, specificState, accumulator) ->
                 instrumentation.instrumentDocumentAndVariables(accumulator, parameters, specificState));
     }
 
     @Override
-    public GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    public GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return chainedInstrument(state, schema, (instrumentation, specificState, accumulator) ->
                 instrumentation.instrumentSchema(accumulator, parameters, specificState));
     }
 
     @Override
-    public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return chainedInstrument(state, executionContext, (instrumentation, specificState, accumulator) ->
                 instrumentation.instrumentExecutionContext(accumulator, parameters, specificState));
     }
 
     @Override
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
         return chainedInstrument(state, dataFetcher, (Instrumentation instrumentation, InstrumentationState specificState, DataFetcher<?> accumulator) ->
                 instrumentation.instrumentDataFetcher(accumulator, parameters, specificState));
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         ImmutableList<Map.Entry<Instrumentation, InstrumentationState>> entries = chainedMapAndDropNulls(state, AbstractMap.SimpleEntry::new);
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(entries, (entry, prevResults) -> {
             Instrumentation instrumentation = entry.getKey();
