@@ -7,7 +7,7 @@ import org.jspecify.annotations.Nullable;
 
 @ExperimentalApi
 @NullMarked
-public final class SUUnionType extends SUNamedType {
+public final class SUUnionType extends SUCompositeType {
 
     @Internal
     public SUUnionType(int id, int nameId, String name, @Nullable String description) {

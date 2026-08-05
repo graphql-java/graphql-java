@@ -255,6 +255,49 @@ public final class SUSchema {
         return implementations == null ? Collections.emptyList() : implementations;
     }
 
+    /**
+     * Returns the concrete object types that a composite type can represent at runtime.
+     *
+     * <p>An object type represents itself, an interface represents its implementations, and a
+     * union represents its members.</p>
+     *
+     * @param compositeType the object, interface, or union type
+     *
+     * @return the immutable list of possible object types
+     */
+    public List<SUObjectType> getPossibleTypes(SUCompositeType compositeType) {
+        assertOwned(compositeType);
+        if (compositeType instanceof SUObjectType) {
+            return Collections.singletonList((SUObjectType) compositeType);
+        }
+        if (compositeType instanceof SUInterfaceType) {
+            return getImplementations((SUInterfaceType) compositeType);
+        }
+        return getUnionMembers((SUUnionType) compositeType);
+    }
+
+    /**
+     * Reports whether an object type is a possible runtime type of a composite type.
+     *
+     * @param compositeType the object, interface, or union type
+     * @param objectType the possible concrete object type
+     *
+     * @return {@code true} when the object is a possible runtime type
+     */
+    public boolean isPossibleType(
+            SUCompositeType compositeType,
+            SUObjectType objectType) {
+        assertOwned(compositeType);
+        assertOwned(objectType);
+        if (compositeType instanceof SUObjectType) {
+            return compositeType == objectType;
+        }
+        if (compositeType instanceof SUInterfaceType) {
+            return containsEdge(objectType, SUEdgeKind.IMPLEMENTS, compositeType);
+        }
+        return containsEdge(compositeType, SUEdgeKind.UNION_MEMBER, objectType);
+    }
+
     public @Nullable SUInterfaceType getInterface(SUObjectType objectType, String name) {
         return getTypedChild(objectType, SUEdgeKind.IMPLEMENTS, name, SUInterfaceType.class);
     }
