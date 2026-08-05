@@ -6,11 +6,6 @@ import graphql.Assert;
 import graphql.Directives;
 import graphql.ExperimentalApi;
 import graphql.Internal;
-import graphql.execution.CoercedVariables;
-import graphql.execution.FieldCollector;
-import graphql.execution.FieldCollectorParameters;
-import graphql.execution.MergedField;
-import graphql.execution.MergedSelectionSet;
 import graphql.execution.TypeFromAST;
 import graphql.execution.ValuesResolver;
 import graphql.i18n.I18nMsg;
@@ -23,13 +18,13 @@ import graphql.language.BooleanValue;
 import graphql.language.Definition;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
+import graphql.language.DirectivesContainer;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
-import graphql.language.NodeUtil;
 import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
@@ -102,6 +97,7 @@ import static graphql.validation.ValidationErrorType.DuplicateOperationName;
 import static graphql.validation.ValidationErrorType.DuplicateVariableName;
 import static graphql.validation.ValidationErrorType.FieldUndefined;
 import static graphql.validation.ValidationErrorType.FieldsConflict;
+import static graphql.validation.ValidationErrorType.ForbidSkipAndIncludeOnSubscriptionRoot;
 import static graphql.validation.ValidationErrorType.FragmentCycle;
 import static graphql.validation.ValidationErrorType.FragmentTypeConditionInvalid;
 import static graphql.validation.ValidationErrorType.InlineFragmentTypeConditionInvalid;
@@ -329,7 +325,16 @@ public class OperationValidator implements DocumentVisitor {
     private final Set<String> checkedDeferLabels = new LinkedHashSet<>();
 
     // --- State: SubscriptionUniqueRootField ---
-    private final FieldCollector fieldCollector = new FieldCollector();
+    private @Nullable OperationDefinition subscriptionRoot_operationDefinition;
+    private @Nullable GraphQLObjectType subscriptionRoot_type;
+    private final Map<String, List<Field>> subscriptionRoot_fields = new LinkedHashMap<>();
+    private final List<Directive> subscriptionRoot_forbiddenDirectives = new ArrayList<>();
+    private final Set<String> subscriptionRoot_visitedFragments = new LinkedHashSet<>();
+    private final List<String> subscriptionRoot_activeFragmentNames = new ArrayList<>();
+    private final List<Integer> subscriptionRoot_activeFragmentBaseDepths = new ArrayList<>();
+    private final List<Boolean> subscriptionRoot_activeFragmentApplies = new ArrayList<>();
+    private final Map<String, Map<String, List<Field>>> subscriptionRoot_fragmentFields = new HashMap<>();
+    private final Map<String, List<Directive>> subscriptionRoot_fragmentForbiddenDirectives = new HashMap<>();
 
     // --- State: Query Complexity Limits ---
     private int fieldCount = 0;
@@ -622,6 +627,9 @@ public class OperationValidator implements DocumentVisitor {
         if (operationScope && isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
             checkGoodFaithIntrospection(field);
         }
+        if (operationScope && isRuleEnabled(OperationValidationRule.SUBSCRIPTION_UNIQUE_ROOT_FIELD)) {
+            validateSubscriptionUniqueRootField_field(field);
+        }
     }
 
     // --- GoodFaithIntrospection ---
@@ -679,6 +687,11 @@ public class OperationValidator implements DocumentVisitor {
                 validateUniqueDirectiveNamesPerLocation(inlineFragment, inlineFragment.getDirectives());
             }
         }
+        if (shouldRunOperationScopedRules()) {
+            if (isRuleEnabled(OperationValidationRule.SUBSCRIPTION_UNIQUE_ROOT_FIELD)) {
+                validateSubscriptionUniqueRootField_inlineFragment(inlineFragment);
+            }
+        }
     }
 
     private void checkDirective(Directive directive, List<Node> ancestors) {
@@ -722,6 +735,12 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
 
+        if (shouldRunOperationScopedRules()) {
+            if (isRuleEnabled(OperationValidationRule.SUBSCRIPTION_UNIQUE_ROOT_FIELD)) {
+                validateSubscriptionUniqueRootField_fragmentSpread(node);
+            }
+        }
+
         // Handle complexity tracking and fragment traversal
         if (operationScope) {
             String fragmentName = node.getName();
@@ -751,9 +770,11 @@ public class OperationValidator implements DocumentVisitor {
                 // Initialize max depth tracking for this fragment
                 fragmentTraversalMaxDepth = currentFieldDepth;
 
+                enterSubscriptionRootFragment(node, fragment, currentFieldDepth);
                 fragmentRetraversalDepth++;
                 new LanguageTraversal(ancestors).traverse(fragment, this);
                 fragmentRetraversalDepth--;
+                leaveSubscriptionRootFragment();
 
                 // Calculate and store fragment complexity
                 int fragmentFieldCount = fieldCount - fieldCountBefore;
@@ -808,7 +829,7 @@ public class OperationValidator implements DocumentVisitor {
             validateUniqueVariableNames(operationDefinition);
         }
         if (isRuleEnabled(OperationValidationRule.SUBSCRIPTION_UNIQUE_ROOT_FIELD)) {
-            validateSubscriptionUniqueRootField(operationDefinition);
+            enterSubscriptionUniqueRootField(operationDefinition);
         }
         if (isRuleEnabled(OperationValidationRule.UNIQUE_DIRECTIVE_NAMES_PER_LOCATION)) {
             validateUniqueDirectiveNamesPerLocation(operationDefinition, operationDefinition.getDirectives());
@@ -864,6 +885,10 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void leaveOperationDefinition() {
+        if (isRuleEnabled(OperationValidationRule.SUBSCRIPTION_UNIQUE_ROOT_FIELD)) {
+            leaveSubscriptionUniqueRootField();
+        }
+
         // fragments should be revisited for each operation
         visitedFragmentSpreads.clear();
         operationScope = false;
@@ -1819,32 +1844,285 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     // --- SubscriptionUniqueRootField ---
-    private void validateSubscriptionUniqueRootField(OperationDefinition operationDef) {
-        if (operationDef.getOperation() == SUBSCRIPTION) {
-            GraphQLObjectType subscriptionType = validationContext.getSchema().getSubscriptionType();
-            FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
-                    .schema(validationContext.getSchema())
-                    .fragments(NodeUtil.getFragmentsByName(validationContext.getDocument()))
-                    .variables(CoercedVariables.emptyVariables().toMap())
-                    .objectType(subscriptionType)
-                    .graphQLContext(validationContext.getGraphQLContext())
-                    .build();
-            MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDef.getSelectionSet());
-            if (fields.size() > 1) {
-                String message = i18n(SubscriptionMultipleRootFields, "SubscriptionUniqueRootField.multipleRootFields", Objects.toString(operationDef.getName(), ""));
-                addError(SubscriptionMultipleRootFields, operationDef.getSourceLocation(), message);
-            } else {
-                MergedField mergedField = fields.getSubFieldsList().get(0);
-                if (isIntrospectionField(mergedField)) {
-                    String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootField", Objects.toString(operationDef.getName(), ""), mergedField.getName());
-                    addError(SubscriptionIntrospectionRootField, mergedField.getSingleField().getSourceLocation(), message);
-                }
+    private void enterSubscriptionUniqueRootField(OperationDefinition operationDef) {
+        resetSubscriptionRootState();
+        if (operationDef.getOperation() != SUBSCRIPTION) {
+            return;
+        }
+
+        GraphQLObjectType subscriptionType = validationContext.getSchema().getSubscriptionType();
+        if (subscriptionType == null) {
+            return;
+        }
+
+        subscriptionRoot_operationDefinition = operationDef;
+        subscriptionRoot_type = subscriptionType;
+    }
+
+    private void validateSubscriptionUniqueRootField_field(Field field) {
+        if (!isSubscriptionRootActive()) {
+            return;
+        }
+
+        if (isSubscriptionRootField()) {
+            collectForbiddenSkipOrIncludeDirectives(field, subscriptionRoot_forbiddenDirectives);
+            addSubscriptionRootField(subscriptionRoot_fields, field);
+        }
+
+        for (int i = 0; i < subscriptionRoot_activeFragmentNames.size(); i++) {
+            if (!isSubscriptionRootActiveFragmentField(i)) {
+                continue;
+            }
+            collectForbiddenSkipOrIncludeDirectives(field, getSubscriptionRootFragmentForbiddenDirectives(i));
+            addSubscriptionRootField(getSubscriptionRootFragmentFields(i), field);
+        }
+    }
+
+    private void validateSubscriptionUniqueRootField_inlineFragment(InlineFragment inlineFragment) {
+        if (!isSubscriptionRootActive()) {
+            return;
+        }
+
+        if (isSubscriptionRootSelection()) {
+            collectForbiddenSkipOrIncludeDirectives(inlineFragment, subscriptionRoot_forbiddenDirectives);
+        }
+
+        for (int i = 0; i < subscriptionRoot_activeFragmentNames.size(); i++) {
+            if (!isSubscriptionRootActiveFragmentSelection(i)) {
+                continue;
+            }
+            collectForbiddenSkipOrIncludeDirectives(inlineFragment, getSubscriptionRootFragmentForbiddenDirectives(i));
+        }
+    }
+
+    private void validateSubscriptionUniqueRootField_fragmentSpread(FragmentSpread fragmentSpread) {
+        if (!isSubscriptionRootActive()) {
+            return;
+        }
+
+        boolean rootSelection = isSubscriptionRootSelection();
+        boolean forbiddenDirective = containsSkipOrIncludeDirective(fragmentSpread);
+        if (rootSelection) {
+            collectForbiddenSkipOrIncludeDirectives(fragmentSpread, subscriptionRoot_forbiddenDirectives);
+            addSubscriptionRootFragmentSummary(fragmentSpread, subscriptionRoot_fields, subscriptionRoot_forbiddenDirectives, forbiddenDirective, true);
+        }
+
+        for (int i = 0; i < subscriptionRoot_activeFragmentNames.size(); i++) {
+            if (!isSubscriptionRootActiveFragmentSelection(i)) {
+                continue;
+            }
+            List<Directive> forbiddenDirectives = getSubscriptionRootFragmentForbiddenDirectives(i);
+            collectForbiddenSkipOrIncludeDirectives(fragmentSpread, forbiddenDirectives);
+            addSubscriptionRootFragmentSummary(fragmentSpread, getSubscriptionRootFragmentFields(i), forbiddenDirectives, forbiddenDirective, false);
+        }
+    }
+
+    private void leaveSubscriptionUniqueRootField() {
+        if (subscriptionRoot_operationDefinition == null) {
+            resetSubscriptionRootState();
+            return;
+        }
+
+        OperationDefinition operationDefinition = subscriptionRoot_operationDefinition;
+        if (!subscriptionRoot_forbiddenDirectives.isEmpty()) {
+            String message = i18n(ForbidSkipAndIncludeOnSubscriptionRoot, "SubscriptionUniqueRootField.skipIncludeNotAllowed", Objects.toString(operationDefinition.getName(), ""));
+            addError(ForbidSkipAndIncludeOnSubscriptionRoot, subscriptionRoot_forbiddenDirectives, message);
+            resetSubscriptionRootState();
+            return;
+        }
+
+        if (subscriptionRoot_fields.size() != 1) {
+            String message = i18n(SubscriptionMultipleRootFields, "SubscriptionUniqueRootField.multipleRootFields", Objects.toString(operationDefinition.getName(), ""));
+            addError(SubscriptionMultipleRootFields, operationDefinition.getSourceLocation(), message);
+            resetSubscriptionRootState();
+            return;
+        }
+
+        Field field = subscriptionRoot_fields.values().iterator().next().get(0);
+        if (isIntrospectionField(field)) {
+            String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootField", Objects.toString(operationDefinition.getName(), ""), field.getName());
+            addError(SubscriptionIntrospectionRootField, field.getSourceLocation(), message);
+        }
+        resetSubscriptionRootState();
+    }
+
+    private void enterSubscriptionRootFragment(FragmentSpread fragmentSpread, FragmentDefinition fragmentDefinition, int baseDepth) {
+        if (!isSubscriptionRootActive()) {
+            return;
+        }
+
+        boolean applies = doesSubscriptionFragmentConditionMatch(fragmentDefinition);
+        subscriptionRoot_activeFragmentNames.add(fragmentSpread.getName());
+        subscriptionRoot_activeFragmentBaseDepths.add(baseDepth);
+        subscriptionRoot_activeFragmentApplies.add(applies);
+    }
+
+    private void leaveSubscriptionRootFragment() {
+        if (subscriptionRoot_activeFragmentNames.isEmpty()) {
+            return;
+        }
+
+        int lastIndex = subscriptionRoot_activeFragmentNames.size() - 1;
+        subscriptionRoot_activeFragmentNames.remove(lastIndex);
+        subscriptionRoot_activeFragmentBaseDepths.remove(lastIndex);
+        subscriptionRoot_activeFragmentApplies.remove(lastIndex);
+    }
+
+    private boolean isSubscriptionRootActive() {
+        return subscriptionRoot_operationDefinition != null;
+    }
+
+    private boolean isSubscriptionRootField() {
+        GraphQLCompositeType parentType = validationContext.getParentType();
+        return currentFieldDepth == 1 && doesSubscriptionFragmentConditionMatch(parentType);
+    }
+
+    private boolean isSubscriptionRootSelection() {
+        if (currentFieldDepth != 0) {
+            return false;
+        }
+        if (subscriptionRoot_activeFragmentNames.isEmpty()) {
+            return true;
+        }
+        for (int i = 0; i < subscriptionRoot_activeFragmentNames.size(); i++) {
+            if (isSubscriptionRootOperationFragmentSelection(i)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isSubscriptionRootActiveFragmentField(int index) {
+        return subscriptionRoot_activeFragmentApplies.get(index) &&
+                currentFieldDepth == subscriptionRoot_activeFragmentBaseDepths.get(index) + 1 &&
+                doesSubscriptionFragmentConditionMatch(validationContext.getParentType());
+    }
+
+    private boolean isSubscriptionRootActiveFragmentSelection(int index) {
+        return subscriptionRoot_activeFragmentApplies.get(index) &&
+                currentFieldDepth == subscriptionRoot_activeFragmentBaseDepths.get(index);
+    }
+
+    private boolean isSubscriptionRootOperationFragmentSelection(int index) {
+        return subscriptionRoot_activeFragmentApplies.get(index) &&
+                subscriptionRoot_activeFragmentBaseDepths.get(index) == 0;
+    }
+
+    private void addSubscriptionRootFragmentSummary(FragmentSpread fragmentSpread, Map<String, List<Field>> fields, List<Directive> forbiddenDirectives, boolean spreadHasForbiddenDirective, boolean trackVisited) {
+        if (spreadHasForbiddenDirective) {
+            return;
+        }
+        if (trackVisited && !subscriptionRoot_visitedFragments.add(fragmentSpread.getName())) {
+            return;
+        }
+
+        Map<String, List<Field>> fragmentFields = subscriptionRoot_fragmentFields.get(fragmentSpread.getName());
+        if (fragmentFields != null && fragmentFields != fields) {
+            addSubscriptionRootFields(fields, fragmentFields);
+        }
+        List<Directive> fragmentForbiddenDirectives = subscriptionRoot_fragmentForbiddenDirectives.get(fragmentSpread.getName());
+        if (fragmentForbiddenDirectives != null && fragmentForbiddenDirectives != forbiddenDirectives) {
+            forbiddenDirectives.addAll(fragmentForbiddenDirectives);
+        }
+    }
+
+    private void addSubscriptionRootFields(Map<String, List<Field>> targetFields, Map<String, List<Field>> sourceFields) {
+        for (List<Field> fields : sourceFields.values()) {
+            for (Field field : fields) {
+                addSubscriptionRootField(targetFields, field);
             }
         }
     }
 
-    private boolean isIntrospectionField(MergedField field) {
+    private void addSubscriptionRootField(Map<String, List<Field>> fields, Field field) {
+        String responseName = field.getResultKey();
+        List<Field> fieldsForResponseName = fields.get(responseName);
+        if (fieldsForResponseName == null) {
+            fieldsForResponseName = new ArrayList<>();
+            fields.put(responseName, fieldsForResponseName);
+        }
+        fieldsForResponseName.add(field);
+    }
+
+    private Map<String, List<Field>> getSubscriptionRootFragmentFields(int index) {
+        String fragmentName = subscriptionRoot_activeFragmentNames.get(index);
+        Map<String, List<Field>> fields = subscriptionRoot_fragmentFields.get(fragmentName);
+        if (fields == null) {
+            fields = new LinkedHashMap<>();
+            subscriptionRoot_fragmentFields.put(fragmentName, fields);
+        }
+        return fields;
+    }
+
+    private List<Directive> getSubscriptionRootFragmentForbiddenDirectives(int index) {
+        String fragmentName = subscriptionRoot_activeFragmentNames.get(index);
+        List<Directive> forbiddenDirectives = subscriptionRoot_fragmentForbiddenDirectives.get(fragmentName);
+        if (forbiddenDirectives == null) {
+            forbiddenDirectives = new ArrayList<>();
+            subscriptionRoot_fragmentForbiddenDirectives.put(fragmentName, forbiddenDirectives);
+        }
+        return forbiddenDirectives;
+    }
+
+    private boolean containsSkipOrIncludeDirective(DirectivesContainer<?> directivesContainer) {
+        for (Directive directive : directivesContainer.getDirectives()) {
+            if (isSkipOrIncludeDirective(directive)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void collectForbiddenSkipOrIncludeDirectives(DirectivesContainer<?> directivesContainer, List<Directive> forbiddenDirectives) {
+        for (Directive directive : directivesContainer.getDirectives()) {
+            if (isSkipOrIncludeDirective(directive)) {
+                forbiddenDirectives.add(directive);
+            }
+        }
+    }
+
+    private boolean isSkipOrIncludeDirective(Directive directive) {
+        return directive.getName().equals(Directives.SkipDirective.getName()) ||
+                directive.getName().equals(Directives.IncludeDirective.getName());
+    }
+
+    private boolean doesSubscriptionFragmentConditionMatch(FragmentDefinition fragmentDefinition) {
+        GraphQLType conditionType = TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragmentDefinition.getTypeCondition());
+        return doesSubscriptionFragmentConditionMatch(conditionType);
+    }
+
+    private boolean doesSubscriptionFragmentConditionMatch(@Nullable GraphQLType conditionType) {
+        if (conditionType == null) {
+            return false;
+        }
+        GraphQLObjectType subscriptionType = Assert.assertNotNull(subscriptionRoot_type, "subscriptionRoot_type must be set");
+        if (conditionType.equals(subscriptionType)) {
+            return true;
+        }
+        if (conditionType instanceof GraphQLInterfaceType) {
+            return validationContext.getSchema().isPossibleType((GraphQLInterfaceType) conditionType, subscriptionType);
+        }
+        if (conditionType instanceof GraphQLUnionType) {
+            return validationContext.getSchema().isPossibleType((GraphQLUnionType) conditionType, subscriptionType);
+        }
+        return false;
+    }
+
+    private boolean isIntrospectionField(Field field) {
         return field.getName().startsWith("__");
+    }
+
+    private void resetSubscriptionRootState() {
+        subscriptionRoot_operationDefinition = null;
+        subscriptionRoot_type = null;
+        subscriptionRoot_fields.clear();
+        subscriptionRoot_forbiddenDirectives.clear();
+        subscriptionRoot_visitedFragments.clear();
+        subscriptionRoot_activeFragmentNames.clear();
+        subscriptionRoot_activeFragmentBaseDepths.clear();
+        subscriptionRoot_activeFragmentApplies.clear();
+        subscriptionRoot_fragmentFields.clear();
+        subscriptionRoot_fragmentForbiddenDirectives.clear();
     }
 
     // --- UniqueObjectFieldName ---

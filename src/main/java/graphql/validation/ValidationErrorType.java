@@ -44,6 +44,7 @@ public enum ValidationErrorType implements ValidationErrorClassification {
     NullValueForNonNullArgument,
     SubscriptionMultipleRootFields,
     SubscriptionIntrospectionRootField,
+    ForbidSkipAndIncludeOnSubscriptionRoot,
     UniqueObjectFieldName,
     UnknownOperation,
     MaxQueryDepthExceeded,
