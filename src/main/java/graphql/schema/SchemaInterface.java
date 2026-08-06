@@ -8,5 +8,5 @@ import org.jspecify.annotations.NullMarked;
  */
 @ExperimentalApi
 @NullMarked
-public interface SchemaInterface extends SchemaFieldsContainer {
+public interface SchemaInterface extends SchemaImplementingType {
 }

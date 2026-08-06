@@ -521,39 +521,6 @@ public class GraphQLSchema implements ExecutableSchema {
                 .getFieldDefinitions((GraphQLInputObjectType) parentType);
     }
 
-    @Override
-    public List<GraphQLInterfaceType> getInterfaces(
-            SchemaFieldsContainer implementingType) {
-        assertTrue(
-                implementingType instanceof GraphQLImplementingType,
-                "The implementing type must belong to this GraphQLSchema");
-        List<GraphQLInterfaceType> result = new ArrayList<>();
-        for (GraphQLNamedOutputType interfaceType :
-                ((GraphQLImplementingType) implementingType).getInterfaces()) {
-            assertTrue(
-                    interfaceType instanceof GraphQLInterfaceType,
-                    "Interface type references must be resolved");
-            result.add((GraphQLInterfaceType) interfaceType);
-        }
-        return ImmutableList.copyOf(result);
-    }
-
-    @Override
-    public List<GraphQLObjectType> getUnionMembers(SchemaUnion unionType) {
-        assertTrue(
-                unionType instanceof GraphQLUnionType,
-                "The union type must belong to this GraphQLSchema");
-        List<GraphQLObjectType> result = new ArrayList<>();
-        for (GraphQLNamedOutputType member :
-                ((GraphQLUnionType) unionType).getTypes()) {
-            assertTrue(
-                    member instanceof GraphQLObjectType,
-                    "Union type references must be resolved");
-            result.add((GraphQLObjectType) member);
-        }
-        return ImmutableList.copyOf(result);
-    }
-
     /**
      * @return all the named types in the scheme as a map from name to named type
      */

@@ -18,9 +18,11 @@ class ExecutableSchemaTest extends Specification {
 
         expect:
         schema.queryType instanceof SchemaObject
+        schema.queryType instanceof SchemaImplementingType
         schema.mutationType.name == "Mutation"
         schema.subscriptionType.name == "Subscription"
         schema.getType("Node") instanceof SchemaInterface
+        schema.getType("Node") instanceof SchemaImplementingType
         schema.getType("Search") instanceof SchemaUnion
         schema.getType("Date") instanceof SchemaScalar
         schema.getType("Color") instanceof SchemaEnum
@@ -43,7 +45,7 @@ class ExecutableSchemaTest extends Specification {
         schema.appliedDirectives.isEmpty()
 
         and:
-        def node = schema.getType("Node") as SchemaFieldsContainer
+        def node = schema.getType("Node") as SchemaInterface
         schema.getFields(node)*.name == ["id"]
         schema.getField(node, "id").type instanceof SchemaNonNull
         schema.getField(
@@ -78,11 +80,13 @@ class ExecutableSchemaTest extends Specification {
         color.getValue("BLUE") == null
 
         and:
-        def user = schema.getType("User") as SchemaFieldsContainer
-        schema.getInterfaces(user)*.name == ["Node"]
-        schema.getInterfaces(node).isEmpty()
-        schema.getUnionMembers(
-                schema.getType("Search") as SchemaUnion)*.name == ["User"]
+        def user = schema.getType("User") as SchemaObject
+        user.interfaces*.name == ["Node"]
+        user.interfaces.every { it instanceof SchemaInterface }
+        node.interfaces.isEmpty()
+        def search = schema.getType("Search") as SchemaUnion
+        search.types*.name == ["User"]
+        search.types.every { it instanceof SchemaObject }
         schema.getAppliedDirectives(choice)*.name == ["oneOf"]
 
         and:
@@ -159,6 +163,49 @@ class ExecutableSchemaTest extends Specification {
 
         where:
         executableSchema << executableSchemas()
+    }
+
+    def "SUSchema element relationships follow their schema snapshot"() {
+        given:
+        def universe = new SchemaUniverse()
+        def query = universe.newObjectType("Query")
+        def node = universe.newInterfaceType("Node")
+        def resource = universe.newInterfaceType("Resource")
+        def search = universe.newUnionType("Search")
+        def alpha = universe.newObjectType("Alpha")
+        def beta = universe.newObjectType("Beta")
+        def baseSchema = universe.newSchema("base")
+                .queryType(query)
+                .addInterface(node, resource)
+                .addInterface(alpha, node)
+                .addUnionMember(search, alpha)
+                .addType(beta)
+                .build()
+        def changedSchema = baseSchema.transform("changed", builder -> builder
+                .removeInterface(alpha, node)
+                .addInterface(beta, node)
+                .removeUnionMember(search, alpha)
+                .addUnionMember(search, beta))
+        def base = SUExecutableSchema
+                .newExecutableSchema(baseSchema)
+                .build()
+        def changed = SUExecutableSchema
+                .newExecutableSchema(changedSchema)
+                .build()
+
+        expect:
+        (base.getType("Alpha") as SchemaObject).interfaces*.name == ["Node"]
+        (base.getType("Beta") as SchemaObject).interfaces.isEmpty()
+        (base.getType("Node") as SchemaInterface).interfaces*.name ==
+                ["Resource"]
+        (base.getType("Search") as SchemaUnion).types*.name == ["Alpha"]
+
+        and:
+        (changed.getType("Alpha") as SchemaObject).interfaces.isEmpty()
+        (changed.getType("Beta") as SchemaObject).interfaces*.name == ["Node"]
+        (changed.getType("Node") as SchemaInterface).interfaces*.name ==
+                ["Resource"]
+        (changed.getType("Search") as SchemaUnion).types*.name == ["Beta"]
     }
 
     def "GraphQLSchema executable lookups apply output and input field visibility"() {

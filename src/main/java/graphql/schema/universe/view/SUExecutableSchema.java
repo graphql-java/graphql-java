@@ -21,13 +21,11 @@ import graphql.schema.SchemaFieldsContainer;
 import graphql.schema.SchemaInputField;
 import graphql.schema.SchemaInputObject;
 import graphql.schema.SchemaInputType;
-import graphql.schema.SchemaInterface;
 import graphql.schema.SchemaNamedType;
 import graphql.schema.SchemaObject;
 import graphql.schema.SchemaOutputType;
 import graphql.schema.SchemaScalar;
 import graphql.schema.SchemaType;
-import graphql.schema.SchemaUnion;
 import graphql.schema.universe.PersistentIntMap;
 import graphql.schema.universe.SUAppliedDirective;
 import graphql.schema.universe.SUCompositeType;
@@ -370,40 +368,6 @@ public final class SUExecutableSchema implements ExecutableSchema {
                 new ArrayList<>(fields.size());
         for (SUInputField field : fields) {
             result.add(new SUSchemaInputField(this, field));
-        }
-        return Collections.unmodifiableList(result);
-    }
-
-    @Override
-    public List<SchemaInterface> getInterfaces(
-            SchemaFieldsContainer implementingType) {
-        SUVertex vertex = elementVertex(implementingType);
-        List<SUInterfaceType> interfaces;
-        if (vertex instanceof SUObjectType) {
-            interfaces = schema.getInterfaces((SUObjectType) vertex);
-        } else {
-            assertTrue(
-                    vertex instanceof SUInterfaceType,
-                    "Expected an object or interface type");
-            interfaces = schema.getInterfaces((SUInterfaceType) vertex);
-        }
-        List<SchemaInterface> result =
-                new ArrayList<>(interfaces.size());
-        for (SUInterfaceType interfaceType : interfaces) {
-            result.add(new SUSchemaInterface(this, interfaceType));
-        }
-        return Collections.unmodifiableList(result);
-    }
-
-    @Override
-    public List<SchemaObject> getUnionMembers(SchemaUnion unionType) {
-        SUVertex vertex = elementVertex(unionType);
-        assertTrue(vertex instanceof SUUnionType, "Expected a union type");
-        List<SUObjectType> members =
-                schema.getUnionMembers((SUUnionType) vertex);
-        List<SchemaObject> result = new ArrayList<>(members.size());
-        for (SUObjectType member : members) {
-            result.add(new SUSchemaObject(this, member));
         }
         return Collections.unmodifiableList(result);
     }

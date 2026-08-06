@@ -129,21 +129,6 @@ public interface ExecutableSchema {
     List<? extends SchemaInputField> getInputFields(SchemaInputObject parentType);
 
     /**
-     * @param implementingType an object or interface
-     *
-     * @return the interfaces directly implemented by the type
-     */
-    List<? extends SchemaInterface> getInterfaces(
-            SchemaFieldsContainer implementingType);
-
-    /**
-     * @param unionType the union
-     *
-     * @return the object types declared by the union
-     */
-    List<? extends SchemaObject> getUnionMembers(SchemaUnion unionType);
-
-    /**
      * @param compositeType an object, interface, or union
      *
      * @return the concrete object types represented by the composite type

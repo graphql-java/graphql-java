@@ -700,8 +700,8 @@ public class SchemaPrinter {
                 printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
-                List<? extends SchemaInterface> interfaces =
-                        getInterfaces(schema, type);
+                List<? extends SchemaNamedType> interfaces =
+                        type.getInterfaces();
                 if (interfaces.isEmpty()) {
                     out.format(
                             "interface %s%s",
@@ -712,12 +712,12 @@ public class SchemaPrinter {
                                     getAppliedDirectives(schema, type),
                                     false));
                 } else {
-                    List<SchemaInterface> sortedInterfaces = sort(
+                    List<SchemaNamedType> sortedInterfaces = sort(
                             type,
                             interfaces,
                             false);
                     Stream<String> interfaceNames = sortedInterfaces.stream()
-                            .map(SchemaInterface::getName);
+                            .map(SchemaNamedType::getName);
                     out.format("interface %s implements %s%s",
                             type.getName(),
                             interfaceNames.collect(joining(" & ")),
@@ -758,12 +758,12 @@ public class SchemaPrinter {
                                 type,
                                 getAppliedDirectives(schema, type),
                                 false));
-                List<SchemaObject> types = sort(
+                List<SchemaNamedType> types = sort(
                         type,
-                        getUnionMembers(schema, type),
+                        type.getTypes(),
                         false);
                 for (int i = 0; i < types.size(); i++) {
-                    SchemaObject objectType = types.get(i);
+                    SchemaNamedType objectType = types.get(i);
                     if (i > 0) {
                         out.format(" | ");
                     }
@@ -799,8 +799,8 @@ public class SchemaPrinter {
                 printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
-                List<? extends SchemaInterface> interfaces =
-                        getInterfaces(schema, type);
+                List<? extends SchemaNamedType> interfaces =
+                        type.getInterfaces();
                 if (interfaces.isEmpty()) {
                     out.format(
                             "type %s%s",
@@ -811,12 +811,12 @@ public class SchemaPrinter {
                                     getAppliedDirectives(schema, type),
                                     false));
                 } else {
-                    List<SchemaInterface> sortedInterfaces = sort(
+                    List<SchemaNamedType> sortedInterfaces = sort(
                             type,
                             interfaces,
                             false);
                     Stream<String> interfaceNames = sortedInterfaces.stream()
-                            .map(SchemaInterface::getName);
+                            .map(SchemaNamedType::getName);
                     out.format("type %s implements %s%s",
                             type.getName(),
                             interfaceNames.collect(joining(" & ")),
@@ -1587,33 +1587,6 @@ public class SchemaPrinter {
             return schema.getInputFields(type);
         }
         return ((GraphQLInputObjectType) type).getFieldDefinitions();
-    }
-
-    private List<? extends SchemaInterface> getInterfaces(
-            @Nullable ExecutableSchema schema,
-            SchemaFieldsContainer type) {
-        if (schema != null) {
-            return schema.getInterfaces(type);
-        }
-        if (type instanceof GraphQLObjectType) {
-            return ((GraphQLObjectType) type).getInterfaces().stream()
-                    .map(interfaceType -> (SchemaInterface) interfaceType)
-                    .collect(toList());
-        }
-        return ((GraphQLInterfaceType) type).getInterfaces().stream()
-                .map(interfaceType -> (SchemaInterface) interfaceType)
-                .collect(toList());
-    }
-
-    private List<? extends SchemaObject> getUnionMembers(
-            @Nullable ExecutableSchema schema,
-            SchemaUnion type) {
-        if (schema != null) {
-            return schema.getUnionMembers(type);
-        }
-        return ((GraphQLUnionType) type).getTypes().stream()
-                .map(member -> (SchemaObject) member)
-                .collect(toList());
     }
 
     private String printValue(

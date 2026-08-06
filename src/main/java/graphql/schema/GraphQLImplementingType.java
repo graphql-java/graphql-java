@@ -8,7 +8,8 @@ import java.util.List;
  * A GraphQLType which can implement interfaces
  */
 @PublicApi
-public interface GraphQLImplementingType extends GraphQLFieldsContainer {
+public interface GraphQLImplementingType
+        extends GraphQLFieldsContainer, SchemaImplementingType {
     /**
      * @return This returns GraphQLInterface or GraphQLTypeReference instances, if the type
      * references are not resolved yet. After they are resolved it contains only GraphQLInterface.
