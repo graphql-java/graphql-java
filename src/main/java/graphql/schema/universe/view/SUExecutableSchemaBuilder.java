@@ -2,10 +2,14 @@ package graphql.schema.universe.view;
 
 import graphql.ExperimentalApi;
 import graphql.schema.Coercing;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.universe.PersistentIntMap;
+import graphql.schema.universe.SUEnumType;
+import graphql.schema.universe.SUEnumValue;
 import graphql.schema.universe.SUNamedType;
 import graphql.schema.universe.SUScalarType;
 import graphql.schema.universe.SUSchema;
@@ -23,16 +27,20 @@ public final class SUExecutableSchemaBuilder {
 
     private final SUSchema schema;
     private PersistentIntMap<Coercing<?, ?>> coercingByScalarId;
+    private PersistentIntMap<Object> enumRuntimeValueById;
 
     public SUExecutableSchemaBuilder(SUSchema schema) {
         this.schema = assertNotNull(schema);
         this.coercingByScalarId = PersistentIntMap.empty();
+        this.enumRuntimeValueById = PersistentIntMap.empty();
     }
 
     public SUExecutableSchemaBuilder(
             SUExecutableSchema executableSchema) {
         this.schema = assertNotNull(executableSchema).getSchema();
         this.coercingByScalarId = executableSchema.getCoercingByScalarId();
+        this.enumRuntimeValueById =
+                executableSchema.getEnumRuntimeValueById();
     }
 
     public SUExecutableSchemaBuilder scalarCoercing(
@@ -96,9 +104,85 @@ public final class SUExecutableSchemaBuilder {
                 ((GraphQLScalarType) sourceType).getCoercing());
     }
 
+    public SUExecutableSchemaBuilder enumRuntimeValue(
+            SUEnumType enumType,
+            String enumValueName,
+            Object runtimeValue) {
+        SUEnumType type = assertNotNull(enumType);
+        String typeName = assertNotNull(type.getName());
+        Object value = assertNotNull(
+                runtimeValue,
+                "runtimeValue can't be null");
+        assertTrue(
+                schema.getEnumType(typeName) == type,
+                "The enum type must belong to this SUSchema");
+        SUEnumValue enumValue = schema.getEnumValue(
+                type,
+                assertNotNull(enumValueName));
+        assertTrue(
+                enumValue != null,
+                "No enum value named '%s.%s' exists in this SUSchema",
+                typeName,
+                enumValueName);
+        if (enumValueName.equals(value)) {
+            enumRuntimeValueById = enumRuntimeValueById.remove(
+                    assertNotNull(enumValue).getId());
+            return this;
+        }
+        enumRuntimeValueById = enumRuntimeValueById.put(
+                assertNotNull(enumValue).getId(),
+                value);
+        return this;
+    }
+
+    /**
+     * Copies enum runtime values from a matching {@link GraphQLSchema}.
+     *
+     * @param graphQLSchema the source executable schema
+     *
+     * @return this builder
+     */
+    public SUExecutableSchemaBuilder enumRuntimeValues(
+            GraphQLSchema graphQLSchema) {
+        GraphQLSchema source = assertNotNull(graphQLSchema);
+        for (SUNamedType type : schema.getTypes()) {
+            copyEnumRuntimeValues(source, type);
+        }
+        return this;
+    }
+
+    private void copyEnumRuntimeValues(
+            GraphQLSchema source,
+            SUNamedType type) {
+        if (!(type instanceof SUEnumType)) {
+            return;
+        }
+        GraphQLType sourceType = source.getType(
+                assertNotNull(type.getName()));
+        assertTrue(
+                sourceType instanceof GraphQLEnumType,
+                "The GraphQLSchema has no matching enum named '%s'",
+                type.getName());
+        GraphQLEnumType sourceEnum = (GraphQLEnumType) sourceType;
+        for (SUEnumValue enumValue :
+                schema.getEnumValues((SUEnumType) type)) {
+            GraphQLEnumValueDefinition sourceValue = assertNotNull(
+                    sourceEnum.getValue(
+                            assertNotNull(enumValue.getName())),
+                    "The GraphQLSchema has no matching enum value named '%s.%s'",
+                    type.getName(),
+                    enumValue.getName());
+            enumRuntimeValue(
+                    (SUEnumType) type,
+                    assertNotNull(enumValue.getName()),
+                    source.getEnumRuntimeValue(sourceValue));
+        }
+    }
+
     public SUExecutableSchema build() {
         return new SUExecutableSchema(
                 schema,
-                coercingByScalarId);
+                coercingByScalarId,
+                enumRuntimeValueById);
     }
 }

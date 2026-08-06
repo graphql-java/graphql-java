@@ -146,6 +146,15 @@ public interface ExecutableSchema {
             SchemaObject objectType);
 
     /**
+     * Returns the runtime value represented by an enum value definition.
+     *
+     * @param enumValue the enum value definition
+     *
+     * @return the schema-specific runtime value
+     */
+    Object getEnumRuntimeValue(SchemaEnumValue enumValue);
+
+    /**
      * @param scalarType the scalar
      *
      * @return the schema-specific scalar coercer

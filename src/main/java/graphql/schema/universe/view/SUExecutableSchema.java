@@ -16,6 +16,7 @@ import graphql.schema.SchemaAppliedDirective;
 import graphql.schema.SchemaComposite;
 import graphql.schema.SchemaDirective;
 import graphql.schema.SchemaDirectiveContainer;
+import graphql.schema.SchemaEnumValue;
 import graphql.schema.SchemaField;
 import graphql.schema.SchemaFieldsContainer;
 import graphql.schema.SchemaInputField;
@@ -31,6 +32,7 @@ import graphql.schema.universe.SUAppliedDirective;
 import graphql.schema.universe.SUCompositeType;
 import graphql.schema.universe.SUDirective;
 import graphql.schema.universe.SUEnumType;
+import graphql.schema.universe.SUEnumValue;
 import graphql.schema.universe.SUField;
 import graphql.schema.universe.SUInputField;
 import graphql.schema.universe.SUInputObjectType;
@@ -66,13 +68,16 @@ public final class SUExecutableSchema implements ExecutableSchema {
 
     private final SUSchema schema;
     private final PersistentIntMap<Coercing<?, ?>> coercingByScalarId;
+    private final PersistentIntMap<Object> enumRuntimeValueById;
 
     @Internal
     public SUExecutableSchema(
             SUSchema schema,
-            PersistentIntMap<Coercing<?, ?>> coercingByScalarId) {
+            PersistentIntMap<Coercing<?, ?>> coercingByScalarId,
+            PersistentIntMap<Object> enumRuntimeValueById) {
         this.schema = assertNotNull(schema);
         this.coercingByScalarId = assertNotNull(coercingByScalarId);
+        this.enumRuntimeValueById = assertNotNull(enumRuntimeValueById);
     }
 
     public static SUExecutableSchemaBuilder newExecutableSchema(
@@ -98,6 +103,7 @@ public final class SUExecutableSchema implements ExecutableSchema {
             GraphQLSchema graphQLSchema) {
         return newExecutableSchema(schema)
                 .scalarCoercings(graphQLSchema)
+                .enumRuntimeValues(graphQLSchema)
                 .build();
     }
 
@@ -395,6 +401,20 @@ public final class SUExecutableSchema implements ExecutableSchema {
     }
 
     @Override
+    public Object getEnumRuntimeValue(
+            SchemaEnumValue enumValue) {
+        SUVertex vertex = elementVertex(enumValue);
+        assertTrue(
+                vertex instanceof SUEnumValue,
+                "The enum value must belong to this SUSchema");
+        Object runtimeValue = enumRuntimeValueById.get(vertex.getId());
+        if (runtimeValue != null) {
+            return runtimeValue;
+        }
+        return assertNotNull(vertex.getName());
+    }
+
+    @Override
     public Coercing<?, ?> getScalarCoercing(SchemaScalar scalarType) {
         SUVertex vertex = elementVertex(scalarType);
         assertTrue(
@@ -561,5 +581,10 @@ public final class SUExecutableSchema implements ExecutableSchema {
     @Internal
     public PersistentIntMap<Coercing<?, ?>> getCoercingByScalarId() {
         return coercingByScalarId;
+    }
+
+    @Internal
+    public PersistentIntMap<Object> getEnumRuntimeValueById() {
+        return enumRuntimeValueById;
     }
 }

@@ -651,6 +651,18 @@ public class GraphQLSchema implements ExecutableSchema {
     }
 
     @Override
+    public Object getEnumRuntimeValue(
+            SchemaEnumValue enumValue) {
+        assertTrue(
+                enumValue instanceof GraphQLEnumValueDefinition,
+                "The enum value must belong to this GraphQLSchema");
+        return assertNotNull(
+                ((GraphQLEnumValueDefinition) enumValue).getValue(),
+                "The enum value '%s' must have a runtime value",
+                enumValue.getName());
+    }
+
+    @Override
     public Coercing<?, ?> getScalarCoercing(SchemaScalar scalarType) {
         assertTrue(
                 scalarType instanceof GraphQLScalarType,

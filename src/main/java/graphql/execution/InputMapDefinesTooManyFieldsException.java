@@ -7,6 +7,7 @@ import graphql.PublicApi;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.SchemaType;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -23,6 +24,15 @@ public class InputMapDefinesTooManyFieldsException extends GraphQLException impl
 
     public InputMapDefinesTooManyFieldsException(GraphQLType graphQLType, String fieldName) {
         super(String.format("The variables input contains a field name '%s' that is not defined for input object type '%s' ", fieldName, GraphQLTypeUtil.simplePrint(graphQLType)));
+    }
+
+    public InputMapDefinesTooManyFieldsException(
+            SchemaType schemaType,
+            String fieldName) {
+        super(String.format(
+                "The variables input contains a field name '%s' that is not defined for input object type '%s' ",
+                fieldName,
+                GraphQLTypeUtil.simplePrint(schemaType)));
     }
 
     @Override

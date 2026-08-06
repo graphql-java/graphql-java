@@ -3,6 +3,7 @@ package graphql.execution.values;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.schema.GraphQLInputType;
+import graphql.schema.SchemaInputType;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
@@ -39,4 +40,25 @@ public interface InputInterceptor {
                      @NonNull GraphQLInputType graphQLType,
                      @NonNull GraphQLContext graphqlContext,
                      @NonNull Locale locale);
+
+    /**
+     * Intercepts a value described by a schema-neutral input type.
+     *
+     * <p>The default preserves existing interceptors for GraphQL schema types. Implementations
+     * that need to intercept values from other executable schema views can override this method.</p>
+     */
+    default Object intercept(
+            @Nullable Object value,
+            @NonNull SchemaInputType inputType,
+            @NonNull GraphQLContext graphqlContext,
+            @NonNull Locale locale) {
+        if (inputType instanceof GraphQLInputType) {
+            return intercept(
+                    value,
+                    (GraphQLInputType) inputType,
+                    graphqlContext,
+                    locale);
+        }
+        return value;
+    }
 }
