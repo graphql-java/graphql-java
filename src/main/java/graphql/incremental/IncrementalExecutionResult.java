@@ -2,6 +2,7 @@ package graphql.incremental;
 
 import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
@@ -83,6 +84,7 @@ import java.util.List;
  * The execution behaviour should match what we get from running Apollo Server 4.9.5 with graphql-js v17.0.0-alpha.2
  */
 @ExperimentalApi
+@NullMarked
 public interface IncrementalExecutionResult extends ExecutionResult {
     /**
      * Indicates whether there are pending incremental data.

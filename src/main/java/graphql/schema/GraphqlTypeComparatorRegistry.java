@@ -1,10 +1,12 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Comparator;
 
 @PublicApi
+@NullMarked
 public interface GraphqlTypeComparatorRegistry {
 
     /**

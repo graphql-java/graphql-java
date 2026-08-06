@@ -2,6 +2,8 @@ package graphql.util;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +15,7 @@ import java.util.function.Function;
 import static graphql.Assert.assertNotNull;
 
 @PublicApi
+@NullMarked
 public class NodeZipper<T> {
 
 
@@ -92,7 +95,7 @@ public class NodeZipper<T> {
     /**
      * @return null if it is the root node and marked as deleted, otherwise never null
      */
-    public T toRoot() {
+    public @Nullable T toRoot() {
         if (breadcrumbs.size() == 0 && modificationType != ModificationType.DELETE) {
             return this.curNode;
         }

@@ -2,11 +2,13 @@ package graphql.language;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * And enumeration of the the kind of things that can be in a graphql type system
  */
 @PublicApi
+@NullMarked
 public enum TypeKind {
 
     Operation, Object, Interface, Union, Enum, Scalar, InputObject;

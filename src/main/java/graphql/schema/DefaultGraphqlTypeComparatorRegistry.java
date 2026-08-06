@@ -2,6 +2,8 @@ package graphql.schema;
 
 import com.google.common.collect.ImmutableMap;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -17,6 +19,7 @@ import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
  * Associates a {@code Comparator} with a {@code GraphqlTypeComparatorEnvironment} to control the scope in which the {@code Comparator} can be applied.
  */
 @PublicApi
+@NullMarked
 public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparatorRegistry {
 
     // This sensible order was taken from the original SchemaPrinter code.  It ordered the types in this manner
@@ -114,6 +117,7 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
 
         private final Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();

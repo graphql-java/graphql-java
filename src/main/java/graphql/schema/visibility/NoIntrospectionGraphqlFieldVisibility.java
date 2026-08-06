@@ -2,6 +2,8 @@ package graphql.schema.visibility;
 
 import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.schema.GraphQLFieldsContainer;
 
 import java.util.List;
@@ -17,6 +19,7 @@ import static graphql.schema.visibility.BlockedFields.newBlock;
  * can be used instead
  */
 @PublicApi
+@NullMarked
 @Deprecated(since = "2024-03-16")
 public class NoIntrospectionGraphqlFieldVisibility implements GraphqlFieldVisibility {
 
@@ -36,7 +39,7 @@ public class NoIntrospectionGraphqlFieldVisibility implements GraphqlFieldVisibi
     }
 
     @Override
-    public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+    public @Nullable GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
         return blockedFields.getFieldDefinition(fieldsContainer, fieldName);
     }
 

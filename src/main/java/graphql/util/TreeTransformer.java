@@ -3,6 +3,8 @@ package graphql.util;
 
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -11,6 +13,7 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 
 @PublicApi
+@NullMarked
 public class TreeTransformer<T> {
 
     private final NodeAdapter<T> nodeAdapter;
@@ -19,11 +22,11 @@ public class TreeTransformer<T> {
         this.nodeAdapter = nodeAdapter;
     }
 
-    public T transform(T root, TraverserVisitor<T> traverserVisitor) {
+    public @Nullable T transform(T root, TraverserVisitor<T> traverserVisitor) {
         return transform(root, traverserVisitor, ImmutableKit.emptyMap());
     }
 
-    public T transform(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars) {
+    public @Nullable T transform(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars) {
         assertNotNull(root);
 
 
@@ -31,7 +34,7 @@ public class TreeTransformer<T> {
 
             @Override
             public TraversalControl enter(TraverserContext<T> context) {
-                NodeZipper<T> nodeZipper = new NodeZipper<>(context.thisNode(), context.getBreadcrumbs(), nodeAdapter);
+                NodeZipper<T> nodeZipper = new NodeZipper<>(assertNotNull(context.thisNode()), context.getBreadcrumbs(), nodeAdapter);
                 context.setVar(NodeZipper.class, nodeZipper);
                 context.setVar(NodeAdapter.class, nodeAdapter);
                 return traverserVisitor.enter(context);
