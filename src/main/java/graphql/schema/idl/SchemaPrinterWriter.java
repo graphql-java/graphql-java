@@ -1,8 +1,57 @@
 package graphql.schema.idl;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
+import graphql.language.ArrayValue;
+import graphql.language.AstPrinter;
+import graphql.language.Comment;
+import graphql.language.DescribedNode;
+import graphql.language.EnumValue;
+import graphql.language.Node;
+import graphql.language.NullValue;
+import graphql.language.ObjectField;
+import graphql.language.ObjectValue;
+import graphql.language.Value;
+import graphql.schema.ExecutableSchema;
+import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLEnumValueDefinition;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphqlTypeComparatorEnvironment;
+import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.InputValueWithState;
+import graphql.schema.SchemaAppliedDirective;
+import graphql.schema.SchemaAppliedDirectiveArgument;
+import graphql.schema.SchemaArgument;
+import graphql.schema.SchemaDirective;
+import graphql.schema.SchemaEnum;
+import graphql.schema.SchemaEnumValue;
+import graphql.schema.SchemaField;
+import graphql.schema.SchemaFieldsContainer;
+import graphql.schema.SchemaInputField;
+import graphql.schema.SchemaInputObject;
+import graphql.schema.SchemaInputType;
+import graphql.schema.SchemaInterface;
+import graphql.schema.SchemaList;
+import graphql.schema.SchemaModifiedType;
+import graphql.schema.SchemaNamedElement;
+import graphql.schema.SchemaNamedType;
+import graphql.schema.SchemaNonNull;
+import graphql.schema.SchemaObject;
+import graphql.schema.SchemaScalar;
+import graphql.schema.SchemaType;
+import graphql.schema.SchemaUnion;
+import graphql.util.FpKit;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -10,7 +59,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
@@ -21,13 +73,13 @@ import static graphql.util.EscapeUtil.escapeJsonString;
 @NullMarked
 public final class SchemaPrinterWriter {
 
-    private final SchemaPrintAccess access;
+    private final ExecutableSchema schema;
     private final SchemaPrinter.Options options;
 
     public SchemaPrinterWriter(
-            SchemaPrintAccess access,
+            ExecutableSchema schema,
             SchemaPrinter.Options options) {
-        this.access = assertNotNull(access);
+        this.schema = assertNotNull(schema);
         this.options = assertNotNull(options);
     }
 
@@ -36,197 +88,216 @@ public final class SchemaPrinterWriter {
         PrintWriter out = new PrintWriter(stringWriter);
         printSchema(out);
 
-        List<Object> elements = new ArrayList<>();
-        elements.addAll(access.getTypes());
-        elements.addAll(access.getDirectiveDefinitions());
-        elements.removeIf(element -> !access.isIncluded(element));
-        elements = access.sort(null, SchemaPrintChildKind.TOP_LEVEL, elements);
-        for (Object element : elements) {
+        List<SchemaNamedElement> elements = new ArrayList<>();
+        elements.addAll(schema.getTypes());
+        elements.addAll(schema.getDirectives());
+        elements.removeIf(element -> !isIncluded(element));
+        elements = sort(null, elements, null, true);
+        for (SchemaNamedElement element : elements) {
             printElement(out, element);
         }
         return trimNewLineChars(stringWriter.toString());
     }
 
     private void printSchema(PrintWriter out) {
-        Object queryType = access.getQueryType();
-        Object mutationType = access.getMutationType();
-        Object subscriptionType = access.getSubscriptionType();
+        SchemaObject queryType = schema.getQueryType();
+        SchemaObject mutationType = schema.getMutationType();
+        SchemaObject subscriptionType = schema.getSubscriptionType();
         boolean needsSchemaPrinted = options.isIncludeSchemaDefinition()
-                || !"Query".equals(access.getName(queryType));
+                || !"Query".equals(queryType.getName());
         if (mutationType != null
-                && !"Mutation".equals(access.getName(mutationType))) {
+                && !"Mutation".equals(mutationType.getName())) {
             needsSchemaPrinted = true;
         }
         if (subscriptionType != null
-                && !"Subscription".equals(access.getName(subscriptionType))) {
+                && !"Subscription".equals(subscriptionType.getName())) {
             needsSchemaPrinted = true;
         }
         if (!needsSchemaPrinted) {
             return;
         }
 
-        Object schema = access.getSchema();
-        printComments(out, schema, "");
+        printComments(
+                out,
+                schema.getDescription(),
+                schema.getDefinition(),
+                "");
         out.format(
                 "schema %s{\n",
-                directivesString(schema, access.getAppliedDirectives(schema), true));
-        out.format("  query: %s\n", access.getName(queryType));
+                directivesString(null, schema.getAppliedDirectives(), true));
+        out.format("  query: %s\n", queryType.getName());
         if (mutationType != null) {
-            out.format("  mutation: %s\n", access.getName(mutationType));
+            out.format("  mutation: %s\n", mutationType.getName());
         }
         if (subscriptionType != null) {
-            out.format("  subscription: %s\n", access.getName(subscriptionType));
+            out.format("  subscription: %s\n", subscriptionType.getName());
         }
         out.format("}\n\n");
     }
 
-    private void printElement(PrintWriter out, Object element) {
-        switch (access.getKind(element)) {
-            case OBJECT:
-                printObject(out, element);
-                return;
-            case INTERFACE:
-                printInterface(out, element);
-                return;
-            case UNION:
-                printUnion(out, element);
-                return;
-            case ENUM:
-                printEnum(out, element);
-                return;
-            case SCALAR:
-                printScalar(out, element);
-                return;
-            case INPUT_OBJECT:
-                printInputObject(out, element);
-                return;
-            case DIRECTIVE:
-                printDirectiveDefinition(out, element);
-                return;
-            default:
-                assertShouldNeverHappen(
-                        "Unsupported top-level schema print element %s",
-                        element);
+    private void printElement(
+            PrintWriter out,
+            SchemaNamedElement element) {
+        if (element instanceof SchemaObject) {
+            printObject(out, (SchemaObject) element);
+            return;
         }
+        if (element instanceof SchemaInterface) {
+            printInterface(out, (SchemaInterface) element);
+            return;
+        }
+        if (element instanceof SchemaUnion) {
+            printUnion(out, (SchemaUnion) element);
+            return;
+        }
+        if (element instanceof SchemaEnum) {
+            printEnum(out, (SchemaEnum) element);
+            return;
+        }
+        if (element instanceof SchemaScalar) {
+            printScalar(out, (SchemaScalar) element);
+            return;
+        }
+        if (element instanceof SchemaInputObject) {
+            printInputObject(out, (SchemaInputObject) element);
+            return;
+        }
+        if (element instanceof SchemaDirective) {
+            printDirectiveDefinition(out, (SchemaDirective) element);
+            return;
+        }
+        assertShouldNeverHappen(
+                "Unsupported top-level schema print element %s",
+                element);
     }
 
-    private void printObject(PrintWriter out, Object type) {
-        if (access.isIntrospectionType(type)) {
+    private void printObject(PrintWriter out, SchemaObject type) {
+        if (isIntrospectionType(type)) {
             return;
         }
         printComments(out, type, "");
-        out.format("type %s", access.getName(type));
+        out.format("type %s", type.getName());
         printInterfaces(out, type);
         out.print(directivesString(
                 type,
-                access.getAppliedDirectives(type),
+                schema.getAppliedDirectives(type),
                 false));
         printFields(out, type);
         out.format("\n\n");
     }
 
-    private void printInterface(PrintWriter out, Object type) {
-        if (access.isIntrospectionType(type)) {
+    private void printInterface(
+            PrintWriter out,
+            SchemaInterface type) {
+        if (isIntrospectionType(type)) {
             return;
         }
         printComments(out, type, "");
-        out.format("interface %s", access.getName(type));
+        out.format("interface %s", type.getName());
         printInterfaces(out, type);
         out.print(directivesString(
                 type,
-                access.getAppliedDirectives(type),
+                schema.getAppliedDirectives(type),
                 false));
         printFields(out, type);
         out.format("\n\n");
     }
 
-    private void printInterfaces(PrintWriter out, Object type) {
-        List<Object> interfaces = access.sort(
+    private void printInterfaces(
+            PrintWriter out,
+            SchemaFieldsContainer type) {
+        List<SchemaInterface> interfaces = sort(
                 type,
-                SchemaPrintChildKind.INTERFACE,
-                access.getInterfaces(type));
+                schema.getInterfaces(type),
+                GraphQLOutputType.class,
+                false);
         if (interfaces.isEmpty()) {
             return;
         }
         String names = interfaces.stream()
-                .map(access::getName)
+                .map(SchemaInterface::getName)
                 .collect(Collectors.joining(" & "));
         out.format(" implements %s", names);
     }
 
-    private void printFields(PrintWriter out, Object type) {
-        List<Object> fields = access.sort(
+    private void printFields(
+            PrintWriter out,
+            SchemaFieldsContainer type) {
+        List<SchemaField> fields = sort(
                 type,
-                SchemaPrintChildKind.FIELD,
-                access.getFields(type));
-        fields.removeIf(field -> !access.isIncluded(field));
+                schema.getFields(type),
+                GraphQLFieldDefinition.class,
+                false);
+        fields.removeIf(field -> !isIncluded(field));
         if (fields.isEmpty()) {
             return;
         }
         out.format(" {\n");
-        for (Object field : fields) {
+        for (SchemaField field : fields) {
             printComments(out, field, "  ");
             out.format(
                     "  %s%s: %s%s\n",
-                    access.getName(field),
+                    field.getName(),
                     argsString(field),
-                    access.getTypeString(access.getType(field)),
+                    typeString(field.getType()),
                     directivesString(
                             field,
-                            access.getAppliedDirectives(field),
+                            schema.getAppliedDirectives(field),
                             false));
         }
         out.format("}");
     }
 
-    private void printUnion(PrintWriter out, Object type) {
-        if (access.isIntrospectionType(type)) {
+    private void printUnion(PrintWriter out, SchemaUnion type) {
+        if (isIntrospectionType(type)) {
             return;
         }
         printComments(out, type, "");
         out.format(
                 "union %s%s = ",
-                access.getName(type),
+                type.getName(),
                 directivesString(
                         type,
-                        access.getAppliedDirectives(type),
+                        schema.getAppliedDirectives(type),
                         false));
-        List<Object> members = access.sort(
+        List<SchemaObject> members = sort(
                 type,
-                SchemaPrintChildKind.UNION_MEMBER,
-                access.getUnionMembers(type));
+                schema.getUnionMembers(type),
+                GraphQLOutputType.class,
+                false);
         out.print(members.stream()
-                .map(access::getName)
+                .map(SchemaObject::getName)
                 .collect(Collectors.joining(" | ")));
         out.format("\n\n");
     }
 
-    private void printEnum(PrintWriter out, Object type) {
-        if (access.isIntrospectionType(type)) {
+    private void printEnum(PrintWriter out, SchemaEnum type) {
+        if (isIntrospectionType(type)) {
             return;
         }
         printComments(out, type, "");
         out.format(
                 "enum %s%s",
-                access.getName(type),
+                type.getName(),
                 directivesString(
                         type,
-                        access.getAppliedDirectives(type),
+                        schema.getAppliedDirectives(type),
                         false));
-        List<Object> values = access.sort(
+        List<SchemaEnumValue> values = sort(
                 type,
-                SchemaPrintChildKind.ENUM_VALUE,
-                access.getEnumValues(type));
+                type.getValues(),
+                GraphQLEnumValueDefinition.class,
+                false);
         if (!values.isEmpty()) {
             out.format(" {\n");
-            for (Object value : values) {
+            for (SchemaEnumValue value : values) {
                 printComments(out, value, "  ");
                 out.format(
                         "  %s%s\n",
-                        access.getName(value),
+                        value.getName(),
                         directivesString(
                                 value,
-                                access.getAppliedDirectives(value),
+                                schema.getAppliedDirectives(value),
                                 false));
             }
             out.format("}");
@@ -234,49 +305,55 @@ public final class SchemaPrinterWriter {
         out.format("\n\n");
     }
 
-    private void printScalar(PrintWriter out, Object type) {
-        if (!options.isIncludeScalars() || access.isSpecifiedScalar(type)) {
+    private void printScalar(PrintWriter out, SchemaScalar type) {
+        if (!options.isIncludeScalars()
+                || ScalarInfo.isGraphqlSpecifiedScalar(type.getName())) {
             return;
         }
         printComments(out, type, "");
-        List<Object> directives = access.getAppliedDirectives(type).stream()
-                .filter(directive -> !"specifiedBy".equals(access.getName(directive)))
-                .collect(Collectors.toList());
+        List<SchemaAppliedDirective> directives =
+                new ArrayList<>(schema.getAppliedDirectives(type));
+        directives.removeIf(directive ->
+                "specifiedBy".equals(directive.getName()));
         out.format(
                 "scalar %s%s%s\n\n",
-                access.getName(type),
+                type.getName(),
                 directivesString(type, directives, false),
                 specifiedByUrlString(type));
     }
 
-    private String specifiedByUrlString(Object scalar) {
-        String url = access.getSpecifiedByUrl(scalar);
-        if (url == null || !options.getIncludeDirective().test("specifiedBy")) {
+    private String specifiedByUrlString(SchemaScalar scalar) {
+        String url = scalar.getSpecifiedByUrl();
+        if (url == null
+                || !options.getIncludeDirective().test("specifiedBy")) {
             return "";
         }
         return " @specifiedBy(url : \"" + escapeJsonString(url) + "\")";
     }
 
-    private void printInputObject(PrintWriter out, Object type) {
-        if (access.isIntrospectionType(type)) {
+    private void printInputObject(
+            PrintWriter out,
+            SchemaInputObject type) {
+        if (isIntrospectionType(type)) {
             return;
         }
         printComments(out, type, "");
         out.format(
                 "input %s%s",
-                access.getName(type),
+                type.getName(),
                 directivesString(
                         type,
-                        access.getAppliedDirectives(type),
+                        schema.getAppliedDirectives(type),
                         false));
-        List<Object> fields = access.sort(
+        List<SchemaInputField> fields = sort(
                 type,
-                SchemaPrintChildKind.INPUT_FIELD,
-                access.getInputFields(type));
-        fields.removeIf(field -> !access.isIncluded(field));
+                schema.getInputFields(type),
+                GraphQLInputObjectField.class,
+                false);
+        fields.removeIf(field -> !isIncluded(field));
         if (!fields.isEmpty()) {
             out.format(" {\n");
-            for (Object field : fields) {
+            for (SchemaInputField field : fields) {
                 printInputField(out, field);
             }
             out.format("}");
@@ -284,176 +361,498 @@ public final class SchemaPrinterWriter {
         out.format("\n\n");
     }
 
-    private void printInputField(PrintWriter out, Object field) {
+    private void printInputField(
+            PrintWriter out,
+            SchemaInputField field) {
         printComments(out, field, "  ");
-        Object type = access.getType(field);
+        SchemaInputType type = field.getType();
         out.format(
                 "  %s: %s",
-                access.getName(field),
-                access.getTypeString(type));
-        InputValueWithState defaultValue = access.getDefaultValue(field);
+                field.getName(),
+                typeString(type));
+        InputValueWithState defaultValue =
+                field.getInputFieldDefaultValue();
         if (defaultValue.isSet()) {
-            out.format(" = %s", access.printValue(defaultValue, type));
+            out.format(" = %s", printValue(defaultValue, type));
         }
         out.print(directivesString(
                 field,
-                access.getAppliedDirectives(field),
+                schema.getAppliedDirectives(field),
                 false));
         out.format("\n");
     }
 
-    private void printDirectiveDefinition(PrintWriter out, Object directive) {
+    private void printDirectiveDefinition(
+            PrintWriter out,
+            SchemaDirective directive) {
         if (!options.isIncludeDirectiveDefinitions()
-                || !options.getIncludeDirective().test(access.getName(directive))
+                || !options.getIncludeDirective().test(directive.getName())
                 || !options.getIncludeDirectiveDefinition()
-                        .test(access.getName(directive))) {
+                .test(directive.getName())) {
             return;
         }
         printComments(out, directive, "");
         out.format(
                 "directive @%s%s%s",
-                access.getName(directive),
+                directive.getName(),
                 argsString(directive),
                 directivesString(
                         directive,
-                        access.getAppliedDirectives(directive),
+                        schema.getAppliedDirectives(directive),
                         false));
-        if (access.isRepeatable(directive)) {
+        if (directive.isRepeatable()) {
             out.print(" repeatable");
         }
-        String locations = access.getDirectiveLocations(directive).stream()
+        String locations = directive.validLocations().stream()
                 .map(DirectiveLocation::name)
                 .collect(Collectors.joining(" | "));
         out.format(" on %s\n\n", locations);
     }
 
-    private String argsString(Object parent) {
-        List<Object> arguments = access.getArguments(parent);
-        boolean hasComments = arguments.stream()
+    private String argsString(SchemaNamedElement parent) {
+        List<? extends SchemaArgument> parentArguments =
+                getArguments(parent);
+        boolean hasComments = parentArguments.stream()
                 .anyMatch(this::hasAstDefinitionComments);
-        boolean hasDescriptions = arguments.stream()
+        boolean hasDescriptions = parentArguments.stream()
                 .anyMatch(this::hasDescription);
         String halfPrefix = hasComments || hasDescriptions ? "  " : "";
         String prefix = hasComments || hasDescriptions ? "    " : "";
-        arguments = access.sort(
+        List<SchemaArgument> arguments = sort(
                 parent,
-                SchemaPrintChildKind.ARGUMENT,
-                arguments);
-        arguments.removeIf(argument -> !access.isIncluded(argument));
+                parentArguments,
+                GraphQLArgument.class,
+                false);
+        arguments.removeIf(argument -> !isIncluded(argument));
         if (arguments.isEmpty()) {
             return "";
         }
+        return argumentsString(
+                arguments,
+                halfPrefix,
+                prefix,
+                hasComments || hasDescriptions);
+    }
 
+    private List<? extends SchemaArgument> getArguments(
+            SchemaNamedElement parent) {
+        if (parent instanceof SchemaField) {
+            return ((SchemaField) parent).getArguments();
+        }
+        return ((SchemaDirective) parent).getArguments();
+    }
+
+    private String argumentsString(
+            List<SchemaArgument> arguments,
+            String halfPrefix,
+            String prefix,
+            boolean multiline) {
         StringBuilder result = new StringBuilder("(");
         for (int i = 0; i < arguments.size(); i++) {
-            Object argument = arguments.get(i);
-            if (i > 0) {
-                result.append(",");
-                if (!hasComments && !hasDescriptions) {
-                    result.append(" ");
-                }
-            }
-            if (hasComments || hasDescriptions) {
-                result.append("\n");
-            }
+            appendArgumentSeparator(result, i, multiline);
+            SchemaArgument argument = arguments.get(i);
             result.append(commentsString(argument, prefix));
-            Object type = access.getType(argument);
+            SchemaInputType type = argument.getType();
             result.append(prefix)
-                    .append(access.getName(argument))
+                    .append(argument.getName())
                     .append(": ")
-                    .append(access.getTypeString(type));
-            InputValueWithState defaultValue = access.getDefaultValue(argument);
-            if (defaultValue.isSet()) {
-                result.append(" = ")
-                        .append(access.printValue(defaultValue, type));
-            }
+                    .append(typeString(type));
+            appendDefaultValue(result, argument, type);
             result.append(directivesString(
                     argument,
-                    access.getAppliedDirectives(argument),
+                    schema.getAppliedDirectives(argument),
                     false));
         }
-        if (hasComments || hasDescriptions) {
+        if (multiline) {
             result.append("\n");
         }
         return result.append(halfPrefix).append(")").toString();
     }
 
+    private void appendArgumentSeparator(
+            StringBuilder result,
+            int index,
+            boolean multiline) {
+        if (index > 0) {
+            result.append(",");
+            if (!multiline) {
+                result.append(" ");
+            }
+        }
+        if (multiline) {
+            result.append("\n");
+        }
+    }
+
+    private void appendDefaultValue(
+            StringBuilder result,
+            SchemaArgument argument,
+            SchemaInputType type) {
+        InputValueWithState defaultValue =
+                argument.getArgumentDefaultValue();
+        if (!defaultValue.isSet()) {
+            return;
+        }
+        result.append(" = ").append(printValue(defaultValue, type));
+    }
+
     private String directivesString(
-            Object parent,
-            List<Object> directives,
+            @Nullable SchemaNamedElement parent,
+            List<? extends SchemaAppliedDirective> directives,
             boolean schemaContainer) {
-        directives = directives.stream()
-                .filter(access::isIncluded)
+        List<SchemaAppliedDirective> included = directives.stream()
+                .filter(this::isIncluded)
                 .filter(directive -> options.getIncludeDirective()
-                        .test(access.getName(directive)))
-                .collect(Collectors.toList());
-        if (directives.isEmpty()) {
+                        .test(directive.getName()))
+                .collect(Collectors.toCollection(ArrayList::new));
+        if (included.isEmpty()) {
             return "";
         }
-        directives = access.sort(
+        included = sort(
                 parent,
-                SchemaPrintChildKind.APPLIED_DIRECTIVE,
-                directives);
-        String result = directives.stream()
+                included,
+                GraphQLAppliedDirective.class,
+                false);
+        String result = included.stream()
                 .map(this::directiveString)
                 .collect(Collectors.joining(" "));
         return schemaContainer ? result : " " + result;
     }
 
-    private String directiveString(Object directive) {
+    private String directiveString(SchemaAppliedDirective directive) {
         StringBuilder result = new StringBuilder("@")
-                .append(access.getName(directive));
-        List<Object> arguments = access.getAppliedDirectiveArguments(directive)
-                .stream()
-                .filter(argument -> access.getAppliedDirectiveArgumentValue(argument)
-                        .isSet())
-                .collect(Collectors.toList());
-        arguments = access.sort(
+                .append(directive.getName());
+        List<SchemaAppliedDirectiveArgument> arguments =
+                directive.getArguments().stream()
+                        .filter(argument -> argument.getArgumentValue().isSet())
+                        .collect(Collectors.toCollection(ArrayList::new));
+        arguments = sort(
                 directive,
-                SchemaPrintChildKind.APPLIED_DIRECTIVE_ARGUMENT,
-                arguments);
+                arguments,
+                GraphQLAppliedDirectiveArgument.class,
+                false);
         if (arguments.isEmpty()) {
             return result.toString();
         }
         result.append("(");
         for (int i = 0; i < arguments.size(); i++) {
-            Object argument = arguments.get(i);
             if (i > 0) {
                 result.append(", ");
             }
-            result.append(access.getName(argument))
+            SchemaAppliedDirectiveArgument argument = arguments.get(i);
+            result.append(argument.getName())
                     .append(" : ")
-                    .append(access.printValue(
-                            access.getAppliedDirectiveArgumentValue(argument),
-                            access.getType(argument)));
+                    .append(printValue(
+                            argument.getArgumentValue(),
+                            argument.getType()));
         }
         return result.append(")").toString();
     }
 
+    private String typeString(SchemaType type) {
+        if (type instanceof SchemaList) {
+            return "[" + typeString(
+                    ((SchemaList) type).getWrappedType()) + "]";
+        }
+        if (type instanceof SchemaNonNull) {
+            return typeString(
+                    ((SchemaNonNull) type).getWrappedType()) + "!";
+        }
+        return ((SchemaNamedType) type).getName();
+    }
+
+    private String printValue(
+            InputValueWithState value,
+            SchemaInputType type) {
+        if (type instanceof GraphQLType) {
+            return AstPrinter.printAst(
+                    graphql.execution.ValuesResolver.valueToLiteral(
+                            value,
+                            (GraphQLType) type,
+                            GraphQLContext.getDefault(),
+                            Locale.getDefault()));
+        }
+        if (value.isLiteral()) {
+            return AstPrinter.printAst(
+                    (Value<?>) assertNotNull(value.getValue()));
+        }
+        Value<?> literal = valueToLiteral(
+                value.getValue(),
+                type,
+                value.isInternal());
+        return AstPrinter.printAst(literal);
+    }
+
+    private Value<?> valueToLiteral(
+            @Nullable Object value,
+            SchemaInputType type,
+            boolean internal) {
+        SchemaInputType unwrappedType = unwrapNonNull(type);
+        if (value == null) {
+            return NullValue.of();
+        }
+        if (unwrappedType instanceof SchemaList) {
+            return listLiteral(
+                    value,
+                    (SchemaList) unwrappedType,
+                    internal);
+        }
+        if (unwrappedType instanceof SchemaInputObject) {
+            return objectLiteral(
+                    value,
+                    (SchemaInputObject) unwrappedType,
+                    internal);
+        }
+        if (unwrappedType instanceof SchemaEnum) {
+            return EnumValue.newEnumValue(String.valueOf(value)).build();
+        }
+        return scalarLiteral(
+                value,
+                (SchemaScalar) unwrappedType,
+                internal);
+    }
+
+    private SchemaInputType unwrapNonNull(SchemaInputType type) {
+        if (!(type instanceof SchemaNonNull)) {
+            return type;
+        }
+        return (SchemaInputType)
+                ((SchemaModifiedType) type).getWrappedType();
+    }
+
+    private Value<?> listLiteral(
+            Object value,
+            SchemaList type,
+            boolean internal) {
+        SchemaInputType wrappedType =
+                (SchemaInputType) type.getWrappedType();
+        List<Value> values = new ArrayList<>();
+        for (Object item : FpKit.toListOrSingletonList(value)) {
+            values.add(valueToLiteral(item, wrappedType, internal));
+        }
+        return ArrayValue.newArrayValue().values(values).build();
+    }
+
+    private Value<?> objectLiteral(
+            Object value,
+            SchemaInputObject type,
+            boolean internal) {
+        if (!(value instanceof Map<?, ?>)) {
+            return assertShouldNeverHappen(
+                    "Cannot print value '%s' for input object '%s' "
+                            + "without a map",
+                    value,
+                    type.getName());
+        }
+        Map<?, ?> map = (Map<?, ?>) value;
+        List<ObjectField> fields = new ArrayList<>();
+        for (SchemaInputField field : schema.getInputFields(type)) {
+            if (!map.containsKey(field.getName())) {
+                continue;
+            }
+            fields.add(ObjectField.newObjectField()
+                    .name(field.getName())
+                    .value(valueToLiteral(
+                            map.get(field.getName()),
+                            field.getType(),
+                            internal))
+                    .build());
+        }
+        return ObjectValue.newObjectValue().objectFields(fields).build();
+    }
+
+    private Value<?> scalarLiteral(
+            Object value,
+            SchemaScalar type,
+            boolean internal) {
+        Object externalValue = internal
+                ? schema.getScalarCoercing(type).serialize(
+                        value,
+                        GraphQLContext.getDefault(),
+                        Locale.getDefault())
+                : value;
+        return schema.getScalarCoercing(type).valueToLiteral(
+                assertNotNull(externalValue),
+                GraphQLContext.getDefault(),
+                Locale.getDefault());
+    }
+
+    private boolean isIntrospectionType(SchemaNamedType type) {
+        return !options.isIncludeIntrospectionTypes()
+                && type.getName().startsWith("__");
+    }
+
+    private boolean isIncluded(SchemaNamedElement element) {
+        if (!(element instanceof GraphQLSchemaElement)) {
+            return true;
+        }
+        return options.getIncludeSchemaElement()
+                .test((GraphQLSchemaElement) element);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private <T extends SchemaNamedElement> List<T> sort(
+            @Nullable SchemaNamedElement parent,
+            List<? extends T> elements,
+            @Nullable Class<? extends GraphQLSchemaElement> elementType,
+            boolean topLevel) {
+        List<T> result = new ArrayList<>(elements);
+        if (result.size() < 2) {
+            return result;
+        }
+        if (result.get(0) instanceof GraphQLSchemaElement) {
+            Class<? extends GraphQLSchemaElement> parentType =
+                    graphQLParentClass(parent);
+            GraphqlTypeComparatorEnvironment environment =
+                    GraphqlTypeComparatorEnvironment.newEnvironment()
+                            .parentType(parentType)
+                            .elementType(elementType)
+                            .build();
+            Comparator comparator = options.getComparatorRegistry()
+                    .getComparator(environment);
+            result.sort(comparator);
+            return result;
+        }
+        if (options.getComparatorRegistry()
+                == GraphqlTypeComparatorRegistry.AS_IS_REGISTRY) {
+            return result;
+        }
+        Comparator<T> comparator =
+                Comparator.comparing(SchemaNamedElement::getName);
+        if (topLevel
+                && options.getComparatorRegistry()
+                != GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY) {
+            comparator = Comparator
+                    .comparingInt((T element) -> topLevelRank(element))
+                    .thenComparing(SchemaNamedElement::getName);
+        }
+        result.sort(comparator);
+        return result;
+    }
+
+    private Class<? extends GraphQLSchemaElement> graphQLParentClass(
+            @Nullable SchemaNamedElement parent) {
+        if (parent == null) {
+            return GraphQLSchemaElement.class;
+        }
+        if (parent instanceof SchemaObject) {
+            return GraphQLObjectType.class;
+        }
+        if (parent instanceof SchemaInterface) {
+            return GraphQLInterfaceType.class;
+        }
+        if (parent instanceof SchemaUnion) {
+            return GraphQLUnionType.class;
+        }
+        if (parent instanceof SchemaEnum) {
+            return graphql.schema.GraphQLEnumType.class;
+        }
+        if (parent instanceof SchemaInputObject) {
+            return graphql.schema.GraphQLInputObjectType.class;
+        }
+        if (parent instanceof SchemaField) {
+            return GraphQLFieldDefinition.class;
+        }
+        if (parent instanceof SchemaDirective) {
+            return GraphQLDirective.class;
+        }
+        if (parent instanceof SchemaAppliedDirective) {
+            return GraphQLAppliedDirective.class;
+        }
+        return GraphQLSchemaElement.class;
+    }
+
+    private int topLevelRank(SchemaNamedElement element) {
+        if (element instanceof SchemaDirective) {
+            return 1;
+        }
+        if (element instanceof SchemaInterface) {
+            return 2;
+        }
+        if (element instanceof SchemaUnion) {
+            return 3;
+        }
+        if (element instanceof SchemaObject) {
+            return 4;
+        }
+        if (element instanceof SchemaEnum) {
+            return 5;
+        }
+        if (element instanceof SchemaScalar) {
+            return 6;
+        }
+        if (element instanceof SchemaInputObject) {
+            return 7;
+        }
+        return 0;
+    }
+
     private void printComments(
             PrintWriter out,
-            Object element,
+            SchemaNamedElement element,
             String prefix) {
         out.print(commentsString(element, prefix));
     }
 
-    private String commentsString(Object element, String prefix) {
+    private String commentsString(
+            SchemaNamedElement element,
+            String prefix) {
+        return commentsString(
+                description(element),
+                element.getDefinition(),
+                prefix);
+    }
+
+    private void printComments(
+            PrintWriter out,
+            @Nullable String description,
+            @Nullable Node<?> definition,
+            String prefix) {
+        out.print(commentsString(description, definition, prefix));
+    }
+
+    private String commentsString(
+            @Nullable String description,
+            @Nullable Node<?> definition,
+            String prefix) {
         StringWriter stringWriter = new StringWriter();
         PrintWriter out = new PrintWriter(stringWriter);
-        String description = access.getDescription(element);
         if (description != null && !description.isEmpty()) {
             printDescription(out, prefix, description);
         }
         if (options.isIncludeAstDefinitionComments()) {
-            String comments = access.getAstDefinitionComments(element);
-            if (comments != null && !comments.isEmpty()) {
-                printHashDescription(
-                        out,
-                        prefix,
-                        Arrays.asList(comments.split("\n")));
-            }
+            printAstDefinitionComments(out, definition, prefix);
         }
         return stringWriter.toString();
+    }
+
+    private @Nullable String description(SchemaNamedElement element) {
+        String description = element.getDescription();
+        if (description != null && !description.isEmpty()) {
+            return description;
+        }
+        Node<?> definition = element.getDefinition();
+        if (!(definition instanceof DescribedNode<?>)) {
+            return description;
+        }
+        graphql.language.Description astDescription =
+                ((DescribedNode<?>) definition).getDescription();
+        return astDescription == null
+                ? description
+                : astDescription.getContent();
+    }
+
+    private void printAstDefinitionComments(
+            PrintWriter out,
+            @Nullable Node<?> definition,
+            String prefix) {
+        if (definition == null || definition.getComments().isEmpty()) {
+            return;
+        }
+        List<String> comments = definition.getComments().stream()
+                .map(Comment::getContent)
+                .collect(Collectors.toList());
+        printHashDescription(out, prefix, comments);
     }
 
     private void printDescription(
@@ -479,7 +878,10 @@ public final class SchemaPrinterWriter {
             out.printf("%s\"\"\"\n", prefix);
             return;
         }
-        out.printf("%s\"%s\"\n", prefix, escapeJsonString(lines.get(0)));
+        out.printf(
+                "%s\"%s\"\n",
+                prefix,
+                escapeJsonString(lines.get(0)));
     }
 
     private void printHashDescription(
@@ -491,17 +893,18 @@ public final class SchemaPrinterWriter {
         }
     }
 
-    private boolean hasDescription(Object element) {
-        String description = access.getDescription(element);
+    private boolean hasDescription(SchemaNamedElement element) {
+        String description = description(element);
         return description != null && !description.isEmpty();
     }
 
-    private boolean hasAstDefinitionComments(Object element) {
+    private boolean hasAstDefinitionComments(
+            SchemaNamedElement element) {
         if (!options.isIncludeAstDefinitionComments()) {
             return false;
         }
-        String comments = access.getAstDefinitionComments(element);
-        return comments != null && !comments.isEmpty();
+        Node<?> definition = element.getDefinition();
+        return definition != null && !definition.getComments().isEmpty();
     }
 
     private String trimNewLineChars(String value) {

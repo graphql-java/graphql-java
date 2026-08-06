@@ -10,7 +10,7 @@ public final class SUSchemaUnion
 
     @Internal
     public SUSchemaUnion(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUUnionType type) {
         super(executableSchema, type);
     }

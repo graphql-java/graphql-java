@@ -1,6 +1,7 @@
 package graphql.schema.universe.view;
 
 import graphql.Internal;
+import graphql.language.FieldDefinition;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.SchemaArgument;
@@ -17,20 +18,20 @@ import static graphql.Assert.assertNotNull;
 @Internal
 public final class SUSchemaIntrospectionField implements SchemaField {
 
-    private final SUSchemaExecutableSchema executableSchema;
+    private final SUExecutableSchema executableSchema;
     private final GraphQLFieldDefinition field;
     private final @Nullable SchemaOutputType type;
 
     @Internal
     public SUSchemaIntrospectionField(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             GraphQLFieldDefinition field) {
         this(executableSchema, field, null);
     }
 
     @Internal
     public SUSchemaIntrospectionField(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             GraphQLFieldDefinition field,
             @Nullable SchemaOutputType type) {
         this.executableSchema = assertNotNull(executableSchema);
@@ -41,6 +42,16 @@ public final class SUSchemaIntrospectionField implements SchemaField {
     @Override
     public String getName() {
         return field.getName();
+    }
+
+    @Override
+    public @Nullable String getDescription() {
+        return field.getDescription();
+    }
+
+    @Override
+    public @Nullable FieldDefinition getDefinition() {
+        return field.getDefinition();
     }
 
     @Override
@@ -72,5 +83,10 @@ public final class SUSchemaIntrospectionField implements SchemaField {
         return new SUSchemaIntrospectionArgument(
                 executableSchema,
                 argument);
+    }
+
+    @Internal
+    public SUExecutableSchema getExecutableSchema() {
+        return executableSchema;
     }
 }

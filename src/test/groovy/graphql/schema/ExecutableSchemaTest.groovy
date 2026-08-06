@@ -1,11 +1,12 @@
 package graphql.schema
 
 import graphql.AssertException
+import graphql.Scalars
 import graphql.TestUtil
 import graphql.introspection.Introspection
 import graphql.introspection.IntrospectionWithDirectivesSupport
 import graphql.schema.universe.SchemaUniverse
-import graphql.schema.universe.view.SUSchemaExecutableSchema
+import graphql.schema.universe.view.SUExecutableSchema
 import graphql.schema.visibility.BlockedFields
 import spock.lang.Specification
 
@@ -25,6 +26,21 @@ class ExecutableSchemaTest extends Specification {
         schema.getType("Color") instanceof SchemaEnum
         schema.getType("Choice") instanceof SchemaInputObject
         schema.getType("missing") == null
+
+        and:
+        schema.types*.name.containsAll([
+                "Query",
+                "Mutation",
+                "Subscription",
+                "Node",
+                "Search",
+                "User",
+                "Date",
+                "Color",
+                "Choice"
+        ])
+        schema.directives*.name.contains("tag")
+        schema.appliedDirectives.isEmpty()
 
         and:
         def node = schema.getType("Node") as SchemaFieldsContainer
@@ -62,6 +78,14 @@ class ExecutableSchemaTest extends Specification {
         color.getValue("BLUE") == null
 
         and:
+        def user = schema.getType("User") as SchemaFieldsContainer
+        schema.getInterfaces(user)*.name == ["Node"]
+        schema.getInterfaces(node).isEmpty()
+        schema.getUnionMembers(
+                schema.getType("Search") as SchemaUnion)*.name == ["User"]
+        schema.getAppliedDirectives(choice)*.name == ["oneOf"]
+
+        and:
         def tag = schema.getDirective("tag")
         tag.repeatable
         tag.validLocations().contains(Introspection.DirectiveLocation.FIELD)
@@ -77,6 +101,42 @@ class ExecutableSchemaTest extends Specification {
 
         where:
         executableSchema << executableSchemas()
+    }
+
+    def "GraphQLSchema and SUSchema expose normalized applied directives"() {
+        given:
+        ExecutableSchema schema = executableSchema
+        def query = schema.queryType
+        def field = schema.getField(query, "value")
+        def argument = field.getArgument("input")
+        def directive = schema.getDirective("configured")
+
+        expect:
+        schema.appliedDirectives*.name == ["meta"]
+        schema.appliedDirectives[0].getArgument("value")
+                .argumentValue.value.value == "schema"
+        schema.getAppliedDirectives(query)*.name == ["meta"]
+        schema.getAppliedDirectives(field)*.name == ["meta"]
+        schema.getAppliedDirectives(argument)*.name ==
+                ["meta", "deprecated"]
+        value(schema.getAppliedDirectives(argument)
+                .find { it.name == "deprecated" }
+                .getArgument("reason").argumentValue.value) == "Use other"
+        schema.getAppliedDirectives(directive)*.name == ["meta"]
+
+        and:
+        def appliedArgument = schema.getAppliedDirectives(field)[0]
+                .getArgument("value")
+        appliedArgument instanceof SchemaAppliedDirectiveArgument
+        unwrap(appliedArgument.type).name == "String"
+        appliedArgument.definition != null
+
+        and:
+        (schema.getType("Date") as SchemaScalar).specifiedByUrl ==
+                "https://example.com/date"
+
+        where:
+        executableSchema << appliedDirectiveSchemas()
     }
 
     def "GraphQLSchema and SUSchema expose possible types through the shared contract"() {
@@ -149,7 +209,7 @@ class ExecutableSchemaTest extends Specification {
                 .apply(TestUtil.schema("type Query { value: String }"))
         def universeSchema = new SchemaUniverse()
                 .importSchema("enhanced", source)
-        ExecutableSchema schema = SUSchemaExecutableSchema
+        ExecutableSchema schema = SUExecutableSchema
                 .fromGraphQLSchema(universeSchema, source)
 
         expect:
@@ -161,6 +221,11 @@ class ExecutableSchemaTest extends Specification {
                 .getArgument("name").type instanceof SchemaNonNull
         unwrap(schema.getField(schema.queryType, "__type")
                 .getArgument("name").type).name == "String"
+        schema.getAppliedDirectives(
+                schema.getField(schema.queryType, "__schema")).isEmpty()
+        schema.getAppliedDirectives(
+                schema.getField(schema.queryType, "__type")
+                        .getArgument("name")).isEmpty()
 
         and:
         schema.getField(
@@ -204,7 +269,7 @@ class ExecutableSchemaTest extends Specification {
         def source = richSchema()
         def universeSchema = new SchemaUniverse()
                 .importSchema("schema", source)
-        def original = SUSchemaExecutableSchema
+        def original = SUExecutableSchema
                 .fromGraphQLSchema(universeSchema, source)
         Coercing<?, ?> replacement = Mock()
 
@@ -222,9 +287,16 @@ class ExecutableSchemaTest extends Specification {
                 .is(replacement)
 
         when:
-        def unbound = SUSchemaExecutableSchema
+        def unbound = SUExecutableSchema
                 .newExecutableSchema(universeSchema)
                 .build()
+
+        then:
+        unbound.getScalarCoercing(
+                unbound.getType("String") as SchemaScalar)
+                .is(Scalars.GraphQLString.coercing)
+
+        when:
         unbound.getScalarCoercing(
                 unbound.getType("Date") as SchemaScalar)
 
@@ -239,9 +311,9 @@ class ExecutableSchemaTest extends Specification {
                 .importSchema("first", source)
         def secondUniverseSchema = new SchemaUniverse()
                 .importSchema("second", source)
-        def first = SUSchemaExecutableSchema
+        def first = SUExecutableSchema
                 .fromGraphQLSchema(firstUniverseSchema, source)
-        def second = SUSchemaExecutableSchema
+        def second = SUExecutableSchema
                 .fromGraphQLSchema(secondUniverseSchema, source)
 
         when:
@@ -260,7 +332,7 @@ class ExecutableSchemaTest extends Specification {
         thrown(AssertException)
 
         when:
-        SUSchemaExecutableSchema.newExecutableSchema(firstUniverseSchema)
+        SUExecutableSchema.newExecutableSchema(firstUniverseSchema)
                 .scalarCoercing(
                         secondUniverseSchema.getScalarType("Date"),
                         source.getType("Date").coercing)
@@ -273,7 +345,38 @@ class ExecutableSchemaTest extends Specification {
         def graphQLSchema = richSchema()
         def universeSchema = new SchemaUniverse()
                 .importSchema("schema", graphQLSchema)
-        def suSchema = SUSchemaExecutableSchema
+        def suSchema = SUExecutableSchema
+                .fromGraphQLSchema(universeSchema, graphQLSchema)
+        return [graphQLSchema, suSchema]
+    }
+
+    private static List<ExecutableSchema> appliedDirectiveSchemas() {
+        def graphQLSchema = TestUtil.schema('''
+            directive @meta(value: String!) repeatable on
+                SCHEMA | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION |
+                DIRECTIVE_DEFINITION
+
+            directive @configured @meta(value: "directive")
+                on FIELD_DEFINITION
+
+            schema @meta(value: "schema") {
+                query: Query
+            }
+
+            scalar Date
+                @specifiedBy(url: "https://example.com/date")
+
+            type Query @meta(value: "query") {
+                value(
+                    input: String
+                        @meta(value: "argument")
+                        @deprecated(reason: "Use other")
+                ): Date @meta(value: "field")
+            }
+        ''')
+        def universeSchema = new SchemaUniverse()
+                .importSchema("applied", graphQLSchema)
+        def suSchema = SUExecutableSchema
                 .fromGraphQLSchema(universeSchema, graphQLSchema)
         return [graphQLSchema, suSchema]
     }
@@ -333,5 +436,12 @@ class ExecutableSchemaTest extends Specification {
             current = (current as SchemaModifiedType).wrappedType
         }
         return current
+    }
+
+    private static Object value(Object value) {
+        if (value instanceof graphql.language.StringValue) {
+            return value.value
+        }
+        return value
     }
 }

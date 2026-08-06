@@ -12,7 +12,7 @@ public final class SUSchemaEnumValue
 
     @Internal
     public SUSchemaEnumValue(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUEnumValue value) {
         super(executableSchema, value);
     }

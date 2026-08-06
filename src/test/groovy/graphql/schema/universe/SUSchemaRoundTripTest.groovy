@@ -6,6 +6,7 @@ import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
 import graphql.schema.idl.TypeDefinitionRegistry
 import graphql.schema.idl.UnExecutableSchemaGenerator
+import graphql.schema.universe.view.SUExecutableSchema
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -47,7 +48,10 @@ class SUSchemaRoundTripTest extends Specification {
         SUSchema schema =
                 new SchemaUniverse().importSchema("native_round_trip", registry)
         return [
-                sdl       : new SUSchemaPrinter(printerOptions()).print(schema),
+                sdl       : new SchemaPrinter(printerOptions()).print(
+                        SUExecutableSchema
+                                .newExecutableSchema(schema)
+                                .build()),
                 query     : schema.queryType.name,
                 mutation  : schema.mutationType?.name,
                 subscription: schema.subscriptionType?.name,

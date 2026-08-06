@@ -2,25 +2,33 @@ package graphql.schema.universe.view;
 
 import graphql.ExperimentalApi;
 import graphql.Internal;
+import graphql.Scalars;
 import graphql.introspection.Introspection;
+import graphql.language.SchemaDefinition;
 import graphql.schema.Coercing;
 import graphql.schema.ExecutableSchema;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.schema.SchemaAppliedDirective;
 import graphql.schema.SchemaComposite;
 import graphql.schema.SchemaDirective;
+import graphql.schema.SchemaDirectiveContainer;
 import graphql.schema.SchemaField;
 import graphql.schema.SchemaFieldsContainer;
 import graphql.schema.SchemaInputField;
 import graphql.schema.SchemaInputObject;
 import graphql.schema.SchemaInputType;
+import graphql.schema.SchemaInterface;
+import graphql.schema.SchemaNamedType;
 import graphql.schema.SchemaObject;
 import graphql.schema.SchemaOutputType;
 import graphql.schema.SchemaScalar;
 import graphql.schema.SchemaType;
+import graphql.schema.SchemaUnion;
 import graphql.schema.universe.PersistentIntMap;
+import graphql.schema.universe.SUAppliedDirective;
 import graphql.schema.universe.SUCompositeType;
 import graphql.schema.universe.SUDirective;
 import graphql.schema.universe.SUEnumType;
@@ -55,27 +63,27 @@ import static graphql.Assert.assertTrue;
  * type-system topology. The adapter has the same supported lifetime as its underlying schema.</p>
  */
 @ExperimentalApi
-public final class SUSchemaExecutableSchema implements ExecutableSchema {
+public final class SUExecutableSchema implements ExecutableSchema {
 
     private final SUSchema schema;
     private final PersistentIntMap<Coercing<?, ?>> coercingByScalarId;
 
     @Internal
-    public SUSchemaExecutableSchema(
+    public SUExecutableSchema(
             SUSchema schema,
             PersistentIntMap<Coercing<?, ?>> coercingByScalarId) {
         this.schema = assertNotNull(schema);
         this.coercingByScalarId = assertNotNull(coercingByScalarId);
     }
 
-    public static SUSchemaExecutableSchemaBuilder newExecutableSchema(
+    public static SUExecutableSchemaBuilder newExecutableSchema(
             SUSchema schema) {
-        return new SUSchemaExecutableSchemaBuilder(schema);
+        return new SUExecutableSchemaBuilder(schema);
     }
 
-    public static SUSchemaExecutableSchemaBuilder newExecutableSchema(
-            SUSchemaExecutableSchema executableSchema) {
-        return new SUSchemaExecutableSchemaBuilder(executableSchema);
+    public static SUExecutableSchemaBuilder newExecutableSchema(
+            SUExecutableSchema executableSchema) {
+        return new SUExecutableSchemaBuilder(executableSchema);
     }
 
     /**
@@ -86,7 +94,7 @@ public final class SUSchemaExecutableSchema implements ExecutableSchema {
      *
      * @return the executable universe schema
      */
-    public static SUSchemaExecutableSchema fromGraphQLSchema(
+    public static SUExecutableSchema fromGraphQLSchema(
             SUSchema schema,
             GraphQLSchema graphQLSchema) {
         return newExecutableSchema(schema)
@@ -94,9 +102,9 @@ public final class SUSchemaExecutableSchema implements ExecutableSchema {
                 .build();
     }
 
-    public SUSchemaExecutableSchema transform(
-            Consumer<SUSchemaExecutableSchemaBuilder> builderConsumer) {
-        SUSchemaExecutableSchemaBuilder builder =
+    public SUExecutableSchema transform(
+            Consumer<SUExecutableSchemaBuilder> builderConsumer) {
+        SUExecutableSchemaBuilder builder =
                 newExecutableSchema(this);
         assertNotNull(builderConsumer).accept(builder);
         return builder.build();
@@ -104,6 +112,16 @@ public final class SUSchemaExecutableSchema implements ExecutableSchema {
 
     public SUSchema getSchema() {
         return schema;
+    }
+
+    @Override
+    public @Nullable String getDescription() {
+        return schema.getRoot().getDescription();
+    }
+
+    @Override
+    public @Nullable SchemaDefinition getDefinition() {
+        return null;
     }
 
     @Override
@@ -146,6 +164,63 @@ public final class SUSchemaExecutableSchema implements ExecutableSchema {
             return null;
         }
         return new SUSchemaDirective(this, directive);
+    }
+
+    @Override
+    public List<SchemaNamedType> getTypes() {
+        List<SUNamedType> types = schema.getTypes();
+        List<SchemaNamedType> result = new ArrayList<>(types.size());
+        for (SUNamedType type : types) {
+            result.add((SchemaNamedType) adaptType(type));
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    @Override
+    public List<SchemaDirective> getDirectives() {
+        List<SUDirective> directives = schema.getDirectiveDefinitions();
+        List<SchemaDirective> result =
+                new ArrayList<>(directives.size());
+        for (SUDirective directive : directives) {
+            result.add(new SUSchemaDirective(this, directive));
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    @Override
+    public List<SchemaAppliedDirective> getAppliedDirectives() {
+        return adaptAppliedDirectives(schema.getSchemaAppliedDirectives());
+    }
+
+    @Override
+    public List<SchemaAppliedDirective> getAppliedDirectives(
+            SchemaDirectiveContainer container) {
+        if (container instanceof SUSchemaIntrospectionField) {
+            assertTrue(
+                    ((SUSchemaIntrospectionField) container)
+                            .getExecutableSchema() == this,
+                    "The directive container must belong to this SUSchema");
+            return Collections.emptyList();
+        }
+        if (container instanceof SUSchemaIntrospectionArgument) {
+            assertTrue(
+                    ((SUSchemaIntrospectionArgument) container)
+                            .getExecutableSchema() == this,
+                    "The directive container must belong to this SUSchema");
+            return Collections.emptyList();
+        }
+        return adaptAppliedDirectives(
+                schema.getAppliedDirectives(elementVertex(container)));
+    }
+
+    private List<SchemaAppliedDirective> adaptAppliedDirectives(
+            List<SUAppliedDirective> directives) {
+        List<SchemaAppliedDirective> result =
+                new ArrayList<>(directives.size());
+        for (SUAppliedDirective directive : directives) {
+            result.add(new SUSchemaAppliedDirective(this, directive));
+        }
+        return Collections.unmodifiableList(result);
     }
 
     @Override
@@ -289,6 +364,40 @@ public final class SUSchemaExecutableSchema implements ExecutableSchema {
     }
 
     @Override
+    public List<SchemaInterface> getInterfaces(
+            SchemaFieldsContainer implementingType) {
+        SUVertex vertex = elementVertex(implementingType);
+        List<SUInterfaceType> interfaces;
+        if (vertex instanceof SUObjectType) {
+            interfaces = schema.getInterfaces((SUObjectType) vertex);
+        } else {
+            assertTrue(
+                    vertex instanceof SUInterfaceType,
+                    "Expected an object or interface type");
+            interfaces = schema.getInterfaces((SUInterfaceType) vertex);
+        }
+        List<SchemaInterface> result =
+                new ArrayList<>(interfaces.size());
+        for (SUInterfaceType interfaceType : interfaces) {
+            result.add(new SUSchemaInterface(this, interfaceType));
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    @Override
+    public List<SchemaObject> getUnionMembers(SchemaUnion unionType) {
+        SUVertex vertex = elementVertex(unionType);
+        assertTrue(vertex instanceof SUUnionType, "Expected a union type");
+        List<SUObjectType> members =
+                schema.getUnionMembers((SUUnionType) vertex);
+        List<SchemaObject> result = new ArrayList<>(members.size());
+        for (SUObjectType member : members) {
+            result.add(new SUSchemaObject(this, member));
+        }
+        return Collections.unmodifiableList(result);
+    }
+
+    @Override
     public List<SchemaObject> getPossibleTypes(
             SchemaComposite compositeType) {
         SUCompositeType type = compositeVertex(compositeType);
@@ -316,10 +425,35 @@ public final class SUSchemaExecutableSchema implements ExecutableSchema {
         assertTrue(
                 vertex instanceof SUScalarType,
                 "The scalar type must belong to this SUSchema");
+        Coercing<?, ?> coercing = coercingByScalarId.get(vertex.getId());
+        if (coercing != null) {
+            return coercing;
+        }
+        Coercing<?, ?> specifiedCoercing =
+                specifiedScalarCoercing(assertNotNull(vertex.getName()));
         return assertNotNull(
-                coercingByScalarId.get(vertex.getId()),
+                specifiedCoercing,
                 "No coercing is registered for scalar '%s'",
                 assertNotNull(vertex.getName()));
+    }
+
+    private @Nullable Coercing<?, ?> specifiedScalarCoercing(String name) {
+        if (Scalars.GraphQLString.getName().equals(name)) {
+            return Scalars.GraphQLString.getCoercing();
+        }
+        if (Scalars.GraphQLBoolean.getName().equals(name)) {
+            return Scalars.GraphQLBoolean.getCoercing();
+        }
+        if (Scalars.GraphQLInt.getName().equals(name)) {
+            return Scalars.GraphQLInt.getCoercing();
+        }
+        if (Scalars.GraphQLFloat.getName().equals(name)) {
+            return Scalars.GraphQLFloat.getCoercing();
+        }
+        if (Scalars.GraphQLID.getName().equals(name)) {
+            return Scalars.GraphQLID.getCoercing();
+        }
+        return null;
     }
 
     @Internal

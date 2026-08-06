@@ -10,7 +10,7 @@ public final class SUSchemaInterface
 
     @Internal
     public SUSchemaInterface(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUInterfaceType type) {
         super(executableSchema, type);
     }

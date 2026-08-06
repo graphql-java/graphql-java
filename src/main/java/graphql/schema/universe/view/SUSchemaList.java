@@ -14,7 +14,7 @@ public final class SUSchemaList
 
     @Internal
     public SUSchemaList(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUListType type) {
         super(executableSchema, type);
     }

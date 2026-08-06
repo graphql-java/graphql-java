@@ -1,25 +1,27 @@
 package graphql.schema.universe.view;
 
 import graphql.Internal;
-import graphql.language.InputValueDefinition;
-import graphql.schema.GraphQLArgument;
+import graphql.language.Argument;
 import graphql.schema.InputValueWithState;
-import graphql.schema.SchemaArgument;
+import graphql.schema.SchemaAppliedDirectiveArgument;
 import graphql.schema.SchemaInputType;
+import graphql.schema.universe.SUAppliedDirectiveArgument;
+import graphql.schema.universe.SUType;
 import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
 
 @Internal
-public final class SUSchemaIntrospectionArgument implements SchemaArgument {
+public final class SUSchemaAppliedDirectiveArgument
+        implements SchemaAppliedDirectiveArgument {
 
     private final SUExecutableSchema executableSchema;
-    private final GraphQLArgument argument;
+    private final SUAppliedDirectiveArgument argument;
 
     @Internal
-    public SUSchemaIntrospectionArgument(
+    public SUSchemaAppliedDirectiveArgument(
             SUExecutableSchema executableSchema,
-            GraphQLArgument argument) {
+            SUAppliedDirectiveArgument argument) {
         this.executableSchema = assertNotNull(executableSchema);
         this.argument = assertNotNull(argument);
     }
@@ -31,26 +33,22 @@ public final class SUSchemaIntrospectionArgument implements SchemaArgument {
 
     @Override
     public @Nullable String getDescription() {
-        return argument.getDescription();
+        return null;
     }
 
     @Override
-    public @Nullable InputValueDefinition getDefinition() {
+    public @Nullable Argument getDefinition() {
         return argument.getDefinition();
     }
 
     @Override
     public SchemaInputType getType() {
-        return executableSchema.adaptGraphQLInputType(argument.getType());
+        SUType type = executableSchema.getSchema().getType(argument);
+        return executableSchema.adaptInputType(type);
     }
 
     @Override
-    public InputValueWithState getArgumentDefaultValue() {
-        return argument.getArgumentDefaultValue();
-    }
-
-    @Internal
-    public SUExecutableSchema getExecutableSchema() {
-        return executableSchema;
+    public InputValueWithState getArgumentValue() {
+        return argument.getArgumentValue();
     }
 }

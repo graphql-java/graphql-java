@@ -11,9 +11,7 @@ import java.util.List;
  */
 @ExperimentalApi
 @NullMarked
-public interface SchemaField {
-
-    String getName();
+public interface SchemaField extends SchemaDirectiveContainer {
 
     SchemaOutputType getType();
 

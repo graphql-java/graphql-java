@@ -15,7 +15,7 @@ public final class SUSchemaArgument
 
     @Internal
     public SUSchemaArgument(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUArgument argument) {
         super(executableSchema, argument);
     }

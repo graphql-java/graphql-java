@@ -11,7 +11,7 @@ public final class SUSchemaInputObject
 
     @Internal
     public SUSchemaInputObject(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUInputObjectType type) {
         super(executableSchema, type);
     }

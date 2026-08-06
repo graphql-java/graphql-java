@@ -13,7 +13,7 @@ public abstract class AbstractSUSchemaType
 
     @Internal
     public AbstractSUSchemaType(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUType type) {
         super(executableSchema, type);
     }

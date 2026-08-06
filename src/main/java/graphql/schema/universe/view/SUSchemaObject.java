@@ -10,7 +10,7 @@ public final class SUSchemaObject
 
     @Internal
     public SUSchemaObject(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUObjectType type) {
         super(executableSchema, type);
     }

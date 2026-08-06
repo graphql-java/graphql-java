@@ -521,6 +521,39 @@ public class GraphQLSchema implements ExecutableSchema {
                 .getFieldDefinitions((GraphQLInputObjectType) parentType);
     }
 
+    @Override
+    public List<GraphQLInterfaceType> getInterfaces(
+            SchemaFieldsContainer implementingType) {
+        assertTrue(
+                implementingType instanceof GraphQLImplementingType,
+                "The implementing type must belong to this GraphQLSchema");
+        List<GraphQLInterfaceType> result = new ArrayList<>();
+        for (GraphQLNamedOutputType interfaceType :
+                ((GraphQLImplementingType) implementingType).getInterfaces()) {
+            assertTrue(
+                    interfaceType instanceof GraphQLInterfaceType,
+                    "Interface type references must be resolved");
+            result.add((GraphQLInterfaceType) interfaceType);
+        }
+        return ImmutableList.copyOf(result);
+    }
+
+    @Override
+    public List<GraphQLObjectType> getUnionMembers(SchemaUnion unionType) {
+        assertTrue(
+                unionType instanceof GraphQLUnionType,
+                "The union type must belong to this GraphQLSchema");
+        List<GraphQLObjectType> result = new ArrayList<>();
+        for (GraphQLNamedOutputType member :
+                ((GraphQLUnionType) unionType).getTypes()) {
+            assertTrue(
+                    member instanceof GraphQLObjectType,
+                    "Union type references must be resolved");
+            result.add((GraphQLObjectType) member);
+        }
+        return ImmutableList.copyOf(result);
+    }
+
     /**
      * @return all the named types in the scheme as a map from name to named type
      */
@@ -535,6 +568,11 @@ public class GraphQLSchema implements ExecutableSchema {
      */
     public List<GraphQLNamedType> getAllTypesAsList() {
         return getAllTypesAsList(typeMap);
+    }
+
+    @Override
+    public List<GraphQLNamedType> getTypes() {
+        return getAllTypesAsList();
     }
 
     /**
@@ -682,6 +720,90 @@ public class GraphQLSchema implements ExecutableSchema {
      */
     public List<GraphQLDirective> getDirectives() {
         return directiveDefinitionsHolder.getDirectives();
+    }
+
+    @Override
+    @SuppressWarnings("deprecation")
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return DirectivesUtil.toAppliedDirectives(
+                getSchemaAppliedDirectives(),
+                getSchemaDirectives());
+    }
+
+    @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives(
+            SchemaDirectiveContainer container) {
+        assertTrue(
+                container instanceof GraphQLDirectiveContainer,
+                "The directive container must belong to this GraphQLSchema");
+        GraphQLDirectiveContainer graphQLContainer =
+                (GraphQLDirectiveContainer) container;
+        List<GraphQLAppliedDirective> directives =
+                DirectivesUtil.toAppliedDirectives(graphQLContainer);
+        String deprecationReason = getDeprecationReason(graphQLContainer);
+        if (deprecationReason == null) {
+            return directives;
+        }
+        return withDeprecationReason(directives, deprecationReason);
+    }
+
+    private @Nullable String getDeprecationReason(
+            GraphQLDirectiveContainer container) {
+        if (container instanceof GraphQLFieldDefinition) {
+            return ((GraphQLFieldDefinition) container).getDeprecationReason();
+        }
+        if (container instanceof GraphQLEnumValueDefinition) {
+            return ((GraphQLEnumValueDefinition) container).getDeprecationReason();
+        }
+        if (container instanceof GraphQLInputObjectField) {
+            return ((GraphQLInputObjectField) container).getDeprecationReason();
+        }
+        if (container instanceof GraphQLArgument) {
+            return ((GraphQLArgument) container).getDeprecationReason();
+        }
+        return null;
+    }
+
+    private List<GraphQLAppliedDirective> withDeprecationReason(
+            List<GraphQLAppliedDirective> directives,
+            String reason) {
+        List<GraphQLAppliedDirective> result =
+                new ArrayList<>(directives.size() + 1);
+        boolean found = false;
+        for (GraphQLAppliedDirective directive : directives) {
+            if (!Directives.DeprecatedDirective.getName().equals(
+                    directive.getName())) {
+                result.add(directive);
+                continue;
+            }
+            found = true;
+            GraphQLAppliedDirectiveArgument existing =
+                    directive.getArgument("reason");
+            if (existing != null
+                    && existing.getArgumentValue()
+                    == InputValueWithState.NOT_SET) {
+                result.add(directive);
+                continue;
+            }
+            result.add(directive.transform(builder ->
+                    builder.argument(deprecationReasonArgument(reason))));
+        }
+        if (!found) {
+            result.add(GraphQLAppliedDirective.newDirective()
+                    .name(Directives.DeprecatedDirective.getName())
+                    .argument(deprecationReasonArgument(reason))
+                    .build());
+        }
+        return result;
+    }
+
+    private GraphQLAppliedDirectiveArgument deprecationReasonArgument(
+            String reason) {
+        return GraphQLAppliedDirectiveArgument.newArgument()
+                .name("reason")
+                .valueProgrammatic(reason)
+                .type(Scalars.GraphQLString)
+                .build();
     }
 
     /**

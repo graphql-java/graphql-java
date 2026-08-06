@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.ExperimentalApi;
+import graphql.language.SchemaDefinition;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -15,6 +16,16 @@ import java.util.List;
 @ExperimentalApi
 @NullMarked
 public interface ExecutableSchema {
+
+    /**
+     * @return the schema description, or {@code null} when absent
+     */
+    @Nullable String getDescription();
+
+    /**
+     * @return the source schema definition, or {@code null} when unavailable
+     */
+    @Nullable SchemaDefinition getDefinition();
 
     /**
      * @return the query root
@@ -44,6 +55,33 @@ public interface ExecutableSchema {
      * @return the directive definition, or {@code null} when absent
      */
     @Nullable SchemaDirective getDirective(String name);
+
+    /**
+     * @return all named types in this schema
+     */
+    List<? extends SchemaNamedType> getTypes();
+
+    /**
+     * @return all directive definitions in this schema
+     */
+    List<? extends SchemaDirective> getDirectives();
+
+    /**
+     * Returns the normalized directives applied to the schema itself.
+     *
+     * @return applied schema directives
+     */
+    List<? extends SchemaAppliedDirective> getAppliedDirectives();
+
+    /**
+     * Returns the normalized directives applied to an element.
+     *
+     * @param container the directive container
+     *
+     * @return applied directives in declaration order
+     */
+    List<? extends SchemaAppliedDirective> getAppliedDirectives(
+            SchemaDirectiveContainer container);
 
     /**
      * @return this schema's introspection schema type
@@ -83,6 +121,21 @@ public interface ExecutableSchema {
      * @return the visible fields declared by the input object
      */
     List<? extends SchemaInputField> getInputFields(SchemaInputObject parentType);
+
+    /**
+     * @param implementingType an object or interface
+     *
+     * @return the interfaces directly implemented by the type
+     */
+    List<? extends SchemaInterface> getInterfaces(
+            SchemaFieldsContainer implementingType);
+
+    /**
+     * @param unionType the union
+     *
+     * @return the object types declared by the union
+     */
+    List<? extends SchemaObject> getUnionMembers(SchemaUnion unionType);
 
     /**
      * @param compositeType an object, interface, or union

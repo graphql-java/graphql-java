@@ -8,9 +8,7 @@ import org.jspecify.annotations.NullMarked;
  */
 @ExperimentalApi
 @NullMarked
-public interface SchemaInputField {
-
-    String getName();
+public interface SchemaInputField extends SchemaDirectiveContainer {
 
     SchemaInputType getType();
 

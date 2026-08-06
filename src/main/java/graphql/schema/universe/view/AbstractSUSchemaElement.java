@@ -1,7 +1,13 @@
 package graphql.schema.universe.view;
 
 import graphql.Internal;
+import graphql.language.Node;
+import graphql.schema.universe.SUAppliedDirective;
+import graphql.schema.universe.SUArgument;
+import graphql.schema.universe.SUDirective;
+import graphql.schema.universe.SUInputField;
 import graphql.schema.universe.SUVertex;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
 
@@ -11,25 +17,55 @@ import static graphql.Assert.assertNotNull;
 @Internal
 public abstract class AbstractSUSchemaElement {
 
-    private final SUSchemaExecutableSchema executableSchema;
+    private final SUExecutableSchema executableSchema;
     private final SUVertex vertex;
 
     @Internal
     public AbstractSUSchemaElement(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUVertex vertex) {
         this.executableSchema = assertNotNull(executableSchema);
         this.vertex = assertNotNull(vertex);
     }
 
     @Internal
-    public final SUSchemaExecutableSchema getExecutableSchema() {
+    public final SUExecutableSchema getExecutableSchema() {
         return executableSchema;
     }
 
     @Internal
     public final SUVertex getVertex() {
         return vertex;
+    }
+
+    /**
+     * Returns the description stored on the schema-universe vertex.
+     *
+     * @return the description, or {@code null} when absent
+     */
+    public final @Nullable String getDescription() {
+        return vertex.getDescription();
+    }
+
+    /**
+     * Returns the source definition stored by vertex kinds that retain one.
+     *
+     * @return the source definition, or {@code null} when unavailable
+     */
+    public @Nullable Node<?> getDefinition() {
+        if (vertex instanceof SUArgument) {
+            return ((SUArgument) vertex).getDefinition();
+        }
+        if (vertex instanceof SUInputField) {
+            return ((SUInputField) vertex).getDefinition();
+        }
+        if (vertex instanceof SUDirective) {
+            return ((SUDirective) vertex).getDefinition();
+        }
+        if (vertex instanceof SUAppliedDirective) {
+            return ((SUAppliedDirective) vertex).getDefinition();
+        }
+        return null;
     }
 
     @Override

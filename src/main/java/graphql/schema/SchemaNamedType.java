@@ -8,7 +8,6 @@ import org.jspecify.annotations.NullMarked;
  */
 @ExperimentalApi
 @NullMarked
-public interface SchemaNamedType extends SchemaType {
-
-    String getName();
+public interface SchemaNamedType
+        extends SchemaType, SchemaDirectiveContainer {
 }

@@ -16,7 +16,7 @@ public final class SUSchemaEnum
 
     @Internal
     public SUSchemaEnum(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUEnumType type) {
         super(executableSchema, type);
     }

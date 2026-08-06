@@ -1,13 +1,20 @@
 package graphql.schema.universe
 
+import graphql.Scalars
+import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLScalarType
+import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
 import graphql.schema.idl.TypeDefinitionRegistry
 import graphql.schema.idl.UnExecutableSchemaGenerator
+import graphql.schema.universe.view.SUExecutableSchema
 import spock.lang.Specification
 import spock.lang.Requires
 
-class SUSchemaPrinterTest extends Specification {
+class SUExecutableSchemaPrinterTest extends Specification {
 
     def "native SDL import and GraphQLSchema import print the same semantic schema"() {
         given:
@@ -19,11 +26,14 @@ class SUSchemaPrinterTest extends Specification {
                 new SchemaUniverse().importSchema("graphql", graphQLSchema)
         def options = SchemaPrinter.Options.defaultOptions()
                 .includeSchemaDefinition(true)
-        def printer = new SUSchemaPrinter(options)
+        def printer = new SchemaPrinter(options)
 
         when:
-        def directSdl = printer.print(direct)
-        def viaGraphQLSdl = printer.print(viaGraphQL)
+        def directSdl = printer.print(executable(direct))
+        def viaGraphQLSdl = printer.print(
+                SUExecutableSchema.fromGraphQLSchema(
+                        viaGraphQL,
+                        graphQLSchema))
         def graphQLSdl = new SchemaPrinter(options).print(graphQLSchema)
 
         then:
@@ -39,13 +49,13 @@ class SUSchemaPrinterTest extends Specification {
         given:
         def options = SchemaPrinter.Options.defaultOptions()
                 .includeSchemaDefinition(true)
-        def printer = new SUSchemaPrinter(options)
+        def printer = new SchemaPrinter(options)
         def first = new SchemaUniverse().parseSchema("first", comprehensiveSdl())
 
         when:
-        def firstSdl = printer.print(first)
+        def firstSdl = printer.print(executable(first))
         def second = new SchemaUniverse().parseSchema("second", firstSdl)
-        def secondSdl = printer.print(second)
+        def secondSdl = printer.print(executable(second))
 
         then:
         firstSdl == secondSdl
@@ -53,6 +63,43 @@ class SUSchemaPrinterTest extends Specification {
         firstSdl.contains("SECOND")
         !firstSdl.contains("extend type")
         !firstSdl.contains("extend enum")
+    }
+
+    def "executable schema printing uses custom scalar coercing for programmatic defaults"() {
+        given:
+        def date = GraphQLScalarType.newScalar()
+                .name("Date")
+                .coercing(Scalars.GraphQLString.coercing)
+                .build()
+        def query = GraphQLObjectType.newObject()
+                .name("Query")
+                .field(GraphQLFieldDefinition.newFieldDefinition()
+                        .name("value")
+                        .type(Scalars.GraphQLString)
+                        .argument(GraphQLArgument.newArgument()
+                                .name("external")
+                                .type(date)
+                                .defaultValueProgrammatic("2026-08-05"))
+                        .argument(GraphQLArgument.newArgument()
+                                .name("internal")
+                                .type(date)
+                                .defaultValue("2026-08-06")))
+                .build()
+        GraphQLSchema graphQLSchema = GraphQLSchema.newSchema()
+                .query(query)
+                .build()
+        def universeSchema = new SchemaUniverse()
+                .importSchema("programmatic", graphQLSchema)
+        def executableSchema = SUExecutableSchema
+                .fromGraphQLSchema(universeSchema, graphQLSchema)
+        def printer = new SchemaPrinter()
+
+        expect:
+        printer.print(executableSchema) == printer.print(graphQLSchema)
+        printer.print(executableSchema).contains(
+                'external: Date = "2026-08-05"')
+        printer.print(executableSchema).contains(
+                'internal: Date = "2026-08-06"')
     }
 
     @Requires({ Boolean.getBoolean("graphql.largeSchemaSdlTest") })
@@ -137,7 +184,8 @@ class SUSchemaPrinterTest extends Specification {
     }
 
     private static String resource(String name) {
-        def resource = SUSchemaPrinterTest.getResource("/" + name)
+        def resource =
+                SUExecutableSchemaPrinterTest.getResource("/" + name)
         assert resource != null
         return resource.getText("UTF-8")
     }
@@ -147,7 +195,7 @@ class SUSchemaPrinterTest extends Specification {
             SchemaPrinter.Options options) {
         TypeDefinitionRegistry registry = new SchemaParser().parse(sdl)
         def schema = new SchemaUniverse().importSchema("direct_large", registry)
-        return new SUSchemaPrinter(options).print(schema)
+        return new SchemaPrinter(options).print(executable(schema))
     }
 
     private static String printGraphQL(
@@ -156,5 +204,9 @@ class SUSchemaPrinterTest extends Specification {
         TypeDefinitionRegistry registry = new SchemaParser().parse(sdl)
         def schema = UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
         return new SchemaPrinter(options).print(schema)
+    }
+
+    private static SUExecutableSchema executable(SUSchema schema) {
+        return SUExecutableSchema.newExecutableSchema(schema).build()
     }
 }

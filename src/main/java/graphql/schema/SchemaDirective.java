@@ -13,9 +13,7 @@ import java.util.Set;
  */
 @ExperimentalApi
 @NullMarked
-public interface SchemaDirective {
-
-    String getName();
+public interface SchemaDirective extends SchemaDirectiveContainer {
 
     boolean isRepeatable();
 

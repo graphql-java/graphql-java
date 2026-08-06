@@ -15,7 +15,7 @@ public final class SUSchemaInputField
 
     @Internal
     public SUSchemaInputField(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUInputField field) {
         super(executableSchema, field);
     }

@@ -25,6 +25,7 @@ import graphql.language.SchemaExtensionDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
+import graphql.schema.ExecutableSchema;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
@@ -50,7 +51,6 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorEnvironment;
 import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.InputValueWithState;
-import graphql.schema.universe.SUSchema;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.io.PrintWriter;
@@ -509,10 +509,7 @@ public class SchemaPrinter {
      */
     public String print(GraphQLSchema schema) {
         if (!options.isUseAstDefinitions()) {
-            return new SchemaPrinterWriter(
-                    new GraphQLSchemaPrintAccess(schema, options),
-                    options)
-                    .print();
+            return print((ExecutableSchema) schema);
         }
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
@@ -540,22 +537,15 @@ public class SchemaPrinter {
     }
 
     /**
-     * Prints a schema-universe snapshot directly without materializing a {@link GraphQLSchema}.
+     * Prints an executable schema view as canonical semantic SDL.
      *
-     * <p>Schema-universe extensions are flattened into their semantic topology, so this always
-     * produces canonical semantic SDL even when {@link Options#useAstDefinitions(boolean)} is
-     * enabled.</p>
-     *
-     * @param schema the schema-universe snapshot
+     * @param schema the schema view
      *
      * @return the logical schema definition
      */
     @ExperimentalApi
-    public String print(SUSchema schema) {
-        return new SchemaPrinterWriter(
-                new SUSchemaPrintAccess(schema, options),
-                options)
-                .print();
+    public String print(ExecutableSchema schema) {
+        return new SchemaPrinterWriter(schema, options).print();
     }
 
     private interface SchemaElementPrinter<T> {

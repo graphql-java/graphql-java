@@ -14,7 +14,7 @@ public final class SUSchemaNonNull
 
     @Internal
     public SUSchemaNonNull(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUNonNullType type) {
         super(executableSchema, type);
     }

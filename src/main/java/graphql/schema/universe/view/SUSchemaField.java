@@ -21,7 +21,7 @@ public final class SUSchemaField
 
     @Internal
     public SUSchemaField(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUField field) {
         super(executableSchema, field);
     }

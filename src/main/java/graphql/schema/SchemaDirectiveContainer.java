@@ -4,9 +4,9 @@ import graphql.ExperimentalApi;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * A value declared by a GraphQL enum type.
+ * A schema element on which directives can be applied.
  */
 @ExperimentalApi
 @NullMarked
-public interface SchemaEnumValue extends SchemaDirectiveContainer {
+public interface SchemaDirectiveContainer extends SchemaNamedElement {
 }

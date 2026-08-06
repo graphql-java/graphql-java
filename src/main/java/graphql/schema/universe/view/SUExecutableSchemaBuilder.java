@@ -19,23 +19,23 @@ import static graphql.Assert.assertTrue;
  */
 @ExperimentalApi
 @NullUnmarked
-public final class SUSchemaExecutableSchemaBuilder {
+public final class SUExecutableSchemaBuilder {
 
     private final SUSchema schema;
     private PersistentIntMap<Coercing<?, ?>> coercingByScalarId;
 
-    public SUSchemaExecutableSchemaBuilder(SUSchema schema) {
+    public SUExecutableSchemaBuilder(SUSchema schema) {
         this.schema = assertNotNull(schema);
         this.coercingByScalarId = PersistentIntMap.empty();
     }
 
-    public SUSchemaExecutableSchemaBuilder(
-            SUSchemaExecutableSchema executableSchema) {
+    public SUExecutableSchemaBuilder(
+            SUExecutableSchema executableSchema) {
         this.schema = assertNotNull(executableSchema).getSchema();
         this.coercingByScalarId = executableSchema.getCoercingByScalarId();
     }
 
-    public SUSchemaExecutableSchemaBuilder scalarCoercing(
+    public SUExecutableSchemaBuilder scalarCoercing(
             SUScalarType scalarType,
             Coercing<?, ?> coercing) {
         SUScalarType scalar = assertNotNull(scalarType);
@@ -49,7 +49,7 @@ public final class SUSchemaExecutableSchemaBuilder {
         return this;
     }
 
-    public SUSchemaExecutableSchemaBuilder scalarCoercing(
+    public SUExecutableSchemaBuilder scalarCoercing(
             String scalarName,
             Coercing<?, ?> coercing) {
         SUScalarType scalarType = schema.getScalarType(
@@ -70,7 +70,7 @@ public final class SUSchemaExecutableSchemaBuilder {
      *
      * @return this builder
      */
-    public SUSchemaExecutableSchemaBuilder scalarCoercings(
+    public SUExecutableSchemaBuilder scalarCoercings(
             GraphQLSchema graphQLSchema) {
         GraphQLSchema source = assertNotNull(graphQLSchema);
         for (SUNamedType type : schema.getTypes()) {
@@ -96,8 +96,8 @@ public final class SUSchemaExecutableSchemaBuilder {
                 ((GraphQLScalarType) sourceType).getCoercing());
     }
 
-    public SUSchemaExecutableSchema build() {
-        return new SUSchemaExecutableSchema(
+    public SUExecutableSchema build() {
+        return new SUExecutableSchema(
                 schema,
                 coercingByScalarId);
     }

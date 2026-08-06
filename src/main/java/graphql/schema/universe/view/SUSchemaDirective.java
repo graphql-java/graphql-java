@@ -21,7 +21,7 @@ public final class SUSchemaDirective
 
     @Internal
     public SUSchemaDirective(
-            SUSchemaExecutableSchema executableSchema,
+            SUExecutableSchema executableSchema,
             SUDirective directive) {
         super(executableSchema, directive);
     }
