@@ -77,7 +77,7 @@ class SUSchemaGeneratorTest extends Specification {
         and:
         def schemaTag = schema.schemaAppliedDirectives[0]
         schemaTag.name == "tag"
-        schemaTag.definition != null
+        schema.getDefinition(schemaTag) != null
         schemaTag.arguments*.name == ["value"]
         schemaTag.arguments[0].argumentValue.value instanceof StringValue
         schemaTag.arguments[0].argumentValue.value.value == "schema"

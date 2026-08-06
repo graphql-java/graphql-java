@@ -2,6 +2,7 @@ package graphql.schema.universe.view;
 
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
+import graphql.language.DirectiveExtensionDefinition;
 import graphql.schema.SchemaArgument;
 import graphql.schema.SchemaDirective;
 import graphql.schema.universe.SUArgument;
@@ -29,6 +30,15 @@ public final class SUSchemaDirective
     @Override
     public String getName() {
         return assertNotNull(getVertex().getName());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public List<DirectiveExtensionDefinition> getExtensionDefinitions() {
+        return (List<DirectiveExtensionDefinition>)
+                getExecutableSchema()
+                        .getSchema()
+                        .getExtensionDefinitions(getDirectiveVertex());
     }
 
     @Override

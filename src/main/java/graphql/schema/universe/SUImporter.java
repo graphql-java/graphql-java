@@ -4,6 +4,7 @@ import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.ExperimentalApi;
 import graphql.Internal;
+import graphql.language.Node;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLAppliedDirectiveArgument;
@@ -45,8 +46,9 @@ import static graphql.Assert.assertTrue;
  * Imports the type-system topology of an existing {@link GraphQLSchema} into a universe.
  *
  * <p>The importer preserves schema-element object identity during one import. Runtime wiring in
- * {@code GraphQLCodeRegistry}, AST definitions, coercing implementations, and input values are not
- * part of this topology import.</p>
+ * {@code GraphQLCodeRegistry}, coercing implementations, and programmatic behavior are not part of
+ * this topology import. Source AST definitions are retained by default and can be disabled through
+ * {@link SUSchemaOptions}.</p>
  */
 @ExperimentalApi
 public final class SUImporter {
@@ -58,13 +60,30 @@ public final class SUImporter {
             appliedArgumentValues = new IdentityHashMap<>();
     private final Map<String, GraphQLDirective> directiveDefinitions = new LinkedHashMap<>();
     private @Nullable SUSchemaBuilder schemaBuilder;
+    private boolean captureAstDefinitions = true;
 
     public SUImporter(SchemaUniverse universe) {
         this.universe = assertNotNull(universe);
     }
 
     public SUSchema importSchema(String name, GraphQLSchema schema) {
+        return importSchema(
+                name,
+                schema,
+                SUSchemaOptions.defaultOptions());
+    }
+
+    public SUSchema importSchema(
+            String name,
+            GraphQLSchema schema,
+            SUSchemaOptions options) {
+        captureAstDefinitions =
+                assertNotNull(options).isCaptureAstDefinitions();
         schemaBuilder = universe.newSchema(name, schema.getDescription());
+        captureAstDefinitions(
+                builder().getRoot(),
+                schema.getDefinition(),
+                schema.getExtensionDefinitions());
         createNamedTypeVertices(schema.getAllTypesAsList());
         addRootTypes(schema);
         builder().introspectionSchemaType(
@@ -150,27 +169,69 @@ public final class SUImporter {
     private SUNamedType createNamedTypeVertex(GraphQLNamedType type) {
         if (type instanceof GraphQLObjectType) {
             GraphQLObjectType objectType = (GraphQLObjectType) type;
-            return universe.newObjectType(objectType.getName(), objectType.getDescription());
+            SUObjectType vertex = universe.newObjectType(
+                    objectType.getName(),
+                    objectType.getDescription());
+            captureAstDefinitions(
+                    vertex,
+                    objectType.getDefinition(),
+                    objectType.getExtensionDefinitions());
+            return vertex;
         }
         if (type instanceof GraphQLInterfaceType) {
             GraphQLInterfaceType interfaceType = (GraphQLInterfaceType) type;
-            return universe.newInterfaceType(interfaceType.getName(), interfaceType.getDescription());
+            SUInterfaceType vertex = universe.newInterfaceType(
+                    interfaceType.getName(),
+                    interfaceType.getDescription());
+            captureAstDefinitions(
+                    vertex,
+                    interfaceType.getDefinition(),
+                    interfaceType.getExtensionDefinitions());
+            return vertex;
         }
         if (type instanceof GraphQLUnionType) {
             GraphQLUnionType unionType = (GraphQLUnionType) type;
-            return universe.newUnionType(unionType.getName(), unionType.getDescription());
+            SUUnionType vertex = universe.newUnionType(
+                    unionType.getName(),
+                    unionType.getDescription());
+            captureAstDefinitions(
+                    vertex,
+                    unionType.getDefinition(),
+                    unionType.getExtensionDefinitions());
+            return vertex;
         }
         if (type instanceof GraphQLEnumType) {
             GraphQLEnumType enumType = (GraphQLEnumType) type;
-            return universe.newEnumType(enumType.getName(), enumType.getDescription());
+            SUEnumType vertex = universe.newEnumType(
+                    enumType.getName(),
+                    enumType.getDescription());
+            captureAstDefinitions(
+                    vertex,
+                    enumType.getDefinition(),
+                    enumType.getExtensionDefinitions());
+            return vertex;
         }
         if (type instanceof GraphQLScalarType) {
             GraphQLScalarType scalarType = (GraphQLScalarType) type;
-            return universe.newScalarType(scalarType.getName(), scalarType.getDescription());
+            SUScalarType vertex = universe.newScalarType(
+                    scalarType.getName(),
+                    scalarType.getDescription());
+            captureAstDefinitions(
+                    vertex,
+                    scalarType.getDefinition(),
+                    scalarType.getExtensionDefinitions());
+            return vertex;
         }
         if (type instanceof GraphQLInputObjectType) {
             GraphQLInputObjectType inputType = (GraphQLInputObjectType) type;
-            return universe.newInputObjectType(inputType.getName(), inputType.getDescription());
+            SUInputObjectType vertex = universe.newInputObjectType(
+                    inputType.getName(),
+                    inputType.getDescription());
+            captureAstDefinitions(
+                    vertex,
+                    inputType.getDefinition(),
+                    inputType.getExtensionDefinitions());
+            return vertex;
         }
         return assertShouldNeverHappen("Unsupported schema universe named type %s", type.getClass().getName());
     }
@@ -195,8 +256,11 @@ public final class SUImporter {
                     directive.getName(),
                     directive.getDescription(),
                     directive.isRepeatable(),
-                    directive.validLocations(),
-                    directive.getDefinition());
+                    directive.validLocations());
+            captureAstDefinitions(
+                    vertex,
+                    directive.getDefinition(),
+                    directive.getExtensionDefinitions());
             elementVertices.put(directive, vertex);
             builder().addDirectiveDefinition(vertex);
         }
@@ -472,6 +536,10 @@ public final class SUImporter {
             return (SUField) existing;
         }
         SUField vertex = universe.newField(field.getName(), field.getDescription());
+        captureAstDefinitions(
+                vertex,
+                field.getDefinition(),
+                List.of());
         elementVertices.put(field, vertex);
         return vertex;
     }
@@ -484,8 +552,11 @@ public final class SUImporter {
         SUArgument vertex = universe.newArgument(
                 argument.getName(),
                 argument.getDescription(),
-                argument.getArgumentDefaultValue(),
-                argument.getDefinition());
+                argument.getArgumentDefaultValue());
+        captureAstDefinitions(
+                vertex,
+                argument.getDefinition(),
+                List.of());
         elementVertices.put(argument, vertex);
         return vertex;
     }
@@ -498,8 +569,11 @@ public final class SUImporter {
         SUInputField vertex = universe.newInputField(
                 field.getName(),
                 field.getDescription(),
-                field.getInputFieldDefaultValue(),
-                field.getDefinition());
+                field.getInputFieldDefaultValue());
+        captureAstDefinitions(
+                vertex,
+                field.getDefinition(),
+                List.of());
         elementVertices.put(field, vertex);
         return vertex;
     }
@@ -510,6 +584,10 @@ public final class SUImporter {
             return (SUEnumValue) existing;
         }
         SUEnumValue vertex = universe.newEnumValue(value.getName(), value.getDescription());
+        captureAstDefinitions(
+                vertex,
+                value.getDefinition(),
+                List.of());
         elementVertices.put(value, vertex);
         return vertex;
     }
@@ -526,8 +604,11 @@ public final class SUImporter {
         }
         SUAppliedDirective vertex = universe.newAppliedDirective(
                 directive.getName(),
-                arguments,
-                directive.getDefinition());
+                arguments);
+        captureAstDefinitions(
+                vertex,
+                directive.getDefinition(),
+                List.of());
         elementVertices.put(directive, vertex);
         return vertex;
     }
@@ -541,7 +622,9 @@ public final class SUImporter {
                 argument.getName(),
                 typeVertex(argument.getType()),
                 argument.getArgumentValue(),
-                argument.getDefinition());
+                captureAstDefinitions
+                        ? argument.getDefinition()
+                        : null);
         appliedArgumentValues.put(argument, value);
         return value;
     }
@@ -563,5 +646,17 @@ public final class SUImporter {
 
     private SUSchemaBuilder builder() {
         return assertNotNull(schemaBuilder, "Schema import has not started");
+    }
+
+    private void captureAstDefinitions(
+            SUVertex vertex,
+            @Nullable Node<?> definition,
+            List<? extends Node<?>> extensionDefinitions) {
+        if (captureAstDefinitions) {
+            universe.setAstDefinitions(
+                    vertex,
+                    definition,
+                    extensionDefinitions);
+        }
     }
 }

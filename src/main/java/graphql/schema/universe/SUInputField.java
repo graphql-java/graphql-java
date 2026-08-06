@@ -2,7 +2,6 @@ package graphql.schema.universe;
 
 import graphql.ExperimentalApi;
 import graphql.Internal;
-import graphql.language.InputValueDefinition;
 import graphql.schema.InputValueWithState;
 import org.jspecify.annotations.Nullable;
 
@@ -12,7 +11,6 @@ import static graphql.Assert.assertNotNull;
 public final class SUInputField extends SUVertex implements SUAppliedDirectiveContainer {
 
     private final InputValueWithState defaultValue;
-    private final @Nullable InputValueDefinition definition;
 
     @Internal
     public SUInputField(
@@ -20,18 +18,12 @@ public final class SUInputField extends SUVertex implements SUAppliedDirectiveCo
             int nameId,
             String name,
             @Nullable String description,
-            InputValueWithState defaultValue,
-            @Nullable InputValueDefinition definition) {
+            InputValueWithState defaultValue) {
         super(id, nameId, SUVertexKind.INPUT_FIELD, name, description);
         this.defaultValue = assertNotNull(defaultValue);
-        this.definition = definition;
     }
 
     public InputValueWithState getInputFieldDefaultValue() {
         return defaultValue;
-    }
-
-    public @Nullable InputValueDefinition getDefinition() {
-        return definition;
     }
 }

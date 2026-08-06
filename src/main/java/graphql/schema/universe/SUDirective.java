@@ -3,7 +3,6 @@ package graphql.schema.universe;
 import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.introspection.Introspection.DirectiveLocation;
-import graphql.language.DirectiveDefinition;
 import org.jspecify.annotations.Nullable;
 
 import java.util.EnumSet;
@@ -17,7 +16,6 @@ public final class SUDirective extends SUVertex implements SUAppliedDirectiveCon
 
     private final boolean repeatable;
     private final long locationMask;
-    private final @Nullable DirectiveDefinition definition;
 
     @Internal
     public SUDirective(
@@ -26,12 +24,10 @@ public final class SUDirective extends SUVertex implements SUAppliedDirectiveCon
             String name,
             @Nullable String description,
             boolean repeatable,
-            Set<DirectiveLocation> validLocations,
-            @Nullable DirectiveDefinition definition) {
+            Set<DirectiveLocation> validLocations) {
         super(id, nameId, SUVertexKind.DIRECTIVE, name, description);
         this.repeatable = repeatable;
         this.locationMask = packLocations(assertNotNull(validLocations));
-        this.definition = definition;
     }
 
     public boolean isRepeatable() {
@@ -46,10 +42,6 @@ public final class SUDirective extends SUVertex implements SUAppliedDirectiveCon
             }
         }
         return result;
-    }
-
-    public @Nullable DirectiveDefinition getDefinition() {
-        return definition;
     }
 
     private static long packLocations(Set<DirectiveLocation> validLocations) {

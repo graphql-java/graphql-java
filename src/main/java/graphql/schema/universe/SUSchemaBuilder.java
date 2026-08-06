@@ -46,6 +46,7 @@ public final class SUSchemaBuilder {
         this.namedTypeCount = baseSchema == null ? 0 : baseSchema.getNamedTypeCount();
         copyRootEdges(baseSchema);
         copyRootMetadata(baseSchema);
+        copyRootAstDefinitions(baseSchema);
     }
 
     public SUSchemaBuilder queryType(SUObjectType queryType) {
@@ -693,6 +694,12 @@ public final class SUSchemaBuilder {
         changedVertexMetadata.put(
                 root.getId(),
                 new LinkedHashMap<>(metadata));
+    }
+
+    private void copyRootAstDefinitions(@Nullable SUSchema base) {
+        if (base != null) {
+            universe.copyAstDefinitions(base.getRoot(), root);
+        }
     }
 
     private MutablePackedEdgeSet mutableEdges(SUVertex source) {

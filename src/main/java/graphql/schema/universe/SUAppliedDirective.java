@@ -2,7 +2,6 @@ package graphql.schema.universe;
 
 import graphql.ExperimentalApi;
 import graphql.Internal;
-import graphql.language.Directive;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
@@ -14,7 +13,6 @@ import static graphql.Assert.assertNotNull;
 @ExperimentalApi
 public final class SUAppliedDirective extends SUVertex {
 
-    private final @Nullable Directive definition;
     private final SUAppliedDirectiveArgument[] arguments;
 
     @Internal
@@ -22,16 +20,10 @@ public final class SUAppliedDirective extends SUVertex {
             int id,
             int nameId,
             String name,
-            @Nullable Directive definition,
             List<SUAppliedDirectiveArgument> arguments) {
         super(id, nameId, SUVertexKind.APPLIED_DIRECTIVE, name, null);
-        this.definition = definition;
         this.arguments = assertNotNull(arguments)
                 .toArray(new SUAppliedDirectiveArgument[0]);
-    }
-
-    public @Nullable Directive getDefinition() {
-        return definition;
     }
 
     public List<SUAppliedDirectiveArgument> getArguments() {

@@ -2,7 +2,20 @@ package graphql.schema.universe;
 
 import graphql.Directives;
 import graphql.ExperimentalApi;
+import graphql.language.Directive;
+import graphql.language.DirectiveDefinition;
+import graphql.language.EnumTypeDefinition;
+import graphql.language.EnumValueDefinition;
+import graphql.language.FieldDefinition;
+import graphql.language.InputObjectTypeDefinition;
+import graphql.language.InputValueDefinition;
+import graphql.language.InterfaceTypeDefinition;
+import graphql.language.Node;
+import graphql.language.ObjectTypeDefinition;
+import graphql.language.ScalarTypeDefinition;
+import graphql.language.SchemaDefinition;
 import graphql.language.StringValue;
+import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLAppliedDirectiveArgument;
@@ -79,6 +92,14 @@ public final class SUExporter {
                         objectType(introspectionSchemaType))
                 .description(schema.getRoot().getDescription())
                 .codeRegistry(exportCodeRegistry());
+        SchemaDefinition definition = definition(
+                schema.getRoot(),
+                SchemaDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
+        }
+        builder.extensionDefinitions(
+                extensionDefinitions(schema.getRoot()));
 
         SUObjectType mutationType = schema.getMutationType();
         if (mutationType != null) {
@@ -141,7 +162,14 @@ public final class SUExporter {
         GraphQLObjectType.Builder builder = GraphQLObjectType.newObject()
                 .name(requiredName(type))
                 .description(type.getDescription())
+                .extensionDefinitions(extensionDefinitions(type))
                 .replaceAppliedDirectives(exportAppliedDirectives(type));
+        ObjectTypeDefinition definition = definition(
+                type,
+                ObjectTypeDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
+        }
         for (SUField field : schema.getFields(type)) {
             builder.field(exportField(field));
         }
@@ -155,7 +183,14 @@ public final class SUExporter {
         GraphQLInterfaceType.Builder builder = GraphQLInterfaceType.newInterface()
                 .name(requiredName(type))
                 .description(type.getDescription())
+                .extensionDefinitions(extensionDefinitions(type))
                 .replaceAppliedDirectives(exportAppliedDirectives(type));
+        InterfaceTypeDefinition definition = definition(
+                type,
+                InterfaceTypeDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
+        }
         for (SUField field : schema.getFields(type)) {
             builder.field(exportField(field));
         }
@@ -169,7 +204,14 @@ public final class SUExporter {
         GraphQLUnionType.Builder builder = GraphQLUnionType.newUnionType()
                 .name(requiredName(type))
                 .description(type.getDescription())
+                .extensionDefinitions(extensionDefinitions(type))
                 .replaceAppliedDirectives(exportAppliedDirectives(type));
+        UnionTypeDefinition definition = definition(
+                type,
+                UnionTypeDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
+        }
         for (SUObjectType member : schema.getUnionMembers(type)) {
             builder.possibleType(typeReference(member));
         }
@@ -180,7 +222,14 @@ public final class SUExporter {
         GraphQLEnumType.Builder builder = GraphQLEnumType.newEnum()
                 .name(requiredName(type))
                 .description(type.getDescription())
+                .extensionDefinitions(extensionDefinitions(type))
                 .replaceAppliedDirectives(exportAppliedDirectives(type));
+        EnumTypeDefinition definition = definition(
+                type,
+                EnumTypeDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
+        }
         for (SUEnumValue value : schema.getEnumValues(type)) {
             GraphQLEnumValueDefinition.Builder valueBuilder =
                     GraphQLEnumValueDefinition.newEnumValueDefinition()
@@ -188,6 +237,12 @@ public final class SUExporter {
                             .description(value.getDescription())
                             .value(requiredName(value))
                             .replaceAppliedDirectives(exportAppliedDirectives(value));
+            EnumValueDefinition valueDefinition = definition(
+                    value,
+                    EnumValueDefinition.class);
+            if (valueDefinition != null) {
+                valueBuilder.definition(valueDefinition);
+            }
             String deprecationReason = deprecationReason(value);
             if (deprecationReason != null) {
                 valueBuilder.deprecationReason(deprecationReason);
@@ -202,17 +257,32 @@ public final class SUExporter {
         if (source != null) {
             return source;
         }
-        return GraphQLScalarType.newScalar(EchoingWiringFactory.fakeScalar(requiredName(type)))
+        GraphQLScalarType.Builder builder = GraphQLScalarType.newScalar(
+                        EchoingWiringFactory.fakeScalar(requiredName(type)))
                 .description(type.getDescription())
-                .replaceAppliedDirectives(exportAppliedDirectives(type))
-                .build();
+                .extensionDefinitions(extensionDefinitions(type))
+                .replaceAppliedDirectives(exportAppliedDirectives(type));
+        ScalarTypeDefinition definition = definition(
+                type,
+                ScalarTypeDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
+        }
+        return builder.build();
     }
 
     private GraphQLInputObjectType exportInputObject(SUInputObjectType type) {
         GraphQLInputObjectType.Builder builder = GraphQLInputObjectType.newInputObject()
                 .name(requiredName(type))
                 .description(type.getDescription())
+                .extensionDefinitions(extensionDefinitions(type))
                 .replaceAppliedDirectives(exportAppliedDirectives(type));
+        InputObjectTypeDefinition definition = definition(
+                type,
+                InputObjectTypeDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
+        }
         for (SUInputField field : schema.getInputFields(type)) {
             builder.field(exportInputField(field));
         }
@@ -225,6 +295,12 @@ public final class SUExporter {
                 .description(field.getDescription())
                 .type(outputType(requiredType(field)))
                 .replaceAppliedDirectives(exportAppliedDirectives(field));
+        FieldDefinition definition = definition(
+                field,
+                FieldDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
+        }
         for (SUArgument argument : schema.getArguments(field)) {
             builder.argument(exportArgument(argument));
         }
@@ -242,8 +318,11 @@ public final class SUExporter {
                 .type(inputType(requiredType(argument)))
                 .replaceAppliedDirectives(exportAppliedDirectives(argument));
         applyArgumentDefault(builder, argument.getArgumentDefaultValue());
-        if (argument.getDefinition() != null) {
-            builder.definition(argument.getDefinition());
+        InputValueDefinition definition = definition(
+                argument,
+                InputValueDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
         }
         String deprecationReason = deprecationReason(argument);
         if (deprecationReason != null) {
@@ -259,8 +338,11 @@ public final class SUExporter {
                 .type(inputType(requiredType(field)))
                 .replaceAppliedDirectives(exportAppliedDirectives(field));
         applyInputFieldDefault(builder, field.getInputFieldDefaultValue());
-        if (field.getDefinition() != null) {
-            builder.definition(field.getDefinition());
+        InputValueDefinition definition = definition(
+                field,
+                InputValueDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
         }
         String deprecationReason = deprecationReason(field);
         if (deprecationReason != null) {
@@ -274,13 +356,17 @@ public final class SUExporter {
                 .name(requiredName(directive))
                 .description(directive.getDescription())
                 .repeatable(directive.isRepeatable())
+                .extensionDefinitions(extensionDefinitions(directive))
                 .replaceAppliedDirectives(exportAppliedDirectives(directive));
         directive.validLocations().forEach(builder::validLocation);
         for (SUArgument argument : schema.getArguments(directive)) {
             builder.argument(exportArgument(argument));
         }
-        if (directive.getDefinition() != null) {
-            builder.definition(directive.getDefinition());
+        DirectiveDefinition definition = definition(
+                directive,
+                DirectiveDefinition.class);
+        if (definition != null) {
+            builder.definition(definition);
         }
         String deprecationReason = deprecationReason(directive);
         if (deprecationReason != null) {
@@ -298,8 +384,11 @@ public final class SUExporter {
     private GraphQLAppliedDirective exportAppliedDirective(SUAppliedDirective directive) {
         GraphQLAppliedDirective.Builder builder = GraphQLAppliedDirective.newDirective()
                 .name(requiredName(directive));
-        if (directive.getDefinition() != null) {
-            builder.definition(directive.getDefinition());
+        Directive definition = definition(
+                directive,
+                Directive.class);
+        if (definition != null) {
+            builder.definition(definition);
         }
         for (SUAppliedDirectiveArgument argument : schema.getArguments(directive)) {
             GraphQLAppliedDirectiveArgument.Builder argumentBuilder =
@@ -327,6 +416,21 @@ public final class SUExporter {
             return knownType;
         }
         return typeReference(type);
+    }
+
+    private <T extends Node<?>> @Nullable T definition(
+            SUVertex vertex,
+            Class<T> definitionType) {
+        Node<?> definition = schema.getDefinition(vertex);
+        return definition == null
+                ? null
+                : definitionType.cast(definition);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T extends Node<?>> List<T> extensionDefinitions(
+            SUVertex vertex) {
+        return (List<T>) schema.getExtensionDefinitions(vertex);
     }
 
     private GraphQLOutputType outputType(SUVertex type) {

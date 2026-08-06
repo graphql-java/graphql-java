@@ -2,6 +2,7 @@ package graphql.schema;
 
 import graphql.ExperimentalApi;
 import graphql.language.SchemaDefinition;
+import graphql.language.SchemaExtensionDefinition;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -26,6 +27,11 @@ public interface ExecutableSchema {
      * @return the source schema definition, or {@code null} when unavailable
      */
     @Nullable SchemaDefinition getDefinition();
+
+    /**
+     * @return source schema extension definitions
+     */
+    List<SchemaExtensionDefinition> getExtensionDefinitions();
 
     /**
      * @return the query root

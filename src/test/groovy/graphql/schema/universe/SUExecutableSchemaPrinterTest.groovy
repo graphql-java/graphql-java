@@ -6,6 +6,7 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
 import graphql.schema.idl.TypeDefinitionRegistry
@@ -13,6 +14,7 @@ import graphql.schema.idl.UnExecutableSchemaGenerator
 import graphql.schema.universe.view.SUExecutableSchema
 import spock.lang.Specification
 import spock.lang.Requires
+import spock.lang.Unroll
 
 class SUExecutableSchemaPrinterTest extends Specification {
 
@@ -100,6 +102,38 @@ class SUExecutableSchemaPrinterTest extends Specification {
                 'external: Date = "2026-08-05"')
         printer.print(executableSchema).contains(
                 'internal: Date = "2026-08-06"')
+    }
+
+    @Unroll
+    def "native executable schema honors #orderingName ordering"() {
+        given:
+        def sdl = '''
+            type Query {
+              z(z: Int, a: Int): String
+              a: String
+            }
+        '''
+        def registry = new SchemaParser().parse(sdl)
+        def graphQLSchema =
+                UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
+        def universeSchema =
+                new SchemaUniverse().importSchema(orderingName, registry)
+        def options = SchemaPrinter.Options.defaultOptions()
+                .setComparators(comparatorRegistry)
+        def printer = new SchemaPrinter(options)
+
+        when:
+        def nativeSdl = printer.print(executable(universeSchema))
+        def graphQLSdl = printer.print(graphQLSchema)
+
+        then:
+        nativeSdl.contains(expectedFields)
+        graphQLSdl.contains(expectedFields)
+
+        where:
+        orderingName | comparatorRegistry                              | expectedFields
+        "as_is"      | GraphqlTypeComparatorRegistry.AS_IS_REGISTRY   | "  z(z: Int, a: Int): String\n  a: String"
+        "by_name"    | GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY | "  a: String\n  z(a: Int, z: Int): String"
     }
 
     @Requires({ Boolean.getBoolean("graphql.largeSchemaSdlTest") })

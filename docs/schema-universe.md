@@ -22,7 +22,8 @@ small edits. This is materially different from reconciling unrelated schemas.
 `SchemaUniverse` is a chunked vertex arena. Every vertex receives a monotonically increasing integer
 ID. Cleanup can reclaim unused vertices and leave holes, but IDs are never reused. There is one Java
 vertex type for each supported GraphQL schema-element kind. A vertex contains intrinsic scalar
-properties such as kind, name, and description, but no child references.
+properties such as kind, name, and description, but no child references. Source AST provenance is
+stored in a chunk-aligned sidecar rather than increasing every vertex object.
 
 `SUSchema` is an immutable adjacency snapshot plus a schema-specific root vertex, a persistent
 registry of every named type keyed by universe name ID, a persistent reverse index from interface
@@ -173,7 +174,20 @@ payload. External and internal values are retained by reference; snapshot immuta
 with respect to a mutable value supplied by an application.
 
 Directive repeatability and valid locations are also intrinsic. Locations are stored as a compact
-bit mask. Directive-definition and applied-directive AST nodes are retained when available.
+bit mask.
+
+Source definitions and extensions are retained by default for the schema root and every
+vertex-backed schema element. Each 1,024-slot vertex chunk lazily allocates a matching AST sidecar
+array only when at least one slot has source provenance. A slot stores its definition node directly
+when it has no extensions; slots with extensions use a small immutable holder for the nullable
+definition and extension list. AST nodes are referenced rather than copied and remain shared by
+derived schemas that reuse the vertex.
+
+`SUSchemaOptions.captureAstDefinitions(false)` disables capture for memory-sensitive imports.
+Disabled chunks allocate no AST array. `SUAppliedDirectiveArgument` is not a vertex, so its source
+argument node remains embedded in that value when capture is enabled. Source AST is provenance:
+transforming topology does not rewrite it, and semantic schema printing remains authoritative for
+the current topology.
 
 ## User metadata
 
@@ -207,12 +221,13 @@ wrapper targets.
 - list and non-null wrappers;
 - operation roots, complete named-type membership, implementations, and union membership;
 - argument and input-field defaults, preserving all `InputValueWithState` states;
-- directive repeatability, valid locations, definitions, and modern applied-directive topology;
-- applied-directive argument values, exact input types, and application AST nodes.
+- directive repeatability, valid locations, and modern applied-directive topology;
+- applied-directive argument values and exact input types;
+- source AST definitions and extensions for the schema and all represented elements.
 
 It does not yet preserve `GraphQLCodeRegistry`, coercing implementations, deprecation metadata,
-general non-directive AST definitions/extensions, comparators, or source locations. These need typed
-intrinsic payloads before round-trip conversion can be lossless.
+or comparators. These need schema-bound behavior or additional intrinsic payloads before round-trip
+conversion can be lossless.
 
 ## Lifecycle and compaction
 

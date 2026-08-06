@@ -5,6 +5,7 @@ import graphql.Internal;
 import graphql.Scalars;
 import graphql.introspection.Introspection;
 import graphql.language.SchemaDefinition;
+import graphql.language.SchemaExtensionDefinition;
 import graphql.schema.Coercing;
 import graphql.schema.ExecutableSchema;
 import graphql.schema.GraphQLNamedType;
@@ -121,7 +122,12 @@ public final class SUExecutableSchema implements ExecutableSchema {
 
     @Override
     public @Nullable SchemaDefinition getDefinition() {
-        return null;
+        return (SchemaDefinition) schema.getDefinition(schema.getRoot());
+    }
+
+    @Override
+    public List<SchemaExtensionDefinition> getExtensionDefinitions() {
+        return astExtensionDefinitions(schema.getRoot());
     }
 
     @Override
@@ -221,6 +227,11 @@ public final class SUExecutableSchema implements ExecutableSchema {
             result.add(new SUSchemaAppliedDirective(this, directive));
         }
         return Collections.unmodifiableList(result);
+    }
+
+    @SuppressWarnings("unchecked")
+    private <T> List<T> astExtensionDefinitions(SUVertex vertex) {
+        return (List<T>) schema.getExtensionDefinitions(vertex);
     }
 
     @Override

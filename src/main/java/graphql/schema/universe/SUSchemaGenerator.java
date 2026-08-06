@@ -85,15 +85,32 @@ public final class SUSchemaGenerator {
     private @Nullable SUObjectType queryType;
     private @Nullable SUObjectType mutationType;
     private @Nullable SUObjectType subscriptionType;
+    private boolean captureAstDefinitions = true;
 
     public SUSchemaGenerator(SchemaUniverse universe) {
         this.universe = assertNotNull(universe);
     }
 
     public SUSchema generate(String name, TypeDefinitionRegistry registry) {
+        return generate(
+                name,
+                registry,
+                SUSchemaOptions.defaultOptions());
+    }
+
+    public SUSchema generate(
+            String name,
+            TypeDefinitionRegistry registry,
+            SUSchemaOptions options) {
         assertTrue(schemaBuilder == null, "This schema universe generator has already been used");
+        captureAstDefinitions =
+                assertNotNull(options).isCaptureAstDefinitions();
         ImmutableTypeDefinitionRegistry definitions = validatedDefinitions(registry);
         schemaBuilder = universe.newSchema(name, schemaDescription(definitions));
+        captureAstDefinitions(
+                builder().getRoot(),
+                definitions.schemaDefinition().orElse(null),
+                definitions.getSchemaExtensionDefinitions());
 
         createNamedTypes(definitions);
         createDirectiveDefinitions(definitions);
@@ -129,15 +146,58 @@ public final class SUSchemaGenerator {
 
     private void createNamedTypes(ImmutableTypeDefinitionRegistry registry) {
         for (TypeDefinition<?> definition : registry.types().values()) {
-            namedTypes.put(definition.getName(), createNamedType(definition));
+            SUNamedType type = createNamedType(definition);
+            namedTypes.put(definition.getName(), type);
+            captureAstDefinitions(
+                    type,
+                    definition,
+                    extensionDefinitions(definition, registry));
         }
         for (ScalarTypeDefinition definition : registry.scalars().values()) {
-            namedTypes.putIfAbsent(
+            if (namedTypes.containsKey(definition.getName())) {
+                continue;
+            }
+            SUScalarType type = universe.newScalarType(
                     definition.getName(),
-                    universe.newScalarType(
+                    description(
+                            definition,
+                            definition.getDescription()));
+            namedTypes.put(definition.getName(), type);
+            captureAstDefinitions(
+                    type,
+                    definition,
+                    registry.scalarTypeExtensions().getOrDefault(
                             definition.getName(),
-                            description(definition, definition.getDescription())));
+                            Collections.emptyList()));
         }
+    }
+
+    private List<? extends Node<?>> extensionDefinitions(
+            TypeDefinition<?> definition,
+            ImmutableTypeDefinitionRegistry registry) {
+        String name = definition.getName();
+        if (definition instanceof ObjectTypeDefinition) {
+            return registry.objectTypeExtensions()
+                    .getOrDefault(name, Collections.emptyList());
+        }
+        if (definition instanceof InterfaceTypeDefinition) {
+            return registry.interfaceTypeExtensions()
+                    .getOrDefault(name, Collections.emptyList());
+        }
+        if (definition instanceof UnionTypeDefinition) {
+            return registry.unionTypeExtensions()
+                    .getOrDefault(name, Collections.emptyList());
+        }
+        if (definition instanceof EnumTypeDefinition) {
+            return registry.enumTypeExtensions()
+                    .getOrDefault(name, Collections.emptyList());
+        }
+        if (definition instanceof InputObjectTypeDefinition) {
+            return registry.inputObjectTypeExtensions()
+                    .getOrDefault(name, Collections.emptyList());
+        }
+        return registry.scalarTypeExtensions()
+                .getOrDefault(name, Collections.emptyList());
     }
 
     private SUNamedType createNamedType(TypeDefinition<?> definition) {
@@ -188,8 +248,14 @@ public final class SUSchemaGenerator {
                     definition.getName(),
                     description(definition, definition.getDescription()),
                     definition.isRepeatable(),
-                    directiveLocations(definition),
-                    definition);
+                    directiveLocations(definition));
+            captureAstDefinitions(
+                    directive,
+                    definition,
+                    registry.directiveExtensions()
+                            .getOrDefault(
+                                    definition.getName(),
+                                    Collections.emptyList()));
             directiveDefinitions.put(definition.getName(), directive);
             builder().addDirectiveDefinition(directive);
         }
@@ -305,6 +371,10 @@ public final class SUSchemaGenerator {
             SUField field = universe.newField(
                     definition.getName(),
                     description(definition, definition.getDescription()));
+            captureAstDefinitions(
+                    field,
+                    definition,
+                    Collections.emptyList());
             addField(parent, field);
             builder().setFieldType(field, typeVertex(definition.getType()));
             for (InputValueDefinition argumentDefinition :
@@ -327,11 +397,15 @@ public final class SUSchemaGenerator {
     }
 
     private SUArgument newArgument(InputValueDefinition definition) {
-        return universe.newArgument(
+        SUArgument argument = universe.newArgument(
                 definition.getName(),
                 description(definition, definition.getDescription()),
-                inputValue(definition.getDefaultValue()),
-                definition);
+                inputValue(definition.getDefaultValue()));
+        captureAstDefinitions(
+                argument,
+                definition,
+                Collections.emptyList());
+        return argument;
     }
 
     private void addImplementedInterfaces(List<Type> interfaces, SUVertex type) {
@@ -389,6 +463,10 @@ public final class SUSchemaGenerator {
             SUEnumValue value = universe.newEnumValue(
                     definition.getName(),
                     description(definition, definition.getDescription()));
+            captureAstDefinitions(
+                    value,
+                    definition,
+                    Collections.emptyList());
             builder().addEnumValue(type, value);
             addAppliedDirectives(definition.getDirectives(), value);
         }
@@ -415,8 +493,11 @@ public final class SUSchemaGenerator {
             SUInputField field = universe.newInputField(
                     definition.getName(),
                     description(definition, definition.getDescription()),
-                    inputValue(definition.getDefaultValue()),
-                    definition);
+                    inputValue(definition.getDefaultValue()));
+            captureAstDefinitions(
+                    field,
+                    definition,
+                    Collections.emptyList());
             builder().addInputField(type, field);
             builder().setInputFieldType(field, typeVertex(definition.getType()));
             addAppliedDirectives(definition.getDirectives(), field);
@@ -524,8 +605,11 @@ public final class SUSchemaGenerator {
             SUAppliedDirective applied =
                     universe.newAppliedDirective(
                             directive.getName(),
-                            arguments,
-                            directive);
+                            arguments);
+            captureAstDefinitions(
+                    applied,
+                    directive,
+                    Collections.emptyList());
             builder().addAppliedDirective(container, applied);
         }
     }
@@ -565,7 +649,9 @@ public final class SUSchemaGenerator {
                 assertNotNull(requiredDefinition.getName()),
                 assertNotNull(directiveArgumentTypes.get(requiredDefinition)),
                 value,
-                argumentDefinition);
+                captureAstDefinitions
+                        ? argumentDefinition
+                        : null);
     }
 
     private SUType typeVertex(Type<?> type) {
@@ -641,5 +727,17 @@ public final class SUSchemaGenerator {
 
     private SUSchemaBuilder builder() {
         return assertNotNull(schemaBuilder, "Schema generation has not started");
+    }
+
+    private void captureAstDefinitions(
+            SUVertex vertex,
+            @Nullable Node<?> definition,
+            List<? extends Node<?>> extensionDefinitions) {
+        if (captureAstDefinitions) {
+            universe.setAstDefinitions(
+                    vertex,
+                    definition,
+                    extensionDefinitions);
+        }
     }
 }

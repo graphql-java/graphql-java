@@ -8,6 +8,7 @@ import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
 import graphql.language.InputValueDefinition;
+import graphql.language.Node;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.InputValueWithState;
 import graphql.schema.idl.SchemaParser;
@@ -69,12 +70,42 @@ public final class SchemaUniverse {
         return new SUImporter(this).importSchema(name, schema);
     }
 
+    public SUSchema importSchema(
+            String name,
+            GraphQLSchema schema,
+            SUSchemaOptions options) {
+        return new SUImporter(this).importSchema(
+                name,
+                schema,
+                options);
+    }
+
     public SUSchema importSchema(String name, TypeDefinitionRegistry typeDefinitionRegistry) {
         return new SUSchemaGenerator(this).generate(name, typeDefinitionRegistry);
     }
 
+    public SUSchema importSchema(
+            String name,
+            TypeDefinitionRegistry typeDefinitionRegistry,
+            SUSchemaOptions options) {
+        return new SUSchemaGenerator(this).generate(
+                name,
+                typeDefinitionRegistry,
+                options);
+    }
+
     public SUSchema parseSchema(String name, String sdl) {
         return importSchema(name, new SchemaParser().parse(sdl));
+    }
+
+    public SUSchema parseSchema(
+            String name,
+            String sdl,
+            SUSchemaOptions options) {
+        return importSchema(
+                name,
+                new SchemaParser().parse(sdl),
+                options);
     }
 
     public @Nullable SUSchema getSchema(String name) {
@@ -272,9 +303,8 @@ public final class SchemaUniverse {
                 nameId(validName),
                 validName,
                 description,
-                defaultValue,
-                definition);
-        return append(vertex);
+                defaultValue);
+        return appendWithDefinition(vertex, definition);
     }
 
     public synchronized SUArgument newArgument(String name) {
@@ -303,9 +333,8 @@ public final class SchemaUniverse {
                 nameId(validName),
                 validName,
                 description,
-                defaultValue,
-                definition);
-        return append(vertex);
+                defaultValue);
+        return appendWithDefinition(vertex, definition);
     }
 
     public synchronized SUDirective newDirective(String name) {
@@ -337,9 +366,8 @@ public final class SchemaUniverse {
                 validName,
                 description,
                 repeatable,
-                validLocations,
-                definition);
-        return append(vertex);
+                validLocations);
+        return appendWithDefinition(vertex, definition);
     }
 
     public synchronized SUAppliedDirective newAppliedDirective(String name) {
@@ -380,9 +408,8 @@ public final class SchemaUniverse {
                         nextVertexId,
                         nameId(validName),
                         validName,
-                        definition,
                         arguments);
-        return append(vertex);
+        return appendWithDefinition(vertex, definition);
     }
 
     public synchronized SUAppliedDirectiveArgument newAppliedDirectiveArgument(
@@ -467,6 +494,59 @@ public final class SchemaUniverse {
         return id >= 0 && id < nextVertexId && vertexOrNull(id) == vertex;
     }
 
+    /**
+     * Associates source AST provenance with a vertex.
+     *
+     * <p>AST provenance is intrinsic to the vertex and shared by every schema that uses it.</p>
+     *
+     * @param vertex the vertex
+     * @param definition the source definition, or {@code null}
+     * @param extensionDefinitions source extension definitions
+     */
+    @Internal
+    public synchronized void setAstDefinitions(
+            SUVertex vertex,
+            @Nullable Node<?> definition,
+            List<? extends Node<?>> extensionDefinitions) {
+        assertTrue(owns(assertNotNull(vertex)),
+                "Vertex %s belongs to another schema universe",
+                vertex);
+        VertexChunk chunk = vertexChunk(vertex.getId());
+        chunk.setAstDefinitions(
+                vertex.getId() & VERTEX_CHUNK_MASK,
+                definition,
+                assertNotNull(extensionDefinitions));
+    }
+
+    @Internal
+    public @Nullable Node<?> getAstDefinition(SUVertex vertex) {
+        assertTrue(owns(assertNotNull(vertex)),
+                "Vertex %s belongs to another schema universe",
+                vertex);
+        return vertexChunk(vertex.getId()).getDefinition(
+                vertex.getId() & VERTEX_CHUNK_MASK);
+    }
+
+    @Internal
+    public List<? extends Node<?>> getAstExtensionDefinitions(
+            SUVertex vertex) {
+        assertTrue(owns(assertNotNull(vertex)),
+                "Vertex %s belongs to another schema universe",
+                vertex);
+        return vertexChunk(vertex.getId()).getExtensionDefinitions(
+                vertex.getId() & VERTEX_CHUNK_MASK);
+    }
+
+    @Internal
+    public synchronized void copyAstDefinitions(
+            SUVertex source,
+            SUVertex target) {
+        setAstDefinitions(
+                target,
+                getAstDefinition(source),
+                getAstExtensionDefinitions(source));
+    }
+
     @Internal
     public SUSchemaBuilder transformBuilder(SUSchema schema, String name) {
         assertTrue(schema.getUniverse() == this, "Schema belongs to another universe");
@@ -527,6 +607,17 @@ public final class SchemaUniverse {
         nextVertexId = id + 1;
         vertexCount++;
         return vertex;
+    }
+
+    private <T extends SUVertex> T appendWithDefinition(
+            T vertex,
+            @Nullable Node<?> definition) {
+        T appended = append(vertex);
+        setAstDefinitions(
+                appended,
+                definition,
+                Collections.emptyList());
+        return appended;
     }
 
     private void markEdgeBinding(
@@ -592,6 +683,10 @@ public final class SchemaUniverse {
             return null;
         }
         return chunk.get(id & VERTEX_CHUNK_MASK);
+    }
+
+    private VertexChunk vertexChunk(int id) {
+        return vertexChunks[id >>> VERTEX_CHUNK_SHIFT];
     }
 
     private void ensureChunk(int chunkIndex) {

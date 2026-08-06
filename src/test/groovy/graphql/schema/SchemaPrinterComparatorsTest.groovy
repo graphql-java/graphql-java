@@ -563,6 +563,59 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         printer.argsString(null, field.arguments) == '''(bb: Int, a: Int)'''
     }
 
+    def "executable schema printing derives GraphQL comparator types internally"() {
+        given:
+        def firstField = newFieldDefinition()
+                .name("a")
+                .type(GraphQLString)
+                .arguments(mockArguments("a", "bb"))
+                .withAppliedDirectives(
+                        mockDirectivesWithArguments("a", "bb"))
+                .build()
+        def secondField = newFieldDefinition()
+                .name("bb")
+                .type(GraphQLString)
+                .build()
+        def query = newObject()
+                .name("Query")
+                .fields([firstField, secondField])
+                .withAppliedDirectives(
+                        mockDirectivesWithArguments("a", "bb"))
+                .build()
+        def schema = GraphQLSchema.newSchema().query(query).build()
+        def environments = []
+        GraphqlTypeComparatorRegistry registry = { environment ->
+            environments.add([
+                    environment.parentType,
+                    environment.elementType])
+            DEFAULT_COMPARATOR
+        }
+        def options = defaultOptions().setComparators(registry)
+
+        when:
+        new SchemaPrinter(options).print(schema)
+
+        then:
+        environments.contains([
+                GraphQLSchemaElement.class,
+                null])
+        environments.contains([
+                GraphQLObjectType.class,
+                GraphQLFieldDefinition.class])
+        environments.contains([
+                GraphQLFieldDefinition.class,
+                GraphQLArgument.class])
+        environments.contains([
+                GraphQLObjectType.class,
+                GraphQLAppliedDirective.class])
+        environments.contains([
+                GraphQLFieldDefinition.class,
+                GraphQLAppliedDirective.class])
+        environments.contains([
+                GraphQLAppliedDirective.class,
+                GraphQLAppliedDirectiveArgument.class])
+    }
+
 
     def "directivesString uses most specific registered comparators"() {
         given:

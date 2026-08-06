@@ -2,10 +2,6 @@ package graphql.schema.universe.view;
 
 import graphql.Internal;
 import graphql.language.Node;
-import graphql.schema.universe.SUAppliedDirective;
-import graphql.schema.universe.SUArgument;
-import graphql.schema.universe.SUDirective;
-import graphql.schema.universe.SUInputField;
 import graphql.schema.universe.SUVertex;
 import org.jspecify.annotations.Nullable;
 
@@ -48,24 +44,12 @@ public abstract class AbstractSUSchemaElement {
     }
 
     /**
-     * Returns the source definition stored by vertex kinds that retain one.
+     * Returns the source definition stored in the universe AST sidecar.
      *
      * @return the source definition, or {@code null} when unavailable
      */
     public @Nullable Node<?> getDefinition() {
-        if (vertex instanceof SUArgument) {
-            return ((SUArgument) vertex).getDefinition();
-        }
-        if (vertex instanceof SUInputField) {
-            return ((SUInputField) vertex).getDefinition();
-        }
-        if (vertex instanceof SUDirective) {
-            return ((SUDirective) vertex).getDefinition();
-        }
-        if (vertex instanceof SUAppliedDirective) {
-            return ((SUAppliedDirective) vertex).getDefinition();
-        }
-        return null;
+        return executableSchema.getSchema().getDefinition(vertex);
     }
 
     @Override

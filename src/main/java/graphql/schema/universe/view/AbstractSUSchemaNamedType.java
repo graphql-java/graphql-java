@@ -1,8 +1,11 @@
 package graphql.schema.universe.view;
 
 import graphql.Internal;
+import graphql.language.TypeDefinition;
 import graphql.schema.SchemaNamedType;
 import graphql.schema.universe.SUNamedType;
+
+import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
@@ -23,5 +26,14 @@ public abstract class AbstractSUSchemaNamedType
     @Override
     public final String getName() {
         return assertNotNull(getTypeVertex().getName());
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public final List<? extends TypeDefinition<?>> getExtensionDefinitions() {
+        return (List<? extends TypeDefinition<?>>)
+                getExecutableSchema()
+                        .getSchema()
+                        .getExtensionDefinitions(getTypeVertex());
     }
 }

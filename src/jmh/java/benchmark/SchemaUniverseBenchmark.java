@@ -24,7 +24,9 @@ import graphql.schema.universe.SUField;
 import graphql.schema.universe.SUObjectType;
 import graphql.schema.universe.SUScalarType;
 import graphql.schema.universe.SUSchema;
+import graphql.schema.universe.SUSchemaOptions;
 import graphql.schema.universe.SchemaUniverse;
+import graphql.schema.universe.view.SUExecutableSchema;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -34,6 +36,7 @@ import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -59,7 +62,8 @@ import static java.util.Objects.requireNonNull;
  * a field, then adds and removes a replacement field. The {@code retain100...} methods print exact
  * JOL object-graph footprints. Run the {@code profileRetained100...} methods separately with
  * async-profiler's sampled live-allocation mode to attribute surviving allocations; use the JOL
- * values, not the sampled profile totals, for exact retained byte counts:</p>
+ * values, not the sampled profile totals, for exact retained byte counts. Schema-universe
+ * benchmarks run with AST capture enabled and disabled:</p>
  *
  * <pre>
  * ./gradlew jmh \
@@ -131,19 +135,38 @@ public class SchemaUniverseBenchmark {
     public static class SUTimingState {
         GraphQLSchema sourceSchema;
         MutationPlan plan;
+        SUSchemaOptions options;
         SchemaUniverse universe;
         SUSchema baseSchema;
+        SUExecutableSchema executableSchema;
+        SchemaPrinter astPrinter;
+
+        @Param({"true", "false"})
+        public boolean captureAstDefinitions;
 
         @Setup(Level.Trial)
         public void setupTrial() {
             sourceSchema = loadBaseSchema();
             plan = MutationPlan.create(sourceSchema);
+            options = SUSchemaOptions.defaultOptions()
+                    .captureAstDefinitions(captureAstDefinitions);
         }
 
         @Setup(Level.Iteration)
         public void setupIteration() {
             universe = new SchemaUniverse();
-            baseSchema = universe.importSchema(BASE_SCHEMA_NAME, sourceSchema);
+            baseSchema = universe.importSchema(
+                    BASE_SCHEMA_NAME,
+                    sourceSchema,
+                    options);
+            executableSchema = SUExecutableSchema.fromGraphQLSchema(
+                    baseSchema,
+                    sourceSchema);
+            SchemaPrinter.Options printerOptions =
+                    SchemaPrinter.Options.defaultOptions()
+                            .includeSchemaDefinition(true)
+                            .useAstDefinitions(true);
+            astPrinter = new SchemaPrinter(printerOptions);
         }
     }
 
@@ -174,17 +197,26 @@ public class SchemaUniverseBenchmark {
     @State(Scope.Benchmark)
     public static class SUMemoryState {
         MutationPlan plan;
+        SUSchemaOptions options;
         SchemaUniverse universe;
         SUSchema baseSchema;
         long baseRetainedBytes;
         SchemaUniverse retainedUniverse;
 
+        @Param({"true", "false"})
+        public boolean captureAstDefinitions;
+
         @Setup(Level.Trial)
         public void setup() {
             GraphQLSchema sourceSchema = loadBaseSchema();
             plan = MutationPlan.create(sourceSchema);
+            options = SUSchemaOptions.defaultOptions()
+                    .captureAstDefinitions(captureAstDefinitions);
             universe = new SchemaUniverse();
-            baseSchema = universe.importSchema(BASE_SCHEMA_NAME, sourceSchema);
+            baseSchema = universe.importSchema(
+                    BASE_SCHEMA_NAME,
+                    sourceSchema,
+                    options);
             baseRetainedBytes = retainedSize(universe);
         }
 
@@ -192,7 +224,8 @@ public class SchemaUniverseBenchmark {
         public void reportRetainedMemory() {
             requireNonNull(retainedUniverse, "retained schema universe");
             reportFootprint(
-                    "SUSchema",
+                    "SUSchema[captureAstDefinitions="
+                            + captureAstDefinitions + "]",
                     baseRetainedBytes,
                     retainedSize(retainedUniverse));
         }
@@ -214,17 +247,63 @@ public class SchemaUniverseBenchmark {
     @State(Scope.Benchmark)
     public static class SUProfileState {
         MutationPlan plan;
+        SUSchemaOptions options;
         SchemaUniverse universe;
         SUSchema baseSchema;
         SchemaUniverse retainedUniverse;
+
+        @Param({"true", "false"})
+        public boolean captureAstDefinitions;
 
         @Setup(Level.Trial)
         public void setup() {
             GraphQLSchema sourceSchema = loadBaseSchema();
             plan = MutationPlan.create(sourceSchema);
+            options = SUSchemaOptions.defaultOptions()
+                    .captureAstDefinitions(captureAstDefinitions);
             universe = new SchemaUniverse();
-            baseSchema = universe.importSchema(BASE_SCHEMA_NAME, sourceSchema);
+            baseSchema = universe.importSchema(
+                    BASE_SCHEMA_NAME,
+                    sourceSchema,
+                    options);
         }
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.SingleShotTime)
+    @Warmup(iterations = 1)
+    @Measurement(iterations = 3)
+    @Fork(
+            value = 1,
+            jvmArgsAppend = {
+                    "-Xms8g",
+                    "-Xmx30g",
+                    "-Djdk.attach.allowAttachSelf=true",
+                    "-Djol.magicFieldOffset=true",
+                    "-XX:+EnableDynamicAgentLoading"
+            })
+    public SUSchema importSUSchema(SUTimingState state) {
+        return new SchemaUniverse().importSchema(
+                BASE_SCHEMA_NAME,
+                state.sourceSchema,
+                state.options);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @Warmup(iterations = 2)
+    @Measurement(iterations = 3)
+    @Fork(
+            value = 1,
+            jvmArgsAppend = {
+                    "-Xms8g",
+                    "-Xmx30g",
+                    "-Djdk.attach.allowAttachSelf=true",
+                    "-Djol.magicFieldOffset=true",
+                    "-XX:+EnableDynamicAgentLoading"
+            })
+    public String printSUSchemaWithAstOption(SUTimingState state) {
+        return state.astPrinter.print(state.executableSchema);
     }
 
     @Benchmark

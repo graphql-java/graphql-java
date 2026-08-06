@@ -1,9 +1,12 @@
 package graphql.schema.universe;
 
 import graphql.Internal;
+import graphql.language.Node;
 import org.jspecify.annotations.Nullable;
 
 import java.util.BitSet;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * A fixed-size arena chunk whose vertex slots may be reclaimed.
@@ -14,6 +17,7 @@ public final class VertexChunk {
     private static final VertexChunk EMPTY = new VertexChunk(0);
 
     private final @Nullable SUVertex[] vertices;
+    private @Nullable Object @Nullable [] astData;
     private int retainedCount;
 
     /**
@@ -67,8 +71,62 @@ public final class VertexChunk {
         }
         if (previous != null && vertex == null) {
             retainedCount--;
+            clearAstDefinitions(index);
         }
         vertices[index] = vertex;
+    }
+
+    /**
+     * Associates source AST provenance with one occupied vertex slot.
+     *
+     * @param index the index within the chunk
+     * @param definition the source definition, or {@code null}
+     * @param extensionDefinitions source extension definitions
+     */
+    public void setAstDefinitions(
+            int index,
+            @Nullable Node<?> definition,
+            List<? extends Node<?>> extensionDefinitions) {
+        if (definition == null && extensionDefinitions.isEmpty()) {
+            clearAstDefinitions(index);
+            return;
+        }
+        if (astData == null) {
+            astData = new @Nullable Object[vertices.length];
+        }
+        astData[index] = extensionDefinitions.isEmpty()
+                ? definition
+                : new SUAstDefinitions(definition, extensionDefinitions);
+    }
+
+    /**
+     * Returns the source definition for one slot.
+     *
+     * @param index the index within the chunk
+     *
+     * @return the definition, or {@code null}
+     */
+    public @Nullable Node<?> getDefinition(int index) {
+        Object data = astData == null ? null : astData[index];
+        if (data instanceof SUAstDefinitions) {
+            return ((SUAstDefinitions) data).getDefinition();
+        }
+        return (Node<?>) data;
+    }
+
+    /**
+     * Returns source extension definitions for one slot.
+     *
+     * @param index the index within the chunk
+     *
+     * @return immutable extension definitions
+     */
+    public List<? extends Node<?>> getExtensionDefinitions(int index) {
+        Object data = astData == null ? null : astData[index];
+        if (data instanceof SUAstDefinitions) {
+            return ((SUAstDefinitions) data).getExtensionDefinitions();
+        }
+        return Collections.emptyList();
     }
 
     /**
@@ -103,5 +161,11 @@ public final class VertexChunk {
      */
     public boolean hasVertices() {
         return retainedCount != 0;
+    }
+
+    private void clearAstDefinitions(int index) {
+        if (astData != null) {
+            astData[index] = null;
+        }
     }
 }

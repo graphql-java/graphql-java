@@ -1,8 +1,9 @@
 package graphql.schema.universe;
 
 import graphql.ExperimentalApi;
-import graphql.schema.GraphQLSchema;
 import graphql.Internal;
+import graphql.language.Node;
+import graphql.schema.GraphQLSchema;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -60,6 +61,34 @@ public final class SUSchema {
 
     public SUSchemaRoot getRoot() {
         return root;
+    }
+
+    /**
+     * Returns the source AST definition associated with a vertex.
+     *
+     * <p>The definition records source provenance. Transforming schema topology does not rewrite
+     * it, and imports with AST capture disabled return {@code null}.</p>
+     *
+     * @param vertex the vertex
+     *
+     * @return the source definition, or {@code null}
+     */
+    public @Nullable Node<?> getDefinition(SUVertex vertex) {
+        assertOwned(vertex);
+        return universe.getAstDefinition(vertex);
+    }
+
+    /**
+     * Returns the source AST extension definitions associated with a vertex.
+     *
+     * @param vertex the vertex
+     *
+     * @return immutable extension definitions
+     */
+    public List<? extends Node<?>> getExtensionDefinitions(
+            SUVertex vertex) {
+        assertOwned(vertex);
+        return universe.getAstExtensionDefinitions(vertex);
     }
 
     /**

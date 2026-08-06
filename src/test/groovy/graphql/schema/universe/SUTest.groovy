@@ -683,10 +683,10 @@ class SUTest extends Specification {
         directive instanceof SUDirective
         directive.repeatable
         directive.validLocations() == EnumSet.of(OBJECT, FIELD_DEFINITION)
-        directive.definition.name == "tag"
+        schema.getDefinition(directive).name == "tag"
         directiveArgument.argumentDefaultValue.isLiteral()
         directiveArgument.argumentDefaultValue.value.value == "fallback"
-        directiveArgument.definition.name == "label"
+        schema.getDefinition(directiveArgument).name == "label"
 
         and:
         inputField.inputFieldDefaultValue.isLiteral()
@@ -695,7 +695,7 @@ class SUTest extends Specification {
         fieldArgument.argumentDefaultValue.value.value == 5
 
         and:
-        queryTag.definition.name == "tag"
+        schema.getDefinition(queryTag).name == "tag"
         queryTagArgument.argumentValue.isLiteral()
         queryTagArgument.argumentValue.value.value == "query"
         queryTagArgument.definition.name == "label"
