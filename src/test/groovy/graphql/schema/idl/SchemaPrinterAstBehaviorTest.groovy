@@ -31,7 +31,7 @@ import static graphql.schema.GraphQLUnionType.newUnionType
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
-class SchemaPrinterLegacyTest extends Specification {
+class SchemaPrinterAstBehaviorTest extends Specification {
 
     def "AST-aware semantic fallback remains equivalent to the semantic writer"() {
         given:
@@ -91,7 +91,7 @@ class SchemaPrinterLegacyTest extends Specification {
         }
     }
 
-    def "direct legacy printing retains AST comments for every schema element kind"() {
+    def "direct schema element printing retains AST comments for every schema element kind"() {
         given:
         def registry = new SchemaParser().parse(commentsEverywhereSdl())
         def wiring = newRuntimeWiring()
