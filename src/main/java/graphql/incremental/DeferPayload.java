@@ -3,6 +3,8 @@ package graphql.incremental;
 import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
@@ -14,10 +16,11 @@ import java.util.Objects;
  * Represents a defer payload
  */
 @ExperimentalApi
+@NullMarked
 public class DeferPayload extends IncrementalPayload {
-    private final Object data;
+    private final @Nullable Object data;
 
-    private DeferPayload(Object data, List<Object> path, String label, List<GraphQLError> errors, Map<Object, Object> extensions) {
+    private DeferPayload(@Nullable Object data, List<Object> path, @Nullable String label, @Nullable List<GraphQLError> errors, @Nullable Map<Object, Object> extensions) {
         super(path, label, errors, extensions);
         this.data = data;
     }
@@ -48,7 +51,7 @@ public class DeferPayload extends IncrementalPayload {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
         if (!super.equals(obj)) return false;
@@ -63,6 +66,7 @@ public class DeferPayload extends IncrementalPayload {
         return new DeferPayload.Builder();
     }
 
+    @NullUnmarked
     public static class Builder extends IncrementalPayload.Builder<Builder> {
         private Object data = null;
 

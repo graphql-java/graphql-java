@@ -2,7 +2,9 @@ package graphql.schema;
 
 
 import graphql.PublicApi;
+import static graphql.Assert.assertNotNull;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
@@ -20,6 +22,7 @@ import java.util.function.Function;
 import static graphql.util.TraversalControl.CONTINUE;
 
 @PublicApi
+@NullMarked
 public class SchemaTraverser {
 
 
@@ -108,7 +111,7 @@ public class SchemaTraverser {
 
         @Override
         public TraversalControl enter(TraverserContext<GraphQLSchemaElement> context) {
-            return context.thisNode().accept(context, delegate);
+            return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, delegate);
         }
 
         @Override
@@ -133,7 +136,7 @@ public class SchemaTraverser {
         @Override
         public TraversalControl enter(TraverserContext<GraphQLSchemaElement> context) {
             for (GraphQLTypeVisitor graphQLTypeVisitor : typeVisitors) {
-                TraversalControl control = context.thisNode().accept(context, graphQLTypeVisitor);
+                TraversalControl control = assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, graphQLTypeVisitor);
                 if (control != CONTINUE) {
                     return control;
                 }

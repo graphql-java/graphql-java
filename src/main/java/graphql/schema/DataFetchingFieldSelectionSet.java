@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Map;
@@ -94,6 +95,7 @@ import java.util.Map;
  * by result key, that is by the field alias or by the field name.
  */
 @PublicApi
+@NullMarked
 public interface DataFetchingFieldSelectionSet {
 
     /**

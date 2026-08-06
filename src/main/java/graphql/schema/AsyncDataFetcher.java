@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -12,6 +13,7 @@ import static graphql.Assert.assertNotNull;
  * A modifier type that indicates the underlying data fetcher is run asynchronously
  */
 @PublicApi
+@NullMarked
 public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
 
     /**

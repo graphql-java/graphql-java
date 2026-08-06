@@ -3,7 +3,7 @@ package graphql.extensions;
 import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
@@ -26,6 +26,7 @@ import static graphql.Assert.assertNotNull;
  * is placed in the {@link ExecutionResult}
  */
 @PublicApi
+@NullMarked
 public class ExtensionsBuilder {
 
     // thread safe since there can be many changes say in DFs across threads
@@ -69,7 +70,7 @@ public class ExtensionsBuilder {
      *
      * @return this builder for fluent style reasons
      */
-    public ExtensionsBuilder addValues(@NonNull Map<Object, Object> newValues) {
+    public ExtensionsBuilder addValues(Map<Object, Object> newValues) {
         assertNotNull(newValues);
         if (!newValues.isEmpty()) {
             changes.add(newValues);
@@ -85,7 +86,7 @@ public class ExtensionsBuilder {
      *
      * @return this builder for fluent style reasons
      */
-    public ExtensionsBuilder addValue(@NonNull Object key, @Nullable Object value) {
+    public ExtensionsBuilder addValue(Object key, @Nullable Object value) {
         assertNotNull(key);
         return addValues(Collections.singletonMap(key, value));
     }
