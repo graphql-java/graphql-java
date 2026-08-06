@@ -6,7 +6,7 @@ import graphql.i18n.I18n;
 import graphql.language.Definition;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
-import graphql.schema.GraphQLSchema;
+import graphql.schema.ExecutableSchema;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -18,7 +18,7 @@ import java.util.Map;
 @NullMarked
 public class ValidationContext {
 
-    private final GraphQLSchema schema;
+    private final ExecutableSchema schema;
     private final Document document;
 
     private final Map<String, FragmentDefinition> fragmentDefinitionMap = new LinkedHashMap<>();
@@ -26,11 +26,11 @@ public class ValidationContext {
     private final GraphQLContext graphQLContext;
     private final QueryComplexityLimits queryComplexityLimits;
 
-    public ValidationContext(GraphQLSchema schema, Document document, I18n i18n) {
+    public ValidationContext(ExecutableSchema schema, Document document, I18n i18n) {
         this(schema, document, i18n, null);
     }
 
-    public ValidationContext(GraphQLSchema schema, Document document, I18n i18n, @Nullable QueryComplexityLimits limits) {
+    public ValidationContext(ExecutableSchema schema, Document document, I18n i18n, @Nullable QueryComplexityLimits limits) {
         this.schema = schema;
         this.document = document;
         this.i18n = i18n;
@@ -49,7 +49,7 @@ public class ValidationContext {
         }
     }
 
-    public GraphQLSchema getSchema() {
+    public ExecutableSchema getSchema() {
         return schema;
     }
 

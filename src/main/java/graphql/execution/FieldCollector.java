@@ -11,10 +11,9 @@ import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLUnionType;
+import graphql.schema.SchemaComposite;
+import graphql.schema.SchemaObject;
+import graphql.schema.SchemaType;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -23,8 +22,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
-import static graphql.execution.TypeFromAST.getTypeFromAST;
-
 /**
  * A field collector can iterate over field selection sets and build out the sub fields that have been selected,
  * expanding named and inline fragments as it goes.
@@ -88,7 +85,7 @@ public class FieldCollector {
         }
         if (!conditionalNodes.shouldInclude(fragmentSpread,
                 parameters.getVariables(),
-                parameters.getGraphQLSchema(),
+                parameters.getSchema(),
                 parameters.getGraphQLContext())) {
             return;
         }
@@ -97,7 +94,7 @@ public class FieldCollector {
 
         if (!conditionalNodes.shouldInclude(fragmentDefinition,
                 parameters.getVariables(),
-                parameters.getGraphQLSchema(),
+                parameters.getSchema(),
                 parameters.getGraphQLContext())) {
             return;
         }
@@ -117,7 +114,7 @@ public class FieldCollector {
     private void collectInlineFragment(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields, InlineFragment inlineFragment, boolean incrementalSupport) {
         if (!conditionalNodes.shouldInclude(inlineFragment,
                 parameters.getVariables(),
-                parameters.getGraphQLSchema(),
+                parameters.getSchema(),
                 parameters.getGraphQLContext()) ||
                 !doesFragmentConditionMatch(parameters, inlineFragment)) {
             return;
@@ -135,7 +132,7 @@ public class FieldCollector {
     private void collectField(FieldCollectorParameters parameters, Map<String, MergedField> fields, Field field, DeferredExecution deferredExecution) {
         if (!conditionalNodes.shouldInclude(field,
                 parameters.getVariables(),
-                parameters.getGraphQLSchema(),
+                parameters.getSchema(),
                 parameters.getGraphQLContext())) {
             return;
         }
@@ -152,30 +149,28 @@ public class FieldCollector {
         if (inlineFragment.getTypeCondition() == null) {
             return true;
         }
-        GraphQLType conditionType;
-        conditionType = getTypeFromAST(parameters.getGraphQLSchema(), inlineFragment.getTypeCondition());
+        SchemaType conditionType = parameters.getSchema()
+                .getType(inlineFragment.getTypeCondition().getName());
         return checkTypeCondition(parameters, conditionType);
     }
 
     private boolean doesFragmentConditionMatch(FieldCollectorParameters parameters, FragmentDefinition fragmentDefinition) {
-        GraphQLType conditionType;
-        conditionType = getTypeFromAST(parameters.getGraphQLSchema(), fragmentDefinition.getTypeCondition());
+        SchemaType conditionType = parameters.getSchema()
+                .getType(fragmentDefinition.getTypeCondition().getName());
         return checkTypeCondition(parameters, conditionType);
     }
 
-    private boolean checkTypeCondition(FieldCollectorParameters parameters, GraphQLType conditionType) {
-        GraphQLObjectType type = parameters.getObjectType();
-        if (conditionType.equals(type)) {
-            return true;
+    private boolean checkTypeCondition(
+            FieldCollectorParameters parameters,
+            SchemaType conditionType) {
+        SchemaObject type = parameters.getObjectType();
+        if (!(conditionType instanceof SchemaComposite)
+                || type == null) {
+            return false;
         }
-
-        if (conditionType instanceof GraphQLInterfaceType) {
-            List<GraphQLObjectType> implementations = parameters.getGraphQLSchema().getImplementations((GraphQLInterfaceType) conditionType);
-            return implementations.contains(type);
-        } else if (conditionType instanceof GraphQLUnionType) {
-            return ((GraphQLUnionType) conditionType).getTypes().contains(type);
-        }
-        return false;
+        return parameters.getSchema().isPossibleType(
+                (SchemaComposite) conditionType,
+                type);
     }
 
 

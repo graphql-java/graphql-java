@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.AssertException
 import graphql.ExecutionInput
 import graphql.GraphQLContext
 import graphql.TestUtil
@@ -13,6 +14,8 @@ import graphql.language.Field
 import graphql.language.NodeUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.universe.SchemaUniverse
+import graphql.schema.universe.view.SUExecutableSchema
 import spock.lang.Specification
 
 class ConditionalNodesTest extends Specification {
@@ -100,6 +103,32 @@ class ConditionalNodesTest extends Specification {
 
         !conditionalNodes.shouldInclude(field, variables, graphQLSchema, graphQLContext)
         called == true
+    }
+
+    def "custom conditional decisions remain GraphQLSchema specific"() {
+        given:
+        def source = TestUtil.schema("type Query { f: String }")
+        def imported = new SchemaUniverse()
+                .importSchema("conditional_nodes", source)
+        def schema = SUExecutableSchema.fromGraphQLSchema(
+                imported,
+                source)
+        def context = GraphQLContext.getDefault()
+        context.put(
+                ConditionalNodeDecision.class,
+                { true } as ConditionalNodeDecision)
+
+        when:
+        new ConditionalNodes().shouldInclude(
+                mkField([]),
+                [:],
+                schema,
+                context)
+
+        then:
+        def exception = thrown(AssertException)
+        exception.message ==
+                "Custom conditional node decisions require a GraphQLSchema"
     }
 
     def "integration test showing conditional nodes can be custom included"() {

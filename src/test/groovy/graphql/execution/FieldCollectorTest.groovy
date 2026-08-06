@@ -75,6 +75,32 @@ class FieldCollectorTest extends Specification {
         result.getSubField('fieldOnInterface').getFields() == [interfaceField]
     }
 
+    def "ignores inline fragments with non composite type conditions"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+                value: String
+            }
+        """)
+        def object = schema.getType("Query") as GraphQLObjectType
+        def parameters = newParameters()
+                .schema(schema)
+                .objectType(object)
+                .build()
+        Document document = new Parser().parseDocument(
+                "{ ... on String { value } }")
+        def selectionSet = ((OperationDefinition) document.children[0])
+                .selectionSet
+
+        when:
+        def result = new FieldCollector().collectFields(
+                parameters,
+                selectionSet)
+
+        then:
+        result.empty
+    }
+
     def "collect fields that are merged together - one of the fields is on an inline fragment "() {
         def schema = TestUtil.schema("""
             type Query {

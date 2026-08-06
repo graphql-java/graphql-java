@@ -5,6 +5,7 @@ import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
 import graphql.parser.ParserEnvironment;
 import graphql.parser.ParserOptions;
+import graphql.schema.ExecutableSchema;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.OperationValidationRule;
 import graphql.validation.QueryComplexityLimits;
@@ -49,9 +50,31 @@ public class ParseAndValidate {
      * @return a result object that indicates how this operation went
      */
     public static ParseAndValidateResult parseAndValidate(@NonNull GraphQLSchema graphQLSchema, @NonNull ExecutionInput executionInput) {
+        return parseAndValidate(
+                (ExecutableSchema) graphQLSchema,
+                executionInput);
+    }
+
+    /**
+     * This can be called to parse and validate a GraphQL query against an executable schema view.
+     *
+     * @param schema         the schema to validate against
+     * @param executionInput the execution input containing the query
+     *
+     * @return a result object that indicates how this operation went
+     */
+    @ExperimentalApi
+    public static ParseAndValidateResult parseAndValidate(
+            ExecutableSchema schema,
+            ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
-            List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"), executionInput.getLocale());
+            List<ValidationError> errors = validate(
+                    schema,
+                    assertNotNull(
+                            result.getDocument(),
+                            "Parse result document cannot be null when parse succeeded"),
+                    executionInput.getLocale());
             return result.transform(builder -> builder.validationErrors(errors));
         }
         return result;
@@ -94,7 +117,27 @@ public class ParseAndValidate {
      * @return a result object that indicates how this operation went
      */
     public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Locale locale) {
-        return validate(graphQLSchema, parsedDocument, rule -> true, locale);
+        return validate(
+                (ExecutableSchema) graphQLSchema,
+                parsedDocument,
+                locale);
+    }
+
+    /**
+     * This can be called to validate a parsed GraphQL query.
+     *
+     * @param schema         the executable schema view to validate against
+     * @param parsedDocument the previously parsed document
+     * @param locale         the current locale
+     *
+     * @return validation errors
+     */
+    @ExperimentalApi
+    public static List<ValidationError> validate(
+            ExecutableSchema schema,
+            Document parsedDocument,
+            Locale locale) {
+        return validate(schema, parsedDocument, rule -> true, locale);
     }
 
     /**
@@ -106,7 +149,28 @@ public class ParseAndValidate {
      * @return a result object that indicates how this operation went
      */
     public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument) {
-        return validate(graphQLSchema, parsedDocument, rule -> true, Locale.getDefault());
+        return validate(
+                (ExecutableSchema) graphQLSchema,
+                parsedDocument);
+    }
+
+    /**
+     * This can be called to validate a parsed GraphQL query, with the JVM default locale.
+     *
+     * @param schema         the executable schema view to validate against
+     * @param parsedDocument the previously parsed document
+     *
+     * @return validation errors
+     */
+    @ExperimentalApi
+    public static List<ValidationError> validate(
+            ExecutableSchema schema,
+            Document parsedDocument) {
+        return validate(
+                schema,
+                parsedDocument,
+                rule -> true,
+                Locale.getDefault());
     }
 
     /**
@@ -120,7 +184,35 @@ public class ParseAndValidate {
      * @return a result object that indicates how this operation went
      */
     public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<OperationValidationRule> rulePredicate, @NonNull Locale locale) {
-        return validate(graphQLSchema, parsedDocument, rulePredicate, locale, null);
+        return validate(
+                (ExecutableSchema) graphQLSchema,
+                parsedDocument,
+                rulePredicate,
+                locale);
+    }
+
+    /**
+     * This can be called to validate a parsed GraphQL query with selected rules.
+     *
+     * @param schema         the executable schema view to validate against
+     * @param parsedDocument the previously parsed document
+     * @param rulePredicate  selects validation rules
+     * @param locale         the current locale
+     *
+     * @return validation errors
+     */
+    @ExperimentalApi
+    public static List<ValidationError> validate(
+            ExecutableSchema schema,
+            Document parsedDocument,
+            Predicate<OperationValidationRule> rulePredicate,
+            Locale locale) {
+        return validate(
+                schema,
+                parsedDocument,
+                rulePredicate,
+                locale,
+                null);
     }
 
     /**
@@ -135,8 +227,39 @@ public class ParseAndValidate {
      * @return a result object that indicates how this operation went
      */
     public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<OperationValidationRule> rulePredicate, Locale locale, @Nullable QueryComplexityLimits limits) {
+        return validate(
+                (ExecutableSchema) graphQLSchema,
+                parsedDocument,
+                rulePredicate,
+                locale,
+                limits);
+    }
+
+    /**
+     * This can be called to validate a parsed GraphQL query with selected rules and complexity limits.
+     *
+     * @param schema         the executable schema view to validate against
+     * @param parsedDocument the previously parsed document
+     * @param rulePredicate  selects validation rules
+     * @param locale         the current locale
+     * @param limits         optional query complexity limits
+     *
+     * @return validation errors
+     */
+    @ExperimentalApi
+    public static List<ValidationError> validate(
+            ExecutableSchema schema,
+            Document parsedDocument,
+            Predicate<OperationValidationRule> rulePredicate,
+            Locale locale,
+            @Nullable QueryComplexityLimits limits) {
         Validator validator = new Validator();
-        return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale, limits);
+        return validator.validateDocument(
+                schema,
+                parsedDocument,
+                rulePredicate,
+                locale,
+                limits);
     }
 
     /**
@@ -149,7 +272,31 @@ public class ParseAndValidate {
      * @return a result object that indicates how this operation went
      */
     public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<OperationValidationRule> rulePredicate) {
+        return validate(
+                (ExecutableSchema) graphQLSchema,
+                parsedDocument,
+                rulePredicate);
+    }
+
+    /**
+     * This can be called to validate a parsed GraphQL query with selected rules and the JVM default locale.
+     *
+     * @param schema         the executable schema view to validate against
+     * @param parsedDocument the previously parsed document
+     * @param rulePredicate  selects validation rules
+     *
+     * @return validation errors
+     */
+    @ExperimentalApi
+    public static List<ValidationError> validate(
+            ExecutableSchema schema,
+            Document parsedDocument,
+            Predicate<OperationValidationRule> rulePredicate) {
         Validator validator = new Validator();
-        return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, Locale.getDefault());
+        return validator.validateDocument(
+                schema,
+                parsedDocument,
+                rulePredicate,
+                Locale.getDefault());
     }
 }
