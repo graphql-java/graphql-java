@@ -2028,21 +2028,6 @@ public class SchemaPrinter {
         if (element instanceof SchemaAppliedDirective) {
             return GraphQLAppliedDirective.class;
         }
-        if (element instanceof SchemaDirective) {
-            return GraphQLDirective.class;
-        }
-        if (element instanceof SchemaUnion) {
-            return GraphQLUnionType.class;
-        }
-        if (element instanceof SchemaEnum) {
-            return GraphQLEnumType.class;
-        }
-        if (element instanceof SchemaScalar) {
-            return GraphQLScalarType.class;
-        }
-        if (element instanceof SchemaInputObject) {
-            return GraphQLInputObjectType.class;
-        }
         return GraphQLSchemaElement.class;
     }
 
@@ -2118,21 +2103,6 @@ public class SchemaPrinter {
         }
         if (element instanceof SchemaAppliedDirective) {
             return SchemaAppliedDirective.class;
-        }
-        if (element instanceof SchemaDirective) {
-            return SchemaDirective.class;
-        }
-        if (element instanceof SchemaUnion) {
-            return SchemaUnion.class;
-        }
-        if (element instanceof SchemaEnum) {
-            return SchemaEnum.class;
-        }
-        if (element instanceof SchemaScalar) {
-            return SchemaScalar.class;
-        }
-        if (element instanceof SchemaInputObject) {
-            return SchemaInputObject.class;
         }
         return SchemaElement.class;
     }
