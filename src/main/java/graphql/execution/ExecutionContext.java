@@ -72,7 +72,7 @@ public class ExecutionContext {
 
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
-    private final boolean propagateErrorsOnNonNullContractFailure;
+    private final OnError onError;
 
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
@@ -108,7 +108,7 @@ public class ExecutionContext {
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
-        this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
+        this.onError = builder.onError;
         this.engineRunningState = builder.engineRunningState;
         this.profiler = builder.profiler;
         // lazy loading for performance
@@ -233,15 +233,15 @@ public class ExecutionContext {
     }
 
     /**
-     * @return true if the current operation should propagate errors in non-null positions
+     * @return the [OnError] behavior requested by the client.
      * Propagating errors is the default. Error aware clients may opt in returning null in non-null positions
-     * by using the `@experimental_disableErrorPropagation` directive.
+     * or halting the execution.
      *
-     * @see graphql.Directives#setExperimentalDisableErrorPropagationEnabled(boolean) to change the JVM wide default
+     * @see Execution#setExperimentalOnErrorEnabled(boolean) (boolean) to change the JVM wide default
      */
     @ExperimentalApi
-    public boolean propagateErrorsOnNonNullContractFailure() {
-        return propagateErrorsOnNonNullContractFailure;
+    public OnError getOnError() {
+        return onError;
     }
 
     /**
