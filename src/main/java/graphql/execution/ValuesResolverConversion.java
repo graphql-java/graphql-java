@@ -27,7 +27,6 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.InputValueWithState;
 import graphql.schema.SchemaEnum;
-import graphql.schema.SchemaEnumValue;
 import graphql.schema.SchemaInputField;
 import graphql.schema.SchemaInputObject;
 import graphql.schema.SchemaInputType;
@@ -299,6 +298,7 @@ class ValuesResolverConversion {
             return externalValueToLiteralForEnum(
                     (SchemaEnum) type,
                     value,
+                    graphqlContext,
                     locale);
         } else if (type instanceof SchemaList) {
             return externalValueToLiteralForList(
@@ -467,16 +467,9 @@ class ValuesResolverConversion {
     private static Value<?> externalValueToLiteralForEnum(
             SchemaEnum enumType,
             Object value,
+            GraphQLContext graphqlContext,
             Locale locale) {
-        SchemaEnumValue enumValue = enumType.getValue(value.toString());
-        if (enumValue == null) {
-            return assertShouldNeverHappen(
-                    "Invalid external enum value '%s' for '%s' in locale '%s'",
-                    value,
-                    enumType.getName(),
-                    locale);
-        }
-        return EnumValue.newEnumValue(enumValue.getName()).build();
+        return enumType.valueToLiteral(value, graphqlContext, locale);
     }
 
     /**
@@ -608,9 +601,10 @@ class ValuesResolverConversion {
         }
         if (type instanceof SchemaEnum) {
             return internalEnumValueToLiteral(
-                    schema,
                     value,
-                    (SchemaEnum) type);
+                    (SchemaEnum) type,
+                    graphqlContext,
+                    locale);
         }
         if (type instanceof SchemaList) {
             return internalListValueToLiteral(
@@ -632,29 +626,15 @@ class ValuesResolverConversion {
     }
 
     private static Value<?> internalEnumValueToLiteral(
-            ExecutableSchema schema,
             Object value,
-            SchemaEnum enumType) {
-        for (SchemaEnumValue enumValue : enumType.getValues()) {
-            Object runtimeValue = schema.getEnumRuntimeValue(enumValue);
-            if (value.equals(runtimeValue)) {
-                return EnumValue.newEnumValue(enumValue.getName()).build();
-            }
-            if (runtimeValue instanceof Enum
-                    && value instanceof String
-                    && value.equals(((Enum<?>) runtimeValue).name())) {
-                return EnumValue.newEnumValue(enumValue.getName()).build();
-            }
-            if (value instanceof Enum
-                    && ((Enum<?>) value).name()
-                    .equals(String.valueOf(runtimeValue))) {
-                return EnumValue.newEnumValue(enumValue.getName()).build();
-            }
-        }
-        return assertShouldNeverHappen(
-                "Invalid internal enum value '%s' for '%s'",
+            SchemaEnum enumType,
+            GraphQLContext graphqlContext,
+            Locale locale) {
+        Object serialized = enumType.serialize(
                 value,
-                enumType.getName());
+                graphqlContext,
+                locale);
+        return EnumValue.newEnumValue(serialized.toString()).build();
     }
 
     @SuppressWarnings("unchecked")
@@ -1011,9 +991,9 @@ class ValuesResolverConversion {
                     locale);
         } else if (type instanceof SchemaEnum) {
             return externalValueToInternalValueForEnum(
-                    schema,
                     (SchemaEnum) type,
                     value,
+                    graphqlContext,
                     locale);
         } else if (type instanceof SchemaList) {
             return externalValueToInternalValueForList(
@@ -1247,22 +1227,12 @@ class ValuesResolverConversion {
      * including validation
      */
     private static Object externalValueToInternalValueForEnum(
-            ExecutableSchema schema,
             SchemaEnum enumType,
             Object value,
+            GraphQLContext graphqlContext,
             Locale locale
     ) throws CoercingParseValueException {
-        SchemaEnumValue enumValue =
-                enumType.getValue(value.toString());
-        if (enumValue != null) {
-            return schema.getEnumRuntimeValue(enumValue);
-        }
-        throw new CoercingParseValueException(
-                i18nMsg(
-                        locale,
-                        "Enum.badName",
-                        enumType.getName(),
-                        value.toString()));
+        return enumType.parseValue(value, graphqlContext, locale);
     }
 
     /**
@@ -1576,9 +1546,9 @@ class ValuesResolverConversion {
         }
         if (type instanceof SchemaEnum) {
             return literalToInternalValueForEnum(
-                    schema,
                     inputValue,
                     (SchemaEnum) type,
+                    graphqlContext,
                     locale);
         }
         if (isList(type)) {
@@ -1724,29 +1694,14 @@ class ValuesResolverConversion {
     }
 
     private static Object literalToInternalValueForEnum(
-            ExecutableSchema schema,
             Value<?> inputValue,
             SchemaEnum enumType,
+            GraphQLContext graphqlContext,
             Locale locale) {
-        if (!(inputValue instanceof EnumValue)) {
-            throw new CoercingParseLiteralException(
-                    i18nMsg(
-                            locale,
-                            "Scalar.unexpectedAstType",
-                            "EnumValue",
-                            typeName(inputValue)));
-        }
-        SchemaEnumValue enumValue = enumType.getValue(
-                ((EnumValue) inputValue).getName());
-        if (enumValue != null) {
-            return schema.getEnumRuntimeValue(enumValue);
-        }
-        throw new CoercingParseLiteralException(
-                i18nMsg(
-                        locale,
-                        "Enum.unallowableValue",
-                        enumType.getName(),
-                        inputValue));
+        return enumType.parseLiteral(
+                inputValue,
+                graphqlContext,
+                locale);
     }
 
     static boolean isNullValue(Object value) {

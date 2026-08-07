@@ -16,7 +16,6 @@ import graphql.schema.SchemaAppliedDirective;
 import graphql.schema.SchemaComposite;
 import graphql.schema.SchemaDirective;
 import graphql.schema.SchemaDirectiveContainer;
-import graphql.schema.SchemaEnumValue;
 import graphql.schema.SchemaField;
 import graphql.schema.SchemaFieldsContainer;
 import graphql.schema.SchemaInputField;
@@ -398,20 +397,6 @@ public final class SUExecutableSchema implements ExecutableSchema {
         return schema.isPossibleType(
                 compositeVertex(compositeType),
                 objectVertex(objectType));
-    }
-
-    @Override
-    public Object getEnumRuntimeValue(
-            SchemaEnumValue enumValue) {
-        SUVertex vertex = elementVertex(enumValue);
-        assertTrue(
-                vertex instanceof SUEnumValue,
-                "The enum value must belong to this SUSchema");
-        Object runtimeValue = enumRuntimeValueById.get(vertex.getId());
-        if (runtimeValue != null) {
-            return runtimeValue;
-        }
-        return assertNotNull(vertex.getName());
     }
 
     @Override

@@ -4,9 +4,9 @@ import graphql.ExperimentalApi;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * A type exposed by an {@link ExecutableSchema}.
+ * An element in a GraphQL schema.
  */
 @ExperimentalApi
 @NullMarked
-public interface SchemaType extends SchemaElement {
+public interface SchemaElement {
 }

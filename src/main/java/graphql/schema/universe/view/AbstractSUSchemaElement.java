@@ -2,6 +2,7 @@ package graphql.schema.universe.view;
 
 import graphql.Internal;
 import graphql.language.Node;
+import graphql.schema.SchemaElement;
 import graphql.schema.universe.SUVertex;
 import org.jspecify.annotations.Nullable;
 
@@ -11,7 +12,7 @@ import static graphql.Assert.assertNotNull;
  * Shared identity for schema-bound universe adapters.
  */
 @Internal
-public abstract class AbstractSUSchemaElement {
+public abstract class AbstractSUSchemaElement implements SchemaElement {
 
     private final SUExecutableSchema executableSchema;
     private final SUVertex vertex;

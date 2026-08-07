@@ -65,6 +65,9 @@ import graphql.schema.SchemaAppliedDirectiveArgument;
 import graphql.schema.SchemaArgument;
 import graphql.schema.SchemaDirective;
 import graphql.schema.SchemaDirectiveContainer;
+import graphql.schema.SchemaElement;
+import graphql.schema.SchemaElementComparatorEnvironment;
+import graphql.schema.SchemaElementComparatorRegistry;
 import graphql.schema.SchemaEnum;
 import graphql.schema.SchemaEnumValue;
 import graphql.schema.SchemaField;
@@ -79,6 +82,7 @@ import graphql.schema.SchemaNamedElement;
 import graphql.schema.SchemaNamedType;
 import graphql.schema.SchemaNonNull;
 import graphql.schema.SchemaObject;
+import graphql.schema.SchemaOutputType;
 import graphql.schema.SchemaScalar;
 import graphql.schema.SchemaType;
 import graphql.schema.SchemaUnion;
@@ -140,9 +144,33 @@ public class SchemaPrinter {
 
         private final Predicate<String> includeDirective;
 
+        /**
+         * The original GraphQL-specific element predicate configured by
+         * {@link #includeSchemaElement(Predicate)}. It is evaluated only for
+         * {@link GraphQLSchemaElement} instances and before {@link #schemaElementFilter}.
+         */
         private final Predicate<GraphQLSchemaElement> includeSchemaElement;
 
+        /**
+         * The schema-neutral element predicate configured by
+         * {@link #filterSchemaElements(Predicate)}. It is evaluated for every
+         * {@link SchemaElement} after the GraphQL-specific predicate, when applicable, accepts it.
+         */
+        private final Predicate<SchemaElement> schemaElementFilter;
+
+        /**
+         * The original GraphQL-specific comparator registry configured by
+         * {@link #setComparators(GraphqlTypeComparatorRegistry)}. It orders only
+         * {@link GraphQLSchemaElement} instances.
+         */
         private final GraphqlTypeComparatorRegistry comparatorRegistry;
+
+        /**
+         * The schema-neutral comparator registry configured by
+         * {@link #sortSchemaElements(SchemaElementComparatorRegistry)}. It orders schema elements
+         * that are not {@link GraphQLSchemaElement} instances.
+         */
+        private final SchemaElementComparatorRegistry schemaElementComparatorRegistry;
 
         private final boolean includeAstDefinitionComments;
 
@@ -155,7 +183,9 @@ public class SchemaPrinter {
                         boolean descriptionsAsHashComments,
                         Predicate<String> includeDirective,
                         Predicate<GraphQLSchemaElement> includeSchemaElement,
+                        Predicate<SchemaElement> schemaElementFilter,
                         GraphqlTypeComparatorRegistry comparatorRegistry,
+                        SchemaElementComparatorRegistry schemaElementComparatorRegistry,
                         boolean includeAstDefinitionComments) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
@@ -167,6 +197,9 @@ public class SchemaPrinter {
             this.descriptionsAsHashComments = descriptionsAsHashComments;
             this.comparatorRegistry = comparatorRegistry;
             this.includeSchemaElement = includeSchemaElement;
+            this.schemaElementFilter = schemaElementFilter;
+            this.schemaElementComparatorRegistry =
+                    schemaElementComparatorRegistry;
             this.includeAstDefinitionComments = includeAstDefinitionComments;
         }
 
@@ -194,16 +227,56 @@ public class SchemaPrinter {
             return includeDirective;
         }
 
+        /**
+         * Returns the original GraphQL-specific element predicate.
+         *
+         * <p>This predicate is evaluated only for {@link GraphQLSchemaElement} instances.
+         * If it rejects an element, {@link #getSchemaElementFilter()} is not evaluated.</p>
+         *
+         * @return the GraphQL-specific element predicate
+         */
         public Predicate<GraphQLSchemaElement> getIncludeSchemaElement() {
             return includeSchemaElement;
+        }
+
+        /**
+         * Returns the schema-neutral element predicate.
+         *
+         * <p>This predicate is evaluated for all schema implementations. For a
+         * {@link GraphQLSchemaElement}, it runs after {@link #getIncludeSchemaElement()}.</p>
+         *
+         * @return the schema-neutral element predicate
+         */
+        public Predicate<SchemaElement> getSchemaElementFilter() {
+            return schemaElementFilter;
         }
 
         public boolean isDescriptionsAsHashComments() {
             return descriptionsAsHashComments;
         }
 
+        /**
+         * Returns the original GraphQL-specific comparator registry.
+         *
+         * <p>This registry is used only for {@link GraphQLSchemaElement} instances.</p>
+         *
+         * @return the GraphQL-specific comparator registry
+         */
         public GraphqlTypeComparatorRegistry getComparatorRegistry() {
             return comparatorRegistry;
+        }
+
+        /**
+         * Returns the schema-neutral comparator registry.
+         *
+         * <p>This registry is used for schema elements that are not
+         * {@link GraphQLSchemaElement} instances.</p>
+         *
+         * @return the schema-neutral comparator registry
+         */
+        public SchemaElementComparatorRegistry
+                getSchemaElementComparatorRegistry() {
+            return schemaElementComparatorRegistry;
         }
 
         public boolean isUseAstDefinitions() {
@@ -223,7 +296,9 @@ public class SchemaPrinter {
                     false,
                     directive -> true,
                     element -> true,
+                    element -> true,
                     DefaultGraphqlTypeComparatorRegistry.defaultComparators(),
+                    SchemaElementComparatorRegistry.DEFAULT_REGISTRY,
                     false);
         }
 
@@ -243,7 +318,9 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
@@ -263,7 +340,9 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
@@ -287,7 +366,9 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
@@ -313,7 +394,9 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
@@ -335,7 +418,9 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
@@ -357,7 +442,9 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     directive -> flag,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
@@ -378,15 +465,23 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
 
         /**
-         * This is a general purpose Predicate that decides whether a schema element is printed ever.
+         * Sets the original GraphQL-specific predicate that decides whether a schema element is
+         * printed.
          *
-         * @param includeSchemaElement the predicate to decide of a schema is printed
+         * <p>This option remains specific to {@link GraphQLSchemaElement} for compatibility. It is
+         * not evaluated for other {@link SchemaElement} implementations. For GraphQL elements it
+         * runs before the predicate configured by {@link #filterSchemaElements(Predicate)}, and
+         * both predicates must accept the element.</p>
+         *
+         * @param includeSchemaElement the GraphQL-specific inclusion predicate
          *
          * @return new instance of options
          */
@@ -401,7 +496,39 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
+                    this.includeAstDefinitionComments);
+        }
+
+        /**
+         * Sets the schema-neutral predicate that decides whether a schema element is printed.
+         *
+         * <p>This predicate is evaluated for every {@link SchemaElement}. For a
+         * {@link GraphQLSchemaElement}, the predicate configured by
+         * {@link #includeSchemaElement(Predicate)} runs first and both predicates must accept the
+         * element. The default predicate accepts every element.</p>
+         *
+         * @param schemaElementFilter the schema-neutral inclusion predicate
+         *
+         * @return new instance of options
+         */
+        public Options filterSchemaElements(
+                Predicate<SchemaElement> schemaElementFilter) {
+            Assert.assertNotNull(schemaElementFilter);
+            return new Options(this.includeIntrospectionTypes,
+                    this.includeScalars,
+                    this.includeSchemaDefinition,
+                    this.includeDirectiveDefinitions,
+                    this.includeDirectiveDefinition,
+                    this.useAstDefinitions,
+                    this.descriptionsAsHashComments,
+                    this.includeDirective,
+                    this.includeSchemaElement,
+                    schemaElementFilter,
+                    this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
@@ -423,7 +550,9 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
@@ -447,12 +576,18 @@ public class SchemaPrinter {
                     flag,
                     this.includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     this.comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     this.includeAstDefinitionComments);
         }
 
         /**
-         * The comparator registry controls the printing order for registered {@code GraphQLType}s.
+         * Sets the original GraphQL-specific comparator registry.
+         *
+         * <p>This option remains specific to {@link GraphQLSchemaElement} for compatibility.
+         * It does not affect other {@link SchemaElement} implementations; configure those through
+         * {@link #sortSchemaElements(SchemaElementComparatorRegistry)}.</p>
          * <p>
          * The default is to sort elements by name but you can put in your own code to decide on the field order
          *
@@ -470,7 +605,40 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
+                    this.includeAstDefinitionComments);
+        }
+
+        /**
+         * Sets the schema-neutral comparator registry.
+         *
+         * <p>This registry orders schema elements that are not {@link GraphQLSchemaElement}
+         * instances. It does not affect GraphQL elements; configure those through
+         * {@link #setComparators(GraphqlTypeComparatorRegistry)}. Its default applies the same
+         * grouped and name ordering as the GraphQL-specific default registry.</p>
+         *
+         * @param schemaElementComparatorRegistry the schema-neutral comparator registry
+         *
+         * @return options
+         */
+        public Options sortSchemaElements(
+                SchemaElementComparatorRegistry
+                        schemaElementComparatorRegistry) {
+            return new Options(this.includeIntrospectionTypes,
+                    this.includeScalars,
+                    this.includeSchemaDefinition,
+                    this.includeDirectiveDefinitions,
+                    this.includeDirectiveDefinition,
+                    this.useAstDefinitions,
+                    this.descriptionsAsHashComments,
+                    this.includeDirective,
+                    this.includeSchemaElement,
+                    this.schemaElementFilter,
+                    this.comparatorRegistry,
+                    Assert.assertNotNull(
+                            schemaElementComparatorRegistry),
                     this.includeAstDefinitionComments);
         }
 
@@ -493,7 +661,9 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
+                    this.schemaElementFilter,
                     comparatorRegistry,
+                    this.schemaElementComparatorRegistry,
                     flag);
         }
     }
@@ -1718,12 +1888,17 @@ public class SchemaPrinter {
                 Locale.getDefault());
     }
 
-    private boolean isIncluded(SchemaNamedElement element) {
-        if (!(element instanceof GraphQLSchemaElement)) {
-            return true;
+    /**
+     * Applies the GraphQL-specific predicate first, when applicable, followed by the
+     * schema-neutral predicate.
+     */
+    private boolean isIncluded(SchemaElement element) {
+        if (element instanceof GraphQLSchemaElement
+                && !options.getIncludeSchemaElement()
+                .test((GraphQLSchemaElement) element)) {
+            return false;
         }
-        return options.getIncludeSchemaElement()
-                .test((GraphQLSchemaElement) element);
+        return options.getSchemaElementFilter().test(element);
     }
 
     private <T extends SchemaNamedElement> List<T> sort(
@@ -1739,20 +1914,22 @@ public class SchemaPrinter {
                     graphQLElementClass(elements.get(0), topLevel),
                     elements);
         }
+        return sortSchemaElements(parent, elements, topLevel);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private <T extends SchemaNamedElement> List<T> sortSchemaElements(
+            @Nullable SchemaNamedElement parent,
+            List<? extends T> elements,
+            boolean topLevel) {
         List<T> result = new ArrayList<>(elements);
-        if (options.getComparatorRegistry()
-                == GraphqlTypeComparatorRegistry.AS_IS_REGISTRY) {
-            return result;
-        }
-        Comparator<T> comparator =
-                Comparator.comparing(SchemaNamedElement::getName);
-        if (topLevel
-                && options.getComparatorRegistry()
-                != GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY) {
-            comparator = Comparator
-                    .comparingInt((T element) -> topLevelRank(element))
-                    .thenComparing(SchemaNamedElement::getName);
-        }
+        SchemaElementComparatorEnvironment environment =
+                SchemaElementComparatorEnvironment.newEnvironment(
+                        schemaParentClass(parent),
+                        schemaElementClass(elements.get(0), topLevel));
+        Comparator comparator = options
+                .getSchemaElementComparatorRegistry()
+                .getComparator(environment);
         result.sort(comparator);
         return result;
     }
@@ -1869,29 +2046,95 @@ public class SchemaPrinter {
         return GraphQLSchemaElement.class;
     }
 
-    private int topLevelRank(SchemaNamedElement element) {
-        if (element instanceof SchemaDirective) {
-            return 1;
+    private Class<? extends SchemaElement> schemaParentClass(
+            @Nullable SchemaNamedElement parent) {
+        if (parent == null) {
+            return SchemaElement.class;
         }
-        if (element instanceof SchemaInterface) {
-            return 2;
+        if (parent instanceof SchemaObject) {
+            return SchemaObject.class;
+        }
+        if (parent instanceof SchemaInterface) {
+            return SchemaInterface.class;
+        }
+        if (parent instanceof SchemaUnion) {
+            return SchemaUnion.class;
+        }
+        if (parent instanceof SchemaEnum) {
+            return SchemaEnum.class;
+        }
+        if (parent instanceof SchemaEnumValue) {
+            return SchemaEnumValue.class;
+        }
+        if (parent instanceof SchemaScalar) {
+            return SchemaScalar.class;
+        }
+        if (parent instanceof SchemaInputObject) {
+            return SchemaInputObject.class;
+        }
+        if (parent instanceof SchemaInputField) {
+            return SchemaInputField.class;
+        }
+        if (parent instanceof SchemaField) {
+            return SchemaField.class;
+        }
+        if (parent instanceof SchemaArgument) {
+            return SchemaArgument.class;
+        }
+        if (parent instanceof SchemaDirective) {
+            return SchemaDirective.class;
+        }
+        if (parent instanceof SchemaAppliedDirective) {
+            return SchemaAppliedDirective.class;
+        }
+        return SchemaElement.class;
+    }
+
+    private @Nullable Class<? extends SchemaElement>
+            schemaElementClass(
+                    SchemaNamedElement element,
+                    boolean topLevel) {
+        if (topLevel) {
+            return null;
+        }
+        if (element instanceof SchemaObject
+                || element instanceof SchemaInterface) {
+            return SchemaOutputType.class;
+        }
+        if (element instanceof SchemaEnumValue) {
+            return SchemaEnumValue.class;
+        }
+        if (element instanceof SchemaInputField) {
+            return SchemaInputField.class;
+        }
+        if (element instanceof SchemaField) {
+            return SchemaField.class;
+        }
+        if (element instanceof SchemaArgument) {
+            return SchemaArgument.class;
+        }
+        if (element instanceof SchemaAppliedDirectiveArgument) {
+            return SchemaAppliedDirectiveArgument.class;
+        }
+        if (element instanceof SchemaAppliedDirective) {
+            return SchemaAppliedDirective.class;
+        }
+        if (element instanceof SchemaDirective) {
+            return SchemaDirective.class;
         }
         if (element instanceof SchemaUnion) {
-            return 3;
-        }
-        if (element instanceof SchemaObject) {
-            return 4;
+            return SchemaUnion.class;
         }
         if (element instanceof SchemaEnum) {
-            return 5;
+            return SchemaEnum.class;
         }
         if (element instanceof SchemaScalar) {
-            return 6;
+            return SchemaScalar.class;
         }
         if (element instanceof SchemaInputObject) {
-            return 7;
+            return SchemaInputObject.class;
         }
-        return 0;
+        return SchemaElement.class;
     }
 
     private Comparator<? super GraphQLSchemaElement> getComparator(

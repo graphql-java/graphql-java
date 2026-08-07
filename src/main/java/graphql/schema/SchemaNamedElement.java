@@ -10,7 +10,7 @@ import org.jspecify.annotations.Nullable;
  */
 @ExperimentalApi
 @NullMarked
-public interface SchemaNamedElement {
+public interface SchemaNamedElement extends SchemaElement {
 
     /**
      * Returns the name of this schema element.

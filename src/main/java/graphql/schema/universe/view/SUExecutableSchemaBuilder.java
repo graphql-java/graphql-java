@@ -175,7 +175,9 @@ public final class SUExecutableSchemaBuilder {
             enumRuntimeValue(
                     (SUEnumType) type,
                     assertNotNull(enumValue.getName()),
-                    source.getEnumRuntimeValue(sourceValue));
+                    sourceValue.getValue() == null
+                            ? assertNotNull(sourceValue.getName())
+                            : sourceValue.getValue());
         }
     }
 

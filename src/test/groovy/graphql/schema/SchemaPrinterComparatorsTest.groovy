@@ -1,8 +1,8 @@
 package graphql.schema
 
 import graphql.TestUtil
+import graphql.schema.idl.AbstractSchemaPrintingTest
 import graphql.schema.idl.SchemaPrinter
-import spock.lang.Specification
 
 import java.util.stream.Collectors
 
@@ -23,7 +23,7 @@ import static graphql.schema.GraphQLUnionType.newUnionType
 import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
-class SchemaPrinterComparatorsTest extends Specification {
+class SchemaPrinterComparatorsTest extends AbstractSchemaPrintingTest {
 
     def "scalarPrinter default comparator"() {
         given:
@@ -584,21 +584,32 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .build()
         def schema = GraphQLSchema.newSchema().query(query).build()
         def environments = []
+        def schemaEnvironments = []
         GraphqlTypeComparatorRegistry registry = { environment ->
             environments.add([
                     environment.parentType,
                     environment.elementType])
             DEFAULT_COMPARATOR
         }
-        def options = defaultOptions().setComparators(registry)
+        SchemaElementComparatorRegistry schemaRegistry = { environment ->
+            schemaEnvironments.add([
+                    environment.parentType,
+                    environment.elementType])
+            SchemaElementComparators.sensibleGroupedOrder()
+        }
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
 
         when:
-        new SchemaPrinter(options).print(schema)
+        printSchema(new SchemaPrinter(options), schema)
 
         then:
-        environments.contains([
+        environments.count {
+            it == [
                 GraphQLSchemaElement.class,
-                null])
+                null]
+        } == 1
         environments.contains([
                 GraphQLObjectType.class,
                 GraphQLFieldDefinition.class])
@@ -614,6 +625,26 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         environments.contains([
                 GraphQLAppliedDirective.class,
                 GraphQLAppliedDirectiveArgument.class])
+        schemaEnvironments.count {
+            it == [
+                SchemaElement.class,
+                null]
+        } == 1
+        schemaEnvironments.contains([
+                SchemaObject.class,
+                SchemaField.class])
+        schemaEnvironments.contains([
+                SchemaField.class,
+                SchemaArgument.class])
+        schemaEnvironments.contains([
+                SchemaObject.class,
+                SchemaAppliedDirective.class])
+        schemaEnvironments.contains([
+                SchemaField.class,
+                SchemaAppliedDirective.class])
+        schemaEnvironments.contains([
+                SchemaAppliedDirective.class,
+                SchemaAppliedDirectiveArgument.class])
     }
 
 

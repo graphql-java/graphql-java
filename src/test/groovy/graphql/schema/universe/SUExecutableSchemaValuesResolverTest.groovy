@@ -13,13 +13,18 @@ import graphql.execution.ValuesResolver
 import graphql.execution.values.InputInterceptor
 import graphql.execution.values.legacycoercing.LegacyCoercingInputInterceptor
 import graphql.language.AstPrinter
+import graphql.language.EnumValue
 import graphql.language.Field
 import graphql.language.ListType
 import graphql.language.NonNullType
 import graphql.language.OperationDefinition
+import graphql.language.StringValue
 import graphql.language.TypeName
 import graphql.language.Value
 import graphql.normalized.NormalizedInputValue
+import graphql.schema.CoercingParseLiteralException
+import graphql.schema.CoercingParseValueException
+import graphql.schema.CoercingSerializeException
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
@@ -311,12 +316,13 @@ class SUExecutableSchemaValuesResolverTest extends Specification {
         def modeVertex = universeSchema.schema.getEnumType("Mode")
         def fastVertex = universeSchema.schema.getEnumValue(modeVertex, "FAST")
         def slowVertex = universeSchema.schema.getEnumValue(modeVertex, "SLOW")
+        def context = GraphQLContext.default
 
         expect:
-        universeSchema.getEnumRuntimeValue(
-                originalEnum.getValue("FAST")) == 11
-        universeSchema.getEnumRuntimeValue(
-                originalEnum.getValue("SLOW")) == 22
+        originalEnum.parseValue(
+                "FAST", context, Locale.ENGLISH) == 11
+        originalEnum.parseValue(
+                "SLOW", context, Locale.ENGLISH) == 22
 
         when:
         def changed = universeSchema.transform {
@@ -326,14 +332,67 @@ class SUExecutableSchemaValuesResolverTest extends Specification {
         SchemaEnum changedEnum = changed.getType("Mode") as SchemaEnum
 
         then:
-        universeSchema.getEnumRuntimeValue(
-                originalEnum.getValue("FAST")) == 11
-        universeSchema.getEnumRuntimeValue(
-                originalEnum.getValue("SLOW")) == 22
-        changed.getEnumRuntimeValue(changedEnum.getValue("FAST")) == 99
-        changed.getEnumRuntimeValue(changedEnum.getValue("SLOW")) == "SLOW"
+        originalEnum.parseValue(
+                "FAST", context, Locale.ENGLISH) == 11
+        originalEnum.parseValue(
+                "SLOW", context, Locale.ENGLISH) == 22
+        changedEnum.parseValue(
+                "FAST", context, Locale.ENGLISH) == 99
+        changedEnum.parseValue(
+                "SLOW", context, Locale.ENGLISH) == "SLOW"
+        changedEnum.parseLiteral(
+                EnumValue.newEnumValue("FAST").build(),
+                context,
+                Locale.ENGLISH) == 99
+        changedEnum.serialize(
+                99, context, Locale.ENGLISH) == "FAST"
+        changedEnum.valueToLiteral(
+                "FAST", context, Locale.ENGLISH).name == "FAST"
         changed.getEnumRuntimeValueById().get(fastVertex.id) == 99
         changed.getEnumRuntimeValueById().get(slowVertex.id) == null
+    }
+
+    def "enum coercion rejects invalid inputs"() {
+        given:
+        SchemaEnum enumType = universeSchema.getType("Mode") as SchemaEnum
+        def context = GraphQLContext.default
+
+        when:
+        enumType.serialize(99, context, Locale.ENGLISH)
+
+        then:
+        thrown(CoercingSerializeException)
+
+        when:
+        enumType.parseValue("UNKNOWN", context, Locale.ENGLISH)
+
+        then:
+        thrown(CoercingParseValueException)
+
+        when:
+        enumType.parseLiteral(
+                StringValue.newStringValue("FAST").build(),
+                context,
+                Locale.ENGLISH)
+
+        then:
+        thrown(CoercingParseLiteralException)
+
+        when:
+        enumType.parseLiteral(
+                EnumValue.newEnumValue("UNKNOWN").build(),
+                context,
+                Locale.ENGLISH)
+
+        then:
+        thrown(CoercingParseLiteralException)
+
+        when:
+        enumType.valueToLiteral(
+                "UNKNOWN", context, Locale.ENGLISH)
+
+        then:
+        thrown(AssertException)
     }
 
     def "enum runtime values reject null"() {

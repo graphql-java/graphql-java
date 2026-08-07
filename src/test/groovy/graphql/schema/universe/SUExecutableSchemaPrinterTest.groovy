@@ -7,6 +7,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphqlTypeComparatorRegistry
+import graphql.schema.SchemaElementComparatorRegistry
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
 import graphql.schema.idl.TypeDefinitionRegistry
@@ -120,6 +121,7 @@ class SUExecutableSchemaPrinterTest extends Specification {
                 new SchemaUniverse().importSchema(orderingName, registry)
         def options = SchemaPrinter.Options.defaultOptions()
                 .setComparators(comparatorRegistry)
+                .sortSchemaElements(schemaComparatorRegistry)
         def printer = new SchemaPrinter(options)
 
         when:
@@ -131,9 +133,9 @@ class SUExecutableSchemaPrinterTest extends Specification {
         graphQLSdl.contains(expectedFields)
 
         where:
-        orderingName | comparatorRegistry                              | expectedFields
-        "as_is"      | GraphqlTypeComparatorRegistry.AS_IS_REGISTRY   | "  z(z: Int, a: Int): String\n  a: String"
-        "by_name"    | GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY | "  a: String\n  z(a: Int, z: Int): String"
+        orderingName | comparatorRegistry                              | schemaComparatorRegistry                              | expectedFields
+        "as_is"      | GraphqlTypeComparatorRegistry.AS_IS_REGISTRY   | SchemaElementComparatorRegistry.AS_IS_REGISTRY   | "  z(z: Int, a: Int): String\n  a: String"
+        "by_name"    | GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY | SchemaElementComparatorRegistry.BY_NAME_REGISTRY | "  a: String\n  z(a: Int, z: Int): String"
     }
 
     @Requires({ Boolean.getBoolean("graphql.largeSchemaSdlTest") })

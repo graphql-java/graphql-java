@@ -17,7 +17,6 @@ import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLUnionType
 import graphql.schema.TypeResolver
-import spock.lang.Specification
 
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLEnumType.newEnum
@@ -31,7 +30,7 @@ import static graphql.schema.GraphQLUnionType.newUnionType
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
-class SchemaPrinterAstBehaviorTest extends Specification {
+class SchemaPrinterAstBehaviorTest extends AbstractSchemaPrintingTest {
 
     def "AST-aware semantic fallback remains equivalent to the semantic writer"() {
         given:
@@ -54,10 +53,10 @@ class SchemaPrinterAstBehaviorTest extends Specification {
 
         expect:
         optionSets.every { options ->
-            def semantic = new SchemaPrinter(
-                    options.useAstDefinitions(false)).print(schema)
-            def astAwareFallback = new SchemaPrinter(
-                    options.useAstDefinitions(true)).print(schema)
+            def semantic = printSchema(new SchemaPrinter(
+                    options.useAstDefinitions(false)), schema)
+            def astAwareFallback = printSchema(new SchemaPrinter(
+                    options.useAstDefinitions(true)), schema)
             astAwareFallback == semantic
         }
     }
@@ -83,10 +82,10 @@ class SchemaPrinterAstBehaviorTest extends Specification {
 
         expect:
         optionSets.every { options ->
-            def semantic = new SchemaPrinter(
-                    options.useAstDefinitions(false)).print(schema)
-            def astAwareFallback = new SchemaPrinter(
-                    options.useAstDefinitions(true)).print(schema)
+            def semantic = printSchema(new SchemaPrinter(
+                    options.useAstDefinitions(false)), schema)
+            def astAwareFallback = printSchema(new SchemaPrinter(
+                    options.useAstDefinitions(true)), schema)
             astAwareFallback == semantic
         }
     }
