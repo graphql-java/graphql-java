@@ -2,6 +2,7 @@ package graphql.schema.universe
 
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphqlTypeComparatorRegistry
+import graphql.schema.SchemaElementComparatorRegistry
 import graphql.schema.idl.SchemaParser
 import graphql.schema.idl.SchemaPrinter
 import graphql.schema.idl.TypeDefinitionRegistry
@@ -79,6 +80,8 @@ class SUSchemaRoundTripTest extends Specification {
                 .includeSchemaDefinition(true)
                 .includeScalarTypes(true)
                 .setComparators(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
+                .sortSchemaElements(
+                        SchemaElementComparatorRegistry.BY_NAME_REGISTRY)
     }
 
     private static String operationRootsAndCyclesSdl() {
