@@ -83,8 +83,11 @@ public class ValuesResolver {
                                                         RawVariables rawVariables,
                                                         GraphQLContext graphqlContext,
                                                         Locale locale) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
-        return coerceVariableValues(
-                (ExecutableSchema) schema,
+
+        InputInterceptor inputInterceptor = graphqlContext.get(InputInterceptor.class);
+        return ValuesResolverConversion.externalValueToInternalValueForVariables(
+                inputInterceptor,
+                schema,
                 variableDefinitions,
                 rawVariables,
                 graphqlContext,
@@ -128,12 +131,30 @@ public class ValuesResolver {
             GraphQLContext graphqlContext,
             Locale locale
     ) {
-        return getNormalizedVariableValues(
-                (ExecutableSchema) schema,
-                variableDefinitions,
-                rawVariables,
-                graphqlContext,
-                locale);
+        GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
+        Map<String, NormalizedInputValue> result = Maps.newLinkedHashMapWithExpectedSize(variableDefinitions.size());
+        for (VariableDefinition variableDefinition : variableDefinitions) {
+            String variableName = variableDefinition.getName();
+            GraphQLType variableType = TypeFromAST.getTypeFromAST(schema, variableDefinition.getType());
+            assertTrue(variableType instanceof GraphQLInputType);
+            // can be NullValue
+            Value defaultValue = variableDefinition.getDefaultValue();
+            boolean hasValue = rawVariables.containsKey(variableName);
+            Object value = rawVariables.get(variableName);
+            if (!hasValue && defaultValue != null) {
+                result.put(variableName, new NormalizedInputValue(simplePrint(variableType), defaultValue));
+            } else if (isNonNull(variableType) && (!hasValue || value == null)) {
+                return assertShouldNeverHappen("variable values are expected to be valid");
+            } else if (hasValue) {
+                if (value == null) {
+                    result.put(variableName, new NormalizedInputValue(simplePrint(variableType), null));
+                } else {
+                    Object literal = ValuesResolverConversion.externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) variableType, NORMALIZED, graphqlContext, locale);
+                    result.put(variableName, new NormalizedInputValue(simplePrint(variableType), literal));
+                }
+            }
+        }
+        return NormalizedVariables.of(result);
     }
 
     public static NormalizedVariables getNormalizedVariableValues(
@@ -143,8 +164,6 @@ public class ValuesResolver {
             GraphQLContext graphqlContext,
             Locale locale
     ) {
-        InputValueSchema inputValueSchema =
-                new ExecutableInputValueSchema(schema);
         Map<String, NormalizedInputValue> result = Maps.newLinkedHashMapWithExpectedSize(variableDefinitions.size());
         for (VariableDefinition variableDefinition : variableDefinitions) {
             String variableName = variableDefinition.getName();
@@ -165,7 +184,7 @@ public class ValuesResolver {
                     result.put(variableName, new NormalizedInputValue(simplePrint(variableType), null));
                 } else {
                     Object literal = ValuesResolverConversion.externalValueToLiteral(
-                            inputValueSchema,
+                            schema,
                             value,
                             (SchemaInputType) variableType,
                             NORMALIZED,
@@ -213,7 +232,7 @@ public class ValuesResolver {
                 graphqlContext.get(InputInterceptor.class);
         return getArgumentValuesImpl(
                 inputInterceptor,
-                new ExecutableInputValueSchema(schema),
+                schema,
                 argumentTypes,
                 arguments,
                 coercedVariables,
@@ -390,20 +409,67 @@ public class ValuesResolver {
             GraphQLContext graphqlContext,
             Locale locale
     ) {
-        return getArgumentValuesImpl(
-                inputInterceptor,
-                new GraphQLInputValueSchema(fieldVisibility),
-                argumentTypes,
-                arguments,
-                coercedVariables,
-                graphqlContext,
-                locale);
+        if (argumentTypes.isEmpty()) {
+            return ImmutableKit.emptyMap();
+        }
+
+        Map<String, Object> coercedValues = Maps.newLinkedHashMapWithExpectedSize(arguments.size());
+        Map<String, Argument> argumentMap = argumentMap(arguments);
+        for (GraphQLArgument argumentDefinition : argumentTypes) {
+            GraphQLInputType argumentType = argumentDefinition.getType();
+            String argumentName = argumentDefinition.getName();
+            Argument argument = argumentMap.get(argumentName);
+            InputValueWithState defaultValue = argumentDefinition.getArgumentDefaultValue();
+            boolean hasValue = argument != null;
+            Object value;
+            Value argumentValue = argument != null ? argument.getValue() : null;
+            if (argumentValue instanceof VariableReference) {
+                String variableName = ((VariableReference) argumentValue).getName();
+                hasValue = coercedVariables.containsKey(variableName);
+                value = coercedVariables.get(variableName);
+            } else {
+                value = argumentValue;
+            }
+            if (!hasValue && argumentDefinition.hasSetDefaultValue()) {
+                Object coercedDefaultValue = ValuesResolverConversion.defaultValueToInternalValue(
+                        inputInterceptor,
+                        fieldVisibility,
+                        defaultValue,
+                        argumentType,
+                        graphqlContext,
+                        locale);
+                coercedValues.put(argumentName, coercedDefaultValue);
+            } else if (isNonNull(argumentType) && (!hasValue || ValuesResolverConversion.isNullValue(value))) {
+                throw new NonNullableValueCoercedAsNullException(argumentDefinition);
+            } else if (hasValue) {
+                if (ValuesResolverConversion.isNullValue(value)) {
+                    coercedValues.put(argumentName, value);
+                } else if (argumentValue instanceof VariableReference) {
+                    coercedValues.put(argumentName, value);
+                } else {
+                    value = ValuesResolverConversion.literalToInternalValue(inputInterceptor,
+                            fieldVisibility,
+                            argumentType,
+                            argument.getValue(),
+                            coercedVariables,
+                            graphqlContext,
+                            locale);
+                    coercedValues.put(argumentName, value);
+                }
+
+                ValuesResolverOneOfValidation.validateOneOfInputTypes(argumentType, value, argumentValue, argumentName, locale);
+
+            }
+        }
+
+
+        return coercedValues;
     }
 
     @NonNull
     private static Map<String, Object> getArgumentValuesImpl(
             InputInterceptor inputInterceptor,
-            InputValueSchema schema,
+            ExecutableSchema schema,
             List<? extends SchemaArgument> argumentTypes,
             List<Argument> arguments,
             CoercedVariables coercedVariables,

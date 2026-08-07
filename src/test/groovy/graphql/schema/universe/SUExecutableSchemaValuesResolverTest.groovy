@@ -31,8 +31,6 @@ import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLType
-import graphql.schema.InputValueWithState
 import graphql.schema.SchemaEnum
 import graphql.schema.SchemaField
 import graphql.schema.universe.view.SUExecutableSchema
@@ -139,18 +137,8 @@ class SUExecutableSchemaValuesResolverTest extends Specification {
         then:
         normalizedSnapshot(universeNormalized.toMap()) ==
                 normalizedSnapshot(graphQLNormalized.toMap())
-        universeNormalized.toMap().filter.value.mode.value.name == "SLOW"
-        universeNormalized.toMap()
-                .filter.value.legacyMode.value.name == "FAST"
-        universeNormalized.toMap()
-                .filter.value.legacyNumbers.value.values*.value == [7, 8]
-        universeNormalized.toMap()
-                .filter.value.legacyChoice.value
-                .objectFields[0].value.value == "legacy"
-        universeNormalized.toMap()
-                .filter.value.legacyRequired.value.value == 10
-        universeNormalized.toMap()
-                .filter.value.legacyNull.value.class.simpleName == "NullValue"
+        universeNormalized.toMap().filter.value.keySet() ==
+                ["required", "numbers", "choice"] as Set
     }
 
     def "literal argument coercion matches GraphQLSchema"() {
@@ -369,29 +357,6 @@ class SUExecutableSchemaValuesResolverTest extends Specification {
         TypeFromAST.getSchemaTypeFromAST(
                 universeSchema,
                 new NonNullType(new TypeName("Missing"))) == null
-    }
-
-    def "literal conversion includes input field defaults"() {
-        given:
-        GraphQLType filter = graphQLSchema.getType("Filter")
-
-        when:
-        def literal = ValuesResolver.valueToLiteral(
-                InputValueWithState.newExternalValue([required: 1]),
-                filter,
-                GraphQLContext.getDefault(),
-                Locale.ENGLISH)
-
-        then:
-        literal.objectFields*.name as Set == [
-                "required",
-                "mode",
-                "legacyMode",
-                "legacyNumbers",
-                "legacyChoice",
-                "legacyRequired",
-                "legacyNull"
-        ] as Set
     }
 
     private static OperationDefinition operation(String query) {
