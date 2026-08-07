@@ -2,15 +2,17 @@ package graphql.validation;
 
 
 import graphql.Internal;
+import graphql.language.ListType;
+import graphql.language.NonNullType;
 import graphql.language.NullValue;
+import graphql.language.Type;
+import graphql.language.TypeName;
 import graphql.language.Value;
-import graphql.schema.GraphQLType;
-
-import static graphql.schema.GraphQLNonNull.nonNull;
-import static graphql.schema.GraphQLTypeUtil.isList;
-import static graphql.schema.GraphQLTypeUtil.isNonNull;
-import static graphql.schema.GraphQLTypeUtil.unwrapNonNull;
-import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+import graphql.schema.SchemaInputType;
+import graphql.schema.SchemaList;
+import graphql.schema.SchemaNamedType;
+import graphql.schema.SchemaNonNull;
+import graphql.schema.SchemaType;
 
 @Internal
 public class VariablesTypesMatcher {
@@ -18,57 +20,91 @@ public class VariablesTypesMatcher {
     /**
      * This method and variable naming was inspired from the reference graphql-js implementation
      *
-     * @param varType              the variable type
-     * @param varDefaultValue      the default value for the variable
-     * @param locationType         the location type where the variable was encountered
-     * @param locationDefaultValue the default value for that location
+     * @param varType                 the variable type
+     * @param varDefaultValue         the default value for the variable
+     * @param locationType            the location type where the variable was encountered
+     * @param hasLocationDefaultValue whether that location has a default value
      *
      * @return true if the variable matches ok
      */
-    public boolean doesVariableTypesMatch(GraphQLType varType, Value<?> varDefaultValue, GraphQLType locationType, Value<?> locationDefaultValue) {
-        if (isNonNull(locationType) && !isNonNull(varType)) {
+    public boolean doesVariableTypesMatch(
+            Type<?> varType,
+            Value<?> varDefaultValue,
+            SchemaInputType locationType,
+            boolean hasLocationDefaultValue) {
+        if (locationType instanceof SchemaNonNull
+                && !(varType instanceof NonNullType)) {
             boolean hasNonNullVariableDefaultValue =
                     varDefaultValue != null && !(varDefaultValue instanceof NullValue);
-            boolean hasLocationDefaultValue = locationDefaultValue != null;
             if (!hasNonNullVariableDefaultValue && !hasLocationDefaultValue) {
                 return false;
             }
-            GraphQLType nullableLocationType = unwrapNonNull(locationType);
+            SchemaType nullableLocationType =
+                    ((SchemaNonNull) locationType).getWrappedType();
             return checkType(varType, nullableLocationType);
         }
         return checkType(varType, locationType);
     }
 
 
-    public GraphQLType effectiveType(GraphQLType variableType, Value<?> defaultValue) {
+    public String effectiveTypeName(
+            Type<?> variableType,
+            Value<?> defaultValue) {
         if (defaultValue == null || defaultValue instanceof NullValue) {
-            return variableType;
+            return simplePrint(variableType);
         }
-        if (isNonNull(variableType)) {
-            return variableType;
+        if (variableType instanceof NonNullType) {
+            return simplePrint(variableType);
         }
-        return nonNull(variableType);
+        return simplePrint(variableType) + "!";
     }
 
     @SuppressWarnings("SimplifiableIfStatement")
-    private boolean checkType(GraphQLType actualType, GraphQLType expectedType) {
+    private boolean checkType(
+            Type<?> actualType,
+            SchemaType expectedType) {
 
-        if (isNonNull(expectedType)) {
-            if (isNonNull(actualType)) {
-                return checkType(unwrapOne(actualType), unwrapOne(expectedType));
+        if (expectedType instanceof SchemaNonNull) {
+            if (actualType instanceof NonNullType) {
+                return checkType(
+                        ((NonNullType) actualType).getType(),
+                        ((SchemaNonNull) expectedType).getWrappedType());
             }
             return false;
         }
 
-        if (isNonNull(actualType)) {
-            return checkType(unwrapOne(actualType), expectedType);
+        if (actualType instanceof NonNullType) {
+            return checkType(
+                    ((NonNullType) actualType).getType(),
+                    expectedType);
         }
 
-
-        if (isList(actualType) && isList(expectedType)) {
-            return checkType(unwrapOne(actualType), unwrapOne(expectedType));
+        if (actualType instanceof ListType
+                && expectedType instanceof SchemaList) {
+            return checkType(
+                    ((ListType) actualType).getType(),
+                    ((SchemaList) expectedType).getWrappedType());
         }
-        return actualType == expectedType;
+        if (actualType instanceof ListType
+                || expectedType instanceof SchemaList) {
+            return false;
+        }
+        if (!(actualType instanceof TypeName)
+                || !(expectedType instanceof SchemaNamedType)) {
+            return false;
+        }
+        return ((TypeName) actualType).getName().equals(
+                ((SchemaNamedType) expectedType).getName());
+    }
+
+    private String simplePrint(Type<?> type) {
+        if (type instanceof NonNullType) {
+            return simplePrint(((NonNullType) type).getType()) + "!";
+        }
+        if (type instanceof ListType) {
+            return "[" + simplePrint(((ListType) type).getType()) + "]";
+        }
+        return ((TypeName) type).getName();
     }
 
 }

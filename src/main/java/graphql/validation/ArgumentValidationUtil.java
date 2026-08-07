@@ -6,10 +6,10 @@ import graphql.i18n.I18nMsg;
 import graphql.language.Argument;
 import graphql.language.ObjectField;
 import graphql.language.Value;
-import graphql.schema.GraphQLEnumType;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLScalarType;
-import graphql.schema.GraphQLType;
+import graphql.schema.SchemaEnum;
+import graphql.schema.SchemaInputObject;
+import graphql.schema.SchemaScalar;
+import graphql.schema.SchemaType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,13 +33,13 @@ public class ArgumentValidationUtil extends ValidationUtil {
     }
 
     @Override
-    protected void handleNullError(Value<?> value, GraphQLType type) {
+    protected void handleNullError(Value<?> value, SchemaType type) {
         errMsgKey = "ArgumentValidationUtil.handleNullError";
         argumentValue = value;
     }
 
     @Override
-    protected void handleScalarError(Value<?> value, GraphQLScalarType type, GraphQLError invalid) {
+    protected void handleScalarError(Value<?> value, SchemaScalar type, GraphQLError invalid) {
         if (invalid.getMessage() == null) {
             errMsgKey = "ArgumentValidationUtil.handleScalarError";
         } else {
@@ -52,7 +52,7 @@ public class ArgumentValidationUtil extends ValidationUtil {
     }
 
     @Override
-    protected void handleEnumError(Value<?> value, GraphQLEnumType type, GraphQLError invalid) {
+    protected void handleEnumError(Value<?> value, SchemaEnum type, GraphQLError invalid) {
         if (invalid.getMessage() == null) {
             errMsgKey = "ArgumentValidationUtil.handleEnumError";
         } else {
@@ -64,35 +64,35 @@ public class ArgumentValidationUtil extends ValidationUtil {
     }
 
     @Override
-    protected void handleNotObjectError(Value<?> value, GraphQLInputObjectType type) {
+    protected void handleNotObjectError(Value<?> value, SchemaInputObject type) {
         errMsgKey = "ArgumentValidationUtil.handleNotObjectError";
     }
 
     @Override
-    protected void handleMissingFieldsError(Value<?> value, GraphQLInputObjectType type, Set<String> missingFields) {
+    protected void handleMissingFieldsError(Value<?> value, SchemaInputObject type, Set<String> missingFields) {
         errMsgKey = "ArgumentValidationUtil.handleMissingFieldsError";
         arguments.add(missingFields);
     }
 
     @Override
-    protected void handleExtraFieldError(Value<?> value, GraphQLInputObjectType type, ObjectField objectField) {
+    protected void handleExtraFieldError(Value<?> value, SchemaInputObject type, ObjectField objectField) {
         errMsgKey = "ArgumentValidationUtil.handleExtraFieldError";
         arguments.add(type.getName());
         arguments.add(objectField.getName());
     }
 
     @Override
-    protected void handleFieldNotValidError(ObjectField objectField, GraphQLInputObjectType type) {
+    protected void handleFieldNotValidError(ObjectField objectField, SchemaInputObject type) {
         argumentNames.add(0, objectField.getName());
     }
 
     @Override
-    protected void handleFieldNotValidError(Value<?> value, GraphQLType type, int index) {
+    protected void handleFieldNotValidError(Value<?> value, SchemaType type, int index) {
         argumentNames.add(0, String.format("[%s]", index));
     }
 
     @Override
-    protected void handleExtraOneOfFieldsError(GraphQLInputObjectType type, Value<?> value) {
+    protected void handleExtraOneOfFieldsError(SchemaInputObject type, Value<?> value) {
         errMsgKey = "ArgumentValidationUtil.extraOneOfFieldsError";
         arguments.add(type.getName());
     }

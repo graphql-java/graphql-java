@@ -10,6 +10,7 @@ import graphql.language.Directive;
 import graphql.language.DirectivesContainer;
 import graphql.language.NodeUtil;
 import graphql.language.VariableReference;
+import graphql.schema.ExecutableSchema;
 import graphql.schema.GraphQLSchema;
 import org.jspecify.annotations.Nullable;
 
@@ -31,7 +32,7 @@ public class ConditionalNodes {
 
     public boolean shouldInclude(DirectivesContainer<?> element,
                                  Map<String, Object> variables,
-                                 GraphQLSchema graphQLSchema,
+                                 ExecutableSchema schema,
                                  @Nullable GraphQLContext graphQLContext
     ) {
         //
@@ -45,7 +46,15 @@ public class ConditionalNodes {
         if (graphQLContext != null) {
             ConditionalNodeDecision conditionalDecision = graphQLContext.get(ConditionalNodeDecision.class);
             if (conditionalDecision != null) {
-                return customShouldInclude(variables, element, graphQLSchema, graphQLContext, conditionalDecision);
+                Assert.assertTrue(
+                        schema instanceof GraphQLSchema,
+                        "Custom conditional node decisions require a GraphQLSchema");
+                return customShouldInclude(
+                        variables,
+                        element,
+                        (GraphQLSchema) schema,
+                        graphQLContext,
+                        conditionalDecision);
             }
         }
         // if no one says otherwise, the node is considered included

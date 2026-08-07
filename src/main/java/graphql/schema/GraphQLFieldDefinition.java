@@ -34,7 +34,7 @@ import static graphql.util.FpKit.getByName;
  * See <a href="https://graphql.org/learn/queries/#fields">https://graphql.org/learn/queries/#fields</a> for more details on the concept.
  */
 @PublicApi
-public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer {
+public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer, SchemaField {
 
     private final String name;
     private final String description;

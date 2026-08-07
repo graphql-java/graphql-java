@@ -155,7 +155,7 @@ public class Directives {
                 .directiveLocation(newDirectiveLocation().name(QUERY.name()).build())
                 .directiveLocation(newDirectiveLocation().name(MUTATION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(SUBSCRIPTION.name()).build())
-                .description(createDescription("This directive allows returning null in non-null positions that have an associated error"))
+                .description(createDescription("This directive disables error propagation when a non nullable field returns null for the given operation."))
                 .build();
     }
 

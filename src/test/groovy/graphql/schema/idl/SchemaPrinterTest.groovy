@@ -34,8 +34,11 @@ import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
 import graphql.schema.GraphqlTypeComparatorRegistry
 import graphql.schema.GraphqlTypeComparators
+import graphql.schema.SchemaElement
+import graphql.schema.SchemaElementComparatorRegistry
+import graphql.schema.SchemaElementComparators
+import graphql.schema.SchemaNamedElement
 import graphql.schema.TypeResolver
-import spock.lang.Specification
 
 import java.util.function.Predicate
 import java.util.function.UnaryOperator
@@ -67,7 +70,7 @@ import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
-class SchemaPrinterTest extends Specification {
+class SchemaPrinterTest extends AbstractSchemaPrintingTest {
 
     def noDirectivesOption = defaultOptions().includeDirectives(false)
 
@@ -209,7 +212,7 @@ class SchemaPrinterTest extends Specification {
     def "starWars default Test"() {
         GraphQLSchema schema = starWarsSchema()
 
-        def result = new SchemaPrinter().print(schema)
+        def result = printSchema(new SchemaPrinter(), schema)
 
         expect:
         result != null
@@ -223,7 +226,7 @@ class SchemaPrinterTest extends Specification {
                 .includeIntrospectionTypes(true)
                 .includeScalarTypes(true)
 
-        def result = new SchemaPrinter(options).print(schema)
+        def result = printSchema(new SchemaPrinter(options), schema)
 
         expect:
         result != null
@@ -247,7 +250,7 @@ class SchemaPrinterTest extends Specification {
         """)
 
 
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         expect:
         result == """type Mutation {
@@ -283,7 +286,7 @@ type Subscription {
                 .includeDirectives(false)
                 .includeSchemaDefinition(true)
 
-        def result = new SchemaPrinter(options).print(schema)
+        def result = printSchema(new SchemaPrinter(options), schema)
 
         expect:
         result == """schema {
@@ -330,7 +333,7 @@ type Subscription {
         """)
 
 
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         expect:
         result == """schema {
@@ -360,7 +363,7 @@ type Subscription {
         def queryType = newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''"""
@@ -380,7 +383,7 @@ type Query {
         def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''type Query {
@@ -400,7 +403,7 @@ type Query {
         def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == """type Query {
@@ -421,7 +424,7 @@ type Query {
         def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''type Query {
@@ -460,7 +463,7 @@ enum Enum {
                 .build()
 
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''"About union"
@@ -502,7 +505,7 @@ type Query {
                 .build()
 
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == """union Union = PossibleType1 | PossibleType2
@@ -536,7 +539,7 @@ type Query {
         def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''type Query {
@@ -572,7 +575,7 @@ input Input {
                 .build()
 
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''"about interface"
@@ -611,7 +614,7 @@ type Query {
         def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)), schema)
 
         then:
         result == '''type Query {
@@ -633,7 +636,7 @@ scalar Scalar
         def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''type Query {
@@ -692,7 +695,7 @@ scalar Scalar
         def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().typeResolver(interfaceType, { env -> null }).build()
         def schema = GraphQLSchema.newSchema().query(queryType).codeRegistry(codeRegistry).build()
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''interface interfaceType {
@@ -735,7 +738,7 @@ input inputObjectType {
         def schema = GraphQLSchema.newSchema().query(queryType).build()
 
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''"test"
@@ -769,7 +772,7 @@ type Query {
         """)
 
 
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         expect:
         result == """type Query {
@@ -877,7 +880,7 @@ scalar Asteroid
         ''')
 
 
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         expect:
         result == '''"""
@@ -960,7 +963,7 @@ type Query {
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
-        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeScalarTypes(true)), schema)
 
         then:
         // args and directives are sorted like the rest of the schema printer
@@ -1072,10 +1075,9 @@ input SomeInput @inputTypeDirective {
 }
 '''
         when:
-        def resultNoDirectives = new SchemaPrinter(defaultOptions()
+        def resultNoDirectives = printSchema(new SchemaPrinter(defaultOptions()
                 .includeScalarTypes(true)
-                .includeDirectives(false))
-                .print(schema)
+                .includeDirectives(false)), schema)
 
         then:
         // args and directives are sorted like the rest of the schema printer
@@ -1149,7 +1151,7 @@ input SomeInput {
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
-        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeScalarTypes(true)), schema)
 
         then:
         // args and directives are sorted like the rest of the schema printer
@@ -1237,7 +1239,7 @@ input Input {
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
-        def resultWithNoDirectives = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+        def resultWithNoDirectives = printSchema(new SchemaPrinter(defaultOptions().includeDirectives(false)), schema)
 
         then:
         resultWithNoDirectives == '''type Query {
@@ -1246,7 +1248,7 @@ input Input {
 '''
 
         when:
-        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({ it == "example" })).print(schema)
+        def resultWithSomeDirectives = printSchema(new SchemaPrinter(defaultOptions().includeDirectives({ it == "example" })), schema)
 
         then:
         resultWithSomeDirectives == '''directive @example on FIELD_DEFINITION
@@ -1257,7 +1259,7 @@ type Query {
 '''
 
         when:
-        def resultWithDirectives = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
+        def resultWithDirectives = printSchema(new SchemaPrinter(defaultOptions().includeDirectives(true)), schema)
 
         then:
         resultWithDirectives == '''"This directive allows results to be deferred during execution"
@@ -1327,7 +1329,7 @@ type Query {
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
-        def resultWithNoDirectiveDefinitions = new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(false)).print(schema)
+        def resultWithNoDirectiveDefinitions = printSchema(new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(false)), schema)
 
         then:
         resultWithNoDirectiveDefinitions == '''type Query {
@@ -1336,7 +1338,7 @@ type Query {
 '''
 
         when:
-        def resultWithDirectiveDefinitions = new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(true)).print(schema)
+        def resultWithDirectiveDefinitions = printSchema(new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(true)), schema)
 
         then:
         resultWithDirectiveDefinitions == '''"This directive allows results to be deferred during execution"
@@ -1429,7 +1431,7 @@ type Query {
         def printOptions = defaultOptions()
                 .useAstDefinitions(true)
                 .includeSchemaDefinition(true)
-        def result = new SchemaPrinter(printOptions).print(schema)
+        def result = printSchema(new SchemaPrinter(printOptions), schema)
 
         then:
         result == '''"""
@@ -1535,7 +1537,7 @@ type MySubscription {
         def printOptions = defaultOptions()
                 .useAstDefinitions(false)
                 .includeSchemaDefinition(true)
-        def result = new SchemaPrinter(printOptions).print(schema)
+        def result = printSchema(new SchemaPrinter(printOptions), schema)
 
         then:
         result == '''"My schema block description"
@@ -1692,7 +1694,7 @@ type MyQuery {
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
 
         def printOptions = defaultOptions().includeScalarTypes(true).useAstDefinitions(true)
-        def result = new SchemaPrinter(printOptions).print(schema)
+        def result = printSchema(new SchemaPrinter(printOptions), schema)
 
         then:
         result == '''"This directive allows results to be deferred during execution"
@@ -1848,7 +1850,7 @@ extend type Query {
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeDirectives(false)), schema)
 
         then:
         result == '''type Field {
@@ -1892,7 +1894,7 @@ input Input {
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
-        def result = new SchemaPrinter(defaultOptions().descriptionsAsHashComments(true).includeDirectives(false)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().descriptionsAsHashComments(true).includeDirectives(false)), schema)
 
         then:
         result == '''#This is the docstring of 
@@ -1920,7 +1922,7 @@ type Query {
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         then:
         result == '''type Query {
@@ -1945,7 +1947,7 @@ type Query {
 
         when:
         def printOptions = defaultOptions().includeDirectives({ dName -> (dName == "deprecated") })
-        def result = new SchemaPrinter(printOptions).print(schema)
+        def result = printSchema(new SchemaPrinter(printOptions), schema)
 
         then:
         result == '''"Marks an element of a GraphQL schema as no longer supported."
@@ -1970,7 +1972,7 @@ type Query {
 
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         expect:
 
@@ -1997,7 +1999,7 @@ scalar RandomScalar
 
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption), schema)
 
         expect:
         assert !result.contains("ID") && !result.contains("Float") && !result.contains("Boolean")
@@ -2038,7 +2040,7 @@ scalar CustomScalar
 
         def schema = GraphQLSchema.newSchema().query(queryType).additionalType(myScalar).build()
 
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeDirectives(false)), schema)
 
         expect:
         ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS.forEach({
@@ -2080,7 +2082,7 @@ scalar RandomScalar
 
         def schema = GraphQLSchema.newSchema().query(queryType).additionalType(myScalar).build()
 
-        def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)), schema)
 
         expect:
         result ==
@@ -2107,7 +2109,7 @@ scalar Scalar
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
 
         when:
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeDirectives(false)), schema)
 
         then:
         result == """type Query {
@@ -2147,7 +2149,7 @@ scalar Scalar
             """
         def schema = TestUtil.schema(sdl)
         when:
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(false)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeDirectives(false)), schema)
 
         then:
         result == """interface Node {
@@ -2203,7 +2205,19 @@ type Query {
             }
             return false
         }
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(true).includeSchemaElement(predicate)).print(schema)
+        Predicate<SchemaElement> schemaPredicate = { element ->
+            if (element instanceof SchemaNamedElement) {
+                return ((SchemaNamedElement) element)
+                        .getName()
+                        .contains("PrintMe")
+            }
+            return false
+        }
+        def options = defaultOptions()
+                .includeDirectives(true)
+                .includeSchemaElement(predicate)
+                .filterSchemaElements(schemaPredicate)
+        def result = printSchema(new SchemaPrinter(options), schema)
 
         then:
         result == """schema {
@@ -2224,6 +2238,39 @@ type PrintMeType {
 
     }
 
+    def "schema element predicates are evaluated in compatibility order"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+                value: String
+            }
+        """)
+        def calls = []
+        Predicate<GraphQLSchemaElement> graphQLPredicate = { element ->
+            if (element instanceof GraphQLNamedSchemaElement
+                    && element.name == "Query") {
+                calls.add("graphql")
+            }
+            return true
+        }
+        Predicate<SchemaElement> schemaPredicate = { element ->
+            if (element instanceof SchemaNamedElement
+                    && element.name == "Query") {
+                calls.add("schema")
+            }
+            return true
+        }
+        def options = defaultOptions()
+                .includeSchemaElement(graphQLPredicate)
+                .filterSchemaElements(schemaPredicate)
+
+        when:
+        new SchemaPrinter(options).print(schema)
+
+        then:
+        calls == ["graphql", "schema"]
+    }
+
     def "schema with directive prints directive"() {
         def sdl = """
             directive @foo on SCHEMA
@@ -2235,7 +2282,7 @@ type PrintMeType {
         def schema = TestUtil.schema(sdl)
 
         when:
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeDirectives(true)), schema)
 
         then:
         result == """schema @foo{
@@ -2324,7 +2371,7 @@ type MyQuery {
         def queryType = newObject().name("Query").field(field).description(descriptionWithTripleQuote).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(ExcludeGraphQLSpecifiedDirectivesPredicate)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeDirectives(ExcludeGraphQLSpecifiedDirectivesPredicate)), schema)
 
         then:
         result == '''"""
@@ -2347,7 +2394,7 @@ type Query {
         """
         def schema = TestUtil.schema(sdl)
         when:
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(ExcludeGraphQLSpecifiedDirectivesPredicate)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeDirectives(ExcludeGraphQLSpecifiedDirectivesPredicate)), schema)
 
 
         then:
@@ -2459,9 +2506,14 @@ type Query {
 
         // by name descending
         GraphqlTypeComparatorRegistry comparatorRegistry = { env -> return GraphqlTypeComparators.byNameAsc().reversed() }
-        def options = defaultOptions().includeDirectives(true).setComparators(comparatorRegistry)
+        SchemaElementComparatorRegistry schemaComparatorRegistry =
+                { env -> SchemaElementComparators.byNameAsc().reversed() }
+        def options = defaultOptions()
+                .includeDirectives(true)
+                .setComparators(comparatorRegistry)
+                .sortSchemaElements(schemaComparatorRegistry)
         when:
-        def result = new SchemaPrinter(options).print(schema)
+        def result = printSchema(new SchemaPrinter(options), schema)
 
         then:
         result == '''"Exposes a URL that specifies the behaviour of this scalar."
@@ -2564,7 +2616,7 @@ type Query {
         def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().description("About Schema").query(queryType).build()
         when:
-        def result = new SchemaPrinter(noDirectivesOption.includeSchemaDefinition(true)).print(schema)
+        def result = printSchema(new SchemaPrinter(noDirectivesOption.includeSchemaDefinition(true)), schema)
         println(result)
 
         then:
@@ -2828,7 +2880,7 @@ input Gun {
                 .query(queryType)
                 .build()
         when:
-        def result = new SchemaPrinter(defaultOptions().includeSchemaDefinition(true).includeAstDefinitionComments(true)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeSchemaDefinition(true).includeAstDefinitionComments(true)), schema)
         println(result)
 
         then:
@@ -2847,7 +2899,7 @@ input Gun {
         def options = SchemaGenerator.Options.defaultOptions().useCommentsAsDescriptions(false)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, wiring)
         when:
-        def result = new SchemaPrinter(defaultOptions().includeSchemaDefinition(true).includeAstDefinitionComments(true)).print(schema)
+        def result = printSchema(new SchemaPrinter(defaultOptions().includeSchemaDefinition(true).includeAstDefinitionComments(true)), schema)
         println(result)
 
         // @TODO: Schema Parser seems to be ignoring directive and scalar comments and needs to be fixed.
@@ -2989,7 +3041,7 @@ input Gun {
 
         when:
         def options = defaultOptions().includeDirectiveDefinitions(false)
-        def sdl = new SchemaPrinter(options).print(schema)
+        def sdl = printSchema(new SchemaPrinter(options), schema)
         then:
         sdl == '''type Query {
   f(arg: String = null): String
@@ -3020,7 +3072,7 @@ input Gun {
 
         def printOptions = defaultOptions().includeDirectiveDefinitions(false).includeDirectives({ d -> true })
 
-        def result = "\n" + new SchemaPrinter(printOptions).print(schema)
+        def result = "\n" + printSchema(new SchemaPrinter(printOptions), schema)
         println(result)
 
         then:
@@ -3055,7 +3107,7 @@ input Input {
         def options = defaultOptions()
                 .includeDirectiveDefinitions(true)
                 .includeDirectiveDefinition({ it != "skip" })
-        def result = new SchemaPrinter(options).print(schema)
+        def result = printSchema(new SchemaPrinter(options), schema)
 
         expect: "has no skip definition"
 
@@ -3097,5 +3149,3 @@ type Query {
 """
     }
 }
-
-

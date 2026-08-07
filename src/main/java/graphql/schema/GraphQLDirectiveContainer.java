@@ -23,7 +23,8 @@ import static graphql.collect.ImmutableKit.emptyList;
  * @see graphql.language.DirectiveDefinition#isRepeatable()
  */
 @PublicApi
-public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
+public interface GraphQLDirectiveContainer
+        extends GraphQLNamedSchemaElement, SchemaDirectiveContainer {
 
     String CHILD_DIRECTIVES = "directives";
     String CHILD_APPLIED_DIRECTIVES = "appliedDirectives";

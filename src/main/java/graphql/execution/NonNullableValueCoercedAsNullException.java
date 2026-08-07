@@ -10,6 +10,8 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.SchemaArgument;
+import graphql.schema.SchemaType;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -33,6 +35,17 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
         this.sourceLocations = Collections.singletonList(variableDefinition.getSourceLocation());
     }
 
+    public NonNullableValueCoercedAsNullException(
+            VariableDefinition variableDefinition,
+            SchemaType schemaType) {
+        super(format(
+                "Variable '%s' has coerced Null value for NonNull type '%s'",
+                variableDefinition.getName(),
+                GraphQLTypeUtil.simplePrint(schemaType)));
+        this.sourceLocations = Collections.singletonList(
+                variableDefinition.getSourceLocation());
+    }
+
     public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, String fieldName, GraphQLType graphQLType) {
         super(format("Field '%s' of variable '%s' has coerced Null value for NonNull type '%s'",
                 fieldName, variableDefinition.getName(), GraphQLTypeUtil.simplePrint(graphQLType)));
@@ -50,6 +63,12 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
         super(format("Coerced Null value for NonNull type '%s'", GraphQLTypeUtil.simplePrint(graphQLType)));
     }
 
+    public NonNullableValueCoercedAsNullException(SchemaType schemaType) {
+        super(format(
+                "Coerced Null value for NonNull type '%s'",
+                GraphQLTypeUtil.simplePrint(schemaType)));
+    }
+
     public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, String causeMessage) {
         super(format("Variable '%s' has an invalid value: %s", variableDefinition.getName(), causeMessage));
         this.sourceLocations = Collections.singletonList(variableDefinition.getSourceLocation());
@@ -58,6 +77,17 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
     public NonNullableValueCoercedAsNullException(String fieldName, List<Object> path, GraphQLType graphQLType) {
         super(format("Field '%s' has coerced Null value for NonNull type '%s'",
                 fieldName, GraphQLTypeUtil.simplePrint(graphQLType)));
+        this.path = path;
+    }
+
+    public NonNullableValueCoercedAsNullException(
+            String fieldName,
+            List<Object> path,
+            SchemaType schemaType) {
+        super(format(
+                "Field '%s' has coerced Null value for NonNull type '%s'",
+                fieldName,
+                GraphQLTypeUtil.simplePrint(schemaType)));
         this.path = path;
     }
 
@@ -74,6 +104,14 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
 
     public NonNullableValueCoercedAsNullException(GraphQLArgument graphQLArgument) {
         super(format("Argument '%s' has coerced Null value for NonNull type '%s'", graphQLArgument.getName(), graphQLArgument.getType()));
+    }
+
+    public NonNullableValueCoercedAsNullException(
+            SchemaArgument argument) {
+        super(format(
+                "Argument '%s' has coerced Null value for NonNull type '%s'",
+                argument.getName(),
+                GraphQLTypeUtil.simplePrint(argument.getType())));
     }
 
     @Override

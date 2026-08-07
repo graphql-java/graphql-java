@@ -14,7 +14,7 @@ import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChil
  * this interface.
  */
 @PublicApi
-public interface GraphQLSchemaElement {
+public interface GraphQLSchemaElement extends SchemaElement {
 
     default List<GraphQLSchemaElement> getChildren() {
         return ImmutableKit.emptyList();

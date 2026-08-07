@@ -42,7 +42,7 @@ import static graphql.util.FpKit.getByName;
  */
 @PublicApi
 @NullMarked
-public class GraphQLDirective implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer {
+public class GraphQLDirective implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer, SchemaDirective {
 
     private final String name;
     private final boolean repeatable;

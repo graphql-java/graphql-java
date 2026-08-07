@@ -10,7 +10,8 @@ import java.util.List;
  * @see graphql.schema.GraphQLInputType
  */
 @PublicApi
-public interface GraphQLInputFieldsContainer extends GraphQLNamedType {
+public interface GraphQLInputFieldsContainer
+        extends GraphQLNamedType, SchemaInputFieldsContainer {
 
     GraphQLInputObjectField getFieldDefinition(String name);
 

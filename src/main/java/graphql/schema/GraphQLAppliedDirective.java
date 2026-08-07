@@ -35,7 +35,8 @@ import static graphql.util.FpKit.getByName;
  */
 @PublicApi
 @NullMarked
-public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
+public class GraphQLAppliedDirective
+        implements GraphQLNamedSchemaElement, SchemaAppliedDirective {
 
     private final String name;
     private final ImmutableList<GraphQLAppliedDirectiveArgument> arguments;

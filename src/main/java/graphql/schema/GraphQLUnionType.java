@@ -40,7 +40,7 @@ import static graphql.util.FpKit.getByName;
  */
 @PublicApi
 @NullMarked
-public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, SchemaUnion {
 
     private final String name;
     private final String description;
@@ -86,6 +86,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * references are not resolved yet. After they are resolved it contains only GraphQLObjectType.
      * Reference resolving happens when a full schema is built.
      */
+    @Override
     public List<GraphQLNamedOutputType> getTypes() {
         if (replacedTypes != null) {
             return replacedTypes;

@@ -17,6 +17,7 @@ import graphql.language.VariableReference;
 import graphql.normalized.NormalizedInputValue;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
+import graphql.schema.ExecutableSchema;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
@@ -27,6 +28,9 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.InputValueWithState;
+import graphql.schema.SchemaArgument;
+import graphql.schema.SchemaInputType;
+import graphql.schema.SchemaType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -90,6 +94,24 @@ public class ValuesResolver {
                 locale);
     }
 
+    public static CoercedVariables coerceVariableValues(
+            ExecutableSchema schema,
+            List<VariableDefinition> variableDefinitions,
+            RawVariables rawVariables,
+            GraphQLContext graphqlContext,
+            Locale locale)
+            throws CoercingParseValueException,
+            NonNullableValueCoercedAsNullException {
+        InputInterceptor inputInterceptor = graphqlContext.get(InputInterceptor.class);
+        return ValuesResolverConversion.externalValueToInternalValueForVariables(
+                inputInterceptor,
+                schema,
+                variableDefinitions,
+                rawVariables,
+                graphqlContext,
+                locale);
+    }
+
 
     /**
      * Normalized variables values are Literals with type information. No validation here!
@@ -135,6 +157,46 @@ public class ValuesResolver {
         return NormalizedVariables.of(result);
     }
 
+    public static NormalizedVariables getNormalizedVariableValues(
+            ExecutableSchema schema,
+            List<VariableDefinition> variableDefinitions,
+            RawVariables rawVariables,
+            GraphQLContext graphqlContext,
+            Locale locale
+    ) {
+        Map<String, NormalizedInputValue> result = Maps.newLinkedHashMapWithExpectedSize(variableDefinitions.size());
+        for (VariableDefinition variableDefinition : variableDefinitions) {
+            String variableName = variableDefinition.getName();
+            SchemaType variableType = TypeFromAST.getSchemaTypeFromAST(
+                    schema,
+                    variableDefinition.getType());
+            assertTrue(variableType instanceof SchemaInputType);
+            // can be NullValue
+            Value defaultValue = variableDefinition.getDefaultValue();
+            boolean hasValue = rawVariables.containsKey(variableName);
+            Object value = rawVariables.get(variableName);
+            if (!hasValue && defaultValue != null) {
+                result.put(variableName, new NormalizedInputValue(simplePrint(variableType), defaultValue));
+            } else if (isNonNull(variableType) && (!hasValue || value == null)) {
+                return assertShouldNeverHappen("variable values are expected to be valid");
+            } else if (hasValue) {
+                if (value == null) {
+                    result.put(variableName, new NormalizedInputValue(simplePrint(variableType), null));
+                } else {
+                    Object literal = ValuesResolverConversion.externalValueToLiteral(
+                            schema,
+                            value,
+                            (SchemaInputType) variableType,
+                            NORMALIZED,
+                            graphqlContext,
+                            locale);
+                    result.put(variableName, new NormalizedInputValue(simplePrint(variableType), literal));
+                }
+            }
+        }
+        return NormalizedVariables.of(result);
+    }
+
 
     /**
      * This is not used for validation: the argument literals are all validated and the variables are validated (when coerced)
@@ -156,6 +218,26 @@ public class ValuesResolver {
     ) {
         InputInterceptor inputInterceptor = graphqlContext.get(InputInterceptor.class);
         return getArgumentValuesImpl(inputInterceptor, DEFAULT_FIELD_VISIBILITY, argumentTypes, arguments, coercedVariables, graphqlContext, locale);
+    }
+
+    public static Map<String, Object> getArgumentValues(
+            ExecutableSchema schema,
+            List<? extends SchemaArgument> argumentTypes,
+            List<Argument> arguments,
+            CoercedVariables coercedVariables,
+            GraphQLContext graphqlContext,
+            Locale locale
+    ) {
+        InputInterceptor inputInterceptor =
+                graphqlContext.get(InputInterceptor.class);
+        return getArgumentValuesImpl(
+                inputInterceptor,
+                schema,
+                argumentTypes,
+                arguments,
+                coercedVariables,
+                graphqlContext,
+                locale);
     }
 
     /**
@@ -376,6 +458,79 @@ public class ValuesResolver {
                 }
 
                 ValuesResolverOneOfValidation.validateOneOfInputTypes(argumentType, value, argumentValue, argumentName, locale);
+
+            }
+        }
+
+
+        return coercedValues;
+    }
+
+    @NonNull
+    private static Map<String, Object> getArgumentValuesImpl(
+            InputInterceptor inputInterceptor,
+            ExecutableSchema schema,
+            List<? extends SchemaArgument> argumentTypes,
+            List<Argument> arguments,
+            CoercedVariables coercedVariables,
+            GraphQLContext graphqlContext,
+            Locale locale
+    ) {
+        if (argumentTypes.isEmpty()) {
+            return ImmutableKit.emptyMap();
+        }
+
+        Map<String, Object> coercedValues = Maps.newLinkedHashMapWithExpectedSize(arguments.size());
+        Map<String, Argument> argumentMap = argumentMap(arguments);
+        for (SchemaArgument argumentDefinition : argumentTypes) {
+            SchemaInputType argumentType = argumentDefinition.getType();
+            String argumentName = argumentDefinition.getName();
+            Argument argument = argumentMap.get(argumentName);
+            InputValueWithState defaultValue = argumentDefinition.getArgumentDefaultValue();
+            boolean hasValue = argument != null;
+            Object value;
+            Value argumentValue = argument != null ? argument.getValue() : null;
+            if (argumentValue instanceof VariableReference) {
+                String variableName = ((VariableReference) argumentValue).getName();
+                hasValue = coercedVariables.containsKey(variableName);
+                value = coercedVariables.get(variableName);
+            } else {
+                value = argumentValue;
+            }
+            if (!hasValue && defaultValue.isSet()) {
+                Object coercedDefaultValue = ValuesResolverConversion.defaultValueToInternalValue(
+                        inputInterceptor,
+                        schema,
+                        defaultValue,
+                        argumentType,
+                        graphqlContext,
+                        locale);
+                coercedValues.put(argumentName, coercedDefaultValue);
+            } else if (isNonNull(argumentType) && (!hasValue || ValuesResolverConversion.isNullValue(value))) {
+                throw new NonNullableValueCoercedAsNullException(argumentDefinition);
+            } else if (hasValue) {
+                if (ValuesResolverConversion.isNullValue(value)) {
+                    coercedValues.put(argumentName, value);
+                } else if (argumentValue instanceof VariableReference) {
+                    coercedValues.put(argumentName, value);
+                } else {
+                    value = ValuesResolverConversion.literalToInternalValue(inputInterceptor,
+                            schema,
+                            argumentType,
+                            argument.getValue(),
+                            coercedVariables,
+                            graphqlContext,
+                            locale);
+                    coercedValues.put(argumentName, value);
+                }
+
+                ValuesResolverOneOfValidation.validateOneOfInputTypes(
+                        schema,
+                        argumentType,
+                        value,
+                        argumentValue,
+                        argumentName,
+                        locale);
 
             }
         }

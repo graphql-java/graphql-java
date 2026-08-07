@@ -25,7 +25,7 @@ import static graphql.Assert.assertValidName;
  * @see graphql.schema.GraphQLEnumType
  */
 @PublicApi
-public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer {
+public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer, SchemaEnumValue {
 
     private final String name;
     private final String description;

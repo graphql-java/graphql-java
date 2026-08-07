@@ -46,7 +46,7 @@ import static graphql.execution.ValuesResolver.getInputValueImpl;
  * as opposed to its schema definition itself.
  */
 @PublicApi
-public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputValueDefinition {
+public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputValueDefinition, SchemaArgument {
 
     private final String name;
     private final String description;

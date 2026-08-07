@@ -4,5 +4,6 @@ package graphql.schema;
 import graphql.PublicApi;
 
 @PublicApi
-public interface GraphQLCompositeType extends GraphQLNamedOutputType {
+public interface GraphQLCompositeType
+        extends GraphQLNamedOutputType, SchemaComposite {
 }

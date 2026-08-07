@@ -38,7 +38,7 @@ import static graphql.util.FpKit.valuesToList;
  * See <a href="https://graphql.org/learn/schema/#interfaces">https://graphql.org/learn/schema/#interfaces</a> for more details on the concept.
  */
 @PublicApi
-public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {
+public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType, SchemaInterface {
 
     private final String name;
     private final String description;

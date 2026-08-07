@@ -1,8 +1,8 @@
 package graphql.schema
 
 import graphql.TestUtil
+import graphql.schema.idl.AbstractSchemaPrintingTest
 import graphql.schema.idl.SchemaPrinter
-import spock.lang.Specification
 
 import java.util.stream.Collectors
 
@@ -23,7 +23,7 @@ import static graphql.schema.GraphQLUnionType.newUnionType
 import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
-class SchemaPrinterComparatorsTest extends Specification {
+class SchemaPrinterComparatorsTest extends AbstractSchemaPrintingTest {
 
     def "scalarPrinter default comparator"() {
         given:
@@ -561,6 +561,90 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         then:
         printer.argsString(GraphQLFieldDefinition.class, field.arguments) == '''(bb: Int, a: Int)'''
         printer.argsString(null, field.arguments) == '''(bb: Int, a: Int)'''
+    }
+
+    def "executable schema printing derives GraphQL comparator types internally"() {
+        given:
+        def firstField = newFieldDefinition()
+                .name("a")
+                .type(GraphQLString)
+                .arguments(mockArguments("a", "bb"))
+                .withAppliedDirectives(
+                        mockDirectivesWithArguments("a", "bb"))
+                .build()
+        def secondField = newFieldDefinition()
+                .name("bb")
+                .type(GraphQLString)
+                .build()
+        def query = newObject()
+                .name("Query")
+                .fields([firstField, secondField])
+                .withAppliedDirectives(
+                        mockDirectivesWithArguments("a", "bb"))
+                .build()
+        def schema = GraphQLSchema.newSchema().query(query).build()
+        def environments = []
+        def schemaEnvironments = []
+        GraphqlTypeComparatorRegistry registry = { environment ->
+            environments.add([
+                    environment.parentType,
+                    environment.elementType])
+            DEFAULT_COMPARATOR
+        }
+        SchemaElementComparatorRegistry schemaRegistry = { environment ->
+            schemaEnvironments.add([
+                    environment.parentType,
+                    environment.elementType])
+            SchemaElementComparators.sensibleGroupedOrder()
+        }
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+
+        when:
+        printSchema(new SchemaPrinter(options), schema)
+
+        then:
+        environments.count {
+            it == [
+                GraphQLSchemaElement.class,
+                null]
+        } == 1
+        environments.contains([
+                GraphQLObjectType.class,
+                GraphQLFieldDefinition.class])
+        environments.contains([
+                GraphQLFieldDefinition.class,
+                GraphQLArgument.class])
+        environments.contains([
+                GraphQLObjectType.class,
+                GraphQLAppliedDirective.class])
+        environments.contains([
+                GraphQLFieldDefinition.class,
+                GraphQLAppliedDirective.class])
+        environments.contains([
+                GraphQLAppliedDirective.class,
+                GraphQLAppliedDirectiveArgument.class])
+        schemaEnvironments.count {
+            it == [
+                SchemaElement.class,
+                null]
+        } == 1
+        schemaEnvironments.contains([
+                SchemaObject.class,
+                SchemaField.class])
+        schemaEnvironments.contains([
+                SchemaField.class,
+                SchemaArgument.class])
+        schemaEnvironments.contains([
+                SchemaObject.class,
+                SchemaAppliedDirective.class])
+        schemaEnvironments.contains([
+                SchemaField.class,
+                SchemaAppliedDirective.class])
+        schemaEnvironments.contains([
+                SchemaAppliedDirective.class,
+                SchemaAppliedDirectiveArgument.class])
     }
 
 
