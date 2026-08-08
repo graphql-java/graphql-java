@@ -9,6 +9,8 @@ import graphql.language.TypeName;
 import graphql.schema.ExecutableSchema;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.schema.SchemaList;
+import graphql.schema.SchemaNonNull;
 import graphql.schema.SchemaType;
 
 import static graphql.schema.GraphQLList.list;
@@ -34,22 +36,21 @@ public class TypeFromAST {
     public static SchemaType getSchemaTypeFromAST(
             ExecutableSchema schema,
             Type<?> type) {
-        SchemaType innerType;
         if (type instanceof ListType) {
-            innerType = getSchemaTypeFromAST(
+            SchemaType wrappedType = getSchemaTypeFromAST(
                     schema,
                     ((ListType) type).getType());
-            return innerType == null
+            return wrappedType == null
                     ? null
-                    : new ResolvedSchemaListType(innerType);
+                    : (SchemaList) () -> wrappedType;
         }
         if (type instanceof NonNullType) {
-            innerType = getSchemaTypeFromAST(
+            SchemaType wrappedType = getSchemaTypeFromAST(
                     schema,
                     ((NonNullType) type).getType());
-            return innerType == null
+            return wrappedType == null
                     ? null
-                    : new ResolvedSchemaNonNullType(innerType);
+                    : (SchemaNonNull) () -> wrappedType;
         }
         return schema.getType(((TypeName) type).getName());
     }

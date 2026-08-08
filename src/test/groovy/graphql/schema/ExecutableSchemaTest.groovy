@@ -3,8 +3,12 @@ package graphql.schema
 import graphql.AssertException
 import graphql.Scalars
 import graphql.TestUtil
+import graphql.execution.TypeFromAST
 import graphql.introspection.Introspection
 import graphql.introspection.IntrospectionWithDirectivesSupport
+import graphql.language.ListType
+import graphql.language.NonNullType
+import graphql.language.TypeName
 import graphql.schema.universe.SchemaUniverse
 import graphql.schema.universe.view.SUExecutableSchema
 import graphql.schema.visibility.BlockedFields
@@ -175,6 +179,30 @@ class ExecutableSchemaTest extends Specification {
         schema.isPossibleType(search, user)
         !schema.isPossibleType(node, query)
         !schema.isPossibleType(search, query)
+
+        where:
+        executableSchema << executableSchemas()
+    }
+
+    def "resolved operation type modifiers are request specific"() {
+        given:
+        ExecutableSchema schema = executableSchema
+        def type = new NonNullType(
+                new ListType(
+                        new NonNullType(
+                                new TypeName("Color"))))
+
+        when:
+        SchemaType resolved = TypeFromAST.getSchemaTypeFromAST(schema, type)
+        def nonNull = resolved as SchemaNonNull
+        def list = nonNull.wrappedType as SchemaList
+        def elementNonNull = list.wrappedType as SchemaNonNull
+
+        then:
+        GraphQLTypeUtil.simplePrint(resolved) == "[Color!]!"
+        elementNonNull.wrappedType == schema.getType("Color")
+        !(nonNull instanceof GraphQLNonNull)
+        !(list instanceof GraphQLList)
 
         where:
         executableSchema << executableSchemas()

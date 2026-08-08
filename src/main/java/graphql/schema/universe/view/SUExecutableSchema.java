@@ -22,6 +22,7 @@ import graphql.schema.SchemaInputField;
 import graphql.schema.SchemaInputObject;
 import graphql.schema.SchemaInputType;
 import graphql.schema.SchemaNamedType;
+import graphql.schema.SchemaNonNull;
 import graphql.schema.SchemaObject;
 import graphql.schema.SchemaOutputType;
 import graphql.schema.SchemaScalar;
@@ -273,8 +274,7 @@ public final class SUExecutableSchema implements ExecutableSchema {
             return new SUSchemaIntrospectionField(
                     this,
                     Introspection.SchemaMetaFieldDef,
-                    new SUSchemaSyntheticNonNull(
-                            getIntrospectionSchemaType()));
+                    syntheticNonNull(getIntrospectionSchemaType()));
         }
         if (name.equals(Introspection.TypeMetaFieldDef.getName())) {
             return new SUSchemaIntrospectionField(
@@ -511,9 +511,8 @@ public final class SUExecutableSchema implements ExecutableSchema {
 
     private SchemaType adaptGraphQLType(GraphQLType type) {
         if (type instanceof GraphQLNonNull) {
-            return new SUSchemaSyntheticNonNull(
-                    adaptGraphQLType(
-                            ((GraphQLNonNull) type).getWrappedType()));
+            return syntheticNonNull(adaptGraphQLType(
+                    ((GraphQLNonNull) type).getWrappedType()));
         }
         assertTrue(
                 type instanceof GraphQLNamedType,
@@ -523,6 +522,10 @@ public final class SUExecutableSchema implements ExecutableSchema {
                 getType(name),
                 "No type named '%s' exists in this SUSchema",
                 name);
+    }
+
+    private static SchemaNonNull syntheticNonNull(SchemaType wrappedType) {
+        return () -> wrappedType;
     }
 
     private SUVertex elementVertex(Object element) {
