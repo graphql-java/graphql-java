@@ -46,7 +46,6 @@ import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLNamedType;
@@ -1106,10 +1105,6 @@ public class SchemaPrinter {
         out.print('\n');
     }
 
-
-    private static String printAst(InputValueWithState value, GraphQLInputType type) {
-        return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, type, GraphQLContext.getDefault(), Locale.getDefault()));
-    }
 
     private void printSchema(
             PrintWriter out,
