@@ -2,11 +2,14 @@ package graphql.schema.universe.view;
 
 import graphql.Internal;
 import graphql.language.InputValueDefinition;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.InputValueWithState;
 import graphql.schema.SchemaArgument;
 import graphql.schema.SchemaInputType;
 import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
@@ -37,6 +40,11 @@ public final class SUSchemaIntrospectionArgument implements SchemaArgument {
     @Override
     public @Nullable InputValueDefinition getDefinition() {
         return argument.getDefinition();
+    }
+
+    @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return argument.getAppliedDirectives();
     }
 
     @Override

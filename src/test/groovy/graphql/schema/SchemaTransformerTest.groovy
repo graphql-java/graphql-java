@@ -5,11 +5,11 @@ import graphql.AssertException
 import graphql.GraphQL
 import graphql.Scalars
 import graphql.TestUtil
+import graphql.schema.idl.AbstractSchemaPrintingTest
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaPrinter
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
-import spock.lang.Specification
 
 import static graphql.schema.FieldCoordinates.coordinates
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -18,7 +18,7 @@ import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
-class SchemaTransformerTest extends Specification {
+class SchemaTransformerTest extends AbstractSchemaPrintingTest {
 
     def "can change field in schema"() {
         given:
@@ -852,7 +852,7 @@ type Query {
         def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(true))
         def newQueryType = newSchema.getObjectType("Query")
 
-        printer.print(newQueryType) == '''type Query {
+        printType(printer, newSchema, newQueryType) == '''type Query {
   field: String @foo(changedArg1 : "fooArg")
   field2: String @bar(arg1 : "barArg")
 }
@@ -1002,7 +1002,10 @@ type Query {
 
         then:
         def newQueryType = newSchema.getObjectType("QueryType")
-        def newQueryTypePrinted = new SchemaPrinter().print(newQueryType)
+        def newQueryTypePrinted = printType(
+                new SchemaPrinter(),
+                newSchema,
+                newQueryType)
 
         newQueryTypePrinted == """type QueryType {
   a: String @deprecated(reason : "NEW REASON")
@@ -1010,14 +1013,20 @@ type Query {
 }
 """
         def newInterfaceType = newSchema.getType("InterfaceType")
-        def newInterfaceTypePrinted = new SchemaPrinter().print(newInterfaceType)
+        def newInterfaceTypePrinted = printType(
+                new SchemaPrinter(),
+                newSchema,
+                newInterfaceType)
         newInterfaceTypePrinted == """interface InterfaceType {
   a: String @deprecated(reason : "NEW REASON")
   b: String @deprecated(reason : "NEW REASON")
 }
 """
         def newInputType = newSchema.getType("InputType")
-        def newInputTypePrinted = new SchemaPrinter().print(newInputType)
+        def newInputTypePrinted = printType(
+                new SchemaPrinter(),
+                newSchema,
+                newInputType)
         newInputTypePrinted == """input InputType {
   a: String @deprecated(reason : "NEW REASON")
   b: String @deprecated(reason : "NEW REASON")

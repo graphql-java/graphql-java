@@ -99,6 +99,8 @@ class SUExecutableSchemaPrinterTest extends Specification {
 
         expect:
         printer.print(executableSchema) == printer.print(graphQLSchema)
+        printer.print(executableSchema.queryType) ==
+                printer.print(graphQLSchema.queryType)
         printer.print(executableSchema).contains(
                 'external: Date = "2026-08-05"')
         printer.print(executableSchema).contains(

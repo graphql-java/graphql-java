@@ -390,8 +390,25 @@ public final class SUImporter {
             SUAppliedDirectiveContainer containerVertex) {
         List<GraphQLAppliedDirective> directives =
                 DirectivesUtil.toAppliedDirectives(container);
-        addAppliedDirectives(directives, containerVertex);
-        addDeprecatedDirective(container, directives, containerVertex);
+        String reason = deprecationReason(container);
+        boolean hasDeprecatedDirective = false;
+        for (GraphQLAppliedDirective directive : directives) {
+            if (Directives.DeprecatedDirective.getName().equals(
+                    directive.getName())) {
+                hasDeprecatedDirective = true;
+                if (replaceDeprecationReason(
+                        directive,
+                        reason,
+                        containerVertex)) {
+                    continue;
+                }
+            }
+            SUAppliedDirective directiveVertex = appliedDirective(directive);
+            builder().addAppliedDirective(containerVertex, directiveVertex);
+        }
+        if (reason != null && !hasDeprecatedDirective) {
+            addDeprecatedDirective(reason, containerVertex);
+        }
     }
 
     private void addAppliedDirectives(
@@ -403,14 +420,27 @@ public final class SUImporter {
         }
     }
 
-    private void addDeprecatedDirective(
-            GraphQLDirectiveContainer container,
-            List<GraphQLAppliedDirective> directives,
+    private boolean replaceDeprecationReason(
+            GraphQLAppliedDirective directive,
+            @Nullable String reason,
             SUAppliedDirectiveContainer containerVertex) {
-        String reason = deprecationReason(container);
-        if (reason == null || hasDirective(directives, Directives.DeprecatedDirective.getName())) {
-            return;
+        if (reason == null) {
+            return false;
         }
+        GraphQLAppliedDirectiveArgument argument =
+                directive.getArgument("reason");
+        if (argument != null
+                && argument.getArgumentValue()
+                == graphql.schema.InputValueWithState.NOT_SET) {
+            return false;
+        }
+        addDeprecatedDirective(reason, containerVertex);
+        return true;
+    }
+
+    private void addDeprecatedDirective(
+            String reason,
+            SUAppliedDirectiveContainer containerVertex) {
         addStringDirective(
                 Directives.DeprecatedDirective.getName(),
                 "reason",

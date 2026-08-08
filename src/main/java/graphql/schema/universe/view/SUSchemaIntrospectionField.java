@@ -3,6 +3,7 @@ package graphql.schema.universe.view;
 import graphql.Internal;
 import graphql.language.FieldDefinition;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.SchemaArgument;
 import graphql.schema.SchemaField;
@@ -52,6 +53,11 @@ public final class SUSchemaIntrospectionField implements SchemaField {
     @Override
     public @Nullable FieldDefinition getDefinition() {
         return field.getDefinition();
+    }
+
+    @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return field.getAppliedDirectives();
     }
 
     @Override

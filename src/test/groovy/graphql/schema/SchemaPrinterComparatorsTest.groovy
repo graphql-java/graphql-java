@@ -33,7 +33,7 @@ class SchemaPrinterComparatorsTest extends AbstractSchemaPrintingTest {
 
         when:
         def options = defaultOptions().includeScalarTypes(true)
-        def result = new SchemaPrinter(options).print(scalarType)
+        def result = printType(new SchemaPrinter(options), scalarType)
 
         then:
         result == '''"TestScalar"
@@ -51,7 +51,7 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 
         when:
         def options = defaultOptions()
-        def result = new SchemaPrinter(options).print(enumType)
+        def result = printType(new SchemaPrinter(options), enumType)
 
         then:
         result == '''enum TestEnum @a(a : 0, bb : 0) @bb(a : 0, bb : 0) {
@@ -65,13 +65,21 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
         given:
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
-                .possibleType(newObject().name("a").build())
-                .possibleType(newObject().name("bb").build())
+                .possibleType(newObject().name("a")
+                        .field(newFieldDefinition()
+                                .name("value")
+                                .type(GraphQLString))
+                        .build())
+                .possibleType(newObject().name("bb")
+                        .field(newFieldDefinition()
+                                .name("value")
+                                .type(GraphQLString))
+                        .build())
                 .build()
 
         when:
         def options = defaultOptions()
-        def result = new SchemaPrinter(options).print(unionType)
+        def result = printType(new SchemaPrinter(options), unionType)
 
         then:
         result == '''union TestUnion @a(a : 0, bb : 0) @bb(a : 0, bb : 0) = a | bb
@@ -96,7 +104,7 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 
         when:
         def options = defaultOptions()
-        def result = new SchemaPrinter(options).print(interfaceType)
+        def result = printType(new SchemaPrinter(options), interfaceType)
 
         then:
         result == '''interface TypeA @a(a : 0, bb : 0) @bb(a : 0, bb : 0) {
@@ -110,7 +118,17 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
         given:
         // @formatter:off
         GraphQLObjectType objectType = newObject().name("TypeA")
-                .withInterfaces(newInterface().name("a").build(), newInterface().name("bb").build())
+                .withInterfaces(
+                        newInterface().name("a")
+                                .field(newFieldDefinition()
+                                        .name("a")
+                                        .type(GraphQLString))
+                                .build(),
+                        newInterface().name("bb")
+                                .field(newFieldDefinition()
+                                        .name("bb")
+                                        .type(GraphQLString))
+                                .build())
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
                     .arguments(mockArguments("a", "bb"))
@@ -125,7 +143,7 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 
         when:
         def options = defaultOptions()
-        def result = new SchemaPrinter(options).print(objectType)
+        def result = printType(new SchemaPrinter(options), objectType)
 
         then:
         result == '''type TypeA implements a & bb @a(a : 0, bb : 0) @bb(a : 0, bb : 0) {
@@ -151,7 +169,9 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 
         when:
         def options = defaultOptions()
-        def result = new SchemaPrinter(options).print(inputObjectType)
+        def result = printType(
+                new SchemaPrinter(options),
+                inputObjectType)
 
         then:
         result == '''input TypeA @a(a : 0, bb : 0) @bb(a : 0, bb : 0) {
@@ -827,7 +847,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         when:
         def options = defaultOptions().includeScalarTypes(true)
-        def result = new SchemaPrinter(options).print(scalarType)
+        def result = printType(new SchemaPrinter(options), scalarType)
 
         then:
         result == '''"TestScalar"

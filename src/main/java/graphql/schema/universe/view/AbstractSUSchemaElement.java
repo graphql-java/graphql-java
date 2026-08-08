@@ -2,9 +2,15 @@ package graphql.schema.universe.view;
 
 import graphql.Internal;
 import graphql.language.Node;
+import graphql.schema.SchemaAppliedDirective;
 import graphql.schema.SchemaElement;
+import graphql.schema.universe.SUAppliedDirective;
 import graphql.schema.universe.SUVertex;
 import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
@@ -51,6 +57,19 @@ public abstract class AbstractSUSchemaElement implements SchemaElement {
      */
     public @Nullable Node<?> getDefinition() {
         return executableSchema.getSchema().getDefinition(vertex);
+    }
+
+    public final List<? extends SchemaAppliedDirective> getAppliedDirectives() {
+        List<SUAppliedDirective> directives =
+                executableSchema.getSchema().getAppliedDirectives(vertex);
+        List<SchemaAppliedDirective> result =
+                new ArrayList<>(directives.size());
+        for (SUAppliedDirective directive : directives) {
+            result.add(new SUSchemaAppliedDirective(
+                    executableSchema,
+                    directive));
+        }
+        return Collections.unmodifiableList(result);
     }
 
     @Override

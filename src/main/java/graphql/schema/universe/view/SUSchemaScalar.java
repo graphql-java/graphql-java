@@ -1,6 +1,7 @@
 package graphql.schema.universe.view;
 
 import graphql.Internal;
+import graphql.schema.Coercing;
 import graphql.schema.SchemaAppliedDirective;
 import graphql.schema.SchemaAppliedDirectiveArgument;
 import graphql.schema.SchemaScalar;
@@ -16,6 +17,11 @@ public final class SUSchemaScalar
             SUExecutableSchema executableSchema,
             SUScalarType type) {
         super(executableSchema, type);
+    }
+
+    @Override
+    public Coercing<?, ?> getCoercing() {
+        return getExecutableSchema().getScalarCoercing(this);
     }
 
     @Override

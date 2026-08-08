@@ -46,6 +46,14 @@ class ExecutableSchemaTest extends Specification {
 
         and:
         def node = schema.getType("Node") as SchemaInterface
+        node.fieldDefinitions*.name == ["id"]
+        schema.queryType.fieldDefinitions*.name == [
+                "node",
+                "search",
+                "colors",
+                "regular",
+                "today"
+        ]
         schema.getFields(node)*.name == ["id"]
         schema.getField(node, "id").type instanceof SchemaNonNull
         schema.getField(
@@ -66,6 +74,7 @@ class ExecutableSchemaTest extends Specification {
         and:
         def choice = schema.getType("Choice") as SchemaInputObject
         choice.oneOf
+        choice.fieldDefinitions*.name == ["color", "date"]
         schema.getInputFields(choice)*.name == ["color", "date"]
         schema.getInputField(choice, "color").type.name == "Color"
         schema.getInputField(choice, "color")
@@ -100,8 +109,8 @@ class ExecutableSchemaTest extends Specification {
         schema.getDirective("missing") == null
 
         and:
-        schema.getScalarCoercing(
-                schema.getType("Date") as SchemaScalar) != null
+        def date = schema.getType("Date") as SchemaScalar
+        date.coercing.is(schema.getScalarCoercing(date))
 
         where:
         executableSchema << executableSchemas()
@@ -127,6 +136,12 @@ class ExecutableSchemaTest extends Specification {
                 .find { it.name == "deprecated" }
                 .getArgument("reason").argumentValue.value) == "Use other"
         schema.getAppliedDirectives(directive)*.name == ["meta"]
+
+        and:
+        query.appliedDirectives*.name == ["meta"]
+        field.appliedDirectives*.name == ["meta"]
+        argument.appliedDirectives*.name == ["meta", "deprecated"]
+        directive.appliedDirectives*.name == ["meta"]
 
         and:
         def appliedArgument = schema.getAppliedDirectives(field)[0]
@@ -233,10 +248,13 @@ class ExecutableSchemaTest extends Specification {
         def filter = schema.getType("Filter") as SchemaInputObject
 
         expect:
+        schema.queryType.fieldDefinitions*.name ==
+                ["visible", "hidden"]
         schema.getFields(schema.queryType)*.name == ["visible"]
         schema.getField(schema.queryType, "visible") != null
         schema.getField(schema.queryType, "hidden") == null
         schema.getInputFields(filter)*.name == ["visible"]
+        filter.fieldDefinitions*.name == ["visible", "hidden"]
         schema.getInputField(filter, "visible") != null
         schema.getInputField(filter, "hidden") == null
 

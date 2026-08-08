@@ -111,7 +111,10 @@ class SchemaPrinterAstBehaviorTest extends AbstractSchemaPrintingTest {
                 .descriptionsAsHashComments(true)
 
         when:
-        def result = new SchemaPrinter(printerOptions).print(elements)
+        def result = printElements(
+                new SchemaPrinter(printerOptions),
+                schema,
+                elements)
 
         then:
         [

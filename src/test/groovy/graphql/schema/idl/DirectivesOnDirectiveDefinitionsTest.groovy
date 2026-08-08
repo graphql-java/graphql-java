@@ -12,9 +12,9 @@ import graphql.schema.idl.errors.DirectiveIllegalLocationError
 import graphql.schema.idl.errors.DirectiveIllegalReferenceError
 import graphql.schema.idl.errors.DirectiveUndeclaredError
 import graphql.schema.idl.errors.SchemaProblem
-import spock.lang.Specification
 
-class DirectivesOnDirectiveDefinitionsTest extends Specification {
+class DirectivesOnDirectiveDefinitionsTest
+        extends AbstractSchemaPrintingTest {
 
     def "registry stores merges exposes and removes directive extensions"() {
         given:
@@ -82,7 +82,7 @@ class DirectivesOnDirectiveDefinitionsTest extends Specification {
         target.extensionDefinitions.size() == 2
 
         and:
-        new SchemaPrinter().print(target) ==
+        printDirective(new SchemaPrinter(), schema, target) ==
                 'directive @target @meta(value : "definition") @meta(value : "first extension") @meta(value : "second extension") on FIELD_DEFINITION'
     }
 
@@ -120,7 +120,8 @@ class DirectivesOnDirectiveDefinitionsTest extends Specification {
         directive.deprecationReason == "Use @replacement"
         directive.extensionDefinitions == [extension]
         directive.copy().appliedDirectives*.name == ["meta", "metaBuilder"]
-        new SchemaPrinter().print(directive).contains('@deprecated(reason : "Use @replacement")')
+        new SchemaPrinter().print(directive)
+                .contains('@deprecated(reason : "Use @replacement")')
         directive.transform { it.clearDirectives() }.appliedDirectives.empty
     }
 

@@ -196,7 +196,8 @@ class SchemaPrinterTest extends AbstractSchemaPrintingTest {
     def "print type direct"() {
         GraphQLSchema schema = starWarsSchema()
 
-        def result = new SchemaPrinter().print(schema.getType("Character"))
+        def character = schema.getType("Character")
+        def result = printType(new SchemaPrinter(), schema, character)
 
         expect:
         result ==
@@ -1805,7 +1806,10 @@ extend input Input {
         when:
         // we can print by direct type using AST
         def queryType = schema.getType("Query")
-        result = new SchemaPrinter(printOptions).print(queryType)
+        result = printType(
+                new SchemaPrinter(printOptions),
+                schema,
+                queryType)
 
         then:
         result == '''type Query {
@@ -2344,7 +2348,11 @@ type MyQuery {
         def directive = schema.getDirective("foo")
 
         when:
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(directive)
+        def result = printDirective(
+                new SchemaPrinter(
+                        defaultOptions().includeDirectives(true)),
+                schema,
+                directive)
 
         then:
         result == """directive @foo on FIELD_DEFINITION"""
@@ -2359,7 +2367,11 @@ type MyQuery {
         def directive = schema.getDirective("foo")
 
         when:
-        def result = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(directive)
+        def result = printDirective(
+                new SchemaPrinter(
+                        defaultOptions().includeDirectives(true)),
+                schema,
+                directive)
 
         then:
         result == """directive @foo on OBJECT | FIELD_DEFINITION"""
@@ -2412,31 +2424,42 @@ type Query {
         GraphQLInputObjectType compoundType = GraphQLInputObjectType.newInputObject().name("Compound")
                 .field({ it.name("a").type(GraphQLString) })
                 .field({ it.name("b").type(GraphQLString) })
+                .field({ it.name("items").type(list(GraphQLString)) })
                 .build()
 
         GraphQLObjectType objType = newObject().name("obj")
                 .field({
                     it.name("f").type(GraphQLString)
                             .argument({
-                                it.name("arg").type(compoundType).defaultValueProgrammatic(["a": "A", "b": "B"])
+                                it.name("arg").type(compoundType)
+                                        .defaultValueProgrammatic([
+                                                "a"    : "A",
+                                                "b"    : "B",
+                                                "items": ["C", "D"]
+                                        ])
                             })
                 }).build()
 
         when:
 
-        def result = new SchemaPrinter().print(objType)
+        def result = printType(new SchemaPrinter(), objType)
 
 
         then:
         result == '''type obj {
-  f(arg: Compound = {a : "A", b : "B"}): String
+  f(arg: Compound = {a : "A", b : "B", items : ["C", "D"]}): String
 }
 '''
 
         when:
         def newAppliedDirective = GraphQLAppliedDirective.newDirective().name("foo")
                 .argument({
-                    it.name("arg").type(compoundType).valueProgrammatic(["a": "A", "b": "B"])
+                    it.name("arg").type(compoundType)
+                            .valueProgrammatic([
+                                    "a"    : "A",
+                                    "b"    : "B",
+                                    "items": ["C", "D"]
+                            ])
                 })
                 .build()
 
@@ -2444,12 +2467,44 @@ type Query {
             it.name("f").type(GraphQLString).withAppliedDirective(newAppliedDirective)
         }).build()
 
-        result = new SchemaPrinter().print(objType)
+        result = printType(new SchemaPrinter(), objType)
 
         then:
 
         result == '''type obj {
-  f: String @foo(arg : {a : "A", b : "B"})
+  f: String @foo(arg : {a : "A", b : "B", items : ["C", "D"]})
+}
+'''
+    }
+
+    def "programmatic enum values are printed directly"() {
+        given:
+        def mode = newEnum()
+                .name("Mode")
+                .value("FAST", 11)
+                .value("SLOW", 22)
+                .build()
+        def type = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("value")
+                        .type(GraphQLString)
+                        .argument(newArgument()
+                                .name("external")
+                                .type(mode)
+                                .defaultValueProgrammatic("SLOW"))
+                        .argument(newArgument()
+                                .name("internal")
+                                .type(mode)
+                                .defaultValue(11)))
+                .build()
+
+        when:
+        def result = printType(new SchemaPrinter(), type)
+
+        then:
+        result == '''type Query {
+  value(external: Mode = SLOW, internal: Mode = FAST): String
 }
 '''
     }
@@ -2466,7 +2521,7 @@ type Query {
                 .build()
 
         when:
-        def result = new SchemaPrinter().print(type)
+        def result = printType(new SchemaPrinter(), type)
 
 
         then:
@@ -2643,7 +2698,9 @@ type Query {
                 .build()
 
         when:
-        def result = new SchemaPrinter().print([testObjectA, testObjectB])
+        def result = printTypes(
+                new SchemaPrinter(),
+                [testObjectA, testObjectB])
         println(result)
 
         then:

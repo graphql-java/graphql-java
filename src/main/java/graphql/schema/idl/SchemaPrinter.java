@@ -33,6 +33,7 @@ import graphql.language.SchemaExtensionDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
+import graphql.schema.Coercing;
 import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
 import graphql.schema.ExecutableSchema;
 import graphql.schema.GraphQLAppliedDirective;
@@ -1486,9 +1487,29 @@ public class SchemaPrinter {
     }
 
     public String print(GraphQLType type) {
+        return print((SchemaType) type);
+    }
+
+    /**
+     * Prints a schema type without applying schema-level visibility.
+     *
+     * @param type the standalone schema type
+     *
+     * @return the logical type definition
+     */
+    @ExperimentalApi
+    public String print(SchemaType type) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
+        printType(out, type);
+
+        return trimNewLineChars(sw.toString());
+    }
+
+    private void printType(
+            PrintWriter out,
+            SchemaType type) {
         if (type instanceof SchemaNamedElement) {
             printSchemaElement(
                     out,
@@ -1497,22 +1518,25 @@ public class SchemaPrinter {
         } else {
             out.print("Type not implemented : " + type + "\n");
         }
-
-        return trimNewLineChars(sw.toString());
     }
 
-    public String print(List<GraphQLSchemaElement> elements) {
+    /**
+     * Prints standalone schema types and directive definitions without applying schema-level
+     * visibility.
+     *
+     * @param elements the elements to print
+     *
+     * @return the logical schema definitions
+     */
+    public String print(List<? extends SchemaElement> elements) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
-        for (GraphQLSchemaElement element : elements) {
-            if (element instanceof GraphQLDirective) {
-                out.print(print(((GraphQLDirective) element)));
-            } else if (element instanceof GraphQLType) {
-                printSchemaElement(
-                        out,
-                        (SchemaNamedElement) element,
-                        null);
+        for (SchemaElement element : elements) {
+            if (element instanceof SchemaDirective) {
+                out.print(print((SchemaDirective) element));
+            } else if (element instanceof SchemaType) {
+                printType(out, (SchemaType) element);
             } else {
                 Assert.assertShouldNeverHappen("How did we miss a %s", element.getClass());
             }
@@ -1521,7 +1545,19 @@ public class SchemaPrinter {
     }
 
     public String print(GraphQLDirective graphQLDirective) {
-        return directiveDefinition(null, graphQLDirective);
+        return print((SchemaDirective) graphQLDirective);
+    }
+
+    /**
+     * Prints a standalone directive definition.
+     *
+     * @param directive the directive definition
+     *
+     * @return the logical directive definition
+     */
+    @ExperimentalApi
+    public String print(SchemaDirective directive) {
+        return directiveDefinition(null, directive);
     }
 
     private void printSchemaElement(
@@ -1710,12 +1746,16 @@ public class SchemaPrinter {
         if (schema != null) {
             return schema.getAppliedDirectives(container);
         }
-        GraphQLDirectiveContainer graphQLContainer =
-                (GraphQLDirectiveContainer) container;
-        if (isDeprecated(graphQLContainer)) {
-            return addOrUpdateDeprecatedDirectiveIfNeeded(graphQLContainer);
+        if (container instanceof GraphQLDirectiveContainer) {
+            GraphQLDirectiveContainer graphQLContainer =
+                    (GraphQLDirectiveContainer) container;
+            if (isDeprecated(graphQLContainer)) {
+                return addOrUpdateDeprecatedDirectiveIfNeeded(
+                        graphQLContainer);
+            }
+            return DirectivesUtil.toAppliedDirectives(graphQLContainer);
         }
-        return DirectivesUtil.toAppliedDirectives(graphQLContainer);
+        return container.getAppliedDirectives();
     }
 
     private boolean isDeprecated(
@@ -1744,10 +1784,7 @@ public class SchemaPrinter {
         if (schema != null) {
             return schema.getFields(type);
         }
-        if (type instanceof GraphQLObjectType) {
-            return ((GraphQLObjectType) type).getFieldDefinitions();
-        }
-        return ((GraphQLInterfaceType) type).getFieldDefinitions();
+        return type.getFieldDefinitions();
     }
 
     private List<? extends SchemaInputField> getInputFields(
@@ -1756,7 +1793,7 @@ public class SchemaPrinter {
         if (schema != null) {
             return schema.getInputFields(type);
         }
-        return ((GraphQLInputObjectType) type).getFieldDefinitions();
+        return type.getFieldDefinitions();
     }
 
     private String printValue(
@@ -1776,14 +1813,14 @@ public class SchemaPrinter {
                     (Value<?>) assertNotNull(value.getValue()));
         }
         return AstPrinter.printAst(valueToLiteral(
-                assertNotNull(schema),
+                schema,
                 value.getValue(),
                 type,
                 value.isInternal()));
     }
 
     private Value<?> valueToLiteral(
-            ExecutableSchema schema,
+            @Nullable ExecutableSchema schema,
             @Nullable Object value,
             SchemaInputType type,
             boolean internal) {
@@ -1806,7 +1843,10 @@ public class SchemaPrinter {
                     internal);
         }
         if (unwrappedType instanceof SchemaEnum) {
-            return EnumValue.newEnumValue(String.valueOf(value)).build();
+            return enumLiteral(
+                    value,
+                    (SchemaEnum) unwrappedType,
+                    internal);
         }
         return scalarLiteral(
                 schema,
@@ -1824,7 +1864,7 @@ public class SchemaPrinter {
     }
 
     private Value<?> listLiteral(
-            ExecutableSchema schema,
+            @Nullable ExecutableSchema schema,
             Object value,
             SchemaList type,
             boolean internal) {
@@ -1842,7 +1882,7 @@ public class SchemaPrinter {
     }
 
     private Value<?> objectLiteral(
-            ExecutableSchema schema,
+            @Nullable ExecutableSchema schema,
             Object value,
             SchemaInputObject type,
             boolean internal) {
@@ -1855,7 +1895,7 @@ public class SchemaPrinter {
         }
         Map<?, ?> map = (Map<?, ?>) value;
         List<ObjectField> fields = new ArrayList<>();
-        for (SchemaInputField field : schema.getInputFields(type)) {
+        for (SchemaInputField field : getInputFields(schema, type)) {
             if (!map.containsKey(field.getName())) {
                 continue;
             }
@@ -1871,18 +1911,39 @@ public class SchemaPrinter {
         return ObjectValue.newObjectValue().objectFields(fields).build();
     }
 
+    private Value<?> enumLiteral(
+            Object value,
+            SchemaEnum type,
+            boolean internal) {
+        if (!internal) {
+            return type.valueToLiteral(
+                    value,
+                    GraphQLContext.getDefault(),
+                    Locale.getDefault());
+        }
+        Object serialized = type.serialize(
+                value,
+                GraphQLContext.getDefault(),
+                Locale.getDefault());
+        return EnumValue.newEnumValue(
+                String.valueOf(serialized)).build();
+    }
+
     private Value<?> scalarLiteral(
-            ExecutableSchema schema,
+            @Nullable ExecutableSchema schema,
             Object value,
             SchemaScalar type,
             boolean internal) {
+        Coercing<?, ?> coercing = schema == null
+                ? type.getCoercing()
+                : schema.getScalarCoercing(type);
         Object externalValue = internal
-                ? schema.getScalarCoercing(type).serialize(
+                ? coercing.serialize(
                         value,
                         GraphQLContext.getDefault(),
                         Locale.getDefault())
                 : value;
-        return schema.getScalarCoercing(type).valueToLiteral(
+        return coercing.valueToLiteral(
                 assertNotNull(externalValue),
                 GraphQLContext.getDefault(),
                 Locale.getDefault());
