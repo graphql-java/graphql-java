@@ -11,7 +11,6 @@ import graphql.language.DirectivesContainer;
 import graphql.language.NodeUtil;
 import graphql.language.VariableReference;
 import graphql.schema.ExecutableSchema;
-import graphql.schema.GraphQLSchema;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -46,13 +45,10 @@ public class ConditionalNodes {
         if (graphQLContext != null) {
             ConditionalNodeDecision conditionalDecision = graphQLContext.get(ConditionalNodeDecision.class);
             if (conditionalDecision != null) {
-                Assert.assertTrue(
-                        schema instanceof GraphQLSchema,
-                        "Custom conditional node decisions require a GraphQLSchema");
                 return customShouldInclude(
                         variables,
                         element,
-                        (GraphQLSchema) schema,
+                        schema,
                         graphQLContext,
                         conditionalDecision);
             }
@@ -63,7 +59,7 @@ public class ConditionalNodes {
 
     private boolean customShouldInclude(Map<String, Object> variables,
                                         DirectivesContainer<?> element,
-                                        GraphQLSchema graphQLSchema,
+                                        ExecutableSchema schema,
                                         GraphQLContext graphQLContext,
                                         ConditionalNodeDecision conditionalDecision
     ) {
@@ -80,8 +76,8 @@ public class ConditionalNodes {
             }
 
             @Override
-            public GraphQLSchema getGraphQlSchema() {
-                return graphQLSchema;
+            public ExecutableSchema getSchema() {
+                return schema;
             }
 
             @Override

@@ -1,6 +1,5 @@
 package graphql.execution
 
-import graphql.AssertException
 import graphql.ExecutionInput
 import graphql.GraphQLContext
 import graphql.TestUtil
@@ -14,70 +13,113 @@ import graphql.language.Field
 import graphql.language.NodeUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.ExecutableSchema
+import graphql.schema.GraphQLSchema
 import graphql.schema.universe.SchemaUniverse
 import graphql.schema.universe.view.SUExecutableSchema
 import spock.lang.Specification
 
 class ConditionalNodesTest extends Specification {
 
-    def "should include false for skip = true"() {
+    def "should include false for skip = true [#schemaKind]"() {
         given:
         def variables = new LinkedHashMap<String, Object>()
         ConditionalNodes conditionalNodes = new ConditionalNodes()
+        def schema = executableSchema(schemaKind)
 
         def directives = directive("skip", ifArg(true))
 
         expect:
-        !conditionalNodes.shouldInclude(mkField(directives), variables, null, GraphQLContext.getDefault())
+        !conditionalNodes.shouldInclude(
+                mkField(directives),
+                variables,
+                schema,
+                GraphQLContext.getDefault())
+
+        where:
+        schemaKind << schemaKinds()
     }
 
-    def "should include true for skip = false"() {
+    def "should include true for skip = false [#schemaKind]"() {
         given:
         def variables = new LinkedHashMap<String, Object>()
         ConditionalNodes conditionalNodes = new ConditionalNodes()
+        def schema = executableSchema(schemaKind)
 
         def directives = directive("skip", ifArg(false))
 
         expect:
-        conditionalNodes.shouldInclude(mkField(directives), variables, null, GraphQLContext.getDefault())
+        conditionalNodes.shouldInclude(
+                mkField(directives),
+                variables,
+                schema,
+                GraphQLContext.getDefault())
+
+        where:
+        schemaKind << schemaKinds()
     }
 
-    def "should include false for include = false"() {
+    def "should include false for include = false [#schemaKind]"() {
         given:
         def variables = new LinkedHashMap<String, Object>()
         ConditionalNodes conditionalNodes = new ConditionalNodes()
+        def schema = executableSchema(schemaKind)
 
         def directives = directive("include", ifArg(false))
 
         expect:
-        !conditionalNodes.shouldInclude(mkField(directives), variables, null, GraphQLContext.getDefault())
+        !conditionalNodes.shouldInclude(
+                mkField(directives),
+                variables,
+                schema,
+                GraphQLContext.getDefault())
+
+        where:
+        schemaKind << schemaKinds()
     }
 
-    def "should include true for include = true"() {
+    def "should include true for include = true [#schemaKind]"() {
         given:
         def variables = new LinkedHashMap<String, Object>()
         ConditionalNodes conditionalNodes = new ConditionalNodes()
+        def schema = executableSchema(schemaKind)
 
         def directives = directive("include", ifArg(true))
 
         expect:
-        conditionalNodes.shouldInclude(mkField(directives), variables, null, GraphQLContext.getDefault())
+        conditionalNodes.shouldInclude(
+                mkField(directives),
+                variables,
+                schema,
+                GraphQLContext.getDefault())
+
+        where:
+        schemaKind << schemaKinds()
     }
 
-    def "no directives means include"() {
+    def "no directives means include [#schemaKind]"() {
         given:
         def variables = new LinkedHashMap<String, Object>()
         ConditionalNodes conditionalNodes = new ConditionalNodes()
+        def schema = executableSchema(schemaKind)
 
         expect:
-        conditionalNodes.shouldInclude(mkField([]), variables, null, GraphQLContext.getDefault())
+        conditionalNodes.shouldInclude(
+                mkField([]),
+                variables,
+                schema,
+                GraphQLContext.getDefault())
+
+        where:
+        schemaKind << schemaKinds()
     }
 
 
-    def "allows a custom implementation to check conditional nodes"() {
+    def "allows a custom implementation to check conditional nodes [#schemaKind]"() {
         given:
         def variables = ["x": "y"]
         def graphQLSchema = TestUtil.schema("type Query { f : String} ")
+        def schema = executableSchema(graphQLSchema, schemaKind)
         ConditionalNodes conditionalNodes = new ConditionalNodes()
 
         def graphQLContext = GraphQLContext.getDefault()
@@ -92,7 +134,7 @@ class ConditionalNodesTest extends Specification {
                 called = true
                 assert env.variables.toMap() == variables
                 assert env.directivesContainer == field
-                assert env.graphQlSchema == graphQLSchema
+                assert env.schema.is(schema)
                 assert env.graphQLContext.get("assert") != null
                 return false
             }
@@ -101,34 +143,15 @@ class ConditionalNodesTest extends Specification {
         graphQLContext.put("assert", true)
         expect:
 
-        !conditionalNodes.shouldInclude(field, variables, graphQLSchema, graphQLContext)
-        called == true
-    }
-
-    def "custom conditional decisions remain GraphQLSchema specific"() {
-        given:
-        def source = TestUtil.schema("type Query { f: String }")
-        def imported = new SchemaUniverse()
-                .importSchema("conditional_nodes", source)
-        def schema = SUExecutableSchema.fromGraphQLSchema(
-                imported,
-                source)
-        def context = GraphQLContext.getDefault()
-        context.put(
-                ConditionalNodeDecision.class,
-                { true } as ConditionalNodeDecision)
-
-        when:
-        new ConditionalNodes().shouldInclude(
-                mkField([]),
-                [:],
+        !conditionalNodes.shouldInclude(
+                field,
+                variables,
                 schema,
-                context)
+                graphQLContext)
+        called == true
 
-        then:
-        def exception = thrown(AssertException)
-        exception.message ==
-                "Custom conditional node decisions require a GraphQLSchema"
+        where:
+        schemaKind << schemaKinds()
     }
 
     def "integration test showing conditional nodes can be custom included"() {
@@ -159,11 +182,16 @@ class ConditionalNodesTest extends Specification {
                 Directive foundDirective = NodeUtil.findNodeByName(env.getDirectives(), "featureFlag")
                 if (foundDirective != null) {
 
-                    def arguments = env.getGraphQlSchema().getDirective("featureFlag")
+                    def arguments = env.schema
+                            .getDirective("featureFlag")
                             .getArguments()
                     Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(
-                            arguments, foundDirective.getArguments(),
-                            env.variables, env.graphQLContext, Locale.getDefault())
+                            env.schema,
+                            arguments,
+                            foundDirective.getArguments(),
+                            env.variables,
+                            env.graphQLContext,
+                            Locale.getDefault())
                     Object flagName = argumentValues.get("flagName")
                     return String.valueOf(flagName) == "ON"
                 }
@@ -251,5 +279,30 @@ class ConditionalNodesTest extends Specification {
 
     Field mkField(List<Directive> directives) {
         return Field.newField("name").directives(directives).build()
+    }
+
+    private static List<String> schemaKinds() {
+        return [
+                GraphQLSchema.simpleName,
+                SUExecutableSchema.simpleName]
+    }
+
+    private static ExecutableSchema executableSchema(String schemaKind) {
+        return executableSchema(
+                TestUtil.schema("type Query { f: String }"),
+                schemaKind)
+    }
+
+    private static ExecutableSchema executableSchema(
+            GraphQLSchema graphQLSchema,
+            String schemaKind) {
+        if (schemaKind == GraphQLSchema.simpleName) {
+            return graphQLSchema
+        }
+        def imported = new SchemaUniverse()
+                .importSchema("conditional_nodes", graphQLSchema)
+        return SUExecutableSchema.fromGraphQLSchema(
+                imported,
+                graphQLSchema)
     }
 }

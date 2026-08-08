@@ -1,17 +1,20 @@
 package graphql.execution.conditional;
 
+import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.execution.CoercedVariables;
 import graphql.language.Directive;
 import graphql.language.DirectivesContainer;
-import graphql.schema.GraphQLSchema;
-import org.jspecify.annotations.Nullable;
+import graphql.schema.ExecutableSchema;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 
 /**
  * The parameters given to a {@link ConditionalNodeDecision}
  */
+@ExperimentalApi
+@NullMarked
 public interface ConditionalNodeDecisionEnvironment {
 
     /**
@@ -37,10 +40,9 @@ public interface ConditionalNodeDecisionEnvironment {
     CoercedVariables getVariables();
 
     /**
-     * @return the {@link GraphQLSchema} in question - this can be null for certain call paths
+     * @return the executable schema view in question
      */
-    @Nullable
-    GraphQLSchema getGraphQlSchema();
+    ExecutableSchema getSchema();
 
     /**
      * @return a graphql context
