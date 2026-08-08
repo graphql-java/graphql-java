@@ -22,10 +22,10 @@ public class TypeFromAST {
         GraphQLType innerType;
         if (type instanceof ListType) {
             innerType = getTypeFromAST(schema, ((ListType) type).getType());
-            return innerType != null ? list(innerType) : null;
+            return list(innerType);
         } else if (type instanceof NonNullType) {
             innerType = getTypeFromAST(schema, ((NonNullType) type).getType());
-            return innerType != null ? nonNull(innerType) : null;
+            return nonNull(innerType);
         }
 
         return schema.getType(((TypeName) type).getName());

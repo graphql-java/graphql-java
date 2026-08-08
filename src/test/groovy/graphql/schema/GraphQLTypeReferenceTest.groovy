@@ -45,5 +45,6 @@ class GraphQLTypeReferenceTest extends Specification {
         objInput.getField("value").getType() instanceof GraphQLScalarType
         objInput.getField("value2").getType() != ref
         objInput.getField("value2").getType() instanceof GraphQLScalarType
+        ref.getAppliedDirectives().isEmpty()
     }
 }
