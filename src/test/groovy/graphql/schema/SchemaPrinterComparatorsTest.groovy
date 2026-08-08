@@ -217,9 +217,17 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
                 .addComparator({ it.parentType(GraphQLScalarType.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
+        def schemaRegistry = schemaComparatorsByEnvironment(
+                schemaEnvironment(SchemaScalar, SchemaAppliedDirective),
+                schemaEnvironment(
+                        SchemaAppliedDirective,
+                        SchemaAppliedDirectiveArgument))
 
-        def options = defaultOptions().includeScalarTypes(true).setComparators(registry)
-        def result = new SchemaPrinter(options).print(scalarType)
+        def options = defaultOptions()
+                .includeScalarTypes(true)
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), scalarType)
 
         then:
         result == '''"TestScalar"
@@ -238,9 +246,15 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
+        def schemaRegistry = schemaComparatorsByElement(
+                SchemaAppliedDirective,
+                SchemaAppliedDirectiveArgument)
 
-        def options = defaultOptions().includeScalarTypes(true).setComparators(registry)
-        def result = new SchemaPrinter(options).print(scalarType)
+        def options = defaultOptions()
+                .includeScalarTypes(true)
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), scalarType)
 
         then:
         result == '''"TestScalar"
@@ -263,9 +277,20 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.parentType(GraphQLEnumValueDefinition.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
+        def schemaRegistry = schemaComparatorsByEnvironment(
+                schemaEnvironment(SchemaEnum, SchemaAppliedDirective),
+                schemaEnvironment(SchemaEnum, SchemaEnumValue),
+                schemaEnvironment(
+                        SchemaEnumValue,
+                        SchemaAppliedDirective),
+                schemaEnvironment(
+                        SchemaAppliedDirective,
+                        SchemaAppliedDirectiveArgument))
 
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(enumType)
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), enumType)
 
         then:
         result == '''enum TestEnum @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
@@ -289,9 +314,15 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
+        def schemaRegistry = schemaComparatorsByElement(
+                SchemaAppliedDirective,
+                SchemaEnumValue,
+                SchemaAppliedDirectiveArgument)
 
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(enumType)
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), enumType)
 
         then:
         result == '''enum TestEnum @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
@@ -305,8 +336,8 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
-                .possibleType(newObject().name("a").build())
-                .possibleType(newObject().name("bb").build())
+                .possibleType(objectWithField("a"))
+                .possibleType(objectWithField("bb"))
                 .build()
 
         when:
@@ -315,9 +346,17 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.parentType(GraphQLUnionType.class).elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
+        def schemaRegistry = schemaComparatorsByEnvironment(
+                schemaEnvironment(SchemaUnion, SchemaAppliedDirective),
+                schemaEnvironment(SchemaUnion, SchemaOutputType),
+                schemaEnvironment(
+                        SchemaAppliedDirective,
+                        SchemaAppliedDirectiveArgument))
 
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(unionType)
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), unionType)
 
         then:
         result == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
@@ -328,8 +367,8 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
-                .possibleType(newObject().name("a").build())
-                .possibleType(newObject().name("bb").build())
+                .possibleType(objectWithField("a"))
+                .possibleType(objectWithField("bb"))
                 .build()
 
         when:
@@ -338,9 +377,15 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
+        def schemaRegistry = schemaComparatorsByElement(
+                SchemaAppliedDirective,
+                SchemaOutputType,
+                SchemaAppliedDirectiveArgument)
 
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(unionType)
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), unionType)
 
         then:
         result == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
@@ -371,9 +416,19 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
+        def schemaRegistry = schemaComparatorsByEnvironment(
+                schemaEnvironment(SchemaInterface, SchemaAppliedDirective),
+                schemaEnvironment(SchemaInterface, SchemaField),
+                schemaEnvironment(SchemaField, SchemaArgument),
+                schemaEnvironment(SchemaField, SchemaAppliedDirective),
+                schemaEnvironment(
+                        SchemaAppliedDirective,
+                        SchemaAppliedDirectiveArgument))
 
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(interfaceType)
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), interfaceType)
 
         then:
         result == '''interface TypeA @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
@@ -406,9 +461,16 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
+        def schemaRegistry = schemaComparatorsByElement(
+                SchemaAppliedDirective,
+                SchemaField,
+                SchemaArgument,
+                SchemaAppliedDirectiveArgument)
 
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(interfaceType)
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), interfaceType)
 
         then:
         result == '''interface TypeA @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
@@ -422,7 +484,9 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         // @formatter:off
         GraphQLObjectType objectType = newObject().name("TypeA")
-                .withInterfaces(newInterface().name("a") .build(), newInterface().name("bb").build())
+                .withInterfaces(
+                        interfaceWithField("a"),
+                        interfaceWithField("bb"))
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
                     .arguments(mockArguments("a", "bb"))
@@ -443,8 +507,19 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLAppliedDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(objectType)
+        def schemaRegistry = schemaComparatorsByEnvironment(
+                schemaEnvironment(SchemaObject, SchemaAppliedDirective),
+                schemaEnvironment(SchemaObject, SchemaOutputType),
+                schemaEnvironment(SchemaObject, SchemaField),
+                schemaEnvironment(SchemaField, SchemaArgument),
+                schemaEnvironment(SchemaField, SchemaAppliedDirective),
+                schemaEnvironment(
+                        SchemaAppliedDirective,
+                        SchemaAppliedDirectiveArgument))
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), objectType)
 
         then:
         result == '''type TypeA implements bb & a @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
@@ -458,7 +533,9 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         // @formatter:off
         GraphQLObjectType objectType = newObject().name("TypeA")
-                .withInterfaces(newInterface().name("a") .build(), newInterface().name("bb").build())
+                .withInterfaces(
+                        interfaceWithField("a"),
+                        interfaceWithField("bb"))
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
                     .arguments(mockArguments("a", "bb"))
@@ -478,8 +555,16 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(objectType)
+        def schemaRegistry = schemaComparatorsByElement(
+                SchemaAppliedDirective,
+                SchemaOutputType,
+                SchemaField,
+                SchemaArgument,
+                SchemaAppliedDirectiveArgument)
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), objectType)
 
         then:
         result == '''type TypeA implements bb & a @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
@@ -510,8 +595,21 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.parentType(GraphQLInputObjectField.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(inputObjectType)
+        def schemaRegistry = schemaComparatorsByEnvironment(
+                schemaEnvironment(
+                        SchemaInputObject,
+                        SchemaAppliedDirective),
+                schemaEnvironment(SchemaInputObject, SchemaInputField),
+                schemaEnvironment(
+                        SchemaInputField,
+                        SchemaAppliedDirective),
+                schemaEnvironment(
+                        SchemaAppliedDirective,
+                        SchemaAppliedDirectiveArgument))
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), inputObjectType)
 
         then:
         result == '''input TypeA @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
@@ -541,8 +639,14 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
-        def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).print(inputObjectType)
+        def schemaRegistry = schemaComparatorsByElement(
+                SchemaAppliedDirective,
+                SchemaInputField,
+                SchemaAppliedDirectiveArgument)
+        def options = defaultOptions()
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
+        def result = printType(new SchemaPrinter(options), inputObjectType)
 
         then:
         result == '''input TypeA @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
@@ -716,8 +820,8 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
-                .possibleType(newObject().name("a").build())
-                .possibleType(newObject().name("bb").build())
+                .possibleType(objectWithField("a"))
+                .possibleType(objectWithField("bb"))
                 .build()
 
         GraphQLEnumType enumType = newEnum().name("TestEnum")
@@ -727,7 +831,9 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .build()
 
         GraphQLObjectType objectType = newObject().name("TestObjectType")
-                .withInterfaces(newInterface().name("a") .build(), newInterface().name("bb").build())
+                .withInterfaces(
+                        interfaceWithField("a"),
+                        interfaceWithField("bb"))
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
                     .arguments(mockArguments("a", "bb"))
@@ -771,15 +877,26 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
-        def options = defaultOptions().includeScalarTypes(true).setComparators(registry)
+        def schemaRegistry = schemaComparatorsByElement(
+                SchemaField,
+                SchemaInputField,
+                SchemaEnumValue,
+                SchemaOutputType,
+                SchemaAppliedDirective,
+                SchemaAppliedDirectiveArgument,
+                SchemaArgument)
+        def options = defaultOptions()
+                .includeScalarTypes(true)
+                .setComparators(registry)
+                .sortSchemaElements(schemaRegistry)
         def printer = new SchemaPrinter(options)
 
-        def scalarResult = printer.print(scalarType)
-        def enumResult = printer.print(enumType)
-        def unionResult = printer.print(unionType)
-        def objectTypeResult = printer.print(objectType)
-        def interfaceTypeResult = printer.print(interfaceType)
-        def inputObjectTypeResult = printer.print(inputObjectType)
+        def scalarResult = printType(printer, scalarType)
+        def enumResult = printType(printer, enumType)
+        def unionResult = printType(printer, unionType)
+        def objectTypeResult = printType(printer, objectType)
+        def interfaceTypeResult = printType(printer, interfaceType)
+        def inputObjectTypeResult = printType(printer, inputObjectType)
 
         then:
 
@@ -894,5 +1011,64 @@ scalar TestScalar @a @bb
 
         then:
         sortedList == [nonNullA, nonNullB]
+    }
+
+    private static SchemaElementComparatorEnvironment schemaEnvironment(
+            Class<? extends SchemaElement> parentType,
+            Class<? extends SchemaElement> elementType) {
+        return SchemaElementComparatorEnvironment.newEnvironment(
+                parentType,
+                elementType)
+    }
+
+    private static SchemaElementComparatorRegistry
+            schemaComparatorsByEnvironment(
+                    SchemaElementComparatorEnvironment...
+                            matchingEnvironments) {
+        def matches = matchingEnvironments.toSet()
+        return { environment ->
+            if (matches.contains(environment)) {
+                return schemaByGreatestLength()
+            }
+            return SchemaElementComparatorRegistry.DEFAULT_REGISTRY
+                    .getComparator(environment)
+        }
+    }
+
+    private static SchemaElementComparatorRegistry schemaComparatorsByElement(
+            Class<? extends SchemaElement>... matchingElementTypes) {
+        def matches = matchingElementTypes.toSet()
+        return { environment ->
+            if (matches.contains(environment.elementType)) {
+                return schemaByGreatestLength()
+            }
+            return SchemaElementComparatorRegistry.DEFAULT_REGISTRY
+                    .getComparator(environment)
+        }
+    }
+
+    private static Comparator<SchemaElement> schemaByGreatestLength() {
+        return { first, second ->
+            ((SchemaNamedElement) second).name.length() <=>
+                    ((SchemaNamedElement) first).name.length()
+        } as Comparator<SchemaElement>
+    }
+
+    private static GraphQLObjectType objectWithField(String name) {
+        return newObject()
+                .name(name)
+                .field(newFieldDefinition()
+                        .name(name)
+                        .type(GraphQLString))
+                .build()
+    }
+
+    private static GraphQLInterfaceType interfaceWithField(String name) {
+        return newInterface()
+                .name(name)
+                .field(newFieldDefinition()
+                        .name(name)
+                        .type(GraphQLString))
+                .build()
     }
 }
