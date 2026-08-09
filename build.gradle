@@ -179,7 +179,17 @@ dependencies {
 }
 
 shadowJar {
-    minimize()
+    // Keep annotation packages that Guava classfiles still reference. Without them,
+    // consumers compiling with -Xlint:classfile -Werror fail (see #4436): the shaded
+    // ImmutableList etc. retain RuntimeInvisibleAnnotations pointing at
+    // com.google.common.annotations / errorprone / j2objc / checker / jsr305 types
+    // that were never shipped in the published jar.
+    minimize {
+        exclude(dependency('com.google.errorprone:error_prone_annotations:.*'))
+        exclude(dependency('com.google.j2objc:j2objc-annotations:.*'))
+        exclude(dependency('org.checkerframework:checker-qual:.*'))
+        exclude(dependency('com.google.code.findbugs:jsr305:.*'))
+    }
     archiveClassifier.set('')
     configurations = [project.configurations.compileClasspath]
     relocate('com.google.common', 'graphql.com.google.common') {
@@ -187,11 +197,20 @@ shadowJar {
         include 'com.google.common.base.*'
         include 'com.google.common.math.*'
         include 'com.google.common.primitives.*'
+        include 'com.google.common.annotations.*'
     }
+    relocate('com.google.errorprone.annotations', 'graphql.com.google.errorprone.annotations')
+    relocate('com.google.j2objc.annotations', 'graphql.com.google.j2objc.annotations')
+    relocate('org.checkerframework', 'graphql.org.checkerframework')
+    relocate('javax.annotation', 'graphql.javax.annotation')
     relocate('org.antlr.v4.runtime', 'graphql.org.antlr.v4.runtime')
     dependencies {
         include(dependency('com.google.guava:guava:' + guavaVersion))
         include(dependency('org.antlr:antlr4-runtime:' + antlrVersion))
+        include(dependency('com.google.errorprone:error_prone_annotations:.*'))
+        include(dependency('com.google.j2objc:j2objc-annotations:.*'))
+        include(dependency('org.checkerframework:checker-qual:.*'))
+        include(dependency('com.google.code.findbugs:jsr305:.*'))
     }
     from "LICENSE.md"
     from "src/main/antlr/Graphql.g4"
@@ -220,7 +239,7 @@ tasks.named('shadowJar').configure {
         bundle.bnd('''
 -exportcontents: graphql.*
 -removeheaders: Private-Package
-Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.annotations;resolution:=optional,*
+Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!graphql.com.google.*,!graphql.org.checkerframework.*,!graphql.javax.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.annotations;resolution:=optional,*
 ''')
     }
 }
@@ -310,6 +329,64 @@ task buildNewJar(type: Jar) {
 buildNewJar.dependsOn extractWithoutGuava
 
 shadowJar.finalizedBy extractWithoutGuava, buildNewJar
+
+// Fail the build if the published jar still embeds Guava classfiles that point at
+// annotation types not present in the jar (javac -Xlint:classfile -Werror for consumers).
+tasks.register('verifyShadedJarAnnotationRefs') {
+    group = 'verification'
+    description = 'Ensure shaded Guava classfiles do not reference missing annotation types (#4436)'
+    dependsOn buildNewJar
+    def jarFile = layout.buildDirectory.file("libs/graphql-java-${project.version}.jar")
+    inputs.file(jarFile)
+    outputs.upToDateWhen { false }
+    doLast {
+        def jar = jarFile.get().asFile
+        if (!jar.exists()) {
+            throw new GradleException("Expected published jar at ${jar}")
+        }
+        def missing = new LinkedHashSet<String>()
+        def present = new HashSet<String>()
+        // Match both pre-relocate and post-relocate annotation descriptors in constant pools.
+        def annotationDesc = ~/L(graphql\/)?((?:com\/google\/(?:common\/annotations|errorprone\/annotations|j2objc\/annotations)|org\/checkerframework|javax\/annotation)[^;]*);/
+        java.util.zip.ZipFile zip = new java.util.zip.ZipFile(jar)
+        try {
+            zip.entries().each { entry ->
+                if (entry.name.endsWith('.class')) {
+                    present.add(entry.name.substring(0, entry.name.length() - 6).replace('/', '.'))
+                }
+            }
+            zip.entries().each { entry ->
+                if (!entry.name.startsWith('graphql/com/google/') || !entry.name.endsWith('.class')) {
+                    return
+                }
+                def bytes = zip.getInputStream(entry).bytes
+                def text = new String(bytes, 'ISO-8859-1')
+                def matcher = annotationDesc.matcher(text)
+                while (matcher.find()) {
+                    def relocatedPrefix = matcher.group(1)
+                    def typePath = matcher.group(2).replace('/', '.')
+                    if (relocatedPrefix == null) {
+                        missing.add("${entry.name} -> ${typePath} (not relocated)")
+                        continue
+                    }
+                    def typeName = 'graphql.' + typePath
+                    if (!present.contains(typeName)) {
+                        missing.add("${entry.name} -> ${typeName} (class missing from jar)")
+                    }
+                }
+            }
+        } finally {
+            zip.close()
+        }
+        if (!missing.isEmpty()) {
+            def msg = new StringBuilder('Shaded Guava classfiles reference annotation types that are missing or not relocated:\n')
+            missing.each { msg.append("  - ${it}\n") }
+            throw new GradleException(msg.toString())
+        }
+    }
+}
+buildNewJar.finalizedBy verifyShadedJarAnnotationRefs
+tasks.named('check') { dependsOn verifyShadedJarAnnotationRefs }
 
 
 // --- TestNG TCK skip verification ---
@@ -582,7 +659,9 @@ jacocoTestReport {
                 fileTree(dir: layout.buildDirectory.dir('classes-jacoco/java/main'), exclude: [
                         'graphql/parser/antlr/**',
                         'graphql/com/google/**',
-                        'graphql/org/antlr/**'
+                        'graphql/org/antlr/**',
+                        'graphql/org/checkerframework/**',
+                        'graphql/javax/**'
                 ])
         ))
     }
