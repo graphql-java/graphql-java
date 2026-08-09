@@ -19,4 +19,4 @@ plugins {
 rootProject.name = 'graphql-java'
 
 include 'performance-results-page'
-include 'graphql-java-property-testing'
+include 'graphql-java-arbitrary'
