@@ -10,8 +10,10 @@ import graphql.execution.ValuesResolver
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLInputType
+import graphql.schema.GraphQLList
 import spock.lang.Specification
 
+import static graphql.language.ListType.newListType
 import static graphql.language.TypeName.newTypeName
 import static graphql.language.VariableDefinition.newVariableDefinition
 
@@ -79,6 +81,38 @@ class InputInterceptorTest extends Specification {
                         "stringArg": "also backwards"
                 ]
         ]
+    }
+
+    def "GraphQLSchema variables retain native wrapper types for interceptors"() {
+        given:
+        def seenTypes = []
+        InputInterceptor trackingInterceptor = {
+            Object value,
+            GraphQLInputType type,
+            GraphQLContext context,
+            Locale locale ->
+                seenTypes.add(type)
+                value
+        } as InputInterceptor
+        def variableDefinition = newVariableDefinition(
+                "values",
+                newListType(newTypeName("String").build()).build())
+                .build()
+        def graphQLContext = GraphQLContext.newContext()
+                .put(InputInterceptor.class, trackingInterceptor)
+                .build()
+
+        when:
+        ValuesResolver.coerceVariableValues(
+                schema,
+                [variableDefinition],
+                RawVariables.of([values: ["a"]]),
+                graphQLContext,
+                Locale.CANADA)
+
+        then:
+        seenTypes.any { it instanceof GraphQLList }
+        seenTypes.contains(Scalars.GraphQLString)
     }
 
     def "integration test of interceptor being called"() {

@@ -23,7 +23,7 @@ import java.util.List;
 public class InputMapDefinesTooManyFieldsException extends GraphQLException implements GraphQLError {
 
     public InputMapDefinesTooManyFieldsException(GraphQLType graphQLType, String fieldName) {
-        super(String.format("The variables input contains a field name '%s' that is not defined for input object type '%s' ", fieldName, GraphQLTypeUtil.simplePrint(graphQLType)));
+        this((SchemaType) graphQLType, fieldName);
     }
 
     public InputMapDefinesTooManyFieldsException(

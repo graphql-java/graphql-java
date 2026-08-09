@@ -29,6 +29,12 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
     private @Nullable List<SourceLocation> sourceLocations;
     private @Nullable List<Object> path;
 
+    public NonNullableValueCoercedAsNullException(
+            VariableDefinition variableDefinition,
+            GraphQLType graphQLType) {
+        this(variableDefinition, (SchemaType) graphQLType);
+    }
+
     public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, SchemaType schemaType) {
         super(format("Variable '%s' has coerced Null value for NonNull type '%s'",
                 variableDefinition.getName(), GraphQLTypeUtil.simplePrint(schemaType)));
@@ -49,7 +55,7 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
     }
 
     public NonNullableValueCoercedAsNullException(GraphQLType graphQLType) {
-        super(format("Coerced Null value for NonNull type '%s'", GraphQLTypeUtil.simplePrint(graphQLType)));
+        this((SchemaType) graphQLType);
     }
 
     public NonNullableValueCoercedAsNullException(SchemaType schemaType) {
@@ -64,9 +70,7 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
     }
 
     public NonNullableValueCoercedAsNullException(String fieldName, List<Object> path, GraphQLType graphQLType) {
-        super(format("Field '%s' has coerced Null value for NonNull type '%s'",
-                fieldName, GraphQLTypeUtil.simplePrint(graphQLType)));
-        this.path = path;
+        this(fieldName, path, (SchemaType) graphQLType);
     }
 
     public NonNullableValueCoercedAsNullException(
@@ -92,7 +96,7 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
     }
 
     public NonNullableValueCoercedAsNullException(GraphQLArgument graphQLArgument) {
-        super(format("Argument '%s' has coerced Null value for NonNull type '%s'", graphQLArgument.getName(), graphQLArgument.getType()));
+        this((SchemaArgument) graphQLArgument);
     }
 
     public NonNullableValueCoercedAsNullException(
