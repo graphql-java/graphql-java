@@ -398,6 +398,7 @@ public class SchemaGraphFactory {
             schemaGraph.addVertex(argumentVertex);
             schemaGraph.addEdge(new Edge(directiveVertex, argumentVertex));
         }
+        createAppliedDirectives(directiveVertex, directive.getDirectives(), schemaGraph);
         schemaGraph.addDirective(directive.getName(), directiveVertex);
         schemaGraph.addVertex(directiveVertex);
     }

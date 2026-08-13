@@ -149,6 +149,7 @@ public class IntrospectionResultToSchema {
         List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(args);
         directiveDefBuilder.inputValueDefinitions(inputValueDefinitions);
         Optional.ofNullable((Boolean) input.get("isRepeatable")).ifPresent(value -> directiveDefBuilder.repeatable(value));
+        createDeprecatedDirective(input, directiveDefBuilder);
 
         return directiveDefBuilder.build();
     }

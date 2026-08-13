@@ -18,6 +18,7 @@ import graphql.introspection.GoodFaithIntrospection;
 import graphql.introspection.Introspection;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
+import graphql.language.ArrayValue;
 import graphql.language.AstComparator;
 import graphql.language.BooleanValue;
 import graphql.language.Definition;
@@ -49,8 +50,11 @@ import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNullableType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLType;
@@ -74,7 +78,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -145,8 +148,8 @@ import static graphql.validation.ValidationErrorType.UniqueObjectFieldName;
  *   <li><b>{@code fragmentRetraversalDepth}</b> - Tracks whether we are in the primary document
  *       traversal ({@code == 0}) or inside a manual re-traversal of a fragment via a spread
  *       ({@code > 0}).</li>
- *   <li><b>{@code operationScope}</b> - Tracks whether we are currently inside an operation
- *       definition ({@code true}) or outside of any operation ({@code false}).</li>
+ *   <li><b>Operation scope</b> - {@code currentOperation} identifies the operation currently
+ *       being traversed, or is {@code null} outside an operation.</li>
  * </ul>
  *
  * <h2>Traversal States</h2>
@@ -198,7 +201,7 @@ import static graphql.validation.ValidationErrorType.UniqueObjectFieldName;
  * <p>Examples: {@code FieldsOnCorrectType}, {@code UniqueFragmentNames}, {@code ScalarLeaves}
  *
  * <h3>Operation-Scoped Rules</h3>
- * <p>Check: {@code operationScope == true} (via {@link #shouldRunOperationScopedRules()})
+ * <p>Check: {@code currentOperation != null} (via {@link #shouldRunOperationScopedRules()})
  * <p>Purpose: Track state across an entire operation, including all fragments it references.
  * These rules need to "follow" fragment spreads to see variable usages, defer directives, etc.
  * <p>Examples: {@code NoUndefinedVariables}, {@code NoUnusedVariables}, {@code VariableTypesMatch}
@@ -277,10 +280,17 @@ public class OperationValidator implements DocumentVisitor {
     private final Predicate<OperationValidationRule> rulePredicate;
 
     // --- Traversal context ---
+    private final List<@Nullable GraphQLCompositeType> parentTypeStack = new ArrayList<>();
+    private final List<@Nullable GraphQLFieldDefinition> fieldDefinitionStack = new ArrayList<>();
+    private final List<@Nullable GraphQLInputType> inputTypeStack = new ArrayList<>();
+    private final List<@Nullable InputValueWithState> defaultValueStack = new ArrayList<>();
+    private final List<String> queryPath = new ArrayList<>();
+    private @Nullable GraphQLDirective directiveDefinition;
+
     /**
-     * True when currently processing within an operation definition.
+     * The operation currently being processed, including during fragment retraversal.
      */
-    private boolean operationScope = false;
+    private @Nullable OperationDefinition currentOperation;
     /**
      * Depth of manual fragment traversal; 0 means primary document traversal.
      */
@@ -347,7 +357,7 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- Track whether we're in a context where fragment spread rules should run ---
     // fragmentRetraversalDepth == 0 means we're NOT inside a manually-traversed fragment => run non-fragment-spread checks
-    // operationScope means we're inside an operation => can trigger fragment traversal
+    // A current operation means fragment traversal and operation-scoped rules are active
 
     private final boolean allRulesEnabled;
 
@@ -372,6 +382,226 @@ public class OperationValidator implements DocumentVisitor {
 
     private boolean isRuleEnabled(OperationValidationRule rule) {
         return allRulesEnabled || rulePredicate.test(rule);
+    }
+
+    private void enterTraversal(Node node, List<Node> ancestors) {
+        if (node instanceof SelectionSet) {
+            parentTypeStack.add(resolveSelectionSetParent(ancestors));
+        } else if (node instanceof Field) {
+            enterField((Field) node);
+        } else if (node instanceof Directive) {
+            directiveDefinition = validationContext.getSchema().getDirective(((Directive) node).getName());
+        } else if (node instanceof FragmentDefinition) {
+            enterName(((FragmentDefinition) node).getName());
+        } else if (node instanceof VariableDefinition) {
+            enterVariableDefinition((VariableDefinition) node);
+        } else if (node instanceof Argument) {
+            enterArgument((Argument) node);
+        } else if (node instanceof ArrayValue) {
+            enterArrayValue();
+        } else if (node instanceof ObjectField) {
+            enterObjectField((ObjectField) node);
+        }
+    }
+
+    private void enterField(Field field) {
+        GraphQLCompositeType parentType = getParentType();
+        GraphQLFieldDefinition fieldDefinition = parentType == null
+                ? null
+                : getFieldDefinition(parentType, field.getName());
+        fieldDefinitionStack.add(fieldDefinition);
+        enterName(field.getName());
+    }
+
+    private void enterVariableDefinition(VariableDefinition variableDefinition) {
+        GraphQLType type = TypeFromAST.getTypeFromAST(
+                validationContext.getSchema(),
+                variableDefinition.getType());
+        inputTypeStack.add(type instanceof GraphQLInputType ? (GraphQLInputType) type : null);
+        defaultValueStack.add(null);
+    }
+
+    private void enterArgument(Argument argument) {
+        GraphQLArgument argumentDefinition = getArgumentDefinition(argument.getName());
+        inputTypeStack.add(argumentDefinition == null ? null : argumentDefinition.getType());
+        defaultValueStack.add(
+                argumentDefinition == null ? null : argumentDefinition.getArgumentDefaultValue());
+    }
+
+    private void enterArrayValue() {
+        GraphQLNullableType nullableType = getNullableType(getInputType());
+        GraphQLInputType inputType = null;
+        if (nullableType != null && isList(nullableType)) {
+            inputType = (GraphQLInputType) unwrapOne(nullableType);
+        }
+        inputTypeStack.add(inputType);
+        defaultValueStack.add(null);
+    }
+
+    private void enterObjectField(ObjectField objectField) {
+        GraphQLInputType currentInputType = getInputType();
+        GraphQLUnmodifiedType unwrappedType =
+                currentInputType == null ? null : unwrapAll(currentInputType);
+        GraphQLInputObjectField inputField = null;
+        if (unwrappedType instanceof GraphQLInputObjectType) {
+            inputField = validationContext.getSchema()
+                    .getCodeRegistry()
+                    .getFieldVisibility()
+                    .getFieldDefinition(
+                            (GraphQLInputObjectType) unwrappedType,
+                            objectField.getName());
+        }
+        inputTypeStack.add(inputField == null ? null : inputField.getType());
+        defaultValueStack.add(
+                inputField == null ? null : inputField.getInputFieldDefaultValue());
+    }
+
+    private void leaveTraversal(Node node) {
+        if (node instanceof SelectionSet) {
+            pop(parentTypeStack);
+        } else if (node instanceof Field) {
+            leaveName(((Field) node).getName());
+            pop(fieldDefinitionStack);
+        } else if (node instanceof Directive) {
+            directiveDefinition = null;
+        } else if (node instanceof FragmentDefinition) {
+            leaveName(((FragmentDefinition) node).getName());
+        } else if (node instanceof VariableDefinition
+                || node instanceof Argument
+                || node instanceof ArrayValue
+                || node instanceof ObjectField) {
+            pop(inputTypeStack);
+            pop(defaultValueStack);
+        }
+    }
+
+    private @Nullable GraphQLCompositeType resolveSelectionSetParent(List<Node> ancestors) {
+        Assert.assertNotEmpty(ancestors, "A selection set must have an owner");
+        Node owner = ancestors.get(ancestors.size() - 1);
+        GraphQLType type = getSelectionSetOwnerType(owner);
+        GraphQLUnmodifiedType unwrappedType = type == null ? null : unwrapAll(type);
+        return unwrappedType instanceof GraphQLCompositeType
+                ? (GraphQLCompositeType) unwrappedType
+                : null;
+    }
+
+    private @Nullable GraphQLType getSelectionSetOwnerType(Node owner) {
+        if (owner instanceof OperationDefinition) {
+            return getOperationType((OperationDefinition) owner);
+        }
+        if (owner instanceof Field) {
+            GraphQLFieldDefinition fieldDefinition = getFieldDefinition();
+            return fieldDefinition == null ? null : fieldDefinition.getType();
+        }
+        if (owner instanceof InlineFragment) {
+            TypeName typeCondition = ((InlineFragment) owner).getTypeCondition();
+            return typeCondition == null
+                    ? getParentType()
+                    : validationContext.getSchema().getType(typeCondition.getName());
+        }
+        FragmentDefinition fragmentDefinition = (FragmentDefinition) owner;
+        TypeName typeCondition = fragmentDefinition.getTypeCondition();
+        return validationContext.getSchema().getType(typeCondition.getName());
+    }
+
+    private @Nullable GraphQLObjectType getOperationType(
+            OperationDefinition operationDefinition) {
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
+            return validationContext.getSchema().getQueryType();
+        }
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+            return validationContext.getSchema().getMutationType();
+        }
+        Assert.assertTrue(
+                OperationDefinition.Operation.SUBSCRIPTION.equals(
+                        operationDefinition.getOperation()));
+        return validationContext.getSchema().getSubscriptionType();
+    }
+
+    private @Nullable GraphQLFieldDefinition getFieldDefinition(
+            GraphQLCompositeType parentType,
+            String fieldName) {
+        if (validationContext.getSchema().getQueryType().equals(parentType)) {
+            if (fieldName.equals(
+                    validationContext.getSchema()
+                            .getIntrospectionSchemaFieldDefinition()
+                            .getName())) {
+                return validationContext.getSchema().getIntrospectionSchemaFieldDefinition();
+            }
+            if (fieldName.equals(
+                    validationContext.getSchema()
+                            .getIntrospectionTypeFieldDefinition()
+                            .getName())) {
+                return validationContext.getSchema().getIntrospectionTypeFieldDefinition();
+            }
+        }
+        if (fieldName.equals(
+                validationContext.getSchema()
+                        .getIntrospectionTypenameFieldDefinition()
+                        .getName())) {
+            return validationContext.getSchema().getIntrospectionTypenameFieldDefinition();
+        }
+        if (parentType instanceof GraphQLFieldsContainer) {
+            return validationContext.getSchema()
+                    .getCodeRegistry()
+                    .getFieldVisibility()
+                    .getFieldDefinition((GraphQLFieldsContainer) parentType, fieldName);
+        }
+        return null;
+    }
+
+    private @Nullable GraphQLArgument getArgumentDefinition(String name) {
+        if (directiveDefinition != null) {
+            return directiveDefinition.getArgument(name);
+        }
+        GraphQLFieldDefinition fieldDefinition = getFieldDefinition();
+        return fieldDefinition == null ? null : fieldDefinition.getArgument(name);
+    }
+
+    private @Nullable GraphQLNullableType getNullableType(@Nullable GraphQLType type) {
+        if (type == null) {
+            return null;
+        }
+        return (GraphQLNullableType) (isNonNull(type) ? unwrapOne(type) : type);
+    }
+
+    private @Nullable GraphQLCompositeType getParentType() {
+        return lastElement(parentTypeStack);
+    }
+
+    private @Nullable GraphQLFieldDefinition getFieldDefinition() {
+        return lastElement(fieldDefinitionStack);
+    }
+
+    private @Nullable GraphQLInputType getInputType() {
+        return lastElement(inputTypeStack);
+    }
+
+    private @Nullable InputValueWithState getDefaultValue() {
+        return lastElement(defaultValueStack);
+    }
+
+    private @Nullable GraphQLDirective getDirectiveDefinition() {
+        return directiveDefinition;
+    }
+
+    private void enterName(String name) {
+        queryPath.add(name);
+    }
+
+    private void leaveName(String name) {
+        queryPath.remove(queryPath.size() - 1);
+    }
+
+    private <T> @Nullable T lastElement(List<@Nullable T> list) {
+        if (list.isEmpty()) {
+            return null;
+        }
+        return list.get(list.size() - 1);
+    }
+
+    private <T> @Nullable T pop(List<@Nullable T> list) {
+        return list.remove(list.size() - 1);
     }
 
     /**
@@ -403,7 +633,7 @@ public class OperationValidator implements DocumentVisitor {
      * @return true if currently processing within an operation scope
      */
     private boolean shouldRunOperationScopedRules() {
-        return operationScope;
+        return currentOperation != null;
     }
 
     // ==================== Query Complexity Limit Helpers ====================
@@ -439,7 +669,7 @@ public class OperationValidator implements DocumentVisitor {
 
     @Override
     public void enter(Node node, List<Node> ancestors) {
-        validationContext.getTraversalContext().enter(node, ancestors);
+        enterTraversal(node, ancestors);
 
         if (node instanceof Document) {
             checkDocument((Document) node);
@@ -451,7 +681,7 @@ public class OperationValidator implements DocumentVisitor {
             checkVariableDefinition((VariableDefinition) node);
         } else if (node instanceof Field) {
             // Track complexity only during operation scope
-            if (operationScope) {
+            if (currentOperation != null) {
                 fieldCount++;
                 currentFieldDepth++;
                 checkFieldCountLimit();
@@ -483,7 +713,7 @@ public class OperationValidator implements DocumentVisitor {
 
     @Override
     public void leave(Node node, List<Node> ancestors) {
-        validationContext.getTraversalContext().leave(node, ancestors);
+        leaveTraversal(node);
 
         if (node instanceof Document) {
             documentFinished();
@@ -494,7 +724,7 @@ public class OperationValidator implements DocumentVisitor {
         } else if (node instanceof FragmentDefinition) {
             leaveFragmentDefinition();
         } else if (node instanceof Field) {
-            if (operationScope) {
+            if (currentOperation != null) {
                 currentFieldDepth--;
             }
         }
@@ -526,7 +756,10 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private @Nullable List<String> getQueryPath() {
-        return validationContext.getQueryPath();
+        if (queryPath.isEmpty()) {
+            return null;
+        }
+        return new ArrayList<>(queryPath);
     }
 
     private String i18n(ValidationErrorType validationErrorType, I18nMsg i18nMsg) {
@@ -618,15 +851,15 @@ public class OperationValidator implements DocumentVisitor {
                 validateUniqueDirectiveNamesPerLocation(field, field.getDirectives());
             }
         }
-        // Good Faith Introspection: runs during fragment spread traversal too (operationScope)
-        if (operationScope && isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
+        // Good Faith Introspection also runs during fragment spread traversal in an operation
+        if (currentOperation != null && isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
             checkGoodFaithIntrospection(field);
         }
     }
 
     // --- GoodFaithIntrospection ---
     private void checkGoodFaithIntrospection(Field field) {
-        GraphQLCompositeType parentType = validationContext.getParentType();
+        GraphQLCompositeType parentType = getParentType();
         if (parentType == null) {
             return;
         }
@@ -701,7 +934,7 @@ public class OperationValidator implements DocumentVisitor {
                 validateDeferDirectiveOnRootLevel(directive);
             }
             if (isRuleEnabled(OperationValidationRule.DEFER_DIRECTIVE_ON_VALID_OPERATION)) {
-                validateDeferDirectiveOnValidOperation(directive, ancestors);
+                validateDeferDirectiveOnValidOperation(directive);
             }
         }
     }
@@ -723,7 +956,7 @@ public class OperationValidator implements DocumentVisitor {
         }
 
         // Handle complexity tracking and fragment traversal
-        if (operationScope) {
+        if (currentOperation != null) {
             String fragmentName = node.getName();
             FragmentDefinition fragment = validationContext.getFragment(fragmentName);
 
@@ -793,7 +1026,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkOperationDefinition(OperationDefinition operationDefinition) {
-        operationScope = true;
+        currentOperation = operationDefinition;
 
         if (isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
             validateOverlappingFieldsCanBeMerged(operationDefinition);
@@ -866,7 +1099,7 @@ public class OperationValidator implements DocumentVisitor {
     private void leaveOperationDefinition() {
         // fragments should be revisited for each operation
         visitedFragmentSpreads.clear();
-        operationScope = false;
+        currentOperation = null;
 
         if (isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
             for (VariableDefinition variableDefinition : unusedVars_variableDefinitions) {
@@ -927,7 +1160,7 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- ArgumentsOfCorrectType ---
     private void validateArgumentsOfCorrectType(Argument argument) {
-        GraphQLArgument fieldArgument = validationContext.getArgument();
+        GraphQLArgument fieldArgument = getArgumentDefinition(argument.getName());
         if (fieldArgument == null) {
             return;
         }
@@ -945,11 +1178,11 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- FieldsOnCorrectType ---
     private void validateFieldsOnCorrectType(Field field) {
-        GraphQLCompositeType parentType = validationContext.getParentType();
+        GraphQLCompositeType parentType = getParentType();
         if (parentType == null) {
             return;
         }
-        GraphQLFieldDefinition fieldDef = validationContext.getFieldDef();
+        GraphQLFieldDefinition fieldDef = getFieldDefinition();
         if (fieldDef == null) {
             String message = i18n(FieldUndefined, "FieldsOnCorrectType.unknownField", field.getName(), parentType.getName());
             addError(FieldUndefined, field.getSourceLocation(), message);
@@ -984,7 +1217,7 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- KnownArgumentNames ---
     private void validateKnownArgumentNames(Argument argument) {
-        GraphQLDirective directiveDef = validationContext.getDirective();
+        GraphQLDirective directiveDef = getDirectiveDefinition();
         if (directiveDef != null) {
             GraphQLArgument directiveArgument = directiveDef.getArgument(argument.getName());
             if (directiveArgument == null) {
@@ -993,7 +1226,7 @@ public class OperationValidator implements DocumentVisitor {
             }
             return;
         }
-        GraphQLFieldDefinition fieldDef = validationContext.getFieldDef();
+        GraphQLFieldDefinition fieldDef = getFieldDefinition();
         if (fieldDef == null) {
             return;
         }
@@ -1194,7 +1427,9 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- OverlappingFieldsCanBeMerged ---
     private void validateOverlappingFieldsCanBeMerged(OperationDefinition operationDefinition) {
-        overlappingFieldsImpl(operationDefinition.getSelectionSet(), validationContext.getOutputType());
+        overlappingFieldsImpl(
+                operationDefinition.getSelectionSet(),
+                getOperationType(operationDefinition));
     }
 
     private void overlappingFieldsImpl(SelectionSet selectionSet, @Nullable GraphQLOutputType graphQLOutputType) {
@@ -1524,8 +1759,8 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- PossibleFragmentSpreads ---
     private void validatePossibleFragmentSpreads_inline(InlineFragment inlineFragment) {
-        GraphQLOutputType fragType = validationContext.getOutputType();
-        GraphQLCompositeType parentType = validationContext.getParentType();
+        GraphQLOutputType fragType = getInlineFragmentType(inlineFragment);
+        GraphQLCompositeType parentType = getParentType();
         if (fragType == null || parentType == null) {
             return;
         }
@@ -1542,7 +1777,7 @@ public class OperationValidator implements DocumentVisitor {
             return;
         }
         GraphQLType typeCondition = TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
-        GraphQLCompositeType parentType = validationContext.getParentType();
+        GraphQLCompositeType parentType = getParentType();
         if (typeCondition == null || parentType == null) {
             return;
         }
@@ -1580,9 +1815,19 @@ public class OperationValidator implements DocumentVisitor {
         return type instanceof GraphQLCompositeType;
     }
 
+    private @Nullable GraphQLOutputType getInlineFragmentType(
+            InlineFragment inlineFragment) {
+        TypeName typeCondition = inlineFragment.getTypeCondition();
+        if (typeCondition == null) {
+            return getParentType();
+        }
+        GraphQLType type = validationContext.getSchema().getType(typeCondition.getName());
+        return type instanceof GraphQLOutputType ? (GraphQLOutputType) type : null;
+    }
+
     // --- ProvidedNonNullArguments ---
     private void validateProvidedNonNullArguments_field(Field field) {
-        GraphQLFieldDefinition fieldDef = validationContext.getFieldDef();
+        GraphQLFieldDefinition fieldDef = getFieldDefinition();
         if (fieldDef == null) {
             return;
         }
@@ -1607,7 +1852,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void validateProvidedNonNullArguments_directive(Directive directive) {
-        GraphQLDirective graphQLDirective = validationContext.getDirective();
+        GraphQLDirective graphQLDirective = getDirectiveDefinition();
         if (graphQLDirective == null) {
             return;
         }
@@ -1635,10 +1880,11 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- ScalarLeaves ---
     private void validateScalarLeaves(Field field) {
-        GraphQLOutputType type = validationContext.getOutputType();
-        if (type == null) {
+        GraphQLFieldDefinition fieldDefinition = getFieldDefinition();
+        if (fieldDefinition == null) {
             return;
         }
+        GraphQLOutputType type = fieldDefinition.getType();
         if (isLeaf(type)) {
             if (field.getSelectionSet() != null) {
                 String message = i18n(SubselectionNotAllowed, "ScalarLeaves.subselectionOnLeaf", simplePrint(type), field.getName());
@@ -1654,7 +1900,7 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- VariableDefaultValuesOfCorrectType ---
     private void validateVariableDefaultValuesOfCorrectType(VariableDefinition variableDefinition) {
-        GraphQLInputType inputType = validationContext.getInputType();
+        GraphQLInputType inputType = getInputType();
         if (inputType == null) {
             return;
         }
@@ -1692,16 +1938,16 @@ public class OperationValidator implements DocumentVisitor {
         if (variableType == null) {
             return;
         }
-        GraphQLInputType locationType = validationContext.getInputType();
-        Optional<InputValueWithState> locationDefault = Optional.ofNullable(validationContext.getDefaultValue());
+        GraphQLInputType locationType = getInputType();
         if (locationType == null) {
             return;
         }
+        InputValueWithState locationDefault = getDefaultValue();
         Value<?> locationDefaultValue = null;
-        if (locationDefault.isPresent() && locationDefault.get().isLiteral()) {
-            locationDefaultValue = (Value<?>) locationDefault.get().getValue();
-        } else if (locationDefault.isPresent() && locationDefault.get().isSet()) {
-            locationDefaultValue = ValuesResolver.valueToLiteral(locationDefault.get(), locationType,
+        if (locationDefault != null && locationDefault.isLiteral()) {
+            locationDefaultValue = (Value<?>) locationDefault.getValue();
+        } else if (locationDefault != null && locationDefault.isSet()) {
+            locationDefaultValue = ValuesResolver.valueToLiteral(locationDefault, locationType,
                     validationContext.getGraphQLContext(), validationContext.getI18n().getLocale());
         }
         boolean variableDefMatches = variablesTypesMatcher.doesVariableTypesMatch(variableType, variableDefinition.getDefaultValue(), locationType, locationDefaultValue);
@@ -1871,7 +2117,7 @@ public class OperationValidator implements DocumentVisitor {
         }
         GraphQLObjectType mutationType = validationContext.getSchema().getMutationType();
         GraphQLObjectType subscriptionType = validationContext.getSchema().getSubscriptionType();
-        GraphQLCompositeType parentType = validationContext.getParentType();
+        GraphQLCompositeType parentType = getParentType();
         if (mutationType != null && parentType != null && parentType.getName().equals(mutationType.getName())) {
             String message = i18n(MisplacedDirective, "DeferDirective.notAllowedOperationRootLevelMutation", parentType.getName());
             addError(MisplacedDirective, directive.getSourceLocation(), message);
@@ -1882,27 +2128,19 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     // --- DeferDirectiveOnValidOperation ---
-    private void validateDeferDirectiveOnValidOperation(Directive directive, List<Node> ancestors) {
+    private void validateDeferDirectiveOnValidOperation(Directive directive) {
         if (!isExperimentalApiKeyEnabled(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT)) {
             return;
         }
         if (!Directives.DeferDirective.getName().equals(directive.getName())) {
             return;
         }
-        Optional<OperationDefinition> operationDefinition = getOperationDefinition(ancestors);
-        if (operationDefinition.isPresent() &&
-                SUBSCRIPTION.equals(operationDefinition.get().getOperation()) &&
+        OperationDefinition operationDefinition = Assert.assertNotNull(currentOperation);
+        if (SUBSCRIPTION.equals(operationDefinition.getOperation()) &&
                 !ifArgumentMightBeFalse(directive)) {
             String message = i18n(MisplacedDirective, "IncrementalDirective.notAllowedSubscriptionOperation", directive.getName());
             addError(MisplacedDirective, directive.getSourceLocation(), message);
         }
-    }
-
-    private Optional<OperationDefinition> getOperationDefinition(List<Node> ancestors) {
-        return ancestors.stream()
-                .filter(doc -> doc instanceof OperationDefinition)
-                .map(def -> (OperationDefinition) def)
-                .findFirst();
     }
 
     private boolean ifArgumentMightBeFalse(Directive directive) {
