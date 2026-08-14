@@ -1,7 +1,5 @@
 import aQute.bnd.gradle.BundleTaskExtension
 import net.ltgt.gradle.errorprone.CheckSeverity
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 import java.text.SimpleDateFormat
 
@@ -27,27 +25,13 @@ plugins {
     id "io.github.reyerizo.gradle.jcstress" version "0.9.0"
     id "net.ltgt.errorprone" version '5.1.0'
     id 'jacoco'
-    //
-    // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.4.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.0' apply false
+    id 'org.jetbrains.dokka-javadoc' version '2.2.0' apply false
 }
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25) // build on 25 - release on 11
-    }
-}
-
-kotlin {
-    compilerOptions {
-        apiVersion = KotlinVersion.KOTLIN_2_0
-        languageVersion = KotlinVersion.KOTLIN_2_0
-        jvmTarget = JvmTarget.JVM_11
-        javaParameters = true
-        freeCompilerArgs = [
-                '-Xemit-jvm-type-annotations',
-                '-Xjspecify-annotations=strict',
-        ]
     }
 }
 
@@ -174,8 +158,6 @@ dependencies {
     errorprone 'com.uber.nullaway:nullaway:0.13.8'
     errorprone 'com.google.errorprone:error_prone_core:2.50.0'
 
-    // just tests - no Kotlin otherwise
-    testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 }
 
 shadowJar {
@@ -801,5 +783,3 @@ tasks.withType(PublishToMavenRepository) {
 tasks.withType(GenerateModuleMetadata) {
     enabled = false
 }
-
-

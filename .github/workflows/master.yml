@@ -57,9 +57,7 @@ jobs:
         run: |
           total=0; failures=0; errors=0; skipped=0
           for dir_name in ${{ matrix.test-results-dirs }}; do
-            dir="build/test-results/$dir_name"
-            for f in "$dir"/TEST-*.xml; do
-              [ -f "$f" ] || continue
+            while IFS= read -r -d '' f; do
               t=$(grep -o 'tests="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
               fl=$(grep -o 'failures="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
               e=$(grep -o 'errors="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
@@ -68,7 +66,7 @@ jobs:
               failures=$((failures + ${fl:-0}))
               errors=$((errors + ${e:-0}))
               skipped=$((skipped + ${s:-0}))
-            done
+            done < <(find . -type f -path "*/build/test-results/$dir_name/TEST-*.xml" -print0)
           done
           passed=$((total - failures - errors - skipped))
           mkdir -p /tmp/test-stats
