@@ -42,6 +42,7 @@ import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.DIRECTIVE_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
 import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
@@ -53,6 +54,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.introspection.Introspection.DirectiveLocation.UNION;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.mergeFirst;
+import static java.util.stream.Collectors.joining;
 
 /**
  * This is responsible for traversing EVERY type and field in the registry and ensuring that
@@ -105,6 +107,14 @@ class SchemaTypeDirectivesChecker {
         checkDirectives(DirectiveLocation.SCHEMA, errors, typeRegistry, schemaDefinition, "schema", schemaDirectives);
 
         Collection<DirectiveDefinition> directiveDefinitions = typeRegistry.getDirectiveDefinitions().values();
+        directiveDefinitions.forEach(definition -> {
+            checkDirectives(DIRECTIVE_DEFINITION, errors, typeRegistry, definition, definition.getName(), definition.getDirectives());
+            definition.getInputValueDefinitions().forEach(argument ->
+                    checkDirectives(ARGUMENT_DEFINITION, errors, typeRegistry, argument, argument.getName(), argument.getDirectives()));
+        });
+        typeRegistry.directiveExtensions().values().forEach(extensions ->
+                extensions.forEach(extension ->
+                        checkDirectives(DIRECTIVE_DEFINITION, errors, typeRegistry, extension, extension.getName(), extension.getDirectives())));
         commonCheck(directiveDefinitions, errors);
     }
 
@@ -190,118 +200,199 @@ class SchemaTypeDirectivesChecker {
     private void commonCheck(Collection<DirectiveDefinition> directiveDefinitions, List<GraphQLError> errors) {
         List<DirectiveDefinition> directiveDefinitionsList = new ArrayList<>(directiveDefinitions);
         Map<String, DirectiveDefinition> directiveDefinitionsByName = getByName(directiveDefinitionsList, DirectiveDefinition::getName, mergeFirst());
-        Map<String, Map<String, InputValueDefinition>> directiveReferencesByName = directiveReferencesByName(directiveDefinitionsByName);
+        Map<String, Map<String, NamedNode<?>>> referencesByName = referencesByName(directiveDefinitionsByName);
 
         directiveDefinitions.forEach(directiveDefinition -> {
             assertTypeName(directiveDefinition, errors);
+            checkDirectReference(directiveDefinition, directiveDefinition, directiveDefinition.getDirectives(), errors);
             directiveDefinition.getInputValueDefinitions().forEach(inputValueDefinition -> {
                 assertTypeName(inputValueDefinition, errors);
                 assertExistAndIsInputType(inputValueDefinition, errors);
-                if (inputValueDefinition.hasDirective(directiveDefinition.getName())) {
-                    errors.add(new DirectiveIllegalReferenceError(directiveDefinition, inputValueDefinition));
-                }
+                checkDirectReference(directiveDefinition, inputValueDefinition, inputValueDefinition.getDirectives(), errors);
             });
+            typeRegistry.directiveExtensions()
+                    .getOrDefault(directiveDefinition.getName(), Collections.emptyList())
+                    .forEach(extension ->
+                            checkDirectReference(directiveDefinition, extension, extension.getDirectives(), errors));
         });
-        checkIndirectDirectiveCycles(directiveDefinitionsByName, directiveReferencesByName, errors);
+        checkIndirectDirectiveCycles(directiveDefinitionsByName, referencesByName, errors);
     }
 
-    private static Map<String, Map<String, InputValueDefinition>> directiveReferencesByName(
+    private static void checkDirectReference(DirectiveDefinition definition,
+                                             NamedNode<?> location,
+                                             List<Directive> directives,
+                                             List<GraphQLError> errors) {
+        if (directives.stream().noneMatch(directive -> directive.getName().equals(definition.getName()))) {
+            return;
+        }
+        errors.add(new DirectiveIllegalReferenceError(definition, location));
+    }
+
+    private Map<String, Map<String, NamedNode<?>>> referencesByName(
             Map<String, DirectiveDefinition> directiveDefinitionsByName) {
-        Map<String, Map<String, InputValueDefinition>> result = new LinkedHashMap<>();
-        directiveDefinitionsByName.forEach((name, directiveDefinition) -> result.put(name, directiveReferences(directiveDefinition)));
+        Map<String, Map<String, NamedNode<?>>> result = new LinkedHashMap<>();
+        directiveDefinitionsByName.values().forEach(definition ->
+                recordDirectiveDefinitionReferences(result, definition));
+        recordInputTypeReferences(result);
         return result;
     }
 
-    private static Map<String, InputValueDefinition> directiveReferences(DirectiveDefinition directiveDefinition) {
-        Map<String, InputValueDefinition> result = new LinkedHashMap<>();
-        for (InputValueDefinition inputValueDefinition : directiveDefinition.getInputValueDefinitions()) {
-            recordDirectiveReferences(directiveDefinition, result, inputValueDefinition);
-        }
-        return result;
+    private void recordDirectiveDefinitionReferences(Map<String, Map<String, NamedNode<?>>> references,
+                                                     DirectiveDefinition definition) {
+        String source = definition.getName();
+        recordAppliedDirectiveReferences(references, source, definition, definition.getDirectives());
+        definition.getInputValueDefinitions().forEach(argument -> {
+            recordAppliedDirectiveReferences(references, source, argument, argument.getDirectives());
+            recordReference(references, source, typeKey(TypeUtil.unwrapAll(argument.getType()).getName()), argument);
+        });
+        typeRegistry.directiveExtensions()
+                .getOrDefault(source, Collections.emptyList())
+                .forEach(extension ->
+                        recordAppliedDirectiveReferences(references, source, extension, extension.getDirectives()));
     }
 
-    private static void recordDirectiveReferences(DirectiveDefinition directiveDefinition,
-                                                  Map<String, InputValueDefinition> result,
-                                                  InputValueDefinition inputValueDefinition) {
-        for (Directive directive : inputValueDefinition.getDirectives()) {
-            if (directive.getName().equals(directiveDefinition.getName())) {
-                continue;
+    private void recordInputTypeReferences(Map<String, Map<String, NamedNode<?>>> references) {
+        typeRegistry.getTypes(InputObjectTypeDefinition.class)
+                .forEach(definition -> recordInputObjectReferences(references, definition));
+        typeRegistry.inputObjectTypeExtensions().values()
+                .forEach(extensions -> extensions.forEach(extension -> recordInputObjectReferences(references, extension)));
+        typeRegistry.getTypes(EnumTypeDefinition.class)
+                .forEach(definition -> recordEnumReferences(references, definition));
+        typeRegistry.enumTypeExtensions().values()
+                .forEach(extensions -> extensions.forEach(extension -> recordEnumReferences(references, extension)));
+        typeRegistry.scalars().values()
+                .forEach(definition -> recordScalarReferences(references, definition));
+        typeRegistry.scalarTypeExtensions().values()
+                .forEach(extensions -> extensions.forEach(extension -> recordScalarReferences(references, extension)));
+    }
+
+    private static void recordInputObjectReferences(Map<String, Map<String, NamedNode<?>>> references,
+                                                    InputObjectTypeDefinition definition) {
+        String source = typeKey(definition.getName());
+        recordAppliedDirectiveReferences(references, source, definition, definition.getDirectives());
+        definition.getInputValueDefinitions().forEach(field -> {
+            recordAppliedDirectiveReferences(references, source, field, field.getDirectives());
+            recordReference(references, source, typeKey(TypeUtil.unwrapAll(field.getType()).getName()), field);
+        });
+    }
+
+    private static void recordEnumReferences(Map<String, Map<String, NamedNode<?>>> references,
+                                             EnumTypeDefinition definition) {
+        String source = typeKey(definition.getName());
+        recordAppliedDirectiveReferences(references, source, definition, definition.getDirectives());
+        definition.getEnumValueDefinitions().forEach(value ->
+                recordAppliedDirectiveReferences(references, source, value, value.getDirectives()));
+    }
+
+    private static void recordScalarReferences(Map<String, Map<String, NamedNode<?>>> references,
+                                               ScalarTypeDefinition definition) {
+        recordAppliedDirectiveReferences(references, typeKey(definition.getName()), definition, definition.getDirectives());
+    }
+
+    private static void recordAppliedDirectiveReferences(Map<String, Map<String, NamedNode<?>>> references,
+                                                         String source,
+                                                         NamedNode<?> location,
+                                                         List<Directive> directives) {
+        directives.forEach(directive -> {
+            if (!directive.getName().equals(source)) {
+                recordReference(references, source, directive.getName(), location);
             }
-            result.putIfAbsent(directive.getName(), inputValueDefinition);
-        }
+        });
+    }
+
+    private static void recordReference(Map<String, Map<String, NamedNode<?>>> references,
+                                        String source,
+                                        String target,
+                                        NamedNode<?> location) {
+        references.computeIfAbsent(source, key -> new LinkedHashMap<>())
+                .putIfAbsent(target, location);
+    }
+
+    private static String typeKey(String typeName) {
+        return "type:" + typeName;
     }
 
     private static void checkIndirectDirectiveCycles(
             Map<String, DirectiveDefinition> directiveDefinitionsByName,
-            Map<String, Map<String, InputValueDefinition>> directiveReferencesByName,
+            Map<String, Map<String, NamedNode<?>>> referencesByName,
             List<GraphQLError> errors) {
         Set<String> checked = new LinkedHashSet<>();
         Set<String> visiting = new LinkedHashSet<>();
         List<String> path = new ArrayList<>();
         for (String directiveName : directiveDefinitionsByName.keySet()) {
-            checkIndirectDirectiveCycles(directiveName, directiveDefinitionsByName, directiveReferencesByName, checked, visiting, path, errors);
+            checkIndirectDirectiveCycles(directiveName, directiveDefinitionsByName, referencesByName, checked, visiting, path, errors);
         }
     }
 
-    private static void checkIndirectDirectiveCycles(String directiveName,
+    private static void checkIndirectDirectiveCycles(String nodeName,
                                                      Map<String, DirectiveDefinition> directiveDefinitionsByName,
-                                                     Map<String, Map<String, InputValueDefinition>> directiveReferencesByName,
+                                                     Map<String, Map<String, NamedNode<?>>> referencesByName,
                                                      Set<String> checked,
                                                      Set<String> visiting,
                                                      List<String> path,
                                                      List<GraphQLError> errors) {
-        if (checked.contains(directiveName)) {
+        if (checked.contains(nodeName)) {
             return;
         }
 
-        visiting.add(directiveName);
-        path.add(directiveName);
-        checkIndirectDirectiveCycleReferences(directiveName, directiveDefinitionsByName, directiveReferencesByName, checked, visiting, path, errors);
+        visiting.add(nodeName);
+        path.add(nodeName);
+        checkIndirectDirectiveCycleReferences(nodeName, directiveDefinitionsByName, referencesByName, checked, visiting, path, errors);
         path.remove(path.size() - 1);
-        visiting.remove(directiveName);
-        checked.add(directiveName);
+        visiting.remove(nodeName);
+        checked.add(nodeName);
     }
 
-    private static void checkIndirectDirectiveCycleReferences(String directiveName,
+    private static void checkIndirectDirectiveCycleReferences(String nodeName,
                                                              Map<String, DirectiveDefinition> directiveDefinitionsByName,
-                                                             Map<String, Map<String, InputValueDefinition>> directiveReferencesByName,
+                                                             Map<String, Map<String, NamedNode<?>>> referencesByName,
                                                              Set<String> checked,
                                                              Set<String> visiting,
                                                              List<String> path,
                                                              List<GraphQLError> errors) {
-        Map<String, InputValueDefinition> references = directiveReferencesByName.getOrDefault(directiveName, Collections.emptyMap());
-        for (Map.Entry<String, InputValueDefinition> entry : references.entrySet()) {
-            checkIndirectDirectiveCycleReference(entry.getKey(), entry.getValue(), directiveDefinitionsByName, directiveReferencesByName, checked, visiting, path, errors);
+        Map<String, NamedNode<?>> references = referencesByName.getOrDefault(nodeName, Collections.emptyMap());
+        for (Map.Entry<String, NamedNode<?>> entry : references.entrySet()) {
+            checkIndirectDirectiveCycleReference(entry.getKey(), entry.getValue(), directiveDefinitionsByName, referencesByName, checked, visiting, path, errors);
         }
     }
 
-    private static void checkIndirectDirectiveCycleReference(String referencedDirectiveName,
-                                                            InputValueDefinition inputValueDefinition,
+    private static void checkIndirectDirectiveCycleReference(String referencedNodeName,
+                                                            NamedNode<?> location,
                                                             Map<String, DirectiveDefinition> directiveDefinitionsByName,
-                                                            Map<String, Map<String, InputValueDefinition>> directiveReferencesByName,
+                                                            Map<String, Map<String, NamedNode<?>>> referencesByName,
                                                             Set<String> checked,
                                                             Set<String> visiting,
                                                             List<String> path,
                                                             List<GraphQLError> errors) {
-        if (visiting.contains(referencedDirectiveName)) {
-            addIndirectDirectiveCycleError(referencedDirectiveName, inputValueDefinition, directiveDefinitionsByName, path, errors);
+        if (visiting.contains(referencedNodeName)) {
+            addIndirectDirectiveCycleError(referencedNodeName, location, directiveDefinitionsByName, path, errors);
             return;
         }
-        if (!checked.contains(referencedDirectiveName)) {
-            checkIndirectDirectiveCycles(referencedDirectiveName, directiveDefinitionsByName, directiveReferencesByName, checked, visiting, path, errors);
+        if (!checked.contains(referencedNodeName)) {
+            checkIndirectDirectiveCycles(referencedNodeName, directiveDefinitionsByName, referencesByName, checked, visiting, path, errors);
         }
     }
 
-    private static void addIndirectDirectiveCycleError(String repeatedDirectiveName,
-                                                       InputValueDefinition inputValueDefinition,
+    private static void addIndirectDirectiveCycleError(String repeatedNodeName,
+                                                       NamedNode<?> location,
                                                        Map<String, DirectiveDefinition> directiveDefinitionsByName,
                                                        List<String> path,
                                                        List<GraphQLError> errors) {
-        List<String> cyclePath = directiveCyclePath(repeatedDirectiveName, path);
-        String cyclePathString = String.join(" -> ", cyclePath);
+        List<String> cyclePath = directiveCyclePath(repeatedNodeName, path);
+        String directiveName = cyclePath.stream()
+                .filter(directiveDefinitionsByName::containsKey)
+                .findFirst()
+                .orElse(null);
+        if (directiveName == null) {
+            return;
+        }
+        cyclePath = rotateCyclePath(cyclePath, directiveName);
+        String cyclePathString = cyclePath.stream()
+                .map(SchemaTypeDirectivesChecker::displayNodeName)
+                .collect(joining(" -> "));
 
-        DirectiveDefinition directiveDefinition = assertNotNull(directiveDefinitionsByName.get(repeatedDirectiveName));
-        errors.add(new DirectiveIllegalReferenceError(directiveDefinition, inputValueDefinition, cyclePathString));
+        DirectiveDefinition directiveDefinition = assertNotNull(directiveDefinitionsByName.get(directiveName));
+        errors.add(new DirectiveIllegalReferenceError(directiveDefinition, location, cyclePathString));
     }
 
     private static List<String> directiveCyclePath(String repeatedDirectiveName, List<String> path) {
@@ -309,6 +400,23 @@ class SchemaTypeDirectivesChecker {
         List<String> cyclePath = new ArrayList<>(path.subList(cycleStart, path.size()));
         cyclePath.add(repeatedDirectiveName);
         return cyclePath;
+    }
+
+    private static List<String> rotateCyclePath(List<String> cyclePath, String firstNode) {
+        List<String> nodes = cyclePath.subList(0, cyclePath.size() - 1);
+        int firstNodeIndex = nodes.indexOf(firstNode);
+        List<String> result = new ArrayList<>(nodes.size() + 1);
+        result.addAll(nodes.subList(firstNodeIndex, nodes.size()));
+        result.addAll(nodes.subList(0, firstNodeIndex));
+        result.add(firstNode);
+        return result;
+    }
+
+    private static String displayNodeName(String nodeName) {
+        if (nodeName.startsWith("type:")) {
+            return nodeName.substring("type:".length());
+        }
+        return nodeName;
     }
 
     private static void assertTypeName(NamedNode<?> node, List<GraphQLError> errors) {

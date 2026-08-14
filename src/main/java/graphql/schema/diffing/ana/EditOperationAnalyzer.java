@@ -26,6 +26,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgume
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumValueLocation;
@@ -260,6 +261,14 @@ public class EditOperationAnalyzer {
             appliedDirectiveDeletedFromField(appliedDirective, container);
         } else if (container.isOfType(SchemaGraph.ARGUMENT)) {
             appliedDirectiveDeletedFromArgument(appliedDirective, container);
+        } else if (container.isOfType(SchemaGraph.DIRECTIVE)) {
+            Vertex directive = container;
+            if (isDirectiveDeleted(directive.getName())) {
+                return;
+            }
+            AppliedDirectiveDirectiveLocation location = new AppliedDirectiveDirectiveLocation(directive.getName(), appliedDirective.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getDirectiveModification(directive.getName()).getDetails().add(appliedDirectiveDeletion);
         } else if (container.isOfType(SchemaGraph.OBJECT)) {
             Vertex object = container;
             if (isObjectDeleted(object.getName())) {
@@ -393,6 +402,16 @@ public class EditOperationAnalyzer {
                 AppliedDirectiveDirectiveArgumentLocation location = new AppliedDirectiveDirectiveArgumentLocation(directive.getName(), argument.getName(), appliedDirective.getName());
                 getDirectiveModification(directive.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
             }
+        } else if (container.isOfType(SchemaGraph.DIRECTIVE)) {
+            Vertex directive = container;
+            if (isDirectiveDeleted(directive.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveDeleted(directive, appliedDirective.getName())) {
+                return;
+            }
+            AppliedDirectiveDirectiveLocation location = new AppliedDirectiveDirectiveLocation(directive.getName(), appliedDirective.getName());
+            getDirectiveModification(directive.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
         } else if (container.isOfType(SchemaGraph.FIELD)) {
             Vertex field = container;
             Vertex interfaceOrObjective = oldSchemaGraph.getFieldsContainerForField(field);
@@ -573,6 +592,16 @@ public class EditOperationAnalyzer {
                 AppliedDirectiveDirectiveArgumentLocation location = new AppliedDirectiveDirectiveArgumentLocation(directive.getName(), argument.getName(), appliedDirective.getName());
                 getDirectiveModification(directive.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
             }
+        } else if (container.isOfType(SchemaGraph.DIRECTIVE)) {
+            Vertex directive = container;
+            if (isDirectiveAdded(directive.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveAdded(directive, appliedDirective.getName())) {
+                return;
+            }
+            AppliedDirectiveDirectiveLocation location = new AppliedDirectiveDirectiveLocation(directive.getName(), appliedDirective.getName());
+            getDirectiveModification(directive.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
         } else if (container.isOfType(SchemaGraph.FIELD)) {
             Vertex field = container;
             Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
@@ -777,6 +806,13 @@ public class EditOperationAnalyzer {
                 }
 
             }
+        } else if (container.isOfType(SchemaGraph.DIRECTIVE)) {
+            Vertex directive = container;
+            AppliedDirectiveDirectiveLocation location = new AppliedDirectiveDirectiveLocation(directive.getName(), appliedDirective.getName());
+            if (valueChanged) {
+                AppliedDirectiveArgumentValueModification argumentValueModification = new AppliedDirectiveArgumentValueModification(location, newArgumentName, oldValue, newValue);
+                getDirectiveModification(directive.getName()).getDetails().add(argumentValueModification);
+            }
         } else if (container.isOfType(SchemaGraph.INPUT_FIELD)) {
             Vertex inputField = container;
             Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
@@ -874,7 +910,14 @@ public class EditOperationAnalyzer {
             appliedDirectiveAddedToField(appliedDirective, container);
         } else if (container.isOfType(SchemaGraph.ARGUMENT)) {
             appliedDirectiveAddedToArgument(appliedDirective, container);
-
+        } else if (container.isOfType(SchemaGraph.DIRECTIVE)) {
+            Vertex directive = container;
+            if (isDirectiveAdded(directive.getName())) {
+                return;
+            }
+            AppliedDirectiveDirectiveLocation location = new AppliedDirectiveDirectiveLocation(directive.getName(), appliedDirective.getName());
+            AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+            getDirectiveModification(directive.getName()).getDetails().add(appliedDirectiveAddition);
         } else if (container.isOfType(SchemaGraph.OBJECT)) {
             Vertex object = container;
             if (isObjectAdded(object.getName())) {

@@ -8,8 +8,8 @@ import java.text.SimpleDateFormat
 buildscript {
     repositories { mavenCentral() }
     dependencies {
-        classpath 'org.ow2.asm:asm:9.9.1'
-        classpath 'org.ow2.asm:asm-tree:9.9.1'
+        classpath 'org.ow2.asm:asm:9.10.1'
+        classpath 'org.ow2.asm:asm-tree:9.10.1'
     }
 }
 
@@ -19,7 +19,7 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "9.4.1"
+    id "com.gradleup.shadow" version "9.4.2"
     id "biz.aQute.bnd.builder" version "7.1.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
@@ -29,7 +29,7 @@ plugins {
     id 'jacoco'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.3.20'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.0'
 }
 
 java {
@@ -137,16 +137,16 @@ dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.14.4'
 
     testImplementation 'org.spockframework:spock-core:2.4-groovy-5.0'
     testImplementation 'net.bytebuddy:byte-buddy:1.18.8'
     testImplementation 'org.objenesis:objenesis:3.5'
-    testImplementation 'org.apache.groovy:groovy:5.0.5'
-    testImplementation 'org.apache.groovy:groovy-json:5.0.5'
+    testImplementation 'org.apache.groovy:groovy:5.0.7'
+    testImplementation 'org.apache.groovy:groovy-json:5.0.7'
     testImplementation 'com.google.code.gson:gson:2.14.0'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.26'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.21.1'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.22.0'
     testImplementation 'org.awaitility:awaitility-groovy:4.3.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
@@ -159,7 +159,7 @@ dependencies {
     testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
     
     // JUnit Platform launcher required for Gradle 9
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.3'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.14.4'
 
     antlr 'org.antlr:antlr4:' + antlrVersion
 
@@ -171,8 +171,8 @@ dependencies {
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
-    errorprone 'com.uber.nullaway:nullaway:0.13.4'
-    errorprone 'com.google.errorprone:error_prone_core:2.48.0'
+    errorprone 'com.uber.nullaway:nullaway:0.13.8'
+    errorprone 'com.google.errorprone:error_prone_core:2.50.0'
 
     // just tests - no Kotlin otherwise
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'

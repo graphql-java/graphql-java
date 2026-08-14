@@ -974,11 +974,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 directive @enumTypeDirective on ENUM
 
@@ -1161,11 +1161,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
@@ -1268,11 +1268,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 directive @example on FIELD_DEFINITION
 
@@ -1347,11 +1347,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 directive @example on FIELD_DEFINITION
 
@@ -1455,11 +1455,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
@@ -1552,11 +1552,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
@@ -1703,11 +1703,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 directive @directive1 on SCALAR
 
@@ -1948,11 +1948,11 @@ type Query {
         def result = new SchemaPrinter(printOptions).print(schema)
 
         then:
-        result == '''"Marks the field, argument, input field or enum value as deprecated"
+        result == '''"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 type Query {
   fieldX: String @deprecated(reason : "No longer supported")
@@ -2250,11 +2250,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
@@ -2488,11 +2488,11 @@ directive @include(
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 "This directive allows results to be deferred during execution"
 directive @defer(
@@ -2620,11 +2620,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 " custom directive 'example' description 1"
 # custom directive 'example' comment 1
@@ -2868,11 +2868,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 " custom directive 'example' description 1"
 directive @example on ENUM_VALUE
@@ -3067,11 +3067,11 @@ directive @defer(
     label: String
   ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Marks the field, argument, input field or enum value as deprecated"
+"Marks an element of a GraphQL schema as no longer supported."
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | DIRECTIVE_DEFINITION
 
 "This directive disables error propagation when a non nullable field returns null for the given operation."
 directive @experimental_disableErrorPropagation on QUERY | MUTATION | SUBSCRIPTION

@@ -50,7 +50,7 @@ public class ShallowTypeRefCollector {
         }
         // Scan applied directives on all directive container types
         if (type instanceof GraphQLDirectiveContainer) {
-            scanAppliedDirectives(((GraphQLDirectiveContainer) type).getAppliedDirectives());
+            scanDirectiveContainer((GraphQLDirectiveContainer) type);
         }
         if (type instanceof GraphQLUnionType) {
             handleUnionType((GraphQLUnionType) type);
@@ -192,9 +192,24 @@ public class ShallowTypeRefCollector {
      * @param directive the directive definition to scan
      */
     public void handleDirective(GraphQLDirective directive) {
+        scanDirectiveContainer(directive);
         for (GraphQLArgument argument : directive.getArguments()) {
             scanArgumentType(argument);
             scanAppliedDirectives(argument.getAppliedDirectives());
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void scanDirectiveContainer(GraphQLDirectiveContainer directiveContainer) {
+        scanAppliedDirectives(directiveContainer.getAppliedDirectives());
+        scanDirectives(directiveContainer.getDirectives());
+    }
+
+    private void scanDirectives(List<GraphQLDirective> directives) {
+        for (GraphQLDirective directive : directives) {
+            for (GraphQLArgument argument : directive.getArguments()) {
+                scanArgumentType(argument);
+            }
         }
     }
 

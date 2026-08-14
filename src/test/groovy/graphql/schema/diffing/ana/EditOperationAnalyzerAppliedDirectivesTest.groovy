@@ -10,6 +10,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgume
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumValueLocation
@@ -479,6 +480,143 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         detail[0].argumentName == "arg1"
         detail[0].oldValue == '"foo"'
         detail[0].newValue == '"bar"'
+    }
+
+    def "applied directive added directive definition"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 @d(arg: "foo") on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d2"] instanceof DirectiveModification
+        def appliedDirective = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveAddition)
+        def location = appliedDirective[0].locationDetail as AppliedDirectiveDirectiveLocation
+        location.directiveDefinitionName == "d2"
+        location.directiveName == "d"
+        appliedDirective[0].name == "d"
+    }
+
+    def "applied directive deleted directive definition"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 @d(arg: "foo") on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d2"] instanceof DirectiveModification
+        def appliedDirective = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveDeletion)
+        def location = appliedDirective[0].locationDetail as AppliedDirectiveDirectiveLocation
+        location.directiveDefinitionName == "d2"
+        location.directiveName == "d"
+        appliedDirective[0].name == "d"
+    }
+
+    def "applied directive argument value changed directive definition"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 @d(arg: "foo") on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 @d(arg: "bar") on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d2"] instanceof DirectiveModification
+        def detail = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveArgumentValueModification)
+        def location = detail[0].locationDetail as AppliedDirectiveDirectiveLocation
+        location.directiveDefinitionName == "d2"
+        location.directiveName == "d"
+        detail[0].argumentName == "arg"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
+    }
+
+    def "applied directive argument added directive definition"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 @d on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 @d(arg: "foo") on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d2"] instanceof DirectiveModification
+        def appliedDirectiveArgumentAddition = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveArgumentAddition)
+        def location = appliedDirectiveArgumentAddition[0].locationDetail as AppliedDirectiveDirectiveLocation
+        location.directiveDefinitionName == "d2"
+        location.directiveName == "d"
+        appliedDirectiveArgumentAddition[0].argumentName == "arg"
+    }
+
+    def "applied directive argument deleted directive definition"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 @d(arg: "foo") on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on DIRECTIVE_DEFINITION
+        directive @d2 @d on FIELD_DEFINITION
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d2"] instanceof DirectiveModification
+        def appliedDirectiveArgumentDeletion = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def location = appliedDirectiveArgumentDeletion[0].locationDetail as AppliedDirectiveDirectiveLocation
+        location.directiveDefinitionName == "d2"
+        location.directiveName == "d"
+        appliedDirectiveArgumentDeletion[0].argumentName == "arg"
     }
 
 

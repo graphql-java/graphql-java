@@ -5,6 +5,7 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.language.DirectiveDefinition;
+import graphql.language.DirectiveExtensionDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.ImplementingTypeDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
@@ -37,9 +38,9 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.idl.SchemaExtensionsChecker.defineOperationDefs;
@@ -62,6 +63,7 @@ public class TypeDefinitionRegistry implements Serializable {
     protected final Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions;
     protected final Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions;
     protected final Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions;
+    protected final Map<String, List<DirectiveExtensionDefinition>> directiveExtensions;
 
     protected final Map<String, TypeDefinition> types;
     protected final Map<String, ScalarTypeDefinition> scalarTypes;
@@ -77,6 +79,7 @@ public class TypeDefinitionRegistry implements Serializable {
         enumTypeExtensions = new LinkedHashMap<>();
         scalarTypeExtensions = new LinkedHashMap<>();
         inputObjectTypeExtensions = new LinkedHashMap<>();
+        directiveExtensions = new LinkedHashMap<>();
         types = new LinkedHashMap<>();
         scalarTypes = new LinkedHashMap<>();
         directiveDefinitions = new LinkedHashMap<>();
@@ -90,6 +93,7 @@ public class TypeDefinitionRegistry implements Serializable {
                                      Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions,
                                      Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions,
                                      Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions,
+                                     Map<String, List<DirectiveExtensionDefinition>> directiveExtensions,
                                      Map<String, TypeDefinition> types,
                                      Map<String, ScalarTypeDefinition> scalarTypes,
                                      Map<String, DirectiveDefinition> directiveDefinitions,
@@ -102,6 +106,7 @@ public class TypeDefinitionRegistry implements Serializable {
         this.enumTypeExtensions = enumTypeExtensions;
         this.scalarTypeExtensions = scalarTypeExtensions;
         this.inputObjectTypeExtensions = inputObjectTypeExtensions;
+        this.directiveExtensions = directiveExtensions;
         this.types = types;
         this.scalarTypes = scalarTypes;
         this.directiveDefinitions = directiveDefinitions;
@@ -205,6 +210,12 @@ public class TypeDefinitionRegistry implements Serializable {
                     .computeIfAbsent(key, k -> new ArrayList<>());
             currentList.addAll(value);
         });
+        typeRegistry.directiveExtensions.forEach((key, value) -> {
+            List<DirectiveExtensionDefinition> currentList = this.directiveExtensions
+                    .computeIfAbsent(key, k -> new ArrayList<>());
+            currentList.addAll(value);
+            value.forEach(schemaParseOrder::addDefinition);
+        });
 
         return this;
     }
@@ -276,6 +287,9 @@ public class TypeDefinitionRegistry implements Serializable {
         } else if (definition instanceof InputObjectTypeExtensionDefinition) {
             InputObjectTypeExtensionDefinition newEntry = (InputObjectTypeExtensionDefinition) definition;
             return defineExt(inputObjectTypeExtensions, newEntry, InputObjectTypeExtensionDefinition::getName);
+        } else if (definition instanceof DirectiveExtensionDefinition) {
+            DirectiveExtensionDefinition newEntry = (DirectiveExtensionDefinition) definition;
+            return defineDirectiveExt(newEntry);
         } else if (definition instanceof SchemaExtensionDefinition) {
             schemaExtensionDefinitions.add((SchemaExtensionDefinition) definition);
             schemaParseOrder.addDefinition(definition);
@@ -330,6 +344,8 @@ public class TypeDefinitionRegistry implements Serializable {
             removeFromList(scalarTypeExtensions, (TypeDefinition) definition);
         } else if (definition instanceof InputObjectTypeExtensionDefinition) {
             removeFromList(inputObjectTypeExtensions, (TypeDefinition) definition);
+        } else if (definition instanceof DirectiveExtensionDefinition) {
+            removeDirectiveExtension((DirectiveExtensionDefinition) definition);
         } else if (definition instanceof ScalarTypeDefinition) {
             scalarTypes.remove(((ScalarTypeDefinition) definition).getName());
         } else if (definition instanceof TypeDefinition) {
@@ -379,6 +395,8 @@ public class TypeDefinitionRegistry implements Serializable {
             removeFromMap(scalarTypeExtensions, key);
         } else if (definition instanceof InputObjectTypeExtensionDefinition) {
             removeFromMap(inputObjectTypeExtensions, key);
+        } else if (definition instanceof DirectiveExtensionDefinition) {
+            removeFromMap(directiveExtensions, key);
         } else if (definition instanceof ScalarTypeDefinition) {
             removeFromMap(scalarTypes, key);
         } else if (definition instanceof TypeDefinition) {
@@ -399,6 +417,17 @@ public class TypeDefinitionRegistry implements Serializable {
             return;
         }
         source.remove(key);
+    }
+
+    private void removeDirectiveExtension(DirectiveExtensionDefinition extension) {
+        List<DirectiveExtensionDefinition> extensions = directiveExtensions.get(extension.getName());
+        if (extensions == null) {
+            return;
+        }
+        extensions.remove(extension);
+        if (extensions.isEmpty()) {
+            directiveExtensions.remove(extension.getName());
+        }
     }
 
 
@@ -430,6 +459,13 @@ public class TypeDefinitionRegistry implements Serializable {
 
     private <T extends TypeDefinition> Optional<GraphQLError> defineExt(Map<String, List<T>> typeExtensions, T newEntry, Function<T, String> namerFunc) {
         List<T> currentList = typeExtensions.computeIfAbsent(namerFunc.apply(newEntry), k -> new ArrayList<>());
+        currentList.add(newEntry);
+        schemaParseOrder.addDefinition(newEntry);
+        return Optional.empty();
+    }
+
+    private Optional<GraphQLError> defineDirectiveExt(DirectiveExtensionDefinition newEntry) {
+        List<DirectiveExtensionDefinition> currentList = directiveExtensions.computeIfAbsent(newEntry.getName(), key -> new ArrayList<>());
         currentList.add(newEntry);
         schemaParseOrder.addDefinition(newEntry);
         return Optional.empty();
@@ -467,6 +503,10 @@ public class TypeDefinitionRegistry implements Serializable {
 
     public Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions() {
         return new LinkedHashMap<>(inputObjectTypeExtensions);
+    }
+
+    public Map<String, List<DirectiveExtensionDefinition>> directiveExtensions() {
+        return new LinkedHashMap<>(directiveExtensions);
     }
 
     public Optional<SchemaDefinition> schemaDefinition() {
@@ -719,18 +759,7 @@ public class TypeDefinitionRegistry implements Serializable {
     public List<ImplementingTypeDefinition> getAllImplementationsOf(InterfaceTypeDefinition targetInterface) {
         return ImmutableKit.filter(
                 getTypes(ImplementingTypeDefinition.class),
-                implementingTypeDefinition -> {
-                    List<Type<?>> implementsList = implementingTypeDefinition.getImplements();
-                    for (Type iFace : implementsList) {
-                        InterfaceTypeDefinition interfaceTypeDef = getTypeOrNull(iFace, InterfaceTypeDefinition.class);
-                        if (interfaceTypeDef != null) {
-                            if (interfaceTypeDef.getName().equals(targetInterface.getName())) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-                });
+                implementingTypeDefinition -> implementsInterface(implementingTypeDefinition, targetInterface));
     }
 
     /**
@@ -765,37 +794,42 @@ public class TypeDefinitionRegistry implements Serializable {
         if (!isObjectTypeOrInterface(possibleType)) {
             return false;
         }
-        TypeDefinition targetObjectTypeDef = Objects.requireNonNull(getTypeOrNull(possibleType));
-        TypeDefinition abstractTypeDef = Objects.requireNonNull(getTypeOrNull(abstractType));
+        TypeDefinition possibleTypeDef = assertNotNull(getTypeOrNull(possibleType));
+        TypeDefinition abstractTypeDef = assertNotNull(getTypeOrNull(abstractType));
         if (abstractTypeDef instanceof UnionTypeDefinition) {
-            List<Type> memberTypes = ((UnionTypeDefinition) abstractTypeDef).getMemberTypes();
-            for (Type memberType : memberTypes) {
-                ObjectTypeDefinition checkType = getTypeOrNull(memberType, ObjectTypeDefinition.class);
-                if (checkType != null) {
-                    if (checkType.getName().equals(targetObjectTypeDef.getName())) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        } else {
-            InterfaceTypeDefinition iFace = (InterfaceTypeDefinition) abstractTypeDef;
-            for (TypeDefinition<?> t : types.values()) {
-                if (t instanceof ImplementingTypeDefinition) {
-                    if (t.getName().equals(targetObjectTypeDef.getName())) {
-                        ImplementingTypeDefinition<?> itd = (ImplementingTypeDefinition<?>) t;
-
-                        for (Type implementsType : itd.getImplements()) {
-                            TypeDefinition<?> matchingInterface = types.get(typeName(implementsType));
-                            if (matchingInterface != null && matchingInterface.getName().equals(iFace.getName())) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
+            return isUnionMember((UnionTypeDefinition) abstractTypeDef, possibleTypeDef);
         }
+        return implementsInterface(
+                (ImplementingTypeDefinition<?>) possibleTypeDef,
+                (InterfaceTypeDefinition) abstractTypeDef);
+    }
+
+    private boolean implementsInterface(
+            ImplementingTypeDefinition<?> implementingType,
+            InterfaceTypeDefinition targetInterface) {
+        return Stream.concat(
+                        Stream.of(implementingType),
+                        getImplementingTypeExtensions(implementingType).stream())
+                .flatMap(type -> type.getImplements().stream())
+                .map(TypeInfo::typeName)
+                .anyMatch(targetInterface.getName()::equals);
+    }
+
+    private List<? extends ImplementingTypeDefinition<?>> getImplementingTypeExtensions(
+            ImplementingTypeDefinition<?> implementingType) {
+        if (implementingType instanceof InterfaceTypeDefinition) {
+            return interfaceTypeExtensions.getOrDefault(implementingType.getName(), List.of());
+        }
+        return objectTypeExtensions.getOrDefault(implementingType.getName(), List.of());
+    }
+
+    private boolean isUnionMember(UnionTypeDefinition unionType, TypeDefinition<?> possibleType) {
+        return Stream.concat(
+                        unionType.getMemberTypes().stream(),
+                        unionTypeExtensions.getOrDefault(unionType.getName(), List.of()).stream()
+                                .flatMap(extension -> extension.getMemberTypes().stream()))
+                .map(TypeInfo::typeName)
+                .anyMatch(possibleType.getName()::equals);
     }
 
     /**

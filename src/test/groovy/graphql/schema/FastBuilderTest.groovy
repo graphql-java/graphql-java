@@ -2368,4 +2368,154 @@ class FastBuilderTest extends Specification {
         !(resolvedApplied.getArgument("color").type instanceof GraphQLTypeReference)
         resolvedApplied.getArgument("color").type == colorEnum
     }
+
+    def "applied directive on directive definition with type-ref enum arg resolves correctly"() {
+        given: "a Color enum type used as the applied directive argument type"
+        def colorEnum = newEnum()
+                .name("Color")
+                .value("RED")
+                .value("GREEN")
+                .build()
+
+        and: "a directive definition that can be applied to directive definitions"
+        def metaDirective = newDirective()
+                .name("meta")
+                .validLocation(Introspection.DirectiveLocation.DIRECTIVE_DEFINITION)
+                .argument(newArgument()
+                        .name("color")
+                        .type(typeRef("Color")))
+                .build()
+
+        and: "an applied directive on another directive definition with an unresolved type ref"
+        def appliedMeta = newAppliedDirective()
+                .name("meta")
+                .argument(newAppliedArgument()
+                        .name("color")
+                        .type(typeRef("Color"))
+                        .valueLiteral(new EnumValue("GREEN"))
+                        .build())
+                .build()
+
+        and: "a directive definition with the applied directive"
+        def targetDirective = newDirective()
+                .name("target")
+                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
+                .withAppliedDirective(appliedMeta)
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("field")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder and validation enabled"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(colorEnum)
+                .additionalDirective(metaDirective)
+                .additionalDirective(targetDirective)
+                .withValidation(true)
+                .build()
+
+        then: "schema builds successfully and the applied directive arg type is resolved"
+        schema != null
+        def resolvedTarget = schema.getDirective("target")
+        def resolvedApplied = resolvedTarget.getAppliedDirective("meta")
+        resolvedApplied != null
+        !(resolvedApplied.getArgument("color").type instanceof GraphQLTypeReference)
+        resolvedApplied.getArgument("color").type == colorEnum
+    }
+
+    def "legacy directive on directive definition with type-ref enum arg resolves correctly"() {
+        given: "a Color enum type used as the legacy directive argument type"
+        def colorEnum = newEnum()
+                .name("Color")
+                .value("RED")
+                .value("GREEN")
+                .build()
+
+        and: "a legacy directive on another directive definition with an unresolved type ref"
+        def legacyMeta = newDirective()
+                .name("meta")
+                .validLocation(Introspection.DirectiveLocation.DIRECTIVE_DEFINITION)
+                .argument(newArgument()
+                        .name("color")
+                        .type(typeRef("Color"))
+                        .valueLiteral(new EnumValue("GREEN")))
+                .build()
+
+        and: "a directive definition with the legacy directive"
+        def targetDirective = newDirective()
+                .name("target")
+                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
+                .withDirective(legacyMeta)
+                .build()
+
+        and: "a query type"
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("field")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(colorEnum)
+                .additionalDirective(targetDirective)
+                .build()
+
+        then: "schema builds successfully and the legacy directive arg type is resolved"
+        schema != null
+        def resolvedTarget = schema.getDirective("target")
+        def resolvedLegacy = resolvedTarget.getDirective("meta")
+        resolvedLegacy != null
+        !(resolvedLegacy.getArgument("color").type instanceof GraphQLTypeReference)
+        resolvedLegacy.getArgument("color").type == colorEnum
+    }
+
+    def "legacy directive on object type with type-ref enum arg resolves correctly"() {
+        given: "a Color enum type used as the legacy directive argument type"
+        def colorEnum = newEnum()
+                .name("Color")
+                .value("RED")
+                .value("GREEN")
+                .build()
+
+        and: "a legacy directive on an object type with an unresolved type ref"
+        def legacyMeta = newDirective()
+                .name("meta")
+                .validLocation(Introspection.DirectiveLocation.OBJECT)
+                .argument(newArgument()
+                        .name("color")
+                        .type(typeRef("Color"))
+                        .valueLiteral(new EnumValue("GREEN")))
+                .build()
+
+        and: "a query type with the legacy directive"
+        def queryType = newObject()
+                .name("Query")
+                .withDirective(legacyMeta)
+                .field(newFieldDefinition()
+                        .name("field")
+                        .type(GraphQLString))
+                .build()
+
+        when: "building with FastBuilder"
+        def schema = new GraphQLSchema.FastBuilder(
+                GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addType(colorEnum)
+                .build()
+
+        then: "schema builds successfully and the legacy directive arg type is resolved"
+        schema != null
+        def resolvedLegacy = schema.queryType.getDirective("meta")
+        resolvedLegacy != null
+        !(resolvedLegacy.getArgument("color").type instanceof GraphQLTypeReference)
+        resolvedLegacy.getArgument("color").type == colorEnum
+    }
 }
