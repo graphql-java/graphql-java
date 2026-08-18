@@ -2,6 +2,7 @@ package graphql.parser
 
 import graphql.i18n.I18n
 import graphql.language.SourceLocation
+import graphql.language.StringValue
 import spock.lang.Specification
 
 import static java.util.Arrays.asList
@@ -225,5 +226,27 @@ L 3'''
 L 2
 L 3'''
         parsed == expected
+    }
+
+    def "removes large runs of leading and trailing blank lines"() {
+        given:
+        def input = "\n".repeat(20_000) + "    value" + "\n  ".repeat(20_000)
+
+        when:
+        String parsed = StringValueParsing.removeIndentation(input)
+
+        then:
+        parsed == "value"
+    }
+
+    def "full parser handles block strings with many leading and trailing blank lines"() {
+        given:
+        def input = '"""' + "\n".repeat(20_000) + "    value" + "\n  ".repeat(20_000) + '"""'
+
+        when:
+        StringValue parsed = Parser.parseValue(input)
+
+        then:
+        parsed.getValue() == "value"
     }
 }
