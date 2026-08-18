@@ -6,9 +6,6 @@ import graphql.i18n.I18n;
 import graphql.language.SourceLocation;
 
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Contains parsing code for the StringValue types in the grammar
@@ -44,45 +41,25 @@ public class StringValueParsing {
                 }
             }
         }
-        List<String> lineList = new ArrayList<>(Arrays.asList(lines));
-        if (commonIndent != null) {
-            for (int i = 0; i < lineList.size(); i++) {
-                String line = lineList.get(i);
-                if (i == 0) {
-                    continue;
-                }
-                if (line.length() > commonIndent) {
-                    line = line.substring(commonIndent);
-                    lineList.set(i, line);
-                }
-            }
+        int firstLine = 0;
+        while (firstLine < lines.length && containsOnlyWhiteSpace(lines[firstLine])) {
+            firstLine++;
         }
-        while (!lineList.isEmpty()) {
-            String line = lineList.get(0);
-            if (containsOnlyWhiteSpace(line)) {
-                lineList.remove(0);
-            } else {
-                break;
-            }
+        int lastLine = lines.length;
+        while (lastLine > firstLine && containsOnlyWhiteSpace(lines[lastLine - 1])) {
+            lastLine--;
         }
-        while (!lineList.isEmpty()) {
-            int endIndex = lineList.size() - 1;
-            String line = lineList.get(endIndex);
-            if (containsOnlyWhiteSpace(line)) {
-                lineList.remove(endIndex);
-            } else {
-                break;
+
+        StringBuilder formatted = new StringBuilder(rawValue.length());
+        for (int i = firstLine; i < lastLine; i++) {
+            String line = lines[i];
+            if (commonIndent != null && i > 0 && line.length() > commonIndent) {
+                line = line.substring(commonIndent);
             }
-        }
-        StringBuilder formatted = new StringBuilder();
-        for (int i = 0; i < lineList.size(); i++) {
-            String line = lineList.get(i);
-            if (i == 0) {
-                formatted.append(line);
-            } else {
-                formatted.append("\n");
-                formatted.append(line);
+            if (i > firstLine) {
+                formatted.append('\n');
             }
+            formatted.append(line);
         }
         return formatted.toString();
     }
