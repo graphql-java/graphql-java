@@ -66,12 +66,15 @@ import graphql.util.StringKit;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
@@ -301,7 +304,8 @@ public class OperationValidator implements DocumentVisitor {
     private final Set<String> visitedFragmentSpreads = new HashSet<>();
 
     // --- State: NoFragmentCycles ---
-    private final Map<String, Set<String>> fragmentSpreadsMap = new HashMap<>();
+    private final Map<String, Set<String>> fragmentSpreadsMap = new LinkedHashMap<>();
+    private final Set<String> fragmentsWithCycleErrors = new HashSet<>();
 
     // --- State: NoUnusedFragments ---
     private final List<FragmentDefinition> allDeclaredFragments = new ArrayList<>();
@@ -368,7 +372,10 @@ public class OperationValidator implements DocumentVisitor {
         this.rulePredicate = rulePredicate;
         this.allRulesEnabled = detectAllRulesEnabled(rulePredicate);
         this.complexityLimits = validationContext.getQueryComplexityLimits();
-        prepareFragmentSpreadsMap();
+        if (isRuleEnabled(OperationValidationRule.NO_FRAGMENT_CYCLES)) {
+            prepareFragmentSpreadsMap();
+            findFragmentCycles();
+        }
     }
 
     private static boolean detectAllRulesEnabled(Predicate<OperationValidationRule> predicate) {
@@ -1306,7 +1313,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private Set<String> gatherSpreads(FragmentDefinition fragmentDefinition) {
-        final Set<String> spreads = new HashSet<>();
+        final Set<String> spreads = new LinkedHashSet<>();
         DocumentVisitor visitor = new DocumentVisitor() {
             @Override
             public void enter(Node node, List<Node> path) {
@@ -1324,44 +1331,57 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void validateNoFragmentCycles(FragmentDefinition fragmentDefinition) {
-        ArrayList<String> path = new ArrayList<>();
-        path.add(fragmentDefinition.getName());
-        Map<String, Set<String>> transitiveSpreads = buildTransitiveSpreads(path, new HashMap<>());
+        if (!fragmentsWithCycleErrors.contains(fragmentDefinition.getName())) {
+            return;
+        }
+        String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
+        addError(FragmentCycle, Collections.singletonList(fragmentDefinition), message);
+    }
 
-        for (Map.Entry<String, Set<String>> entry : transitiveSpreads.entrySet()) {
-            if (entry.getValue().contains(entry.getKey())) {
-                String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
-                addError(FragmentCycle, Collections.singletonList(fragmentDefinition), message);
+    private void findFragmentCycles() {
+        Set<String> visitedFragments = new HashSet<>();
+        for (Map.Entry<String, Set<String>> entry : fragmentSpreadsMap.entrySet()) {
+            if (!visitedFragments.add(entry.getKey())) {
+                continue;
             }
+            findFragmentCycles(entry.getKey(), entry.getValue(), visitedFragments);
         }
     }
 
-    private Map<String, Set<String>> buildTransitiveSpreads(ArrayList<String> path, Map<String, Set<String>> transitiveSpreads) {
-        String name = path.get(path.size() - 1);
-        if (transitiveSpreads.containsKey(name)) {
-            return transitiveSpreads;
-        }
-        Set<String> spreads = fragmentSpreadsMap.get(name);
-        if (spreads == null || spreads.isEmpty()) {
-            return transitiveSpreads;
-        }
-        for (String ancestor : path) {
-            Set<String> ancestorSpreads = transitiveSpreads.get(ancestor);
-            if (ancestorSpreads == null) {
-                ancestorSpreads = new HashSet<>();
-            }
-            ancestorSpreads.addAll(spreads);
-            transitiveSpreads.put(ancestor, ancestorSpreads);
-        }
-        for (String child : spreads) {
-            if (path.contains(child) || transitiveSpreads.containsKey(child)) {
+    private void findFragmentCycles(String firstFragment, Set<String> firstSpreads, Set<String> visitedFragments) {
+        Set<String> visitingFragments = new HashSet<>();
+        Deque<String> fragmentStack = new ArrayDeque<>();
+        Deque<Iterator<String>> spreadIteratorStack = new ArrayDeque<>();
+        visitingFragments.add(firstFragment);
+        fragmentStack.push(firstFragment);
+        spreadIteratorStack.push(firstSpreads.iterator());
+
+        while (!fragmentStack.isEmpty()) {
+            Iterator<String> spreadIterator = spreadIteratorStack.getFirst();
+            if (!spreadIterator.hasNext()) {
+                visitingFragments.remove(fragmentStack.pop());
+                spreadIteratorStack.pop();
                 continue;
             }
-            ArrayList<String> childPath = new ArrayList<>(path);
-            childPath.add(child);
-            buildTransitiveSpreads(childPath, transitiveSpreads);
+
+            String childFragment = spreadIterator.next();
+            Set<String> childSpreads = fragmentSpreadsMap.get(childFragment);
+            if (childSpreads == null) {
+                continue;
+            }
+            if (visitingFragments.contains(childFragment)) {
+                fragmentsWithCycleErrors.add(childFragment);
+                fragmentsWithCycleErrors.add(fragmentStack.getFirst());
+                continue;
+            }
+            if (!visitedFragments.add(childFragment)) {
+                continue;
+            }
+
+            visitingFragments.add(childFragment);
+            fragmentStack.push(childFragment);
+            spreadIteratorStack.push(childSpreads.iterator());
         }
-        return transitiveSpreads;
     }
 
     // --- NoUndefinedVariables ---
