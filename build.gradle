@@ -2,6 +2,9 @@ import aQute.bnd.gradle.BundleTaskExtension
 import net.ltgt.gradle.errorprone.CheckSeverity
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.ClassWriter
+import org.objectweb.asm.tree.ClassNode
 
 import java.text.SimpleDateFormat
 
@@ -55,6 +58,76 @@ def makeDevelopmentVersion(parts) {
     def version = String.join("-", parts)
     println "created development version: $version"
     return version
+}
+
+static private List<List> invisibleAnnotationLists(ClassNode classNode) {
+    def annotationLists = []
+    if (classNode.invisibleAnnotations != null) {
+        annotationLists.add(classNode.invisibleAnnotations)
+    }
+    classNode.fields.each { field ->
+        if (field.invisibleAnnotations != null) {
+            annotationLists.add(field.invisibleAnnotations)
+        }
+    }
+    classNode.methods.each { method ->
+        if (method.invisibleAnnotations != null) {
+            annotationLists.add(method.invisibleAnnotations)
+        }
+        method.invisibleParameterAnnotations?.each { annotations ->
+            if (annotations != null) {
+                annotationLists.add(annotations)
+            }
+        }
+    }
+    classNode.recordComponents?.each { recordComponent ->
+        if (recordComponent.invisibleAnnotations != null) {
+            annotationLists.add(recordComponent.invisibleAnnotations)
+        }
+    }
+    return annotationLists
+}
+
+static private int removeListedInvisibleAnnotations(ClassNode classNode, Set<String> annotationsToRemove) {
+    int removedAnnotationCount = 0
+    invisibleAnnotationLists(classNode).each { annotations ->
+        int originalSize = annotations.size()
+        annotations.removeAll { annotation -> annotationsToRemove.contains(annotation.desc) }
+        removedAnnotationCount += originalSize - annotations.size()
+    }
+
+    classNode.methods.each { method ->
+        if (method.invisibleParameterAnnotations == null) return
+        if (!method.invisibleParameterAnnotations.every { it == null || it.isEmpty() }) return
+
+        method.invisibleParameterAnnotations = null
+        method.invisibleAnnotableParameterCount = 0
+    }
+    return removedAnnotationCount
+}
+
+static private Map<String, Integer> rewriteClassFiles(File directory, Closure<Integer> rewriteClass) {
+    int modifiedClassCount = 0
+    int modificationCount = 0
+
+    directory.eachFileRecurse(groovy.io.FileType.FILES) { file ->
+        if (!file.name.endsWith('.class')) return
+
+        byte[] originalBytes = file.bytes
+        def reader = new ClassReader(originalBytes)
+        def classNode = new ClassNode()
+        reader.accept(classNode, 0)
+
+        int classModificationCount = rewriteClass.call(classNode)
+        if (classModificationCount == 0) return
+
+        def writer = new ClassWriter(reader, 0)
+        classNode.accept(writer)
+        file.bytes = writer.toByteArray()
+        modifiedClassCount++
+        modificationCount += classModificationCount
+    }
+    return [modifiedClassCount: modifiedClassCount, modificationCount: modificationCount]
 }
 
 def getDevelopmentVersion() {
@@ -284,21 +357,62 @@ jmh {
 }
 
 
-task extractWithoutGuava(type: Copy) {
-    from({ zipTree({ "build/libs/graphql-java-${project.version}.jar" }) }) {
+def extractedShadowJarDir = layout.buildDirectory.dir("extract")
+def annotationCleanedShadowJarDir = layout.buildDirectory.dir("annotation-cleaned")
+
+// External CLASS-retention annotations referenced by shaded classes. Keep this
+// list explicit so GraphQL Java's own invisible annotations remain untouched.
+def annotationsToRemoveFromShadedJar = [
+        'Lcom/google/common/annotations/Beta;',
+        'Lcom/google/common/annotations/GwtCompatible;',
+        'Lcom/google/common/annotations/GwtIncompatible;',
+        'Lcom/google/common/annotations/J2ktIncompatible;',
+        'Lcom/google/common/annotations/VisibleForTesting;',
+        'Lcom/google/errorprone/annotations/CanIgnoreReturnValue;',
+        'Lcom/google/errorprone/annotations/CompatibleWith;',
+        'Lcom/google/errorprone/annotations/DoNotCall;',
+        'Lcom/google/errorprone/annotations/ForOverride;',
+        'Lcom/google/errorprone/annotations/InlineMe;',
+        'Lcom/google/errorprone/annotations/InlineMeValidationDisabled;',
+        'Lcom/google/errorprone/annotations/concurrent/GuardedBy;',
+        'Lcom/google/j2objc/annotations/RetainedWith;',
+        'Lcom/google/j2objc/annotations/Weak;',
+        'Ljavax/annotation/meta/TypeQualifierNickname;',
+] as Set<String>
+
+task extractWithoutGuava(type: Sync) {
+    from({ zipTree(tasks.named('shadowJar').get().archiveFile) }) {
         exclude('/com/**')
     }
-    into layout.buildDirectory.dir("extract")
+    into extractedShadowJarDir
 }
 
-extractWithoutGuava.dependsOn jar
+extractWithoutGuava.dependsOn shadowJar
+
+tasks.register('cleanShadedClassAnnotations', Sync) {
+    description = 'Remove selected invisible annotations from shaded class files'
+    dependsOn extractWithoutGuava
+
+    from extractedShadowJarDir
+    into annotationCleanedShadowJarDir
+    inputs.property('annotationsToRemove', annotationsToRemoveFromShadedJar.toList().sort())
+
+    doLast {
+        def outputDir = annotationCleanedShadowJarDir.get().asFile
+        def result = rewriteClassFiles(outputDir) { classNode ->
+            removeListedInvisibleAnnotations(classNode, annotationsToRemoveFromShadedJar)
+        }
+
+        logger.lifecycle("Removed ${result.modificationCount} invisible annotations; modified ${result.modifiedClassCount} shaded class files")
+    }
+}
 
 task buildNewJar(type: Jar) {
-    from layout.buildDirectory.dir("extract")
+    from annotationCleanedShadowJarDir
     archiveFileName = "graphql-java-tmp.jar"
     destinationDirectory = file("${project.buildDir}/libs")
     manifest {
-        from file("build/extract/META-INF/MANIFEST.MF")
+        from annotationCleanedShadowJarDir.map { it.file("META-INF/MANIFEST.MF") }
     }
     def projectVersion = version
     doLast {
@@ -307,9 +421,68 @@ task buildNewJar(type: Jar) {
     }
 }
 
-buildNewJar.dependsOn extractWithoutGuava
+buildNewJar.dependsOn cleanShadedClassAnnotations
 
-shadowJar.finalizedBy extractWithoutGuava, buildNewJar
+assemble.dependsOn buildNewJar
+
+tasks.register('verifyShadedClassAnnotations') {
+    group = 'verification'
+    description = 'Verify selected invisible annotations are absent from the published jar'
+    dependsOn buildNewJar
+
+    def shadedJar = layout.buildDirectory.file("libs/graphql-java-${project.version}.jar")
+    inputs.file(shadedJar)
+    inputs.property('annotationsToRemove', annotationsToRemoveFromShadedJar.toList().sort())
+
+    doLast {
+        def offendingAnnotations = []
+        boolean graphqlContractFound = false
+
+        new java.util.jar.JarFile(shadedJar.get().asFile).withCloseable { jarFile ->
+            jarFile.entries().each { entry ->
+                if (entry.directory || !entry.name.endsWith('.class')) return
+
+                byte[] classBytes = jarFile.getInputStream(entry).withCloseable { it.bytes }
+                def classNode = new ClassNode()
+                new ClassReader(classBytes).accept(classNode, 0)
+
+                invisibleAnnotationLists(classNode).each { annotations ->
+                    annotations.each { annotation ->
+                        if (annotationsToRemoveFromShadedJar.contains(annotation.desc)) {
+                            offendingAnnotations.add("${entry.name}: ${annotation.desc}")
+                        }
+                        if (annotation.desc == 'Lgraphql/Contract;') {
+                            graphqlContractFound = true
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!offendingAnnotations.isEmpty()) {
+            throw new GradleException("Found annotations that should have been removed:\n${offendingAnnotations.join('\n')}")
+        }
+        if (!graphqlContractFound) {
+            throw new GradleException('graphql.Contract was removed from the shaded jar')
+        }
+    }
+}
+
+tasks.register('compileShadedJarConsumer', JavaCompile) {
+    group = 'verification'
+    description = 'Compile a consumer against the shaded jar with class-file warnings treated as errors'
+    dependsOn buildNewJar
+
+    source fileTree('src/test/compiler') {
+        include '**/*.java'
+    }
+    classpath = files(layout.buildDirectory.file("libs/graphql-java-${project.version}.jar"))
+    destinationDirectory = layout.buildDirectory.dir('classes/shaded-jar-consumer')
+    options.release = 11
+    options.compilerArgs.addAll(['-Xlint:classfile', '-Werror'])
+}
+
+check.dependsOn verifyShadedClassAnnotations, compileShadedJarConsumer
 
 
 // --- TestNG TCK skip verification ---
@@ -623,14 +796,8 @@ tasks.register('markGeneratedEqualsHashCode') {
 
         def ANNOTATION = 'Lgraphql/coverage/Generated;'
 
-        dest.eachFileRecurse(groovy.io.FileType.FILES) { file ->
-            if (!file.name.endsWith('.class')) return
-
-            def bytes = file.bytes
-            def classNode = new org.objectweb.asm.tree.ClassNode()
-            new org.objectweb.asm.ClassReader(bytes).accept(classNode, 0)
-
-            boolean modified = false
+        rewriteClassFiles(dest) { classNode ->
+            int addedAnnotationCount = 0
             for (method in classNode.methods) {
                 if ((method.name == 'equals' && method.desc == '(Ljava/lang/Object;)Z') ||
                         (method.name == 'hashCode' && method.desc == '()I')) {
@@ -639,16 +806,11 @@ tasks.register('markGeneratedEqualsHashCode') {
                     }
                     if (!method.invisibleAnnotations.any { it.desc == ANNOTATION }) {
                         method.invisibleAnnotations.add(new org.objectweb.asm.tree.AnnotationNode(ANNOTATION))
-                        modified = true
+                        addedAnnotationCount++
                     }
                 }
             }
-
-            if (modified) {
-                def writer = new org.objectweb.asm.ClassWriter(0)
-                classNode.accept(writer)
-                file.bytes = writer.toByteArray()
-            }
+            return addedAnnotationCount
         }
     }
 }
@@ -801,5 +963,3 @@ tasks.withType(PublishToMavenRepository) {
 tasks.withType(GenerateModuleMetadata) {
     enabled = false
 }
-
-
