@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - master
+      - 26.x
       - 23.x
       - 22.x
       - 21.x
@@ -116,7 +117,10 @@ jobs:
   test-summary:
     name: "Per-Class Coverage Gate"
     needs: buildAndTest
-    if: always() && github.event_name == 'pull_request'
+    if: >-
+      always() &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.base.ref == 'master'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

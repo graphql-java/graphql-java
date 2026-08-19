@@ -16,6 +16,7 @@ on:
   pull_request:
     branches:
       - master
+      - 26.x
       - 23.x
       - 22.x
       - 21.x
