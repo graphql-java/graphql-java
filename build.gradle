@@ -180,6 +180,9 @@ def guavaVersion = '32.1.2-jre'
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
+def plainJarDir = layout.buildDirectory.dir('intermediates/plain-jar')
+def shadowJarDir = layout.buildDirectory.dir('intermediates/shadow-jar')
+
 gradle.buildFinished { buildResult ->
     println "*******************************"
     println "*"
@@ -199,6 +202,11 @@ repositories {
 }
 
 jar {
+    // The regular Java JAR is an input to the shading pipeline, not a
+    // publishable artifact. Keep it out of build/libs so it cannot be mistaken
+    // for the final GraphQL Java JAR.
+    archiveClassifier.set('plain')
+    destinationDirectory.set(plainJarDir)
     from "LICENSE.md"
     from "src/main/antlr/Graphql.g4"
     from "src/main/antlr/GraphqlOperation.g4"
@@ -207,6 +215,20 @@ jar {
     manifest {
         attributes('Automatic-Module-Name': 'com.graphqljava')
     }
+}
+
+shadow {
+    // GraphQL Java has additional post-processing after shadowJar. Do not let
+    // Shadow expose its intermediate artifact through the Java component or
+    // add it directly to assemble; buildFinalJar owns both responsibilities.
+    addShadowVariantIntoJavaComponent.set(false)
+    addShadowJarToAssembleLifecycle.set(false)
+
+    // The shadow runtime variant is disabled below because it would expose the
+    // uncleaned intermediate JAR. It therefore has no need for a target JVM
+    // attribute. Disabling this also prevents Shadow's afterEvaluate hook from
+    // trying to mutate that configuration after it has become non-consumable.
+    addTargetJvmVersionAttribute.set(false)
 }
 
 dependencies {
@@ -260,7 +282,10 @@ dependencies {
 
 shadowJar {
     minimize()
-    archiveClassifier.set('')
+    // This is deliberately an intermediate artifact. The only unclassified
+    // binary JAR is produced by buildFinalJar after cleanup.
+    archiveClassifier.set('shadow')
+    destinationDirectory.set(shadowJarDir)
     configurations = [project.configurations.compileClasspath]
     relocate('com.google.common', 'graphql.com.google.common') {
         include 'com.google.common.collect.*'
@@ -364,8 +389,8 @@ jmh {
 }
 
 
-def extractedShadowJarDir = layout.buildDirectory.dir("extract")
-def annotationCleanedShadowJarDir = layout.buildDirectory.dir("annotation-cleaned")
+def extractedShadowJarDir = layout.buildDirectory.dir('intermediates/shadow-jar-extracted')
+def annotationCleanedShadowJarDir = layout.buildDirectory.dir('intermediates/annotation-cleaned')
 
 // External CLASS-retention annotations referenced by shaded classes. Keep this
 // list explicit so GraphQL Java's own invisible annotations remain untouched.
@@ -432,30 +457,50 @@ tasks.register('cleanShadedClassAnnotations', Sync) {
 }
 
 /**
- * Reassembles the published GraphQL Java JAR from the annotation-cleaned
- * directory, retaining the manifest produced for the shaded JAR.
+ * Produces the sole unclassified GraphQL Java binary JAR directly from the
+ * annotation-cleaned directory, retaining the manifest produced by Bnd for
+ * the shaded JAR.
  *
- * The temporary archive is renamed over the normal project JAR so publication
- * continues to use the existing unclassified artifact name.
+ * The regular jar and shadowJar tasks write explicitly named intermediates to
+ * build/intermediates. This task alone owns the final build/libs path so Gradle
+ * can accurately track it and no earlier pipeline stage can overwrite it.
  */
-task buildNewJar(type: Jar) {
+def buildFinalJar = tasks.register('buildFinalJar', Jar) {
+    group = 'build'
     description = 'Build the published jar from cleaned shaded class files'
-    from annotationCleanedShadowJarDir
-    archiveFileName = "graphql-java-tmp.jar"
-    destinationDirectory = file("${project.buildDir}/libs")
+    dependsOn cleanShadedClassAnnotations
+
+    from(annotationCleanedShadowJarDir) {
+        exclude 'META-INF/MANIFEST.MF'
+    }
+    archiveClassifier.set('')
+    destinationDirectory.set(layout.buildDirectory.dir('libs'))
     manifest {
         from annotationCleanedShadowJarDir.map { it.file("META-INF/MANIFEST.MF") }
     }
-    def projectVersion = version
-    doLast {
-        delete("build/libs/graphql-java-${projectVersion}.jar")
-        file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${projectVersion}.jar"))
-    }
 }
 
-buildNewJar.dependsOn cleanShadedClassAnnotations
+assemble.dependsOn buildFinalJar
 
-assemble.dependsOn buildNewJar
+// The Java component is the source of the main Maven publication. Replace the
+// regular jar artifact on both variants with buildFinalJar so local consumers,
+// project dependencies, signing, and publication all resolve the same cleaned
+// binary. Shadow's optional Java variant is disabled above for the same reason.
+configurations.named('apiElements') {
+    outgoing.artifacts.clear()
+    outgoing.artifact(buildFinalJar)
+}
+configurations.named('runtimeElements') {
+    outgoing.artifacts.clear()
+    outgoing.artifact(buildFinalJar)
+}
+// Shadow creates this configuration independently of its optional Java
+// component variant. Make it non-consumable so dependency resolution cannot
+// select the uncleaned intermediate; shadowJar remains available only as an
+// explicitly invoked internal pipeline task.
+configurations.named('shadowRuntimeElements') {
+    canBeConsumed = false
+}
 
 /**
  * Scans every class in the completed published JAR with ASM and fails if any
@@ -465,12 +510,12 @@ assemble.dependsOn buildNewJar
  * also verifies that {@code graphql.Contract} was preserved by the selective
  * cleanup.
  */
-tasks.register('verifyShadedClassAnnotations') {
+def verifyShadedClassAnnotations = tasks.register('verifyShadedClassAnnotations') {
     group = 'verification'
     description = 'Verify invisible annotations are bundled or removed from the published jar'
-    dependsOn buildNewJar
+    dependsOn buildFinalJar
 
-    def shadedJar = layout.buildDirectory.file("libs/graphql-java-${project.version}.jar")
+    def shadedJar = buildFinalJar.flatMap { it.archiveFile }
     inputs.file(shadedJar)
     inputs.property('annotationsToRemove', annotationsToRemoveFromShadedJar.toList().sort())
 
@@ -527,15 +572,15 @@ tasks.register('verifyShadedClassAnnotations') {
  * inspect the shaded ImmutableList signature; {@code -Xlint:classfile -Werror}
  * turns dangling annotation references into a build failure.
  */
-tasks.register('compileShadedJarConsumer', JavaCompile) {
+def compileShadedJarConsumer = tasks.register('compileShadedJarConsumer', JavaCompile) {
     group = 'verification'
     description = 'Compile a consumer against the shaded jar with class-file warnings treated as errors'
-    dependsOn buildNewJar
+    dependsOn buildFinalJar
 
     source fileTree('src/test/compiler') {
         include '**/*.java'
     }
-    classpath = files(layout.buildDirectory.file("libs/graphql-java-${project.version}.jar"))
+    classpath = files(buildFinalJar.flatMap { it.archiveFile })
     destinationDirectory = layout.buildDirectory.dir('classes/shaded-jar-consumer')
     options.release = 11
     options.compilerArgs.addAll(['-Xlint:classfile', '-Werror'])
@@ -955,8 +1000,8 @@ publishing {
                 // the Gradle ANTLR plugin. `1ac98bf` can be reverted and this comment removed once
                 // that issue is fixed and Gradle upgraded. See https://goo.gl/L92KiF and https://goo.gl/FY0PVR.
                 //
-                // Removing antlr4-runtime and guava because the classes we want to use are "shaded" into the jar itself
-                // via the shadowJar task
+                // Removing antlr4-runtime and guava because the classes we want to use are shaded and cleaned into the
+                // final jar produced by buildFinalJar.
                 def pomNode = asNode()
                 pomNode.dependencies.'*'.findAll() {
                     it.artifactId.text() == 'antlr4' || it.artifactId.text() == 'antlr4-runtime' || it.artifactId.text() == 'guava'
@@ -1012,10 +1057,20 @@ signing {
     sign publishing.publications
 }
 
+// Signing must read the same verified final artifact that is published. This
+// explicit dependency also makes direct invocation of the signing task safe.
+tasks.named('signGraphqlJavaPublication') {
+    dependsOn verifyShadedClassAnnotations
+}
 
-// all publish tasks depend on the build task
+// Remote publication retains the existing full-build requirement. Both remote
+// and Maven Local publication additionally depend on artifact verification so
+// neither path can publish a plain, raw-shadowed, or uncleaned binary JAR.
 tasks.withType(PublishToMavenRepository) {
-    dependsOn build
+    dependsOn build, verifyShadedClassAnnotations
+}
+tasks.withType(PublishToMavenLocal) {
+    dependsOn verifyShadedClassAnnotations
 }
 
 // Only publish Maven POM, disable default Gradle modules file
