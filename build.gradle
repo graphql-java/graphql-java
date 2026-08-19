@@ -379,6 +379,11 @@ def annotationsToRemoveFromShadedJar = [
         'Lcom/google/j2objc/annotations/Weak;',
         'Ljavax/annotation/meta/TypeQualifierNickname;',
 ] as Set<String>
+def graphqlJavaAnnotationDescriptorPrefix = 'Lgraphql/'
+def shadedDependencyAnnotationDescriptorPrefixes = [
+        'Lgraphql/com/google/',
+        'Lgraphql/org/antlr/',
+]
 
 /**
  * Expands the shaded JAR into a clean working directory and removes any
@@ -452,21 +457,26 @@ assemble.dependsOn buildNewJar
 
 /**
  * Scans every class in the completed published JAR with ASM and fails if any
- * configured annotation remains in a declaration or parameter invisible
- * annotation attribute. It also verifies that GraphQL Java's own
- * {@code graphql.Contract} annotation was preserved by the selective cleanup.
+ * configured annotation remains, or if an unknown external annotation appears,
+ * in a declaration or parameter invisible annotation attribute. GraphQL Java
+ * annotations are allowed, while annotations in relocated dependency namespaces
+ * are still considered external. The task also verifies that
+ * {@code graphql.Contract} was preserved by the selective cleanup.
  */
 tasks.register('verifyShadedClassAnnotations') {
     group = 'verification'
-    description = 'Verify selected invisible annotations are absent from the published jar'
+    description = 'Verify only GraphQL Java invisible annotations remain in the published jar'
     dependsOn buildNewJar
 
     def shadedJar = layout.buildDirectory.file("libs/graphql-java-${project.version}.jar")
     inputs.file(shadedJar)
     inputs.property('annotationsToRemove', annotationsToRemoveFromShadedJar.toList().sort())
+    inputs.property('graphqlJavaAnnotationPrefix', graphqlJavaAnnotationDescriptorPrefix)
+    inputs.property('shadedDependencyAnnotationPrefixes', shadedDependencyAnnotationDescriptorPrefixes)
 
     doLast {
-        def offendingAnnotations = []
+        def annotationsThatShouldHaveBeenRemoved = []
+        def unexpectedExternalAnnotations = []
         boolean graphqlContractFound = false
 
         new java.util.jar.JarFile(shadedJar.get().asFile).withCloseable { jarFile ->
@@ -480,7 +490,13 @@ tasks.register('verifyShadedClassAnnotations') {
                 invisibleAnnotationLists(classNode).each { annotations ->
                     annotations.each { annotation ->
                         if (annotationsToRemoveFromShadedJar.contains(annotation.desc)) {
-                            offendingAnnotations.add("${entry.name}: ${annotation.desc}")
+                            annotationsThatShouldHaveBeenRemoved.add("${entry.name}: ${annotation.desc}")
+                        } else {
+                            boolean isGraphQLJavaAnnotation = annotation.desc.startsWith(graphqlJavaAnnotationDescriptorPrefix) &&
+                                    !shadedDependencyAnnotationDescriptorPrefixes.any { annotation.desc.startsWith(it) }
+                            if (!isGraphQLJavaAnnotation) {
+                                unexpectedExternalAnnotations.add("${entry.name}: ${annotation.desc}")
+                            }
                         }
                         if (annotation.desc == 'Lgraphql/Contract;') {
                             graphqlContractFound = true
@@ -490,11 +506,18 @@ tasks.register('verifyShadedClassAnnotations') {
             }
         }
 
-        if (!offendingAnnotations.isEmpty()) {
-            throw new GradleException("Found annotations that should have been removed:\n${offendingAnnotations.join('\n')}")
+        def verificationErrors = []
+        if (!annotationsThatShouldHaveBeenRemoved.isEmpty()) {
+            verificationErrors.add("Found annotations that should have been removed:\n${annotationsThatShouldHaveBeenRemoved.join('\n')}")
+        }
+        if (!unexpectedExternalAnnotations.isEmpty()) {
+            verificationErrors.add("Found unexpected external invisible annotations; add them to annotationsToRemoveFromShadedJar:\n${unexpectedExternalAnnotations.join('\n')}")
         }
         if (!graphqlContractFound) {
-            throw new GradleException('graphql.Contract was removed from the shaded jar')
+            verificationErrors.add('graphql.Contract was removed from the shaded jar')
+        }
+        if (!verificationErrors.isEmpty()) {
+            throw new GradleException(verificationErrors.join('\n\n'))
         }
     }
 }
