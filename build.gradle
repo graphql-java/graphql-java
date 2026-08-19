@@ -380,7 +380,15 @@ def annotationsToRemoveFromShadedJar = [
         'Ljavax/annotation/meta/TypeQualifierNickname;',
 ] as Set<String>
 
+/**
+ * Expands the shaded JAR into a clean working directory and removes any
+ * unrelocated dependency classes that remain under {@code com/**}.
+ *
+ * The annotation cleanup must consume this output rather than the regular
+ * {@code jar} output because dependency classes only exist after shadowing.
+ */
 task extractWithoutGuava(type: Sync) {
+    description = 'Extract the shaded jar without unrelocated dependency classes'
     from({ zipTree(tasks.named('shadowJar').get().archiveFile) }) {
         exclude('/com/**')
     }
@@ -389,6 +397,15 @@ task extractWithoutGuava(type: Sync) {
 
 extractWithoutGuava.dependsOn shadowJar
 
+/**
+ * Copies the extracted shaded JAR into a separate output directory and uses
+ * ASM to remove the explicitly configured annotations from declaration-level
+ * {@code RuntimeInvisibleAnnotations} and
+ * {@code RuntimeInvisibleParameterAnnotations} attributes.
+ *
+ * Other invisible annotations, runtime-visible annotations, and invisible
+ * type annotations are deliberately preserved.
+ */
 tasks.register('cleanShadedClassAnnotations', Sync) {
     description = 'Remove selected invisible annotations from shaded class files'
     dependsOn extractWithoutGuava
@@ -407,7 +424,15 @@ tasks.register('cleanShadedClassAnnotations', Sync) {
     }
 }
 
+/**
+ * Reassembles the published GraphQL Java JAR from the annotation-cleaned
+ * directory, retaining the manifest produced for the shaded JAR.
+ *
+ * The temporary archive is renamed over the normal project JAR so publication
+ * continues to use the existing unclassified artifact name.
+ */
 task buildNewJar(type: Jar) {
+    description = 'Build the published jar from cleaned shaded class files'
     from annotationCleanedShadowJarDir
     archiveFileName = "graphql-java-tmp.jar"
     destinationDirectory = file("${project.buildDir}/libs")
@@ -425,6 +450,12 @@ buildNewJar.dependsOn cleanShadedClassAnnotations
 
 assemble.dependsOn buildNewJar
 
+/**
+ * Scans every class in the completed published JAR with ASM and fails if any
+ * configured annotation remains in a declaration or parameter invisible
+ * annotation attribute. It also verifies that GraphQL Java's own
+ * {@code graphql.Contract} annotation was preserved by the selective cleanup.
+ */
 tasks.register('verifyShadedClassAnnotations') {
     group = 'verification'
     description = 'Verify selected invisible annotations are absent from the published jar'
@@ -468,6 +499,12 @@ tasks.register('verifyShadedClassAnnotations') {
     }
 }
 
+/**
+ * Compiles a small Java 11 consumer against only the completed shaded JAR.
+ * Resolving {@code ExecutionContext.getOperationDirectives()} forces javac to
+ * inspect the shaded ImmutableList signature; {@code -Xlint:classfile -Werror}
+ * turns dangling annotation references into a build failure.
+ */
 tasks.register('compileShadedJarConsumer', JavaCompile) {
     group = 'verification'
     description = 'Compile a consumer against the shaded jar with class-file warnings treated as errors'
