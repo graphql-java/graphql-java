@@ -37,9 +37,9 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.idl.SchemaExtensionsChecker.defineOperationDefs;
@@ -719,18 +719,7 @@ public class TypeDefinitionRegistry implements Serializable {
     public List<ImplementingTypeDefinition> getAllImplementationsOf(InterfaceTypeDefinition targetInterface) {
         return ImmutableKit.filter(
                 getTypes(ImplementingTypeDefinition.class),
-                implementingTypeDefinition -> {
-                    List<Type<?>> implementsList = implementingTypeDefinition.getImplements();
-                    for (Type iFace : implementsList) {
-                        InterfaceTypeDefinition interfaceTypeDef = getTypeOrNull(iFace, InterfaceTypeDefinition.class);
-                        if (interfaceTypeDef != null) {
-                            if (interfaceTypeDef.getName().equals(targetInterface.getName())) {
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-                });
+                implementingTypeDefinition -> implementsInterface(implementingTypeDefinition, targetInterface));
     }
 
     /**
@@ -765,37 +754,42 @@ public class TypeDefinitionRegistry implements Serializable {
         if (!isObjectTypeOrInterface(possibleType)) {
             return false;
         }
-        TypeDefinition targetObjectTypeDef = Objects.requireNonNull(getTypeOrNull(possibleType));
-        TypeDefinition abstractTypeDef = Objects.requireNonNull(getTypeOrNull(abstractType));
+        TypeDefinition possibleTypeDef = assertNotNull(getTypeOrNull(possibleType));
+        TypeDefinition abstractTypeDef = assertNotNull(getTypeOrNull(abstractType));
         if (abstractTypeDef instanceof UnionTypeDefinition) {
-            List<Type> memberTypes = ((UnionTypeDefinition) abstractTypeDef).getMemberTypes();
-            for (Type memberType : memberTypes) {
-                ObjectTypeDefinition checkType = getTypeOrNull(memberType, ObjectTypeDefinition.class);
-                if (checkType != null) {
-                    if (checkType.getName().equals(targetObjectTypeDef.getName())) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        } else {
-            InterfaceTypeDefinition iFace = (InterfaceTypeDefinition) abstractTypeDef;
-            for (TypeDefinition<?> t : types.values()) {
-                if (t instanceof ImplementingTypeDefinition) {
-                    if (t.getName().equals(targetObjectTypeDef.getName())) {
-                        ImplementingTypeDefinition<?> itd = (ImplementingTypeDefinition<?>) t;
-
-                        for (Type implementsType : itd.getImplements()) {
-                            TypeDefinition<?> matchingInterface = types.get(typeName(implementsType));
-                            if (matchingInterface != null && matchingInterface.getName().equals(iFace.getName())) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
+            return isUnionMember((UnionTypeDefinition) abstractTypeDef, possibleTypeDef);
         }
+        return implementsInterface(
+                (ImplementingTypeDefinition<?>) possibleTypeDef,
+                (InterfaceTypeDefinition) abstractTypeDef);
+    }
+
+    private boolean implementsInterface(
+            ImplementingTypeDefinition<?> implementingType,
+            InterfaceTypeDefinition targetInterface) {
+        return Stream.concat(
+                        Stream.of(implementingType),
+                        getImplementingTypeExtensions(implementingType).stream())
+                .flatMap(type -> type.getImplements().stream())
+                .map(TypeInfo::typeName)
+                .anyMatch(targetInterface.getName()::equals);
+    }
+
+    private List<? extends ImplementingTypeDefinition<?>> getImplementingTypeExtensions(
+            ImplementingTypeDefinition<?> implementingType) {
+        if (implementingType instanceof InterfaceTypeDefinition) {
+            return interfaceTypeExtensions.getOrDefault(implementingType.getName(), List.of());
+        }
+        return objectTypeExtensions.getOrDefault(implementingType.getName(), List.of());
+    }
+
+    private boolean isUnionMember(UnionTypeDefinition unionType, TypeDefinition<?> possibleType) {
+        return Stream.concat(
+                        unionType.getMemberTypes().stream(),
+                        unionTypeExtensions.getOrDefault(unionType.getName(), List.of()).stream()
+                                .flatMap(extension -> extension.getMemberTypes().stream()))
+                .map(TypeInfo::typeName)
+                .anyMatch(possibleType.getName()::equals);
     }
 
     /**
