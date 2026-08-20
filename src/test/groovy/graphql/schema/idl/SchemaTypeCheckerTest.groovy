@@ -1179,7 +1179,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.size() == 3
+        result.size() == 4
         errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
         errorContaining(result, "The union member type 'Buzz' is not present when resolving type 'FooBar' [@n:n]")
         errorContaining(result, "The type 'FooBar' [@n:n] has declared an union member with a non unique name 'Foo'")
@@ -1785,6 +1785,52 @@ class SchemaTypeCheckerTest extends Specification {
 
         then:
         errorContaining(result, "Union type 'UnionType' must include one or more member types.")
+    }
+
+    def "union type with directive only extension must include one or more member types"() {
+        given:
+        def sdl = """
+            directive @directive on UNION
+
+            type Query { hello: String }
+
+            union UnionType
+
+            extend union UnionType @directive
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "Union type 'UnionType' must include one or more member types.")
+    }
+
+    @Unroll
+    def "union extension must not redefine member types from previous union type: #scenario"() {
+        given:
+        def sdl = """
+            type Query { pet: Pet }
+
+            type Cat {
+                id: ID
+            }
+
+            union Pet $baseMembers
+
+            $extensions
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "The type 'Pet' [@n:n] has declared an union member with a non unique name 'Cat'")
+
+        where:
+        scenario             | baseMembers | extensions
+        "base definition"    | "= Cat"     | "extend union Pet = Cat"
+        "earlier extension"  | ""          | "extend union Pet = Cat\nextend union Pet = Cat"
     }
 
     def "The member types of a Union type must all be object base types"() {
