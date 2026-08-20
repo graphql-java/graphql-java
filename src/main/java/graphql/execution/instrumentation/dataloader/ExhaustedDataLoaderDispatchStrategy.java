@@ -174,11 +174,16 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     }
 
     @Override
+    public void subscriptionEventExecutionDone(AlternativeCallContext alternativeCallContext) {
+        alternativeCallContextMap.remove(alternativeCallContext);
+    }
+
+    @Override
     public void deferFieldFetched(ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         int deferredFragmentRootFieldsCompleted = callStack.deferredFragmentRootFieldsCompleted.incrementAndGet();
-        Assert.assertNotNull(parameters.getDeferredCallContext());
-        if (deferredFragmentRootFieldsCompleted == parameters.getDeferredCallContext().getFields()) {
+        Assert.assertNotNull(parameters.getAlternativeCallContext());
+        if (deferredFragmentRootFieldsCompleted == parameters.getAlternativeCallContext().getFields()) {
             decrementObjectRunningAndMaybeDispatch(callStack);
         }
     }
@@ -195,7 +200,7 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     }
 
     private CallStack getCallStack(ExecutionStrategyParameters parameters) {
-        return getCallStack(parameters.getDeferredCallContext());
+        return getCallStack(parameters.getAlternativeCallContext());
     }
 
     private CallStack getCallStack(@Nullable AlternativeCallContext alternativeCallContext) {
@@ -281,4 +286,3 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
 
 
 }
-

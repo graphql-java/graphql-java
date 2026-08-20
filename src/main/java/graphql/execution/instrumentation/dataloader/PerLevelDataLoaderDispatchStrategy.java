@@ -362,8 +362,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
         CallStack callStack = getCallStack(executionStrategyParameters);
         int level = executionStrategyParameters.getPath().getLevel();
-        AlternativeCallContext deferredCallContext = executionStrategyParameters.getDeferredCallContext();
-        if (level == 1 || (deferredCallContext != null && level == deferredCallContext.getStartLevel())) {
+        AlternativeCallContext alternativeCallContext = executionStrategyParameters.getAlternativeCallContext();
+        if (level == 1 || (alternativeCallContext != null && level == alternativeCallContext.getStartLevel())) {
             int happenedFirstLevelFetchCount = callStack.happenedFirstLevelFetchCount.incrementAndGet();
             if (happenedFirstLevelFetchCount == callStack.expectedFirstLevelFetchCount) {
                 callStack.dispatchedLevels.add(level);
@@ -396,19 +396,24 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     @Override
+    public void subscriptionEventExecutionDone(AlternativeCallContext alternativeCallContext) {
+        alternativeCallContextMap.remove(alternativeCallContext);
+    }
+
+    @Override
     public void deferredOnFieldValue(String resultKey, FieldValueInfo fieldValueInfo, Throwable throwable, ExecutionStrategyParameters parameters) {
         CallStack callStack = getCallStack(parameters);
         int deferredFragmentRootFieldsCompleted = callStack.deferredFragmentRootFieldsCompleted.incrementAndGet();
-        Assert.assertNotNull(parameters.getDeferredCallContext());
-        if (deferredFragmentRootFieldsCompleted == parameters.getDeferredCallContext().getFields()) {
-            onCompletionFinished(parameters.getDeferredCallContext().getStartLevel() - 1, callStack);
+        Assert.assertNotNull(parameters.getAlternativeCallContext());
+        if (deferredFragmentRootFieldsCompleted == parameters.getAlternativeCallContext().getFields()) {
+            onCompletionFinished(parameters.getAlternativeCallContext().getStartLevel() - 1, callStack);
         }
 
     }
 
 
     private CallStack getCallStack(ExecutionStrategyParameters parameters) {
-        return getCallStack(parameters.getDeferredCallContext());
+        return getCallStack(parameters.getAlternativeCallContext());
     }
 
     private CallStack getCallStack(@Nullable AlternativeCallContext alternativeCallContext) {
@@ -520,4 +525,3 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
 }
-
