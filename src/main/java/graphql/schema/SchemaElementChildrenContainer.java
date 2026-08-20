@@ -1,6 +1,9 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,6 +16,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
+@NullMarked
 public class SchemaElementChildrenContainer {
 
     private final Map<String, List<GraphQLSchemaElement>> children = new LinkedHashMap<>();
@@ -25,7 +29,7 @@ public class SchemaElementChildrenContainer {
         return (List<T>) children.getOrDefault(key, emptyList());
     }
 
-    public <T extends GraphQLSchemaElement> T getChildOrNull(String key) {
+    public <T extends GraphQLSchemaElement> @Nullable T getChildOrNull(String key) {
         List<? extends GraphQLSchemaElement> result = children.getOrDefault(key, new ArrayList<>());
         if (result.size() > 1) {
             throw new IllegalStateException("children " + key + " is not a single value");
@@ -65,6 +69,7 @@ public class SchemaElementChildrenContainer {
         return this.children.isEmpty();
     }
 
+    @NullUnmarked
     public static class Builder {
         private final Map<String, List<GraphQLSchemaElement>> children = new LinkedHashMap<>();
 

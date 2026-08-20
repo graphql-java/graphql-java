@@ -2,6 +2,7 @@ package graphql.schema.idl.errors;
 
 import graphql.GraphQLException;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.TypeRuntimeWiring;
 
@@ -10,6 +11,7 @@ import graphql.schema.idl.TypeRuntimeWiring;
  * something gets redefined.
  */
 @PublicApi
+@NullMarked
 public class StrictModeWiringException extends GraphQLException {
     public StrictModeWiringException(String msg) {
         super(msg);

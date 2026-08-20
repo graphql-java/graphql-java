@@ -1,11 +1,13 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Special traversal control values
  */
 @PublicApi
+@NullMarked
 public enum TraversalControl {
 
     /**

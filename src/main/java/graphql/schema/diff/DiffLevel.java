@@ -1,11 +1,13 @@
 package graphql.schema.diff;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This is the level of difference between graphql APIs
  */
 @PublicApi
+@NullMarked
 public enum DiffLevel {
     /**
      * A simple info object coming out of the difference engine

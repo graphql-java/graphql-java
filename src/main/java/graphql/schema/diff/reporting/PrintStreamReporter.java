@@ -2,6 +2,7 @@ package graphql.schema.diff.reporting;
 
 import graphql.PublicApi;
 import graphql.schema.diff.DiffEvent;
+import org.jspecify.annotations.NullMarked;
 import graphql.schema.diff.DiffLevel;
 
 import java.io.PrintStream;
@@ -12,6 +13,7 @@ import static java.lang.String.format;
  * A reporter that prints its output to a PrintStream
  */
 @PublicApi
+@NullMarked
 public class PrintStreamReporter implements DifferenceReporter {
 
     int breakageCount = 0;

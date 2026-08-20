@@ -4,6 +4,8 @@ import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.execution.ResultPath;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -16,13 +18,14 @@ import java.util.Objects;
  * Represents a payload that can be resolved after the initial response.
  */
 @ExperimentalApi
+@NullMarked
 public abstract class IncrementalPayload {
     private final List<Object> path;
-    private final String label;
-    private final List<GraphQLError> errors;
-    private final transient Map<Object, Object> extensions;
+    private final @Nullable String label;
+    private final @Nullable List<GraphQLError> errors;
+    private final transient @Nullable Map<Object, Object> extensions;
 
-    protected IncrementalPayload(List<Object> path, String label, List<GraphQLError> errors, Map<Object, Object> extensions) {
+    protected IncrementalPayload(List<Object> path, @Nullable String label, @Nullable List<GraphQLError> errors, @Nullable Map<Object, Object> extensions) {
         this.path = path;
         this.errors = errors;
         this.label = label;
@@ -90,7 +93,7 @@ public abstract class IncrementalPayload {
         return Objects.hash(path, label, errors, extensions);
     }
 
-    public boolean equals(Object obj) {
+    public boolean equals(@Nullable Object obj) {
         if (this == obj) {
             return true;
         }
@@ -104,6 +107,7 @@ public abstract class IncrementalPayload {
                 Objects.equals(extensions, that.extensions);
     }
 
+    @NullUnmarked
     protected static abstract class Builder<T extends Builder<T>> {
         protected List<Object> path;
         protected String label;
