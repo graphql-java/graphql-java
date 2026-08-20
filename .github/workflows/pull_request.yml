@@ -1,5 +1,9 @@
-name: Pull Request Build
+name: 26.x Pull Request Build
 # For pull requests: builds and test
+#
+# This name intentionally differs from "Pull Request Build". The default-branch
+# PR Test Report workflow listens for that name and compares results against the
+# master baseline, which is not maintained for 26.x.
 on:
   push:
     branches:
@@ -25,16 +29,12 @@ jobs:
             label: 'check'
           - gradle-argument: 'testWithJava11 testngWithJava11'
             label: 'java11'
-            test-results-dirs: 'testWithJava11 testngWithJava11'
           - gradle-argument: 'testWithJava17 testngWithJava17'
             label: 'java17'
-            test-results-dirs: 'testWithJava17 testngWithJava17'
           - gradle-argument: 'testWithJava21 testngWithJava21'
             label: 'java21'
-            test-results-dirs: 'testWithJava21 testngWithJava21'
-          - gradle-argument: 'test testng jacocoTestReport'
+          - gradle-argument: 'test testng'
             label: 'java25'
-            test-results-dirs: 'test testng'
           - gradle-argument: 'jcstress'
             label: 'jcstress'
     steps:
@@ -46,177 +46,7 @@ jobs:
           java-version: '25'
           distribution: 'corretto'
       - name: build and test
-        run: |
-          if [ "${{ matrix.label }}" = "jcstress" ]; then
-            set -o pipefail
-            mkdir -p build
-            ./gradlew ${{matrix.gradle-argument}} --info --stacktrace 2>&1 | tee build/jcstress-output.txt
-          else
-            ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
-          fi
-      - name: Upload Coverage HTML Report
-        uses: actions/upload-artifact@v7
-        if: always() && matrix.label == 'java25'
-        with:
-          name: jacoco-html-report
-          path: build/reports/jacoco/test/html/
-          retention-days: 14
-      - name: Upload Coverage XML Report
-        uses: actions/upload-artifact@v7
-        if: always() && matrix.label == 'java25'
-        with:
-          name: coverage-report
-          path: build/reports/jacoco/test/jacocoTestReport.xml
-          retention-days: 1
-      - name: Parse Test Results
-        if: always() && matrix.label != 'check' && matrix.label != 'jcstress'
-        run: |
-          total=0; failures=0; errors=0; skipped=0
-          for dir_name in ${{ matrix.test-results-dirs }}; do
-            dir="build/test-results/$dir_name"
-            for f in "$dir"/TEST-*.xml; do
-              [ -f "$f" ] || continue
-              t=$(grep -o 'tests="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
-              fl=$(grep -o 'failures="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
-              e=$(grep -o 'errors="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
-              s=$(grep -o 'skipped="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
-              total=$((total + ${t:-0}))
-              failures=$((failures + ${fl:-0}))
-              errors=$((errors + ${e:-0}))
-              skipped=$((skipped + ${s:-0}))
-            done
-          done
-          passed=$((total - failures - errors - skipped))
-          mkdir -p /tmp/test-stats
-          echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failures,\"errors\":$errors,\"skipped\":$skipped}" \
-            > "/tmp/test-stats/${{ matrix.label }}.json"
-      - name: Parse jcstress Results
-        if: always() && matrix.label == 'jcstress'
-        run: |
-          total=0; passed=0; failed=0; errors=0; skipped=0
-          if [ -f build/jcstress-output.txt ]; then
-            line=$(grep 'Results:.*planned.*passed.*failed' build/jcstress-output.txt | tail -1)
-            if [ -n "$line" ]; then
-              total=$(echo "$line" | sed 's/.*Results: \([0-9]*\) planned.*/\1/')
-              passed=$(echo "$line" | sed 's/.*; \([0-9]*\) passed.*/\1/')
-              failed=$(echo "$line" | sed 's/.*passed, \([0-9]*\) failed.*/\1/')
-              soft=$(echo "$line" | sed 's/.*failed, \([0-9]*\) soft.*/\1/')
-              hard=$(echo "$line" | sed 's/.*soft errs, \([0-9]*\) hard.*/\1/')
-              errors=$((soft + hard))
-            fi
-          fi
-          mkdir -p /tmp/test-stats
-          echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failed,\"errors\":$errors,\"skipped\":$skipped}" \
-            > "/tmp/test-stats/${{ matrix.label }}.json"
-      - name: Upload Test Stats
-        if: always() && matrix.label != 'check'
-        uses: actions/upload-artifact@v7
-        with:
-          name: test-stats-${{ matrix.label }}
-          path: /tmp/test-stats/${{ matrix.label }}.json
-  test-summary:
-    name: "Per-Class Coverage Gate"
-    needs: buildAndTest
-    if: >-
-      always() &&
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.base.ref == 'master'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Download Coverage Report
-        uses: actions/download-artifact@v8
-        continue-on-error: true
-        with:
-          name: coverage-report
-          path: coverage/
-      - name: Enforce Per-Class Coverage Gate
-        uses: actions/github-script@v8
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-            const { parseJacocoXml, pct, zeroCov, isRegression } = require('./.github/scripts/parse-jacoco.js');
-
-            // --- Read baseline from repo ---
-            const baselineFile = 'test-baseline.json';
-            let baseline = { tests: {}, coverage: {} };
-            if (fs.existsSync(baselineFile)) {
-              baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
-            }
-            const baseClasses = (baseline.coverage || {}).classes || {};
-
-            // --- Parse JaCoCo XML for per-class coverage ---
-            const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
-            const parsed = parseJacocoXml(jacocoFile);
-            if (!parsed) {
-              console.log('No JaCoCo report found, skipping coverage gate.');
-              return;
-            }
-            const classCounters = parsed.classes;
-
-            // --- Coverage gate: fail if any class regresses on any metric ---
-            // A regression requires BOTH a percentage drop AND an increase in the
-            // absolute number of missed items. This avoids false positives when
-            // well-covered code is extracted/moved out of a class (which lowers the
-            // percentage without actually losing any test coverage).
-            const regressions = [];
-            for (const [cls, curr] of Object.entries(classCounters)) {
-              const base = baseClasses[cls] || { line: zeroCov, branch: zeroCov, method: zeroCov };
-              const classRegressions = [];
-              for (const [metric, key] of [['Line', 'line'], ['Branch', 'branch'], ['Method', 'method']]) {
-                const currPct = pct(curr[key].covered, curr[key].missed);
-                const basePct = pct(base[key].covered, base[key].missed);
-                const currMissed = curr[key].missed;
-                const baseMissed = base[key].missed;
-                if (isRegression(currPct, basePct, currMissed, baseMissed)) {
-                  classRegressions.push(`  ${cls} ${metric}: ${currPct.toFixed(1)}% (was ${basePct.toFixed(1)}%, delta ${(currPct - basePct).toFixed(1)}%, missed: ${currMissed} was ${baseMissed})`);
-                }
-              }
-              if (classRegressions.length > 0) {
-                regressions.push(...classRegressions);
-                // Add method-level details for this regression
-                const currMethods = curr.methods || [];
-                const baseMethods = (base.methods || []);
-                if (currMethods.length > 0 || baseMethods.length > 0) {
-                  const baseByKey = {};
-                  for (const m of baseMethods) baseByKey[m.name + m.desc] = m;
-                  const seen = new Set();
-                  for (const m of currMethods) {
-                    const key = m.name + m.desc;
-                    seen.add(key);
-                    const bm = baseByKey[key];
-                    const currLinePct = pct(m.counters.line.covered, m.counters.line.missed);
-                    const baseLinePct = bm ? pct(bm.counters.line.covered, bm.counters.line.missed) : null;
-                    const lineChanged = baseLinePct !== null && Math.abs(currLinePct - baseLinePct) >= 0.05;
-                    const isNew = !bm;
-                    // When baseline method data exists, only show methods that actually
-                    // changed or are new. Fall back to showing all uncovered methods
-                    // when no baseline method data is available yet.
-                    const hasMissed = m.counters.line.missed > 0 || m.counters.branch.missed > 0;
-                    const show = baseMethods.length > 0
-                      ? (lineChanged || isNew)
-                      : (hasMissed || isNew);
-                    if (show) {
-                      const displayName = m.name === '<init>' ? 'constructor' : m.name;
-                      let detail = `      ${displayName} — Line: ${currLinePct.toFixed(1)}%`;
-                      if (baseLinePct !== null) detail += ` (was ${baseLinePct.toFixed(1)}%)`;
-                      else detail += ' (new)';
-                      regressions.push(detail);
-                    }
-                  }
-                  for (const bm of baseMethods) {
-                    if (!seen.has(bm.name + bm.desc)) {
-                      const displayName = bm.name === '<init>' ? 'constructor' : bm.name;
-                      regressions.push(`      ${displayName} — removed`);
-                    }
-                  }
-                }
-              }
-            }
-            if (regressions.length > 0) {
-              core.setFailed(`Per-class coverage regressions detected:\n${regressions.join('\n')}\n\nUpdate test-baseline.json if these changes are intentional.`);
-            }
+        run: ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
   javadoc:
     runs-on: ubuntu-latest
     steps:
@@ -233,7 +63,6 @@ jobs:
     if: always()
     needs:
       - buildAndTest
-      - test-summary
       - javadoc
     runs-on: ubuntu-latest
     steps:
@@ -241,10 +70,6 @@ jobs:
         run: |
           if [ "${{ needs.buildAndTest.result }}" != "success" ]; then
             echo "buildAndTest failed with result: ${{ needs.buildAndTest.result }}"
-            exit 1
-          fi
-          if [ "${{ needs.test-summary.result }}" != "success" ] && [ "${{ needs.test-summary.result }}" != "skipped" ]; then
-            echo "Per-Class Coverage Gate failed with result: ${{ needs.test-summary.result }}"
             exit 1
           fi
           if [ "${{ needs.javadoc.result }}" != "success" ]; then
