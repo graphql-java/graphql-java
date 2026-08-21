@@ -8,5 +8,6 @@ import graphql.PublicApi;
  * to {@link graphql.schema.GraphQLOutputType}s which can only be used as graphql response output.
  */
 @PublicApi
-public interface GraphQLInputType extends GraphQLType, GraphQLInputSchemaElement {
+public interface GraphQLInputType
+        extends GraphQLType, GraphQLInputSchemaElement, SchemaInputType {
 }

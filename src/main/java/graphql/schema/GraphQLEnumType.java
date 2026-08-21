@@ -43,7 +43,7 @@ import static graphql.util.FpKit.getByName;
  */
 @PublicApi
 @NullMarked
-public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
+public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, SchemaEnum {
 
     private final String name;
     private final String description;
@@ -80,6 +80,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     @Internal
+    @Override
     public Object serialize(Object input, GraphQLContext graphQLContext, Locale locale) {
         return getNameByValue(input, graphQLContext, locale);
     }
@@ -91,6 +92,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     @Internal
+    @Override
     public Object parseValue(Object input, GraphQLContext graphQLContext, Locale locale) {
         return getValueByName(input, graphQLContext, locale);
     }
@@ -103,6 +105,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     @Internal
+    @Override
     public Object parseLiteral(Value<?> input, GraphQLContext graphQLContext, Locale locale) {
         return parseLiteralImpl(input, graphQLContext, locale);
     }
@@ -131,6 +134,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     @Internal
+    @Override
     public Value<?> valueToLiteral(Object input, GraphQLContext graphQLContext, Locale locale) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
         if (enumValueDefinition == null) {
@@ -209,7 +213,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         return directivesHolder.getDirectives();
     }
 
-    @Override
+
     public Map<String, GraphQLDirective> getDirectivesByName() {
         return directivesHolder.getDirectivesByName();
     }

@@ -88,6 +88,79 @@ class ValidationUtilTest extends Specification {
         validationUtil.isValidLiteralValue(new VariableReference("var"), GraphQLBoolean, schema, graphQLContext, locale)
     }
 
+    def "AST variable types preserve wrapper semantics"() {
+        given:
+        def stringType = new TypeName("String")
+        def nonNullStringType = new NonNullType(stringType)
+        def stringListType = new ListType(nonNullStringType)
+
+        expect:
+        !validationUtil.isValidLiteralValue(
+                NullValue.newNullValue().build(),
+                nonNullStringType,
+                schema,
+                graphQLContext,
+                locale)
+        validationUtil.isValidLiteralValue(
+                new StringValue("value"),
+                nonNullStringType,
+                schema,
+                graphQLContext,
+                locale)
+        validationUtil.isValidLiteralValue(
+                null,
+                stringType,
+                schema,
+                graphQLContext,
+                locale)
+        validationUtil.isValidLiteralValue(
+                new VariableReference("value"),
+                stringType,
+                schema,
+                graphQLContext,
+                locale)
+
+        and:
+        validationUtil.isValidLiteralValue(
+                new StringValue("value"),
+                stringListType,
+                schema,
+                graphQLContext,
+                locale)
+        validationUtil.isValidLiteralValue(
+                new ArrayValue([
+                        new StringValue("first"),
+                        new StringValue("second")
+                ]),
+                stringListType,
+                schema,
+                graphQLContext,
+                locale)
+        !validationUtil.isValidLiteralValue(
+                new ArrayValue([
+                        new StringValue("first"),
+                        NullValue.newNullValue().build()
+                ]),
+                stringListType,
+                schema,
+                graphQLContext,
+                locale)
+
+        and:
+        !validationUtil.isValidLiteralValue(
+                new StringValue("value"),
+                new TypeName("Missing"),
+                schema,
+                graphQLContext,
+                locale)
+        !validationUtil.isValidLiteralValue(
+                new StringValue("value"),
+                new TypeName("QueryType"),
+                schema,
+                graphQLContext,
+                locale)
+    }
+
     def "ArrayValue and ListType is invalid when one entry is invalid"() {
         given:
         def arrayValue = new ArrayValue([new BooleanValue(true)])

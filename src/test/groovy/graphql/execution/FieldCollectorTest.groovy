@@ -6,7 +6,11 @@ import graphql.language.Field
 import graphql.language.InlineFragment
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
-import graphql.schema.GraphQLObjectType
+import graphql.schema.ExecutableSchema
+import graphql.schema.GraphQLSchema
+import graphql.schema.SchemaObject
+import graphql.schema.universe.SchemaUniverse
+import graphql.schema.universe.view.SUExecutableSchema
 import spock.lang.Specification
 
 import static graphql.TestUtil.mergedField
@@ -15,15 +19,16 @@ import static graphql.execution.FieldCollectorParameters.newParameters
 class FieldCollectorTest extends Specification {
 
 
-    def "collect fields"() {
+    def "collect fields [#schemaKind]"() {
         given:
-        def schema = TestUtil.schema("""
+        def graphQLSchema = TestUtil.schema("""
             type Query {
                 bar1: String
                 bar2: String 
             }
                 """)
-        def objectType = schema.getType("Query") as GraphQLObjectType
+        def schema = executableSchema(graphQLSchema, schemaKind)
+        def objectType = schema.getType("Query") as SchemaObject
         FieldCollector fieldCollector = new FieldCollector()
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
@@ -41,10 +46,13 @@ class FieldCollectorTest extends Specification {
         then:
         result.getSubField('bar1').getFields() == [bar1]
         result.getSubField('bar2').getFields() == [bar2]
+
+        where:
+        schemaKind << schemaKinds()
     }
 
-    def "collect fields on inline fragments"() {
-        def schema = TestUtil.schema("""
+    def "collect fields on inline fragments [#schemaKind]"() {
+        def graphQLSchema = TestUtil.schema("""
             type Query{
                 bar1: String
                 bar2: Test 
@@ -56,7 +64,8 @@ class FieldCollectorTest extends Specification {
                 fieldOnInterface: String
             }
                 """)
-        def object = schema.getType("TestImpl") as GraphQLObjectType
+        def schema = executableSchema(graphQLSchema, schemaKind)
+        def object = schema.getType("TestImpl") as SchemaObject
         FieldCollector fieldCollector = new FieldCollector()
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
@@ -73,14 +82,48 @@ class FieldCollectorTest extends Specification {
 
         then:
         result.getSubField('fieldOnInterface').getFields() == [interfaceField]
+
+        where:
+        schemaKind << schemaKinds()
     }
 
-    def "collect fields that are merged together - one of the fields is on an inline fragment "() {
-        def schema = TestUtil.schema("""
+    def "ignores inline fragments with non composite type conditions [#schemaKind]"() {
+        given:
+        def graphQLSchema = TestUtil.schema("""
+            type Query {
+                value: String
+            }
+        """)
+        def schema = executableSchema(graphQLSchema, schemaKind)
+        def object = schema.getType("Query") as SchemaObject
+        def parameters = newParameters()
+                .schema(schema)
+                .objectType(object)
+                .build()
+        Document document = new Parser().parseDocument(
+                "{ ... on String { value } }")
+        def selectionSet = ((OperationDefinition) document.children[0])
+                .selectionSet
+
+        when:
+        def result = new FieldCollector().collectFields(
+                parameters,
+                selectionSet)
+
+        then:
+        result.empty
+
+        where:
+        schemaKind << schemaKinds()
+    }
+
+    def "collect fields that are merged together - one of the fields is on an inline fragment [#schemaKind]"() {
+        def graphQLSchema = TestUtil.schema("""
             type Query {
                 echo: String
             }
 """)
+        def schema = executableSchema(graphQLSchema, schemaKind)
 
         Document document = new Parser().parseDocument("""
         {
@@ -92,7 +135,7 @@ class FieldCollectorTest extends Specification {
         
 """)
 
-        def object = schema.getType("TestImpl") as GraphQLObjectType
+        def object = schema.getType("TestImpl") as SchemaObject
         FieldCollector fieldCollector = new FieldCollector()
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
@@ -107,10 +150,13 @@ class FieldCollectorTest extends Specification {
         then:
         result.size() == 1
         result.getSubField('echo').fields.size() == 1
+
+        where:
+        schemaKind << schemaKinds()
     }
 
-    def "collect fields that are merged together - fields have different selection sets "() {
-        def schema = TestUtil.schema("""
+    def "collect fields that are merged together - fields have different selection sets [#schemaKind]"() {
+        def graphQLSchema = TestUtil.schema("""
             type Query {
                 me: Me
             }
@@ -120,6 +166,7 @@ class FieldCollectorTest extends Specification {
                 lastname: String 
             }
 """)
+        def schema = executableSchema(graphQLSchema, schemaKind)
 
         Document document = new Parser().parseDocument("""
         {
@@ -133,7 +180,7 @@ class FieldCollectorTest extends Specification {
         
 """)
 
-        def object = schema.getType("TestImpl") as GraphQLObjectType
+        def object = schema.getType("TestImpl") as SchemaObject
         FieldCollector fieldCollector = new FieldCollector()
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
@@ -157,10 +204,13 @@ class FieldCollectorTest extends Specification {
 
         meField.fields[1].selectionSet.selections.size() == 1
         meField.fields[1].selectionSet.selections[0].name == "lastname"
+
+        where:
+        schemaKind << schemaKinds()
     }
 
-    def "collect fields that are merged together - fields have different directives"() {
-        def schema = TestUtil.schema("""
+    def "collect fields that are merged together - fields have different directives [#schemaKind]"() {
+        def graphQLSchema = TestUtil.schema("""
             directive @one on FIELD
             directive @two on FIELD
             
@@ -168,6 +218,7 @@ class FieldCollectorTest extends Specification {
                 echo: String 
             }
 """)
+        def schema = executableSchema(graphQLSchema, schemaKind)
 
         Document document = new Parser().parseDocument("""
         {
@@ -177,7 +228,7 @@ class FieldCollectorTest extends Specification {
         
 """)
 
-        def object = schema.getType("TestImpl") as GraphQLObjectType
+        def object = schema.getType("TestImpl") as SchemaObject
         FieldCollector fieldCollector = new FieldCollector()
         FieldCollectorParameters fieldCollectorParameters = newParameters()
                 .schema(schema)
@@ -204,5 +255,27 @@ class FieldCollectorTest extends Specification {
         echoField.fields[1].name == "echo"
         echoField.fields[1].directives.size() == 1
         echoField.fields[1].directives[0].name == "two"
+
+        where:
+        schemaKind << schemaKinds()
+    }
+
+    private static List<String> schemaKinds() {
+        return [
+                GraphQLSchema.simpleName,
+                SUExecutableSchema.simpleName]
+    }
+
+    private static ExecutableSchema executableSchema(
+            GraphQLSchema graphQLSchema,
+            String schemaKind) {
+        if (schemaKind == GraphQLSchema.simpleName) {
+            return graphQLSchema
+        }
+        def imported = new SchemaUniverse()
+                .importSchema("field_collector", graphQLSchema)
+        return SUExecutableSchema.fromGraphQLSchema(
+                imported,
+                graphQLSchema)
     }
 }

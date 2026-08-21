@@ -10,7 +10,7 @@ import graphql.language.Directive;
 import graphql.language.DirectivesContainer;
 import graphql.language.NodeUtil;
 import graphql.language.VariableReference;
-import graphql.schema.GraphQLSchema;
+import graphql.schema.ExecutableSchema;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -31,7 +31,7 @@ public class ConditionalNodes {
 
     public boolean shouldInclude(DirectivesContainer<?> element,
                                  Map<String, Object> variables,
-                                 GraphQLSchema graphQLSchema,
+                                 ExecutableSchema schema,
                                  @Nullable GraphQLContext graphQLContext
     ) {
         //
@@ -45,7 +45,12 @@ public class ConditionalNodes {
         if (graphQLContext != null) {
             ConditionalNodeDecision conditionalDecision = graphQLContext.get(ConditionalNodeDecision.class);
             if (conditionalDecision != null) {
-                return customShouldInclude(variables, element, graphQLSchema, graphQLContext, conditionalDecision);
+                return customShouldInclude(
+                        variables,
+                        element,
+                        schema,
+                        graphQLContext,
+                        conditionalDecision);
             }
         }
         // if no one says otherwise, the node is considered included
@@ -54,7 +59,7 @@ public class ConditionalNodes {
 
     private boolean customShouldInclude(Map<String, Object> variables,
                                         DirectivesContainer<?> element,
-                                        GraphQLSchema graphQLSchema,
+                                        ExecutableSchema schema,
                                         GraphQLContext graphQLContext,
                                         ConditionalNodeDecision conditionalDecision
     ) {
@@ -71,8 +76,8 @@ public class ConditionalNodes {
             }
 
             @Override
-            public GraphQLSchema getGraphQlSchema() {
-                return graphQLSchema;
+            public ExecutableSchema getSchema() {
+                return schema;
             }
 
             @Override

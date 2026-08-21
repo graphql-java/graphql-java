@@ -7,12 +7,14 @@ import graphql.language.ArrayValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.Value;
-import graphql.schema.GraphQLInputObjectField;
-import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLList;
-import graphql.schema.GraphQLType;
+import graphql.schema.ExecutableSchema;
 import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.SchemaInputField;
+import graphql.schema.SchemaInputObject;
+import graphql.schema.SchemaList;
+import graphql.schema.SchemaNonNull;
+import graphql.schema.SchemaType;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -25,34 +27,57 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 final class ValuesResolverOneOfValidation {
 
     @SuppressWarnings("unchecked")
-    static void validateOneOfInputTypes(GraphQLType type, Object inputValue, Value<?> argumentValue, String argumentName, Locale locale) {
-        GraphQLType unwrappedNonNullType = GraphQLTypeUtil.unwrapNonNull(type);
+    static void validateOneOfInputTypes(
+            @Nullable ExecutableSchema schema,
+            SchemaType type,
+            Object inputValue,
+            Value<?> argumentValue,
+            String argumentName,
+            Locale locale) {
+        SchemaType unwrappedNonNullType = type instanceof SchemaNonNull
+                ? GraphQLTypeUtil.unwrapOne(type)
+                : type;
 
         if (isList(unwrappedNonNullType)
                 && !ValuesResolverConversion.isNullValue(inputValue)
                 && inputValue instanceof List
                 && argumentValue instanceof ArrayValue) {
-            GraphQLType elementType = ((GraphQLList) unwrappedNonNullType).getWrappedType();
+            SchemaType elementType =
+                    ((SchemaList) unwrappedNonNullType).getWrappedType();
             List<Object> inputList = (List<Object>) inputValue;
             List<Value> argumentList = ((ArrayValue) argumentValue).getValues();
 
             for (int i = 0; i < argumentList.size(); i++) {
-                validateOneOfInputTypes(elementType, inputList.get(i), argumentList.get(i), argumentName, locale);
+                validateOneOfInputTypes(
+                        schema,
+                        elementType,
+                        inputList.get(i),
+                        argumentList.get(i),
+                        argumentName,
+                        locale);
             }
         }
 
-        if (unwrappedNonNullType instanceof GraphQLInputObjectType && !ValuesResolverConversion.isNullValue(inputValue)) {
-            Assert.assertTrue(inputValue instanceof Map, "The coerced argument %s GraphQLInputObjectType is unexpectedly not a map", argumentName);
+        if (unwrappedNonNullType instanceof SchemaInputObject
+                && !ValuesResolverConversion.isNullValue(inputValue)) {
+            Assert.assertTrue(
+                    inputValue instanceof Map,
+                    "The coerced argument %s SchemaInputObject is unexpectedly not a map",
+                    argumentName);
             Map<String, Object> objectMap = (Map<String, Object>) inputValue;
 
-            GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) unwrappedNonNullType;
+            SchemaInputObject inputObjectType =
+                    (SchemaInputObject) unwrappedNonNullType;
 
             if (inputObjectType.isOneOf()) {
                 validateOneOfInputTypesInternal(inputObjectType, argumentValue, objectMap, locale);
             }
 
-            for (GraphQLInputObjectField fieldDefinition : inputObjectType.getFields()) {
-                GraphQLInputType childFieldType = fieldDefinition.getType();
+            for (SchemaInputField fieldDefinition :
+                    getInputFields(
+                            schema,
+                            inputObjectType)) {
+                SchemaType childFieldType = fieldDefinition.getType();
                 String childFieldName = fieldDefinition.getName();
                 Object childFieldInputValue = objectMap.get(childFieldName);
 
@@ -65,16 +90,32 @@ final class ValuesResolverOneOfValidation {
                     if (values.size() > 1) {
                         Assert.assertShouldNeverHappen("argument %s has %s object fields with the same name: '%s'. A maximum of 1 is expected", argumentName, values.size(), childFieldName);
                     } else if (!values.isEmpty()) {
-                        validateOneOfInputTypes(childFieldType, childFieldInputValue, values.get(0), argumentName, locale);
+                        validateOneOfInputTypes(
+                                schema,
+                                childFieldType,
+                                childFieldInputValue,
+                                values.get(0),
+                                argumentName,
+                                locale);
                     }
                 } else {
-                    validateOneOfInputTypes(childFieldType, childFieldInputValue, argumentValue, argumentName, locale);
+                    validateOneOfInputTypes(
+                            schema,
+                            childFieldType,
+                            childFieldInputValue,
+                            argumentValue,
+                            argumentName,
+                            locale);
                 }
             }
         }
     }
 
-    private static void validateOneOfInputTypesInternal(GraphQLInputObjectType oneOfInputType, Value<?> argumentValue, Map<String, Object> objectMap, Locale locale) {
+    private static void validateOneOfInputTypesInternal(
+            SchemaInputObject oneOfInputType,
+            Value<?> argumentValue,
+            Map<String, Object> objectMap,
+            Locale locale) {
         final String fieldName;
         if (argumentValue instanceof ObjectValue) {
             List<ObjectField> objectFields = ((ObjectValue) argumentValue).getObjectFields();
@@ -96,13 +137,27 @@ final class ValuesResolverOneOfValidation {
         }
     }
 
-    private static void throwValueIsNullError(GraphQLInputObjectType oneOfInputType, Locale locale, String fieldName) {
+    private static List<? extends SchemaInputField> getInputFields(
+            @Nullable ExecutableSchema schema,
+            SchemaInputObject inputObjectType) {
+        if (schema != null) {
+            return schema.getInputFields(inputObjectType);
+        }
+        return inputObjectType.getFieldDefinitions();
+    }
+
+    private static void throwValueIsNullError(
+            SchemaInputObject oneOfInputType,
+            Locale locale,
+            String fieldName) {
         String msg = I18n.i18n(I18n.BundleType.Execution, locale)
                 .msg("Execution.handleOneOfValueIsNullError", oneOfInputType.getName() + "." + fieldName);
         throw new OneOfNullValueException(msg);
     }
 
-    private static void throwNotOneFieldError(GraphQLInputObjectType oneOfInputType, Locale locale) {
+    private static void throwNotOneFieldError(
+            SchemaInputObject oneOfInputType,
+            Locale locale) {
         String msg = I18n.i18n(I18n.BundleType.Execution, locale)
                 .msg("Execution.handleOneOfNotOneFieldError", oneOfInputType.getName());
         throw new OneOfTooManyKeysException(msg);

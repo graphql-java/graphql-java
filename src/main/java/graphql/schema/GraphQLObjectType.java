@@ -38,7 +38,7 @@ import static graphql.util.FpKit.valuesToList;
  * See <a href="https://graphql.org/learn/schema/#object-types-and-fields">https://graphql.org/learn/schema/#object-types-and-fields</a> for more details on the concept.
  */
 @PublicApi
-public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {
+public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType, SchemaObject {
 
     private final String name;
     private final String description;

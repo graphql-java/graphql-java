@@ -9,7 +9,8 @@ import org.jspecify.annotations.Nullable;
  * A Schema element which has a name and also a description and AST Node which it is based on.
  */
 @PublicApi
-public interface GraphQLNamedSchemaElement extends GraphQLSchemaElement {
+public interface GraphQLNamedSchemaElement
+        extends GraphQLSchemaElement, SchemaNamedElement {
 
     /**
      * @return the name of this element.  This cant be null

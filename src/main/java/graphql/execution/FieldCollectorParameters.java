@@ -4,8 +4,8 @@ import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.language.FragmentDefinition;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
+import graphql.schema.ExecutableSchema;
+import graphql.schema.SchemaObject;
 
 import java.util.Map;
 
@@ -14,14 +14,14 @@ import java.util.Map;
  */
 @Internal
 public class FieldCollectorParameters {
-    private final GraphQLSchema graphQLSchema;
+    private final ExecutableSchema schema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> variables;
-    private final GraphQLObjectType objectType;
+    private final SchemaObject objectType;
     private final GraphQLContext graphQLContext;
 
-    public GraphQLSchema getGraphQLSchema() {
-        return graphQLSchema;
+    public ExecutableSchema getSchema() {
+        return schema;
     }
 
     public Map<String, FragmentDefinition> getFragmentsByName() {
@@ -32,7 +32,7 @@ public class FieldCollectorParameters {
         return variables;
     }
 
-    public GraphQLObjectType getObjectType() {
+    public SchemaObject getObjectType() {
         return objectType;
     }
 
@@ -42,7 +42,7 @@ public class FieldCollectorParameters {
 
     private FieldCollectorParameters(Builder builder) {
         this.fragmentsByName = builder.fragmentsByName;
-        this.graphQLSchema = builder.graphQLSchema;
+        this.schema = builder.schema;
         this.variables = builder.variables;
         this.objectType = builder.objectType;
         this.graphQLContext = builder.graphQLContext;
@@ -53,10 +53,10 @@ public class FieldCollectorParameters {
     }
 
     public static class Builder {
-        private GraphQLSchema graphQLSchema;
+        private ExecutableSchema schema;
         private Map<String, FragmentDefinition> fragmentsByName;
         private Map<String, Object> variables;
-        private GraphQLObjectType objectType;
+        private SchemaObject objectType;
         private GraphQLContext graphQLContext = GraphQLContext.getDefault();
 
         /**
@@ -66,12 +66,12 @@ public class FieldCollectorParameters {
 
         }
 
-        public Builder schema(GraphQLSchema graphQLSchema) {
-            this.graphQLSchema = graphQLSchema;
+        public Builder schema(ExecutableSchema schema) {
+            this.schema = schema;
             return this;
         }
 
-        public Builder objectType(GraphQLObjectType objectType) {
+        public Builder objectType(SchemaObject objectType) {
             this.objectType = objectType;
             return this;
         }
@@ -92,7 +92,7 @@ public class FieldCollectorParameters {
         }
 
         public FieldCollectorParameters build() {
-            Assert.assertNotNull(graphQLSchema, "You must provide a schema");
+            Assert.assertNotNull(schema, "You must provide a schema");
             return new FieldCollectorParameters(this);
         }
 

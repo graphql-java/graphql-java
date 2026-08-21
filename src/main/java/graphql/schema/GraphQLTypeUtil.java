@@ -1,9 +1,10 @@
 package graphql.schema;
 
 import graphql.Assert;
+import graphql.Directives;
+import graphql.ExperimentalApi;
 import graphql.PublicApi;
 import graphql.introspection.Introspection;
-import graphql.Directives;
 import graphql.schema.idl.ScalarInfo;
 import org.jspecify.annotations.NullMarked;
 
@@ -14,7 +15,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 
 /**
- * A utility class that helps work with {@link graphql.schema.GraphQLType}s
+ * A utility class that helps work with GraphQL schema types.
  */
 @PublicApi
 @NullMarked
@@ -46,6 +47,89 @@ public class GraphQLTypeUtil {
         }
         // a schema element is either a GraphQLType or a GraphQLNamedSchemaElement
         return assertShouldNeverHappen("unexpected schema element: " + schemaElement);
+    }
+
+    /**
+     * This will return an abstract schema type in GraphQL SDL format, eg {@code [typeName!]!}.
+     *
+     * @param type the type in play
+     *
+     * @return the type in GraphQL SDL format
+     */
+    @ExperimentalApi
+    public static String simplePrint(SchemaType type) {
+        Assert.assertNotNull(type, "type can't be null");
+        if (isNonNull(type)) {
+            return simplePrint(unwrapOne(type)) + "!";
+        }
+        if (isList(type)) {
+            return "[" + simplePrint(unwrapOne(type)) + "]";
+        }
+        return ((SchemaNamedType) type).getName();
+    }
+
+    @ExperimentalApi
+    public static boolean isNonNull(SchemaType type) {
+        return type instanceof SchemaNonNull;
+    }
+
+    @ExperimentalApi
+    public static boolean isNullable(SchemaType type) {
+        return !isNonNull(type);
+    }
+
+    @ExperimentalApi
+    public static boolean isList(SchemaType type) {
+        return type instanceof SchemaList;
+    }
+
+    @ExperimentalApi
+    public static boolean isWrapped(SchemaType type) {
+        return isList(type) || isNonNull(type);
+    }
+
+    @ExperimentalApi
+    public static boolean isNotWrapped(SchemaType type) {
+        return !isWrapped(type);
+    }
+
+    @ExperimentalApi
+    public static boolean isScalar(SchemaType type) {
+        return type instanceof SchemaScalar;
+    }
+
+    @ExperimentalApi
+    public static boolean isEnum(SchemaType type) {
+        return type instanceof SchemaEnum;
+    }
+
+    @ExperimentalApi
+    public static boolean isLeaf(SchemaType type) {
+        SchemaType unmodifiedType = unwrapAll(type);
+        return unmodifiedType instanceof SchemaScalar
+                || unmodifiedType instanceof SchemaEnum;
+    }
+
+    @ExperimentalApi
+    public static boolean isInput(SchemaType type) {
+        return unwrapAll(type) instanceof SchemaInputType;
+    }
+
+    @ExperimentalApi
+    public static SchemaType unwrapOne(SchemaType type) {
+        if (type instanceof SchemaModifiedType) {
+            return ((SchemaModifiedType) type).getWrappedType();
+        }
+        return type;
+    }
+
+    @ExperimentalApi
+    public static SchemaType unwrapAll(SchemaType type) {
+        SchemaType current = type;
+        while (isWrapped(current)) {
+            current = unwrapOne(current);
+        }
+        return current;
     }
 
     /**

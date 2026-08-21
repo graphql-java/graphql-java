@@ -6,6 +6,9 @@ import graphql.language.Node;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.Collections;
+import java.util.List;
+
 import static graphql.Assert.assertValidName;
 
 /**
@@ -43,6 +46,11 @@ public class GraphQLTypeReference implements GraphQLNamedOutputType, GraphQLName
     @Override
     public String getDescription() {
         return null;
+    }
+
+    @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return Collections.emptyList();
     }
 
     @Override

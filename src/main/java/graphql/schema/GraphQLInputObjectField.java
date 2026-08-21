@@ -30,7 +30,7 @@ import static graphql.execution.ValuesResolver.getInputValueImpl;
  * See <a href="https://graphql.org/learn/schema/#input-types">https://graphql.org/learn/schema/#input-types</a> for more details on the concept.
  */
 @PublicApi
-public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, GraphQLInputValueDefinition {
+public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, GraphQLInputValueDefinition, SchemaInputField {
 
     private final String name;
     private final String description;

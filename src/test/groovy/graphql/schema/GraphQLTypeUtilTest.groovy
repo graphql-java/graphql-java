@@ -1,5 +1,8 @@
 package graphql.schema
 
+import graphql.TestUtil
+import graphql.schema.universe.SchemaUniverse
+import graphql.schema.universe.view.SUExecutableSchema
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLString
@@ -232,5 +235,54 @@ class GraphQLTypeUtilTest extends Specification {
         then:
         (type as GraphQLNamedType).getName() == "String"
 
+    }
+
+    def "schema view types can be inspected without GraphQLType"() {
+        given:
+        def source = TestUtil.schema('''
+            enum Choice {
+                FIRST
+            }
+
+            input Filter {
+                choice: Choice
+            }
+
+            type Query {
+                values: [String!]!
+                choice: Choice
+                filter(value: Filter): String
+            }
+        ''')
+        def imported = new SchemaUniverse()
+                .importSchema("type_util", source)
+        def schema = SUExecutableSchema.fromGraphQLSchema(
+                imported,
+                source)
+        SchemaType valuesType = schema.getField(
+                schema.queryType,
+                "values").type
+        SchemaType scalarType = schema.getType("String")
+        SchemaType enumSchemaType = schema.getType("Choice")
+        SchemaType inputSchemaType = schema.getType("Filter")
+
+        expect:
+        GraphQLTypeUtil.simplePrint(valuesType) == "[String!]!"
+        GraphQLTypeUtil.isNonNull(valuesType)
+        !GraphQLTypeUtil.isNullable(valuesType)
+        GraphQLTypeUtil.isWrapped(valuesType)
+        !GraphQLTypeUtil.isNotWrapped(valuesType)
+        !GraphQLTypeUtil.isList(valuesType)
+        GraphQLTypeUtil.isList(GraphQLTypeUtil.unwrapOne(valuesType))
+        GraphQLTypeUtil.unwrapAll(valuesType) == scalarType
+        GraphQLTypeUtil.unwrapOne(scalarType) == scalarType
+
+        and:
+        GraphQLTypeUtil.isScalar(scalarType)
+        !GraphQLTypeUtil.isEnum(scalarType)
+        GraphQLTypeUtil.isEnum(enumSchemaType)
+        GraphQLTypeUtil.isLeaf(enumSchemaType)
+        GraphQLTypeUtil.isInput(inputSchemaType)
+        !GraphQLTypeUtil.isInput(schema.queryType)
     }
 }
