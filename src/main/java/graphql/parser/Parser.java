@@ -15,6 +15,7 @@ import graphql.parser.antlr.GraphqlParser;
 import graphql.parser.exceptions.ParseCancelledException;
 import graphql.parser.exceptions.ParseCancelledTooDeepException;
 import graphql.parser.exceptions.ParseCancelledTooManyCharsException;
+import graphql.parser.exceptions.ParseCancelledTooManyNumericLiteralCharactersException;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CodePointCharStream;
@@ -348,13 +349,25 @@ public class Parser {
     private SafeTokenSource getSafeTokenSource(ParserEnvironment environment, ParserOptions parserOptions, MultiSourceReader multiSourceReader, GraphqlLexer lexer) {
         int maxTokens = parserOptions.getMaxTokens();
         int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();
+        int maxNumericLiteralCharacters = parserOptions.getMaxNumericLiteralCharacters();
         BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwIfTokenProblems(
                 environment,
                 token,
                 maxTokenCount,
                 multiSourceReader,
                 ParseCancelledException.class);
-        return new SafeTokenSource(lexer, maxTokens, maxWhitespaceTokens, onTooManyTokens);
+        BiConsumer<Integer, Token> onTooManyNumericLiteralCharacters = (maxCharacters, token) -> {
+            SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token);
+            throw new ParseCancelledTooManyNumericLiteralCharactersException(environment.getI18N(), sourceLocation, maxCharacters);
+        };
+        return new SafeTokenSource(
+                lexer,
+                maxTokens,
+                maxWhitespaceTokens,
+                maxNumericLiteralCharacters,
+                onTooManyTokens,
+                onTooManyNumericLiteralCharacters
+        );
     }
 
     private void setupParserListener(ParserEnvironment environment, MultiSourceReader multiSourceReader, GraphqlParser parser, GraphqlAntlrToLanguage toLanguage) {

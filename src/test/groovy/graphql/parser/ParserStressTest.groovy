@@ -6,6 +6,7 @@ import graphql.language.Document
 import graphql.parser.exceptions.ParseCancelledException
 import graphql.parser.exceptions.ParseCancelledTooDeepException
 import graphql.parser.exceptions.ParseCancelledTooManyCharsException
+import graphql.parser.exceptions.ParseCancelledTooManyNumericLiteralCharactersException
 import spock.lang.Specification
 
 import static graphql.parser.ParserEnvironment.newParserEnvironment
@@ -182,6 +183,66 @@ class ParserStressTest extends Specification {
 
         then:
         document != null // its parsed - its invalid of course but parsed
+    }
+
+    def "numeric literals longer than the default limit are prevented"() {
+        given:
+        def text = "query { f(arg: ${numericLiteral}) }"
+        def parserEnvironment = newParserEnvironment().document(text).parserOptions(defaultOperationOptions).build()
+
+        when:
+        Parser.parse(parserEnvironment)
+
+        then:
+        def exception = thrown(ParseCancelledTooManyNumericLiteralCharactersException)
+        exception.message.contains("more than 100 characters")
+        exception.offendingToken == null
+
+        where:
+        numericLiteral << ["9" * 101, "9" * 99 + ".0"]
+    }
+
+    def "numeric literals at the default limit are accepted"() {
+        given:
+        def text = "query { f(arg: ${numericLiteral}) }"
+        def parserEnvironment = newParserEnvironment().document(text).parserOptions(defaultOperationOptions).build()
+
+        when:
+        def document = Parser.parse(parserEnvironment)
+
+        then:
+        document != null
+
+        where:
+        numericLiteral << ["9" * 100, "9" * 98 + ".0"]
+    }
+
+    def "maximum numeric literal characters can be overridden"() {
+        given:
+        def parserOptions = defaultOperationOptions.transform {
+            it.maxNumericLiteralCharacters(101)
+        }
+        def acceptedText = "query { f(arg: ${acceptedLiteral}) }"
+        def acceptedEnvironment = newParserEnvironment().document(acceptedText).parserOptions(parserOptions).build()
+
+        when:
+        def document = Parser.parse(acceptedEnvironment)
+
+        then:
+        document != null
+
+        when:
+        def rejectedText = "query { f(arg: ${rejectedLiteral}) }"
+        def rejectedEnvironment = newParserEnvironment().document(rejectedText).parserOptions(parserOptions).build()
+        Parser.parse(rejectedEnvironment)
+
+        then:
+        thrown(ParseCancelledTooManyNumericLiteralCharactersException)
+
+        where:
+        acceptedLiteral    | rejectedLiteral
+        "9" * 101         | "9" * 102
+        "9" * 99 + ".0" | "9" * 100 + ".0"
     }
 
     String mkDeepQuery(int howMany) {

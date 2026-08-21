@@ -34,7 +34,7 @@ class SafeTokenSourceTest extends Specification {
             offendingToken = token
             throw new IllegalStateException("stop at $max")
         }
-        def tokenSource = new SafeTokenSource(graphqlLexer, 50, 1000, onTooManyTokens)
+        def tokenSource = new SafeTokenSource(graphqlLexer, 50, 1000, Integer.MAX_VALUE, onTooManyTokens, { max, token -> })
 
         consumeAllTokens(tokenSource)
         assert false, "This is not meant to actually consume all tokens"
@@ -59,7 +59,7 @@ class SafeTokenSourceTest extends Specification {
             offendingToken = token
             throw new IllegalStateException("stop at $max")
         }
-        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, onTooManyTokens)
+        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, Integer.MAX_VALUE, onTooManyTokens, { max, token -> })
 
         consumeAllTokens(tokenSource)
         assert false, "This is not meant to actually consume all tokens"
@@ -82,13 +82,40 @@ class SafeTokenSourceTest extends Specification {
             offendingToken = token
             throw new IllegalStateException("stop at $max")
         }
-        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, onTooManyTokens)
+        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, Integer.MAX_VALUE, onTooManyTokens, { max, token -> })
 
         consumeAllTokens(tokenSource)
 
         then:
         noExceptionThrown()
         offendingToken == null
+    }
+
+    def "can call back before returning an oversized numeric literal"() {
+        given:
+        GraphqlLexer graphqlLexer = lexer("query { field(arg: ${"9" * 101}) }")
+        Token offendingToken = null
+        BiConsumer<Integer, Token> onTooManyNumericLiteralCharacters = { max, token ->
+            offendingToken = token
+            throw new IllegalStateException("stop at $max")
+        }
+        def tokenSource = new SafeTokenSource(
+                graphqlLexer,
+                1000,
+                200_000,
+                100,
+                { max, token -> },
+                onTooManyNumericLiteralCharacters
+        )
+
+        when:
+        consumeAllTokens(tokenSource)
+
+        then:
+        def exception = thrown(IllegalStateException)
+        exception.message == "stop at 100"
+        offendingToken.type == GraphqlLexer.IntValue
+        offendingToken.stopIndex - offendingToken.startIndex + 1 == 101
     }
 
 }
