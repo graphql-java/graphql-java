@@ -171,7 +171,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
      *
      * @return a new builder
      */
-    public static <T> Builder<T> newResult() {
+    public static <T extends @Nullable Object> Builder<T> newResult() {
         return new Builder<>();
     }
 

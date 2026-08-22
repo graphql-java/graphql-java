@@ -1179,7 +1179,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.size() == 3
+        result.size() == 4
         errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
         errorContaining(result, "The union member type 'Buzz' is not present when resolving type 'FooBar' [@n:n]")
         errorContaining(result, "The type 'FooBar' [@n:n] has declared an union member with a non unique name 'Foo'")
@@ -1335,6 +1335,171 @@ class SchemaTypeCheckerTest extends Specification {
 
         result.isEmpty()
 
+    }
+
+    def "covariant object type implemented through an extension is supported"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            interface Pet {
+              id: ID
+            }
+
+            type Dog {
+              id: ID
+            }
+
+            extend type Dog implements Pet
+
+            type Base {
+              foo: String
+            }
+
+            interface PetContainer {
+              pet: Pet
+            }
+
+            extend type Base implements PetContainer {
+              pet: Dog
+            }
+        '''
+
+        def result = check(spec, ["Pet", "PetContainer"])
+
+        expect:
+        result.isEmpty()
+    }
+
+    def "covariant interface type implemented through an extension is supported"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            interface Pet {
+              id: ID
+            }
+
+            interface WorkingPet {
+              id: ID
+            }
+
+            extend interface WorkingPet implements Pet
+
+            interface PetContainer {
+              pet: Pet
+            }
+
+            type Base implements PetContainer {
+              pet: WorkingPet
+            }
+        '''
+
+        def result = check(spec, ["Pet", "WorkingPet", "PetContainer"])
+
+        expect:
+        result.isEmpty()
+    }
+
+    def "covariant union member added through an extension is supported"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            type Cat {
+              id: ID
+            }
+
+            type Dog {
+              id: ID
+            }
+
+            union Pets = Cat
+
+            extend union Pets = Dog
+
+            interface PetContainer {
+              pet: Pets
+            }
+
+            type Base implements PetContainer {
+              pet: Dog
+            }
+        '''
+
+        def result = check(spec, ["Pets", "PetContainer"])
+
+        expect:
+        result.isEmpty()
+    }
+
+    def "wrapped covariant object type implemented through an extension is supported"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            interface Pet {
+              id: ID
+            }
+
+            type Dog {
+              id: ID
+            }
+
+            extend type Dog implements Pet
+
+            interface PetContainer {
+              pets: [Pet]!
+            }
+
+            type Base implements PetContainer {
+              pets: [Dog!]!
+            }
+        '''
+
+        def result = check(spec, ["Pet", "PetContainer"])
+
+        expect:
+        result.isEmpty()
+    }
+
+    def "unrelated type remains invalid when other interface relationships use extensions"() {
+        def spec = '''
+            type Query {
+              base: Base
+            }
+
+            interface Pet {
+              id: ID
+            }
+
+            interface Vehicle {
+              id: ID
+            }
+
+            type Car {
+              id: ID
+            }
+
+            extend type Car implements Vehicle
+
+            interface PetContainer {
+              pet: Pet
+            }
+
+            type Base implements PetContainer {
+              pet: Car
+            }
+        '''
+
+        def result = check(spec, ["Pet", "Vehicle", "PetContainer"])
+
+        expect:
+        errorContaining(result, "has tried to redefine field 'pet' defined via interface 'PetContainer'")
     }
 
     def "deviant covariant object types are detected"() {
@@ -1785,6 +1950,52 @@ class SchemaTypeCheckerTest extends Specification {
 
         then:
         errorContaining(result, "Union type 'UnionType' must include one or more member types.")
+    }
+
+    def "union type with directive only extension must include one or more member types"() {
+        given:
+        def sdl = """
+            directive @directive on UNION
+
+            type Query { hello: String }
+
+            union UnionType
+
+            extend union UnionType @directive
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "Union type 'UnionType' must include one or more member types.")
+    }
+
+    @Unroll
+    def "union extension must not redefine member types from previous union type: #scenario"() {
+        given:
+        def sdl = """
+            type Query { pet: Pet }
+
+            type Cat {
+                id: ID
+            }
+
+            union Pet $baseMembers
+
+            $extensions
+        """
+
+        when:
+        def result = check(sdl)
+
+        then:
+        errorContaining(result, "The type 'Pet' [@n:n] has declared an union member with a non unique name 'Cat'")
+
+        where:
+        scenario             | baseMembers | extensions
+        "base definition"    | "= Cat"     | "extend union Pet = Cat"
+        "earlier extension"  | ""          | "extend union Pet = Cat\nextend union Pet = Cat"
     }
 
     def "The member types of a Union type must all be object base types"() {
