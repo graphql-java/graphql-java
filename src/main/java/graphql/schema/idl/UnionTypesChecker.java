@@ -13,9 +13,9 @@ import graphql.schema.idl.errors.UnionTypeError;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static java.lang.String.format;
+import static java.util.Collections.emptyList;
 
 /**
  * UnionType check, details in https://spec.graphql.org/June2018/#sec-Type-System.
@@ -33,18 +33,15 @@ class UnionTypesChecker {
 
     void checkUnionType(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry) {
         List<UnionTypeDefinition> unionTypes = typeRegistry.getTypes(UnionTypeDefinition.class);
-        List<UnionTypeExtensionDefinition> unionTypeExtensions = typeRegistry.getTypes(UnionTypeExtensionDefinition.class);
 
-        Stream.concat(unionTypes.stream(), unionTypeExtensions.stream())
-                .forEach(type -> checkUnionType(typeRegistry, type, errors));
+        unionTypes.forEach(type -> checkUnionType(typeRegistry, type, errors));
     }
 
     private void checkUnionType(TypeDefinitionRegistry typeRegistry, UnionTypeDefinition unionTypeDefinition, List<GraphQLError> errors) {
         assertTypeName(unionTypeDefinition, errors);
 
-        //noinspection rawtypes
         List<Type> memberTypes = unionTypeDefinition.getMemberTypes();
-        if (memberTypes == null || memberTypes.isEmpty()) {
+        if (!hasMemberTypes(typeRegistry, unionTypeDefinition)) {
             errors.add(new UnionTypeError(unionTypeDefinition, format("Union type '%s' must include one or more member types.", unionTypeDefinition.getName())));
             return;
         }
@@ -64,6 +61,16 @@ class UnionTypesChecker {
             }
             typeNames.add(memberTypeName);
         }
+    }
+
+    private boolean hasMemberTypes(TypeDefinitionRegistry typeRegistry, UnionTypeDefinition unionTypeDefinition) {
+        if (!unionTypeDefinition.getMemberTypes().isEmpty()) {
+            return true;
+        }
+
+        List<UnionTypeExtensionDefinition> extensions = typeRegistry.unionTypeExtensions()
+                .getOrDefault(unionTypeDefinition.getName(), emptyList());
+        return extensions.stream().anyMatch(extension -> !extension.getMemberTypes().isEmpty());
     }
 
     private void assertTypeName(UnionTypeDefinition unionTypeDefinition, List<GraphQLError> errors) {
