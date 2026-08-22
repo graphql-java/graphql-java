@@ -16,9 +16,11 @@ import graphql.execution.NonNullableFieldValidator
 import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
+import graphql.execution.incremental.AlternativeCallContext
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import org.dataloader.DataLoaderRegistry
+import spock.lang.Issue
 import spock.lang.Specification
 
 import java.util.concurrent.CountDownLatch
@@ -58,6 +60,20 @@ class PerLevelDataLoaderDispatchStrategyTest extends Specification {
                 .engineRunningState(new EngineRunningState(ei, Profiler.NO_OP))
         executionContext = builder.build()
         strategy = new PerLevelDataLoaderDispatchStrategy(executionContext)
+    }
+
+    @Issue("https://github.com/graphql-java/graphql-java/issues/4314")
+    def "subscription event call stacks are removed after execution is done"() {
+        when:
+        3.times {
+            def alternativeCallContext = new AlternativeCallContext(1, 1)
+            strategy.newSubscriptionExecution(alternativeCallContext)
+            strategy.subscriptionEventCompletionDone(alternativeCallContext)
+            strategy.subscriptionEventExecutionDone(alternativeCallContext)
+        }
+
+        then:
+        alternativeCallContextMap().size() == 0
     }
 
     private ExecutionStrategyParameters paramsAtLevel(int level) {
@@ -178,5 +194,11 @@ class PerLevelDataLoaderDispatchStrategyTest extends Specification {
 
         then:
         strategy.initialCallStack.get(0).happenedCompletionFinishedCount > 0
+    }
+
+    private Map alternativeCallContextMap() {
+        def field = PerLevelDataLoaderDispatchStrategy.getDeclaredField("alternativeCallContextMap")
+        field.accessible = true
+        field.get(strategy) as Map
     }
 }

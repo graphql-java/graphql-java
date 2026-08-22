@@ -18,6 +18,7 @@ import graphql.schema.GraphQLSchema
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import spock.lang.Issue
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -242,6 +243,23 @@ class ExhaustedDataLoaderDispatchStrategyTest extends Specification {
         batchLoaderInvocations.get() == 1
     }
 
+    @Issue("https://github.com/graphql-java/graphql-java/issues/4314")
+    def "subscription event call stacks are removed after execution is done"() {
+        given:
+        setupStrategy(simpleBatchLoader())
+
+        when:
+        3.times {
+            def alternativeCallContext = new AlternativeCallContext(1, 1)
+            strategy.newSubscriptionExecution(alternativeCallContext)
+            strategy.subscriptionEventCompletionDone(alternativeCallContext)
+            strategy.subscriptionEventExecutionDone(alternativeCallContext)
+        }
+
+        then:
+        alternativeCallContextMap().size() == 0
+    }
+
     def "startComplete and stopComplete affect dispatch"() {
         given:
         setupStrategy(simpleBatchLoader())
@@ -279,7 +297,7 @@ class ExhaustedDataLoaderDispatchStrategyTest extends Specification {
                 .source(new Object())
                 .fields(graphql.execution.MergedSelectionSet.newMergedSelectionSet().build())
                 .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
-                .deferredCallContext(deferCtx)
+                .alternativeCallContext(deferCtx)
                 .build()
 
         when:
@@ -429,5 +447,11 @@ class ExhaustedDataLoaderDispatchStrategyTest extends Specification {
         then:
         completed
         roundCount.get() == 2
+    }
+
+    private Map alternativeCallContextMap() {
+        def field = ExhaustedDataLoaderDispatchStrategy.getDeclaredField("alternativeCallContextMap")
+        field.accessible = true
+        field.get(strategy) as Map
     }
 }

@@ -11,8 +11,9 @@ import graphql.TestUtil
 import graphql.TypeMismatchError
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.LegacyTestingInstrumentation
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
 import graphql.execution.instrumentation.ModernTestingInstrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.FlowMessagePublisher
@@ -36,6 +37,7 @@ import spock.lang.Unroll
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
@@ -830,6 +832,16 @@ class SubscriptionExecutionStrategyTest extends Specification {
         def dataLoader = DataLoaderFactory.newDataLoader("dogsNameLoader", batchLoader)
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("dogsNameLoader", dataLoader)
+        AtomicReference<ExecutionContext> capturedExecutionContext = new AtomicReference<>()
+        def instrumentation = Spy(SimplePerformantInstrumentation) {
+            instrumentExecutionContext(_, _, _) >> {
+                ExecutionContext executionContext,
+                InstrumentationExecutionParameters parameters,
+                InstrumentationState state ->
+                    capturedExecutionContext.set(executionContext)
+                    executionContext
+            }
+        }
 
         DataFetcher dogsNameDF = { env ->
             println "dogsNameDF called"
@@ -857,6 +869,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .build()
         def graphQL = GraphQL.newGraphQL(schema)
+                .instrumentation(instrumentation)
                 .build()
 
         if (exhaustedStrategy) {
@@ -878,9 +891,16 @@ class SubscriptionExecutionStrategyTest extends Specification {
         events[0].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
         events[1].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
         events[2].data == ["newDogs": [[name: "Luna"], [name: "Skipper"]]]
+        alternativeCallContextMap(capturedExecutionContext.get().dataLoaderDispatcherStrategy).size() == 0
 
         where:
         exhaustedStrategy << [false, true]
+    }
+
+    private Map alternativeCallContextMap(DataLoaderDispatchStrategy dataLoaderDispatchStrategy) {
+        def field = dataLoaderDispatchStrategy.class.getDeclaredField("alternativeCallContextMap")
+        field.accessible = true
+        field.get(dataLoaderDispatchStrategy) as Map
     }
 
 
