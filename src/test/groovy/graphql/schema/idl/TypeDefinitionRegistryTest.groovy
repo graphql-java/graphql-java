@@ -469,6 +469,87 @@ class TypeDefinitionRegistryTest extends Specification {
 
         '''
 
+    def extensionRelationships = '''
+            interface Pet {
+              id: ID
+            }
+
+            interface WorkingPet {
+              id: ID
+            }
+
+            extend interface WorkingPet implements Pet
+
+            type Dog {
+              id: ID
+            }
+
+            extend type Dog implements Pet
+
+            type Cat {
+              id: ID
+            }
+
+            union Pets = Cat
+
+            extend union Pets = Dog
+        '''
+
+    def "possible type detection includes interface implementations from extensions for #typeOfReg registry"() {
+        when:
+        def registry = registry(extensionRelationships, typeOfReg)
+
+        then:
+        registry.isPossibleType(type("Pet"), type("Dog"))
+        registry.isPossibleType(type("Pet"), type("WorkingPet"))
+        !registry.isPossibleType(type("Pet"), type("Cat"))
+
+        where:
+        typeOfReg << ["mutable", "immutable"]
+    }
+
+    def "possible type detection includes union members from extensions for #typeOfReg registry"() {
+        when:
+        def registry = registry(extensionRelationships, typeOfReg)
+
+        then:
+        registry.isPossibleType(type("Pets"), type("Cat"))
+        registry.isPossibleType(type("Pets"), type("Dog"))
+        !registry.isPossibleType(type("Pets"), type("WorkingPet"))
+
+        where:
+        typeOfReg << ["mutable", "immutable"]
+    }
+
+    def "subtype detection unwraps types implemented through extensions for #typeOfReg registry"() {
+        when:
+        def registry = registry(extensionRelationships, typeOfReg)
+
+        then:
+        registry.isSubTypeOf(nonNullType("Dog"), type("Pet"))
+        registry.isSubTypeOf(listType(type("Dog")), listType(type("Pet")))
+        registry.isSubTypeOf(
+                listType(nonNullType(listType(type("Dog")))),
+                listType(nonNullType(listType(type("Pet")))))
+        !registry.isSubTypeOf(type("Cat"), type("Pet"))
+
+        where:
+        typeOfReg << ["mutable", "immutable"]
+    }
+
+    def "implementation lookup includes relationships from extensions for #typeOfReg registry"() {
+        when:
+        def registry = registry(extensionRelationships, typeOfReg)
+        def pet = registry.getTypeOrNull("Pet", InterfaceTypeDefinition.class)
+
+        then:
+        registry.getAllImplementationsOf(pet)*.name == ["WorkingPet", "Dog"]
+        registry.getImplementationsOf(pet)*.name == ["Dog"]
+
+        where:
+        typeOfReg << ["mutable", "immutable"]
+    }
+
     def "test possible type detection #typeOfReg"() {
         given:
         TypeDefinitionRegistry mutableReg = parse(animalia)
@@ -504,6 +585,14 @@ class TypeDefinitionRegistryTest extends Specification {
         typeOfReg   | _
         "mutable"   | _
         "immutable" | _
+    }
+
+    private static TypeDefinitionRegistry registry(String spec, String typeOfRegistry) {
+        def registry = parse(spec)
+        if (typeOfRegistry == "immutable") {
+            return registry.readOnly()
+        }
+        return registry
     }
 
 
