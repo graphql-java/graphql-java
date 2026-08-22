@@ -884,11 +884,13 @@ tasks.register('markGeneratedEqualsHashCode') {
     def jacocoDir = layout.buildDirectory.dir('classes-jacoco/java/main')
 
     inputs.dir(originalDir)
+    inputs.property("generatedAnnotationTaskVersion", 2)
     outputs.dir(jacocoDir)
 
     doLast {
         def src = originalDir.get().asFile
         def dest = jacocoDir.get().asFile
+        project.delete(dest)
         if (!src.exists()) return
 
         // Copy all class files to a separate directory for JaCoCo
