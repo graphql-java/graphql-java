@@ -240,4 +240,32 @@ class NoFragmentCyclesTest extends Specification {
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
         errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[MyFrag]) : Fragment cycles not allowed"
     }
+
+    def "long acyclic fragment chains are valid"() {
+        when:
+        traverse(fragmentChain(1_000, false))
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def "cycles at the end of long fragment chains are detected"() {
+        when:
+        traverse(fragmentChain(1_000, true))
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+    }
+
+    private static String fragmentChain(int fragmentCount, boolean cycle) {
+        (0..<fragmentCount).collect { index ->
+            String selection = "name"
+            if (index < fragmentCount - 1) {
+                selection = "...F${index + 1}"
+            } else if (cycle) {
+                selection = "...F${fragmentCount.intdiv(2)}"
+            }
+            "fragment F${index} on Dog { ${selection} }"
+        }.join("\n")
+    }
 }
