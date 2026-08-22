@@ -51,7 +51,7 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
         super(instrumentations);
     }
 
-    private <T> @Nullable T runAll(@Nullable InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
+    private <T> @Nullable T runAll(@Nullable InstrumentationState state, BiConsumer<Instrumentation, @Nullable InstrumentationState> stateConsumer) {
         chainedConsume(state, stateConsumer);
         return null;
     }

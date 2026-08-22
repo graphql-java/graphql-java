@@ -76,7 +76,7 @@ public class ChainedInstrumentation implements Instrumentation {
         return (ChainedInstrumentationState) assertNotNull(state);
     }
 
-    private <T> @Nullable InstrumentationContext<T> chainedCtx(@Nullable InstrumentationState state, BiFunction<Instrumentation, InstrumentationState, InstrumentationContext<T>> mapper) {
+    private <T> @Nullable InstrumentationContext<T> chainedCtx(@Nullable InstrumentationState state, BiFunction<Instrumentation, @Nullable InstrumentationState, InstrumentationContext<T>> mapper) {
         // if we have zero or 1 instrumentations (and 1 is the most common), then we can avoid an object allocation
         // of the ChainedInstrumentationContext since it won't be needed
         if (instrumentations.isEmpty()) {
@@ -89,23 +89,23 @@ public class ChainedInstrumentation implements Instrumentation {
         return new ChainedInstrumentationContext<>(chainedMapAndDropNulls(chainedInstrumentationState, mapper));
     }
 
-    private <T> T chainedInstrument(@Nullable InstrumentationState state, T input, ChainedInstrumentationFunction<Instrumentation, InstrumentationState, T, T> mapper) {
+    private <T> T chainedInstrument(@Nullable InstrumentationState state, T input, ChainedInstrumentationFunction<Instrumentation, T, T> mapper) {
         ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         for (int i = 0; i < instrumentations.size(); i++) {
             Instrumentation instrumentation = instrumentations.get(i);
-            InstrumentationState specificState = chainedInstrumentationState.getState(i);
+            @Nullable InstrumentationState specificState = chainedInstrumentationState.getState(i);
             input = mapper.apply(instrumentation, specificState, input);
         }
         return input;
     }
 
-    protected <T> ImmutableList<T> chainedMapAndDropNulls(@Nullable InstrumentationState state, BiFunction<Instrumentation, InstrumentationState, T> mapper) {
+    protected <T> ImmutableList<T> chainedMapAndDropNulls(@Nullable InstrumentationState state, BiFunction<Instrumentation, @Nullable InstrumentationState, T> mapper) {
         ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         ImmutableList.Builder<T> result = ImmutableList.builderWithExpectedSize(instrumentations.size());
         for (int i = 0; i < instrumentations.size(); i++) {
             Instrumentation instrumentation = instrumentations.get(i);
-            InstrumentationState specificState = chainedInstrumentationState.getState(i);
-            T value = mapper.apply(instrumentation, specificState);
+            @Nullable InstrumentationState specificState = chainedInstrumentationState.getState(i);
+            @Nullable T value = mapper.apply(instrumentation, specificState);
             if (value != null) {
                 result.add(value);
             }
@@ -113,11 +113,11 @@ public class ChainedInstrumentation implements Instrumentation {
         return result.build();
     }
 
-    protected void chainedConsume(@Nullable InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
+    protected void chainedConsume(@Nullable InstrumentationState state, BiConsumer<Instrumentation, @Nullable InstrumentationState> stateConsumer) {
         ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         for (int i = 0; i < instrumentations.size(); i++) {
             Instrumentation instrumentation = instrumentations.get(i);
-            InstrumentationState specificState = chainedInstrumentationState.getState(i);
+            @Nullable InstrumentationState specificState = chainedInstrumentationState.getState(i);
             stateConsumer.accept(instrumentation, specificState);
         }
     }
@@ -159,7 +159,7 @@ public class ChainedInstrumentation implements Instrumentation {
         if (instrumentations.isEmpty()) {
             return ExecutionStrategyInstrumentationContext.NOOP;
         }
-        BiFunction<Instrumentation, InstrumentationState, ExecutionStrategyInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginExecutionStrategy(parameters, specificState);
+        BiFunction<Instrumentation, @Nullable InstrumentationState, ExecutionStrategyInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginExecutionStrategy(parameters, specificState);
         ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         if (instrumentations.size() == 1) {
             return mapper.apply(instrumentations.get(0), chainedInstrumentationState.getState(0));
@@ -172,7 +172,7 @@ public class ChainedInstrumentation implements Instrumentation {
         if (instrumentations.isEmpty()) {
             return ExecuteObjectInstrumentationContext.NOOP;
         }
-        BiFunction<Instrumentation, InstrumentationState, ExecuteObjectInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginExecuteObject(parameters, specificState);
+        BiFunction<Instrumentation, @Nullable InstrumentationState, ExecuteObjectInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginExecuteObject(parameters, specificState);
         ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         if (instrumentations.size() == 1) {
             return mapper.apply(instrumentations.get(0), chainedInstrumentationState.getState(0));
@@ -207,7 +207,7 @@ public class ChainedInstrumentation implements Instrumentation {
         if (instrumentations.isEmpty()) {
             return FieldFetchingInstrumentationContext.NOOP;
         }
-        BiFunction<Instrumentation, InstrumentationState, FieldFetchingInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginFieldFetching(parameters, specificState);
+        BiFunction<Instrumentation, @Nullable InstrumentationState, FieldFetchingInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginFieldFetching(parameters, specificState);
         ChainedInstrumentationState chainedInstrumentationState = asChainedState(state);
         if (instrumentations.size() == 1) {
             return mapper.apply(instrumentations.get(0), chainedInstrumentationState.getState(0));
@@ -252,16 +252,16 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
-        return chainedInstrument(state, dataFetcher, (Instrumentation instrumentation, InstrumentationState specificState, DataFetcher<?> accumulator) ->
+        return chainedInstrument(state, dataFetcher, (Instrumentation instrumentation, @Nullable InstrumentationState specificState, DataFetcher<?> accumulator) ->
                 instrumentation.instrumentDataFetcher(accumulator, parameters, specificState));
     }
 
     @Override
     public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
-        ImmutableList<Map.Entry<Instrumentation, InstrumentationState>> entries = chainedMapAndDropNulls(state, AbstractMap.SimpleEntry::new);
+        ImmutableList<Map.Entry<Instrumentation, @Nullable InstrumentationState>> entries = chainedMapAndDropNulls(state, AbstractMap.SimpleEntry::new);
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(entries, (entry, prevResults) -> {
             Instrumentation instrumentation = entry.getKey();
-            InstrumentationState specificState = entry.getValue();
+            @Nullable InstrumentationState specificState = entry.getValue();
             ExecutionResult lastResult = !prevResults.isEmpty() ? prevResults.get(prevResults.size() - 1) : executionResult;
             return instrumentation.instrumentExecutionResult(lastResult, parameters, specificState);
         });
@@ -269,21 +269,21 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     static class ChainedInstrumentationState implements InstrumentationState {
-        private final List<InstrumentationState> instrumentationStates;
+        private final List<@Nullable InstrumentationState> instrumentationStates;
 
-        private ChainedInstrumentationState(List<InstrumentationState> instrumentationStates) {
+        private ChainedInstrumentationState(List<@Nullable InstrumentationState> instrumentationStates) {
             this.instrumentationStates = instrumentationStates;
         }
 
-        private InstrumentationState getState(int index) {
+        private @Nullable InstrumentationState getState(int index) {
             return instrumentationStates.get(index);
         }
 
         private static CompletableFuture<InstrumentationState> combineAll(List<Instrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
-            Async.CombinedBuilder<InstrumentationState> builder = Async.ofExpectedSize(instrumentations.size());
+            Async.CombinedBuilder<@Nullable InstrumentationState> builder = Async.ofExpectedSize(instrumentations.size());
             for (Instrumentation instrumentation : instrumentations) {
                 // state can be null including the CF so handle that
-                CompletableFuture<InstrumentationState> stateCF = Async.orNullCompletedFuture(instrumentation.createStateAsync(parameters));
+                CompletableFuture<@Nullable InstrumentationState> stateCF = Async.<@Nullable InstrumentationState>orNullCompletedFuture(instrumentation.createStateAsync(parameters));
                 builder.add(stateCF);
             }
             return builder.await().thenApply(ChainedInstrumentationState::new);
@@ -417,8 +417,8 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @FunctionalInterface
-    private interface ChainedInstrumentationFunction<I, S, V, R> {
-        R apply(I instrumentation, S state, V value);
+    private interface ChainedInstrumentationFunction<I, V, R> {
+        R apply(I instrumentation, @Nullable InstrumentationState state, V value);
     }
 
 
