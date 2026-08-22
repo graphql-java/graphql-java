@@ -6,7 +6,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
@@ -63,17 +62,11 @@ public class NoUnbrokenInputCycles extends GraphQLTypeVisitorStub {
     }
 
     private GraphQLType unwrapNonNull(GraphQLNonNull type) {
-        if (isList(type.getWrappedType())) {
-            //we only care about [type!]! i.e. non-null lists of non-nulls
-            GraphQLList listType = (GraphQLList) type.getWrappedType();
-            if (isNonNull(listType.getWrappedType())) {
-                return unwrapAll(listType.getWrappedType());
-            } else {
-                return type.getWrappedType();
-            }
-        } else {
-            return unwrapAll(type.getWrappedType());
+        GraphQLType wrappedType = type.getWrappedType();
+        if (isList(wrappedType)) {
+            return wrappedType;
         }
+        return unwrapAll(wrappedType);
     }
 
     private String getErrorMessage(List<String> path) {
