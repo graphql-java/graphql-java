@@ -61,6 +61,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
                 "foo",
                 "include",
                 "oneOf",
+                "semanticNonNull",
                 "skip",
                 "specifiedBy",
         ]
@@ -113,6 +114,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
                 "foo",
                 "include",
                 "oneOf",
+                "semanticNonNull",
                 "skip",
                 "specifiedBy",
         ]

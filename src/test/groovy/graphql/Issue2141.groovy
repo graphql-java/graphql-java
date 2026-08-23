@@ -50,6 +50,12 @@ directive @include(
 "Indicates an Input Object is a OneOf Input Object."
 directive @oneOf on INPUT_OBJECT
 
+"Indicates that a position is semantically non null: it is only null if there is a matching error in the `errors` array."
+directive @semanticNonNull(
+    "The list dimensions that are semantically non null, with 0 being the outermost position."
+    levels: [Int!]! = [0]
+  ) on FIELD_DEFINITION
+
 "Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
