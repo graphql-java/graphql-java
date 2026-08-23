@@ -14,10 +14,8 @@ import java.util.Set;
 @Internal
 public class SchemaValidator {
 
-
-    private final List<GraphQLTypeVisitor> rules = new ArrayList<>();
-
-    public SchemaValidator() {
+    public List<GraphQLTypeVisitor> getRules() {
+        List<GraphQLTypeVisitor> rules = new ArrayList<>();
         rules.add(new NoUnbrokenInputCycles());
         rules.add(new NoDefaultValueCircularRefs());
         rules.add(new TypesImplementInterfaces());
@@ -28,9 +26,6 @@ public class SchemaValidator {
         rules.add(new InputAndOutputTypesUsedAppropriately());
         rules.add(new OneOfInputObjectRules());
         rules.add(new DeprecatedInputObjectAndArgumentsAreValid());
-    }
-
-    public List<GraphQLTypeVisitor> getRules() {
         return rules;
     }
 
@@ -39,7 +34,7 @@ public class SchemaValidator {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(GraphQLSchema.class, schema);
         rootVars.put(SchemaValidationErrorCollector.class, validationErrorCollector);
-        new SchemaTraverser().depthFirstFullSchema(rules, schema, rootVars);
+        new SchemaTraverser().depthFirstFullSchema(getRules(), schema, rootVars);
         return validationErrorCollector.getErrors();
     }
 
