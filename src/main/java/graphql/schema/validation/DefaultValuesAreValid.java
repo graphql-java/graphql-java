@@ -47,7 +47,7 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
                 !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), inputObjectField.getType(), schema, graphQLContext, Locale.getDefault())) {
             invalid = true;
         } else if (defaultValue.isExternal() &&
-                !isValidExternalValue(schema, defaultValue.getValue(), inputObjectField.getType(), graphQLContext)) {
+                !isValidExternalValue(schema, defaultValue.getValue(), inputObjectField.getType(), graphQLContext, errorCollector)) {
             invalid = true;
         }
         if (invalid) {
@@ -70,7 +70,7 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
                 !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), argument.getType(), schema, graphQLContext, Locale.getDefault())) {
             invalid = true;
         } else if (defaultValue.isExternal() &&
-                !isValidExternalValue(schema, defaultValue.getValue(), argument.getType(), graphQLContext)) {
+                !isValidExternalValue(schema, defaultValue.getValue(), argument.getType(), graphQLContext, errorCollector)) {
             invalid = true;
         }
         if (invalid) {
@@ -80,7 +80,17 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
         return TraversalControl.CONTINUE;
     }
 
-    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, GraphQLContext graphQLContext) {
+    private boolean isValidExternalValue(
+            GraphQLSchema schema,
+            Object externalValue,
+            GraphQLInputType type,
+            GraphQLContext graphQLContext,
+            SchemaValidationErrorCollector errorCollector
+    ) {
+        // Coercion expands nested field defaults. Avoid recursing into a cycle that has already made the schema invalid.
+        if (errorCollector.containsValidationError(SchemaValidationErrorType.DefaultValueCircularRef)) {
+            return true;
+        }
         try {
             ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext, Locale.getDefault());
             return true;
