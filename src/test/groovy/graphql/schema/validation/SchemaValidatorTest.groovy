@@ -10,16 +10,21 @@ class SchemaValidatorTest extends Specification {
         when:
         def validator = new SchemaValidator()
         def rules = validator.rules
+        def nextRules = validator.rules
+
         then:
-        rules.size() == 9
-        rules[0] instanceof NoUnbrokenInputCycles
-        rules[1] instanceof TypesImplementInterfaces
-        rules[2] instanceof TypeAndFieldRule
-        rules[3] instanceof DefaultValuesAreValid
-        rules[4] instanceof AppliedDirectivesAreValid
-        rules[5] instanceof AppliedDirectiveArgumentsAreValid
-        rules[6] instanceof InputAndOutputTypesUsedAppropriately
-        rules[7] instanceof OneOfInputObjectRules
-        rules[8] instanceof DeprecatedInputObjectAndArgumentsAreValid
+        rules*.class == [
+                NoUnbrokenInputCycles,
+                NoDefaultValueCircularRefs,
+                TypesImplementInterfaces,
+                TypeAndFieldRule,
+                DefaultValuesAreValid,
+                AppliedDirectivesAreValid,
+                AppliedDirectiveArgumentsAreValid,
+                InputAndOutputTypesUsedAppropriately,
+                OneOfInputObjectRules,
+                DeprecatedInputObjectAndArgumentsAreValid,
+        ]
+        rules[1] !== nextRules[1]
     }
 }
