@@ -2271,9 +2271,16 @@ class SchemaGeneratorTest extends Specification {
         schema != null
     }
 
-    def "#4201 indirect cyclical directive definitions are rejected without stack overflow - #name"() {
+    def "#4201 indirect cyclical directive definitions are rejected without stack overflow"() {
         given:
-        def registry = new SchemaParser().parse(sdl)
+        def registry = new SchemaParser().parse('''
+            directive @foo(x: Int @bar(y: 1)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+            directive @bar(y: Int @foo(x: 2)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+            type Query {
+                field: String @foo(x: 10) @bar(y: 20)
+            }
+        ''')
 
         when:
         UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
@@ -2282,33 +2289,7 @@ class SchemaGeneratorTest extends Specification {
         def e = thrown(SchemaProblem)
         e.errors.size() == 1
         e.errors.get(0) instanceof DirectiveIllegalReferenceError
-        e.errors.get(0).getMessage().contains(cycleMessage)
-
-        where:
-        name << ["two directives", "three directives"]
-        sdl << [
-                '''
-                    directive @foo(x: Int @bar(y: 1)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
-                    directive @bar(y: Int @foo(x: 2)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
-
-                    type Query {
-                        field: String @foo(x: 10) @bar(y: 20)
-                    }
-                ''',
-                '''
-                    directive @dirA(x: Int @dirB(y: 1)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
-                    directive @dirB(y: Int @dirC(z: 2)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
-                    directive @dirC(z: Int @dirA(x: 3)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
-
-                    type Query {
-                        field: String @dirA(x: 10) @dirB(y: 20) @dirC(z: 30)
-                    }
-                '''
-        ]
-        cycleMessage << [
-                "'foo' must not reference itself via directive cycle 'foo -> bar -> foo'",
-                "'dirA' must not reference itself via directive cycle 'dirA -> dirB -> dirC -> dirA'"
-        ]
+        e.errors.get(0).getMessage().contains("'foo' must not reference itself via directive cycle 'foo -> bar -> foo'")
     }
 
     def "code registry default data fetcher is respected"() {

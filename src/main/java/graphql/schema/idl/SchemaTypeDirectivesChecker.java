@@ -32,7 +32,6 @@ import graphql.schema.idl.errors.NotAnInputTypeError;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -190,7 +189,6 @@ class SchemaTypeDirectivesChecker {
     private void commonCheck(Collection<DirectiveDefinition> directiveDefinitions, List<GraphQLError> errors) {
         List<DirectiveDefinition> directiveDefinitionsList = new ArrayList<>(directiveDefinitions);
         Map<String, DirectiveDefinition> directiveDefinitionsByName = getByName(directiveDefinitionsList, DirectiveDefinition::getName, mergeFirst());
-        Map<String, Map<String, InputValueDefinition>> directiveReferencesByName = directiveReferencesByName(directiveDefinitionsByName);
 
         directiveDefinitions.forEach(directiveDefinition -> {
             assertTypeName(directiveDefinition, errors);
@@ -202,14 +200,7 @@ class SchemaTypeDirectivesChecker {
                 }
             });
         });
-        checkIndirectDirectiveCycles(directiveDefinitionsByName, directiveReferencesByName, errors);
-    }
-
-    private static Map<String, Map<String, InputValueDefinition>> directiveReferencesByName(
-            Map<String, DirectiveDefinition> directiveDefinitionsByName) {
-        Map<String, Map<String, InputValueDefinition>> result = new LinkedHashMap<>();
-        directiveDefinitionsByName.forEach((name, directiveDefinition) -> result.put(name, directiveReferences(directiveDefinition)));
-        return result;
+        checkIndirectDirectiveCycles(directiveDefinitionsByName, errors);
     }
 
     private static Map<String, InputValueDefinition> directiveReferences(DirectiveDefinition directiveDefinition) {
@@ -233,82 +224,49 @@ class SchemaTypeDirectivesChecker {
 
     private static void checkIndirectDirectiveCycles(
             Map<String, DirectiveDefinition> directiveDefinitionsByName,
-            Map<String, Map<String, InputValueDefinition>> directiveReferencesByName,
             List<GraphQLError> errors) {
         Set<String> checked = new LinkedHashSet<>();
-        Set<String> visiting = new LinkedHashSet<>();
-        List<String> path = new ArrayList<>();
-        for (String directiveName : directiveDefinitionsByName.keySet()) {
-            checkIndirectDirectiveCycles(directiveName, directiveDefinitionsByName, directiveReferencesByName, checked, visiting, path, errors);
+        // Insertion order records the active recursion path for the error message.
+        LinkedHashSet<String> currentPath = new LinkedHashSet<>();
+        for (DirectiveDefinition directiveDefinition : directiveDefinitionsByName.values()) {
+            checkDirectiveReferencesForCycles(directiveDefinition, directiveDefinitionsByName, checked, currentPath, errors);
         }
     }
 
-    private static void checkIndirectDirectiveCycles(String directiveName,
-                                                     Map<String, DirectiveDefinition> directiveDefinitionsByName,
-                                                     Map<String, Map<String, InputValueDefinition>> directiveReferencesByName,
-                                                     Set<String> checked,
-                                                     Set<String> visiting,
-                                                     List<String> path,
-                                                     List<GraphQLError> errors) {
+    private static void checkDirectiveReferencesForCycles(DirectiveDefinition directiveDefinition,
+                                                          Map<String, DirectiveDefinition> directiveDefinitionsByName,
+                                                          Set<String> checked,
+                                                          LinkedHashSet<String> currentPath,
+                                                          List<GraphQLError> errors) {
+        String directiveName = directiveDefinition.getName();
         if (checked.contains(directiveName)) {
             return;
         }
 
-        visiting.add(directiveName);
-        path.add(directiveName);
-        checkIndirectDirectiveCycleReferences(directiveName, directiveDefinitionsByName, directiveReferencesByName, checked, visiting, path, errors);
-        path.remove(path.size() - 1);
-        visiting.remove(directiveName);
+        currentPath.add(directiveName);
+        for (Map.Entry<String, InputValueDefinition> reference : directiveReferences(directiveDefinition).entrySet()) {
+            String referencedDirectiveName = reference.getKey();
+            if (currentPath.contains(referencedDirectiveName)) {
+                DirectiveDefinition repeatedDirective = assertNotNull(directiveDefinitionsByName.get(referencedDirectiveName));
+                String cyclePath = directiveCyclePath(referencedDirectiveName, currentPath);
+                errors.add(new DirectiveIllegalReferenceError(repeatedDirective, reference.getValue(), cyclePath));
+                continue;
+            }
+            DirectiveDefinition referencedDirective = directiveDefinitionsByName.get(referencedDirectiveName);
+            if (referencedDirective != null) {
+                checkDirectiveReferencesForCycles(referencedDirective, directiveDefinitionsByName, checked, currentPath, errors);
+            }
+        }
+        currentPath.remove(directiveName);
         checked.add(directiveName);
     }
 
-    private static void checkIndirectDirectiveCycleReferences(String directiveName,
-                                                             Map<String, DirectiveDefinition> directiveDefinitionsByName,
-                                                             Map<String, Map<String, InputValueDefinition>> directiveReferencesByName,
-                                                             Set<String> checked,
-                                                             Set<String> visiting,
-                                                             List<String> path,
-                                                             List<GraphQLError> errors) {
-        Map<String, InputValueDefinition> references = directiveReferencesByName.getOrDefault(directiveName, Collections.emptyMap());
-        for (Map.Entry<String, InputValueDefinition> entry : references.entrySet()) {
-            checkIndirectDirectiveCycleReference(entry.getKey(), entry.getValue(), directiveDefinitionsByName, directiveReferencesByName, checked, visiting, path, errors);
-        }
-    }
-
-    private static void checkIndirectDirectiveCycleReference(String referencedDirectiveName,
-                                                            InputValueDefinition inputValueDefinition,
-                                                            Map<String, DirectiveDefinition> directiveDefinitionsByName,
-                                                            Map<String, Map<String, InputValueDefinition>> directiveReferencesByName,
-                                                            Set<String> checked,
-                                                            Set<String> visiting,
-                                                            List<String> path,
-                                                            List<GraphQLError> errors) {
-        if (visiting.contains(referencedDirectiveName)) {
-            addIndirectDirectiveCycleError(referencedDirectiveName, inputValueDefinition, directiveDefinitionsByName, path, errors);
-            return;
-        }
-        if (!checked.contains(referencedDirectiveName)) {
-            checkIndirectDirectiveCycles(referencedDirectiveName, directiveDefinitionsByName, directiveReferencesByName, checked, visiting, path, errors);
-        }
-    }
-
-    private static void addIndirectDirectiveCycleError(String repeatedDirectiveName,
-                                                       InputValueDefinition inputValueDefinition,
-                                                       Map<String, DirectiveDefinition> directiveDefinitionsByName,
-                                                       List<String> path,
-                                                       List<GraphQLError> errors) {
-        List<String> cyclePath = directiveCyclePath(repeatedDirectiveName, path);
-        String cyclePathString = String.join(" -> ", cyclePath);
-
-        DirectiveDefinition directiveDefinition = assertNotNull(directiveDefinitionsByName.get(repeatedDirectiveName));
-        errors.add(new DirectiveIllegalReferenceError(directiveDefinition, inputValueDefinition, cyclePathString));
-    }
-
-    private static List<String> directiveCyclePath(String repeatedDirectiveName, List<String> path) {
-        int cycleStart = path.indexOf(repeatedDirectiveName);
-        List<String> cyclePath = new ArrayList<>(path.subList(cycleStart, path.size()));
+    private static String directiveCyclePath(String repeatedDirectiveName, LinkedHashSet<String> currentPath) {
+        List<String> pathList = new ArrayList<>(currentPath);
+        int cycleStart = pathList.indexOf(repeatedDirectiveName);
+        List<String> cyclePath = new ArrayList<>(pathList.subList(cycleStart, pathList.size()));
         cyclePath.add(repeatedDirectiveName);
-        return cyclePath;
+        return String.join(" -> ", cyclePath);
     }
 
     private static void assertTypeName(NamedNode<?> node, List<GraphQLError> errors) {
