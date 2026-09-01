@@ -10,6 +10,7 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQL;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
+import graphql.GraphQLUnusualConfiguration;
 import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.Profiler;
@@ -143,6 +144,13 @@ public class Execution {
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
+
+        // When partial results on cancel is enabled, store the cancellation future in the context
+        // so that Async.Many#await(GraphQLContext) can race against it
+        if (graphQLContext.getBoolean(GraphQLUnusualConfiguration.CancellationConfig.CAPTURE_PARTIAL_RESULTS_ON_CANCEL)) {
+            graphQLContext.put(GraphQLUnusualConfiguration.CancellationConfig.CANCELLATION_FUTURE_KEY,
+                    executionInput.getCancellationFuture());
+        }
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
                 executionInput, graphQLSchema
