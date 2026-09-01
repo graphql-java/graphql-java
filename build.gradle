@@ -234,7 +234,7 @@ shadow {
 dependencies {
     api 'com.graphql-java:java-dataloader:6.0.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
-    api "org.jspecify:jspecify:1.0.0"
+    api "org.jspecify:jspecify:1.0.1"
 
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
