@@ -7,8 +7,8 @@ import graphql.Internal;
 /**
  * This will check that a value is non-null when the type definition says it must be and, it will throw {@link NonNullableFieldWasNullException}
  * if this is not the case.
- *
- * See: https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability
+ * <p>
+ * See: <a href="https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability">https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability</a>
  */
 @Internal
 public class NonNullableFieldValidator {
@@ -20,7 +20,7 @@ public class NonNullableFieldValidator {
     }
 
     /**
-     * Called to check that a value is non-null if the type requires it to be non null
+     * Called to check that a value is non-null if the type requires it to be non-null
      *
      * @param parameters the execution strategy parameters
      * @param result the result to check
@@ -55,8 +55,13 @@ public class NonNullableFieldValidator {
                 } else {
                     executionContext.addError(error, path);
                 }
-                if (executionContext.propagateErrorsOnNonNullContractFailure()) {
+
+                OnError onError = executionContext.getOnError();
+                if (onError == OnError.PROPAGATE) {
+
                     throw nonNullException;
+                } else if (onError == OnError.HALT) {
+                    throw new AbortExecutionException(executionContext.getErrors());
                 }
             }
         }

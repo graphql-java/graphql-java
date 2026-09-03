@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static graphql.Directives.EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
@@ -103,7 +104,13 @@ public class Execution {
             return completedFuture(abortExecutionException.toExecutionResult());
         }
 
-        boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
+        OnError onError = isExperimentalOnErrorEnabled() ? executionInput.getOnError() : OnError.PROPAGATE;
+
+        // The `@experimental_disableErrorPropagation` directive remains supported and, when present on the
+        // operation, is equivalent to requesting `onError: NULL`.
+        if (!propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives())) {
+            onError = OnError.NULL;
+        }
 
         GraphQLContext graphQLContext = executionInput.getGraphQLContext();
         Locale locale = executionInput.getLocale();
@@ -137,7 +144,7 @@ public class Execution {
                 .valueUnboxer(valueUnboxer)
                 .responseMapFactory(responseMapFactory)
                 .executionInput(executionInput)
-                .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
+                .onError(onError)
                 .engineRunningState(engineRunningState)
                 .profiler(profiler)
                 .build();
@@ -325,4 +332,25 @@ public class Execution {
         Directive foundDirective = NodeUtil.findNodeByName(directives, EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
         return foundDirective == null;
     }
+
+    private static final AtomicBoolean EXPERIMENTAL_ON_ERROR_ENABLED = new AtomicBoolean(true);
+
+    /**
+     * This can be used to get the state the `onError` request parameter support on a JVM-wide basis.
+     * @return true if the `onError` request parameter will be respected
+     */
+    public static boolean isExperimentalOnErrorEnabled() {
+        return EXPERIMENTAL_ON_ERROR_ENABLED.get();
+    }
+
+    /**
+     * This can be used to disable the `onError` request parameter support on a JVM-wide basis in case your server
+     * implementation does NOT want to act on the request parameter ever.
+     *
+     * @param flag the desired state of the flag
+     */
+    public static void setExperimentalOnErrorEnabled(boolean flag) {
+        EXPERIMENTAL_ON_ERROR_ENABLED.set(flag);
+    }
+
 }
