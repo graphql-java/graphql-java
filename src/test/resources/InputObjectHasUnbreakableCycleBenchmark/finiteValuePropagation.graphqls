@@ -1,0 +1,46 @@
+type Query {
+  check(input: Finite7): Boolean
+}
+
+input Seed {
+  value: Int!
+}
+
+input Finite1 {
+  previous: Seed!
+}
+
+input Finite2 @oneOf {
+  previous: Finite1
+  trap: TrapA
+}
+
+input Finite3 {
+  previous: Finite2!
+}
+
+input Finite4 @oneOf {
+  previous: Finite3
+  trap: TrapA
+}
+
+input Finite5 {
+  previous: Finite4!
+}
+
+input Finite6 @oneOf {
+  previous: Finite5
+  trap: TrapA
+}
+
+input Finite7 {
+  previous: Finite6!
+}
+
+input TrapA @oneOf {
+  next: TrapB
+}
+
+input TrapB {
+  next: TrapA!
+}

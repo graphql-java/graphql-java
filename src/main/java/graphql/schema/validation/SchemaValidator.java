@@ -18,7 +18,7 @@ public class SchemaValidator {
     private final List<GraphQLTypeVisitor> rules = new ArrayList<>();
 
     public SchemaValidator() {
-        rules.add(new NoUnbrokenInputCycles());
+        rules.add(new InputObjectHasUnbreakableCycle());
         rules.add(new NoDefaultValueCircularRefs());
         rules.add(new TypesImplementInterfaces());
         rules.add(new TypeAndFieldRule());
