@@ -2,6 +2,9 @@ package graphql.schema.visibility;
 
 import graphql.Internal;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 import graphql.collect.ImmutableKit;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -21,6 +24,7 @@ import java.util.regex.Pattern;
  * Remember that graphql type and fields names MUST be inside the name space "[_A-Za-z][_0-9A-Za-z]*"
  */
 @PublicApi
+@NullMarked
 public class BlockedFields implements GraphqlFieldVisibility {
 
     private final List<Pattern> patterns;
@@ -40,7 +44,7 @@ public class BlockedFields implements GraphqlFieldVisibility {
     }
 
     @Override
-    public GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+    public @Nullable GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
         GraphQLFieldDefinition fieldDefinition = fieldsContainer.getFieldDefinition(fieldName);
         if (fieldDefinition != null) {
             if (block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName()))) {
@@ -57,7 +61,7 @@ public class BlockedFields implements GraphqlFieldVisibility {
     }
 
     @Override
-    public GraphQLInputObjectField getFieldDefinition(GraphQLInputFieldsContainer fieldsContainer, String fieldName) {
+    public @Nullable GraphQLInputObjectField getFieldDefinition(GraphQLInputFieldsContainer fieldsContainer, String fieldName) {
         GraphQLInputObjectField fieldDefinition = fieldsContainer.getFieldDefinition(fieldName);
         if (fieldDefinition != null) {
             if (block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName()))) {
@@ -84,6 +88,7 @@ public class BlockedFields implements GraphqlFieldVisibility {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         private final List<Pattern> patterns = new ArrayList<>();
 

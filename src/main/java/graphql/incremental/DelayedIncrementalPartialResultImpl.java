@@ -2,6 +2,9 @@ package graphql.incremental;
 
 import graphql.ExperimentalApi;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -9,10 +12,11 @@ import java.util.List;
 import java.util.Map;
 
 @ExperimentalApi
+@NullMarked
 public class DelayedIncrementalPartialResultImpl implements DelayedIncrementalPartialResult {
-    private final List<IncrementalPayload> incrementalItems;
+    private final @Nullable List<IncrementalPayload> incrementalItems;
     private final boolean hasNext;
-    private final Map<Object, Object> extensions;
+    private final @Nullable Map<Object, Object> extensions;
 
     private DelayedIncrementalPartialResultImpl(Builder builder) {
         this.incrementalItems = builder.incrementalItems;
@@ -21,7 +25,7 @@ public class DelayedIncrementalPartialResultImpl implements DelayedIncrementalPa
     }
 
     @Override
-    public List<IncrementalPayload> getIncremental() {
+    public @Nullable List<IncrementalPayload> getIncremental() {
         return this.incrementalItems;
     }
 
@@ -31,7 +35,7 @@ public class DelayedIncrementalPartialResultImpl implements DelayedIncrementalPa
     }
 
     @Override
-    public Map<Object, Object> getExtensions() {
+    public @Nullable Map<Object, Object> getExtensions() {
         return this.extensions;
     }
 
@@ -62,6 +66,7 @@ public class DelayedIncrementalPartialResultImpl implements DelayedIncrementalPa
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         private boolean hasNext = false;
         private List<IncrementalPayload> incrementalItems = Collections.emptyList();

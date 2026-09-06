@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.PublicApi;
 import graphql.schema.GraphQLArgument;
+import org.jspecify.annotations.NullMarked;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
@@ -27,6 +28,7 @@ import graphql.schema.GraphQLUnionType;
  * </ol>
  */
 @PublicApi
+@NullMarked
 public interface SchemaDirectiveWiring {
 
     /**

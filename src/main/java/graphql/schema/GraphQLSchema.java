@@ -448,7 +448,7 @@ public class GraphQLSchema {
             }
             return Assert.assertShouldNeverHappen("The system field name %s is unknown", fieldName);
         }
-        String typeName = fieldCoordinates.getTypeName();
+        String typeName = Assert.assertNotNull(fieldCoordinates.getTypeName(), "non-system coordinates must have a type name");
         GraphQLType graphQLType = getType(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLFieldsContainer,
