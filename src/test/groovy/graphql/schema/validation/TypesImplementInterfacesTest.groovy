@@ -1,8 +1,13 @@
 package graphql.schema.validation
 
+import graphql.TestUtil
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLTypeReference
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
 import static graphql.Scalars.GraphQLBoolean
@@ -85,6 +90,77 @@ class TypesImplementInterfacesTest extends Specification {
                 "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg4' is defined differently"))
         errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
                 "object type 'obj' does not implement interface 'Interface' because field 'argField2' is missing argument(s): 'arg2, arg3'"))
+    }
+
+    def "types must explicitly implement transitive interfaces"() {
+        given:
+        def baseInterface = newInterface()
+                .name("BaseInterface")
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .build()
+        def childInterface = newInterface()
+                .name("ChildInterface")
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .withInterface(baseInterface)
+                .build()
+        def incompleteImplementation = newObject()
+                .name("IncompleteImplementation")
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .withInterface(childInterface)
+                .build()
+        def completeImplementation = newObject()
+                .name("CompleteImplementation")
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .withInterface(baseInterface)
+                .withInterface(childInterface)
+                .build()
+        def missingErrorCollector = new SchemaValidationErrorCollector()
+        def completeErrorCollector = new SchemaValidationErrorCollector()
+
+        when:
+        new TypesImplementInterfaces().check(incompleteImplementation, missingErrorCollector)
+        new TypesImplementInterfaces().check(completeImplementation, completeErrorCollector)
+
+        then:
+        missingErrorCollector.getErrors()*.description == [
+                "object type 'IncompleteImplementation' must implement 'BaseInterface' because it is implemented by 'ChildInterface'"
+        ]
+        completeErrorCollector.getErrors().isEmpty()
+    }
+
+    def "interfaces cannot circularly implement each other"() {
+        given:
+        def firstInterface = newInterface()
+                .name("FirstInterface")
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .withInterface(GraphQLTypeReference.typeRef("SecondInterface"))
+                .build()
+        def secondInterface = newInterface()
+                .name("SecondInterface")
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .withInterface(firstInterface)
+                .build()
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("find").type(secondInterface))
+                .build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(firstInterface, { null })
+                .typeResolver(secondInterface, { null })
+                .build()
+
+        when:
+        GraphQLSchema.newSchema()
+                .query(query)
+                .codeRegistry(codeRegistry)
+                .build()
+
+        then:
+        def exception = thrown(InvalidSchemaException)
+        exception.getErrors()*.description as Set == [
+                "interface type 'FirstInterface' cannot implement 'SecondInterface' because that would result on a circular reference",
+                "interface type 'SecondInterface' cannot implement 'FirstInterface' because that would result on a circular reference"
+        ] as Set
     }
 
     def "field is object implementing interface"() {
@@ -228,6 +304,19 @@ class TypesImplementInterfacesTest extends Specification {
         !badErrorCollector.getErrors().isEmpty()
     }
 
+    def "interface and list fields are incompatible with unrelated field types"() {
+        given:
+        def interfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("field").type(GraphQLString))
+                .build()
+        def validator = new TypesImplementInterfaces()
+
+        expect:
+        !validator.isCompatible(interfaceType, GraphQLString)
+        !validator.isCompatible(list(GraphQLString), GraphQLString)
+    }
+
     def "field is member of union"() {
         given:
         def actor = newObject()
@@ -311,6 +400,52 @@ class TypesImplementInterfacesTest extends Specification {
         !badErrorCollector.getErrors().isEmpty()
     }
 
+    @Unroll
+    def "implementing field can strengthen #kind nullability from #interfaceFieldType to #implementingFieldType"() {
+        when:
+        TestUtil.schema("""
+            schema { query: B }
+
+            enum E {
+                VALUE
+            }
+
+            interface J {
+                value: String
+            }
+
+            type A implements J {
+                value: String
+            }
+
+            union U = A
+
+            interface I {
+                value: $interfaceFieldType
+            }
+
+            type B implements I {
+                value: $implementingFieldType
+            }
+        """)
+
+        then:
+        noExceptionThrown()
+
+        where:
+        kind                | interfaceFieldType | implementingFieldType
+        "scalar"            | "String"           | "String!"
+        "enum"              | "E"                | "E!"
+        "object"            | "A"                | "A!"
+        "interface"         | "J"                | "J!"
+        "union"             | "U"                | "U!"
+        "list"              | "[String]"         | "[String]!"
+        "list item"         | "[String]"         | "[String!]"
+        "list and item"     | "[String]"         | "[String!]!"
+        "nested list"       | "[[String]]"       | "[[String!]!]!"
+        "list of unions"    | "[U]"              | "[U!]!"
+        "list of interfaces" | "[J]"              | "[J!]!"
+    }
 
     def "field is a non null object"() {
         given:
@@ -369,6 +504,33 @@ class TypesImplementInterfacesTest extends Specification {
         then:
         def errors = errorCollector.getErrors()
         errors.isEmpty()
+    }
+
+    def "field argument defaults must be set in both the interface and implementing type"() {
+        given:
+        GraphQLInterfaceType interfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("argField").type(GraphQLString)
+                        .argument(newArgument().name("interfaceDefault").type(GraphQLString).defaultValueProgrammatic("default"))
+                        .argument(newArgument().name("objectDefault").type(GraphQLString)))
+                .build()
+        GraphQLObjectType objectType = newObject()
+                .name("Object")
+                .withInterface(interfaceType)
+                .field(newFieldDefinition().name("argField").type(GraphQLString)
+                        .argument(newArgument().name("interfaceDefault").type(GraphQLString))
+                        .argument(newArgument().name("objectDefault").type(GraphQLString).defaultValueProgrammatic("default")))
+                .build()
+        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
+
+        when:
+        new TypesImplementInterfaces().check(objectType, errorCollector)
+
+        then:
+        errorCollector.getErrors()*.description as Set == [
+                "object type 'Object' does not implement interface 'Interface' because field 'argField' argument 'interfaceDefault' is defined differently",
+                "object type 'Object' does not implement interface 'Interface' because field 'argField' argument 'objectDefault' is defined differently"
+        ] as Set
     }
 
     def "type should declare all arguments present in implemented interface"() {

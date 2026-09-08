@@ -189,6 +189,15 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
     boolean isCompatible(GraphQLOutputType constraintType, GraphQLOutputType objectType) {
         if (isSameType(constraintType, objectType)) {
             return true;
+        } else if (isNonNull(objectType)) {
+            GraphQLOutputType nullableConstraint;
+            if (isNonNull(constraintType)) {
+                nullableConstraint = (GraphQLOutputType) unwrapOne(constraintType);
+            } else {
+                nullableConstraint = constraintType;
+            }
+            GraphQLOutputType nullableObjectType = (GraphQLOutputType) unwrapOne(objectType);
+            return isCompatible(nullableConstraint, nullableObjectType);
         } else if (constraintType instanceof GraphQLUnionType) {
             return objectIsMemberOfUnion((GraphQLUnionType) constraintType, objectType);
         } else if (constraintType instanceof GraphQLInterfaceType && objectType instanceof GraphQLObjectType) {
@@ -199,15 +208,6 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
             GraphQLOutputType wrappedConstraintType = (GraphQLOutputType) unwrapOne(constraintType);
             GraphQLOutputType wrappedObjectType = (GraphQLOutputType) unwrapOne(objectType);
             return isCompatible(wrappedConstraintType, wrappedObjectType);
-        } else if (isNonNull(objectType)) {
-            GraphQLOutputType nullableConstraint;
-            if (isNonNull(constraintType)) {
-                nullableConstraint = (GraphQLOutputType) unwrapOne(constraintType);
-            } else {
-                nullableConstraint = constraintType;
-            }
-            GraphQLOutputType nullableObjectType = (GraphQLOutputType) unwrapOne(objectType);
-            return isCompatible(nullableConstraint, nullableObjectType);
         } else {
             return false;
         }
