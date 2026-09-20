@@ -50,8 +50,14 @@ public class UnicodeUtil {
             i = continueIndex + 2;
             int trailingStartIndex = isBracedEscape(string, i) ? i + 2 : i + 1;
             int trailingEndIndexExclusive = getEndIndexExclusive(i18n, string, i, sourceLocation);
-            int trailingCodePoint = Integer.parseInt(string, trailingStartIndex, trailingEndIndexExclusive, 16);
             continueIndex = isBracedEscape(string, i) ? trailingEndIndexExclusive : trailingEndIndexExclusive - 1;
+
+            int trailingCodePoint;
+            try {
+                trailingCodePoint = Integer.parseInt(string, trailingStartIndex, trailingEndIndexExclusive, 16);
+            } catch (NumberFormatException e) {
+                throw new InvalidUnicodeSyntaxException(i18n, "InvalidUnicode.invalidHexString", sourceLocation, offendingToken(string, i, continueIndex));
+            }
 
             if (isTrailingSurrogateValue(trailingCodePoint)) {
                 writeCodePoint(writer, codePoint);
