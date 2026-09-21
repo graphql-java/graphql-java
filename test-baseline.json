@@ -43,8 +43,8 @@
         "missed": 1518
       },
       "line": {
-        "covered": 30072,
-        "missed": 3121
+        "covered": 30069,
+        "missed": 3119
       },
       "method": {
         "covered": 8033,
@@ -4387,6 +4387,174 @@
           }
         ]
       },
+      "graphql.language.NullValue$Builder": {
+        "line": {
+          "covered": 10,
+          "missed": 12
+        },
+        "branch": {
+          "covered": 0,
+          "missed": 0
+        },
+        "method": {
+          "covered": 4,
+          "missed": 4
+        },
+        "methods": [
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Lgraphql/language/NullValue;)V",
+            "line": 96,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 9
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "&lt;init&gt;",
+            "desc": "()V",
+            "line": 96,
+            "counters": {
+              "line": {
+                "covered": 5,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "sourceLocation",
+            "desc": "(Lgraphql/language/SourceLocation;)Lgraphql/language/NullValue$Builder;",
+            "line": 111,
+            "counters": {
+              "line": {
+                "covered": 2,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "comments",
+            "desc": "(Ljava/util/List;)Lgraphql/language/NullValue$Builder;",
+            "line": 116,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 2
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "ignoredChars",
+            "desc": "(Lgraphql/language/IgnoredChars;)Lgraphql/language/NullValue$Builder;",
+            "line": 121,
+            "counters": {
+              "line": {
+                "covered": 2,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "additionalData",
+            "desc": "(Ljava/util/Map;)Lgraphql/language/NullValue$Builder;",
+            "line": 126,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 2
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "additionalData",
+            "desc": "(Ljava/lang/String;Ljava/lang/String;)Lgraphql/language/NullValue$Builder;",
+            "line": 131,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 2
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "build",
+            "desc": "()Lgraphql/language/NullValue;",
+            "line": 137,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          }
+        ]
+      },
       "graphql.language.SelectionSet": {
         "line": {
           "covered": 26,
@@ -4690,174 +4858,6 @@
             "name": "lambda$getSelectionsOfType$0",
             "desc": "(Ljava/lang/Class;Lgraphql/language/Selection;)Z",
             "line": 58,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          }
-        ]
-      },
-      "graphql.language.NullValue$Builder": {
-        "line": {
-          "covered": 10,
-          "missed": 12
-        },
-        "branch": {
-          "covered": 0,
-          "missed": 0
-        },
-        "method": {
-          "covered": 4,
-          "missed": 4
-        },
-        "methods": [
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Lgraphql/language/NullValue;)V",
-            "line": 96,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 9
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "&lt;init&gt;",
-            "desc": "()V",
-            "line": 96,
-            "counters": {
-              "line": {
-                "covered": 5,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "sourceLocation",
-            "desc": "(Lgraphql/language/SourceLocation;)Lgraphql/language/NullValue$Builder;",
-            "line": 111,
-            "counters": {
-              "line": {
-                "covered": 2,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "comments",
-            "desc": "(Ljava/util/List;)Lgraphql/language/NullValue$Builder;",
-            "line": 116,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 2
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "ignoredChars",
-            "desc": "(Lgraphql/language/IgnoredChars;)Lgraphql/language/NullValue$Builder;",
-            "line": 121,
-            "counters": {
-              "line": {
-                "covered": 2,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "additionalData",
-            "desc": "(Ljava/util/Map;)Lgraphql/language/NullValue$Builder;",
-            "line": 126,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 2
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "additionalData",
-            "desc": "(Ljava/lang/String;Ljava/lang/String;)Lgraphql/language/NullValue$Builder;",
-            "line": 131,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 2
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "build",
-            "desc": "()Lgraphql/language/NullValue;",
-            "line": 137,
             "counters": {
               "line": {
                 "covered": 1,
@@ -56423,6 +56423,79 @@
           }
         ]
       },
+      "graphql.schema.diffing.ana.SchemaDifference$InterfaceFieldArgumentDeletion": {
+        "line": {
+          "covered": 6,
+          "missed": 0
+        },
+        "branch": {
+          "covered": 0,
+          "missed": 0
+        },
+        "method": {
+          "covered": 3,
+          "missed": 0
+        },
+        "methods": [
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Ljava/lang/String;Ljava/lang/String;)V",
+            "line": 488,
+            "counters": {
+              "line": {
+                "covered": 4,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "getFieldName",
+            "desc": "()Ljava/lang/String;",
+            "line": 494,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "getName",
+            "desc": "()Ljava/lang/String;",
+            "line": 498,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          }
+        ]
+      },
       "graphql.schema.diffing.ana.SchemaDifference$ScalarModification": {
         "line": {
           "covered": 16,
@@ -56555,79 +56628,6 @@
             "name": "getDetails",
             "desc": "(Ljava/lang/Class;)Ljava/util/List;",
             "line": 1057,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          }
-        ]
-      },
-      "graphql.schema.diffing.ana.SchemaDifference$InterfaceFieldArgumentDeletion": {
-        "line": {
-          "covered": 6,
-          "missed": 0
-        },
-        "branch": {
-          "covered": 0,
-          "missed": 0
-        },
-        "method": {
-          "covered": 3,
-          "missed": 0
-        },
-        "methods": [
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Ljava/lang/String;Ljava/lang/String;)V",
-            "line": 488,
-            "counters": {
-              "line": {
-                "covered": 4,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "getFieldName",
-            "desc": "()Ljava/lang/String;",
-            "line": 494,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "getName",
-            "desc": "()Ljava/lang/String;",
-            "line": 498,
             "counters": {
               "line": {
                 "covered": 1,
@@ -60523,6 +60523,60 @@
           }
         ]
       },
+      "graphql.schema.diffing.ana.SchemaDifference$InputObjectDeletion": {
+        "line": {
+          "covered": 4,
+          "missed": 0
+        },
+        "branch": {
+          "covered": 0,
+          "missed": 0
+        },
+        "method": {
+          "covered": 2,
+          "missed": 0
+        },
+        "methods": [
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Ljava/lang/String;)V",
+            "line": 726,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "getName",
+            "desc": "()Ljava/lang/String;",
+            "line": 731,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          }
+        ]
+      },
       "graphql.schema.diffing.ana.SchemaDifference$AppliedDirectiveScalarLocation": {
         "line": {
           "covered": 6,
@@ -60579,60 +60633,6 @@
             "name": "getDirectiveName",
             "desc": "()Ljava/lang/String;",
             "line": 1315,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          }
-        ]
-      },
-      "graphql.schema.diffing.ana.SchemaDifference$InputObjectDeletion": {
-        "line": {
-          "covered": 4,
-          "missed": 0
-        },
-        "branch": {
-          "covered": 0,
-          "missed": 0
-        },
-        "method": {
-          "covered": 2,
-          "missed": 0
-        },
-        "methods": [
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Ljava/lang/String;)V",
-            "line": 726,
-            "counters": {
-              "line": {
-                "covered": 3,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "getName",
-            "desc": "()Ljava/lang/String;",
-            "line": 731,
             "counters": {
               "line": {
                 "covered": 1,
@@ -64998,60 +64998,6 @@
           }
         ]
       },
-      "graphql.schema.diffing.ana.SchemaDifference$DirectiveArgumentDeletion": {
-        "line": {
-          "covered": 4,
-          "missed": 0
-        },
-        "branch": {
-          "covered": 0,
-          "missed": 0
-        },
-        "method": {
-          "covered": 2,
-          "missed": 0
-        },
-        "methods": [
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Ljava/lang/String;)V",
-            "line": 1138,
-            "counters": {
-              "line": {
-                "covered": 3,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "getName",
-            "desc": "()Ljava/lang/String;",
-            "line": 1143,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          }
-        ]
-      },
       "graphql.schema.diffing.ana.SchemaDifference$InterfaceFieldArgumentTypeModification": {
         "line": {
           "covered": 10,
@@ -65146,6 +65092,60 @@
             "name": "getArgumentName",
             "desc": "()Ljava/lang/String;",
             "line": 547,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          }
+        ]
+      },
+      "graphql.schema.diffing.ana.SchemaDifference$DirectiveArgumentDeletion": {
+        "line": {
+          "covered": 4,
+          "missed": 0
+        },
+        "branch": {
+          "covered": 0,
+          "missed": 0
+        },
+        "method": {
+          "covered": 2,
+          "missed": 0
+        },
+        "methods": [
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Ljava/lang/String;)V",
+            "line": 1138,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "getName",
+            "desc": "()Ljava/lang/String;",
+            "line": 1143,
             "counters": {
               "line": {
                 "covered": 1,
@@ -100536,7 +100536,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 46,
+            "line": 33,
             "counters": {
               "line": {
                 "covered": 10,
@@ -113328,6 +113328,41 @@
           }
         ]
       },
+      "graphql.schema.idl.errors.MissingInterfaceTypeError": {
+        "line": {
+          "covered": 3,
+          "missed": 0
+        },
+        "branch": {
+          "covered": 0,
+          "missed": 0
+        },
+        "method": {
+          "covered": 1,
+          "missed": 0
+        },
+        "methods": [
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Ljava/lang/String;Lgraphql/language/TypeDefinition;Lgraphql/language/TypeName;)V",
+            "line": 13,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          }
+        ]
+      },
       "graphql.schema.idl.errors.DirectiveIllegalReferenceError": {
         "line": {
           "covered": 8,
@@ -113368,41 +113403,6 @@
             "counters": {
               "line": {
                 "covered": 4,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          }
-        ]
-      },
-      "graphql.schema.idl.errors.MissingInterfaceTypeError": {
-        "line": {
-          "covered": 3,
-          "missed": 0
-        },
-        "branch": {
-          "covered": 0,
-          "missed": 0
-        },
-        "method": {
-          "covered": 1,
-          "missed": 0
-        },
-        "methods": [
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Ljava/lang/String;Lgraphql/language/TypeDefinition;Lgraphql/language/TypeName;)V",
-            "line": 13,
-            "counters": {
-              "line": {
-                "covered": 3,
                 "missed": 0
               },
               "branch": {
@@ -150030,6 +150030,79 @@
           }
         ]
       },
+      "graphql.schema.DataFetcherFactories$1": {
+        "line": {
+          "covered": 3,
+          "missed": 0
+        },
+        "branch": {
+          "covered": 0,
+          "missed": 0
+        },
+        "method": {
+          "covered": 3,
+          "missed": 0
+        },
+        "methods": [
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Lgraphql/schema/DataFetcher;)V",
+            "line": 24,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "get",
+            "desc": "(Lgraphql/schema/DataFetcherFactoryEnvironment;)Lgraphql/schema/DataFetcher;",
+            "line": 27,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "get",
+            "desc": "(Lgraphql/schema/GraphQLFieldDefinition;)Lgraphql/schema/DataFetcher;",
+            "line": 32,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          }
+        ]
+      },
       "graphql.schema.SingletonPropertyDataFetcher": {
         "line": {
           "covered": 9,
@@ -150165,79 +150238,6 @@
             "counters": {
               "line": {
                 "covered": 2,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          }
-        ]
-      },
-      "graphql.schema.DataFetcherFactories$1": {
-        "line": {
-          "covered": 3,
-          "missed": 0
-        },
-        "branch": {
-          "covered": 0,
-          "missed": 0
-        },
-        "method": {
-          "covered": 3,
-          "missed": 0
-        },
-        "methods": [
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Lgraphql/schema/DataFetcher;)V",
-            "line": 24,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "get",
-            "desc": "(Lgraphql/schema/DataFetcherFactoryEnvironment;)Lgraphql/schema/DataFetcher;",
-            "line": 27,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "get",
-            "desc": "(Lgraphql/schema/GraphQLFieldDefinition;)Lgraphql/schema/DataFetcher;",
-            "line": 32,
-            "counters": {
-              "line": {
-                "covered": 1,
                 "missed": 0
               },
               "branch": {
@@ -153350,8 +153350,8 @@
       },
       "graphql.parser.UnicodeUtil": {
         "line": {
-          "covered": 43,
-          "missed": 5
+          "covered": 41,
+          "missed": 3
         },
         "branch": {
           "covered": 44,
@@ -153365,7 +153365,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 17,
+            "line": 12,
             "counters": {
               "line": {
                 "covered": 0,
@@ -153383,8 +153383,8 @@
           },
           {
             "name": "parseAndWriteUnicode",
-            "desc": "(Lgraphql/i18n/I18n;Ljava/io/StringWriter;Ljava/lang/String;ILgraphql/language/SourceLocation;)I",
-            "line": 30,
+            "desc": "(Lgraphql/i18n/I18n;Ljava/lang/StringBuilder;Ljava/lang/String;ILgraphql/language/SourceLocation;)I",
+            "line": 25,
             "counters": {
               "line": {
                 "covered": 24,
@@ -153403,7 +153403,7 @@
           {
             "name": "offendingToken",
             "desc": "(Ljava/lang/String;II)Ljava/lang/String;",
-            "line": 72,
+            "line": 67,
             "counters": {
               "line": {
                 "covered": 1,
@@ -153422,7 +153422,7 @@
           {
             "name": "getEndIndexExclusive",
             "desc": "(Lgraphql/i18n/I18n;Ljava/lang/String;ILgraphql/language/SourceLocation;)I",
-            "line": 77,
+            "line": 72,
             "counters": {
               "line": {
                 "covered": 7,
@@ -153441,7 +153441,7 @@
           {
             "name": "isValidUnicodeCodePoint",
             "desc": "(I)Z",
-            "line": 93,
+            "line": 88,
             "counters": {
               "line": {
                 "covered": 1,
@@ -153460,7 +153460,7 @@
           {
             "name": "isEscapedUnicode",
             "desc": "(Ljava/lang/String;I)Z",
-            "line": 97,
+            "line": 92,
             "counters": {
               "line": {
                 "covered": 3,
@@ -153479,7 +153479,7 @@
           {
             "name": "isLeadingSurrogateValue",
             "desc": "(I)Z",
-            "line": 104,
+            "line": 99,
             "counters": {
               "line": {
                 "covered": 1,
@@ -153498,7 +153498,7 @@
           {
             "name": "isTrailingSurrogateValue",
             "desc": "(I)Z",
-            "line": 108,
+            "line": 103,
             "counters": {
               "line": {
                 "covered": 1,
@@ -153516,12 +153516,12 @@
           },
           {
             "name": "writeCodePoint",
-            "desc": "(Ljava/io/StringWriter;I)V",
-            "line": 112,
+            "desc": "(Ljava/lang/StringBuilder;I)V",
+            "line": 107,
             "counters": {
               "line": {
-                "covered": 4,
-                "missed": 2
+                "covered": 2,
+                "missed": 0
               },
               "branch": {
                 "covered": 0,
@@ -153536,7 +153536,7 @@
           {
             "name": "isBracedEscape",
             "desc": "(Ljava/lang/String;I)Z",
-            "line": 121,
+            "line": 111,
             "counters": {
               "line": {
                 "covered": 1,
@@ -155399,7 +155399,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 14,
+            "line": 12,
             "counters": {
               "line": {
                 "covered": 0,
@@ -155418,7 +155418,7 @@
           {
             "name": "parseTripleQuotedString",
             "desc": "(Ljava/lang/String;)Ljava/lang/String;",
-            "line": 19,
+            "line": 17,
             "counters": {
               "line": {
                 "covered": 4,
@@ -155437,7 +155437,7 @@
           {
             "name": "removeIndentation",
             "desc": "(Ljava/lang/String;)Ljava/lang/String;",
-            "line": 29,
+            "line": 27,
             "counters": {
               "line": {
                 "covered": 26,
@@ -155456,7 +155456,7 @@
           {
             "name": "leadingWhitespace",
             "desc": "(Ljava/lang/String;)I",
-            "line": 68,
+            "line": 66,
             "counters": {
               "line": {
                 "covered": 7,
@@ -155475,7 +155475,7 @@
           {
             "name": "containsOnlyWhiteSpace",
             "desc": "(Ljava/lang/String;)Z",
-            "line": 81,
+            "line": 79,
             "counters": {
               "line": {
                 "covered": 1,
@@ -155494,7 +155494,7 @@
           {
             "name": "parseSingleQuotedString",
             "desc": "(Lgraphql/i18n/I18n;Ljava/lang/String;Lgraphql/language/SourceLocation;)Ljava/lang/String;",
-            "line": 85,
+            "line": 83,
             "counters": {
               "line": {
                 "covered": 29,
@@ -174764,193 +174764,6 @@
           }
         ]
       },
-      "graphql.execution.AbortExecutionException": {
-        "line": {
-          "covered": 10,
-          "missed": 11
-        },
-        "branch": {
-          "covered": 2,
-          "missed": 0
-        },
-        "method": {
-          "covered": 4,
-          "missed": 5
-        },
-        "methods": [
-          {
-            "name": "&lt;init&gt;",
-            "desc": "()V",
-            "line": 29,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 3
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Ljava/util/Collection;)V",
-            "line": 33,
-            "counters": {
-              "line": {
-                "covered": 3,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Ljava/lang/String;)V",
-            "line": 38,
-            "counters": {
-              "line": {
-                "covered": 3,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Ljava/lang/String;Ljava/lang/Throwable;)V",
-            "line": 43,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 3
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "&lt;init&gt;",
-            "desc": "(Ljava/lang/Throwable;)V",
-            "line": 48,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 3
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "getLocations",
-            "desc": "()Ljava/util/List;",
-            "line": 54,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 1
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "getErrorType",
-            "desc": "()Lgraphql/ErrorType;",
-            "line": 59,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 1
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "getUnderlyingErrors",
-            "desc": "()Ljava/util/List;",
-            "line": 66,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "toExecutionResult",
-            "desc": "()Lgraphql/ExecutionResult;",
-            "line": 76,
-            "counters": {
-              "line": {
-                "covered": 3,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 2,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          }
-        ]
-      },
       "graphql.execution.MergedField": {
         "line": {
           "covered": 26,
@@ -175337,6 +175150,193 @@
               },
               "branch": {
                 "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          }
+        ]
+      },
+      "graphql.execution.AbortExecutionException": {
+        "line": {
+          "covered": 10,
+          "missed": 11
+        },
+        "branch": {
+          "covered": 2,
+          "missed": 0
+        },
+        "method": {
+          "covered": 4,
+          "missed": 5
+        },
+        "methods": [
+          {
+            "name": "&lt;init&gt;",
+            "desc": "()V",
+            "line": 29,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 3
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Ljava/util/Collection;)V",
+            "line": 33,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Ljava/lang/String;)V",
+            "line": 38,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Ljava/lang/String;Ljava/lang/Throwable;)V",
+            "line": 43,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 3
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "&lt;init&gt;",
+            "desc": "(Ljava/lang/Throwable;)V",
+            "line": 48,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 3
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "getLocations",
+            "desc": "()Ljava/util/List;",
+            "line": 54,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 1
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "getErrorType",
+            "desc": "()Lgraphql/ErrorType;",
+            "line": 59,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 1
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "getUnderlyingErrors",
+            "desc": "()Ljava/util/List;",
+            "line": 66,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "toExecutionResult",
+            "desc": "()Lgraphql/ExecutionResult;",
+            "line": 76,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 2,
                 "missed": 0
               },
               "method": {
@@ -180163,174 +180163,6 @@
           }
         ]
       },
-      "graphql.execution.ValuesResolverLegacy": {
-        "line": {
-          "covered": 50,
-          "missed": 3
-        },
-        "branch": {
-          "covered": 32,
-          "missed": 4
-        },
-        "method": {
-          "covered": 7,
-          "missed": 1
-        },
-        "methods": [
-          {
-            "name": "&lt;init&gt;",
-            "desc": "()V",
-            "line": 44,
-            "counters": {
-              "line": {
-                "covered": 0,
-                "missed": 1
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 0,
-                "missed": 1
-              }
-            }
-          },
-          {
-            "name": "valueToLiteralLegacy",
-            "desc": "(Ljava/lang/Object;Lgraphql/schema/GraphQLType;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
-            "line": 51,
-            "counters": {
-              "line": {
-                "covered": 22,
-                "missed": 2
-              },
-              "branch": {
-                "covered": 23,
-                "missed": 3
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "handleInputObjectLegacy",
-            "desc": "(Ljava/lang/Object;Lgraphql/schema/GraphQLInputObjectType;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
-            "line": 109,
-            "counters": {
-              "line": {
-                "covered": 4,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "handleNumberLegacy",
-            "desc": "(Ljava/lang/String;)Lgraphql/language/Value;",
-            "line": 124,
-            "counters": {
-              "line": {
-                "covered": 3,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 2,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "handleListLegacy",
-            "desc": "(Ljava/lang/Object;Lgraphql/schema/GraphQLList;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
-            "line": 133,
-            "counters": {
-              "line": {
-                "covered": 9,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 4,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "handleNonNullLegacy",
-            "desc": "(Ljava/lang/Object;Lgraphql/schema/GraphQLNonNull;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
-            "line": 146,
-            "counters": {
-              "line": {
-                "covered": 2,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "serializeLegacy",
-            "desc": "(Lgraphql/schema/GraphQLType;Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Object;",
-            "line": 151,
-            "counters": {
-              "line": {
-                "covered": 3,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 2,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "lambda$handleInputObjectLegacy$0",
-            "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;Ljava/util/List;Lgraphql/schema/GraphQLInputObjectField;)V",
-            "line": 112,
-            "counters": {
-              "line": {
-                "covered": 7,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 1,
-                "missed": 1
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          }
-        ]
-      },
       "graphql.execution.ValuesResolverConversion": {
         "line": {
           "covered": 231,
@@ -180793,6 +180625,174 @@
               },
               "branch": {
                 "covered": 5,
+                "missed": 1
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          }
+        ]
+      },
+      "graphql.execution.ValuesResolverLegacy": {
+        "line": {
+          "covered": 50,
+          "missed": 3
+        },
+        "branch": {
+          "covered": 32,
+          "missed": 4
+        },
+        "method": {
+          "covered": 7,
+          "missed": 1
+        },
+        "methods": [
+          {
+            "name": "&lt;init&gt;",
+            "desc": "()V",
+            "line": 44,
+            "counters": {
+              "line": {
+                "covered": 0,
+                "missed": 1
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 0,
+                "missed": 1
+              }
+            }
+          },
+          {
+            "name": "valueToLiteralLegacy",
+            "desc": "(Ljava/lang/Object;Lgraphql/schema/GraphQLType;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
+            "line": 51,
+            "counters": {
+              "line": {
+                "covered": 22,
+                "missed": 2
+              },
+              "branch": {
+                "covered": 23,
+                "missed": 3
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "handleInputObjectLegacy",
+            "desc": "(Ljava/lang/Object;Lgraphql/schema/GraphQLInputObjectType;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
+            "line": 109,
+            "counters": {
+              "line": {
+                "covered": 4,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "handleNumberLegacy",
+            "desc": "(Ljava/lang/String;)Lgraphql/language/Value;",
+            "line": 124,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 2,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "handleListLegacy",
+            "desc": "(Ljava/lang/Object;Lgraphql/schema/GraphQLList;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
+            "line": 133,
+            "counters": {
+              "line": {
+                "covered": 9,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 4,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "handleNonNullLegacy",
+            "desc": "(Ljava/lang/Object;Lgraphql/schema/GraphQLNonNull;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
+            "line": 146,
+            "counters": {
+              "line": {
+                "covered": 2,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "serializeLegacy",
+            "desc": "(Lgraphql/schema/GraphQLType;Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Object;",
+            "line": 151,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 2,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "lambda$handleInputObjectLegacy$0",
+            "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;Ljava/util/List;Lgraphql/schema/GraphQLInputObjectField;)V",
+            "line": 112,
+            "counters": {
+              "line": {
+                "covered": 7,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 1,
                 "missed": 1
               },
               "method": {
@@ -184512,79 +184512,6 @@
           }
         ]
       },
-      "graphql.execution.DefaultValueUnboxer": {
-        "line": {
-          "covered": 21,
-          "missed": 0
-        },
-        "branch": {
-          "covered": 14,
-          "missed": 0
-        },
-        "method": {
-          "covered": 3,
-          "missed": 0
-        },
-        "methods": [
-          {
-            "name": "&lt;init&gt;",
-            "desc": "()V",
-            "line": 18,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "unbox",
-            "desc": "(Ljava/lang/Object;)Ljava/lang/Object;",
-            "line": 23,
-            "counters": {
-              "line": {
-                "covered": 1,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "unboxValue",
-            "desc": "(Ljava/lang/Object;)Ljava/lang/Object;",
-            "line": 28,
-            "counters": {
-              "line": {
-                "covered": 19,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 14,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          }
-        ]
-      },
       "graphql.execution.AbstractAsyncExecutionStrategy": {
         "line": {
           "covered": 10,
@@ -184667,6 +184594,79 @@
               },
               "branch": {
                 "covered": 2,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          }
+        ]
+      },
+      "graphql.execution.DefaultValueUnboxer": {
+        "line": {
+          "covered": 21,
+          "missed": 0
+        },
+        "branch": {
+          "covered": 14,
+          "missed": 0
+        },
+        "method": {
+          "covered": 3,
+          "missed": 0
+        },
+        "methods": [
+          {
+            "name": "&lt;init&gt;",
+            "desc": "()V",
+            "line": 18,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "unbox",
+            "desc": "(Ljava/lang/Object;)Ljava/lang/Object;",
+            "line": 23,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "unboxValue",
+            "desc": "(Ljava/lang/Object;)Ljava/lang/Object;",
+            "line": 28,
+            "counters": {
+              "line": {
+                "covered": 19,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 14,
                 "missed": 0
               },
               "method": {
