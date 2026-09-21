@@ -5,11 +5,6 @@ import graphql.i18n.I18n;
 import graphql.language.SourceLocation;
 import graphql.parser.exceptions.InvalidUnicodeSyntaxException;
 
-import java.io.IOException;
-import java.io.StringWriter;
-
-import static graphql.Assert.assertShouldNeverHappen;
-
 /**
  * Contains Unicode helpers for parsing StringValue types in the grammar
  */
@@ -21,7 +16,7 @@ public class UnicodeUtil {
     public static final int TRAILING_SURROGATE_LOWER_BOUND = 0xDC00;
     public static final int TRAILING_SURROGATE_UPPER_BOUND = 0xDFFF;
 
-    public static int parseAndWriteUnicode(I18n i18n, StringWriter writer, String string, int i, SourceLocation sourceLocation) {
+    public static int parseAndWriteUnicode(I18n i18n, StringBuilder writer, String string, int i, SourceLocation sourceLocation) {
         // Unicode code points can either be:
         //  1. Unbraced: four hex characters in the form \\u597D, or
         //  2. Braced: any number of hex characters surrounded by braces in the form \\u{1F37A}
@@ -108,13 +103,8 @@ public class UnicodeUtil {
         return TRAILING_SURROGATE_LOWER_BOUND <= value && value <= TRAILING_SURROGATE_UPPER_BOUND;
     }
 
-    private static void writeCodePoint(StringWriter writer, int codepoint) {
-        char[] chars = Character.toChars(codepoint);
-        try {
-            writer.write(chars);
-        } catch (IOException e) {
-            assertShouldNeverHappen();
-        }
+    private static void writeCodePoint(StringBuilder writer, int codepoint) {
+        writer.appendCodePoint(codepoint);
     }
 
     private static boolean isBracedEscape(String string, int i) {
