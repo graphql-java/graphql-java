@@ -37,6 +37,24 @@ public class Async {
     public interface CombinedBuilder<T> {
 
         /**
+         * Controls how {@link #await(CompletableFuture, OnCancel)} treats tracked futures that are still
+         * pending when cancellation is signalled before they have all completed.
+         */
+        enum OnCancel {
+            /**
+             * Harvest immediately when cancellation is signalled; any still-pending future becomes {@code null}.
+             * Safe for futures that may block indefinitely on cancellation (for example raw data fetcher futures).
+             */
+            DROP_PENDING,
+            /**
+             * Wait for still-pending futures to settle before harvesting, so their own partial data is
+             * captured. Only safe for cancellation-aware futures that are guaranteed to complete promptly after
+             * cancellation (for example nested object or list results that capture their own partial data).
+             */
+            WAIT_FOR_PENDING
+        }
+
+        /**
          * This adds a {@link CompletableFuture} into the collection of results
          *
          * @param completableFuture the CF to add
@@ -58,18 +76,33 @@ public class Async {
         CompletableFuture<List<T>> await();
 
         /**
-         * Like {@link #await()} but races against the given cancellation future. If the cancellation future
-         * completes before all the tracked futures complete, the already-completed futures will have their
-         * values harvested and returned as partial results (with {@code null} for incomplete entries)
-         * rather than completing exceptionally.
+         * Like {@link #await()} but also waits on the given cancellation future. This waits on two things at
+         * once - all the tracked futures completing, and the cancellation future completing - and proceeds as
+         * soon as either happens. If cancellation is signalled before all the tracked futures have completed,
+         * the already-completed futures have their values harvested and returned as partial results rather than
+         * completing exceptionally.
+         *
+         * <p>The {@code onCancel} policy controls what happens to the tracked futures that are still pending
+         * when cancellation is signalled first:
+         * <ul>
+         *     <li>{@link OnCancel#DROP_PENDING} - harvest immediately, pending futures become {@code null}.
+         *     Use this when the tracked futures may block indefinitely on cancellation (for example raw data
+         *     fetcher futures).</li>
+         *     <li>{@link OnCancel#WAIT_FOR_PENDING} - wait for the still-pending futures to settle before
+         *     harvesting, so their own partial data is captured. Use this only when the tracked futures are
+         *     themselves cancellation-aware and therefore guaranteed to complete promptly after cancellation
+         *     (for example nested object or list results that capture their own partial data on cancel);
+         *     otherwise the returned future may never complete.</li>
+         * </ul>
          *
          * <p>If {@code cancellationFuture} is {@code null}, this behaves identically to {@link #await()}.
          *
          * @param cancellationFuture a future that, when completed, signals cancellation; may be {@code null}
+         * @param onCancel           how to treat still-pending tracked futures if cancellation is signalled first
          *
          * @return a CompletableFuture to a List of values (possibly partial on cancellation)
          */
-        CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture);
+        CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture, OnCancel onCancel);
 
         /**
          * This will return a {@code CompletableFuture<List<T>>} if ANY of the input values are async
@@ -119,7 +152,7 @@ public class Async {
         }
 
         @Override
-        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture, OnCancel onCancel) {
             return await();
         }
 
@@ -168,7 +201,7 @@ public class Async {
         }
 
         @Override
-        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture, OnCancel onCancel) {
             commonSizeAssert();
             if (cancellationFuture == null) {
                 return await();
@@ -181,6 +214,12 @@ public class Async {
                 CompletableFuture.anyOf(valueCF, cancellationFuture).whenComplete((ignored, exception) -> {
                     if (exception != null) {
                         overallResult.completeExceptionally(exception);
+                        return;
+                    }
+                    if (onCancel == OnCancel.WAIT_FOR_PENDING && !valueCF.isDone()) {
+                        // the tracked future is cancellation-aware and will complete promptly - wait for
+                        // its partial data rather than harvesting a null for it (see interface javadoc)
+                        valueCF.whenComplete((v, ex) -> overallResult.complete(Collections.singletonList(doneOrNull(valueCF))));
                         return;
                     }
                     overallResult.complete(Collections.singletonList(doneOrNull(valueCF)));
@@ -279,7 +318,7 @@ public class Async {
         }
 
         @Override
-        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture) {
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture, OnCancel onCancel) {
             commonSizeAssert();
             if (cfCount == 0) {
                 return CompletableFuture.completedFuture(materialisedList(array));
@@ -291,18 +330,27 @@ public class Async {
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
             CompletableFuture<Void> allOf = CompletableFuture.allOf(copyOnlyCFsToArray());
 
-            // Race "all field futures complete" against cancellation. The cancellation future always
-            // completes normally (see ExecutionInput#cancel), so anyOf can only complete exceptionally
-            // when a field future fails - in which case we propagate that failure.
+            // Wait for either "all field futures complete" (allOf) or cancellation, whichever happens
+            // first. The cancellation future always completes normally (see ExecutionInput#cancel), so
+            // anyOf can only complete exceptionally when a field future fails - which we propagate.
             CompletableFuture.anyOf(allOf, cancellationFuture).whenComplete((ignored, exception) -> {
                 if (exception != null) {
                     overallResult.completeExceptionally(exception);
                     return;
                 }
-                // Either every field future is done (allOf won) or cancellation won the race. In both
-                // cases we harvest whatever has completed; field futures that are not yet done become
-                // null. join() is safe here: if allOf is not done then no field future has failed (a
-                // failure would have completed allOf exceptionally and taken the branch above).
+                if (onCancel == OnCancel.WAIT_FOR_PENDING && !allOf.isDone()) {
+                    // Cancellation happened before all the field futures completed, but the caller knows
+                    // every tracked future is itself cancellation-aware and will complete promptly (e.g.
+                    // nested object/list results that harvest their own partial data on cancel). Wait for
+                    // them to settle so we capture that partial data instead of harvesting null for
+                    // entries that are just about to complete.
+                    allOf.whenComplete((ig, ex) -> overallResult.complete(harvestResults(array)));
+                    return;
+                }
+                // Either every field future is done (allOf completed first) or cancellation happened
+                // first. In both cases we harvest whatever has completed; field futures that are not yet
+                // done become null. join() is safe here: if allOf is not done then no field future has
+                // failed (a failure would have completed allOf exceptionally and taken the branch above).
                 overallResult.complete(harvestResults(array));
             });
 

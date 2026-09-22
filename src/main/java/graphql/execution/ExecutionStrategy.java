@@ -46,6 +46,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.LightDataFetcher;
 import graphql.util.FpKit;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +59,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CANCELLATION_FUTURE_KEY;
+import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CAPTURE_PARTIAL_RESULTS_ON_CANCEL;
+import static graphql.execution.Async.CombinedBuilder.OnCancel.DROP_PENDING;
+import static graphql.execution.Async.CombinedBuilder.OnCancel.WAIT_FOR_PENDING;
 import static graphql.execution.Async.exceptionallyCompletedFuture;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
@@ -218,21 +223,39 @@ public abstract class ExecutionStrategy {
 
         resolveObjectCtx.onDispatched();
 
-        Object fieldValueInfosResult = resolvedFieldFutures.awaitPolymorphic();
+        CompletableFuture<Void> cancelCF = getCancellationFuture(executionContext);
+        Object fieldValueInfosResult;
+        if (cancelCF == null) {
+            fieldValueInfosResult = resolvedFieldFutures.awaitPolymorphic();
+        } else {
+            // When capturePartialResults(..) is enabled we gather the field value infos but stop
+            // waiting as soon as cancellation is signalled. Otherwise a single slow sub-field (whose
+            // data fetcher returns a not-yet-complete future) would block this object from producing
+            // any partial result at all, since resolveFieldWithInfo folds the fetch into the
+            // FieldValueInfo future. On cancellation the list may contain null entries for the
+            // sub-fields that had not completed yet.
+            fieldValueInfosResult = resolvedFieldFutures.await(cancelCF, DROP_PENDING);
+        }
         if (fieldValueInfosResult instanceof CompletableFuture) {
             CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
             fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
                 throwable = executionContext.possibleCancellation(throwable);
 
-                if (throwable != null) {
+                if (throwable != null && !(completeValueInfos != null && capturePartialResults(executionContext))) {
+                    // a genuine field failure, or a cancellation we cannot surface partial results for
                     handleResultsConsumer.accept(null, throwable);
                     return;
                 }
 
+                // completeValueInfos may contain null entries for sub-fields that were cancelled
+                // before completing; the builder tolerates those and turns them into null values
                 Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
-                dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
-                resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
-                resultFutures.await().whenComplete(handleResultsConsumer);
+                List<FieldValueInfo> valueInfosForInstrumentation = nonNullFieldValueInfos(completeValueInfos);
+                dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(valueInfosForInstrumentation, parameters);
+                resolveObjectCtx.onFieldValuesInfo(valueInfosForInstrumentation);
+                // value-phase futures are cancellation-aware (nested object/list results self-complete
+                // with their own partial data on cancel), so wait for them to settle on cancel
+                resultFutures.await(cancelCF, WAIT_FOR_PENDING).whenComplete(handleResultsConsumer);
             }).exceptionally((ex) -> {
                 // if there are any issues with combining/handling the field results,
                 // complete the future at all costs and bubble up any thrown exception so
@@ -265,12 +288,63 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    private static Async.@NonNull CombinedBuilder<Object> fieldValuesCombinedBuilder(List<FieldValueInfo> completeValueInfos) {
+    protected static Async.@NonNull CombinedBuilder<Object> fieldValuesCombinedBuilder(List<FieldValueInfo> completeValueInfos) {
         Async.CombinedBuilder<Object> resultFutures = Async.ofExpectedSize(completeValueInfos.size());
         for (FieldValueInfo completeValueInfo : completeValueInfos) {
-            resultFutures.addObject(completeValueInfo.getFieldValueObject());
+            // a null FieldValueInfo only happens when capturePartialResults(..) is enabled and a
+            // sub-field was cancelled before it completed - it becomes a null field value in the result
+            resultFutures.addObject(completeValueInfo != null ? completeValueInfo.getFieldValueObject() : null);
         }
         return resultFutures;
+    }
+
+    @DuckTyped(shape = "CompletableFuture<List<Object>> | List<Object>")
+    private static Object awaitListElementValues(List<FieldValueInfo> fieldValueInfos, @Nullable CompletableFuture<Void> cancelCF) {
+        if (cancelCF == null) {
+            // no cancellation in play - keep the existing (cheaper) path unchanged
+            return Async.eachPolymorphic(fieldValueInfos, FieldValueInfo::getFieldValueObject);
+        }
+        // Wait for the list element values, but stop waiting when cancellation is signalled. List
+        // elements are cancellation-aware (nested object/list elements self-complete with their own
+        // partial data on cancel, and scalar/enum elements are already materialised), so on cancel we
+        // wait for them to settle and harvest their partial data rather than blocking the whole list
+        // on one slow element.
+        return fieldValuesCombinedBuilder(fieldValueInfos).await(cancelCF, WAIT_FOR_PENDING);
+    }
+
+    protected static List<FieldValueInfo> nonNullFieldValueInfos(List<FieldValueInfo> completeValueInfos) {
+        boolean hasNulls = completeValueInfos.contains(null);
+        if (!hasNulls) {
+            return completeValueInfos;
+        }
+        List<FieldValueInfo> result = new ArrayList<>(completeValueInfos.size());
+        for (FieldValueInfo completeValueInfo : completeValueInfos) {
+            if (completeValueInfo != null) {
+                result.add(completeValueInfo);
+            }
+        }
+        return result;
+    }
+
+    protected boolean capturePartialResults(ExecutionContext executionContext) {
+        return executionContext.getGraphQLContext().getBoolean(CAPTURE_PARTIAL_RESULTS_ON_CANCEL);
+    }
+
+    /**
+     * Returns the cancellation future from the execution context if partial result capture is enabled,
+     * or {@code null} otherwise. This is passed into
+     * {@link Async.CombinedBuilder#await(CompletableFuture, Async.CombinedBuilder.OnCancel)} so that the generic
+     * utility can stop waiting when cancellation is signalled, without needing to know about GraphQL context.
+     *
+     * @param executionContext the execution context
+     *
+     * @return the cancellation future, or {@code null} if partial results on cancel is not enabled
+     */
+    protected @Nullable CompletableFuture<Void> getCancellationFuture(ExecutionContext executionContext) {
+        if (!capturePartialResults(executionContext)) {
+            return null;
+        }
+        return executionContext.getGraphQLContext().get(CANCELLATION_FUTURE_KEY);
     }
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
@@ -278,12 +352,24 @@ public abstract class ExecutionStrategy {
             exception = executionContext.possibleCancellation(exception);
 
             if (exception != null) {
+                Throwable cause = exception instanceof CompletionException ? exception.getCause() : exception;
+                if (cause instanceof AbortExecutionException && results != null
+                        && capturePartialResults(executionContext)) {
+                    // partial results mode: results already has harvested values from completed CFs
+                    executionContext.addError((AbortExecutionException) cause);
+                    completeFieldValueMap(overallResult, executionContext, fieldNames, results);
+                    return;
+                }
                 handleValueException(overallResult, exception, executionContext);
                 return;
             }
-            Map<String, Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldNames, results);
-            overallResult.complete(resolvedValuesByField);
+            completeFieldValueMap(overallResult, executionContext, fieldNames, results);
         };
+    }
+
+    protected void completeFieldValueMap(CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext, List<String> fieldNames, List<Object> results) {
+        Map<String, Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldNames, results);
+        overallResult.complete(resolvedValuesByField);
     }
 
     DeferredExecutionSupport createDeferredExecutionSupport(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -826,7 +912,8 @@ public abstract class ExecutionStrategy {
             index++;
         }
 
-        Object listResults = Async.eachPolymorphic(fieldValueInfos, FieldValueInfo::getFieldValueObject);
+        CompletableFuture<Void> cancelCF = getCancellationFuture(executionContext);
+        Object listResults = awaitListElementValues(fieldValueInfos, cancelCF);
         Object listOrPromiseToList;
         if (listResults instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
@@ -839,6 +926,18 @@ public abstract class ExecutionStrategy {
                 exception = executionContext.possibleCancellation(exception);
 
                 if (exception != null) {
+                    // On cancellation possibleCancellation(..) yields a bare AbortExecutionException on top of
+                    // a successful (non-null) results list; a genuine field failure completes exceptionally
+                    // with results == null and a non-abort exception, which falls through to handleValueException.
+                    if (exception instanceof AbortExecutionException && capturePartialResults(executionContext)) {
+                        // capturePartialResults(..) is enabled: results already holds the harvested
+                        // element values (with nulls for elements whose sub-fields were still pending on cancel)
+                        executionContext.addError((AbortExecutionException) exception);
+                        List<Object> partialResults = new ArrayList<>(results.size());
+                        partialResults.addAll(results);
+                        overallResult.complete(partialResults);
+                        return;
+                    }
                     handleValueException(overallResult, exception, executionContext);
                     return;
                 }

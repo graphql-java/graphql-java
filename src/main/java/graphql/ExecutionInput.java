@@ -11,7 +11,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CompletableFuture;
+
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -34,7 +35,7 @@ public class ExecutionInput {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final ExecutionId executionId;
     private final Locale locale;
-    private final AtomicBoolean cancelled;
+    private final CompletableFuture<Void> cancellationFuture;
     private final boolean profileExecution;
 
     /**
@@ -60,7 +61,7 @@ public class ExecutionInput {
         this.locale = builder.locale != null ? builder.locale : Locale.getDefault(); // always have a locale in place
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
-        this.cancelled = builder.cancelled;
+        this.cancellationFuture = builder.cancellationFuture;
         this.profileExecution = builder.profileExecution;
     }
 
@@ -211,7 +212,7 @@ public class ExecutionInput {
      * @return true if the execution should be cancelled
      */
     public boolean isCancelled() {
-        return cancelled.get();
+        return cancellationFuture.isDone();
     }
 
     /**
@@ -219,7 +220,18 @@ public class ExecutionInput {
      * and the graphql engine needs to be running on a thread to allow is to respect this flag.
      */
     public void cancel() {
-        cancelled.set(true);
+        cancellationFuture.complete(null);
+    }
+
+    /**
+     * Returns a {@link CompletableFuture} that completes when {@link #cancel()} is called.
+     * This allows async code to race against cancellation without polling.
+     *
+     * @return a future that completes (with null) when this execution is cancelled
+     */
+    @Internal
+    public CompletableFuture<Void> getCancellationFuture() {
+        return cancellationFuture;
     }
 
 
@@ -241,7 +253,7 @@ public class ExecutionInput {
                 .operationName(this.operationName)
                 .context(this.context)
                 .internalTransferContext(this.graphQLContext)
-                .internalTransferCancelBoolean(this.cancelled)
+                .internalTransferCancellationFuture(this.cancellationFuture)
                 .localContext(this.localContext)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
@@ -306,7 +318,7 @@ public class ExecutionInput {
         private DataLoaderRegistry dataLoaderRegistry = EMPTY_DATALOADER_REGISTRY;
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
-        private AtomicBoolean cancelled = new AtomicBoolean(false);
+        private CompletableFuture<Void> cancellationFuture = new CompletableFuture<>();
         private boolean profileExecution;
 
         /**
@@ -412,9 +424,8 @@ public class ExecutionInput {
             return this;
         }
 
-        // hidden on purpose
-        private Builder internalTransferCancelBoolean(AtomicBoolean cancelled) {
-            this.cancelled = cancelled;
+        private Builder internalTransferCancellationFuture(CompletableFuture<Void> cancellationFuture) {
+            this.cancellationFuture = cancellationFuture;
             return this;
         }
 
