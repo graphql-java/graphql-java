@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 
@@ -8,6 +9,7 @@ import java.util.List;
  * A GraphQLType which can implement interfaces
  */
 @PublicApi
+@NullMarked
 public interface GraphQLImplementingType extends GraphQLFieldsContainer {
     /**
      * @return This returns GraphQLInterface or GraphQLTypeReference instances, if the type

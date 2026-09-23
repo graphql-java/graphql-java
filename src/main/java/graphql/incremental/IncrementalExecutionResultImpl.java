@@ -3,6 +3,8 @@ package graphql.incremental;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.ExperimentalApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
@@ -13,9 +15,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 @ExperimentalApi
+@NullMarked
 public class IncrementalExecutionResultImpl extends ExecutionResultImpl implements IncrementalExecutionResult {
     private final boolean hasNext;
-    private final List<IncrementalPayload> incremental;
+    private final @Nullable List<IncrementalPayload> incremental;
     private final Publisher<DelayedIncrementalPartialResult> incrementalItemPublisher;
 
     private IncrementalExecutionResultImpl(Builder builder) {
@@ -79,6 +82,7 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
         return map;
     }
 
+    @NullUnmarked
     public static class Builder extends ExecutionResultImpl.Builder<Builder> {
         private boolean hasNext = true;
         public List<IncrementalPayload> incremental;

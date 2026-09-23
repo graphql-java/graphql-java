@@ -1068,7 +1068,7 @@ public class AstSignature {
 
     private Document transformDoc(Document document, NodeVisitorStub visitor) {
         AstTransformer astTransformer = new AstTransformer();
-        Node<?> newDoc = astTransformer.transform(document, visitor);
+        Node<?> newDoc = assertNotNull(astTransformer.transform(document, visitor));
         return (Document) newDoc;
     }
 

@@ -1,6 +1,8 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +13,7 @@ import java.util.Map;
  * interface returned via {@link DataFetchingEnvironment#getSelectionSet()}
  */
 @PublicApi
+@NullMarked
 public interface SelectedField {
     /**
      * @return the simple name of the selected field
@@ -71,7 +74,7 @@ public interface SelectedField {
     /**
      * @return the alias of the selected field or null if not alias was used
      */
-    String getAlias();
+    @Nullable String getAlias();
 
     /**
      * The result key is either the field query alias OR the field name in that preference order
@@ -86,7 +89,7 @@ public interface SelectedField {
      *
      * @return the fields selected parent or null if there is not one
      */
-    SelectedField getParentField();
+    @Nullable SelectedField getParentField();
 
     /**
      * @return a sub selection set (if it has any)

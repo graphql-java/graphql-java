@@ -2,10 +2,13 @@ package graphql.schema.idl;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
 @PublicApi
+@NullMarked
 public class MapEnumValuesProvider implements EnumValuesProvider {
 
 
@@ -17,7 +20,7 @@ public class MapEnumValuesProvider implements EnumValuesProvider {
     }
 
     @Override
-    public Object getValue(String name) {
+    public @Nullable Object getValue(String name) {
         return values.get(name);
     }
 }

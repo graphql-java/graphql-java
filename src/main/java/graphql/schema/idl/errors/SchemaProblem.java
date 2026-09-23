@@ -4,6 +4,7 @@ import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.schema.idl.SchemaParser;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.List;
  * exception as a list of {@link GraphQLError}s
  */
 @PublicApi
+@NullMarked
 public class SchemaProblem extends GraphQLException {
 
     private final List<GraphQLError> errors;

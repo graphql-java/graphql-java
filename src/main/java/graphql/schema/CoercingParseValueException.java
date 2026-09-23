@@ -4,8 +4,12 @@ import graphql.ErrorType;
 import graphql.GraphqlErrorException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 @PublicApi
+@NullMarked
 public class CoercingParseValueException extends GraphqlErrorException {
 
     public CoercingParseValueException() {
@@ -24,7 +28,7 @@ public class CoercingParseValueException extends GraphqlErrorException {
         this(newCoercingParseValueException().cause(cause));
     }
 
-    public CoercingParseValueException(String message, Throwable cause, SourceLocation sourceLocation) {
+    public CoercingParseValueException(String message, @Nullable Throwable cause, @Nullable SourceLocation sourceLocation) {
         this(newCoercingParseValueException().message(message).cause(cause).sourceLocation(sourceLocation));
     }
 
@@ -41,6 +45,7 @@ public class CoercingParseValueException extends GraphqlErrorException {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder extends BuilderBase<Builder,CoercingParseValueException> {
         public CoercingParseValueException build() {
             return new CoercingParseValueException(this);

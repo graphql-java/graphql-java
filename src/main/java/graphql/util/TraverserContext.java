@@ -1,6 +1,8 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ import java.util.Set;
  * @param <T> type of tree node
  */
 @PublicApi
+@NullMarked
 public interface TraverserContext<T> {
 
     enum Phase {
@@ -34,14 +37,14 @@ public interface TraverserContext<T> {
      *
      * @throws graphql.AssertException if the current node is deleted
      */
-    T thisNode();
+    @Nullable T thisNode();
 
     /**
      * Returns the original, unchanged, not deleted Node.
      *
      * @return the original node
      */
-    T originalThisNode();
+    @Nullable T originalThisNode();
 
     /**
      * Change the current node to the provided node. Only applicable in enter.
@@ -78,7 +81,7 @@ public interface TraverserContext<T> {
      *
      * @return context associated with the node parent
      */
-    TraverserContext<T> getParentContext();
+    @Nullable TraverserContext<T> getParentContext();
 
     /**
      * The list of parent nodes starting from the current parent.
@@ -92,7 +95,7 @@ public interface TraverserContext<T> {
      *
      * @return The parent node.
      */
-    T getParentNode();
+    @Nullable T getParentNode();
 
 
     /**
@@ -107,7 +110,7 @@ public interface TraverserContext<T> {
      *
      * @return the position or null if this node is a root node
      */
-    NodeLocation getLocation();
+    @Nullable NodeLocation getLocation();
 
     /**
      * Informs that the current node has been already "visited"
@@ -132,7 +135,7 @@ public interface TraverserContext<T> {
      *
      * @return a variable value or {@code null}
      */
-    <S> S getVar(Class<? super S> key);
+    <S> @Nullable S getVar(Class<? super S> key);
 
     /**
      * Searches for a context variable starting from the parent
@@ -143,7 +146,7 @@ public interface TraverserContext<T> {
      *
      * @return a variable value or {@code null}
      */
-    <S> S getVarFromParents(Class<? super S> key);
+    <S> @Nullable S getVarFromParents(Class<? super S> key);
 
     /**
      * Stores a variable in the context

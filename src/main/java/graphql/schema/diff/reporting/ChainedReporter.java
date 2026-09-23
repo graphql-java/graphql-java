@@ -2,6 +2,7 @@ package graphql.schema.diff.reporting;
 
 import graphql.PublicApi;
 import graphql.schema.diff.DiffEvent;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.List;
  * A reporter that chains together one or more difference reporters
  */
 @PublicApi
+@NullMarked
 public class ChainedReporter implements DifferenceReporter {
     private final List<DifferenceReporter> reporters;
 

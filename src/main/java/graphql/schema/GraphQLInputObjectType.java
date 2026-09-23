@@ -19,7 +19,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -35,13 +37,14 @@ import static graphql.util.FpKit.getByName;
  * See <a href="https://graphql.org/learn/schema/#input-types">https://graphql.org/learn/schema/#input-types</a> for more details on the concept
  */
 @PublicApi
+@NullMarked
 public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer, GraphQLDirectiveContainer {
 
     private final String name;
     private final boolean isOneOf;
-    private final String description;
+    private final @Nullable String description;
     private final ImmutableMap<String, GraphQLInputObjectField> fieldMap;
-    private final InputObjectTypeDefinition definition;
+    private final @Nullable InputObjectTypeDefinition definition;
     private final ImmutableList<InputObjectTypeExtensionDefinition> extensionDefinitions;
     private final DirectivesUtil.DirectivesHolder directives;
 
@@ -49,11 +52,11 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     @Internal
     private GraphQLInputObjectType(String name,
-                                   String description,
+                                   @Nullable String description,
                                    List<GraphQLInputObjectField> fields,
                                    List<GraphQLDirective> directives,
                                    List<GraphQLAppliedDirective> appliedDirectives,
-                                   InputObjectTypeDefinition definition,
+                                   @Nullable InputObjectTypeDefinition definition,
                                    List<InputObjectTypeExtensionDefinition> extensionDefinitions) {
         assertValidName(name);
         assertNotNull(fields, "fields can't be null");
@@ -100,7 +103,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         return isOneOf;
     }
 
-    public String getDescription() {
+    public @Nullable String getDescription() {
         return description;
     }
 
@@ -108,7 +111,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         return getFieldDefinitions();
     }
 
-    public GraphQLInputObjectField getField(String name) {
+    public @Nullable GraphQLInputObjectField getField(String name) {
         return fieldMap.get(name);
     }
 
@@ -148,7 +151,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     }
 
     @Override
-    public GraphQLInputObjectField getFieldDefinition(String name) {
+    public @Nullable GraphQLInputObjectField getFieldDefinition(String name) {
         return fieldMap.get(name);
     }
 
@@ -158,7 +161,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         return values instanceof ImmutableList<?> ? (ImmutableList<GraphQLInputObjectField>) values : ImmutableList.copyOf(values);
     }
 
-    public InputObjectTypeDefinition getDefinition() {
+    public @Nullable InputObjectTypeDefinition getDefinition() {
         return definition;
     }
 

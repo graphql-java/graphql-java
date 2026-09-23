@@ -2,6 +2,8 @@ package graphql.util;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +20,7 @@ import static graphql.Assert.assertTrue;
 import static graphql.util.NodeZipper.ModificationType.REPLACE;
 
 @PublicApi
+@NullMarked
 public class NodeMultiZipper<T> {
 
     private final T commonRoot;
@@ -33,7 +36,7 @@ public class NodeMultiZipper<T> {
     /*
      * constructor without defensive copy of the zippers
      */
-    private NodeMultiZipper(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter, Object dummy) {
+    private NodeMultiZipper(T commonRoot, List<NodeZipper<T>> zippers, NodeAdapter<T> nodeAdapter, @Nullable Object dummy) {
         this.commonRoot = assertNotNull(commonRoot);
         this.zippers = ImmutableList.copyOf(zippers);
         this.nodeAdapter = nodeAdapter;
@@ -49,7 +52,7 @@ public class NodeMultiZipper<T> {
     /**
      * @return can be null if the root node is marked as deleted
      */
-    public T toRootNode() {
+    public @Nullable T toRootNode() {
         if (zippers.size() == 0) {
             return commonRoot;
         }
@@ -88,7 +91,7 @@ public class NodeMultiZipper<T> {
         return zippers.size();
     }
 
-    public NodeZipper<T> getZipperForNode(T node) {
+    public @Nullable NodeZipper<T> getZipperForNode(T node) {
         return FpKit.findOneOrNull(zippers, zipper -> zipper.getCurNode() == node);
     }
 
@@ -125,7 +128,7 @@ public class NodeMultiZipper<T> {
         Map<Integer, ImmutableList<NodeZipper<T>>> grouped = FpKit.groupingBy(zippers, astZipper -> astZipper.getBreadcrumbs().size());
 
         Integer maxLevel = Collections.max(grouped.keySet());
-        return grouped.get(maxLevel);
+        return assertNotNull(grouped.get(maxLevel), "expected grouped to contain maxLevel key");
     }
 
     private NodeZipper<T> moveUp(T parent, List<NodeZipper<T>> sameParent) {
