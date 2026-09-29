@@ -1010,6 +1010,22 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
     }
 
     @Unroll
+    def "float literal with out-of-range exponent #value is a syntax error"() {
+        when:
+        Parser.parse(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+        e.message.contains("Invalid floating point value")
+
+        where:
+        input                                          | value
+        'query($x: Float = 1.0e9999999999) {foo}'      | '1.0e9999999999 (variable default value)'
+        'query($x: Float = [1.0e9999999999]) {foo}'    | '1.0e9999999999 (nested in list default)'
+        '{foo(arg: 1.0e9999999999)}'                   | '1.0e9999999999 (argument value)'
+    }
+
+    @Unroll
     def 'parse ast field definition #valueLiteral'() {
         expect:
         def fieldDefinition = Parser.parseFieldDefinition(valueLiteral)
