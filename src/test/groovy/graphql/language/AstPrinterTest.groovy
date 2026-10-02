@@ -590,6 +590,26 @@ scalar Demo
 '''
     }
 
+    def "escapes triple quotes in multi line descriptions"() {
+        def query = '''
+"""
+x \\""" scalar Injected \\"""
+"""
+scalar Demo
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''"""
+x \\""" scalar Injected \\"""
+"""
+scalar Demo
+'''
+        isParseableAst(output)
+        parse(output).definitions.collect { it.name } == ["Demo"]
+    }
+
     def "print type extensions"() {
         def query = '''
     extend schema {

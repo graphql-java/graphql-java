@@ -15,6 +15,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.util.EscapeUtil.escapeBlockString;
 import static graphql.util.EscapeUtil.escapeJsonStringTo;
 
 /**
@@ -700,7 +701,7 @@ public class AstPrinter {
             if (description.getContent().isEmpty() || description.getContent().charAt(0) != '\n') {
                 out.append('\n');
             }
-            out.append(description.getContent());
+            out.append(escapeBlockString(description.getContent()));
             out.append("\n\"\"\"\n");
         } else {
             out.append('"');

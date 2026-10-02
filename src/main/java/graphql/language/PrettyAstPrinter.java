@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
 import static graphql.parser.ParserEnvironment.newParserEnvironment;
+import static graphql.util.EscapeUtil.escapeBlockString;
+import static graphql.util.EscapeUtil.escapeJsonString;
 
 /**
  * A printer that acts as a code formatter.
@@ -285,9 +287,9 @@ public class PrettyAstPrinter extends AstPrinter {
         String s;
         boolean startNewLine = description.getContent().length() > 0 && description.getContent().charAt(0) == '\n';
         if (description.isMultiLine()) {
-            s = "\"\"\"" + (startNewLine ? "" : "\n") + description.getContent() + "\n\"\"\"\n";
+            s = "\"\"\"" + (startNewLine ? "" : "\n") + escapeBlockString(description.getContent()) + "\n\"\"\"\n";
         } else {
-            s = "\"" + description.getContent() + "\"\n";
+            s = "\"" + escapeJsonString(description.getContent()) + "\"\n";
         }
         return s;
     }
