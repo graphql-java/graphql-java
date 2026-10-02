@@ -515,6 +515,44 @@ a: A, b: B): Type
         result == expected
     }
 
+    def "escapes triple quotes in multi line descriptions"() {
+        given:
+        def input = '''
+"""
+x \\""" scalar Injected \\"""
+"""
+scalar Demo
+'''
+
+        def expected = '''"""
+x \\""" scalar Injected \\"""
+"""
+scalar Demo
+'''
+        when:
+        def result = print(input)
+
+        then:
+        result == expected
+    }
+
+    def "escapes single line descriptions"() {
+        given:
+        def input = '''
+"x \\" scalar Injected \\""
+scalar Demo
+'''
+
+        def expected = '''"x \\" scalar Injected \\""
+scalar Demo
+'''
+        when:
+        def result = print(input)
+
+        then:
+        result == expected
+    }
+
     private static String print(String input) {
         return PrettyAstPrinter.print(input, PrettyAstPrinter.PrettyPrinterOptions.defaultOptions())
     }
