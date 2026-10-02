@@ -604,6 +604,51 @@ class SubscriptionExecutionStrategyTest extends Specification {
         }
     }
 
+    def "subscription event DataFetcherResult extensions are included on the emitted ExecutionResult"() {
+
+        DataFetcher newMessageDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                def objectMaker = { int index ->
+                    def message = new Message("sender" + index, "text" + index)
+                    return DataFetcherResult.newResult()
+                            .data(message)
+                            .extensions(["eventKey": "event-" + index])
+                            .build()
+                }
+                return new ReactiveStreamsObjectPublisher(3, objectMaker)
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 3
+        for (int i = 0; i < messages.size(); i++) {
+            def message = messages[i]
+            assert message.data == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+            assert message.extensions == [eventKey: "event-" + i]
+        }
+    }
+
     def "instrumentation gets called on subscriptions"() {
 
         //
