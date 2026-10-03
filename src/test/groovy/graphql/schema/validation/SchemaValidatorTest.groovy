@@ -12,7 +12,7 @@ class SchemaValidatorTest extends Specification {
         def rules = validator.rules
         then:
         rules.size() == 10
-        rules[0] instanceof NoUnbrokenInputCycles
+        rules[0] instanceof InputObjectHasUnbreakableCycle
         rules[1] instanceof NoDefaultValueCircularRefs
         rules[2] instanceof TypesImplementInterfaces
         rules[3] instanceof TypeAndFieldRule
