@@ -2,6 +2,7 @@ package graphql.schema.validation;
 
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 
 /**
@@ -9,6 +10,7 @@ import graphql.PublicApi;
  * and all the error classifications implement this interface.
  */
 @PublicApi
+@NullMarked
 public interface SchemaValidationErrorClassification {
 
 }

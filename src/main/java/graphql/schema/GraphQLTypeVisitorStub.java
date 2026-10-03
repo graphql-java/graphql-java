@@ -3,6 +3,7 @@ package graphql.schema;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 import static graphql.util.TraversalControl.CONTINUE;
 
@@ -11,6 +12,7 @@ import static graphql.util.TraversalControl.CONTINUE;
  * Overwrite only required methods and/or {@link #visitGraphQLType(GraphQLSchemaElement, TraverserContext)} as default fallback.
  */
 @PublicApi
+@NullMarked
 public class GraphQLTypeVisitorStub implements GraphQLTypeVisitor {
 
     @Override

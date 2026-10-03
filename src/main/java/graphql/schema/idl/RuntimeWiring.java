@@ -16,7 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
@@ -27,6 +29,7 @@ import static java.lang.String.format;
  * to wire together a functional {@link GraphQLSchema}
  */
 @PublicApi
+@NullMarked
 public class RuntimeWiring {
 
     private final Map<String, Map<String, DataFetcher>> dataFetchers;
@@ -143,7 +146,7 @@ public class RuntimeWiring {
         return dataFetchers.computeIfAbsent(typeName, k -> new LinkedHashMap<>());
     }
 
-    public DataFetcher getDefaultDataFetcherForType(String typeName) {
+    public @Nullable DataFetcher getDefaultDataFetcherForType(String typeName) {
         return defaultDataFetchers.get(typeName);
     }
 

@@ -2,6 +2,8 @@ package graphql.schema.idl;
 
 import graphql.PublicApi;
 import graphql.schema.DataFetcher;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.TypeResolver;
@@ -17,6 +19,7 @@ import static graphql.Assert.assertShouldNeverHappen;
  * whether it handles a type and delegates to the first one to answer yes.
  */
 @PublicApi
+@NullMarked
 public class CombinedWiringFactory implements WiringFactory {
     private final List<WiringFactory> factories;
 
@@ -146,7 +149,7 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
+    public @Nullable DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
         for (WiringFactory factory : factories) {
             if (factory.getDefaultDataFetcher(environment) != null) {
                 return factory.getDefaultDataFetcher(environment);
