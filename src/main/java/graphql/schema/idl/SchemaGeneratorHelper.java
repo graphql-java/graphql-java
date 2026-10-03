@@ -84,6 +84,7 @@ import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.NO_LONGER_SUPPORTED;
 import static graphql.Directives.ONE_OF_DIRECTIVE_DEFINITION;
+import static graphql.Directives.SEMANTIC_NON_NULL_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SkipDirective;
 import static graphql.Directives.SpecifiedByDirective;
@@ -1099,6 +1100,7 @@ public class SchemaGeneratorHelper {
         typeRegistry.add(DEPRECATED_DIRECTIVE_DEFINITION);
         typeRegistry.add(SPECIFIED_BY_DIRECTIVE_DEFINITION);
         typeRegistry.add(ONE_OF_DIRECTIVE_DEFINITION);
+        typeRegistry.add(SEMANTIC_NON_NULL_DIRECTIVE_DEFINITION);
     }
 
     private Optional<OperationTypeDefinition> getOperationNamed(String name, Map<String, OperationTypeDefinition> operationTypeDefs) {
