@@ -873,18 +873,22 @@ public class OperationValidator implements DocumentVisitor {
         String fieldName = field.getName();
         String key = null;
 
-        // Check query-level introspection fields (__schema, __type).
-        // Only counted at the structural level (not during fragment traversal) to match ENO merging
-        // behavior where the same field from a direct selection and a fragment spread merge into one.
-        if (shouldRunDocumentLevelRules()) {
-            GraphQLObjectType queryType = validationContext.getSchema().getQueryType();
-            if (parentType.getName().equals(queryType.getName())) {
-                if (Introspection.SchemaMetaFieldDef.getName().equals(fieldName) || Introspection.TypeMetaFieldDef.getName().equals(fieldName)) {
+        // Detect query-level introspection fields (__schema, __type) and tighten the complexity
+        // limits to the good faith bounds. Detection has to run during fragment spread traversal
+        // too, otherwise a __schema/__type reached only through a fragment keeps the looser default
+        // limits and the good faith field count / depth caps are never applied.
+        GraphQLObjectType queryType = validationContext.getSchema().getQueryType();
+        if (queryType != null && parentType.getName().equals(queryType.getName())) {
+            if (Introspection.SchemaMetaFieldDef.getName().equals(fieldName) || Introspection.TypeMetaFieldDef.getName().equals(fieldName)) {
+                if (!introspectionQueryDetected) {
+                    introspectionQueryDetected = true;
+                    complexityLimits = GoodFaithIntrospection.goodFaithLimits(complexityLimits);
+                }
+                // The once-per-operation cap stays at the structural level, so a __schema/__type
+                // that appears both directly and via a fragment spread (ENO merges these into one)
+                // is not falsely flagged as asking twice.
+                if (shouldRunDocumentLevelRules()) {
                     key = parentType.getName() + "." + fieldName;
-                    if (!introspectionQueryDetected) {
-                        introspectionQueryDetected = true;
-                        complexityLimits = GoodFaithIntrospection.goodFaithLimits(complexityLimits);
-                    }
                 }
             }
         }
