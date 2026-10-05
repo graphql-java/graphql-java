@@ -244,6 +244,50 @@ class GoodFaithIntrospectionTest extends Specification {
         er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
     }
 
+    def "wide introspection via fragment spread is detected as bad faith"() {
+        given:
+        // non cycle-forming fields (aliases of 'name') so the tooManyFields cap does not fire;
+        // __schema is reached only through the fragment spread
+        def sb = new StringBuilder()
+        sb.append("query { ...F } fragment F on Query { __schema { types { ")
+        for (int i = 0; i < 510; i++) {
+            sb.append("a${i}: name ")
+        }
+        sb.append("} } }")
+
+        when:
+        ExecutionResult er = graphql.execute(sb.toString())
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0].message.contains("too big")
+    }
+
+    def "deep introspection via fragment spread is detected as bad faith"() {
+        given:
+        // ofType is not a cycle-forming field, so depth is only bounded by the good faith limit;
+        // __schema is reached only through the fragment spread
+        def sb = new StringBuilder()
+        sb.append("query { ...F } fragment F on Query { __schema { types { ")
+        for (int i = 0; i < 25; i++) {
+            sb.append("ofType { ")
+        }
+        sb.append("name ")
+        for (int i = 0; i < 25; i++) {
+            sb.append("} ")
+        }
+        sb.append("} } }")
+
+        when:
+        ExecutionResult er = graphql.execute(sb.toString())
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0].message.contains("too big")
+    }
+
     def "good faith limits are applied on top of custom user limits"() {
         given:
         def limits = QueryComplexityLimits.newLimits().maxFieldsCount(200).maxDepth(15).build()
