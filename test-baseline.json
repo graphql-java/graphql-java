@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5955,
-      "passed": 5899,
+      "total": 5957,
+      "passed": 5901,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5955,
-      "passed": 5898,
+      "total": 5957,
+      "passed": 5900,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5955,
-      "passed": 5898,
+      "total": 5957,
+      "passed": 5900,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5955,
-      "passed": 5898,
+      "total": 5957,
+      "passed": 5900,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -40,7 +40,7 @@
     "overall": {
       "branch": {
         "covered": 8835,
-        "missed": 1517
+        "missed": 1519
       },
       "line": {
         "covered": 30136,
@@ -179124,8 +179124,8 @@
           "missed": 12
         },
         "branch": {
-          "covered": 119,
-          "missed": 11
+          "covered": 118,
+          "missed": 12
         },
         "method": {
           "covered": 67,
@@ -180377,8 +180377,8 @@
                 "missed": 0
               },
               "branch": {
-                "covered": 10,
-                "missed": 0
+                "covered": 9,
+                "missed": 1
               },
               "method": {
                 "covered": 1,
@@ -187575,7 +187575,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Ljava/lang/String;Ljava/util/List;)V",
-            "line": 1772,
+            "line": 1776,
             "counters": {
               "line": {
                 "covered": 5,
@@ -187599,8 +187599,8 @@
           "missed": 19
         },
         "branch": {
-          "covered": 770,
-          "missed": 46
+          "covered": 771,
+          "missed": 47
         },
         "method": {
           "covered": 129,
@@ -188453,8 +188453,8 @@
                 "missed": 0
               },
               "branch": {
-                "covered": 26,
-                "missed": 0
+                "covered": 27,
+                "missed": 1
               },
               "method": {
                 "covered": 1,
@@ -188465,7 +188465,7 @@
           {
             "name": "checkInlineFragment",
             "desc": "(Lgraphql/language/InlineFragment;)V",
-            "line": 911,
+            "line": 915,
             "counters": {
               "line": {
                 "covered": 8,
@@ -188484,7 +188484,7 @@
           {
             "name": "checkDirective",
             "desc": "(Lgraphql/language/Directive;Ljava/util/List;)V",
-            "line": 925,
+            "line": 929,
             "counters": {
               "line": {
                 "covered": 15,
@@ -188503,7 +188503,7 @@
           {
             "name": "checkFragmentSpread",
             "desc": "(Lgraphql/language/FragmentSpread;Ljava/util/List;)V",
-            "line": 950,
+            "line": 954,
             "counters": {
               "line": {
                 "covered": 36,
@@ -188522,7 +188522,7 @@
           {
             "name": "checkFragmentDefinition",
             "desc": "(Lgraphql/language/FragmentDefinition;)V",
-            "line": 1014,
+            "line": 1018,
             "counters": {
               "line": {
                 "covered": 14,
@@ -188541,7 +188541,7 @@
           {
             "name": "checkOperationDefinition",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 1036,
+            "line": 1040,
             "counters": {
               "line": {
                 "covered": 26,
@@ -188560,7 +188560,7 @@
           {
             "name": "checkVariable",
             "desc": "(Lgraphql/language/VariableReference;Ljava/util/List;)V",
-            "line": 1076,
+            "line": 1080,
             "counters": {
               "line": {
                 "covered": 11,
@@ -188579,7 +188579,7 @@
           {
             "name": "checkSelectionSet",
             "desc": "()V",
-            "line": 1096,
+            "line": 1100,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188598,7 +188598,7 @@
           {
             "name": "checkObjectValue",
             "desc": "(Lgraphql/language/ObjectValue;)V",
-            "line": 1099,
+            "line": 1103,
             "counters": {
               "line": {
                 "covered": 4,
@@ -188617,7 +188617,7 @@
           {
             "name": "leaveOperationDefinition",
             "desc": "()V",
-            "line": 1108,
+            "line": 1112,
             "counters": {
               "line": {
                 "covered": 14,
@@ -188636,7 +188636,7 @@
           {
             "name": "leaveSelectionSet",
             "desc": "()V",
-            "line": 1130,
+            "line": 1134,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188655,7 +188655,7 @@
           {
             "name": "leaveFragmentDefinition",
             "desc": "()V",
-            "line": 1135,
+            "line": 1139,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188674,7 +188674,7 @@
           {
             "name": "documentFinished",
             "desc": "()V",
-            "line": 1138,
+            "line": 1142,
             "counters": {
               "line": {
                 "covered": 5,
@@ -188693,7 +188693,7 @@
           {
             "name": "validateExecutableDefinitions",
             "desc": "(Lgraphql/language/Document;)V",
-            "line": 1148,
+            "line": 1152,
             "counters": {
               "line": {
                 "covered": 2,
@@ -188712,7 +188712,7 @@
           {
             "name": "nonExecutableDefinitionMessage",
             "desc": "(Lgraphql/language/Definition;)Ljava/lang/String;",
-            "line": 1158,
+            "line": 1162,
             "counters": {
               "line": {
                 "covered": 6,
@@ -188731,7 +188731,7 @@
           {
             "name": "validateArgumentsOfCorrectType",
             "desc": "(Lgraphql/language/Argument;)V",
-            "line": 1170,
+            "line": 1174,
             "counters": {
               "line": {
                 "covered": 13,
@@ -188750,7 +188750,7 @@
           {
             "name": "validateFieldsOnCorrectType",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 1188,
+            "line": 1192,
             "counters": {
               "line": {
                 "covered": 8,
@@ -188769,7 +188769,7 @@
           {
             "name": "validateFragmentsOnCompositeType_inline",
             "desc": "(Lgraphql/language/InlineFragment;)V",
-            "line": 1201,
+            "line": 1205,
             "counters": {
               "line": {
                 "covered": 9,
@@ -188788,7 +188788,7 @@
           {
             "name": "validateFragmentsOnCompositeType_definition",
             "desc": "(Lgraphql/language/FragmentDefinition;)V",
-            "line": 1215,
+            "line": 1219,
             "counters": {
               "line": {
                 "covered": 6,
@@ -188807,7 +188807,7 @@
           {
             "name": "validateKnownArgumentNames",
             "desc": "(Lgraphql/language/Argument;)V",
-            "line": 1227,
+            "line": 1231,
             "counters": {
               "line": {
                 "covered": 15,
@@ -188826,7 +188826,7 @@
           {
             "name": "validateKnownDirectives",
             "desc": "(Lgraphql/language/Directive;Ljava/util/List;)V",
-            "line": 1249,
+            "line": 1253,
             "counters": {
               "line": {
                 "covered": 10,
@@ -188845,7 +188845,7 @@
           {
             "name": "hasInvalidLocation",
             "desc": "(Lgraphql/schema/GraphQLDirective;Lgraphql/language/Node;)Z",
-            "line": 1263,
+            "line": 1267,
             "counters": {
               "line": {
                 "covered": 19,
@@ -188864,7 +188864,7 @@
           {
             "name": "validateKnownFragmentNames",
             "desc": "(Lgraphql/language/FragmentSpread;)V",
-            "line": 1289,
+            "line": 1293,
             "counters": {
               "line": {
                 "covered": 5,
@@ -188883,7 +188883,7 @@
           {
             "name": "validateKnownTypeNames",
             "desc": "(Lgraphql/language/TypeName;)V",
-            "line": 1298,
+            "line": 1302,
             "counters": {
               "line": {
                 "covered": 4,
@@ -188902,7 +188902,7 @@
           {
             "name": "prepareFragmentSpreadsMap",
             "desc": "()V",
-            "line": 1306,
+            "line": 1310,
             "counters": {
               "line": {
                 "covered": 7,
@@ -188921,7 +188921,7 @@
           {
             "name": "gatherSpreads",
             "desc": "(Lgraphql/language/FragmentDefinition;)Ljava/util/Set;",
-            "line": 1316,
+            "line": 1320,
             "counters": {
               "line": {
                 "covered": 4,
@@ -188940,7 +188940,7 @@
           {
             "name": "validateNoFragmentCycles",
             "desc": "(Lgraphql/language/FragmentDefinition;)V",
-            "line": 1334,
+            "line": 1338,
             "counters": {
               "line": {
                 "covered": 5,
@@ -188959,7 +188959,7 @@
           {
             "name": "findFragmentCycles",
             "desc": "()V",
-            "line": 1342,
+            "line": 1346,
             "counters": {
               "line": {
                 "covered": 7,
@@ -188978,7 +188978,7 @@
           {
             "name": "findFragmentCycles",
             "desc": "(Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;)V",
-            "line": 1352,
+            "line": 1356,
             "counters": {
               "line": {
                 "covered": 27,
@@ -188997,7 +188997,7 @@
           {
             "name": "validateNoUndefinedVariables",
             "desc": "(Lgraphql/language/VariableReference;)V",
-            "line": 1389,
+            "line": 1393,
             "counters": {
               "line": {
                 "covered": 4,
@@ -189016,7 +189016,7 @@
           {
             "name": "validateVariableNotAllowedInConstantDirective",
             "desc": "(Lgraphql/language/VariableReference;Ljava/util/List;)V",
-            "line": 1407,
+            "line": 1411,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189035,7 +189035,7 @@
           {
             "name": "validateNoUnusedFragments",
             "desc": "()V",
-            "line": 1421,
+            "line": 1425,
             "counters": {
               "line": {
                 "covered": 12,
@@ -189054,7 +189054,7 @@
           {
             "name": "collectUsedFragmentsInDefinition",
             "desc": "(Ljava/util/Set;Ljava/lang/String;)V",
-            "line": 1436,
+            "line": 1440,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189073,7 +189073,7 @@
           {
             "name": "validateOverlappingFieldsCanBeMerged",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 1450,
+            "line": 1454,
             "counters": {
               "line": {
                 "covered": 4,
@@ -189092,7 +189092,7 @@
           {
             "name": "overlappingFieldsImpl",
             "desc": "(Lgraphql/language/SelectionSet;Lgraphql/schema/GraphQLOutputType;)V",
-            "line": 1456,
+            "line": 1460,
             "counters": {
               "line": {
                 "covered": 11,
@@ -189111,7 +189111,7 @@
           {
             "name": "overlappingFields_collectFields",
             "desc": "(Ljava/util/Map;Lgraphql/language/SelectionSet;Lgraphql/schema/GraphQLType;Ljava/util/Set;)V",
-            "line": 1470,
+            "line": 1474,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189130,7 +189130,7 @@
           {
             "name": "overlappingFields_collectFieldsForFragmentSpread",
             "desc": "(Ljava/util/Map;Ljava/util/Set;Lgraphql/language/FragmentSpread;)V",
-            "line": 1482,
+            "line": 1486,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189149,7 +189149,7 @@
           {
             "name": "overlappingFields_collectFieldsForInlineFragment",
             "desc": "(Ljava/util/Map;Ljava/util/Set;Lgraphql/schema/GraphQLType;Lgraphql/language/InlineFragment;)V",
-            "line": 1496,
+            "line": 1500,
             "counters": {
               "line": {
                 "covered": 5,
@@ -189168,7 +189168,7 @@
           {
             "name": "overlappingFields_collectFieldsForField",
             "desc": "(Ljava/util/Map;Lgraphql/schema/GraphQLType;Lgraphql/language/Field;)V",
-            "line": 1505,
+            "line": 1509,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189187,7 +189187,7 @@
           {
             "name": "findConflicts",
             "desc": "(Ljava/util/Map;)Ljava/util/List;",
-            "line": 1517,
+            "line": 1521,
             "counters": {
               "line": {
                 "covered": 4,
@@ -189206,7 +189206,7 @@
           {
             "name": "sameResponseShapeByName",
             "desc": "(Ljava/util/Map;Lcom/google/common/collect/ImmutableList;Ljava/util/List;)V",
-            "line": 1524,
+            "line": 1528,
             "counters": {
               "line": {
                 "covered": 13,
@@ -189225,7 +189225,7 @@
           {
             "name": "mergeSubSelections",
             "desc": "(Ljava/util/Set;)Ljava/util/Map;",
-            "line": 1541,
+            "line": 1545,
             "counters": {
               "line": {
                 "covered": 7,
@@ -189244,7 +189244,7 @@
           {
             "name": "sameForCommonParentsByName",
             "desc": "(Ljava/util/Map;Lcom/google/common/collect/ImmutableList;Ljava/util/List;)V",
-            "line": 1552,
+            "line": 1556,
             "counters": {
               "line": {
                 "covered": 16,
@@ -189263,7 +189263,7 @@
           {
             "name": "groupByCommonParents",
             "desc": "(Ljava/util/Set;)Ljava/util/List;",
-            "line": 1573,
+            "line": 1577,
             "counters": {
               "line": {
                 "covered": 23,
@@ -189282,7 +189282,7 @@
           {
             "name": "isInterfaceOrUnion",
             "desc": "(Lgraphql/schema/GraphQLType;)Z",
-            "line": 1609,
+            "line": 1613,
             "counters": {
               "line": {
                 "covered": 1,
@@ -189301,7 +189301,7 @@
           {
             "name": "requireSameNameAndArguments",
             "desc": "(Lcom/google/common/collect/ImmutableList;Ljava/util/Set;)Lgraphql/validation/OperationValidator$Conflict;",
-            "line": 1613,
+            "line": 1617,
             "counters": {
               "line": {
                 "covered": 20,
@@ -189320,7 +189320,7 @@
           {
             "name": "pathToString",
             "desc": "(Lcom/google/common/collect/ImmutableList;)Ljava/lang/String;",
-            "line": 1640,
+            "line": 1644,
             "counters": {
               "line": {
                 "covered": 1,
@@ -189339,7 +189339,7 @@
           {
             "name": "sameArguments",
             "desc": "(Ljava/util/List;Ljava/util/List;)Z",
-            "line": 1644,
+            "line": 1648,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189358,7 +189358,7 @@
           {
             "name": "findArgumentByName",
             "desc": "(Ljava/lang/String;Ljava/util/List;)Lgraphql/language/Argument;",
-            "line": 1660,
+            "line": 1664,
             "counters": {
               "line": {
                 "covered": 3,
@@ -189377,7 +189377,7 @@
           {
             "name": "requireSameOutputTypeShape",
             "desc": "(Lcom/google/common/collect/ImmutableList;Ljava/util/Set;)Lgraphql/validation/OperationValidator$Conflict;",
-            "line": 1669,
+            "line": 1673,
             "counters": {
               "line": {
                 "covered": 32,
@@ -189396,7 +189396,7 @@
           {
             "name": "mkNotSameTypeError",
             "desc": "(Lcom/google/common/collect/ImmutableList;Ljava/util/List;Lgraphql/schema/GraphQLType;Lgraphql/schema/GraphQLType;)Lgraphql/validation/OperationValidator$Conflict;",
-            "line": 1719,
+            "line": 1723,
             "counters": {
               "line": {
                 "covered": 4,
@@ -189415,7 +189415,7 @@
           {
             "name": "notSameType",
             "desc": "(Lgraphql/schema/GraphQLType;Lgraphql/schema/GraphQLType;)Z",
-            "line": 1726,
+            "line": 1730,
             "counters": {
               "line": {
                 "covered": 2,
@@ -189434,7 +189434,7 @@
           {
             "name": "validatePossibleFragmentSpreads_inline",
             "desc": "(Lgraphql/language/InlineFragment;)V",
-            "line": 1782,
+            "line": 1786,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189453,7 +189453,7 @@
           {
             "name": "validatePossibleFragmentSpreads_spread",
             "desc": "(Lgraphql/language/FragmentSpread;)V",
-            "line": 1795,
+            "line": 1799,
             "counters": {
               "line": {
                 "covered": 11,
@@ -189472,7 +189472,7 @@
           {
             "name": "typesDoNotOverlap",
             "desc": "(Lgraphql/schema/GraphQLType;Lgraphql/schema/GraphQLCompositeType;)Z",
-            "line": 1812,
+            "line": 1816,
             "counters": {
               "line": {
                 "covered": 5,
@@ -189491,7 +189491,7 @@
           {
             "name": "getPossibleType",
             "desc": "(Lgraphql/schema/GraphQLType;)Ljava/util/List;",
-            "line": 1821,
+            "line": 1825,
             "counters": {
               "line": {
                 "covered": 7,
@@ -189510,7 +189510,7 @@
           {
             "name": "isValidTargetCompositeType",
             "desc": "(Lgraphql/schema/GraphQLType;)Z",
-            "line": 1835,
+            "line": 1839,
             "counters": {
               "line": {
                 "covered": 1,
@@ -189529,7 +189529,7 @@
           {
             "name": "getInlineFragmentType",
             "desc": "(Lgraphql/language/InlineFragment;)Lgraphql/schema/GraphQLOutputType;",
-            "line": 1840,
+            "line": 1844,
             "counters": {
               "line": {
                 "covered": 5,
@@ -189548,7 +189548,7 @@
           {
             "name": "validateProvidedNonNullArguments_field",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 1850,
+            "line": 1854,
             "counters": {
               "line": {
                 "covered": 18,
@@ -189567,7 +189567,7 @@
           {
             "name": "validateProvidedNonNullArguments_directive",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 1875,
+            "line": 1879,
             "counters": {
               "line": {
                 "covered": 13,
@@ -189586,7 +189586,7 @@
           {
             "name": "findArgumentByName",
             "desc": "(Ljava/util/List;Ljava/lang/String;)Lgraphql/language/Argument;",
-            "line": 1893,
+            "line": 1897,
             "counters": {
               "line": {
                 "covered": 5,
@@ -189605,7 +189605,7 @@
           {
             "name": "validateScalarLeaves",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 1903,
+            "line": 1907,
             "counters": {
               "line": {
                 "covered": 13,
@@ -189624,7 +189624,7 @@
           {
             "name": "validateVariableDefaultValuesOfCorrectType",
             "desc": "(Lgraphql/language/VariableDefinition;)V",
-            "line": 1923,
+            "line": 1927,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189643,7 +189643,7 @@
           {
             "name": "validateVariablesAreInputTypes",
             "desc": "(Lgraphql/language/VariableDefinition;)V",
-            "line": 1937,
+            "line": 1941,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189662,7 +189662,7 @@
           {
             "name": "validateVariableTypesMatch",
             "desc": "(Lgraphql/language/VariableReference;)V",
-            "line": 1950,
+            "line": 1954,
             "counters": {
               "line": {
                 "covered": 23,
@@ -189681,7 +189681,7 @@
           {
             "name": "validateLoneAnonymousOperation",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 1986,
+            "line": 1990,
             "counters": {
               "line": {
                 "covered": 12,
@@ -189700,7 +189700,7 @@
           {
             "name": "validateUniqueOperationNames",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 2004,
+            "line": 2008,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189719,7 +189719,7 @@
           {
             "name": "validateUniqueFragmentNames",
             "desc": "(Lgraphql/language/FragmentDefinition;)V",
-            "line": 2018,
+            "line": 2022,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189738,7 +189738,7 @@
           {
             "name": "validateUniqueDirectiveNamesPerLocation",
             "desc": "(Lgraphql/language/Node;Ljava/util/List;)V",
-            "line": 2032,
+            "line": 2036,
             "counters": {
               "line": {
                 "covered": 12,
@@ -189757,7 +189757,7 @@
           {
             "name": "validateUniqueArgumentNames_field",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 2048,
+            "line": 2052,
             "counters": {
               "line": {
                 "covered": 2,
@@ -189776,7 +189776,7 @@
           {
             "name": "validateUniqueArgumentNames_directive",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 2052,
+            "line": 2056,
             "counters": {
               "line": {
                 "covered": 2,
@@ -189795,7 +189795,7 @@
           {
             "name": "validateUniqueArgumentNames",
             "desc": "(Ljava/util/List;Lgraphql/language/SourceLocation;)V",
-            "line": 2056,
+            "line": 2060,
             "counters": {
               "line": {
                 "covered": 11,
@@ -189814,7 +189814,7 @@
           {
             "name": "validateUniqueVariableNames",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 2072,
+            "line": 2076,
             "counters": {
               "line": {
                 "covered": 12,
@@ -189833,7 +189833,7 @@
           {
             "name": "validateSubscriptionUniqueRootField",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 2089,
+            "line": 2093,
             "counters": {
               "line": {
                 "covered": 19,
@@ -189852,7 +189852,7 @@
           {
             "name": "isIntrospectionField",
             "desc": "(Lgraphql/execution/MergedField;)Z",
-            "line": 2113,
+            "line": 2117,
             "counters": {
               "line": {
                 "covered": 1,
@@ -189871,7 +189871,7 @@
           {
             "name": "validateUniqueObjectFieldName",
             "desc": "(Lgraphql/language/ObjectValue;)V",
-            "line": 2118,
+            "line": 2122,
             "counters": {
               "line": {
                 "covered": 10,
@@ -189890,7 +189890,7 @@
           {
             "name": "validateDeferDirectiveOnRootLevel",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 2132,
+            "line": 2136,
             "counters": {
               "line": {
                 "covered": 13,
@@ -189909,7 +189909,7 @@
           {
             "name": "validateDeferDirectiveOnValidOperation",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 2152,
+            "line": 2156,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189928,7 +189928,7 @@
           {
             "name": "ifArgumentMightBeFalse",
             "desc": "(Lgraphql/language/Directive;)Z",
-            "line": 2167,
+            "line": 2171,
             "counters": {
               "line": {
                 "covered": 6,
@@ -189947,7 +189947,7 @@
           {
             "name": "validateDeferDirectiveLabel",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 2179,
+            "line": 2183,
             "counters": {
               "line": {
                 "covered": 19,
@@ -189966,7 +189966,7 @@
           {
             "name": "validateKnownOperationTypes",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 2205,
+            "line": 2209,
             "counters": {
               "line": {
                 "covered": 10,
@@ -189985,7 +189985,7 @@
           {
             "name": "formatOperation",
             "desc": "(Lgraphql/language/OperationDefinition$Operation;)Ljava/lang/String;",
-            "line": 2219,
+            "line": 2223,
             "counters": {
               "line": {
                 "covered": 1,
@@ -190004,7 +190004,7 @@
           {
             "name": "toString",
             "desc": "()Ljava/lang/String;",
-            "line": 2224,
+            "line": 2228,
             "counters": {
               "line": {
                 "covered": 0,
@@ -190023,7 +190023,7 @@
           {
             "name": "lambda$groupByCommonParents$0",
             "desc": "(Lgraphql/schema/GraphQLType;)Ljava/util/Set;",
-            "line": 1586,
+            "line": 1590,
             "counters": {
               "line": {
                 "covered": 1,
@@ -190042,7 +190042,7 @@
           {
             "name": "lambda$overlappingFields_collectFieldsForField$0",
             "desc": "(Ljava/lang/String;)Ljava/util/Set;",
-            "line": 1513,
+            "line": 1517,
             "counters": {
               "line": {
                 "covered": 1,
@@ -190061,7 +190061,7 @@
           {
             "name": "lambda$validateExecutableDefinitions$0",
             "desc": "(Lgraphql/language/Definition;)V",
-            "line": 1149,
+            "line": 1153,
             "counters": {
               "line": {
                 "covered": 4,
@@ -190711,7 +190711,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/validation/OperationValidator;Ljava/util/Set;)V",
-            "line": 1317,
+            "line": 1321,
             "counters": {
               "line": {
                 "covered": 1,
@@ -190730,7 +190730,7 @@
           {
             "name": "enter",
             "desc": "(Lgraphql/language/Node;Ljava/util/List;)V",
-            "line": 1320,
+            "line": 1324,
             "counters": {
               "line": {
                 "covered": 3,
@@ -190749,7 +190749,7 @@
           {
             "name": "leave",
             "desc": "(Lgraphql/language/Node;Ljava/util/List;)V",
-            "line": 1327,
+            "line": 1331,
             "counters": {
               "line": {
                 "covered": 1,
@@ -191716,7 +191716,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/language/Field;Lgraphql/schema/GraphQLType;Lgraphql/schema/GraphQLType;)V",
-            "line": 1737,
+            "line": 1741,
             "counters": {
               "line": {
                 "covered": 5,
@@ -191735,7 +191735,7 @@
           {
             "name": "toString",
             "desc": "()Ljava/lang/String;",
-            "line": 1745,
+            "line": 1749,
             "counters": {
               "line": {
                 "covered": 0,
