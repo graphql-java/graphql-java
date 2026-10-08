@@ -49,9 +49,12 @@ class ScalarsFloatTest extends Specification {
         thrown(CoercingParseLiteralException)
 
         where:
-        literal                | _
-        new BooleanValue(true) | _
-        new StringValue("")    | _
+        literal                                   | _
+        new BooleanValue(true)                    | _
+        new StringValue("")                       | _
+        new FloatValue(new BigDecimal("1e400"))   | _
+        new FloatValue(new BigDecimal("-1e400"))  | _
+        new IntValue(BigInteger.TEN.pow(400))     | _
     }
 
     @Unroll
