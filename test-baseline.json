@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5957,
-      "passed": 5901,
+      "total": 5960,
+      "passed": 5904,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5957,
-      "passed": 5900,
+      "total": 5960,
+      "passed": 5903,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5957,
-      "passed": 5900,
+      "total": 5960,
+      "passed": 5903,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5957,
-      "passed": 5900,
+      "total": 5960,
+      "passed": 5903,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,11 +39,11 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8835,
+        "covered": 8839,
         "missed": 1519
       },
       "line": {
-        "covered": 30136,
+        "covered": 30140,
         "missed": 3118
       },
       "method": {
@@ -77405,12 +77405,12 @@
       },
       "graphql.scalar.GraphqlFloatCoercing": {
         "line": {
-          "covered": 38,
+          "covered": 42,
           "missed": 7
         },
         "branch": {
-          "covered": 17,
-          "missed": 3
+          "covered": 20,
+          "missed": 4
         },
         "method": {
           "covered": 11,
@@ -77496,15 +77496,15 @@
           {
             "name": "parseLiteralImpl",
             "desc": "(Ljava/lang/Object;Ljava/util/Locale;)D",
-            "line": 85,
+            "line": 86,
             "counters": {
               "line": {
-                "covered": 6,
+                "covered": 10,
                 "missed": 0
               },
               "branch": {
-                "covered": 4,
-                "missed": 0
+                "covered": 7,
+                "missed": 1
               },
               "method": {
                 "covered": 1,
@@ -77515,7 +77515,7 @@
           {
             "name": "valueToLiteralImpl",
             "desc": "(Ljava/lang/Object;Ljava/util/Locale;)Lgraphql/language/FloatValue;",
-            "line": 98,
+            "line": 108,
             "counters": {
               "line": {
                 "covered": 0,
@@ -77534,7 +77534,7 @@
           {
             "name": "serialize",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Double;",
-            "line": 108,
+            "line": 118,
             "counters": {
               "line": {
                 "covered": 1,
@@ -77553,7 +77553,7 @@
           {
             "name": "serialize",
             "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Double;",
-            "line": 113,
+            "line": 123,
             "counters": {
               "line": {
                 "covered": 1,
@@ -77572,7 +77572,7 @@
           {
             "name": "parseValue",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Double;",
-            "line": 119,
+            "line": 129,
             "counters": {
               "line": {
                 "covered": 1,
@@ -77591,7 +77591,7 @@
           {
             "name": "parseValue",
             "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Double;",
-            "line": 124,
+            "line": 134,
             "counters": {
               "line": {
                 "covered": 1,
@@ -77610,7 +77610,7 @@
           {
             "name": "parseLiteral",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Double;",
-            "line": 130,
+            "line": 140,
             "counters": {
               "line": {
                 "covered": 1,
@@ -77629,7 +77629,7 @@
           {
             "name": "parseLiteral",
             "desc": "(Lgraphql/language/Value;Lgraphql/execution/CoercedVariables;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Double;",
-            "line": 135,
+            "line": 145,
             "counters": {
               "line": {
                 "covered": 1,
@@ -77648,7 +77648,7 @@
           {
             "name": "valueToLiteral",
             "desc": "(Ljava/lang/Object;)Lgraphql/language/Value;",
-            "line": 141,
+            "line": 151,
             "counters": {
               "line": {
                 "covered": 0,
@@ -77667,7 +77667,7 @@
           {
             "name": "valueToLiteral",
             "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
-            "line": 146,
+            "line": 156,
             "counters": {
               "line": {
                 "covered": 0,
@@ -179124,8 +179124,8 @@
           "missed": 12
         },
         "branch": {
-          "covered": 118,
-          "missed": 12
+          "covered": 119,
+          "missed": 11
         },
         "method": {
           "covered": 67,
@@ -180377,8 +180377,8 @@
                 "missed": 0
               },
               "branch": {
-                "covered": 9,
-                "missed": 1
+                "covered": 10,
+                "missed": 0
               },
               "method": {
                 "covered": 1,
