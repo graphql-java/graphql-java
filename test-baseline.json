@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5960,
-      "passed": 5904,
+      "total": 5962,
+      "passed": 5906,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5960,
-      "passed": 5903,
+      "total": 5962,
+      "passed": 5905,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5960,
-      "passed": 5903,
+      "total": 5962,
+      "passed": 5905,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5960,
-      "passed": 5903,
+      "total": 5962,
+      "passed": 5905,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,8 +39,8 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8839,
-        "missed": 1519
+        "covered": 8838,
+        "missed": 1520
       },
       "line": {
         "covered": 30140,
@@ -21573,7 +21573,7 @@
           {
             "name": "full",
             "desc": "()Lgraphql/language/AstPrinter;",
-            "line": 33,
+            "line": 34,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21592,7 +21592,7 @@
           {
             "name": "compact",
             "desc": "()Lgraphql/language/AstPrinter;",
-            "line": 40,
+            "line": 41,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21611,7 +21611,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Z)V",
-            "line": 43,
+            "line": 44,
             "counters": {
               "line": {
                 "covered": 48,
@@ -21630,7 +21630,7 @@
           {
             "name": "argument",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 96,
+            "line": 97,
             "counters": {
               "line": {
                 "covered": 3,
@@ -21649,7 +21649,7 @@
           {
             "name": "document",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 109,
+            "line": 110,
             "counters": {
               "line": {
                 "covered": 3,
@@ -21668,7 +21668,7 @@
           {
             "name": "directive",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 119,
+            "line": 120,
             "counters": {
               "line": {
                 "covered": 2,
@@ -21687,7 +21687,7 @@
           {
             "name": "directiveDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 132,
+            "line": 133,
             "counters": {
               "line": {
                 "covered": 2,
@@ -21706,7 +21706,7 @@
           {
             "name": "directiveExtensionDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 156,
+            "line": 157,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21725,7 +21725,7 @@
           {
             "name": "directiveLocation",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 165,
+            "line": 166,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21744,7 +21744,7 @@
           {
             "name": "enumTypeDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 169,
+            "line": 170,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21763,7 +21763,7 @@
           {
             "name": "enumValue",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 183,
+            "line": 184,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21782,7 +21782,7 @@
           {
             "name": "enumValueDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 187,
+            "line": 188,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21801,7 +21801,7 @@
           {
             "name": "field",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 198,
+            "line": 199,
             "counters": {
               "line": {
                 "covered": 3,
@@ -21820,7 +21820,7 @@
           {
             "name": "fieldDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 226,
+            "line": 227,
             "counters": {
               "line": {
                 "covered": 2,
@@ -21839,7 +21839,7 @@
           {
             "name": "hasDescription",
             "desc": "(Lgraphql/language/Node;)Z",
-            "line": 260,
+            "line": 261,
             "counters": {
               "line": {
                 "covered": 3,
@@ -21858,7 +21858,7 @@
           {
             "name": "hasDescription",
             "desc": "(Ljava/util/List;)Z",
-            "line": 268,
+            "line": 269,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21877,7 +21877,7 @@
           {
             "name": "fragmentDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 272,
+            "line": 273,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21896,7 +21896,7 @@
           {
             "name": "fragmentSpread",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 285,
+            "line": 286,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21915,7 +21915,7 @@
           {
             "name": "inlineFragment",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 293,
+            "line": 294,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21934,7 +21934,7 @@
           {
             "name": "inputObjectTypeDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 319,
+            "line": 320,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21953,7 +21953,7 @@
           {
             "name": "inputValueDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 335,
+            "line": 336,
             "counters": {
               "line": {
                 "covered": 3,
@@ -21972,7 +21972,7 @@
           {
             "name": "interfaceTypeDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 356,
+            "line": 357,
             "counters": {
               "line": {
                 "covered": 1,
@@ -21991,7 +21991,7 @@
           {
             "name": "objectField",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 376,
+            "line": 377,
             "counters": {
               "line": {
                 "covered": 2,
@@ -22010,7 +22010,7 @@
           {
             "name": "operationDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 385,
+            "line": 386,
             "counters": {
               "line": {
                 "covered": 2,
@@ -22029,7 +22029,7 @@
           {
             "name": "canUseQueryShortForm",
             "desc": "(Lgraphql/language/OperationDefinition;)Z",
-            "line": 414,
+            "line": 415,
             "counters": {
               "line": {
                 "covered": 5,
@@ -22048,7 +22048,7 @@
           {
             "name": "variableDefinitions",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/OperationDefinition;Ljava/lang/String;)V",
-            "line": 422,
+            "line": 423,
             "counters": {
               "line": {
                 "covered": 15,
@@ -22067,7 +22067,7 @@
           {
             "name": "operationTypeDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 442,
+            "line": 443,
             "counters": {
               "line": {
                 "covered": 2,
@@ -22086,7 +22086,7 @@
           {
             "name": "objectTypeDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 451,
+            "line": 452,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22105,7 +22105,7 @@
           {
             "name": "selectionSet",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 471,
+            "line": 472,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22124,7 +22124,7 @@
           {
             "name": "scalarTypeDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 475,
+            "line": 476,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22143,7 +22143,7 @@
           {
             "name": "schemaDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 488,
+            "line": 489,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22162,7 +22162,7 @@
           {
             "name": "type",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 501,
+            "line": 502,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22181,7 +22181,7 @@
           {
             "name": "type",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Type;)V",
-            "line": 505,
+            "line": 506,
             "counters": {
               "line": {
                 "covered": 13,
@@ -22200,7 +22200,7 @@
           {
             "name": "objectTypeExtensionDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 521,
+            "line": 522,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22219,7 +22219,7 @@
           {
             "name": "enumTypeExtensionDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 528,
+            "line": 529,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22238,7 +22238,7 @@
           {
             "name": "interfaceTypeExtensionDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 535,
+            "line": 536,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22257,7 +22257,7 @@
           {
             "name": "unionTypeExtensionDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 542,
+            "line": 543,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22276,7 +22276,7 @@
           {
             "name": "scalarTypeExtensionDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 549,
+            "line": 550,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22295,7 +22295,7 @@
           {
             "name": "inputObjectTypeExtensionDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 556,
+            "line": 557,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22314,7 +22314,7 @@
           {
             "name": "schemaExtensionDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 563,
+            "line": 564,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22333,7 +22333,7 @@
           {
             "name": "unionTypeDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 570,
+            "line": 571,
             "counters": {
               "line": {
                 "covered": 3,
@@ -22352,7 +22352,7 @@
           {
             "name": "variableDefinition",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 587,
+            "line": 588,
             "counters": {
               "line": {
                 "covered": 3,
@@ -22371,7 +22371,7 @@
           {
             "name": "variableReference",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 604,
+            "line": 605,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22390,7 +22390,7 @@
           {
             "name": "node",
             "desc": "(Lgraphql/language/Node;)Ljava/lang/String;",
-            "line": 608,
+            "line": 609,
             "counters": {
               "line": {
                 "covered": 0,
@@ -22409,7 +22409,7 @@
           {
             "name": "node",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Node;)V",
-            "line": 612,
+            "line": 613,
             "counters": {
               "line": {
                 "covered": 2,
@@ -22428,7 +22428,7 @@
           {
             "name": "node",
             "desc": "(Lgraphql/language/Node;Ljava/lang/Class;)Ljava/lang/String;",
-            "line": 616,
+            "line": 617,
             "counters": {
               "line": {
                 "covered": 0,
@@ -22447,7 +22447,7 @@
           {
             "name": "node",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Node;Ljava/lang/Class;)V",
-            "line": 622,
+            "line": 623,
             "counters": {
               "line": {
                 "covered": 5,
@@ -22466,7 +22466,7 @@
           {
             "name": "_findPrinter",
             "desc": "(Lgraphql/language/Node;)Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 631,
+            "line": 632,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22485,7 +22485,7 @@
           {
             "name": "_findPrinter",
             "desc": "(Lgraphql/language/Node;Ljava/lang/Class;)Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 635,
+            "line": 636,
             "counters": {
               "line": {
                 "covered": 5,
@@ -22504,7 +22504,7 @@
           {
             "name": "isEmpty",
             "desc": "(Ljava/util/List;)Z",
-            "line": 648,
+            "line": 649,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22523,7 +22523,7 @@
           {
             "name": "isEmpty",
             "desc": "(Ljava/lang/String;)Z",
-            "line": 652,
+            "line": 653,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22542,7 +22542,7 @@
           {
             "name": "nvl",
             "desc": "(Ljava/util/List;)Ljava/util/List;",
-            "line": 656,
+            "line": 657,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22561,7 +22561,7 @@
           {
             "name": "value",
             "desc": "()Lgraphql/language/AstPrinter$NodePrinter;",
-            "line": 660,
+            "line": 661,
             "counters": {
               "line": {
                 "covered": 1,
@@ -22580,7 +22580,7 @@
           {
             "name": "value",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Value;)V",
-            "line": 664,
+            "line": 665,
             "counters": {
               "line": {
                 "covered": 27,
@@ -22599,7 +22599,7 @@
           {
             "name": "description",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Node;)V",
-            "line": 694,
+            "line": 695,
             "counters": {
               "line": {
                 "covered": 13,
@@ -22618,7 +22618,7 @@
           {
             "name": "directives",
             "desc": "(Ljava/lang/StringBuilder;Ljava/util/List;)V",
-            "line": 714,
+            "line": 715,
             "counters": {
               "line": {
                 "covered": 2,
@@ -22637,7 +22637,7 @@
           {
             "name": "join",
             "desc": "(Ljava/lang/StringBuilder;Ljava/util/List;Ljava/lang/String;)V",
-            "line": 718,
+            "line": 719,
             "counters": {
               "line": {
                 "covered": 8,
@@ -22656,7 +22656,7 @@
           {
             "name": "joinTight",
             "desc": "(Ljava/lang/StringBuilder;Ljava/util/List;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V",
-            "line": 735,
+            "line": 736,
             "counters": {
               "line": {
                 "covered": 11,
@@ -22675,7 +22675,7 @@
           {
             "name": "wrap",
             "desc": "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
-            "line": 753,
+            "line": 754,
             "counters": {
               "line": {
                 "covered": 4,
@@ -22694,7 +22694,7 @@
           {
             "name": "block",
             "desc": "(Ljava/lang/StringBuilder;Ljava/util/List;)V",
-            "line": 763,
+            "line": 764,
             "counters": {
               "line": {
                 "covered": 11,
@@ -22713,7 +22713,7 @@
           {
             "name": "indent",
             "desc": "(Ljava/lang/StringBuilder;I)V",
-            "line": 780,
+            "line": 781,
             "counters": {
               "line": {
                 "covered": 6,
@@ -22732,7 +22732,7 @@
           {
             "name": "wrap",
             "desc": "(Ljava/lang/String;Lgraphql/language/Node;Ljava/lang/String;)Ljava/lang/String;",
-            "line": 791,
+            "line": 792,
             "counters": {
               "line": {
                 "covered": 2,
@@ -22751,7 +22751,7 @@
           {
             "name": "printAst",
             "desc": "(Lgraphql/language/Node;)Ljava/lang/String;",
-            "line": 805,
+            "line": 806,
             "counters": {
               "line": {
                 "covered": 3,
@@ -22770,7 +22770,7 @@
           {
             "name": "printAstTo",
             "desc": "(Lgraphql/language/Node;Ljava/lang/Appendable;)V",
-            "line": 818,
+            "line": 819,
             "counters": {
               "line": {
                 "covered": 9,
@@ -22789,7 +22789,7 @@
           {
             "name": "printAst",
             "desc": "(Ljava/io/Writer;Lgraphql/language/Node;)V",
-            "line": 840,
+            "line": 841,
             "counters": {
               "line": {
                 "covered": 4,
@@ -22808,7 +22808,7 @@
           {
             "name": "printAstCompact",
             "desc": "(Lgraphql/language/Node;)Ljava/lang/String;",
-            "line": 857,
+            "line": 858,
             "counters": {
               "line": {
                 "covered": 3,
@@ -22827,7 +22827,7 @@
           {
             "name": "printImpl",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Node;Z)V",
-            "line": 863,
+            "line": 864,
             "counters": {
               "line": {
                 "covered": 4,
@@ -22846,7 +22846,7 @@
           {
             "name": "replacePrinter",
             "desc": "(Ljava/lang/Class;Lgraphql/language/AstPrinter$NodePrinter;)V",
-            "line": 884,
+            "line": 885,
             "counters": {
               "line": {
                 "covered": 2,
@@ -22865,7 +22865,7 @@
           {
             "name": "lambda$variableReference$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/VariableReference;)V",
-            "line": 604,
+            "line": 605,
             "counters": {
               "line": {
                 "covered": 0,
@@ -22884,7 +22884,7 @@
           {
             "name": "lambda$variableDefinition$0",
             "desc": "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/VariableDefinition;)V",
-            "line": 590,
+            "line": 591,
             "counters": {
               "line": {
                 "covered": 10,
@@ -22903,7 +22903,7 @@
           {
             "name": "lambda$unionTypeDefinition$0",
             "desc": "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/UnionTypeDefinition;)V",
-            "line": 573,
+            "line": 574,
             "counters": {
               "line": {
                 "covered": 10,
@@ -22922,7 +22922,7 @@
           {
             "name": "lambda$schemaExtensionDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/SchemaExtensionDefinition;)V",
-            "line": 564,
+            "line": 565,
             "counters": {
               "line": {
                 "covered": 3,
@@ -22941,7 +22941,7 @@
           {
             "name": "lambda$inputObjectTypeExtensionDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/InputObjectTypeExtensionDefinition;)V",
-            "line": 557,
+            "line": 558,
             "counters": {
               "line": {
                 "covered": 3,
@@ -22960,7 +22960,7 @@
           {
             "name": "lambda$scalarTypeExtensionDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/ScalarTypeExtensionDefinition;)V",
-            "line": 550,
+            "line": 551,
             "counters": {
               "line": {
                 "covered": 3,
@@ -22979,7 +22979,7 @@
           {
             "name": "lambda$unionTypeExtensionDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/UnionTypeExtensionDefinition;)V",
-            "line": 543,
+            "line": 544,
             "counters": {
               "line": {
                 "covered": 3,
@@ -22998,7 +22998,7 @@
           {
             "name": "lambda$interfaceTypeExtensionDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/InterfaceTypeDefinition;)V",
-            "line": 536,
+            "line": 537,
             "counters": {
               "line": {
                 "covered": 3,
@@ -23017,7 +23017,7 @@
           {
             "name": "lambda$enumTypeExtensionDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/EnumTypeExtensionDefinition;)V",
-            "line": 529,
+            "line": 530,
             "counters": {
               "line": {
                 "covered": 3,
@@ -23036,7 +23036,7 @@
           {
             "name": "lambda$objectTypeExtensionDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/ObjectTypeExtensionDefinition;)V",
-            "line": 522,
+            "line": 523,
             "counters": {
               "line": {
                 "covered": 3,
@@ -23055,7 +23055,7 @@
           {
             "name": "lambda$schemaDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/SchemaDefinition;)V",
-            "line": 489,
+            "line": 490,
             "counters": {
               "line": {
                 "covered": 7,
@@ -23074,7 +23074,7 @@
           {
             "name": "lambda$scalarTypeDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/ScalarTypeDefinition;)V",
-            "line": 476,
+            "line": 477,
             "counters": {
               "line": {
                 "covered": 7,
@@ -23093,7 +23093,7 @@
           {
             "name": "lambda$selectionSet$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/SelectionSet;)V",
-            "line": 471,
+            "line": 472,
             "counters": {
               "line": {
                 "covered": 1,
@@ -23112,7 +23112,7 @@
           {
             "name": "lambda$objectTypeDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/ObjectTypeDefinition;)V",
-            "line": 452,
+            "line": 453,
             "counters": {
               "line": {
                 "covered": 13,
@@ -23131,7 +23131,7 @@
           {
             "name": "lambda$operationTypeDefinition$0",
             "desc": "(Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/OperationTypeDefinition;)V",
-            "line": 444,
+            "line": 445,
             "counters": {
               "line": {
                 "covered": 4,
@@ -23150,7 +23150,7 @@
           {
             "name": "lambda$operationDefinition$0",
             "desc": "(Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/OperationDefinition;)V",
-            "line": 387,
+            "line": 388,
             "counters": {
               "line": {
                 "covered": 17,
@@ -23169,7 +23169,7 @@
           {
             "name": "lambda$objectField$0",
             "desc": "(Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/ObjectField;)V",
-            "line": 378,
+            "line": 379,
             "counters": {
               "line": {
                 "covered": 4,
@@ -23188,7 +23188,7 @@
           {
             "name": "lambda$interfaceTypeDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/InterfaceTypeDefinition;)V",
-            "line": 357,
+            "line": 358,
             "counters": {
               "line": {
                 "covered": 13,
@@ -23207,7 +23207,7 @@
           {
             "name": "lambda$inputValueDefinition$0",
             "desc": "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/InputValueDefinition;)V",
-            "line": 338,
+            "line": 339,
             "counters": {
               "line": {
                 "covered": 11,
@@ -23226,7 +23226,7 @@
           {
             "name": "lambda$inputObjectTypeDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/InputObjectTypeDefinition;)V",
-            "line": 320,
+            "line": 321,
             "counters": {
               "line": {
                 "covered": 10,
@@ -23245,7 +23245,7 @@
           {
             "name": "lambda$inlineFragment$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/InlineFragment;)V",
-            "line": 294,
+            "line": 295,
             "counters": {
               "line": {
                 "covered": 16,
@@ -23264,7 +23264,7 @@
           {
             "name": "lambda$fragmentSpread$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/FragmentSpread;)V",
-            "line": 286,
+            "line": 287,
             "counters": {
               "line": {
                 "covered": 4,
@@ -23283,7 +23283,7 @@
           {
             "name": "lambda$fragmentDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/FragmentDefinition;)V",
-            "line": 273,
+            "line": 274,
             "counters": {
               "line": {
                 "covered": 9,
@@ -23302,7 +23302,7 @@
           {
             "name": "lambda$fieldDefinition$0",
             "desc": "(Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/FieldDefinition;)V",
-            "line": 228,
+            "line": 229,
             "counters": {
               "line": {
                 "covered": 21,
@@ -23321,7 +23321,7 @@
           {
             "name": "lambda$field$0",
             "desc": "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/Field;)V",
-            "line": 201,
+            "line": 202,
             "counters": {
               "line": {
                 "covered": 17,
@@ -23340,7 +23340,7 @@
           {
             "name": "lambda$enumValueDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/EnumValueDefinition;)V",
-            "line": 188,
+            "line": 189,
             "counters": {
               "line": {
                 "covered": 6,
@@ -23359,7 +23359,7 @@
           {
             "name": "lambda$enumValue$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/EnumValue;)V",
-            "line": 183,
+            "line": 184,
             "counters": {
               "line": {
                 "covered": 1,
@@ -23378,7 +23378,7 @@
           {
             "name": "lambda$enumTypeDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/EnumTypeDefinition;)V",
-            "line": 170,
+            "line": 171,
             "counters": {
               "line": {
                 "covered": 7,
@@ -23397,7 +23397,7 @@
           {
             "name": "lambda$directiveLocation$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/DirectiveLocation;)V",
-            "line": 165,
+            "line": 166,
             "counters": {
               "line": {
                 "covered": 1,
@@ -23416,7 +23416,7 @@
           {
             "name": "lambda$directiveExtensionDefinition$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/DirectiveExtensionDefinition;)V",
-            "line": 157,
+            "line": 158,
             "counters": {
               "line": {
                 "covered": 5,
@@ -23435,7 +23435,7 @@
           {
             "name": "lambda$directiveDefinition$0",
             "desc": "(Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/DirectiveDefinition;)V",
-            "line": 134,
+            "line": 135,
             "counters": {
               "line": {
                 "covered": 16,
@@ -23454,7 +23454,7 @@
           {
             "name": "lambda$directive$0",
             "desc": "(Ljava/lang/String;Ljava/lang/StringBuilder;Lgraphql/language/Directive;)V",
-            "line": 121,
+            "line": 122,
             "counters": {
               "line": {
                 "covered": 7,
@@ -23473,7 +23473,7 @@
           {
             "name": "lambda$document$1",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Document;)V",
-            "line": 113,
+            "line": 114,
             "counters": {
               "line": {
                 "covered": 3,
@@ -23492,7 +23492,7 @@
           {
             "name": "lambda$document$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Document;)V",
-            "line": 110,
+            "line": 111,
             "counters": {
               "line": {
                 "covered": 1,
@@ -23511,7 +23511,7 @@
           {
             "name": "lambda$argument$1",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Argument;)V",
-            "line": 103,
+            "line": 104,
             "counters": {
               "line": {
                 "covered": 3,
@@ -23530,7 +23530,7 @@
           {
             "name": "lambda$argument$0",
             "desc": "(Ljava/lang/StringBuilder;Lgraphql/language/Argument;)V",
-            "line": 98,
+            "line": 99,
             "counters": {
               "line": {
                 "covered": 3,
@@ -46841,7 +46841,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 43,
+            "line": 44,
             "counters": {
               "line": {
                 "covered": 0,
@@ -46860,7 +46860,7 @@
           {
             "name": "buildAppliedDirectives",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Lgraphql/schema/GraphqlDirectivesContainerTypeBuilder;Lgraphql/util/Pair;)V",
-            "line": 46,
+            "line": 47,
             "counters": {
               "line": {
                 "covered": 9,
@@ -46879,7 +46879,7 @@
           {
             "name": "buildAppliedDirectives",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Ljava/util/function/Function;Ljava/util/List;Ljava/util/List;Lgraphql/introspection/Introspection$DirectiveLocation;Ljava/util/Set;Lgraphql/schema/GraphqlTypeComparatorRegistry;)Lgraphql/util/Pair;",
-            "line": 67,
+            "line": 68,
             "counters": {
               "line": {
                 "covered": 15,
@@ -46898,7 +46898,7 @@
           {
             "name": "buildAppliedDirective",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Ljava/util/function/Function;Lgraphql/language/Directive;Ljava/util/Set;Lgraphql/introspection/Introspection$DirectiveLocation;Lgraphql/schema/GraphqlTypeComparatorRegistry;)Lgraphql/util/Pair;",
-            "line": 102,
+            "line": 103,
             "counters": {
               "line": {
                 "covered": 25,
@@ -46917,7 +46917,7 @@
           {
             "name": "buildDirectiveArg",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Lgraphql/language/Argument;Lgraphql/schema/GraphQLDirective;)Lgraphql/schema/GraphQLArgument;",
-            "line": 141,
+            "line": 142,
             "counters": {
               "line": {
                 "covered": 11,
@@ -46936,7 +46936,7 @@
           {
             "name": "buildAppliedArg",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Lgraphql/language/Argument;Lgraphql/schema/GraphQLDirective;)Lgraphql/schema/GraphQLAppliedDirectiveArgument;",
-            "line": 164,
+            "line": 165,
             "counters": {
               "line": {
                 "covered": 8,
@@ -46955,7 +46955,7 @@
           {
             "name": "transferMissingArguments",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Ljava/util/List;Lgraphql/schema/GraphQLDirective;)Ljava/util/List;",
-            "line": 184,
+            "line": 185,
             "counters": {
               "line": {
                 "covered": 16,
@@ -46974,7 +46974,7 @@
           {
             "name": "transferMissingAppliedArguments",
             "desc": "(Ljava/util/List;Lgraphql/schema/GraphQLDirective;)Ljava/util/List;",
-            "line": 208,
+            "line": 209,
             "counters": {
               "line": {
                 "covered": 15,
@@ -46993,7 +46993,7 @@
           {
             "name": "buildDirectiveDefinitionFromAst",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Lgraphql/language/DirectiveDefinition;Ljava/util/function/Function;)Lgraphql/schema/GraphQLDirective;",
-            "line": 231,
+            "line": 232,
             "counters": {
               "line": {
                 "covered": 24,
@@ -47012,7 +47012,7 @@
           {
             "name": "combineDirectives",
             "desc": "(Ljava/util/List;Ljava/util/List;)Ljava/util/List;",
-            "line": 268,
+            "line": 269,
             "counters": {
               "line": {
                 "covered": 3,
@@ -47031,7 +47031,7 @@
           {
             "name": "buildLocations",
             "desc": "(Lgraphql/language/DirectiveDefinition;)Ljava/util/List;",
-            "line": 274,
+            "line": 275,
             "counters": {
               "line": {
                 "covered": 1,
@@ -47050,7 +47050,7 @@
           {
             "name": "buildDirectiveArgumentDefinitionFromAst",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Lgraphql/language/InputValueDefinition;Ljava/util/function/Function;)Lgraphql/schema/GraphQLArgument;",
-            "line": 279,
+            "line": 280,
             "counters": {
               "line": {
                 "covered": 18,
@@ -47069,7 +47069,7 @@
           {
             "name": "buildDeprecationReason",
             "desc": "(Ljava/util/List;)Ljava/lang/String;",
-            "line": 308,
+            "line": 309,
             "counters": {
               "line": {
                 "covered": 8,
@@ -47088,7 +47088,7 @@
           {
             "name": "lambda$buildDeprecationReason$1",
             "desc": "(Lgraphql/language/Argument;)Ljava/lang/String;",
-            "line": 312,
+            "line": 313,
             "counters": {
               "line": {
                 "covered": 1,
@@ -47107,7 +47107,7 @@
           {
             "name": "lambda$buildDeprecationReason$0",
             "desc": "(Lgraphql/language/Directive;)Z",
-            "line": 309,
+            "line": 310,
             "counters": {
               "line": {
                 "covered": 1,
@@ -47126,7 +47126,7 @@
           {
             "name": "lambda$buildLocations$0",
             "desc": "(Lgraphql/language/DirectiveLocation;)Lgraphql/introspection/Introspection$DirectiveLocation;",
-            "line": 275,
+            "line": 276,
             "counters": {
               "line": {
                 "covered": 1,
@@ -47145,7 +47145,7 @@
           {
             "name": "lambda$buildDirectiveDefinitionFromAst$2",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Ljava/util/function/Function;Lgraphql/language/InputValueDefinition;)Lgraphql/schema/GraphQLArgument;",
-            "line": 252,
+            "line": 253,
             "counters": {
               "line": {
                 "covered": 1,
@@ -47164,7 +47164,7 @@
           {
             "name": "lambda$buildDirectiveDefinitionFromAst$1",
             "desc": "(Lgraphql/schema/GraphQLDirective$Builder;Lgraphql/introspection/Introspection$DirectiveLocation;)V",
-            "line": 249,
+            "line": 250,
             "counters": {
               "line": {
                 "covered": 1,
@@ -47183,7 +47183,7 @@
           {
             "name": "lambda$buildDirectiveDefinitionFromAst$0",
             "desc": "(Lgraphql/language/DirectiveExtensionDefinition;)Ljava/util/stream/Stream;",
-            "line": 235,
+            "line": 236,
             "counters": {
               "line": {
                 "covered": 1,
@@ -47202,7 +47202,7 @@
           {
             "name": "lambda$buildAppliedDirective$1",
             "desc": "(Lgraphql/schema/idl/SchemaGeneratorHelper$BuildContext;Lgraphql/language/Directive;Ljava/util/function/Function;)Lgraphql/schema/GraphQLDirective;",
-            "line": 116,
+            "line": 117,
             "counters": {
               "line": {
                 "covered": 1,
@@ -47221,7 +47221,7 @@
           {
             "name": "lambda$buildAppliedDirective$0",
             "desc": "(Lgraphql/language/Directive;Lgraphql/schema/GraphQLDirective;)Z",
-            "line": 113,
+            "line": 114,
             "counters": {
               "line": {
                 "covered": 1,
@@ -85087,7 +85087,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 22,
+            "line": 23,
             "counters": {
               "line": {
                 "covered": 0,
@@ -85106,7 +85106,7 @@
           {
             "name": "createGetter",
             "desc": "(Ljava/lang/Class;Ljava/lang/String;)Ljava/util/Optional;",
-            "line": 39,
+            "line": 40,
             "counters": {
               "line": {
                 "covered": 6,
@@ -85125,7 +85125,7 @@
           {
             "name": "getCandidateMethod",
             "desc": "(Ljava/lang/Class;Ljava/lang/String;)Ljava/lang/reflect/Method;",
-            "line": 60,
+            "line": 61,
             "counters": {
               "line": {
                 "covered": 17,
@@ -85144,7 +85144,7 @@
           {
             "name": "checkForSingleParameterPeer",
             "desc": "(Ljava/lang/reflect/Method;Ljava/util/List;)Ljava/lang/reflect/Method;",
-            "line": 90,
+            "line": 91,
             "counters": {
               "line": {
                 "covered": 5,
@@ -85163,7 +85163,7 @@
           {
             "name": "findBestBooleanGetter",
             "desc": "(Ljava/util/List;)Ljava/lang/reflect/Method;",
-            "line": 102,
+            "line": 103,
             "counters": {
               "line": {
                 "covered": 7,
@@ -85182,7 +85182,7 @@
           {
             "name": "findMethodsForProperty",
             "desc": "(Ljava/lang/Class;Ljava/util/function/Predicate;)Ljava/util/List;",
-            "line": 120,
+            "line": 121,
             "counters": {
               "line": {
                 "covered": 12,
@@ -85201,7 +85201,7 @@
           {
             "name": "isPossiblePojoMethod",
             "desc": "(Ljava/lang/reflect/Method;)Z",
-            "line": 138,
+            "line": 139,
             "counters": {
               "line": {
                 "covered": 5,
@@ -85220,7 +85220,7 @@
           {
             "name": "isRecordLike",
             "desc": "(Ljava/lang/reflect/Method;)Z",
-            "line": 146,
+            "line": 147,
             "counters": {
               "line": {
                 "covered": 4,
@@ -85239,7 +85239,7 @@
           {
             "name": "isBooleanGetter",
             "desc": "(Ljava/lang/reflect/Method;)Z",
-            "line": 153,
+            "line": 154,
             "counters": {
               "line": {
                 "covered": 2,
@@ -85258,7 +85258,7 @@
           {
             "name": "hasNoParameters",
             "desc": "(Ljava/lang/reflect/Method;)Z",
-            "line": 158,
+            "line": 159,
             "counters": {
               "line": {
                 "covered": 1,
@@ -85277,7 +85277,7 @@
           {
             "name": "isGetterNamed",
             "desc": "(Ljava/lang/reflect/Method;)Z",
-            "line": 162,
+            "line": 163,
             "counters": {
               "line": {
                 "covered": 2,
@@ -85296,7 +85296,7 @@
           {
             "name": "returnsSomething",
             "desc": "(Ljava/lang/reflect/Method;)Z",
-            "line": 167,
+            "line": 168,
             "counters": {
               "line": {
                 "covered": 1,
@@ -85315,7 +85315,7 @@
           {
             "name": "isPublic",
             "desc": "(Ljava/lang/reflect/Method;)Z",
-            "line": 171,
+            "line": 172,
             "counters": {
               "line": {
                 "covered": 1,
@@ -85334,7 +85334,7 @@
           {
             "name": "isObjectMethod",
             "desc": "(Ljava/lang/reflect/Method;)Z",
-            "line": 175,
+            "line": 176,
             "counters": {
               "line": {
                 "covered": 1,
@@ -85353,7 +85353,7 @@
           {
             "name": "mkPropertyNameGetter",
             "desc": "(Ljava/lang/reflect/Method;)Ljava/lang/String;",
-            "line": 183,
+            "line": 184,
             "counters": {
               "line": {
                 "covered": 6,
@@ -85372,7 +85372,7 @@
           {
             "name": "decapitalize",
             "desc": "(Ljava/lang/String;)Ljava/lang/String;",
-            "line": 193,
+            "line": 194,
             "counters": {
               "line": {
                 "covered": 2,
@@ -85391,7 +85391,7 @@
           {
             "name": "mkCallFunction",
             "desc": "(Ljava/lang/Class;Ljava/lang/String;Ljava/lang/Class;)Ljava/util/function/Function;",
-            "line": 202,
+            "line": 203,
             "counters": {
               "line": {
                 "covered": 8,
@@ -85410,7 +85410,7 @@
           {
             "name": "getLookup",
             "desc": "(Ljava/lang/Class;)Ljava/lang/invoke/MethodHandles$Lookup;",
-            "line": 216,
+            "line": 217,
             "counters": {
               "line": {
                 "covered": 2,
@@ -85429,7 +85429,7 @@
           {
             "name": "lambda$getCandidateMethod$1",
             "desc": "(Ljava/lang/String;Ljava/lang/reflect/Method;)Z",
-            "line": 68,
+            "line": 69,
             "counters": {
               "line": {
                 "covered": 1,
@@ -85448,7 +85448,7 @@
           {
             "name": "lambda$getCandidateMethod$0",
             "desc": "(Ljava/lang/String;Ljava/lang/reflect/Method;)Z",
-            "line": 60,
+            "line": 61,
             "counters": {
               "line": {
                 "covered": 1,
@@ -95246,7 +95246,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 10,
+            "line": 11,
             "counters": {
               "line": {
                 "covered": 1,
@@ -95265,7 +95265,7 @@
           {
             "name": "print",
             "desc": "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Lgraphql/util/querygenerator/QueryGeneratorFieldSelection$FieldSelection;)Ljava/lang/String;",
-            "line": 17,
+            "line": 18,
             "counters": {
               "line": {
                 "covered": 6,
@@ -95284,7 +95284,7 @@
           {
             "name": "printFieldsForTopLevelType",
             "desc": "(Lgraphql/util/querygenerator/QueryGeneratorFieldSelection$FieldSelection;)Ljava/lang/String;",
-            "line": 28,
+            "line": 29,
             "counters": {
               "line": {
                 "covered": 3,
@@ -95303,7 +95303,7 @@
           {
             "name": "printOperationStart",
             "desc": "([Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;",
-            "line": 42,
+            "line": 43,
             "counters": {
               "line": {
                 "covered": 14,
@@ -95322,7 +95322,7 @@
           {
             "name": "printOperationEnd",
             "desc": "([Ljava/lang/String;)Ljava/lang/String;",
-            "line": 69,
+            "line": 70,
             "counters": {
               "line": {
                 "covered": 1,
@@ -95341,7 +95341,7 @@
           {
             "name": "printFieldSelectionForContainer",
             "desc": "(Ljava/lang/String;Ljava/util/List;Z)Ljava/lang/String;",
-            "line": 77,
+            "line": 78,
             "counters": {
               "line": {
                 "covered": 11,
@@ -95360,7 +95360,7 @@
           {
             "name": "printFieldSelection",
             "desc": "(Lgraphql/util/querygenerator/QueryGeneratorFieldSelection$FieldSelection;Ljava/lang/String;)Ljava/lang/String;",
-            "line": 101,
+            "line": 102,
             "counters": {
               "line": {
                 "covered": 17,
@@ -95379,7 +95379,7 @@
           {
             "name": "printFieldSelection",
             "desc": "(Lgraphql/util/querygenerator/QueryGeneratorFieldSelection$FieldSelection;)Ljava/lang/String;",
-            "line": 127,
+            "line": 128,
             "counters": {
               "line": {
                 "covered": 1,
@@ -95398,7 +95398,7 @@
           {
             "name": "lambda$printFieldSelection$0",
             "desc": "(Lgraphql/util/querygenerator/QueryGeneratorFieldSelection$FieldSelection;Ljava/util/Map$Entry;)Ljava/lang/String;",
-            "line": 105,
+            "line": 106,
             "counters": {
               "line": {
                 "covered": 1,
@@ -95417,7 +95417,7 @@
           {
             "name": "lambda$printFieldSelectionForContainer$0",
             "desc": "(ZLjava/lang/String;Lgraphql/util/querygenerator/QueryGeneratorFieldSelection$FieldSelection;)Ljava/lang/String;",
-            "line": 79,
+            "line": 80,
             "counters": {
               "line": {
                 "covered": 1,
@@ -179124,8 +179124,8 @@
           "missed": 12
         },
         "branch": {
-          "covered": 119,
-          "missed": 11
+          "covered": 118,
+          "missed": 12
         },
         "method": {
           "covered": 67,
@@ -180377,8 +180377,8 @@
                 "missed": 0
               },
               "branch": {
-                "covered": 10,
-                "missed": 0
+                "covered": 9,
+                "missed": 1
               },
               "method": {
                 "covered": 1,
@@ -187575,7 +187575,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Ljava/lang/String;Ljava/util/List;)V",
-            "line": 1776,
+            "line": 1777,
             "counters": {
               "line": {
                 "covered": 5,
@@ -187610,7 +187610,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/validation/ValidationContext;Lgraphql/validation/ValidationErrorCollector;Ljava/util/function/Predicate;)V",
-            "line": 286,
+            "line": 287,
             "counters": {
               "line": {
                 "covered": 44,
@@ -187629,7 +187629,7 @@
           {
             "name": "detectAllRulesEnabled",
             "desc": "(Ljava/util/function/Predicate;)Z",
-            "line": 382,
+            "line": 383,
             "counters": {
               "line": {
                 "covered": 4,
@@ -187648,7 +187648,7 @@
           {
             "name": "isRuleEnabled",
             "desc": "(Lgraphql/validation/OperationValidationRule;)Z",
-            "line": 391,
+            "line": 392,
             "counters": {
               "line": {
                 "covered": 1,
@@ -187667,7 +187667,7 @@
           {
             "name": "enterTraversal",
             "desc": "(Lgraphql/language/Node;Ljava/util/List;)V",
-            "line": 395,
+            "line": 396,
             "counters": {
               "line": {
                 "covered": 17,
@@ -187686,7 +187686,7 @@
           {
             "name": "enterField",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 415,
+            "line": 416,
             "counters": {
               "line": {
                 "covered": 7,
@@ -187705,7 +187705,7 @@
           {
             "name": "enterVariableDefinition",
             "desc": "(Lgraphql/language/VariableDefinition;)V",
-            "line": 424,
+            "line": 425,
             "counters": {
               "line": {
                 "covered": 6,
@@ -187724,7 +187724,7 @@
           {
             "name": "enterArgument",
             "desc": "(Lgraphql/language/Argument;)V",
-            "line": 432,
+            "line": 433,
             "counters": {
               "line": {
                 "covered": 5,
@@ -187743,7 +187743,7 @@
           {
             "name": "enterArrayValue",
             "desc": "()V",
-            "line": 439,
+            "line": 440,
             "counters": {
               "line": {
                 "covered": 7,
@@ -187762,7 +187762,7 @@
           {
             "name": "enterObjectField",
             "desc": "(Lgraphql/language/ObjectField;)V",
-            "line": 449,
+            "line": 450,
             "counters": {
               "line": {
                 "covered": 13,
@@ -187781,7 +187781,7 @@
           {
             "name": "leaveTraversal",
             "desc": "(Lgraphql/language/Node;)V",
-            "line": 467,
+            "line": 468,
             "counters": {
               "line": {
                 "covered": 13,
@@ -187800,7 +187800,7 @@
           {
             "name": "resolveSelectionSetParent",
             "desc": "(Ljava/util/List;)Lgraphql/schema/GraphQLCompositeType;",
-            "line": 486,
+            "line": 487,
             "counters": {
               "line": {
                 "covered": 7,
@@ -187819,7 +187819,7 @@
           {
             "name": "getSelectionSetOwnerType",
             "desc": "(Lgraphql/language/Node;)Lgraphql/schema/GraphQLType;",
-            "line": 496,
+            "line": 497,
             "counters": {
               "line": {
                 "covered": 13,
@@ -187838,7 +187838,7 @@
           {
             "name": "getOperationType",
             "desc": "(Lgraphql/language/OperationDefinition;)Lgraphql/schema/GraphQLObjectType;",
-            "line": 516,
+            "line": 517,
             "counters": {
               "line": {
                 "covered": 8,
@@ -187857,7 +187857,7 @@
           {
             "name": "getFieldDefinition",
             "desc": "(Lgraphql/schema/GraphQLCompositeType;Ljava/lang/String;)Lgraphql/schema/GraphQLFieldDefinition;",
-            "line": 531,
+            "line": 532,
             "counters": {
               "line": {
                 "covered": 22,
@@ -187876,7 +187876,7 @@
           {
             "name": "getArgumentDefinition",
             "desc": "(Ljava/lang/String;)Lgraphql/schema/GraphQLArgument;",
-            "line": 561,
+            "line": 562,
             "counters": {
               "line": {
                 "covered": 4,
@@ -187895,7 +187895,7 @@
           {
             "name": "getNullableType",
             "desc": "(Lgraphql/schema/GraphQLType;)Lgraphql/schema/GraphQLNullableType;",
-            "line": 569,
+            "line": 570,
             "counters": {
               "line": {
                 "covered": 3,
@@ -187914,7 +187914,7 @@
           {
             "name": "getParentType",
             "desc": "()Lgraphql/schema/GraphQLCompositeType;",
-            "line": 576,
+            "line": 577,
             "counters": {
               "line": {
                 "covered": 1,
@@ -187933,7 +187933,7 @@
           {
             "name": "getFieldDefinition",
             "desc": "()Lgraphql/schema/GraphQLFieldDefinition;",
-            "line": 580,
+            "line": 581,
             "counters": {
               "line": {
                 "covered": 1,
@@ -187952,7 +187952,7 @@
           {
             "name": "getInputType",
             "desc": "()Lgraphql/schema/GraphQLInputType;",
-            "line": 584,
+            "line": 585,
             "counters": {
               "line": {
                 "covered": 1,
@@ -187971,7 +187971,7 @@
           {
             "name": "getDefaultValue",
             "desc": "()Lgraphql/schema/InputValueWithState;",
-            "line": 588,
+            "line": 589,
             "counters": {
               "line": {
                 "covered": 1,
@@ -187990,7 +187990,7 @@
           {
             "name": "getDirectiveDefinition",
             "desc": "()Lgraphql/schema/GraphQLDirective;",
-            "line": 592,
+            "line": 593,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188009,7 +188009,7 @@
           {
             "name": "enterName",
             "desc": "(Ljava/lang/String;)V",
-            "line": 596,
+            "line": 597,
             "counters": {
               "line": {
                 "covered": 2,
@@ -188028,7 +188028,7 @@
           {
             "name": "leaveName",
             "desc": "(Ljava/lang/String;)V",
-            "line": 600,
+            "line": 601,
             "counters": {
               "line": {
                 "covered": 2,
@@ -188047,7 +188047,7 @@
           {
             "name": "lastElement",
             "desc": "(Ljava/util/List;)Ljava/lang/Object;",
-            "line": 604,
+            "line": 605,
             "counters": {
               "line": {
                 "covered": 3,
@@ -188066,7 +188066,7 @@
           {
             "name": "pop",
             "desc": "(Ljava/util/List;)Ljava/lang/Object;",
-            "line": 611,
+            "line": 612,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188085,7 +188085,7 @@
           {
             "name": "shouldRunDocumentLevelRules",
             "desc": "()Z",
-            "line": 627,
+            "line": 628,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188104,7 +188104,7 @@
           {
             "name": "shouldRunOperationScopedRules",
             "desc": "()Z",
-            "line": 643,
+            "line": 644,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188123,7 +188123,7 @@
           {
             "name": "checkFieldCountLimit",
             "desc": "()V",
-            "line": 649,
+            "line": 650,
             "counters": {
               "line": {
                 "covered": 7,
@@ -188142,7 +188142,7 @@
           {
             "name": "checkDepthLimit",
             "desc": "(I)V",
-            "line": 662,
+            "line": 663,
             "counters": {
               "line": {
                 "covered": 9,
@@ -188161,7 +188161,7 @@
           {
             "name": "enter",
             "desc": "(Lgraphql/language/Node;Ljava/util/List;)V",
-            "line": 679,
+            "line": 680,
             "counters": {
               "line": {
                 "covered": 35,
@@ -188180,7 +188180,7 @@
           {
             "name": "leave",
             "desc": "(Lgraphql/language/Node;Ljava/util/List;)V",
-            "line": 723,
+            "line": 724,
             "counters": {
               "line": {
                 "covered": 13,
@@ -188199,7 +188199,7 @@
           {
             "name": "addError",
             "desc": "(Lgraphql/validation/ValidationErrorType;Ljava/util/Collection;Ljava/lang/String;)V",
-            "line": 741,
+            "line": 742,
             "counters": {
               "line": {
                 "covered": 11,
@@ -188218,7 +188218,7 @@
           {
             "name": "addError",
             "desc": "(Lgraphql/validation/ValidationErrorType;Lgraphql/language/SourceLocation;Ljava/lang/String;)V",
-            "line": 755,
+            "line": 756,
             "counters": {
               "line": {
                 "covered": 5,
@@ -188237,7 +188237,7 @@
           {
             "name": "addError",
             "desc": "(Lgraphql/validation/ValidationError$Builder;)V",
-            "line": 762,
+            "line": 763,
             "counters": {
               "line": {
                 "covered": 2,
@@ -188256,7 +188256,7 @@
           {
             "name": "getQueryPath",
             "desc": "()Ljava/util/List;",
-            "line": 766,
+            "line": 767,
             "counters": {
               "line": {
                 "covered": 3,
@@ -188275,7 +188275,7 @@
           {
             "name": "i18n",
             "desc": "(Lgraphql/validation/ValidationErrorType;Lgraphql/i18n/I18nMsg;)Ljava/lang/String;",
-            "line": 773,
+            "line": 774,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188294,7 +188294,7 @@
           {
             "name": "i18n",
             "desc": "(Lgraphql/validation/ValidationErrorType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;",
-            "line": 777,
+            "line": 778,
             "counters": {
               "line": {
                 "covered": 4,
@@ -188313,7 +188313,7 @@
           {
             "name": "mkTypeAndPath",
             "desc": "(Lgraphql/validation/ValidationErrorType;)Ljava/lang/String;",
-            "line": 784,
+            "line": 785,
             "counters": {
               "line": {
                 "covered": 6,
@@ -188332,7 +188332,7 @@
           {
             "name": "isExperimentalApiKeyEnabled",
             "desc": "(Ljava/lang/String;)Z",
-            "line": 794,
+            "line": 795,
             "counters": {
               "line": {
                 "covered": 2,
@@ -188351,7 +188351,7 @@
           {
             "name": "checkDocument",
             "desc": "(Lgraphql/language/Document;)V",
-            "line": 799,
+            "line": 800,
             "counters": {
               "line": {
                 "covered": 3,
@@ -188370,7 +188370,7 @@
           {
             "name": "checkArgument",
             "desc": "(Lgraphql/language/Argument;)V",
-            "line": 805,
+            "line": 806,
             "counters": {
               "line": {
                 "covered": 6,
@@ -188389,7 +188389,7 @@
           {
             "name": "checkTypeName",
             "desc": "(Lgraphql/language/TypeName;)V",
-            "line": 816,
+            "line": 817,
             "counters": {
               "line": {
                 "covered": 4,
@@ -188408,7 +188408,7 @@
           {
             "name": "checkVariableDefinition",
             "desc": "(Lgraphql/language/VariableDefinition;)V",
-            "line": 824,
+            "line": 825,
             "counters": {
               "line": {
                 "covered": 12,
@@ -188427,7 +188427,7 @@
           {
             "name": "checkField",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 844,
+            "line": 845,
             "counters": {
               "line": {
                 "covered": 14,
@@ -188446,7 +188446,7 @@
           {
             "name": "checkGoodFaithIntrospection",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 869,
+            "line": 870,
             "counters": {
               "line": {
                 "covered": 22,
@@ -188465,7 +188465,7 @@
           {
             "name": "checkInlineFragment",
             "desc": "(Lgraphql/language/InlineFragment;)V",
-            "line": 915,
+            "line": 916,
             "counters": {
               "line": {
                 "covered": 8,
@@ -188484,7 +188484,7 @@
           {
             "name": "checkDirective",
             "desc": "(Lgraphql/language/Directive;Ljava/util/List;)V",
-            "line": 929,
+            "line": 930,
             "counters": {
               "line": {
                 "covered": 15,
@@ -188503,7 +188503,7 @@
           {
             "name": "checkFragmentSpread",
             "desc": "(Lgraphql/language/FragmentSpread;Ljava/util/List;)V",
-            "line": 954,
+            "line": 955,
             "counters": {
               "line": {
                 "covered": 36,
@@ -188522,7 +188522,7 @@
           {
             "name": "checkFragmentDefinition",
             "desc": "(Lgraphql/language/FragmentDefinition;)V",
-            "line": 1018,
+            "line": 1019,
             "counters": {
               "line": {
                 "covered": 14,
@@ -188541,7 +188541,7 @@
           {
             "name": "checkOperationDefinition",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 1040,
+            "line": 1041,
             "counters": {
               "line": {
                 "covered": 26,
@@ -188560,7 +188560,7 @@
           {
             "name": "checkVariable",
             "desc": "(Lgraphql/language/VariableReference;Ljava/util/List;)V",
-            "line": 1080,
+            "line": 1081,
             "counters": {
               "line": {
                 "covered": 11,
@@ -188579,7 +188579,7 @@
           {
             "name": "checkSelectionSet",
             "desc": "()V",
-            "line": 1100,
+            "line": 1101,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188598,7 +188598,7 @@
           {
             "name": "checkObjectValue",
             "desc": "(Lgraphql/language/ObjectValue;)V",
-            "line": 1103,
+            "line": 1104,
             "counters": {
               "line": {
                 "covered": 4,
@@ -188617,7 +188617,7 @@
           {
             "name": "leaveOperationDefinition",
             "desc": "()V",
-            "line": 1112,
+            "line": 1113,
             "counters": {
               "line": {
                 "covered": 14,
@@ -188636,7 +188636,7 @@
           {
             "name": "leaveSelectionSet",
             "desc": "()V",
-            "line": 1134,
+            "line": 1135,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188655,7 +188655,7 @@
           {
             "name": "leaveFragmentDefinition",
             "desc": "()V",
-            "line": 1139,
+            "line": 1140,
             "counters": {
               "line": {
                 "covered": 1,
@@ -188674,7 +188674,7 @@
           {
             "name": "documentFinished",
             "desc": "()V",
-            "line": 1142,
+            "line": 1143,
             "counters": {
               "line": {
                 "covered": 5,
@@ -188693,7 +188693,7 @@
           {
             "name": "validateExecutableDefinitions",
             "desc": "(Lgraphql/language/Document;)V",
-            "line": 1152,
+            "line": 1153,
             "counters": {
               "line": {
                 "covered": 2,
@@ -188712,7 +188712,7 @@
           {
             "name": "nonExecutableDefinitionMessage",
             "desc": "(Lgraphql/language/Definition;)Ljava/lang/String;",
-            "line": 1162,
+            "line": 1163,
             "counters": {
               "line": {
                 "covered": 6,
@@ -188731,7 +188731,7 @@
           {
             "name": "validateArgumentsOfCorrectType",
             "desc": "(Lgraphql/language/Argument;)V",
-            "line": 1174,
+            "line": 1175,
             "counters": {
               "line": {
                 "covered": 13,
@@ -188750,7 +188750,7 @@
           {
             "name": "validateFieldsOnCorrectType",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 1192,
+            "line": 1193,
             "counters": {
               "line": {
                 "covered": 8,
@@ -188769,7 +188769,7 @@
           {
             "name": "validateFragmentsOnCompositeType_inline",
             "desc": "(Lgraphql/language/InlineFragment;)V",
-            "line": 1205,
+            "line": 1206,
             "counters": {
               "line": {
                 "covered": 9,
@@ -188788,7 +188788,7 @@
           {
             "name": "validateFragmentsOnCompositeType_definition",
             "desc": "(Lgraphql/language/FragmentDefinition;)V",
-            "line": 1219,
+            "line": 1220,
             "counters": {
               "line": {
                 "covered": 6,
@@ -188807,7 +188807,7 @@
           {
             "name": "validateKnownArgumentNames",
             "desc": "(Lgraphql/language/Argument;)V",
-            "line": 1231,
+            "line": 1232,
             "counters": {
               "line": {
                 "covered": 15,
@@ -188826,7 +188826,7 @@
           {
             "name": "validateKnownDirectives",
             "desc": "(Lgraphql/language/Directive;Ljava/util/List;)V",
-            "line": 1253,
+            "line": 1254,
             "counters": {
               "line": {
                 "covered": 10,
@@ -188845,7 +188845,7 @@
           {
             "name": "hasInvalidLocation",
             "desc": "(Lgraphql/schema/GraphQLDirective;Lgraphql/language/Node;)Z",
-            "line": 1267,
+            "line": 1268,
             "counters": {
               "line": {
                 "covered": 19,
@@ -188864,7 +188864,7 @@
           {
             "name": "validateKnownFragmentNames",
             "desc": "(Lgraphql/language/FragmentSpread;)V",
-            "line": 1293,
+            "line": 1294,
             "counters": {
               "line": {
                 "covered": 5,
@@ -188883,7 +188883,7 @@
           {
             "name": "validateKnownTypeNames",
             "desc": "(Lgraphql/language/TypeName;)V",
-            "line": 1302,
+            "line": 1303,
             "counters": {
               "line": {
                 "covered": 4,
@@ -188902,7 +188902,7 @@
           {
             "name": "prepareFragmentSpreadsMap",
             "desc": "()V",
-            "line": 1310,
+            "line": 1311,
             "counters": {
               "line": {
                 "covered": 7,
@@ -188921,7 +188921,7 @@
           {
             "name": "gatherSpreads",
             "desc": "(Lgraphql/language/FragmentDefinition;)Ljava/util/Set;",
-            "line": 1320,
+            "line": 1321,
             "counters": {
               "line": {
                 "covered": 4,
@@ -188940,7 +188940,7 @@
           {
             "name": "validateNoFragmentCycles",
             "desc": "(Lgraphql/language/FragmentDefinition;)V",
-            "line": 1338,
+            "line": 1339,
             "counters": {
               "line": {
                 "covered": 5,
@@ -188959,7 +188959,7 @@
           {
             "name": "findFragmentCycles",
             "desc": "()V",
-            "line": 1346,
+            "line": 1347,
             "counters": {
               "line": {
                 "covered": 7,
@@ -188978,7 +188978,7 @@
           {
             "name": "findFragmentCycles",
             "desc": "(Ljava/lang/String;Ljava/util/Set;Ljava/util/Set;)V",
-            "line": 1356,
+            "line": 1357,
             "counters": {
               "line": {
                 "covered": 27,
@@ -188997,7 +188997,7 @@
           {
             "name": "validateNoUndefinedVariables",
             "desc": "(Lgraphql/language/VariableReference;)V",
-            "line": 1393,
+            "line": 1394,
             "counters": {
               "line": {
                 "covered": 4,
@@ -189016,7 +189016,7 @@
           {
             "name": "validateVariableNotAllowedInConstantDirective",
             "desc": "(Lgraphql/language/VariableReference;Ljava/util/List;)V",
-            "line": 1411,
+            "line": 1412,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189035,7 +189035,7 @@
           {
             "name": "validateNoUnusedFragments",
             "desc": "()V",
-            "line": 1425,
+            "line": 1426,
             "counters": {
               "line": {
                 "covered": 12,
@@ -189054,7 +189054,7 @@
           {
             "name": "collectUsedFragmentsInDefinition",
             "desc": "(Ljava/util/Set;Ljava/lang/String;)V",
-            "line": 1440,
+            "line": 1441,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189073,7 +189073,7 @@
           {
             "name": "validateOverlappingFieldsCanBeMerged",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 1454,
+            "line": 1455,
             "counters": {
               "line": {
                 "covered": 4,
@@ -189092,7 +189092,7 @@
           {
             "name": "overlappingFieldsImpl",
             "desc": "(Lgraphql/language/SelectionSet;Lgraphql/schema/GraphQLOutputType;)V",
-            "line": 1460,
+            "line": 1461,
             "counters": {
               "line": {
                 "covered": 11,
@@ -189111,7 +189111,7 @@
           {
             "name": "overlappingFields_collectFields",
             "desc": "(Ljava/util/Map;Lgraphql/language/SelectionSet;Lgraphql/schema/GraphQLType;Ljava/util/Set;)V",
-            "line": 1474,
+            "line": 1475,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189130,7 +189130,7 @@
           {
             "name": "overlappingFields_collectFieldsForFragmentSpread",
             "desc": "(Ljava/util/Map;Ljava/util/Set;Lgraphql/language/FragmentSpread;)V",
-            "line": 1486,
+            "line": 1487,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189149,7 +189149,7 @@
           {
             "name": "overlappingFields_collectFieldsForInlineFragment",
             "desc": "(Ljava/util/Map;Ljava/util/Set;Lgraphql/schema/GraphQLType;Lgraphql/language/InlineFragment;)V",
-            "line": 1500,
+            "line": 1501,
             "counters": {
               "line": {
                 "covered": 5,
@@ -189168,7 +189168,7 @@
           {
             "name": "overlappingFields_collectFieldsForField",
             "desc": "(Ljava/util/Map;Lgraphql/schema/GraphQLType;Lgraphql/language/Field;)V",
-            "line": 1509,
+            "line": 1510,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189187,7 +189187,7 @@
           {
             "name": "findConflicts",
             "desc": "(Ljava/util/Map;)Ljava/util/List;",
-            "line": 1521,
+            "line": 1522,
             "counters": {
               "line": {
                 "covered": 4,
@@ -189206,7 +189206,7 @@
           {
             "name": "sameResponseShapeByName",
             "desc": "(Ljava/util/Map;Lcom/google/common/collect/ImmutableList;Ljava/util/List;)V",
-            "line": 1528,
+            "line": 1529,
             "counters": {
               "line": {
                 "covered": 13,
@@ -189225,7 +189225,7 @@
           {
             "name": "mergeSubSelections",
             "desc": "(Ljava/util/Set;)Ljava/util/Map;",
-            "line": 1545,
+            "line": 1546,
             "counters": {
               "line": {
                 "covered": 7,
@@ -189244,7 +189244,7 @@
           {
             "name": "sameForCommonParentsByName",
             "desc": "(Ljava/util/Map;Lcom/google/common/collect/ImmutableList;Ljava/util/List;)V",
-            "line": 1556,
+            "line": 1557,
             "counters": {
               "line": {
                 "covered": 16,
@@ -189263,7 +189263,7 @@
           {
             "name": "groupByCommonParents",
             "desc": "(Ljava/util/Set;)Ljava/util/List;",
-            "line": 1577,
+            "line": 1578,
             "counters": {
               "line": {
                 "covered": 23,
@@ -189282,7 +189282,7 @@
           {
             "name": "isInterfaceOrUnion",
             "desc": "(Lgraphql/schema/GraphQLType;)Z",
-            "line": 1613,
+            "line": 1614,
             "counters": {
               "line": {
                 "covered": 1,
@@ -189301,7 +189301,7 @@
           {
             "name": "requireSameNameAndArguments",
             "desc": "(Lcom/google/common/collect/ImmutableList;Ljava/util/Set;)Lgraphql/validation/OperationValidator$Conflict;",
-            "line": 1617,
+            "line": 1618,
             "counters": {
               "line": {
                 "covered": 20,
@@ -189320,7 +189320,7 @@
           {
             "name": "pathToString",
             "desc": "(Lcom/google/common/collect/ImmutableList;)Ljava/lang/String;",
-            "line": 1644,
+            "line": 1645,
             "counters": {
               "line": {
                 "covered": 1,
@@ -189339,7 +189339,7 @@
           {
             "name": "sameArguments",
             "desc": "(Ljava/util/List;Ljava/util/List;)Z",
-            "line": 1648,
+            "line": 1649,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189358,7 +189358,7 @@
           {
             "name": "findArgumentByName",
             "desc": "(Ljava/lang/String;Ljava/util/List;)Lgraphql/language/Argument;",
-            "line": 1664,
+            "line": 1665,
             "counters": {
               "line": {
                 "covered": 3,
@@ -189377,7 +189377,7 @@
           {
             "name": "requireSameOutputTypeShape",
             "desc": "(Lcom/google/common/collect/ImmutableList;Ljava/util/Set;)Lgraphql/validation/OperationValidator$Conflict;",
-            "line": 1673,
+            "line": 1674,
             "counters": {
               "line": {
                 "covered": 32,
@@ -189396,7 +189396,7 @@
           {
             "name": "mkNotSameTypeError",
             "desc": "(Lcom/google/common/collect/ImmutableList;Ljava/util/List;Lgraphql/schema/GraphQLType;Lgraphql/schema/GraphQLType;)Lgraphql/validation/OperationValidator$Conflict;",
-            "line": 1723,
+            "line": 1724,
             "counters": {
               "line": {
                 "covered": 4,
@@ -189415,7 +189415,7 @@
           {
             "name": "notSameType",
             "desc": "(Lgraphql/schema/GraphQLType;Lgraphql/schema/GraphQLType;)Z",
-            "line": 1730,
+            "line": 1731,
             "counters": {
               "line": {
                 "covered": 2,
@@ -189434,7 +189434,7 @@
           {
             "name": "validatePossibleFragmentSpreads_inline",
             "desc": "(Lgraphql/language/InlineFragment;)V",
-            "line": 1786,
+            "line": 1787,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189453,7 +189453,7 @@
           {
             "name": "validatePossibleFragmentSpreads_spread",
             "desc": "(Lgraphql/language/FragmentSpread;)V",
-            "line": 1799,
+            "line": 1800,
             "counters": {
               "line": {
                 "covered": 11,
@@ -189472,7 +189472,7 @@
           {
             "name": "typesDoNotOverlap",
             "desc": "(Lgraphql/schema/GraphQLType;Lgraphql/schema/GraphQLCompositeType;)Z",
-            "line": 1816,
+            "line": 1817,
             "counters": {
               "line": {
                 "covered": 5,
@@ -189491,7 +189491,7 @@
           {
             "name": "getPossibleType",
             "desc": "(Lgraphql/schema/GraphQLType;)Ljava/util/List;",
-            "line": 1825,
+            "line": 1826,
             "counters": {
               "line": {
                 "covered": 7,
@@ -189510,7 +189510,7 @@
           {
             "name": "isValidTargetCompositeType",
             "desc": "(Lgraphql/schema/GraphQLType;)Z",
-            "line": 1839,
+            "line": 1840,
             "counters": {
               "line": {
                 "covered": 1,
@@ -189529,7 +189529,7 @@
           {
             "name": "getInlineFragmentType",
             "desc": "(Lgraphql/language/InlineFragment;)Lgraphql/schema/GraphQLOutputType;",
-            "line": 1844,
+            "line": 1845,
             "counters": {
               "line": {
                 "covered": 5,
@@ -189548,7 +189548,7 @@
           {
             "name": "validateProvidedNonNullArguments_field",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 1854,
+            "line": 1855,
             "counters": {
               "line": {
                 "covered": 18,
@@ -189567,7 +189567,7 @@
           {
             "name": "validateProvidedNonNullArguments_directive",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 1879,
+            "line": 1880,
             "counters": {
               "line": {
                 "covered": 13,
@@ -189586,7 +189586,7 @@
           {
             "name": "findArgumentByName",
             "desc": "(Ljava/util/List;Ljava/lang/String;)Lgraphql/language/Argument;",
-            "line": 1897,
+            "line": 1898,
             "counters": {
               "line": {
                 "covered": 5,
@@ -189605,7 +189605,7 @@
           {
             "name": "validateScalarLeaves",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 1907,
+            "line": 1908,
             "counters": {
               "line": {
                 "covered": 13,
@@ -189624,7 +189624,7 @@
           {
             "name": "validateVariableDefaultValuesOfCorrectType",
             "desc": "(Lgraphql/language/VariableDefinition;)V",
-            "line": 1927,
+            "line": 1928,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189643,7 +189643,7 @@
           {
             "name": "validateVariablesAreInputTypes",
             "desc": "(Lgraphql/language/VariableDefinition;)V",
-            "line": 1941,
+            "line": 1942,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189662,7 +189662,7 @@
           {
             "name": "validateVariableTypesMatch",
             "desc": "(Lgraphql/language/VariableReference;)V",
-            "line": 1954,
+            "line": 1955,
             "counters": {
               "line": {
                 "covered": 23,
@@ -189681,7 +189681,7 @@
           {
             "name": "validateLoneAnonymousOperation",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 1990,
+            "line": 1991,
             "counters": {
               "line": {
                 "covered": 12,
@@ -189700,7 +189700,7 @@
           {
             "name": "validateUniqueOperationNames",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 2008,
+            "line": 2009,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189719,7 +189719,7 @@
           {
             "name": "validateUniqueFragmentNames",
             "desc": "(Lgraphql/language/FragmentDefinition;)V",
-            "line": 2022,
+            "line": 2023,
             "counters": {
               "line": {
                 "covered": 8,
@@ -189738,7 +189738,7 @@
           {
             "name": "validateUniqueDirectiveNamesPerLocation",
             "desc": "(Lgraphql/language/Node;Ljava/util/List;)V",
-            "line": 2036,
+            "line": 2037,
             "counters": {
               "line": {
                 "covered": 12,
@@ -189757,7 +189757,7 @@
           {
             "name": "validateUniqueArgumentNames_field",
             "desc": "(Lgraphql/language/Field;)V",
-            "line": 2052,
+            "line": 2053,
             "counters": {
               "line": {
                 "covered": 2,
@@ -189776,7 +189776,7 @@
           {
             "name": "validateUniqueArgumentNames_directive",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 2056,
+            "line": 2057,
             "counters": {
               "line": {
                 "covered": 2,
@@ -189795,7 +189795,7 @@
           {
             "name": "validateUniqueArgumentNames",
             "desc": "(Ljava/util/List;Lgraphql/language/SourceLocation;)V",
-            "line": 2060,
+            "line": 2061,
             "counters": {
               "line": {
                 "covered": 11,
@@ -189814,7 +189814,7 @@
           {
             "name": "validateUniqueVariableNames",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 2076,
+            "line": 2077,
             "counters": {
               "line": {
                 "covered": 12,
@@ -189833,7 +189833,7 @@
           {
             "name": "validateSubscriptionUniqueRootField",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 2093,
+            "line": 2094,
             "counters": {
               "line": {
                 "covered": 19,
@@ -189852,7 +189852,7 @@
           {
             "name": "isIntrospectionField",
             "desc": "(Lgraphql/execution/MergedField;)Z",
-            "line": 2117,
+            "line": 2118,
             "counters": {
               "line": {
                 "covered": 1,
@@ -189871,7 +189871,7 @@
           {
             "name": "validateUniqueObjectFieldName",
             "desc": "(Lgraphql/language/ObjectValue;)V",
-            "line": 2122,
+            "line": 2123,
             "counters": {
               "line": {
                 "covered": 10,
@@ -189890,7 +189890,7 @@
           {
             "name": "validateDeferDirectiveOnRootLevel",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 2136,
+            "line": 2137,
             "counters": {
               "line": {
                 "covered": 13,
@@ -189909,7 +189909,7 @@
           {
             "name": "validateDeferDirectiveOnValidOperation",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 2156,
+            "line": 2157,
             "counters": {
               "line": {
                 "covered": 9,
@@ -189928,7 +189928,7 @@
           {
             "name": "ifArgumentMightBeFalse",
             "desc": "(Lgraphql/language/Directive;)Z",
-            "line": 2171,
+            "line": 2172,
             "counters": {
               "line": {
                 "covered": 6,
@@ -189947,7 +189947,7 @@
           {
             "name": "validateDeferDirectiveLabel",
             "desc": "(Lgraphql/language/Directive;)V",
-            "line": 2183,
+            "line": 2184,
             "counters": {
               "line": {
                 "covered": 19,
@@ -189966,7 +189966,7 @@
           {
             "name": "validateKnownOperationTypes",
             "desc": "(Lgraphql/language/OperationDefinition;)V",
-            "line": 2209,
+            "line": 2210,
             "counters": {
               "line": {
                 "covered": 10,
@@ -189985,7 +189985,7 @@
           {
             "name": "formatOperation",
             "desc": "(Lgraphql/language/OperationDefinition$Operation;)Ljava/lang/String;",
-            "line": 2223,
+            "line": 2224,
             "counters": {
               "line": {
                 "covered": 1,
@@ -190004,7 +190004,7 @@
           {
             "name": "toString",
             "desc": "()Ljava/lang/String;",
-            "line": 2228,
+            "line": 2229,
             "counters": {
               "line": {
                 "covered": 0,
@@ -190023,7 +190023,7 @@
           {
             "name": "lambda$groupByCommonParents$0",
             "desc": "(Lgraphql/schema/GraphQLType;)Ljava/util/Set;",
-            "line": 1590,
+            "line": 1591,
             "counters": {
               "line": {
                 "covered": 1,
@@ -190042,7 +190042,7 @@
           {
             "name": "lambda$overlappingFields_collectFieldsForField$0",
             "desc": "(Ljava/lang/String;)Ljava/util/Set;",
-            "line": 1517,
+            "line": 1518,
             "counters": {
               "line": {
                 "covered": 1,
@@ -190061,7 +190061,7 @@
           {
             "name": "lambda$validateExecutableDefinitions$0",
             "desc": "(Lgraphql/language/Definition;)V",
-            "line": 1153,
+            "line": 1154,
             "counters": {
               "line": {
                 "covered": 4,
@@ -190711,7 +190711,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/validation/OperationValidator;Ljava/util/Set;)V",
-            "line": 1321,
+            "line": 1322,
             "counters": {
               "line": {
                 "covered": 1,
@@ -190730,7 +190730,7 @@
           {
             "name": "enter",
             "desc": "(Lgraphql/language/Node;Ljava/util/List;)V",
-            "line": 1324,
+            "line": 1325,
             "counters": {
               "line": {
                 "covered": 3,
@@ -190749,7 +190749,7 @@
           {
             "name": "leave",
             "desc": "(Lgraphql/language/Node;Ljava/util/List;)V",
-            "line": 1331,
+            "line": 1332,
             "counters": {
               "line": {
                 "covered": 1,
@@ -191716,7 +191716,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/language/Field;Lgraphql/schema/GraphQLType;Lgraphql/schema/GraphQLType;)V",
-            "line": 1741,
+            "line": 1742,
             "counters": {
               "line": {
                 "covered": 5,
@@ -191735,7 +191735,7 @@
           {
             "name": "toString",
             "desc": "()Ljava/lang/String;",
-            "line": 1749,
+            "line": 1750,
             "counters": {
               "line": {
                 "covered": 0,
