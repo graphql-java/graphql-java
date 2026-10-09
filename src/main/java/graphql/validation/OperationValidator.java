@@ -79,6 +79,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -2220,7 +2221,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private String formatOperation(OperationDefinition.Operation operation) {
-        return StringKit.capitalize(operation.name().toLowerCase());
+        return StringKit.capitalize(operation.name().toLowerCase(Locale.ROOT));
     }
 
     @Override

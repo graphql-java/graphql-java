@@ -129,6 +129,24 @@ class LambdaFetchingSupportTest extends Specification {
         getter.get().apply(pojo) == null
     }
 
+    def "property names are derived independently of the default locale"() {
+        // see https://github.com/graphql-java/graphql-java/issues/3385
+        given:
+        Locale oldLocale = Locale.getDefault()
+        Locale.setDefault(new Locale("tr", "TR"))
+        def pojo = new Pojo("Brad", 42)
+
+        when:
+        def getter = LambdaFetchingSupport.createGetter(Pojo.class, "interesting")
+
+        then:
+        getter.isPresent()
+        getter.get().apply(pojo) == true
+
+        cleanup:
+        Locale.setDefault(oldLocale)
+    }
+
     def "will ignore non public methods"() {
 
         when:
