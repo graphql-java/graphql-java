@@ -17,9 +17,10 @@ import graphql.parser.exceptions.ParseCancelledTooDeepException;
 import graphql.parser.exceptions.ParseCancelledTooManyCharsException;
 import graphql.parser.exceptions.ParseCancelledTooManyNumericLiteralCharactersException;
 import org.antlr.v4.runtime.BaseErrorListener;
-import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CodePointBuffer;
 import org.antlr.v4.runtime.CodePointCharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.IntStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
@@ -32,6 +33,7 @@ import org.jspecify.annotations.NonNull;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
+import java.nio.CharBuffer;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -309,15 +311,51 @@ public class Parser {
         return new SafeTokenReader(multiSourceReader, maxCharacters, onTooManyCharacters);
     }
 
+    // matches the chunk size ANTLR's CharStreams.fromReader() uses internally
+    private static final int CHAR_STREAM_BUFFER_SIZE = 4096;
+
     @NonNull
     private static CodePointCharStream setupCharStream(SafeTokenReader safeTokenReader) {
-        CodePointCharStream charStream;
         try {
-            charStream = CharStreams.fromReader(safeTokenReader);
+            return readCodePointCharStream(safeTokenReader, CHAR_STREAM_BUFFER_SIZE);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        return charStream;
+    }
+
+    /**
+     * This mirrors {@link CharStreams#fromReader(Reader)}, except that a surrogate pair split across
+     * two chunk reads is held back and carried into the next chunk instead of being mis-decoded.
+     * <p>
+     * ANTLR's {@link CodePointBuffer.Builder#append(CharBuffer)} keeps a pending high surrogate across
+     * calls, but its flush at the end of a chunk fails to clear that pending state, so a surrogate pair
+     * split across two {@code append()} calls gets decoded into two separate code points instead of one.
+     * Never handing it a chunk that ends on an unpaired high surrogate avoids the bug entirely.
+     *
+     * @see <a href="https://github.com/antlr/antlr4/pull/4943">antlr/antlr4#4943</a>
+     */
+    private static CodePointCharStream readCodePointCharStream(Reader reader, int bufferSize) throws IOException {
+        CodePointBuffer.Builder builder = CodePointBuffer.builder(bufferSize);
+        CharBuffer charBuffer = CharBuffer.allocate(bufferSize);
+        try {
+            while (reader.read(charBuffer) != -1) {
+                charBuffer.flip();
+                int realLimit = charBuffer.limit();
+                if (realLimit > charBuffer.position() && Character.isHighSurrogate(charBuffer.get(realLimit - 1))) {
+                    charBuffer.limit(realLimit - 1);
+                }
+                builder.append(charBuffer);
+                charBuffer.limit(realLimit);
+                charBuffer.compact();
+            }
+            charBuffer.flip();
+            if (charBuffer.hasRemaining()) {
+                builder.append(charBuffer);
+            }
+            return CodePointCharStream.fromBuffer(builder.build(), IntStream.UNKNOWN_SOURCE_NAME);
+        } finally {
+            reader.close();
+        }
     }
 
     @NonNull
