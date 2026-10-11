@@ -22,6 +22,7 @@ import graphql.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -272,7 +273,7 @@ class SchemaGeneratorAppliedDirectiveHelper {
 
     private static List<Introspection.DirectiveLocation> buildLocations(DirectiveDefinition directiveDefinition) {
         return map(directiveDefinition.getDirectiveLocations(),
-                dl -> Introspection.DirectiveLocation.valueOf(dl.getName().toUpperCase()));
+                dl -> Introspection.DirectiveLocation.valueOf(dl.getName().toUpperCase(Locale.ROOT)));
     }
 
     static GraphQLArgument buildDirectiveArgumentDefinitionFromAst(SchemaGeneratorHelper.BuildContext buildCtx, InputValueDefinition valueDefinition, Function<Type<?>, GraphQLInputType> inputTypeFactory) {
