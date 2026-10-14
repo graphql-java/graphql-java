@@ -8,6 +8,9 @@ import graphql.collect.ImmutableKit;
 import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,6 +22,7 @@ import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> implements SDLDefinition<SchemaDefinition>, DirectivesContainer<SchemaDefinition> {
 
     private final NodeUtil.DirectivesHolder directives;
@@ -31,11 +35,11 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
     @Internal
     protected SchemaDefinition(List<Directive> directives,
                                List<OperationTypeDefinition> operationTypeDefinitions,
-                               SourceLocation sourceLocation,
+                               @Nullable SourceLocation sourceLocation,
                                List<Comment> comments,
                                IgnoredChars ignoredChars,
                                Map<String, String> additionalData,
-                               Description description) {
+                               @Nullable Description description) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.directives = NodeUtil.DirectivesHolder.of(directives);
         this.operationTypeDefinitions = ImmutableList.copyOf(operationTypeDefinitions);
@@ -65,10 +69,6 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
         return operationTypeDefinitions;
     }
 
-    public Description getDescription() {
-        return description;
-    }
-
     @Override
     public List<Node> getChildren() {
         return FpKit.concat(directives.getDirectives(), operationTypeDefinitions);
@@ -91,7 +91,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -103,7 +103,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
 
     @Override
     public SchemaDefinition deepCopy() {
-        return new SchemaDefinition(deepCopy(directives.getDirectives()), deepCopy(operationTypeDefinitions), getSourceLocation(), getComments(),
+        return new SchemaDefinition(assertNotNull(deepCopy(directives.getDirectives()), "directives deepCopy should not return null"), assertNotNull(deepCopy(operationTypeDefinitions), "operationTypeDefinitions deepCopy should not return null"), getSourceLocation(), getComments(),
                 getIgnoredChars(), getAdditionalData(), description);
     }
 
@@ -130,6 +130,7 @@ public class SchemaDefinition extends AbstractDescribedNode<SchemaDefinition> im
         return new Builder();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();

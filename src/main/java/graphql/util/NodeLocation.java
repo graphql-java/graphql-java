@@ -1,6 +1,8 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
@@ -10,12 +12,13 @@ import java.util.Objects;
  * Can be an index or a name with an index.
  */
 @PublicApi
+@NullMarked
 public class NodeLocation {
 
-    private final String name;
+    private final @Nullable String name;
     private final int index;
 
-    public NodeLocation(String name, int index) {
+    public NodeLocation(@Nullable String name, int index) {
         this.name = name;
         this.index = index;
     }
@@ -23,7 +26,7 @@ public class NodeLocation {
     /**
      * @return the name or null if there is no name
      */
-    public String getName() {
+    public @Nullable String getName() {
         return name;
     }
 
@@ -40,7 +43,7 @@ public class NodeLocation {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }

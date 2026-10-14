@@ -2,11 +2,13 @@ package graphql.schema.idl;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Simple EnumValuesProvided which maps the GraphQL Enum name to the Java Enum instance.
  */
 @PublicApi
+@NullMarked
 public class NaturalEnumValuesProvider<T extends Enum<T>> implements EnumValuesProvider {
 
 

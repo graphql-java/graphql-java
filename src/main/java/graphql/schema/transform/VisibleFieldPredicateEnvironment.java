@@ -2,12 +2,14 @@ package graphql.schema.transform;
 
 import graphql.PublicApi;
 import graphql.schema.GraphQLNamedSchemaElement;
+import org.jspecify.annotations.NullMarked;
 import graphql.schema.GraphQLSchemaElement;
 
 /**
  * Container to pass additional context about a schema element (ie., field) to {@link VisibleFieldPredicate}.
  */
 @PublicApi
+@NullMarked
 public interface VisibleFieldPredicateEnvironment {
 
     GraphQLNamedSchemaElement getSchemaElement();

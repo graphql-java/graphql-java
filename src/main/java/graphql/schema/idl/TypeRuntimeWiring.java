@@ -2,6 +2,9 @@ package graphql.schema.idl;
 
 import graphql.PublicApi;
 import graphql.schema.DataFetcher;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.TypeResolver;
 import graphql.schema.idl.errors.StrictModeWiringException;
@@ -20,6 +23,7 @@ import static java.lang.String.format;
  * This is used by {@link RuntimeWiring} to wire together a functional {@link GraphQLSchema}
  */
 @PublicApi
+@NullMarked
 public class TypeRuntimeWiring {
 
     private final static AtomicBoolean DEFAULT_STRICT_MODE = new AtomicBoolean(true);
@@ -43,12 +47,12 @@ public class TypeRuntimeWiring {
     }
 
     private final String typeName;
-    private final DataFetcher defaultDataFetcher;
+    private final @Nullable DataFetcher defaultDataFetcher;
     private final Map<String, DataFetcher> fieldDataFetchers;
-    private final TypeResolver typeResolver;
-    private final EnumValuesProvider enumValuesProvider;
+    private final @Nullable TypeResolver typeResolver;
+    private final @Nullable EnumValuesProvider enumValuesProvider;
 
-    private TypeRuntimeWiring(String typeName, DataFetcher defaultDataFetcher, Map<String, DataFetcher> fieldDataFetchers, TypeResolver typeResolver, EnumValuesProvider enumValuesProvider) {
+    private TypeRuntimeWiring(String typeName, @Nullable DataFetcher defaultDataFetcher, Map<String, DataFetcher> fieldDataFetchers, @Nullable TypeResolver typeResolver, @Nullable EnumValuesProvider enumValuesProvider) {
         this.typeName = typeName;
         this.defaultDataFetcher = defaultDataFetcher;
         this.fieldDataFetchers = fieldDataFetchers;
@@ -88,18 +92,19 @@ public class TypeRuntimeWiring {
         return fieldDataFetchers;
     }
 
-    public DataFetcher getDefaultDataFetcher() {
+    public @Nullable DataFetcher getDefaultDataFetcher() {
         return defaultDataFetcher;
     }
 
-    public TypeResolver getTypeResolver() {
+    public @Nullable TypeResolver getTypeResolver() {
         return typeResolver;
     }
 
-    public EnumValuesProvider getEnumValuesProvider() {
+    public @Nullable EnumValuesProvider getEnumValuesProvider() {
         return enumValuesProvider;
     }
 
+    @NullUnmarked
     public static class Builder {
         private final Map<String, DataFetcher> fieldDataFetchers = new LinkedHashMap<>();
         private String typeName;

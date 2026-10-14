@@ -1,6 +1,8 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -10,9 +12,10 @@ import java.util.List;
  * @see graphql.schema.GraphQLInputType
  */
 @PublicApi
+@NullMarked
 public interface GraphQLInputFieldsContainer extends GraphQLNamedType {
 
-    GraphQLInputObjectField getFieldDefinition(String name);
+    @Nullable GraphQLInputObjectField getFieldDefinition(String name);
 
     List<GraphQLInputObjectField> getFieldDefinitions();
 }

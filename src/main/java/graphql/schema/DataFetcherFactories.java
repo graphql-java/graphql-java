@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
@@ -9,6 +10,7 @@ import java.util.function.BiFunction;
  * A helper for {@link graphql.schema.DataFetcherFactory}
  */
 @PublicApi
+@NullMarked
 public class DataFetcherFactories {
 
     /**
