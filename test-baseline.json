@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5963,
-      "passed": 5907,
+      "total": 5964,
+      "passed": 5908,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5963,
-      "passed": 5906,
+      "total": 5964,
+      "passed": 5907,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5963,
-      "passed": 5906,
+      "total": 5964,
+      "passed": 5907,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5963,
-      "passed": 5906,
+      "total": 5964,
+      "passed": 5907,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,11 +39,11 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8838,
+        "covered": 8840,
         "missed": 1520
       },
       "line": {
-        "covered": 30140,
+        "covered": 30143,
         "missed": 3118
       },
       "method": {
@@ -78061,11 +78061,11 @@
       },
       "graphql.scalar.GraphqlIntCoercing": {
         "line": {
-          "covered": 55,
+          "covered": 58,
           "missed": 4
         },
         "branch": {
-          "covered": 23,
+          "covered": 25,
           "missed": 1
         },
         "method": {
@@ -78095,7 +78095,7 @@
           {
             "name": "convertImpl",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Integer;",
-            "line": 35,
+            "line": 38,
             "counters": {
               "line": {
                 "covered": 11,
@@ -78114,7 +78114,7 @@
           {
             "name": "serialiseImpl",
             "desc": "(Ljava/lang/Object;Ljava/util/Locale;)Ljava/lang/Integer;",
-            "line": 56,
+            "line": 59,
             "counters": {
               "line": {
                 "covered": 5,
@@ -78133,7 +78133,7 @@
           {
             "name": "parseValueImpl",
             "desc": "(Ljava/lang/Object;Ljava/util/Locale;)Ljava/lang/Integer;",
-            "line": 67,
+            "line": 70,
             "counters": {
               "line": {
                 "covered": 13,
@@ -78151,15 +78151,15 @@
           },
           {
             "name": "convertParseValueImpl",
-            "desc": "(Ljava/lang/Object;)Ljava/math/BigInteger;",
-            "line": 94,
+            "desc": "(Ljava/lang/Object;Ljava/util/Locale;)Ljava/math/BigInteger;",
+            "line": 97,
             "counters": {
               "line": {
-                "covered": 5,
+                "covered": 8,
                 "missed": 2
               },
               "branch": {
-                "covered": 0,
+                "covered": 2,
                 "missed": 0
               },
               "method": {
@@ -78171,7 +78171,7 @@
           {
             "name": "parseLiteralImpl",
             "desc": "(Ljava/lang/Object;Ljava/util/Locale;)I",
-            "line": 108,
+            "line": 123,
             "counters": {
               "line": {
                 "covered": 8,
@@ -78190,7 +78190,7 @@
           {
             "name": "valueToLiteralImpl",
             "desc": "(Ljava/lang/Object;Ljava/util/Locale;)Lgraphql/language/IntValue;",
-            "line": 123,
+            "line": 138,
             "counters": {
               "line": {
                 "covered": 3,
@@ -78209,7 +78209,7 @@
           {
             "name": "serialize",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Integer;",
-            "line": 134,
+            "line": 149,
             "counters": {
               "line": {
                 "covered": 1,
@@ -78228,7 +78228,7 @@
           {
             "name": "serialize",
             "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Integer;",
-            "line": 139,
+            "line": 154,
             "counters": {
               "line": {
                 "covered": 1,
@@ -78247,7 +78247,7 @@
           {
             "name": "parseValue",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Integer;",
-            "line": 145,
+            "line": 160,
             "counters": {
               "line": {
                 "covered": 1,
@@ -78266,7 +78266,7 @@
           {
             "name": "parseValue",
             "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Integer;",
-            "line": 150,
+            "line": 165,
             "counters": {
               "line": {
                 "covered": 1,
@@ -78285,7 +78285,7 @@
           {
             "name": "parseLiteral",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Integer;",
-            "line": 156,
+            "line": 171,
             "counters": {
               "line": {
                 "covered": 1,
@@ -78304,7 +78304,7 @@
           {
             "name": "parseLiteral",
             "desc": "(Lgraphql/language/Value;Lgraphql/execution/CoercedVariables;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Integer;",
-            "line": 161,
+            "line": 176,
             "counters": {
               "line": {
                 "covered": 1,
@@ -78323,7 +78323,7 @@
           {
             "name": "valueToLiteral",
             "desc": "(Ljava/lang/Object;)Lgraphql/language/Value;",
-            "line": 167,
+            "line": 182,
             "counters": {
               "line": {
                 "covered": 0,
@@ -78342,7 +78342,7 @@
           {
             "name": "valueToLiteral",
             "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
-            "line": 172,
+            "line": 187,
             "counters": {
               "line": {
                 "covered": 1,
