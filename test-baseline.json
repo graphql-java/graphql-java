@@ -39,8 +39,8 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8847,
-        "missed": 1521
+        "covered": 8848,
+        "missed": 1520
       },
       "line": {
         "covered": 30158,
@@ -179143,8 +179143,8 @@
           "missed": 12
         },
         "branch": {
-          "covered": 118,
-          "missed": 12
+          "covered": 119,
+          "missed": 11
         },
         "method": {
           "covered": 67,
@@ -180396,8 +180396,8 @@
                 "missed": 0
               },
               "branch": {
-                "covered": 9,
-                "missed": 1
+                "covered": 10,
+                "missed": 0
               },
               "method": {
                 "covered": 1,
