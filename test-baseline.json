@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5964,
-      "passed": 5908,
+      "total": 5982,
+      "passed": 5926,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5964,
-      "passed": 5907,
+      "total": 5982,
+      "passed": 5925,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5964,
-      "passed": 5907,
+      "total": 5982,
+      "passed": 5925,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5964,
-      "passed": 5907,
+      "total": 5982,
+      "passed": 5925,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,16 +39,16 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8840,
-        "missed": 1520
+        "covered": 8847,
+        "missed": 1521
       },
       "line": {
-        "covered": 30143,
-        "missed": 3118
+        "covered": 30158,
+        "missed": 3117
       },
       "method": {
-        "covered": 8048,
-        "missed": 1207
+        "covered": 8050,
+        "missed": 1206
       }
     },
     "classes": {
@@ -39975,16 +39975,16 @@
       },
       "graphql.schema.idl.TypeDefinitionRegistry": {
         "line": {
-          "covered": 336,
-          "missed": 22
+          "covered": 337,
+          "missed": 21
         },
         "branch": {
           "covered": 144,
           "missed": 20
         },
         "method": {
-          "covered": 75,
-          "missed": 4
+          "covered": 76,
+          "missed": 3
         },
         "methods": [
           {
@@ -40715,16 +40715,16 @@
             "line": 616,
             "counters": {
               "line": {
-                "covered": 0,
-                "missed": 1
+                "covered": 1,
+                "missed": 0
               },
               "branch": {
                 "covered": 0,
                 "missed": 0
               },
               "method": {
-                "covered": 0,
-                "missed": 1
+                "covered": 1,
+                "missed": 0
               }
             }
           },
@@ -155437,7 +155437,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/parser/Parser$2;Lorg/antlr/v4/runtime/Token;)V",
-            "line": 407,
+            "line": 445,
             "counters": {
               "line": {
                 "covered": 1,
@@ -155456,7 +155456,7 @@
           {
             "name": "getText",
             "desc": "()Ljava/lang/String;",
-            "line": 410,
+            "line": 448,
             "counters": {
               "line": {
                 "covered": 1,
@@ -155475,7 +155475,7 @@
           {
             "name": "getLine",
             "desc": "()I",
-            "line": 415,
+            "line": 453,
             "counters": {
               "line": {
                 "covered": 0,
@@ -155494,7 +155494,7 @@
           {
             "name": "getCharPositionInLine",
             "desc": "()I",
-            "line": 420,
+            "line": 458,
             "counters": {
               "line": {
                 "covered": 0,
@@ -156163,7 +156163,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/parser/MultiSourceReader;Lgraphql/parser/ParserEnvironment;)V",
-            "line": 327,
+            "line": 365,
             "counters": {
               "line": {
                 "covered": 1,
@@ -156182,7 +156182,7 @@
           {
             "name": "syntaxError",
             "desc": "(Lorg/antlr/v4/runtime/Recognizer;Ljava/lang/Object;IILjava/lang/String;Lorg/antlr/v4/runtime/RecognitionException;)V",
-            "line": 330,
+            "line": 368,
             "counters": {
               "line": {
                 "covered": 9,
@@ -156217,7 +156217,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/parser/Parser;ILgraphql/parser/ParserEnvironment;Lgraphql/parser/MultiSourceReader;Lgraphql/parser/ParsingListener;I)V",
-            "line": 379,
+            "line": 417,
             "counters": {
               "line": {
                 "covered": 3,
@@ -156236,7 +156236,7 @@
           {
             "name": "enterEveryRule",
             "desc": "(Lorg/antlr/v4/runtime/ParserRuleContext;)V",
-            "line": 386,
+            "line": 424,
             "counters": {
               "line": {
                 "covered": 5,
@@ -156255,7 +156255,7 @@
           {
             "name": "exitEveryRule",
             "desc": "(Lorg/antlr/v4/runtime/ParserRuleContext;)V",
-            "line": 400,
+            "line": 438,
             "counters": {
               "line": {
                 "covered": 2,
@@ -156274,7 +156274,7 @@
           {
             "name": "visitTerminal",
             "desc": "(Lorg/antlr/v4/runtime/tree/TerminalNode;)V",
-            "line": 406,
+            "line": 444,
             "counters": {
               "line": {
                 "covered": 5,
@@ -157673,22 +157673,22 @@
       },
       "graphql.parser.Parser": {
         "line": {
-          "covered": 129,
+          "covered": 143,
           "missed": 2
         },
         "branch": {
-          "covered": 19,
-          "missed": 9
+          "covered": 26,
+          "missed": 10
         },
         "method": {
-          "covered": 29,
+          "covered": 30,
           "missed": 0
         },
         "methods": [
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 58,
+            "line": 60,
             "counters": {
               "line": {
                 "covered": 1,
@@ -157707,7 +157707,7 @@
           {
             "name": "parse",
             "desc": "(Lgraphql/parser/ParserEnvironment;)Lgraphql/language/Document;",
-            "line": 75,
+            "line": 77,
             "counters": {
               "line": {
                 "covered": 1,
@@ -157726,7 +157726,7 @@
           {
             "name": "parse",
             "desc": "(Ljava/lang/String;)Lgraphql/language/Document;",
-            "line": 88,
+            "line": 90,
             "counters": {
               "line": {
                 "covered": 1,
@@ -157745,7 +157745,7 @@
           {
             "name": "parseValue",
             "desc": "(Ljava/lang/String;)Lgraphql/language/Value;",
-            "line": 102,
+            "line": 104,
             "counters": {
               "line": {
                 "covered": 1,
@@ -157764,7 +157764,7 @@
           {
             "name": "parseFieldDefinition",
             "desc": "(Ljava/lang/String;)Lgraphql/language/FieldDefinition;",
-            "line": 115,
+            "line": 117,
             "counters": {
               "line": {
                 "covered": 1,
@@ -157783,7 +157783,7 @@
           {
             "name": "parseType",
             "desc": "(Ljava/lang/String;)Lgraphql/language/Type;",
-            "line": 128,
+            "line": 130,
             "counters": {
               "line": {
                 "covered": 1,
@@ -157802,7 +157802,7 @@
           {
             "name": "parseDocument",
             "desc": "(Lgraphql/parser/ParserEnvironment;)Lgraphql/language/Document;",
-            "line": 141,
+            "line": 143,
             "counters": {
               "line": {
                 "covered": 1,
@@ -157821,7 +157821,7 @@
           {
             "name": "parseDocument",
             "desc": "(Ljava/lang/String;)Lgraphql/language/Document;",
-            "line": 154,
+            "line": 156,
             "counters": {
               "line": {
                 "covered": 8,
@@ -157840,7 +157840,7 @@
           {
             "name": "parseDocument",
             "desc": "(Ljava/io/Reader;)Lgraphql/language/Document;",
-            "line": 175,
+            "line": 177,
             "counters": {
               "line": {
                 "covered": 4,
@@ -157859,7 +157859,7 @@
           {
             "name": "parseDocumentImpl",
             "desc": "(Lgraphql/parser/ParserEnvironment;)Lgraphql/language/Document;",
-            "line": 182,
+            "line": 184,
             "counters": {
               "line": {
                 "covered": 2,
@@ -157878,7 +157878,7 @@
           {
             "name": "parseValueImpl",
             "desc": "(Ljava/lang/String;)Lgraphql/language/Value;",
-            "line": 191,
+            "line": 193,
             "counters": {
               "line": {
                 "covered": 7,
@@ -157897,7 +157897,7 @@
           {
             "name": "parseTypeImpl",
             "desc": "(Ljava/lang/String;)Lgraphql/language/Type;",
-            "line": 205,
+            "line": 207,
             "counters": {
               "line": {
                 "covered": 7,
@@ -157916,7 +157916,7 @@
           {
             "name": "parseFieldDefinitionImpl",
             "desc": "(Ljava/lang/String;)Lgraphql/language/FieldDefinition;",
-            "line": 220,
+            "line": 222,
             "counters": {
               "line": {
                 "covered": 7,
@@ -157935,7 +157935,7 @@
           {
             "name": "parseImpl",
             "desc": "(Lgraphql/parser/ParserEnvironment;Ljava/util/function/BiFunction;)Lgraphql/language/Node;",
-            "line": 236,
+            "line": 238,
             "counters": {
               "line": {
                 "covered": 28,
@@ -157954,7 +157954,7 @@
           {
             "name": "setupMultiSourceReader",
             "desc": "(Lgraphql/parser/ParserEnvironment;Lgraphql/parser/ParserOptions;)Lgraphql/parser/MultiSourceReader;",
-            "line": 291,
+            "line": 293,
             "counters": {
               "line": {
                 "covered": 8,
@@ -157973,7 +157973,7 @@
           {
             "name": "setupSafeTokenReader",
             "desc": "(Lgraphql/parser/ParserEnvironment;Lgraphql/parser/ParserOptions;Lgraphql/parser/MultiSourceReader;)Lgraphql/parser/SafeTokenReader;",
-            "line": 305,
+            "line": 307,
             "counters": {
               "line": {
                 "covered": 3,
@@ -157992,10 +157992,10 @@
           {
             "name": "setupCharStream",
             "desc": "(Lgraphql/parser/SafeTokenReader;)Lorg/antlr/v4/runtime/CodePointCharStream;",
-            "line": 316,
+            "line": 320,
             "counters": {
               "line": {
-                "covered": 3,
+                "covered": 1,
                 "missed": 2
               },
               "branch": {
@@ -158009,9 +158009,28 @@
             }
           },
           {
+            "name": "readCodePointCharStream",
+            "desc": "(Ljava/io/Reader;I)Lorg/antlr/v4/runtime/CodePointCharStream;",
+            "line": 338,
+            "counters": {
+              "line": {
+                "covered": 16,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 7,
+                "missed": 1
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
             "name": "setupGraphqlLexer",
             "desc": "(Lgraphql/parser/ParserEnvironment;Lgraphql/parser/MultiSourceReader;Lorg/antlr/v4/runtime/CodePointCharStream;)Lgraphql/parser/antlr/GraphqlLexer;",
-            "line": 325,
+            "line": 363,
             "counters": {
               "line": {
                 "covered": 4,
@@ -158030,7 +158049,7 @@
           {
             "name": "getSafeTokenSource",
             "desc": "(Lgraphql/parser/ParserEnvironment;Lgraphql/parser/ParserOptions;Lgraphql/parser/MultiSourceReader;Lgraphql/parser/antlr/GraphqlLexer;)Lgraphql/parser/SafeTokenSource;",
-            "line": 350,
+            "line": 388,
             "counters": {
               "line": {
                 "covered": 6,
@@ -158049,7 +158068,7 @@
           {
             "name": "setupParserListener",
             "desc": "(Lgraphql/parser/ParserEnvironment;Lgraphql/parser/MultiSourceReader;Lgraphql/parser/antlr/GraphqlParser;Lgraphql/parser/GraphqlAntlrToLanguage;)V",
-            "line": 374,
+            "line": 412,
             "counters": {
               "line": {
                 "covered": 7,
@@ -158068,7 +158087,7 @@
           {
             "name": "throwIfTokenProblems",
             "desc": "(Lgraphql/parser/ParserEnvironment;Lorg/antlr/v4/runtime/Token;ILgraphql/parser/MultiSourceReader;Ljava/lang/Class;)V",
-            "line": 440,
+            "line": 478,
             "counters": {
               "line": {
                 "covered": 11,
@@ -158087,7 +158106,7 @@
           {
             "name": "getAntlrToLanguage",
             "desc": "(Lorg/antlr/v4/runtime/CommonTokenStream;Lgraphql/parser/MultiSourceReader;Lgraphql/parser/ParserEnvironment;)Lgraphql/parser/GraphqlAntlrToLanguage;",
-            "line": 466,
+            "line": 504,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158106,7 +158125,7 @@
           {
             "name": "lambda$getSafeTokenSource$1",
             "desc": "(Lgraphql/parser/MultiSourceReader;Lgraphql/parser/ParserEnvironment;Ljava/lang/Integer;Lorg/antlr/v4/runtime/Token;)V",
-            "line": 360,
+            "line": 398,
             "counters": {
               "line": {
                 "covered": 2,
@@ -158125,7 +158144,7 @@
           {
             "name": "lambda$getSafeTokenSource$0",
             "desc": "(Lgraphql/parser/ParserEnvironment;Lgraphql/parser/MultiSourceReader;Ljava/lang/Integer;Lorg/antlr/v4/runtime/Token;)V",
-            "line": 353,
+            "line": 391,
             "counters": {
               "line": {
                 "covered": 2,
@@ -158144,7 +158163,7 @@
           {
             "name": "lambda$setupSafeTokenReader$0",
             "desc": "(Lgraphql/parser/ParserEnvironment;ILjava/lang/Integer;)V",
-            "line": 307,
+            "line": 309,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158163,7 +158182,7 @@
           {
             "name": "lambda$parseFieldDefinitionImpl$0",
             "desc": "(Lgraphql/parser/antlr/GraphqlParser;Lgraphql/parser/GraphqlAntlrToLanguage;)[Ljava/lang/Object;",
-            "line": 221,
+            "line": 223,
             "counters": {
               "line": {
                 "covered": 3,
@@ -158182,7 +158201,7 @@
           {
             "name": "lambda$parseTypeImpl$0",
             "desc": "(Lgraphql/parser/antlr/GraphqlParser;Lgraphql/parser/GraphqlAntlrToLanguage;)[Ljava/lang/Object;",
-            "line": 206,
+            "line": 208,
             "counters": {
               "line": {
                 "covered": 3,
@@ -158201,7 +158220,7 @@
           {
             "name": "lambda$parseValueImpl$0",
             "desc": "(Lgraphql/parser/antlr/GraphqlParser;Lgraphql/parser/GraphqlAntlrToLanguage;)[Ljava/lang/Object;",
-            "line": 192,
+            "line": 194,
             "counters": {
               "line": {
                 "covered": 3,
@@ -158220,7 +158239,7 @@
           {
             "name": "lambda$parseDocumentImpl$0",
             "desc": "(Lgraphql/parser/antlr/GraphqlParser;Lgraphql/parser/GraphqlAntlrToLanguage;)[Ljava/lang/Object;",
-            "line": 183,
+            "line": 185,
             "counters": {
               "line": {
                 "covered": 3,
