@@ -73,6 +73,25 @@ class I18nTest extends Specification {
         message == "Validierungsfehler ({0}) : Type definition '{1}' ist nicht ausführbar"
     }
 
+    def "message arguments are formatted with the message locale not the JVM default locale"() {
+        // Slovenian formats -1 with a unicode minus sign and groups thousands with a dot
+        def originalDefault = Locale.getDefault()
+        def originalFormatDefault = Locale.getDefault(Locale.Category.FORMAT)
+        Locale.setDefault(Locale.forLanguageTag("sl-SI"))
+
+        when:
+        def englishMessage = I18n.i18n(BundleType.Parsing, Locale.ENGLISH).msg("InvalidSyntaxMoreTokens.noMessage", -1, 1234)
+        def germanMessage = I18n.i18n(BundleType.Parsing, Locale.GERMAN).msg("InvalidSyntaxMoreTokens.noMessage", -1, 1234)
+
+        then:
+        englishMessage.endsWith("Offending token at line -1 column 1,234")
+        germanMessage.endsWith("Ungültiges Token in Zeile -1 Spalte 1.234")
+
+        cleanup:
+        Locale.setDefault(originalDefault)
+        Locale.setDefault(Locale.Category.FORMAT, originalFormatDefault)
+    }
+
     def "integration test of valid messages"() {
         def sdl = """
             type Query {
