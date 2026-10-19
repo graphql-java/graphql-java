@@ -176,7 +176,7 @@ def getDevelopmentVersion() {
 def reactiveStreamsVersion = '1.0.3'
 def releaseVersion = System.env.RELEASE_VERSION
 def antlrVersion = '4.13.2' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
-def guavaVersion = '32.1.2-jre'
+def guavaVersion = '33.7.2-jre'
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
@@ -406,6 +406,7 @@ def annotationsToRemoveFromShadedJar = [
         'Lcom/google/errorprone/annotations/ForOverride;',
         'Lcom/google/errorprone/annotations/InlineMe;',
         'Lcom/google/errorprone/annotations/InlineMeValidationDisabled;',
+        'Lcom/google/errorprone/annotations/RestrictedApi;',
         'Lcom/google/errorprone/annotations/concurrent/GuardedBy;',
         'Lcom/google/j2objc/annotations/RetainedWith;',
         'Lcom/google/j2objc/annotations/Weak;',
