@@ -867,4 +867,22 @@ extend input Input @directive {
   mutation: Mutation
 }"""
     }
+
+    def "operation keyword is printed independently of the default locale"() {
+        // see https://github.com/graphql-java/graphql-java/issues/3385
+        given:
+        Locale oldLocale = Locale.getDefault()
+        Locale.setDefault(new Locale("tr", "TR"))
+
+        when:
+        String output = printAst("mutation M { f } subscription S { f }")
+
+        then:
+        output.contains("mutation M")
+        output.contains("subscription S")
+        isParseableAst(output)
+
+        cleanup:
+        Locale.setDefault(oldLocale)
+    }
 }

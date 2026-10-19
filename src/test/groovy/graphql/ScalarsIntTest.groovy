@@ -8,6 +8,7 @@ import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import spock.lang.Specification
+import spock.lang.Timeout
 import spock.lang.Unroll
 
 import java.util.concurrent.atomic.AtomicInteger
@@ -187,6 +188,18 @@ class ScalarsIntTest extends Specification {
         "42"                             | _
         "42.0000"                        | _
         "-1"                             | _
+    }
+
+    @Timeout(10)
+    def "parseValue rejects a huge-magnitude BigDecimal from its scale rather than expanding it"() {
+        // 1E1000000000 is a tiny input but toBigIntegerExact() would try to materialise a BigInteger
+        // with ~10^9 digits. The value is out of the Int range by magnitude and must be rejected as
+        // such from the decimal's scale/precision, not by first expanding it.
+        when:
+        Scalars.GraphQLInt.getCoercing().parseValue(new BigDecimal("1E1000000000"), GraphQLContext.default, Locale.default)
+        then:
+        def e = thrown(CoercingParseValueException)
+        e.message.contains("integer range")
     }
 
 }

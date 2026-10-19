@@ -120,7 +120,7 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
 
     static Object coerceLegacyBooleanValue(Object input) {
         if (input instanceof String) {
-            String lStr = ((String) input).toLowerCase();
+            String lStr = ((String) input).toLowerCase(Locale.ROOT);
             if (lStr.equals("true")) {
                 return true;
             }

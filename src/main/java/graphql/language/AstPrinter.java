@@ -11,6 +11,7 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -392,7 +393,7 @@ public class AstPrinter {
             } else {
                 description(out, node);
                 OperationDefinition.Operation op = node.getOperation();
-                out.append(op.toString().toLowerCase());
+                out.append(op.toString().toLowerCase(Locale.ROOT));
                 if (!isEmpty(name)) {
                     out.append(' ');
                     out.append(name);

@@ -82,15 +82,25 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
     }
 
     private static double parseLiteralImpl(@NonNull Object input, @NonNull Locale locale) {
+        double result;
         if (input instanceof IntValue) {
-            return ((IntValue) input).getValue().doubleValue();
+            result = ((IntValue) input).getValue().doubleValue();
         } else if (input instanceof FloatValue) {
-            return ((FloatValue) input).getValue().doubleValue();
+            result = ((FloatValue) input).getValue().doubleValue();
         } else {
             throw new CoercingParseLiteralException(
                     i18nMsg(locale, "Float.unexpectedAstType", typeName(input))
             );
         }
+        // the GraphQL Float spec requires non-finite values (NaN and Infinity) to raise an error on
+        // input coercion, same as convertImpl above. a literal like 1e400 overflows BigDecimal.doubleValue()
+        // to Infinity, so it has to be rejected here rather than flowing through to a data fetcher.
+        if (Double.isNaN(result) || Double.isInfinite(result)) {
+            throw new CoercingParseLiteralException(
+                    i18nMsg(locale, "Float.notFinite")
+            );
+        }
+        return result;
     }
 
     @NonNull
