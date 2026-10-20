@@ -185,13 +185,10 @@ class ImplementingTypesChecker {
             InputValueDefinition objectArg = objectArgs.get(interfaceEntries.getKey());
             if (objectArg == null) {
                 errors.add(new MissingInterfaceFieldArgumentsError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef));
-            } else {
-                // we need to remove the not relevant  applied directives on the argument definitions to compare
+            } else if (!AstPrinter.printAstCompact(interfaceArg.getType()).equals(AstPrinter.printAstCompact(objectArg.getType()))) {
                 String interfaceArgStr = AstPrinter.printAstCompact(interfaceArg.transform(builder -> builder.directives(emptyList())));
                 String objectArgStr = AstPrinter.printAstCompact(objectArg.transform(builder -> builder.directives(emptyList())));
-                if (!interfaceArgStr.equals(objectArgStr)) {
-                    errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
-                }
+                errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
             }
         }
 
