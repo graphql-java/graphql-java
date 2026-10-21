@@ -32,7 +32,7 @@ plugins {
     id 'jacoco'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.4.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.20'
 }
 
 java {
@@ -176,7 +176,7 @@ def getDevelopmentVersion() {
 def reactiveStreamsVersion = '1.0.3'
 def releaseVersion = System.env.RELEASE_VERSION
 def antlrVersion = '4.13.2' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
-def guavaVersion = '32.1.2-jre'
+def guavaVersion = '33.7.2-jre'
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
@@ -257,7 +257,7 @@ dependencies {
     testImplementation "io.projectreactor:reactor-core:3.8.7"
 
     testImplementation 'org.testng:testng:7.12.0' // use for reactive streams test inheritance
-    testImplementation "com.tngtech.archunit:archunit-junit5:1.4.2"
+    testImplementation "com.tngtech.archunit:archunit-junit5:1.5.0"
     testImplementation 'org.openjdk.jmh:jmh-core:1.37' // required for ArchUnit to check JMH tests
     
     // JUnit Platform launcher required for Gradle 9
@@ -406,6 +406,7 @@ def annotationsToRemoveFromShadedJar = [
         'Lcom/google/errorprone/annotations/ForOverride;',
         'Lcom/google/errorprone/annotations/InlineMe;',
         'Lcom/google/errorprone/annotations/InlineMeValidationDisabled;',
+        'Lcom/google/errorprone/annotations/RestrictedApi;',
         'Lcom/google/errorprone/annotations/concurrent/GuardedBy;',
         'Lcom/google/j2objc/annotations/RetainedWith;',
         'Lcom/google/j2objc/annotations/Weak;',

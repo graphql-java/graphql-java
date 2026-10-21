@@ -8,6 +8,8 @@ import java.util.concurrent.CompletionException
 import java.util.function.BiFunction
 import java.util.function.Function
 
+import static graphql.execution.Async.CombinedBuilder.OnCancel.DROP_PENDING
+import static graphql.execution.Async.CombinedBuilder.OnCancel.WAIT_FOR_PENDING
 import static java.util.concurrent.CompletableFuture.completedFuture
 import static java.util.concurrent.CompletableFuture.runAsync
 
@@ -429,7 +431,7 @@ class AsyncTest extends Specification {
         asyncBuilder.add(completedFuture("A"))
         asyncBuilder.add(completedFuture("B"))
         asyncBuilder.add(completedFuture("C"))
-        def list = asyncBuilder.await((CompletableFuture) null).join()
+        def list = asyncBuilder.await((CompletableFuture) null, DROP_PENDING).join()
 
         then:
         list == ["A", "B", "C"]
@@ -442,7 +444,7 @@ class AsyncTest extends Specification {
         asyncBuilder.add(completedFuture("A"))
         asyncBuilder.add(completedFuture("B"))
         asyncBuilder.add(completedFuture("C"))
-        def list = asyncBuilder.await(cancelCF).join()
+        def list = asyncBuilder.await(cancelCF, DROP_PENDING).join()
 
         then:
         list == ["A", "B", "C"]
@@ -460,7 +462,7 @@ class AsyncTest extends Specification {
         asyncBuilder.add(completedFuture("C"))
         asyncBuilder.add(pending2)
 
-        def resultCF = asyncBuilder.await(cancelCF)
+        def resultCF = asyncBuilder.await(cancelCF, DROP_PENDING)
 
         // cancel before pending CFs complete
         cancelCF.complete(null)
@@ -469,6 +471,75 @@ class AsyncTest extends Specification {
 
         then:
         list == ["A", null, "C", null]
+    }
+
+    def "await with WAIT_FOR_PENDING waits for pending CFs to settle before harvesting"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def pending1 = new CompletableFuture<String>()
+        def pending2 = new CompletableFuture<String>()
+
+        def asyncBuilder = Async.ofExpectedSize(4)
+        asyncBuilder.add(completedFuture("A"))
+        asyncBuilder.add(pending1)
+        asyncBuilder.add(completedFuture("C"))
+        asyncBuilder.add(pending2)
+
+        def resultCF = asyncBuilder.await(cancelCF, WAIT_FOR_PENDING)
+
+        // cancellation fires while pending CFs are still incomplete
+        cancelCF.complete(null)
+
+        then: "the result does not complete until the pending CFs settle"
+        !resultCF.isDone()
+
+        when: "the pending CFs settle (as cancellation-aware futures would)"
+        pending1.complete("B")
+        pending2.complete("D")
+        def list = resultCF.join()
+
+        then: "their settled values are captured rather than harvested as null"
+        list == ["A", "B", "C", "D"]
+    }
+
+    def "await with WAIT_FOR_PENDING on single builder waits for the pending CF to settle"() {
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def pending = new CompletableFuture<String>()
+
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.add(pending)
+
+        def resultCF = asyncBuilder.await(cancelCF, WAIT_FOR_PENDING)
+        cancelCF.complete(null)
+
+        then: "not done until the pending CF settles"
+        !resultCF.isDone()
+
+        when:
+        pending.complete("A")
+        def list = resultCF.join()
+
+        then:
+        list == ["A"]
+    }
+
+    def "await with WAIT_FOR_PENDING on single builder harvests an already-completed CF"() {
+        // covers the WAIT_FOR_PENDING branch when the single value has already completed by the time
+        // cancellation is observed - it should just harvest the completed value (no waiting needed)
+        when:
+        def cancelCF = new CompletableFuture<Void>()
+        def valueCF = completedFuture("A")
+
+        def asyncBuilder = Async.ofExpectedSize(1)
+        asyncBuilder.add(valueCF)
+
+        // value is already done; cancellation is also signalled
+        cancelCF.complete(null)
+        def list = asyncBuilder.await(cancelCF, WAIT_FOR_PENDING).join()
+
+        then:
+        list == ["A"]
     }
 
     def "await with cancelCF returns partial results with mixed objects and CFs"() {
@@ -482,7 +553,7 @@ class AsyncTest extends Specification {
         asyncBuilder.add(pending)
         asyncBuilder.addObject("D")
 
-        def resultCF = asyncBuilder.await(cancelCF)
+        def resultCF = asyncBuilder.await(cancelCF, DROP_PENDING)
 
         cancelCF.complete(null)
         def list = resultCF.join()
@@ -501,7 +572,7 @@ class AsyncTest extends Specification {
         asyncBuilder.add(cf1)
         asyncBuilder.add(cf2)
 
-        def resultCF = asyncBuilder.await(cancelCF)
+        def resultCF = asyncBuilder.await(cancelCF, DROP_PENDING)
 
         // complete all CFs before cancellation
         cf1.complete("X")
@@ -529,7 +600,7 @@ class AsyncTest extends Specification {
         asyncBuilder.add(completedFuture("A"))
         asyncBuilder.add(failing)
 
-        def resultCF = asyncBuilder.await(cancelCF)
+        def resultCF = asyncBuilder.await(cancelCF, DROP_PENDING)
         resultCF.join()
 
         then:
@@ -545,7 +616,7 @@ class AsyncTest extends Specification {
         asyncBuilder.addObject("C")
         // make cancel happen soon but off thread
         runAsync({ -> cancelCF.complete(null) })
-        def list = asyncBuilder.await(cancelCF).join()
+        def list = asyncBuilder.await(cancelCF, DROP_PENDING).join()
 
         then:
         list == ["A", "B", "C"]
@@ -556,7 +627,7 @@ class AsyncTest extends Specification {
         def asyncBuilder = Async.ofExpectedSize(2)
         asyncBuilder.add(completedFuture("A"))
         asyncBuilder.add(completedFuture("B"))
-        def list = asyncBuilder.await((CompletableFuture<Void>) null).join()
+        def list = asyncBuilder.await((CompletableFuture<Void>) null, DROP_PENDING).join()
 
         then: "it behaves identically to await() and returns all results"
         list == ["A", "B"]
@@ -566,7 +637,7 @@ class AsyncTest extends Specification {
         when:
         def cancelCF = new CompletableFuture<Void>()
         def asyncBuilder = Async.ofExpectedSize(0)
-        def list = asyncBuilder.await(cancelCF).join()
+        def list = asyncBuilder.await(cancelCF, DROP_PENDING).join()
 
         then:
         list == []
@@ -579,7 +650,7 @@ class AsyncTest extends Specification {
         asyncBuilder.add(completedFuture("A"))
         // make cancel happen soon but off thread
         runAsync({ -> cancelCF.complete(null) })
-        def list = asyncBuilder.await(cancelCF).join()
+        def list = asyncBuilder.await(cancelCF, DROP_PENDING).join()
 
         then: "result is returned normally"
         list == ["A"]
@@ -596,7 +667,7 @@ class AsyncTest extends Specification {
 
         // make cancel happen soon but off thread
         runAsync({ -> cancelCF.complete(null) })
-        def list = asyncBuilder.await(cancelCF).join()
+        def list = asyncBuilder.await(cancelCF, DROP_PENDING).join()
 
         then: "result is exceptional"
         thrown(CompletionException)
@@ -606,7 +677,7 @@ class AsyncTest extends Specification {
         when: "single builder with a completed CF"
         def asyncBuilder = Async.ofExpectedSize(1)
         asyncBuilder.add(completedFuture("A"))
-        def list = asyncBuilder.await(null).join()
+        def list = asyncBuilder.await(null, DROP_PENDING).join()
 
         then: "result is returned normally"
         list == ["A"]
@@ -616,7 +687,7 @@ class AsyncTest extends Specification {
         when: "single builder with a completed CF"
         def asyncBuilder = Async.ofExpectedSize(1)
         asyncBuilder.addObject("A")
-        def list = asyncBuilder.await(null).join()
+        def list = asyncBuilder.await(null, DROP_PENDING).join()
 
         then: "result is returned normally"
         list == ["A"]
@@ -631,7 +702,7 @@ class AsyncTest extends Specification {
         // make cancel happen soon but off thread
         runAsync({ -> cancelCF.complete(null) })
 
-        def list = asyncBuilder.await(cancelCF).join()
+        def list = asyncBuilder.await(cancelCF, DROP_PENDING).join()
 
         then: "the single value is null since it never completed"
         list == [null]
@@ -646,7 +717,7 @@ class AsyncTest extends Specification {
         // make cancel happen soon but off thread
         runAsync({ -> cancelCF.complete(null) })
 
-        def list = asyncBuilder.await(cancelCF).join()
+        def list = asyncBuilder.await(cancelCF, DROP_PENDING).join()
 
         then:
         list == ["A"]
@@ -657,7 +728,7 @@ class AsyncTest extends Specification {
         def asyncBuilder = Async.ofExpectedSize(1)
         asyncBuilder.addObject("A")
 
-        def list = asyncBuilder.await(null).join()
+        def list = asyncBuilder.await(null, DROP_PENDING).join()
 
         then:
         list == ["A"]

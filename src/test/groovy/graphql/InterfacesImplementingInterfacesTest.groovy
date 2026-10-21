@@ -22,6 +22,47 @@ import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLObjectType.newObject
 
 class InterfacesImplementingInterfacesTest extends Specification {
+    def 'Execution uses the implementing field argument default'() {
+        given:
+        def registry = new SchemaParser().parse('''
+            type Query { account: Account }
+            interface Account { memberOf(limit: Int! = 100): Int }
+            type Host implements Account { memberOf(limit: Int! = 150): Int }
+            ''')
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type('Query', { typeWiring -> typeWiring.dataFetcher('account', { [:] }) })
+                .type('Account', { typeWiring -> typeWiring.typeResolver({ env -> env.schema.getObjectType('Host') }) })
+                .type('Host', { typeWiring -> typeWiring.dataFetcher('memberOf', { env -> env.getArgument('limit') }) })
+                .build()
+        def schema = new SchemaGenerator().makeExecutableSchema(registry, wiring)
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute('{ account { memberOf } }')
+
+        then:
+        !result.errors
+        result.data == [account: [memberOf: 150]]
+    }
+
+    def 'Implementing field arguments may have different default values'() {
+        when:
+        parseSchema("""
+            type Query { account: Account }
+            interface Account { memberOf(limit: Int! $interfaceDefault): [String] }
+            $implementingType Host implements Account { memberOf(limit: Int! $implementingDefault): [String] }
+            """)
+
+        then:
+        noExceptionThrown()
+
+        where:
+        implementingType | interfaceDefault | implementingDefault
+        'type'           | '= 100'          | '= 150'
+        'interface'      | '= 100'          | '= 150'
+        'type'           | '= 100'          | ''
+        'type'           | ''               | '= 150'
+    }
+
     def 'Simple interface implementing interface'() {
         when:
         def schema = """
@@ -780,10 +821,9 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         then:
         def error = thrown(SchemaProblem)
-        error.errors.size() == 4
+        error.errors.size() == 3
 
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType' [@n:n]")
-        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg1:String =\"defaultVal\"' to 'arg1:String =\"defaultValX\"")
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg2:String' to 'arg2:String!")
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg3:Int' to 'arg3:String")
     }
@@ -811,10 +851,9 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         then:
         def error = thrown(SchemaProblem)
-        error.errors.size() == 4
+        error.errors.size() == 3
 
         assertErrorMessage(error, "The interface type 'BaseInterface' [@n:n] field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType' [@n:n]")
-        assertErrorMessage(error, "The interface type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg1:String =\"defaultVal\"' to 'arg1:String =\"defaultValX\"")
         assertErrorMessage(error, "The interface type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg2:String' to 'arg2:String!")
         assertErrorMessage(error, "The interface type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg3:Int' to 'arg3:String")
     }
@@ -848,10 +887,9 @@ class InterfacesImplementingInterfacesTest extends Specification {
 
         then:
         def error = thrown(SchemaProblem)
-        error.errors.size() == 4
+        error.errors.size() == 3
 
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType' [@n:n]")
-        assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg1:String =\"defaultVal\"' to 'arg1:String =\"defaultValX\"")
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg2:String' to 'arg2:String!")
         assertErrorMessage(error, "The interface extension type 'BaseInterface' [@n:n] has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType' [@n:n] from 'arg3:Int' to 'arg3:String")
     }
