@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5993,
-      "passed": 5937,
+      "total": 5995,
+      "passed": 5939,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5993,
-      "passed": 5936,
+      "total": 5995,
+      "passed": 5938,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5993,
-      "passed": 5936,
+      "total": 5995,
+      "passed": 5938,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5993,
-      "passed": 5936,
+      "total": 5995,
+      "passed": 5938,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -43,8 +43,8 @@
         "missed": 1520
       },
       "line": {
-        "covered": 30150,
-        "missed": 3117
+        "covered": 30155,
+        "missed": 3115
       },
       "method": {
         "covered": 8050,
@@ -153480,8 +153480,8 @@
       },
       "graphql.parser.UnicodeUtil": {
         "line": {
-          "covered": 41,
-          "missed": 3
+          "covered": 46,
+          "missed": 1
         },
         "branch": {
           "covered": 44,
@@ -153517,8 +153517,8 @@
             "line": 25,
             "counters": {
               "line": {
-                "covered": 24,
-                "missed": 2
+                "covered": 29,
+                "missed": 0
               },
               "branch": {
                 "covered": 18,
@@ -153533,7 +153533,7 @@
           {
             "name": "offendingToken",
             "desc": "(Ljava/lang/String;II)Ljava/lang/String;",
-            "line": 67,
+            "line": 73,
             "counters": {
               "line": {
                 "covered": 1,
@@ -153552,7 +153552,7 @@
           {
             "name": "getEndIndexExclusive",
             "desc": "(Lgraphql/i18n/I18n;Ljava/lang/String;ILgraphql/language/SourceLocation;)I",
-            "line": 72,
+            "line": 78,
             "counters": {
               "line": {
                 "covered": 7,
@@ -153571,7 +153571,7 @@
           {
             "name": "isValidUnicodeCodePoint",
             "desc": "(I)Z",
-            "line": 88,
+            "line": 94,
             "counters": {
               "line": {
                 "covered": 1,
@@ -153590,7 +153590,7 @@
           {
             "name": "isEscapedUnicode",
             "desc": "(Ljava/lang/String;I)Z",
-            "line": 92,
+            "line": 98,
             "counters": {
               "line": {
                 "covered": 3,
@@ -153609,7 +153609,7 @@
           {
             "name": "isLeadingSurrogateValue",
             "desc": "(I)Z",
-            "line": 99,
+            "line": 105,
             "counters": {
               "line": {
                 "covered": 1,
@@ -153628,7 +153628,7 @@
           {
             "name": "isTrailingSurrogateValue",
             "desc": "(I)Z",
-            "line": 103,
+            "line": 109,
             "counters": {
               "line": {
                 "covered": 1,
@@ -153647,7 +153647,7 @@
           {
             "name": "writeCodePoint",
             "desc": "(Ljava/lang/StringBuilder;I)V",
-            "line": 107,
+            "line": 113,
             "counters": {
               "line": {
                 "covered": 2,
@@ -153666,7 +153666,7 @@
           {
             "name": "isBracedEscape",
             "desc": "(Ljava/lang/String;I)Z",
-            "line": 111,
+            "line": 117,
             "counters": {
               "line": {
                 "covered": 1,
