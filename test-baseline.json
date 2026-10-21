@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5995,
-      "passed": 5939,
+      "total": 5996,
+      "passed": 5940,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5995,
-      "passed": 5938,
+      "total": 5996,
+      "passed": 5939,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5995,
-      "passed": 5938,
+      "total": 5996,
+      "passed": 5939,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5995,
-      "passed": 5938,
+      "total": 5996,
+      "passed": 5939,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,15 +39,15 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8838,
+        "covered": 8842,
         "missed": 1520
       },
       "line": {
-        "covered": 30155,
+        "covered": 30162,
         "missed": 3115
       },
       "method": {
-        "covered": 8050,
+        "covered": 8052,
         "missed": 1206
       }
     },
@@ -158313,22 +158313,22 @@
       },
       "graphql.introspection.Introspection": {
         "line": {
-          "covered": 498,
+          "covered": 505,
           "missed": 9
         },
         "branch": {
-          "covered": 105,
+          "covered": 109,
           "missed": 9
         },
         "method": {
-          "covered": 46,
+          "covered": 48,
           "missed": 1
         },
         "methods": [
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 78,
+            "line": 80,
             "counters": {
               "line": {
                 "covered": 0,
@@ -158347,7 +158347,7 @@
           {
             "name": "enabledJvmWide",
             "desc": "(Z)Z",
-            "line": 96,
+            "line": 98,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158366,7 +158366,7 @@
           {
             "name": "isEnabledJvmWide",
             "desc": "()Z",
-            "line": 103,
+            "line": 105,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158385,7 +158385,7 @@
           {
             "name": "isIntrospectionSensible",
             "desc": "(Lgraphql/execution/MergedSelectionSet;Lgraphql/execution/ExecutionContext;)Ljava/util/Optional;",
-            "line": 117,
+            "line": 119,
             "counters": {
               "line": {
                 "covered": 9,
@@ -158404,7 +158404,7 @@
           {
             "name": "mkDisabledError",
             "desc": "(Lgraphql/execution/MergedField;)Ljava/util/Optional;",
-            "line": 134,
+            "line": 136,
             "counters": {
               "line": {
                 "covered": 2,
@@ -158423,7 +158423,7 @@
           {
             "name": "isIntrospectionEnabled",
             "desc": "(Lgraphql/GraphQLContext;)Z",
-            "line": 139,
+            "line": 141,
             "counters": {
               "line": {
                 "covered": 3,
@@ -158442,7 +158442,7 @@
           {
             "name": "register",
             "desc": "(Lgraphql/schema/GraphQLFieldsContainer;Ljava/lang/String;Lgraphql/introspection/IntrospectionDataFetcher;)V",
-            "line": 148,
+            "line": 150,
             "counters": {
               "line": {
                 "covered": 2,
@@ -158461,7 +158461,7 @@
           {
             "name": "register",
             "desc": "(Lgraphql/schema/GraphQLFieldsContainer;Ljava/lang/String;Ljava/lang/Class;Ljava/util/function/Function;)V",
-            "line": 162,
+            "line": 164,
             "counters": {
               "line": {
                 "covered": 3,
@@ -158480,7 +158480,7 @@
           {
             "name": "addCodeForIntrospectionTypes",
             "desc": "(Lgraphql/schema/GraphQLCodeRegistry$Builder;)V",
-            "line": 175,
+            "line": 177,
             "counters": {
               "line": {
                 "covered": 5,
@@ -158499,7 +158499,7 @@
           {
             "name": "printDefaultValue",
             "desc": "(Lgraphql/schema/InputValueWithState;Lgraphql/schema/GraphQLInputType;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/String;",
-            "line": 319,
+            "line": 321,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158516,9 +158516,28 @@
             }
           },
           {
+            "name": "mkDisabledFieldResult",
+            "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Lgraphql/execution/DataFetcherResult;",
+            "line": 748,
+            "counters": {
+              "line": {
+                "covered": 2,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
             "name": "buildSchemaField",
             "desc": "(Lgraphql/schema/GraphQLObjectType;)Lgraphql/schema/GraphQLFieldDefinition;",
-            "line": 740,
+            "line": 757,
             "counters": {
               "line": {
                 "covered": 5,
@@ -158537,7 +158556,7 @@
           {
             "name": "buildTypeField",
             "desc": "(Lgraphql/schema/GraphQLObjectType;)Lgraphql/schema/GraphQLFieldDefinition;",
-            "line": 750,
+            "line": 767,
             "counters": {
               "line": {
                 "covered": 10,
@@ -158556,7 +158575,7 @@
           {
             "name": "isIntrospectionTypes",
             "desc": "(Lgraphql/schema/GraphQLNamedType;)Z",
-            "line": 787,
+            "line": 804,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158575,7 +158594,7 @@
           {
             "name": "isIntrospectionTypes",
             "desc": "(Ljava/lang/String;)Z",
-            "line": 791,
+            "line": 808,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158594,7 +158613,7 @@
           {
             "name": "getFieldDef",
             "desc": "(Lgraphql/schema/GraphQLSchema;Lgraphql/schema/GraphQLCompositeType;Ljava/lang/String;)Lgraphql/schema/GraphQLFieldDefinition;",
-            "line": 807,
+            "line": 824,
             "counters": {
               "line": {
                 "covered": 8,
@@ -158613,7 +158632,7 @@
           {
             "name": "getFieldDefinition",
             "desc": "(Lgraphql/schema/GraphQLSchema;Lgraphql/schema/GraphQLFieldsContainer;Ljava/lang/String;)Lgraphql/schema/GraphQLFieldDefinition;",
-            "line": 832,
+            "line": 849,
             "counters": {
               "line": {
                 "covered": 5,
@@ -158632,7 +158651,7 @@
           {
             "name": "getSystemFieldDef",
             "desc": "(Lgraphql/schema/GraphQLSchema;Lgraphql/schema/GraphQLCompositeType;Ljava/lang/String;)Lgraphql/schema/GraphQLFieldDefinition;",
-            "line": 844,
+            "line": 861,
             "counters": {
               "line": {
                 "covered": 8,
@@ -158640,6 +158659,25 @@
               },
               "branch": {
                 "covered": 8,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "lambda$static$28",
+            "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
+            "line": 753,
+            "counters": {
+              "line": {
+                "covered": 1,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 0,
                 "missed": 0
               },
               "method": {
@@ -158651,14 +158689,14 @@
           {
             "name": "lambda$static$27",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 736,
+            "line": 740,
             "counters": {
               "line": {
-                "covered": 1,
+                "covered": 4,
                 "missed": 0
               },
               "branch": {
-                "covered": 0,
+                "covered": 2,
                 "missed": 0
               },
               "method": {
@@ -158670,14 +158708,14 @@
           {
             "name": "lambda$static$26",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 731,
+            "line": 733,
             "counters": {
               "line": {
-                "covered": 2,
+                "covered": 3,
                 "missed": 0
               },
               "branch": {
-                "covered": 0,
+                "covered": 2,
                 "missed": 0
               },
               "method": {
@@ -158689,7 +158727,7 @@
           {
             "name": "lambda$static$24",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 706,
+            "line": 708,
             "counters": {
               "line": {
                 "covered": 2,
@@ -158708,7 +158746,7 @@
           {
             "name": "lambda$static$25",
             "desc": "(Ljava/lang/Boolean;Lgraphql/schema/GraphQLDirective;)Z",
-            "line": 708,
+            "line": 710,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158727,7 +158765,7 @@
           {
             "name": "lambda$static$23",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 699,
+            "line": 701,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158746,7 +158784,7 @@
           {
             "name": "lambda$static$21",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 650,
+            "line": 652,
             "counters": {
               "line": {
                 "covered": 3,
@@ -158765,7 +158803,7 @@
           {
             "name": "lambda$static$22",
             "desc": "(Ljava/lang/Boolean;Lgraphql/schema/GraphQLArgument;)Z",
-            "line": 653,
+            "line": 655,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158784,7 +158822,7 @@
           {
             "name": "lambda$static$20",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 646,
+            "line": 648,
             "counters": {
               "line": {
                 "covered": 2,
@@ -158803,7 +158841,7 @@
           {
             "name": "lambda$static$19",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 481,
+            "line": 483,
             "counters": {
               "line": {
                 "covered": 4,
@@ -158822,7 +158860,7 @@
           {
             "name": "lambda$static$18",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 473,
+            "line": 475,
             "counters": {
               "line": {
                 "covered": 4,
@@ -158841,7 +158879,7 @@
           {
             "name": "lambda$static$17",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 465,
+            "line": 467,
             "counters": {
               "line": {
                 "covered": 4,
@@ -158860,7 +158898,7 @@
           {
             "name": "lambda$static$15",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 447,
+            "line": 449,
             "counters": {
               "line": {
                 "covered": 12,
@@ -158879,7 +158917,7 @@
           {
             "name": "lambda$static$16",
             "desc": "(Lgraphql/schema/GraphQLInputObjectField;)Z",
-            "line": 459,
+            "line": 461,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158898,7 +158936,7 @@
           {
             "name": "lambda$static$13",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 433,
+            "line": 435,
             "counters": {
               "line": {
                 "covered": 8,
@@ -158917,7 +158955,7 @@
           {
             "name": "lambda$static$14",
             "desc": "(Lgraphql/schema/GraphQLEnumValueDefinition;)Z",
-            "line": 441,
+            "line": 443,
             "counters": {
               "line": {
                 "covered": 1,
@@ -158936,7 +158974,7 @@
           {
             "name": "lambda$static$12",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 422,
+            "line": 424,
             "counters": {
               "line": {
                 "covered": 6,
@@ -158955,7 +158993,7 @@
           {
             "name": "lambda$static$11",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 411,
+            "line": 413,
             "counters": {
               "line": {
                 "covered": 6,
@@ -158974,7 +159012,7 @@
           {
             "name": "lambda$static$9",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 391,
+            "line": 393,
             "counters": {
               "line": {
                 "covered": 13,
@@ -158993,7 +159031,7 @@
           {
             "name": "lambda$static$10",
             "desc": "(Lgraphql/schema/GraphQLFieldDefinition;)Z",
-            "line": 404,
+            "line": 406,
             "counters": {
               "line": {
                 "covered": 1,
@@ -159012,7 +159050,7 @@
           {
             "name": "lambda$static$7",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 351,
+            "line": 353,
             "counters": {
               "line": {
                 "covered": 4,
@@ -159031,7 +159069,7 @@
           {
             "name": "lambda$static$8",
             "desc": "(Ljava/lang/Boolean;Lgraphql/schema/GraphQLArgument;)Z",
-            "line": 355,
+            "line": 357,
             "counters": {
               "line": {
                 "covered": 1,
@@ -159050,7 +159088,7 @@
           {
             "name": "lambda$static$6",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 301,
+            "line": 303,
             "counters": {
               "line": {
                 "covered": 5,
@@ -159069,7 +159107,7 @@
           {
             "name": "lambda$static$5",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 292,
+            "line": 294,
             "counters": {
               "line": {
                 "covered": 5,
@@ -159088,7 +159126,7 @@
           {
             "name": "lambda$static$4",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 283,
+            "line": 285,
             "counters": {
               "line": {
                 "covered": 5,
@@ -159107,7 +159145,7 @@
           {
             "name": "lambda$static$3",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 268,
+            "line": 270,
             "counters": {
               "line": {
                 "covered": 11,
@@ -159126,7 +159164,7 @@
           {
             "name": "lambda$static$2",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 237,
+            "line": 239,
             "counters": {
               "line": {
                 "covered": 3,
@@ -159145,7 +159183,7 @@
           {
             "name": "lambda$static$1",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 230,
+            "line": 232,
             "counters": {
               "line": {
                 "covered": 4,
@@ -159164,7 +159202,7 @@
           {
             "name": "lambda$static$0",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 208,
+            "line": 210,
             "counters": {
               "line": {
                 "covered": 17,
@@ -159183,7 +159221,7 @@
           {
             "name": "lambda$register$0",
             "desc": "(Ljava/lang/Class;Ljava/util/function/Function;Lgraphql/schema/DataFetchingEnvironment;)Ljava/lang/Object;",
-            "line": 163,
+            "line": 165,
             "counters": {
               "line": {
                 "covered": 3,
@@ -159202,7 +159240,7 @@
           {
             "name": "&lt;clinit&gt;",
             "desc": "()V",
-            "line": 86,
+            "line": 88,
             "counters": {
               "line": {
                 "covered": 304,
@@ -160438,7 +160476,7 @@
           {
             "name": "&lt;clinit&gt;",
             "desc": "()V",
-            "line": 559,
+            "line": 561,
             "counters": {
               "line": {
                 "covered": 21,
@@ -160565,7 +160603,7 @@
           {
             "name": "&lt;clinit&gt;",
             "desc": "()V",
-            "line": 183,
+            "line": 185,
             "counters": {
               "line": {
                 "covered": 9,
