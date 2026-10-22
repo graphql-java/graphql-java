@@ -30,14 +30,20 @@ final class ValuesResolverOneOfValidation {
 
         if (isList(unwrappedNonNullType)
                 && !ValuesResolverConversion.isNullValue(inputValue)
-                && inputValue instanceof List
-                && argumentValue instanceof ArrayValue) {
+                && inputValue instanceof List) {
             GraphQLType elementType = ((GraphQLList) unwrappedNonNullType).getWrappedType();
             List<Object> inputList = (List<Object>) inputValue;
-            List<Value> argumentList = ((ArrayValue) argumentValue).getValues();
 
-            for (int i = 0; i < argumentList.size(); i++) {
-                validateOneOfInputTypes(elementType, inputList.get(i), argumentList.get(i), argumentName, locale);
+            if (argumentValue instanceof ArrayValue) {
+                List<Value> argumentList = ((ArrayValue) argumentValue).getValues();
+                for (int i = 0; i < argumentList.size(); i++) {
+                    validateOneOfInputTypes(elementType, inputList.get(i), argumentList.get(i), argumentName, locale);
+                }
+            } else {
+                // a single literal coerced into a list, or a list resolved from a variable reference
+                for (Object inputElement : inputList) {
+                    validateOneOfInputTypes(elementType, inputElement, argumentValue, argumentName, locale);
+                }
             }
         }
 
