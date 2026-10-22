@@ -64,7 +64,8 @@ public class QueryComplexityCalculator {
                 QueryVisitorFieldEnvironment parentEnvironment = env.getParentEnvironment();
                 valuesByParent.compute(parentEnvironment, (key, oldValue) -> {
                             Integer currentValue = ofNullable(oldValue).orElse(0);
-                            return currentValue + value;
+                            // saturate rather than overflow, a wrapped negative total would pass the max complexity check
+                            return (int) Math.min((long) currentValue + value, Integer.MAX_VALUE);
                         }
                 );
             }
