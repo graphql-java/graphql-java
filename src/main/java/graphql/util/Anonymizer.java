@@ -25,6 +25,7 @@ import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.EnumValue;
 import graphql.language.Field;
+import graphql.language.FloatValue;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
@@ -76,6 +77,7 @@ import graphql.schema.idl.TypeUtil;
 import graphql.schema.impl.SchemaUtil;
 import org.jspecify.annotations.NullMarked;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -348,7 +350,7 @@ public class Anonymizer {
                 }
                 String newName = assertNotNull(newNameMap.get(graphQLScalarType));
                 GraphQLScalarType newElement = graphQLScalarType.transform(builder -> {
-                    builder.name(newName).description(null).definition(null);
+                    builder.name(newName).description(null).definition(null).specifiedByUrl(null);
                 });
                 return changeNode(context, newElement);
             }
@@ -392,6 +394,8 @@ public class Anonymizer {
             return StringValue.newStringValue("stringValue" + defaultStringValueCounter.getAndIncrement()).build();
         } else if (valueLiteral instanceof IntValue) {
             return IntValue.newIntValue(BigInteger.valueOf(defaultIntValueCounter.getAndIncrement())).build();
+        } else if (valueLiteral instanceof FloatValue) {
+            return FloatValue.newFloatValue(BigDecimal.valueOf(defaultIntValueCounter.getAndIncrement()).setScale(1)).build();
         } else if (valueLiteral instanceof EnumValue) {
             GraphQLEnumType enumType = unwrapNonNullAs(argType);
             GraphQLEnumValueDefinition enumValueDefinition = enumType.getValue(((EnumValue) valueLiteral).getName());
