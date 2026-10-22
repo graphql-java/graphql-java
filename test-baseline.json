@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 5997,
-      "passed": 5941,
+      "total": 6002,
+      "passed": 5946,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 5997,
-      "passed": 5940,
+      "total": 6002,
+      "passed": 5945,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 5997,
-      "passed": 5940,
+      "total": 6002,
+      "passed": 5945,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 5997,
-      "passed": 5940,
+      "total": 6002,
+      "passed": 5945,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,11 +39,11 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8842,
+        "covered": 8844,
         "missed": 1520
       },
       "line": {
-        "covered": 30163,
+        "covered": 30168,
         "missed": 3114
       },
       "method": {
@@ -182821,11 +182821,11 @@
       },
       "graphql.execution.ValuesResolverOneOfValidation": {
         "line": {
-          "covered": 45,
+          "covered": 50,
           "missed": 5
         },
         "branch": {
-          "covered": 30,
+          "covered": 32,
           "missed": 2
         },
         "method": {
@@ -182858,11 +182858,11 @@
             "line": 29,
             "counters": {
               "line": {
-                "covered": 30,
+                "covered": 35,
                 "missed": 1
               },
               "branch": {
-                "covered": 22,
+                "covered": 24,
                 "missed": 2
               },
               "method": {
@@ -182874,7 +182874,7 @@
           {
             "name": "validateOneOfInputTypesInternal",
             "desc": "(Lgraphql/schema/GraphQLInputObjectType;Lgraphql/language/Value;Ljava/util/Map;Ljava/util/Locale;)V",
-            "line": 79,
+            "line": 85,
             "counters": {
               "line": {
                 "covered": 9,
@@ -182893,7 +182893,7 @@
           {
             "name": "throwValueIsNullError",
             "desc": "(Lgraphql/schema/GraphQLInputObjectType;Ljava/util/Locale;Ljava/lang/String;)V",
-            "line": 100,
+            "line": 106,
             "counters": {
               "line": {
                 "covered": 3,
@@ -182912,7 +182912,7 @@
           {
             "name": "throwNotOneFieldError",
             "desc": "(Lgraphql/schema/GraphQLInputObjectType;Ljava/util/Locale;)V",
-            "line": 106,
+            "line": 112,
             "counters": {
               "line": {
                 "covered": 3,
@@ -182931,7 +182931,7 @@
           {
             "name": "lambda$validateOneOfInputTypes$0",
             "desc": "(Ljava/lang/String;Lgraphql/language/ObjectField;)Z",
-            "line": 61,
+            "line": 67,
             "counters": {
               "line": {
                 "covered": 1,
