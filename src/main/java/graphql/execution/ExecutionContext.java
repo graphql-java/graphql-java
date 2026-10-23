@@ -20,6 +20,7 @@ import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -78,6 +80,9 @@ public class ExecutionContext {
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
+    // the sub fields of a merged field only depend on the object type (variables and fragments are fixed for an execution)
+    // so they are collected once rather than for every object in a list
+    private final Map<MergedField, Map<GraphQLObjectType, MergedSelectionSet>> collectedSubFields = new ConcurrentHashMap<>();
     private final EngineRunningState engineRunningState;
 
     private final Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives;
@@ -407,6 +412,11 @@ public class ExecutionContext {
 
     public ResultNodesInfo getResultNodesInfo() {
         return resultNodesInfo;
+    }
+
+    @Internal
+    public Map<MergedField, Map<GraphQLObjectType, MergedSelectionSet>> getCollectedSubFields() {
+        return collectedSubFields;
     }
 
     @Internal
