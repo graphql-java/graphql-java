@@ -1365,6 +1365,41 @@ class ValuesResolverTest extends Specification {
         error.message == "Argument 'arg' has coerced Null value for NonNull type 'inputObject!'"
     }
 
+    def "list item of Non-Nullable type and with null variable value throws error"() {
+        given:
+        // eg query($var: String = "default") { field(arg: [$var]) } with {"var": null}
+        def fieldArgument = newArgument().name("arg").type(list(nonNull(GraphQLString))).build()
+        def argument = new Argument("arg", new ArrayValue([new VariableReference("var")]))
+
+        when:
+        def variables = CoercedVariables.of(["var": null])
+        ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
+
+        then:
+        def error = thrown(NonNullableValueCoercedAsNullException)
+        error.message == "Coerced Null value for NonNull type 'String!'"
+    }
+
+    def "input object field of Non-Nullable type and with null variable value throws error"() {
+        given:
+        // eg query($var: String = "default") { field(arg: {name: $var}) } with {"var": null}
+        def inputObjectType = newInputObject()
+                .name("inputObject")
+                .field(newInputObjectField().name("name").type(nonNull(GraphQLString)))
+                .build()
+
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).build()
+        def argument = new Argument("arg", new ObjectValue([new ObjectField("name", new VariableReference("var"))]))
+
+        when:
+        def variables = CoercedVariables.of(["var": null])
+        ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
+
+        then:
+        def error = thrown(NonNullableValueCoercedAsNullException)
+        error.message == "Field 'name' has coerced Null value for NonNull type 'String!'"
+    }
+
     def "invalid enum error message is not nested and contains source location - issue 2560"() {
         when:
         def graphQL = TestUtil.graphQL('''
