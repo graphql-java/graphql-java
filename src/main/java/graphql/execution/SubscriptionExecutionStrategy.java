@@ -22,6 +22,7 @@ import graphql.schema.GraphQLObjectType;
 import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
@@ -184,12 +185,13 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 newParameters.getAlternativeCallContext(),
                 "alternativeCallContext must not be null");
         executionContext.getDataLoaderDispatcherStrategy().newSubscriptionExecution(alternativeCallContext);
+        Map<Object, Object> eventExtensions = extensionsFromEventPayload(eventPayload);
         Object fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, newParameters, eventPayload);
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
         executionContext.getDataLoaderDispatcherStrategy().subscriptionEventCompletionDone(alternativeCallContext);
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
-                .thenApply(val -> new ExecutionResultImpl(val, alternativeCallContext.getErrors()))
+                .thenApply(val -> new ExecutionResultImpl(val, alternativeCallContext.getErrors(), eventExtensions))
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult))
                 .whenComplete((executionResult, throwable) -> {
                     executionContext.getDataLoaderDispatcherStrategy().subscriptionEventExecutionDone(alternativeCallContext);
@@ -211,8 +213,16 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         String rootFieldName = getRootFieldName(parameters);
         return new ExecutionResultImpl(
                 singletonMap(rootFieldName, executionResult.getData()),
-                executionResult.getErrors()
+                executionResult.getErrors(),
+                executionResult.getExtensions()
         );
+    }
+
+    private static @Nullable Map<Object, Object> extensionsFromEventPayload(Object eventPayload) {
+        if (eventPayload instanceof DataFetcherResult) {
+            return ((DataFetcherResult<?>) eventPayload).getExtensions();
+        }
+        return null;
     }
 
     private String getRootFieldName(ExecutionStrategyParameters parameters) {
