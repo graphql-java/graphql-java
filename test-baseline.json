@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 6010,
-      "passed": 5954,
+      "total": 6011,
+      "passed": 5955,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 6010,
-      "passed": 5953,
+      "total": 6011,
+      "passed": 5954,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 6010,
-      "passed": 5953,
+      "total": 6011,
+      "passed": 5954,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 6010,
-      "passed": 5953,
+      "total": 6011,
+      "passed": 5954,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,11 +39,11 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8851,
-        "missed": 1515
+        "covered": 8852,
+        "missed": 1516
       },
       "line": {
-        "covered": 30181,
+        "covered": 30180,
         "missed": 3103
       },
       "method": {
@@ -52406,7 +52406,7 @@
           "missed": 1
         },
         "branch": {
-          "covered": 0,
+          "covered": 2,
           "missed": 0
         },
         "method": {
@@ -52417,14 +52417,14 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/schema/idl/RuntimeWiring$Builder;)V",
-            "line": 53,
+            "line": 52,
             "counters": {
               "line": {
                 "covered": 13,
                 "missed": 0
               },
               "branch": {
-                "covered": 0,
+                "covered": 2,
                 "missed": 0
               },
               "method": {
@@ -52778,7 +52778,7 @@
           {
             "name": "&lt;clinit&gt;",
             "desc": "()V",
-            "line": 49,
+            "line": 48,
             "counters": {
               "line": {
                 "covered": 3,
@@ -53058,7 +53058,7 @@
       },
       "graphql.schema.idl.RuntimeWiring$Builder": {
         "line": {
-          "covered": 65,
+          "covered": 64,
           "missed": 2
         },
         "branch": {
@@ -53076,7 +53076,7 @@
             "line": 181,
             "counters": {
               "line": {
-                "covered": 15,
+                "covered": 14,
                 "missed": 0
               },
               "branch": {
@@ -179181,8 +179181,8 @@
           "missed": 12
         },
         "branch": {
-          "covered": 119,
-          "missed": 11
+          "covered": 118,
+          "missed": 12
         },
         "method": {
           "covered": 67,
@@ -180434,8 +180434,8 @@
                 "missed": 0
               },
               "branch": {
-                "covered": 10,
-                "missed": 0
+                "covered": 9,
+                "missed": 1
               },
               "method": {
                 "covered": 1,
