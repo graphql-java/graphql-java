@@ -5,14 +5,17 @@ import graphql.language.ArrayValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.Value;
+import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.InputValueWithState;
+import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -42,198 +45,146 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 @Internal
 public class NoDefaultValueCircularRefs extends GraphQLTypeVisitorStub {
 
-    // Coordinates already fully traversed without finding a cycle, used to avoid duplicate error reports
-    // when the same coordinate is reachable from multiple input object types.
-    private final Set<String> fullyExplored = new LinkedHashSet<>();
-
-    // The spec's "visitedFields" set, tracked as coordinate strings ("Type.field").
-    // The spec creates a new immutable set at each step; this implementation mutates and backtracks
-    // for the same effect.
-    private final LinkedHashSet<String> visitedFields = new LinkedHashSet<>();
+    private final Set<String> checkedFields = new LinkedHashSet<>();
+    private final LinkedHashSet<String> fieldPath = new LinkedHashSet<>();
 
     @Override
     public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType type, TraverserContext<GraphQLSchemaElement> context) {
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
-
-        // Implements InputObjectDefaultValueHasCycle(inputObject) from the spec:
-        // "If defaultValue is not provided, initialize it to an empty unordered map."
-        inputObjectDefaultValueHasCycle(type, ObjectValue.newObjectValue().build(), errorCollector);
-
+        checkType(type, getErrorCollector(context));
         return TraversalControl.CONTINUE;
     }
 
-    /**
-     * Implements {@code InputObjectDefaultValueHasCycle(inputObject, defaultValue, visitedFields)}
-     * from the spec, for literal (AST) default values.
-     */
-    private void inputObjectDefaultValueHasCycle(
-            GraphQLInputObjectType inputObject,
-            Value<?> defaultValue,
-            SchemaValidationErrorCollector errorCollector
-    ) {
-        // "If defaultValue is a list: for each itemValue in defaultValue..."
-        if (defaultValue instanceof ArrayValue) {
-            for (Value<?> itemValue : ((ArrayValue) defaultValue).getValues()) {
-                inputObjectDefaultValueHasCycle(inputObject, itemValue, errorCollector);
-            }
-            return;
+    @Override
+    public TraversalControl visitGraphQLArgument(GraphQLArgument argument, TraverserContext<GraphQLSchemaElement> context) {
+        GraphQLType namedType = unwrapAll(argument.getType());
+        if (namedType instanceof GraphQLInputObjectType) {
+            checkType((GraphQLInputObjectType) namedType, getErrorCollector(context));
         }
+        return TraversalControl.CONTINUE;
+    }
 
-        // "Otherwise, if defaultValue is an unordered map..."
-        if (!(defaultValue instanceof ObjectValue)) {
-            return;
-        }
-
-        ObjectValue objectValue = (ObjectValue) defaultValue;
-        Map<String, Value<?>> defaultValueMap = new LinkedHashMap<>();
-        for (ObjectField field : objectValue.getObjectFields()) {
-            defaultValueMap.put(field.getName(), field.getValue());
-        }
-
-        // "For each field in inputObject: if InputFieldDefaultValueHasCycle(...)"
-        for (GraphQLInputObjectField field : inputObject.getFieldDefinitions()) {
-            String fieldName = field.getName();
-            boolean hasDefaultValue = defaultValueMap.containsKey(fieldName);
-            if (!hasDefaultValue && field.getInputFieldDefaultValue().isNotSet()) {
+    private void checkType(GraphQLInputObjectType type, SchemaValidationErrorCollector errorCollector) {
+        for (GraphQLInputObjectField field : type.getFieldDefinitions()) {
+            GraphQLInputObjectType fieldType = getInputObjectType(field);
+            if (fieldType == null) {
                 continue;
             }
-
-            GraphQLType namedFieldType = unwrapAll(field.getType());
-            if (!(namedFieldType instanceof GraphQLInputObjectType)) {
-                continue;
-            }
-
-            GraphQLInputObjectType fieldInputObject = (GraphQLInputObjectType) namedFieldType;
-            if (hasDefaultValue) {
-                // "Let fieldDefaultValue be the value for fieldName in defaultValue.
-                //  If fieldDefaultValue exists: InputObjectDefaultValueHasCycle(namedFieldType, fieldDefaultValue, visitedFields)"
-                inputObjectDefaultValueHasCycle(fieldInputObject, defaultValueMap.get(fieldName), errorCollector);
-            } else {
-                // "Otherwise: let fieldDefaultValue be the default value of field..."
-                inputFieldDefaultValueHasCycle(field, fieldInputObject, inputObject.getName(), errorCollector);
-            }
+            checkFieldDefaultValue(field, fieldType, type.getName(), errorCollector);
         }
     }
 
-    /**
-     * Implements {@code InputObjectDefaultValueHasCycle(inputObject, defaultValue, visitedFields)}
-     * from the spec, for external (programmatic Map/List) default values.
-     */
-    private void inputObjectDefaultValueHasCycle(
+    private void checkValue(
             GraphQLInputObjectType inputObject,
-            Object defaultValue,
+            @Nullable Object value,
             SchemaValidationErrorCollector errorCollector
     ) {
-        // "If defaultValue is a list: for each itemValue in defaultValue..."
-        if (defaultValue instanceof Iterable) {
-            for (Object itemValue : (Iterable<?>) defaultValue) {
-                if (itemValue != null) {
-                    inputObjectDefaultValueHasCycle(inputObject, itemValue, errorCollector);
-                }
+        if (value == null) {
+            return;
+        }
+        if (value instanceof ArrayValue) {
+            for (Value<?> itemValue : ((ArrayValue) value).getValues()) {
+                checkValue(inputObject, itemValue, errorCollector);
+            }
+            return;
+        }
+        if (FpKit.isIterable(value)) {
+            for (Object itemValue : FpKit.toIterable(value)) {
+                checkValue(inputObject, itemValue, errorCollector);
             }
             return;
         }
 
-        // "Otherwise, if defaultValue is an unordered map..."
-        if (!(defaultValue instanceof Map)) {
+        Map<?, ?> valueMap = getValueMap(value);
+        if (valueMap == null) {
             return;
         }
+        checkObjectValue(inputObject, valueMap, errorCollector);
+    }
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> defaultValueMap = (Map<String, Object>) defaultValue;
-
-        // "For each field in inputObject: if InputFieldDefaultValueHasCycle(...)"
+    private void checkObjectValue(
+            GraphQLInputObjectType inputObject,
+            Map<?, ?> valueMap,
+            SchemaValidationErrorCollector errorCollector
+    ) {
         for (GraphQLInputObjectField field : inputObject.getFieldDefinitions()) {
-            String fieldName = field.getName();
-            boolean hasDefaultValue = defaultValueMap.containsKey(fieldName);
-            if (!hasDefaultValue && field.getInputFieldDefaultValue().isNotSet()) {
+            boolean hasValue = valueMap.containsKey(field.getName());
+            if (!hasValue && field.getInputFieldDefaultValue().isNotSet()) {
                 continue;
             }
 
-            GraphQLType namedFieldType = unwrapAll(field.getType());
-            if (!(namedFieldType instanceof GraphQLInputObjectType)) {
+            GraphQLInputObjectType fieldType = getInputObjectType(field);
+            if (fieldType == null) {
                 continue;
             }
-
-            GraphQLInputObjectType fieldInputObject = (GraphQLInputObjectType) namedFieldType;
-            if (hasDefaultValue) {
-                // "Let fieldDefaultValue be the value for fieldName in defaultValue.
-                //  If fieldDefaultValue exists: InputObjectDefaultValueHasCycle(namedFieldType, fieldDefaultValue, visitedFields)"
-                Object fieldDefaultValue = defaultValueMap.get(fieldName);
-                if (fieldDefaultValue != null) {
-                    inputObjectDefaultValueHasCycle(fieldInputObject, fieldDefaultValue, errorCollector);
-                }
-            } else {
-                // "Otherwise: let fieldDefaultValue be the default value of field..."
-                inputFieldDefaultValueHasCycle(field, fieldInputObject, inputObject.getName(), errorCollector);
+            if (hasValue) {
+                checkValue(fieldType, valueMap.get(field.getName()), errorCollector);
+                continue;
             }
+            checkFieldDefaultValue(field, fieldType, inputObject.getName(), errorCollector);
         }
     }
 
-    /**
-     * Implements the "Otherwise" branch of {@code InputFieldDefaultValueHasCycle(field, defaultValue, visitedFields)}
-     * from the spec — called when the field is not present in the parent's default value,
-     * so the field's own default will be used at runtime.
-     */
-    private void inputFieldDefaultValueHasCycle(
+    private void checkFieldDefaultValue(
             GraphQLInputObjectField field,
-            GraphQLInputObjectType namedFieldType,
+            GraphQLInputObjectType fieldType,
             String parentTypeName,
             SchemaValidationErrorCollector errorCollector
     ) {
-        // "Let fieldDefaultValue be the default value of field.
-        //  If fieldDefaultValue does not exist: return false."
-        InputValueWithState fieldDefaultValue = field.getInputFieldDefaultValue();
-        if (fieldDefaultValue.isNotSet()) {
+        InputValueWithState defaultValue = field.getInputFieldDefaultValue();
+        if (!defaultValue.isLiteral() && !defaultValue.isExternal()) {
             return;
         }
 
         String coordinate = parentTypeName + "." + field.getName();
-
-        // "If field is within visitedFields: return true."
-        if (visitedFields.contains(coordinate)) {
-            // Cycle found — collect intermediate nodes (everything after the coordinate itself)
-            List<String> intermediaries = new ArrayList<>();
-            boolean found = false;
-            for (String entry : visitedFields) {
-                if (found) {
-                    intermediaries.add(entry);
-                }
-                if (entry.equals(coordinate)) {
-                    found = true;
-                }
-            }
-
-            String message;
-            if (intermediaries.isEmpty()) {
-                message = "Invalid circular reference. The default value of Input Object field "
-                        + coordinate + " references itself.";
-            } else {
-                message = "Invalid circular reference. The default value of Input Object field "
-                        + coordinate + " references itself via the default values of: "
-                        + String.join(", ", intermediaries) + ".";
-            }
-
-            errorCollector.addError(new SchemaValidationError(
-                    SchemaValidationErrorType.DefaultValueCircularRef, message));
+        if (fieldPath.contains(coordinate)) {
+            addError(coordinate, errorCollector);
+            return;
+        }
+        if (!checkedFields.add(coordinate)) {
             return;
         }
 
-        if (fullyExplored.contains(coordinate)) {
-            return;
+        fieldPath.add(coordinate);
+        checkValue(fieldType, defaultValue.getValue(), errorCollector);
+        fieldPath.remove(coordinate);
+    }
+
+    private void addError(String coordinate, SchemaValidationErrorCollector errorCollector) {
+        List<String> path = new ArrayList<>(fieldPath);
+        List<String> intermediaries = path.subList(path.indexOf(coordinate) + 1, path.size());
+        String via = intermediaries.isEmpty()
+                ? ""
+                : " via the default values of: " + String.join(", ", intermediaries);
+        String message = "Invalid circular reference. The default value of Input Object field "
+                + coordinate + " references itself" + via + ".";
+        errorCollector.addError(new SchemaValidationError(
+                SchemaValidationErrorType.DefaultValueCircularRef, message));
+    }
+
+    private @Nullable GraphQLInputObjectType getInputObjectType(GraphQLInputObjectField field) {
+        GraphQLType type = unwrapAll(field.getType());
+        if (type instanceof GraphQLInputObjectType) {
+            return (GraphQLInputObjectType) type;
         }
-        fullyExplored.add(coordinate);
+        return null;
+    }
 
-        // "Let nextVisitedFields be a new set containing field and everything from visitedFields.
-        //  Return InputObjectDefaultValueHasCycle(namedFieldType, fieldDefaultValue, nextVisitedFields)."
-        visitedFields.add(coordinate);
-
-        if (fieldDefaultValue.isLiteral() && fieldDefaultValue.getValue() instanceof Value) {
-            inputObjectDefaultValueHasCycle(namedFieldType, (Value<?>) fieldDefaultValue.getValue(), errorCollector);
-        } else if (fieldDefaultValue.isExternal() && fieldDefaultValue.getValue() != null) {
-            inputObjectDefaultValueHasCycle(namedFieldType, fieldDefaultValue.getValue(), errorCollector);
+    private @Nullable Map<?, ?> getValueMap(Object value) {
+        if (value instanceof Map) {
+            return (Map<?, ?>) value;
+        }
+        if (!(value instanceof ObjectValue)) {
+            return null;
         }
 
-        visitedFields.remove(coordinate);
+        Map<String, Value<?>> valueMap = new LinkedHashMap<>();
+        for (ObjectField field : ((ObjectValue) value).getObjectFields()) {
+            valueMap.put(field.getName(), field.getValue());
+        }
+        return valueMap;
+    }
+
+    private SchemaValidationErrorCollector getErrorCollector(TraverserContext<GraphQLSchemaElement> context) {
+        return context.getVarFromParents(SchemaValidationErrorCollector.class);
     }
 }
