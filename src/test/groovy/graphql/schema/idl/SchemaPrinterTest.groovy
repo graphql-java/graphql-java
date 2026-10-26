@@ -1905,6 +1905,33 @@ type Query {
 '''
     }
 
+    def "carriage returns in descriptions printed as # comments do not end the comment early"() {
+        given:
+        def idl = '''
+            "x\\rtype Injected { a: String }"
+            type Query {
+              fieldX : String
+            }
+        '''
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions()
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().descriptionsAsHashComments(true).includeDirectives(false)).print(schema)
+        def reparsed = new SchemaParser().parse(result)
+
+        then:
+        !reparsed.getType("Injected").isPresent()
+        result == '''#x
+#type Injected { a: String }
+type Query {
+  fieldX: String
+}
+'''
+    }
+
     def "@deprecated directive are NOT always printed regardless of options"() {
         given:
         def idl = '''
