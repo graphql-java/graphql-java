@@ -31,6 +31,9 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
     private static final BigInteger INT_MAX = BigInteger.valueOf(Integer.MAX_VALUE);
     private static final BigInteger INT_MIN = BigInteger.valueOf(Integer.MIN_VALUE);
 
+    // Integer.MAX_VALUE / Integer.MIN_VALUE both have 10 significant digits
+    private static final int INT_MAX_DIGITS = 10;
+
     private Integer convertImpl(Object input) {
         if (input instanceof Integer) {
             return (Integer) input;
@@ -74,7 +77,7 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
             return (Integer) input;
         }
 
-        BigInteger result = convertParseValueImpl(input);
+        BigInteger result = convertParseValueImpl(input, locale);
         if (result == null) {
             throw new CoercingParseValueException(
                     i18nMsg(locale, "Int.notInt", typeName(input))
@@ -88,12 +91,24 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
         return result.intValueExact();
     }
 
-    private BigInteger convertParseValueImpl(Object input) {
+    private BigInteger convertParseValueImpl(Object input, @NonNull Locale locale) {
         BigDecimal value;
         try {
             value = new BigDecimal(input.toString());
         } catch (NumberFormatException e) {
             return null;
+        }
+
+        // A value whose integer part has more digits than Integer can hold is out of range by
+        // definition. Decide that from the decimal's scale/precision instead of letting
+        // toBigIntegerExact() expand it: a variable value like 1E1000000000 arrives here as a
+        // BigDecimal and would otherwise materialise a BigInteger with ~10^9 digits (CPU/heap blow
+        // up) before the range check in parseValueImpl ever runs. Use long math because scale can
+        // be close to Integer.MIN_VALUE.
+        if ((long) value.precision() - value.scale() > INT_MAX_DIGITS) {
+            throw new CoercingParseValueException(
+                    i18nMsg(locale, "Int.outsideRange", value.toString())
+            );
         }
 
         try {

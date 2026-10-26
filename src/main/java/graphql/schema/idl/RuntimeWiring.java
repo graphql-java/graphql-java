@@ -19,7 +19,6 @@ import java.util.function.UnaryOperator;
 import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static java.lang.String.format;
 
 /**
@@ -59,7 +58,8 @@ public class RuntimeWiring {
         this.directiveWiring = builder.directiveWiring;
         this.wiringFactory = builder.wiringFactory;
         this.enumValuesProviders = builder.enumValuesProviders;
-        this.fieldVisibility = builder.fieldVisibility;
+        // a visibility seeded in via the code registry applies unless one is set on the wiring itself
+        this.fieldVisibility = builder.fieldVisibility != null ? builder.fieldVisibility : builder.codeRegistry.getFieldVisibility();
         this.codeRegistry = builder.codeRegistry;
         this.comparatorRegistry = builder.comparatorRegistry;
     }
@@ -187,7 +187,7 @@ public class RuntimeWiring {
         private final List<SchemaDirectiveWiring> directiveWiring = new ArrayList<>();
         private WiringFactory wiringFactory = new NoopWiringFactory();
         private boolean strictMode = true;
-        private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
+        private GraphqlFieldVisibility fieldVisibility;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
         private GraphqlTypeComparatorRegistry comparatorRegistry = GraphqlTypeComparatorRegistry.AS_IS_REGISTRY;
 

@@ -1,9 +1,6 @@
 package graphql.schema.validation;
 
-import graphql.GraphQLContext;
 import graphql.Internal;
-import graphql.execution.ValuesResolver;
-import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLImplementingType;
@@ -21,13 +18,10 @@ import graphql.util.TraverserContext;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static graphql.collect.ImmutableKit.map;
-import static graphql.language.AstPrinter.printAst;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
@@ -145,23 +139,7 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
                                         TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), objectFieldDef.getName(), objectArg.getName(), interfaceType.getName())));
                     }
                 } else {
-                    String interfaceArgStr = makeArgStr(objectArg);
-                    String objectArgStr = makeArgStr(interfaceArg);
-
-                    boolean same = true;
-                    if (!interfaceArgStr.equals(objectArgStr)) {
-                        same = false;
-                    }
-                    if (objectArg.hasSetDefaultValue() && interfaceArg.hasSetDefaultValue()) {
-                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getArgumentDefaultValue(), objectArg.getType(), GraphQLContext.getDefault(), Locale.getDefault());
-                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getArgumentDefaultValue(), interfaceArg.getType(), GraphQLContext.getDefault(), Locale.getDefault());
-                        if (!Objects.equals(printAst(objectDefaultValue), printAst(interfaceDefaultValue))) {
-                            same = false;
-                        }
-                    } else if (objectArg.hasSetDefaultValue() || interfaceArg.hasSetDefaultValue()) {
-                        same = false;
-                    }
-                    if (!same) {
+                    if (!makeArgStr(objectArg).equals(makeArgStr(interfaceArg))) {
                         validationErrorCollector.addError(
                                 error(format("%s type '%s' does not implement interface '%s' because field '%s' argument '%s' is defined differently",
                                         TYPE_OF_MAP.get(implementingType.getClass()), implementingType.getName(), interfaceType.getName(), interfaceFieldDef.getName(), objectArg.getName())));
@@ -172,7 +150,6 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
     }
 
     private String makeArgStr(GraphQLArgument argument) {
-        // we don't do default value checking because toString of getDefaultValue is not guaranteed to be stable
         return argument.getName() +
                 ":" +
                 simplePrint(argument.getType());

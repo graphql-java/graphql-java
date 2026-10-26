@@ -155,6 +155,30 @@ class ValuesResolverTest extends Specification {
         er.errors[0].message == "Exactly one key must be specified for OneOf type 'OneOf'."
     }
 
+    def "can validate list input oneOf fields when the argument is not an array literal"() {
+        def sdl = '''
+            input OneOf @oneOf { a: Int, b: Int }
+            type Query { q(oneofs: [OneOf]): Boolean }
+        '''
+
+        DataFetcher q = { env -> return !env.getArguments().isEmpty() }
+        def graphQL = TestUtil.graphQL(sdl, [Query: [q: q]]).build()
+
+        when: "a single object literal is coerced into the list"
+        def er = graphQL.execute('{ q(oneofs: {a: null}) }')
+
+        then:
+        er.errors.size() == 1
+        er.errors[0].message.contains("OneOf type field 'OneOf.a' must be non-null.")
+
+        when: "the list comes from the default value of a variable"
+        er = graphQL.execute('query ($oneofs: [OneOf] = [{a: null}]) { q(oneofs: $oneofs) }')
+
+        then:
+        er.errors.size() == 1
+        er.errors[0].message.contains("OneOf type field 'OneOf.a' must be non-null.")
+    }
+
 
     class Person {
         def name = ""
@@ -784,6 +808,85 @@ class ValuesResolverTest extends Specification {
                         ]),
                 ]).build()
                               | CoercedVariables.of("var": null)
+
+    }
+
+    def "getArgumentValues: invalid oneOf list input without an array literal because element contains null value - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        when:
+        def argument = new Argument("arg", inputValue)
+        def fieldArgumentList = newArgument().name("arg").type(list(inputObjectType)).build()
+        ValuesResolver.getArgumentValues([fieldArgumentList], [argument], variables, graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfNullValueException)
+        e.message == "OneOf type field 'oneOfInputObject.a' must be non-null."
+
+        where:
+
+        testCase | inputValue | variables
+
+        '{ a: null } coerced to a single element list'
+                 | buildObjectLiteral([
+                a: NullValue.of()
+        ])                    | CoercedVariables.emptyVariables()
+
+        '$var [{ a: null }]'
+                 | VariableReference.of("var")
+                              | CoercedVariables.of("var": [[a: null]])
+
+    }
+
+    def "getArgumentValues: invalid oneOf list input without an array literal because element contains duplicate key - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        when:
+        def argument = new Argument("arg", inputValue)
+        def fieldArgumentList = newArgument().name("arg").type(list(inputObjectType)).build()
+        ValuesResolver.getArgumentValues([fieldArgumentList], [argument], variables, graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfTooManyKeysException)
+        e.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+
+        where:
+
+        testCase | inputValue | variables
+
+        '{ a: "abc", b: 123 } coerced to a single element list'
+                 | buildObjectLiteral([
+                a: StringValue.of("abc"),
+                b: IntValue.of(123)
+        ])                    | CoercedVariables.emptyVariables()
+
+        '$var [{ a: "abc", b: 123 }]'
+                 | VariableReference.of("var")
+                              | CoercedVariables.of("var": [[a: "abc", b: 123]])
 
     }
 
