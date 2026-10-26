@@ -51,8 +51,9 @@ public interface GraphQLSchemaElement {
     int hashCode();
 
     /**
-     * Each GraphQLSchemaElement should make a copy of itself when this is called.  The copy should
-     * be included its current contents as they currently exist into a new object.
+     * Each GraphQLSchemaElement should make a copy of itself when this is called. The copy includes
+     * its current contents in a new object. Any AST definition and extension definitions are retained
+     * by reference, not deep-copied or rewritten to match the runtime element.
      *
      * @return a copy of this element
      */

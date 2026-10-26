@@ -199,6 +199,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
             this.name = existing.getName();
             this.value = existing.getArgumentValue();
             this.type = existing.getType();
+            this.definition = existing.getDefinition();
         }
 
         public Builder type(GraphQLInputType type) {

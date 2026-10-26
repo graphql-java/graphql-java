@@ -206,6 +206,7 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         public Builder(GraphQLEnumValueDefinition existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
+            this.definition = existing.getDefinition();
             this.value = existing.getValue();
             this.deprecationReason = existing.getDeprecationReason();
             copyExistingDirectives(existing);
