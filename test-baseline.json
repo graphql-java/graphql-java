@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 6011,
-      "passed": 5955,
+      "total": 6012,
+      "passed": 5956,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 6011,
-      "passed": 5954,
+      "total": 6012,
+      "passed": 5955,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 6011,
-      "passed": 5954,
+      "total": 6012,
+      "passed": 5955,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 6011,
-      "passed": 5954,
+      "total": 6012,
+      "passed": 5955,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,16 +39,16 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8852,
-        "missed": 1516
+        "covered": 8851,
+        "missed": 1517
       },
       "line": {
         "covered": 30180,
         "missed": 3103
       },
       "method": {
-        "covered": 8055,
-        "missed": 1203
+        "covered": 8056,
+        "missed": 1202
       }
     },
     "classes": {
@@ -39975,16 +39975,16 @@
       },
       "graphql.schema.idl.TypeDefinitionRegistry": {
         "line": {
-          "covered": 337,
-          "missed": 21
+          "covered": 338,
+          "missed": 20
         },
         "branch": {
           "covered": 144,
           "missed": 20
         },
         "method": {
-          "covered": 76,
-          "missed": 3
+          "covered": 77,
+          "missed": 2
         },
         "methods": [
           {
@@ -40696,16 +40696,16 @@
             "line": 602,
             "counters": {
               "line": {
-                "covered": 0,
-                "missed": 1
+                "covered": 1,
+                "missed": 0
               },
               "branch": {
                 "covered": 0,
                 "missed": 0
               },
               "method": {
-                "covered": 0,
-                "missed": 1
+                "covered": 1,
+                "missed": 0
               }
             }
           },
@@ -51736,7 +51736,7 @@
           {
             "name": "printMultiLineHashDescription",
             "desc": "(Ljava/io/PrintWriter;Ljava/lang/String;Ljava/util/List;)V",
-            "line": 1243,
+            "line": 1244,
             "counters": {
               "line": {
                 "covered": 2,
@@ -51755,7 +51755,7 @@
           {
             "name": "printMultiLineDescription",
             "desc": "(Ljava/io/PrintWriter;Ljava/lang/String;Ljava/util/List;)V",
-            "line": 1247,
+            "line": 1248,
             "counters": {
               "line": {
                 "covered": 4,
@@ -51774,7 +51774,7 @@
           {
             "name": "printSingleLineDescription",
             "desc": "(Ljava/io/PrintWriter;Ljava/lang/String;Ljava/lang/String;)V",
-            "line": 1257,
+            "line": 1258,
             "counters": {
               "line": {
                 "covered": 3,
@@ -51793,7 +51793,7 @@
           {
             "name": "hasAstDefinitionComments",
             "desc": "(Ljava/lang/Object;)Z",
-            "line": 1262,
+            "line": 1263,
             "counters": {
               "line": {
                 "covered": 2,
@@ -51812,7 +51812,7 @@
           {
             "name": "getAstDefinitionComments",
             "desc": "(Ljava/lang/Object;)Ljava/lang/String;",
-            "line": 1267,
+            "line": 1268,
             "counters": {
               "line": {
                 "covered": 36,
@@ -51831,7 +51831,7 @@
           {
             "name": "comments",
             "desc": "(Ljava/util/List;)Ljava/lang/String;",
-            "line": 1309,
+            "line": 1310,
             "counters": {
               "line": {
                 "covered": 4,
@@ -51850,7 +51850,7 @@
           {
             "name": "hasDescription",
             "desc": "(Ljava/lang/Object;)Z",
-            "line": 1317,
+            "line": 1318,
             "counters": {
               "line": {
                 "covered": 2,
@@ -51869,7 +51869,7 @@
           {
             "name": "getDescription",
             "desc": "(Ljava/lang/Object;)Ljava/lang/String;",
-            "line": 1322,
+            "line": 1323,
             "counters": {
               "line": {
                 "covered": 36,
@@ -51888,7 +51888,7 @@
           {
             "name": "description",
             "desc": "(Ljava/lang/String;Lgraphql/language/Description;)Ljava/lang/String;",
-            "line": 1368,
+            "line": 1369,
             "counters": {
               "line": {
                 "covered": 5,
@@ -51907,7 +51907,7 @@
           {
             "name": "getComparator",
             "desc": "(Ljava/lang/Class;Ljava/lang/Class;)Ljava/util/Comparator;",
-            "line": 1378,
+            "line": 1379,
             "counters": {
               "line": {
                 "covered": 5,
@@ -51926,7 +51926,7 @@
           {
             "name": "trimNewLineChars",
             "desc": "(Ljava/lang/String;)Ljava/lang/String;",
-            "line": 1386,
+            "line": 1387,
             "counters": {
               "line": {
                 "covered": 3,
@@ -51945,7 +51945,7 @@
           {
             "name": "isNullOrEmpty",
             "desc": "(Ljava/lang/String;)Z",
-            "line": 1393,
+            "line": 1394,
             "counters": {
               "line": {
                 "covered": 1,
@@ -51964,7 +51964,7 @@
           {
             "name": "lambda$comments$0",
             "desc": "(Lgraphql/language/Comment;)Ljava/lang/String;",
-            "line": 1312,
+            "line": 1313,
             "counters": {
               "line": {
                 "covered": 1,
@@ -51983,7 +51983,7 @@
           {
             "name": "lambda$printMultiLineDescription$0",
             "desc": "(Ljava/io/PrintWriter;Ljava/lang/String;Ljava/lang/String;)V",
-            "line": 1249,
+            "line": 1250,
             "counters": {
               "line": {
                 "covered": 3,
@@ -52002,7 +52002,7 @@
           {
             "name": "lambda$printMultiLineHashDescription$0",
             "desc": "(Ljava/io/PrintWriter;Ljava/lang/String;Ljava/lang/String;)V",
-            "line": 1243,
+            "line": 1244,
             "counters": {
               "line": {
                 "covered": 1,
@@ -67325,12 +67325,12 @@
       },
       "graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy$ChainedDLStack": {
         "line": {
-          "covered": 40,
-          "missed": 1
+          "covered": 39,
+          "missed": 2
         },
         "branch": {
-          "covered": 23,
-          "missed": 1
+          "covered": 22,
+          "missed": 2
         },
         "method": {
           "covered": 6,
@@ -67381,12 +67381,12 @@
             "line": 114,
             "counters": {
               "line": {
-                "covered": 16,
-                "missed": 0
+                "covered": 15,
+                "missed": 1
               },
               "branch": {
-                "covered": 10,
-                "missed": 0
+                "covered": 9,
+                "missed": 1
               },
               "method": {
                 "covered": 1,
