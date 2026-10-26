@@ -45,6 +45,11 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
         try {
             if (queryIdOption.isPresent()) {
                 Object persistedQueryId = queryIdOption.get();
+                // query text sent along with the id has to match it, even when the id is already cached
+                String requestQueryText = executionInput.getQuery();
+                if (hasQueryText(requestQueryText) && persistedQueryIdIsInvalid(persistedQueryId, requestQueryText)) {
+                    throw new PersistedQueryIdInvalid(persistedQueryId);
+                }
                 return persistedQueryCache.getPersistedQueryDocumentAsync(persistedQueryId, executionInput, (queryText) -> {
                     // we have a miss and they gave us nothing - bah!
                     if (queryText == null || queryText.isBlank()) {
@@ -77,6 +82,10 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
 
     protected boolean persistedQueryIdIsInvalid(Object persistedQueryId, String queryText) {
         return false;
+    }
+
+    private static boolean hasQueryText(String queryText) {
+        return queryText != null && !queryText.isBlank() && !queryText.equals(PERSISTED_QUERY_MARKER);
     }
 
     /**
