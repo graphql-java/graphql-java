@@ -472,6 +472,7 @@ public class SchemaGeneratorHelper {
                 builder
                         .description(description)
                         .definition(buildCtx.isCaptureAstDefinitions() ? typeDefinition : null)
+                        .extensionDefinitions(buildCtx.isCaptureAstDefinitions() ? extensions : emptyList())
                         .comparatorRegistry(buildCtx.getComparatorRegistry())
                         .specifiedByUrl(getSpecifiedByUrl(typeDefinition, extensions));
 

@@ -714,6 +714,9 @@ public class GraphQLSchema {
     /**
      * This helps you transform the current GraphQLSchema object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
+     * <p>
+     * The original AST definition and extension definitions are retained unless explicitly replaced or cleared.
+     * They are not updated to reflect changes to the runtime schema.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
      *
@@ -728,6 +731,7 @@ public class GraphQLSchema {
     /**
      * This helps you transform the current GraphQLSchema object into another one by using a builder that only allows you to change
      * simple values and does not involve changing the complex schema type graph.
+     * The original AST definition and extension definitions are retained without modification.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
      *
@@ -749,6 +753,7 @@ public class GraphQLSchema {
     /**
      * This allows you to build a schema from an existing schema.  It copies everything from the existing
      * schema and then allows you to replace them.
+     * The original AST definition and extension definitions are retained by reference, not rewritten.
      *
      * @param existingSchema the existing schema
      *
@@ -759,6 +764,7 @@ public class GraphQLSchema {
                 .query(existingSchema.getQueryType())
                 .mutation(existingSchema.getMutationType())
                 .subscription(existingSchema.getSubscriptionType())
+                .definition(existingSchema.getDefinition())
                 .extensionDefinitions(existingSchema.getExtensionDefinitions())
                 .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
                 .codeRegistry(existingSchema.getCodeRegistry())

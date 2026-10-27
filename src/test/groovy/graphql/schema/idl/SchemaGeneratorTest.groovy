@@ -2588,6 +2588,41 @@ class SchemaGeneratorTest extends Specification {
     }
 
 
+    def "scalar AST capture is #captureAstDefinitions with prepopulated wiring #prepopulated"() {
+        given:
+        def registry = new SchemaParser().parse('''
+            scalar Custom
+            extend scalar Custom @specifiedBy(url: "https://example.com/custom")
+            type Query { custom: Custom }
+        ''')
+        def definition = registry.scalars().get('Custom')
+        def extensions = registry.scalarTypeExtensions().get('Custom')
+        def scalar = TestUtil.mockScalar('Custom').transform {
+            it.definition(prepopulated ? definition : null)
+                    .extensionDefinitions(prepopulated ? extensions : [])
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring().scalar(scalar).build()
+        def options = defaultOptions().captureAstDefinitions(captureAstDefinitions)
+
+        when:
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, wiring)
+        def result = schema.getType('Custom') as GraphQLScalarType
+
+        then:
+        result.specifiedByUrl == 'https://example.com/custom'
+        result.definition.is(captureAstDefinitions ? definition : null)
+        result.extensionDefinitions.size() == (captureAstDefinitions ? 1 : 0)
+        !captureAstDefinitions || result.extensionDefinitions[0].is(extensions[0])
+        scalar.extensionDefinitions.size() == (prepopulated ? 1 : 0)
+
+        where:
+        captureAstDefinitions | prepopulated
+        true                  | false
+        false                 | false
+        true                  | true
+        false                 | true
+    }
+
     def "classCastException when interface extension is before base and has recursion"() {
         given:
         def spec = '''
