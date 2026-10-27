@@ -288,6 +288,47 @@ class GoodFaithIntrospectionTest extends Specification {
         er.errors[0].message.contains("too big")
     }
 
+    def "cycle forming fields repeated via the same fragment spread are detected as bad faith"() {
+        when:
+        ExecutionResult er = graphql.execute(query)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0].message.contains("__Type.fields")
+
+        where:
+        query                                                                                                    | _
+        // the same fragment spread under aliased parents
+        """ query badActor {
+                __schema { a1: types { ...T } a2: types { ...T } }
+            }
+            fragment T on __Type { fields { type { name } } }
+        """                                                                                           | _
+        // the repeated spread is of a fragment that holds the field via a nested fragment
+        """ query badActor {
+                __schema { a1: types { ...Outer } a2: types { ...Outer } }
+            }
+            fragment Outer on __Type { name ...T }
+            fragment T on __Type { fields { type { name } } }
+        """                                                                                           | _
+    }
+
+    def "fragments without cycle forming fields can be spread repeatedly"() {
+        def query = """
+            query goodActor {
+                __schema { a1: types { ...T } a2: types { ...T } }
+            }
+            fragment T on __Type { name ofType { name } }
+        """
+
+        when:
+        ExecutionResult er = graphql.execute(query)
+
+        then:
+        er.errors.isEmpty()
+    }
+
     def "good faith limits are applied on top of custom user limits"() {
         given:
         def limits = QueryComplexityLimits.newLimits().maxFieldsCount(200).maxDepth(15).build()
