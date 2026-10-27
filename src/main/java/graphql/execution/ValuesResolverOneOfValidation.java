@@ -14,9 +14,13 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static graphql.schema.GraphQLTypeUtil.isList;
@@ -24,8 +28,61 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 @Internal
 final class ValuesResolverOneOfValidation {
 
-    @SuppressWarnings("unchecked")
+    /**
+     * Per input object type: true if the type itself or any transitively reachable input object type is a
+     * @oneOf type. Input types are immutable once built, so this answer is stable for a given type instance.
+     */
+    private static final Map<GraphQLInputObjectType, Boolean> CONTAINS_ONE_OF = new ConcurrentHashMap<>();
+
     static void validateOneOfInputTypes(GraphQLType type, Object inputValue, Value<?> argumentValue, String argumentName, Locale locale) {
+        // the walk below can only do something when a @oneOf type is reachable - skip it otherwise
+        if (!mayContainOneOf(type)) {
+            return;
+        }
+        validateOneOfInputTypesImpl(type, inputValue, argumentValue, argumentName, locale);
+    }
+
+    private static boolean mayContainOneOf(GraphQLType type) {
+        GraphQLType unwrappedType = unwrapToNamed(type);
+        return unwrappedType instanceof GraphQLInputObjectType
+                && CONTAINS_ONE_OF.computeIfAbsent((GraphQLInputObjectType) unwrappedType, ValuesResolverOneOfValidation::computeContainsOneOf);
+    }
+
+    private static boolean computeContainsOneOf(GraphQLInputObjectType type) {
+        return containsOneOf(type, Collections.newSetFromMap(new IdentityHashMap<>()));
+    }
+
+    // uncached recursive check with cycle protection for self-referencing input types
+    private static boolean containsOneOf(GraphQLType type, Set<GraphQLType> visiting) {
+        GraphQLType unwrappedType = unwrapToNamed(type);
+        if (!(unwrappedType instanceof GraphQLInputObjectType)) {
+            return false;
+        }
+        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) unwrappedType;
+        if (inputObjectType.isOneOf()) {
+            return true;
+        }
+        if (!visiting.add(inputObjectType)) {
+            return false;
+        }
+        for (GraphQLInputObjectField fieldDefinition : inputObjectType.getFields()) {
+            if (containsOneOf(fieldDefinition.getType(), visiting)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static GraphQLType unwrapToNamed(GraphQLType type) {
+        GraphQLType unwrappedType = GraphQLTypeUtil.unwrapNonNull(type);
+        while (isList(unwrappedType)) {
+            unwrappedType = GraphQLTypeUtil.unwrapNonNull(((GraphQLList) unwrappedType).getWrappedType());
+        }
+        return unwrappedType;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void validateOneOfInputTypesImpl(GraphQLType type, Object inputValue, Value<?> argumentValue, String argumentName, Locale locale) {
         GraphQLType unwrappedNonNullType = GraphQLTypeUtil.unwrapNonNull(type);
 
         if (isList(unwrappedNonNullType)
