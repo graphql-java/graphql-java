@@ -185,6 +185,7 @@ public class AstSignature {
                                                          Set<String> fragmentSpreads) {
         GraphQLOutputType rootType = operationRootType(operationDefinition, schema);
         return operationDefinition.transform(builder -> {
+            builder.description(null);
             builder.variableDefinitions(redactVariableDefinitions(operationDefinition.getVariableDefinitions(), schema, variables, variableTypes, variableRemapping, variableCount, references));
             builder.directives(redactDirectives(operationDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
             builder.selectionSet(redactSelectionSet(operationDefinition.getSelectionSet(), rootType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
@@ -205,6 +206,7 @@ public class AstSignature {
             throw schemaMismatch("fragment type condition '%s' must be present in the schema as an output type", typeCondition.getName());
         }
         return fragmentDefinition.transform(builder -> {
+            builder.description(null);
             builder.directives(redactDirectives(fragmentDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
             builder.selectionSet(redactSelectionSet(fragmentDefinition.getSelectionSet(), outputType, schema, variables, variableTypes, variableRemapping, variableCount, references, fragmentSpreads));
         });
@@ -238,6 +240,7 @@ public class AstSignature {
                 : redactValue(defaultValue, variableType, schema, variables, variableRemapping, variableCount, references);
         return variableDefinition.transform(builder -> {
             builder.name(remapVariable(variableDefinition.getName(), variableRemapping, variableCount));
+            builder.description(null);
             builder.defaultValue(redactedDefaultValue);
             builder.directives(redactDirectives(variableDefinition.getDirectives(), schema, variables, variableTypes, variableRemapping, variableCount, references));
         });
@@ -822,7 +825,17 @@ public class AstSignature {
             @Override
             public TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> context) {
                 String varName = remapVariable(node.getName(), variableRemapping, variableCount);
-                return changeNode(context, node.transform(builder -> builder.name(varName)));
+                return changeNode(context, node.transform(builder -> builder.name(varName).description(null)));
+            }
+
+            @Override
+            public TraversalControl visitOperationDefinition(OperationDefinition node, TraverserContext<Node> context) {
+                return changeNode(context, node.transform(builder -> builder.description(null)));
+            }
+
+            @Override
+            public TraversalControl visitFragmentDefinition(FragmentDefinition node, TraverserContext<Node> context) {
+                return changeNode(context, node.transform(builder -> builder.description(null)));
             }
         };
         return transformDoc(document, visitor);
