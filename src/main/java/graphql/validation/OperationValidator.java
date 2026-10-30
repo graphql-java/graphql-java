@@ -357,11 +357,8 @@ public class OperationValidator implements DocumentVisitor {
 
     // --- State: Good Faith Introspection ---
     private @Nullable Map<Set<FieldAndType>, Map<String, Set<FieldAndType>>> mergedIntrospectionSelections;
-    private @Nullable Map<Set<FieldAndType>, Map<Set<GraphQLObjectType>, GoodFaithIntrospectionCounts>> introspectionCounts;
-    private final Set<Set<FieldAndType>> introspectionCountsInProgress = new HashSet<>();
+    private @Nullable Map<Set<FieldAndType>, @Nullable GoodFaithIntrospectionCounts> introspectionCounts;
     private boolean introspectionQueryDetected = false;
-    private @Nullable List<Conflict> introspectionConflicts;
-    private @Nullable List<String> introspectionPath;
 
     // --- Track whether we're in a context where fragment spread rules should run ---
     // fragmentRetraversalDepth == 0 means we're NOT inside a manually-traversed fragment => run non-fragment-spread checks
@@ -1083,9 +1080,6 @@ public class OperationValidator implements DocumentVisitor {
         introspectionQueryDetected = false;
         mergedIntrospectionSelections = null;
         introspectionCounts = null;
-        introspectionCountsInProgress.clear();
-        introspectionConflicts = null;
-        introspectionPath = null;
     }
 
     private void leaveSelectionSet() {
@@ -1431,205 +1425,16 @@ public class OperationValidator implements DocumentVisitor {
         return false;
     }
 
-    private Set<GraphQLObjectType> possibleObjectTypes(@Nullable GraphQLType type) {
-        GraphQLType unwrapped = type == null ? null : unwrapAll(type);
-        if (unwrapped instanceof GraphQLObjectType) {
-            return Collections.singleton((GraphQLObjectType) unwrapped);
-        }
-        if (unwrapped instanceof GraphQLInterfaceType) {
-            return new LinkedHashSet<>(validationContext.getSchema().getImplementations((GraphQLInterfaceType) unwrapped));
-        }
-        if (unwrapped instanceof GraphQLUnionType) {
-            Set<GraphQLObjectType> result = new LinkedHashSet<>();
-            ((GraphQLUnionType) unwrapped).getTypes().forEach(member -> result.add((GraphQLObjectType) member));
-            return result;
-        }
-        return Collections.emptySet();
-    }
-
-    private @Nullable Set<GraphQLObjectType> narrowPossibleTypes(@Nullable Set<GraphQLObjectType> possibleTypes, @Nullable GraphQLType condition) {
-        if (possibleTypes == null) {
-            return null;
-        }
-        Set<GraphQLObjectType> narrowed = new LinkedHashSet<>(possibleTypes);
-        narrowed.retainAll(possibleObjectTypes(condition));
-        return narrowed;
-    }
-
-    private GoodFaithIntrospectionCounts countIntrospectionSelections(Map<String, Set<FieldAndType>> fields,
-                                                                      Set<GraphQLObjectType> possibleParents, int depth) {
-        GoodFaithIntrospectionCounts counts = new GoodFaithIntrospectionCounts();
-        for (Map.Entry<String, Set<FieldAndType>> entry : fields.entrySet()) {
-            if (introspectionPath != null) {
-                introspectionPath.add(entry.getKey());
-            }
-            counts.add(countIntrospectionGroup(entry.getValue(), possibleParents, depth));
-            if (introspectionPath != null) {
-                introspectionPath.remove(introspectionPath.size() - 1);
-            }
-        }
-        validateRemainingIntrospectionSelections(fields);
-        return counts;
-    }
-
-    private void validateRemainingIntrospectionSelections(Map<String, Set<FieldAndType>> fields) {
-        if (introspectionConflicts == null) {
-            return;
-        }
-        for (Set<FieldAndType> group : fields.values()) {
-            if (!sameResponseShapeChecked.contains(group) || !sameForCommonParentsChecked.contains(group)) {
-                ImmutableList<String> path = ImmutableList.copyOf(Assert.assertNotNull(introspectionPath));
-                sameResponseShapeByName(fields, path, introspectionConflicts);
-                sameForCommonParentsByName(fields, path, introspectionConflicts);
-                return;
-            }
-        }
-    }
-
-    private void validateConcreteIntrospectionGroup(Set<FieldAndType> fields, Set<GraphQLObjectType> parents) {
-        if (introspectionConflicts == null || !hasSingleConcreteParent(fields, parents)) {
-            return;
-        }
-        boolean checkShape = sameResponseShapeChecked.add(fields);
-        boolean checkParents = sameForCommonParentsChecked.add(fields);
-        if (fields.size() == 1) {
-            return;
-        }
-        ImmutableList<String> path = ImmutableList.copyOf(Assert.assertNotNull(introspectionPath));
-        Conflict shapeConflict = checkShape ? requireSameOutputTypeShape(path, fields) : null;
-        Conflict parentConflict = checkParents ? requireSameNameAndArguments(path, fields) : null;
-        if (shapeConflict != null) {
-            introspectionConflicts.add(shapeConflict);
-        }
-        if (parentConflict != null) {
-            introspectionConflicts.add(parentConflict);
-        }
-    }
-
-    private GoodFaithIntrospectionCounts countIntrospectionGroup(Set<FieldAndType> fields, Set<GraphQLObjectType> possibleParents, int depth) {
-        if (hasNoSubSelections(fields) && hasSingleConcreteParent(fields, possibleParents)) {
-            return countIntrospectionField(fields, possibleParents, depth);
-        }
-        Map<Set<GraphQLObjectType>, GoodFaithIntrospectionCounts> cachedByParent = Assert.assertNotNull(introspectionCounts)
-                .computeIfAbsent(fields, ignored -> new HashMap<>());
-        GoodFaithIntrospectionCounts cached = cachedByParent.get(possibleParents);
-        if (cached != null) {
-            cached.checkDepth(depth);
-            return cached;
-        }
-        // Cyclic fragment documents are diagnosed by NoFragmentCycles. Do not recursively expand them here.
-        if (!introspectionCountsInProgress.add(fields)) {
-            return new GoodFaithIntrospectionCounts();
-        }
-        GoodFaithIntrospectionCounts counts = countIntrospectionByParent(fields, possibleParents, depth);
-        introspectionCountsInProgress.remove(fields);
-        cachedByParent.put(possibleParents, counts);
-        return counts;
-    }
-
-    private GoodFaithIntrospectionCounts countIntrospectionByParent(Set<FieldAndType> fields, Set<GraphQLObjectType> possibleParents, int depth) {
-        if (hasSingleConcreteParent(fields, possibleParents)) {
-            return countIntrospectionField(fields, possibleParents, depth);
-        }
-        Set<FieldAndType> applicable = new LinkedHashSet<>();
-        Set<GraphQLObjectType> applicableParents = new LinkedHashSet<>();
-        Set<GraphQLType> declaredParents = new LinkedHashSet<>();
-        for (FieldAndType field : fields) {
-            Set<GraphQLObjectType> parents = applicableParents(field, possibleParents);
-            if (!parents.isEmpty()) {
-                applicable.add(field);
-                applicableParents.addAll(parents);
-                declaredParents.add(Assert.assertNotNull(field.parentType));
-            }
-        }
-        if (applicable.isEmpty()) {
-            return new GoodFaithIntrospectionCounts();
-        }
-        // Like normalization, a single declared parent produces one field covering all its possible objects.
-        // Mixed type conditions must instead be partitioned by concrete object, including uncovered interface members.
-        if (declaredParents.size() == 1) {
-            return countIntrospectionField(applicable, applicableParents, depth);
-        }
-        GoodFaithIntrospectionCounts counts = new GoodFaithIntrospectionCounts();
-        for (GraphQLObjectType parent : applicableParents) {
-            Set<FieldAndType> group = new LinkedHashSet<>();
-            applicable.stream().filter(field -> appliesTo(field, parent)).forEach(group::add);
-            counts.add(countIntrospectionField(group, Collections.singleton(parent), depth));
-        }
-        return counts;
-    }
-
-    private Set<GraphQLObjectType> applicableParents(FieldAndType field, Set<GraphQLObjectType> possibleParents) {
-        Set<GraphQLObjectType> result = new LinkedHashSet<>(possibleParents);
-        result.retainAll(field.possibleParentTypes == null ? possibleObjectTypes(field.parentType) : field.possibleParentTypes);
-        return result;
-    }
-
-    private boolean appliesTo(FieldAndType field, GraphQLObjectType parent) {
-        return field.possibleParentTypes == null ? possibleObjectTypes(field.parentType).contains(parent) : field.possibleParentTypes.contains(parent);
-    }
-
-    private GoodFaithIntrospectionCounts countIntrospectionField(Set<FieldAndType> fields, Set<GraphQLObjectType> parents, int depth) {
-        GoodFaithIntrospectionCounts counts = new GoodFaithIntrospectionCounts();
-        FieldAndType representative = fields.iterator().next();
-        counts.enterField(introspectionCoordinate(representative), depth);
-        // Concrete groups have identical merge-validation and counting semantics. Check them in this walk.
-        validateConcreteIntrospectionGroup(fields, parents);
-        if (hasNoSubSelections(fields)) {
-            return counts;
-        }
-        Set<GraphQLObjectType> childTypes = childObjectTypes(representative, parents);
-        GoodFaithIntrospectionCounts children = countIntrospectionSelections(mergeSubSelections(fields), childTypes, depth + 1);
-        counts.addChildren(children);
-        return counts;
-    }
-
-    private boolean hasSingleConcreteParent(Set<FieldAndType> fields, Set<GraphQLObjectType> parents) {
-        if (parents.size() != 1) {
-            return false;
-        }
-        GraphQLObjectType parent = parents.iterator().next();
-        for (FieldAndType field : fields) {
-            if (field.parentType != parent || (field.possibleParentTypes != null && !field.possibleParentTypes.contains(parent))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean hasNoSubSelections(Set<FieldAndType> fields) {
-        for (FieldAndType field : fields) {
-            if (field.field.getSelectionSet() != null) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private Set<GraphQLObjectType> childObjectTypes(FieldAndType field, Set<GraphQLObjectType> parents) {
-        if (parents.size() == 1 && parents.contains(field.parentType)) {
-            return possibleObjectTypes(field.graphQLType);
-        }
-        Set<GraphQLObjectType> childTypes = new LinkedHashSet<>();
-        for (GraphQLObjectType parent : parents) {
-            GraphQLFieldDefinition definition = getFieldDefinition(parent, field.field.getName());
-            if (definition != null) {
-                childTypes.addAll(possibleObjectTypes(definition.getType()));
-            }
-        }
-        return childTypes;
-    }
-
     private @Nullable String introspectionCoordinate(FieldAndType field) {
         String name = field.field.getName();
         if (field.parentType == validationContext.getSchema().getQueryType()
                 && (Introspection.SchemaMetaFieldDef.getName().equals(name) || Introspection.TypeMetaFieldDef.getName().equals(name))) {
             return validationContext.getSchema().getQueryType().getName() + "." + name;
         }
-        if (field.parentType instanceof GraphQLObjectType && "__Type".equals(((GraphQLObjectType) field.parentType).getName())
+        if (field.parentType instanceof GraphQLObjectType && Introspection.__Type.getName().equals(((GraphQLObjectType) field.parentType).getName())
                 && ("fields".equals(name) || "inputFields".equals(name)
                 || "interfaces".equals(name) || "possibleTypes".equals(name))) {
-            return "__Type." + name;
+            return Introspection.__Type.getName() + "." + name;
         }
         return null;
     }
@@ -1643,22 +1448,14 @@ public class OperationValidator implements DocumentVisitor {
 
     private void overlappingFieldsImpl(SelectionSet selectionSet, @Nullable GraphQLOutputType graphQLOutputType) {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>(selectionSet.getSelections().size());
-        Map<String, Set<GraphQLObjectType>> visitedFragments = new LinkedHashMap<>();
-        overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments, null);
+        Set<String> visitedFragments = new LinkedHashSet<>();
+        overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments);
         if (isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION) && containsIntrospection(fieldMap, graphQLOutputType)) {
             introspectionQueryDetected = true;
             mergedIntrospectionSelections = new HashMap<>();
             introspectionCounts = new HashMap<>();
-            if (isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
-                introspectionConflicts = new ArrayList<>();
-                introspectionPath = new ArrayList<>();
-            }
-            countIntrospectionSelections(fieldMap, possibleObjectTypes(graphQLOutputType), 0);
         }
-        if (!isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
-            return;
-        }
-        List<Conflict> conflicts = introspectionConflicts == null ? findConflicts(fieldMap) : introspectionConflicts;
+        List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
             if (conflictsReported.contains(conflict.fields)) {
                 continue;
@@ -1668,55 +1465,42 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
-    private void overlappingFields_collectFields(Map<String, Set<FieldAndType>> fieldMap, SelectionSet selectionSet,
-                                                 @Nullable GraphQLType parentType, Map<String, Set<GraphQLObjectType>> visitedFragments,
-                                                 @Nullable Set<GraphQLObjectType> possibleParentTypes) {
+    private void overlappingFields_collectFields(Map<String, Set<FieldAndType>> fieldMap, SelectionSet selectionSet, @Nullable GraphQLType parentType, Set<String> visitedFragments) {
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
-                overlappingFields_collectFieldsForField(fieldMap, parentType, (Field) selection, possibleParentTypes);
+                overlappingFields_collectFieldsForField(fieldMap, parentType, (Field) selection);
             } else if (selection instanceof InlineFragment) {
-                overlappingFields_collectFieldsForInlineFragment(fieldMap, visitedFragments, parentType, (InlineFragment) selection, possibleParentTypes);
+                overlappingFields_collectFieldsForInlineFragment(fieldMap, visitedFragments, parentType, (InlineFragment) selection);
             } else if (selection instanceof FragmentSpread) {
-                overlappingFields_collectFieldsForFragmentSpread(fieldMap, visitedFragments, (FragmentSpread) selection, possibleParentTypes);
+                overlappingFields_collectFieldsForFragmentSpread(fieldMap, visitedFragments, (FragmentSpread) selection);
             }
         }
     }
 
-    private void overlappingFields_collectFieldsForFragmentSpread(Map<String, Set<FieldAndType>> fieldMap,
-                                                                  Map<String, Set<GraphQLObjectType>> visitedFragments,
-                                                                  FragmentSpread fragmentSpread,
-                                                                  @Nullable Set<GraphQLObjectType> possibleParentTypes) {
+    private void overlappingFields_collectFieldsForFragmentSpread(Map<String, Set<FieldAndType>> fieldMap, Set<String> visitedFragments, FragmentSpread fragmentSpread) {
         FragmentDefinition fragment = validationContext.getFragment(fragmentSpread.getName());
         if (fragment == null) {
             return;
         }
-        GraphQLType graphQLType = TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
-        Set<GraphQLObjectType> narrowedTypes = narrowPossibleTypes(possibleParentTypes, graphQLType);
-        Set<GraphQLObjectType> visitedTypes = visitedFragments.get(fragment.getName());
-        if (visitedTypes != null && (narrowedTypes == null || visitedTypes.containsAll(narrowedTypes))) {
+        if (visitedFragments.contains(fragment.getName())) {
             return;
         }
-        Set<GraphQLObjectType> allVisitedTypes = Collections.emptySet();
-        if (narrowedTypes != null) {
-            allVisitedTypes = new LinkedHashSet<>(visitedTypes == null ? Collections.emptySet() : visitedTypes);
-            allVisitedTypes.addAll(narrowedTypes);
+        visitedFragments.add(fragment.getName());
+        GraphQLType graphQLType = TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
+        overlappingFields_collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragments);
+    }
+
+    private void overlappingFields_collectFieldsForInlineFragment(Map<String, Set<FieldAndType>> fieldMap, Set<String> visitedFragments, @Nullable GraphQLType parentType, InlineFragment inlineFragment) {
+        GraphQLType graphQLType;
+        if (inlineFragment.getTypeCondition() == null) {
+            graphQLType = parentType;
+        } else {
+            graphQLType = TypeFromAST.getTypeFromAST(validationContext.getSchema(), inlineFragment.getTypeCondition());
         }
-        visitedFragments.put(fragment.getName(), allVisitedTypes);
-        overlappingFields_collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragments, narrowedTypes);
+        overlappingFields_collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragments);
     }
 
-    private void overlappingFields_collectFieldsForInlineFragment(Map<String, Set<FieldAndType>> fieldMap,
-                                                                  Map<String, Set<GraphQLObjectType>> visitedFragments,
-                                                                  @Nullable GraphQLType parentType, InlineFragment inlineFragment,
-                                                                  @Nullable Set<GraphQLObjectType> possibleParentTypes) {
-        GraphQLType graphQLType = inlineFragment.getTypeCondition() == null ? parentType
-                : TypeFromAST.getTypeFromAST(validationContext.getSchema(), inlineFragment.getTypeCondition());
-        Set<GraphQLObjectType> narrowedTypes = narrowPossibleTypes(possibleParentTypes, graphQLType);
-        overlappingFields_collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragments, narrowedTypes);
-    }
-
-    private void overlappingFields_collectFieldsForField(Map<String, Set<FieldAndType>> fieldMap, @Nullable GraphQLType parentType,
-                                                         Field field, @Nullable Set<GraphQLObjectType> possibleParentTypes) {
+    private void overlappingFields_collectFieldsForField(Map<String, Set<FieldAndType>> fieldMap, @Nullable GraphQLType parentType, Field field) {
         String responseName = field.getResultKey();
         GraphQLOutputType fieldType = null;
         GraphQLUnmodifiedType unwrappedParent = parentType != null ? unwrapAll(parentType) : null;
@@ -1724,13 +1508,22 @@ public class OperationValidator implements DocumentVisitor {
             GraphQLFieldDefinition fieldDefinition = getFieldDefinition((GraphQLCompositeType) unwrappedParent, field.getName());
             fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
         }
-        fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(new FieldAndType(field, fieldType, unwrappedParent, possibleParentTypes));
+        fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(new FieldAndType(field, fieldType, unwrappedParent));
     }
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
         List<Conflict> result = new ArrayList<>();
-        sameResponseShapeByName(fieldMap, emptyList(), result);
-        sameForCommonParentsByName(fieldMap, emptyList(), result);
+        boolean checkMerging = isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
+        if (checkMerging && !introspectionQueryDetected) {
+            sameResponseShapeByName(fieldMap, emptyList(), result);
+        }
+        if (checkMerging || introspectionQueryDetected) {
+            sameForCommonParentsByName(fieldMap, emptyList(), result);
+        }
+        // Enforce Good Faith limits in the common-parent walk before the other recursive merge checks.
+        if (checkMerging && introspectionQueryDetected) {
+            sameResponseShapeByName(fieldMap, emptyList(), result);
+        }
         return result;
     }
 
@@ -1762,32 +1555,69 @@ public class OperationValidator implements DocumentVisitor {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>();
         for (FieldAndType fieldAndType : sameNameFields) {
             if (fieldAndType.field.getSelectionSet() != null) {
-                Map<String, Set<GraphQLObjectType>> visitedFragments = new LinkedHashMap<>();
-                Set<GraphQLObjectType> possibleTypes = introspectionQueryDetected ? possibleObjectTypes(fieldAndType.graphQLType) : null;
-                overlappingFields_collectFields(fieldMap, fieldAndType.field.getSelectionSet(), fieldAndType.graphQLType, visitedFragments, possibleTypes);
+                Set<String> visitedFragments = new LinkedHashSet<>();
+                overlappingFields_collectFields(fieldMap, fieldAndType.field.getSelectionSet(), fieldAndType.graphQLType, visitedFragments);
             }
         }
         return fieldMap;
     }
 
-    private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+    private @Nullable GoodFaithIntrospectionCounts sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap,
+                                                                              ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+        GoodFaithIntrospectionCounts counts = introspectionCounts == null ? null : new GoodFaithIntrospectionCounts();
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             List<Set<FieldAndType>> groups = groupByCommonParents(entry.getValue());
             ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
             for (Set<FieldAndType> group : groups) {
-                if (sameForCommonParentsChecked.contains(group)) {
-                    continue;
-                }
-                sameForCommonParentsChecked.add(group);
-                Conflict conflict = requireSameNameAndArguments(newPath, group);
-                if (conflict != null) {
-                    conflictsResult.add(conflict);
-                    continue;
-                }
-                Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group);
-                sameForCommonParentsByName(subSelections, newPath, conflictsResult);
+                sameForCommonParentGroup(group, newPath, conflictsResult, counts);
             }
         }
+        return counts;
+    }
+
+    private void sameForCommonParentGroup(Set<FieldAndType> group, ImmutableList<String> path, List<Conflict> conflictsResult,
+                                          @Nullable GoodFaithIntrospectionCounts selectionCounts) {
+        if (selectionCounts != null && reuseIntrospectionCounts(group, path.size() - 1, selectionCounts)) {
+            return;
+        }
+        boolean newlyChecked = sameForCommonParentsChecked.add(group);
+        if (!newlyChecked && selectionCounts == null) {
+            return;
+        }
+        if (newlyChecked && isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
+            Conflict conflict = requireSameNameAndArguments(path, group);
+            if (conflict != null) {
+                conflictsResult.add(conflict);
+                return;
+            }
+        }
+        GoodFaithIntrospectionCounts groupCounts = null;
+        if (selectionCounts != null) {
+            groupCounts = new GoodFaithIntrospectionCounts();
+            groupCounts.enterField(introspectionCoordinate(group.iterator().next()), path.size() - 1);
+            // A null value marks an in-progress group, stopping invalid fragment cycles.
+            Assert.assertNotNull(introspectionCounts).put(group, null);
+        }
+        Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group);
+        GoodFaithIntrospectionCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
+        if (groupCounts != null) {
+            groupCounts.addChildren(Assert.assertNotNull(children));
+            Assert.assertNotNull(introspectionCounts).put(group, groupCounts);
+            Assert.assertNotNull(selectionCounts).add(groupCounts);
+        }
+    }
+
+    private boolean reuseIntrospectionCounts(Set<FieldAndType> group, int parentDepth, GoodFaithIntrospectionCounts selectionCounts) {
+        Map<Set<FieldAndType>, @Nullable GoodFaithIntrospectionCounts> cache = Assert.assertNotNull(introspectionCounts);
+        if (!cache.containsKey(group)) {
+            return false;
+        }
+        GoodFaithIntrospectionCounts cached = cache.get(group);
+        if (cached != null) {
+            cached.checkDepth(parentDepth);
+            selectionCounts.add(cached);
+        }
+        return true;
     }
 
     private List<Set<FieldAndType>> groupByCommonParents(Set<FieldAndType> fields) {
@@ -1955,14 +1785,11 @@ public class OperationValidator implements DocumentVisitor {
         final Field field;
         final @Nullable GraphQLType graphQLType;
         final @Nullable GraphQLType parentType;
-        final @Nullable Set<GraphQLObjectType> possibleParentTypes;
 
-        public FieldAndType(Field field, @Nullable GraphQLType graphQLType, @Nullable GraphQLType parentType,
-                            @Nullable Set<GraphQLObjectType> possibleParentTypes) {
+        public FieldAndType(Field field, @Nullable GraphQLType graphQLType, @Nullable GraphQLType parentType) {
             this.field = field;
             this.graphQLType = graphQLType;
             this.parentType = parentType;
-            this.possibleParentTypes = possibleParentTypes;
         }
 
         @Override
@@ -1983,12 +1810,12 @@ public class OperationValidator implements DocumentVisitor {
                 return false;
             }
             FieldAndType that = (FieldAndType) o;
-            return Objects.equals(field, that.field) && Objects.equals(possibleParentTypes, that.possibleParentTypes);
+            return Objects.equals(field, that.field);
         }
 
         @Override
         public int hashCode() {
-            return 31 * Objects.hashCode(field) + Objects.hashCode(possibleParentTypes);
+            return Objects.hashCode(field);
         }
     }
 

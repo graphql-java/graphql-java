@@ -242,7 +242,7 @@ class GoodFaithMergedFieldsTest extends Specification {
         ]
     }
 
-    def "mixed abstract selections match ENO field counts at the limit"() {
+    def "mixed abstract selections use validation groups at the limit"() {
         given:
         def abstractSchema = TestUtil.schema('''
             type Query { normalField: String node: I union: U }
@@ -254,11 +254,12 @@ class GoodFaithMergedFieldsTest extends Specification {
         def base = "{ __type(name: \"Query\") { name } $selection } $fragments"
         def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(abstractSchema, Parser.parse(base),
                 null, CoercedVariables.emptyVariables())
-        def padding = (1..(500 - eno.operationFieldCount)).collect { "p$it: normalField" }.join(' ')
+        def padding = (1..(500 - validationFields)).collect { "p$it: normalField" }.join(' ')
         def atLimit = "{ __type(name: \"Query\") { name } $padding $selection } $fragments"
         def aboveLimit = "{ __type(name: \"Query\") { name } extra: normalField $padding $selection } $fragments"
 
         expect:
+        eno.operationFieldCount == normalizationFields
         new Validator().validateDocument(abstractSchema, Parser.parse(atLimit), Locale.ENGLISH).empty
 
         when:
@@ -268,16 +269,35 @@ class GoodFaithMergedFieldsTest extends Specification {
         thrown(GoodFaithIntrospectionExceeded)
 
         where:
-        selection                                                                                         | fragments
-        'node { name name }'                                                                               | ''
-        'node { ...on I { name } ...on A { name } }'                                                       | ''
-        'node { ...on A { name } ...on B { name } }'                                                       | ''
-        'union { ...on A { name } ...on B { name } }'                                                      | ''
-        'node { ...on A { ...on I { name } } }'                                                            | ''
-        'node { ...on A { ...F } ...on B { ...F } }'                                                       | 'fragment F on I { name }'
-        'node { ...on A { ...on I { child { ...on I { name } ...on B { extra } } } } }'                                | ''
-        'node { child { name } ...on A { child { name extra } } }'                                         | ''
-        'node { ...F } alias: node { ...F }'                                                              | 'fragment F on I { name }'
+        selection                                                                        | fragments                      | validationFields | normalizationFields
+        'node { name name }'                                                              | ''                             | 4                | 4
+        'node { ...on I { name } ...on A { name } }'                                       | ''                             | 4                | 5
+        'node { ...on A { name } ...on B { name } }'                                       | ''                             | 5                | 5
+        'union { ...on A { name } ...on B { name } }'                                      | ''                             | 5                | 5
+        'node { ...on A { ...on I { name } } }'                                            | ''                             | 4                | 4
+        'node { ...on A { ...F } ...on B { ...F } }'                                       | 'fragment F on I { name }'      | 4                | 4
+        'node { ...on A { ...on I { child { ...on I { name } ...on B { extra } } } } }'     | ''                             | 6                | 5
+        'node { child { name } ...on A { child { name extra } } }'                         | ''                             | 6                | 8
+        'node { ...F } alias: node { ...F }'                                              | 'fragment F on I { name }'      | 6                | 6
+    }
+
+    def "Good Faith counts fragments already checked by another operation"() {
+        given:
+        def names = (1..leaves).collect { "n$it: name" }.join(' ')
+        def normal = 'query Normal { node { ...F } }'
+        def introspection = 'query Intro { __type(name: "Query") { name } a: node { ...F } b: node { ...F } }'
+        def fragment = "fragment F on Node { $names }"
+        def query = (normalFirst ? normal + introspection : introspection + normal) + fragment
+
+        expect:
+        rejected(query) == expected
+
+        where:
+        leaves | normalFirst | expected
+        248    | true        | false
+        249    | true        | true
+        248    | false       | false
+        249    | false       | true
     }
 
     def "introspection subfields still undergo overlap validation"() {

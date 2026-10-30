@@ -33,6 +33,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * {@link #GOOD_FAITH_MAX_DEPTH_COUNT} depth</li>
  * </ul>
  * Field and depth limits cover the entire operation, including any non-introspection selections.
+ * Fields are counted using the common-parent groups checked by field-merge validation. For
+ * interface and union selections, these groups can differ from the runtime-type variants counted
+ * by executable normalization.
  * All selections are counted as if {@code @skip} were false and {@code @include} were true,
  * without coercing variables during validation. General {@link QueryComplexityLimits} continue
  * to bound AST traversal independently of these merged-field limits.
@@ -51,7 +54,7 @@ public class GoodFaithIntrospection {
 
     private static final AtomicBoolean ENABLED_STATE = new AtomicBoolean(true);
     /**
-     * This is the maximum number of executable fields that can be in a good faith introspection query
+     * This is the maximum number of merged validation field groups in a good faith introspection query
      */
     public static final int GOOD_FAITH_MAX_FIELDS_COUNT = 500;
     /**
