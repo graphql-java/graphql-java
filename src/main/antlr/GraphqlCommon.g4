@@ -143,7 +143,6 @@ Comment: '#' SourceCharacterWithoutLineFeed* -> channel(2);
 
 LF: [\n] -> channel(3);
 CR: [\r] -> channel(3);
-LineTerminator: [\u2028\u2029] -> channel(3);
 
 Space : [\u0020] -> channel(3);
 Tab : [\u0009] -> channel(3);
