@@ -8,11 +8,13 @@ import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.execution.DataFetcherResult;
 import graphql.execution.ExecutionContext;
 import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -725,12 +727,27 @@ public class Introspection {
             Introspection.TypeNameMetaFieldDef.getName()
     );
 
-    public static final IntrospectionDataFetcher<?> SchemaMetaFieldDefDataFetcher = IntrospectionDataFetchingEnvironment::getGraphQLSchema;
+    // the query type can be reached below the operation root (eg `viewer : Query`) so these
+    // fields check enablement themselves rather than relying only on isIntrospectionSensible
+    public static final IntrospectionDataFetcher<?> SchemaMetaFieldDefDataFetcher = environment -> {
+        if (!isIntrospectionEnabled(environment.getGraphQlContext())) {
+            return mkDisabledFieldResult(environment);
+        }
+        return environment.getGraphQLSchema();
+    };
 
     public static final IntrospectionDataFetcher<?> TypeMetaFieldDefDataFetcher = environment -> {
+        if (!isIntrospectionEnabled(environment.getGraphQlContext())) {
+            return mkDisabledFieldResult(environment);
+        }
         String name = environment.getArgument("name");
         return environment.getGraphQLSchema().getType(name);
     };
+
+    private static DataFetcherResult<Object> mkDisabledFieldResult(DataFetchingEnvironment environment) {
+        IntrospectionDisabledError error = new IntrospectionDisabledError(environment.getField().getSourceLocation());
+        return DataFetcherResult.newResult().error(error).build();
+    }
 
     // __typename is always available
     public static final IntrospectionDataFetcher<?> TypeNameMetaFieldDefDataFetcher = environment -> simplePrint(environment.getParentType());

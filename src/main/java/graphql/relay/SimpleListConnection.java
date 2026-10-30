@@ -61,7 +61,7 @@ public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>
         ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
 
         int afterOffset = getOffsetFromCursor(environment.getArgument("after"), -1);
-        int begin = Math.max(afterOffset, -1) + 1;
+        int begin = Math.min(afterOffset, edges.size() - 1) + 1;
         int beforeOffset = getOffsetFromCursor(environment.getArgument("before"), edges.size());
         int end = Math.min(beforeOffset, edges.size());
 
@@ -142,14 +142,19 @@ public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>
             throw new InvalidCursorException(format("The cursor is not in base64 format : '%s'", cursor), e);
         }
         String string = new String(decode, StandardCharsets.UTF_8);
-        if (prefix.length() > string.length()) {
+        if (!string.startsWith(prefix)) {
             throw new InvalidCursorException(format("The cursor prefix is missing from the cursor : '%s'", cursor));
         }
+        int offset;
         try {
-            return Integer.parseInt(string.substring(prefix.length()));
+            offset = Integer.parseInt(string.substring(prefix.length()));
         } catch (NumberFormatException nfe) {
             throw new InvalidCursorException(format("The cursor was not created by this class  : '%s'", cursor), nfe);
         }
+        if (offset < 0) {
+            throw new InvalidCursorException(format("The cursor offset must not be negative : '%s'", cursor));
+        }
+        return offset;
     }
 
     private String createCursor(int offset) {

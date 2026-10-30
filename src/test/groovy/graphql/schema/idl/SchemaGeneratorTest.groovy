@@ -29,6 +29,7 @@ import graphql.schema.idl.errors.DirectiveIllegalReferenceError
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.idl.errors.SchemaProblem
+import graphql.schema.visibility.BlockedFields
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Issue
 import spock.lang.Specification
@@ -1430,6 +1431,32 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
+    def "field visibility on a seeded code registry is kept"() {
+        def sdl = """
+            type Query {
+              user : User
+            }
+            type User {
+              id : ID
+              ssn : String
+            }
+        """
+
+        def blockedFields = BlockedFields.newBlock().addPattern("User.ssn").build()
+        def codeRegistry = newCodeRegistry().fieldVisibility(blockedFields).build()
+        def runtimeWiring = newRuntimeWiring().codeRegistry(codeRegistry).build()
+
+        def graphQL = TestUtil.graphQL(sdl, runtimeWiring).build()
+
+        when:
+        def er = graphQL.execute('{ user { ssn } }')
+
+        then:
+        graphQL.getGraphQLSchema().getCodeRegistry().getFieldVisibility() == blockedFields
+        er.errors.size() == 1
+        er.errors[0].message.contains("Field 'ssn' in type 'User' is undefined")
+    }
+
     def "empty types are allowed and expanded"() {
         def spec = """
             type Query
@@ -2560,6 +2587,41 @@ class SchemaGeneratorTest extends Specification {
         schema.getQueryType().getFieldDefinition("test").getDefinition() != null
     }
 
+
+    def "scalar AST capture is #captureAstDefinitions with prepopulated wiring #prepopulated"() {
+        given:
+        def registry = new SchemaParser().parse('''
+            scalar Custom
+            extend scalar Custom @specifiedBy(url: "https://example.com/custom")
+            type Query { custom: Custom }
+        ''')
+        def definition = registry.scalars().get('Custom')
+        def extensions = registry.scalarTypeExtensions().get('Custom')
+        def scalar = TestUtil.mockScalar('Custom').transform {
+            it.definition(prepopulated ? definition : null)
+                    .extensionDefinitions(prepopulated ? extensions : [])
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring().scalar(scalar).build()
+        def options = defaultOptions().captureAstDefinitions(captureAstDefinitions)
+
+        when:
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, wiring)
+        def result = schema.getType('Custom') as GraphQLScalarType
+
+        then:
+        result.specifiedByUrl == 'https://example.com/custom'
+        result.definition.is(captureAstDefinitions ? definition : null)
+        result.extensionDefinitions.size() == (captureAstDefinitions ? 1 : 0)
+        !captureAstDefinitions || result.extensionDefinitions[0].is(extensions[0])
+        scalar.extensionDefinitions.size() == (prepopulated ? 1 : 0)
+
+        where:
+        captureAstDefinitions | prepopulated
+        true                  | false
+        false                 | false
+        true                  | true
+        false                 | true
+    }
 
     def "classCastException when interface extension is before base and has recursion"() {
         given:

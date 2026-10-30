@@ -168,6 +168,7 @@ public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
         public Builder(GraphQLAppliedDirective existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
+            this.definition = existing.getDefinition();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLAppliedDirectiveArgument::getName));
         }
 

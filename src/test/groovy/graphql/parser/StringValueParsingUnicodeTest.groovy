@@ -257,4 +257,28 @@ class StringValueParsingUnicodeTest extends Specification {
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
         e.message == "Invalid unicode encountered. Not a valid code point. Offending token '\\u{fffffff}' at line -1 column -1"
     }
+
+    def "invalid unicode code point - braced hex value overflows int"() {
+        given:
+        def input = '''"\\u{fffffffff}"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
+
+        then:
+        InvalidSyntaxException e = thrown(InvalidSyntaxException)
+        e.message == "Invalid unicode encountered. Not a valid hex digits string. Offending token '\\u{fffffffff}' at line -1 column -1"
+    }
+
+    def "invalid surrogate pair - trailing braced hex value overflows int"() {
+        given:
+        def input = '''"\\uD83D\\u{fffffffff}"'''
+
+        when:
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
+
+        then:
+        InvalidSyntaxException e = thrown(InvalidSyntaxException)
+        e.message == "Invalid unicode encountered. Not a valid hex digits string. Offending token '\\u{fffffffff}' at line -1 column -1"
+    }
 }
