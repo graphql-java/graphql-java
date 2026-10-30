@@ -77,6 +77,38 @@ class GoodFaithMergedFieldsTest extends Specification {
         '__type(name: "Root")' | '__type'   | 'name'
     }
 
+    def "root #rootField through #placement merges valid selections"() {
+        given:
+        def query = rootFragments(rootIntrospection(rootField, 'fields { name }'), placement)
+
+        expect:
+        validate(query).empty
+
+        where:
+        [rootField, placement] << [['__schema', '__type'], ['inline', 'named chain', 'shared fragments']].combinations()
+    }
+
+    def "root #rootField through #placement enforces #protection"() {
+        given:
+        def query = rootFragments(rootIntrospectionViolation(rootField, protection), placement)
+
+        when:
+        validate(query)
+
+        then:
+        def error = thrown(GoodFaithIntrospectionExceeded)
+        error.toBadFaithError().message.contains(expectedDetail)
+
+        where:
+        [rootField, placement, protection] << [
+                ['__schema', '__type'],
+                ['inline', 'named chain', 'shared fragments'],
+                ['field count', 'depth', 'restricted field', 'root aliases']
+        ].combinations()
+        expectedDetail = ['field count': '501 fields', 'depth': 'Query depth 21',
+                          'restricted field': '__Type.fields', 'root aliases': "Query.$rootField"][protection]
+    }
+
     def "merged field limit includes each reuse of a cached subtree"() {
         given:
         // __schema, two types fields, and 248 or 249 leaves at each response position.
@@ -291,6 +323,48 @@ class GoodFaithMergedFieldsTest extends Specification {
         50     | 10    | 50             | 10
         1000   | 10    | 500            | 10
         50     | 100   | 50             | 20
+    }
+
+    private String rootIntrospection(String rootField, String selection, String alias = '') {
+        if (rootField == '__schema') {
+            return "${alias}__schema { types { $selection } }"
+        }
+        return "${alias}__type(name: \"Query\") { $selection }"
+    }
+
+    private String rootFragments(String selection, String placement) {
+        switch (placement) {
+            case 'inline':
+                return "{ ...on Query { ... { $selection } } }"
+            case 'named chain':
+                return """{ ...Outer }
+                          fragment Outer on Query { ...Inner }
+                          fragment Inner on Query { $selection }"""
+            case 'shared fragments':
+                return """{ ...Left ...Right }
+                          fragment Left on Query { ...Shared }
+                          fragment Right on Query { ...Shared }
+                          fragment Shared on Query { $selection }"""
+            default:
+                throw new IllegalArgumentException(placement)
+        }
+    }
+
+    private String rootIntrospectionViolation(String rootField, String protection) {
+        int rootDepth = rootField == '__schema' ? 2 : 1
+        switch (protection) {
+            case 'field count':
+                return rootIntrospection(rootField, (1..(501 - rootDepth)).collect { "n$it: name" }.join(' '))
+            case 'depth':
+                int wrappers = 20 - rootDepth
+                return rootIntrospection(rootField, 'ofType { ' * wrappers + 'name' + ' }' * wrappers)
+            case 'restricted field':
+                return rootIntrospection(rootField, 'a: fields { name } b: fields { name }')
+            case 'root aliases':
+                return rootIntrospection(rootField, 'name', 'a: ') + rootIntrospection(rootField, 'name', 'b: ')
+            default:
+                throw new IllegalArgumentException(protection)
+        }
     }
 
     private List validate(String query) {
