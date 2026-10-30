@@ -21,7 +21,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Schemas form a cyclic graph and hence it's possible to send in introspection queries that can reference those cycles
  * and in large schemas this can be expensive and perhaps a "denial of service".
  * <p>
- * When enabled, the validation layer enforces that:
+ * When enabled, the validation layer applies these limits to each operation containing a root
+ * {@code __schema} or {@code __type} selection. {@code __typename} alone does not activate them.
+ * Selections are merged by response name at each response position; aliases and selections at
+ * different positions count separately. The validation layer enforces that:
  * <ul>
  * <li>Only one {@code __schema} and one {@code __type} field can appear per operation</li>
  * <li>The {@code __Type} fields {@code fields}, {@code inputFields}, {@code interfaces}, and {@code possibleTypes}
@@ -29,6 +32,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <li>The query complexity is limited to {@link #GOOD_FAITH_MAX_FIELDS_COUNT} fields and
  * {@link #GOOD_FAITH_MAX_DEPTH_COUNT} depth</li>
  * </ul>
+ * Field and depth limits cover the entire operation, including any non-introspection selections.
+ * All selections are counted as if {@code @skip} were false and {@code @include} were true,
+ * without coercing variables during validation. General {@link QueryComplexityLimits} continue
+ * to bound AST traversal independently of these merged-field limits.
+ * <p>
  * This allows the standard and common introspection queries to work so tooling such as graphiql can work.
  */
 @PublicApi

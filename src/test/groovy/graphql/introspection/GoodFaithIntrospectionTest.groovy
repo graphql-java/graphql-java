@@ -69,7 +69,7 @@ class GoodFaithIntrospectionTest extends Specification {
         """                                                                                           | _
         // a case for __Type possibleTypes
         """ query badActor {
-                __schema { types { inputFields { type { inputFields { name }}}}}
+                __schema { types { possibleTypes { possibleTypes { name }}}}
             }
         """                                                                                           | _
         // a case leading from __InputValue
