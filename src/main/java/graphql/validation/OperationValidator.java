@@ -1423,7 +1423,8 @@ public class OperationValidator implements DocumentVisitor {
 
     private boolean containsIntrospectionField(Set<FieldAndType> fields) {
         for (FieldAndType field : fields) {
-            if ("__schema".equals(field.field.getName()) || "__type".equals(field.field.getName())) {
+            String name = field.field.getName();
+            if (Introspection.SchemaMetaFieldDef.getName().equals(name) || Introspection.TypeMetaFieldDef.getName().equals(name)) {
                 return true;
             }
         }
@@ -1621,7 +1622,8 @@ public class OperationValidator implements DocumentVisitor {
 
     private @Nullable String introspectionCoordinate(FieldAndType field) {
         String name = field.field.getName();
-        if (field.parentType == validationContext.getSchema().getQueryType() && ("__schema".equals(name) || "__type".equals(name))) {
+        if (field.parentType == validationContext.getSchema().getQueryType()
+                && (Introspection.SchemaMetaFieldDef.getName().equals(name) || Introspection.TypeMetaFieldDef.getName().equals(name))) {
             return validationContext.getSchema().getQueryType().getName() + "." + name;
         }
         if (field.parentType instanceof GraphQLObjectType && "__Type".equals(((GraphQLObjectType) field.parentType).getName())
