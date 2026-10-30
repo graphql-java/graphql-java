@@ -357,7 +357,8 @@ public class OperationValidator implements DocumentVisitor {
     private int fragmentTraversalMaxDepth = 0;
 
     // --- State: Good Faith Introspection ---
-    private final Map<String, Integer> introspectionFieldCounts = new HashMap<>();
+    // insertion ordered so the keys counted while traversing a fragment can be found again for its later spreads
+    private final Map<String, Integer> introspectionFieldCounts = new LinkedHashMap<>();
     private boolean introspectionQueryDetected = false;
 
     // --- Track whether we're in a context where fragment spread rules should run ---
@@ -905,11 +906,23 @@ public class OperationValidator implements DocumentVisitor {
         }
 
         if (key != null) {
-            int count = introspectionFieldCounts.merge(key, 1, Integer::sum);
-            if (count > 1) {
-                throw GoodFaithIntrospectionExceeded.tooManyFields(key);
-            }
+            countIntrospectionField(key);
         }
+    }
+
+    private void countIntrospectionField(String key) {
+        int count = introspectionFieldCounts.merge(key, 1, Integer::sum);
+        if (count > 1) {
+            throw GoodFaithIntrospectionExceeded.tooManyFields(key);
+        }
+    }
+
+    private List<String> introspectionFieldKeysAddedSince(int introspectionKeyCountBefore) {
+        if (introspectionFieldCounts.size() == introspectionKeyCountBefore) {
+            return Collections.emptyList();
+        }
+        List<String> keys = new ArrayList<>(introspectionFieldCounts.keySet());
+        return keys.subList(introspectionKeyCountBefore, keys.size());
     }
 
     private void checkInlineFragment(InlineFragment inlineFragment) {
@@ -984,6 +997,10 @@ public class OperationValidator implements DocumentVisitor {
                     if (fragmentRetraversalDepth > 0 && potentialDepth > fragmentTraversalMaxDepth) {
                         fragmentTraversalMaxDepth = potentialDepth;
                     }
+                    // the fragment is not traversed again, so count its good faith introspection fields here
+                    for (String introspectionFieldKey : info.getIntrospectionFieldKeys()) {
+                        countIntrospectionField(introspectionFieldKey);
+                    }
                 }
             } else if (fragment != null) {
                 // First spread - traverse and track complexity
@@ -992,6 +1009,7 @@ public class OperationValidator implements DocumentVisitor {
                 int fieldCountBefore = fieldCount;
                 int depthAtEntry = currentFieldDepth;
                 int previousFragmentMaxDepth = fragmentTraversalMaxDepth;
+                int introspectionKeyCountBefore = introspectionFieldCounts.size();
 
                 // Initialize max depth tracking for this fragment
                 fragmentTraversalMaxDepth = currentFieldDepth;
@@ -1005,7 +1023,7 @@ public class OperationValidator implements DocumentVisitor {
                 int fragmentMaxInternalDepth = fragmentTraversalMaxDepth - depthAtEntry;
 
                 fragmentComplexityMap.put(fragmentName,
-                        new FragmentComplexityInfo(fragmentFieldCount, fragmentMaxInternalDepth));
+                        new FragmentComplexityInfo(fragmentFieldCount, fragmentMaxInternalDepth, introspectionFieldKeysAddedSince(introspectionKeyCountBefore)));
 
                 // Restore max depth for outer fragment (if nested)
                 if (fragmentRetraversalDepth > 0 && previousFragmentMaxDepth > fragmentTraversalMaxDepth) {
