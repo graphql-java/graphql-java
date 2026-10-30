@@ -1,29 +1,29 @@
 {
   "tests": {
     "java11": {
-      "total": 6053,
-      "passed": 5997,
+      "total": 6057,
+      "passed": 6001,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java17": {
-      "total": 6053,
-      "passed": 5996,
+      "total": 6057,
+      "passed": 6000,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java21": {
-      "total": 6053,
-      "passed": 5996,
+      "total": 6057,
+      "passed": 6000,
       "failed": 0,
       "errors": 0,
       "skipped": 57
     },
     "java25": {
-      "total": 6053,
-      "passed": 5996,
+      "total": 6057,
+      "passed": 6000,
       "failed": 0,
       "errors": 0,
       "skipped": 57
@@ -39,12 +39,12 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8860,
-        "missed": 1510
+        "covered": 8864,
+        "missed": 1508
       },
       "line": {
-        "covered": 30210,
-        "missed": 3085
+        "covered": 30216,
+        "missed": 3082
       },
       "method": {
         "covered": 8074,
@@ -21634,12 +21634,12 @@
       },
       "graphql.language.AstPrinter": {
         "line": {
-          "covered": 510,
-          "missed": 21
+          "covered": 512,
+          "missed": 19
         },
         "branch": {
-          "covered": 205,
-          "missed": 23
+          "covered": 206,
+          "missed": 22
         },
         "method": {
           "covered": 101,
@@ -23286,12 +23286,12 @@
             "line": 339,
             "counters": {
               "line": {
-                "covered": 11,
-                "missed": 2
+                "covered": 13,
+                "missed": 0
               },
               "branch": {
-                "covered": 3,
-                "missed": 1
+                "covered": 4,
+                "missed": 0
               },
               "method": {
                 "covered": 1,
@@ -160883,12 +160883,12 @@
       },
       "graphql.introspection.IntrospectionResultToSchema": {
         "line": {
-          "covered": 177,
-          "missed": 3
+          "covered": 181,
+          "missed": 2
         },
         "branch": {
-          "covered": 64,
-          "missed": 7
+          "covered": 67,
+          "missed": 6
         },
         "method": {
           "covered": 18,
@@ -160898,7 +160898,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 49,
+            "line": 50,
             "counters": {
               "line": {
                 "covered": 1,
@@ -160917,7 +160917,7 @@
           {
             "name": "createSchemaDefinition",
             "desc": "(Lgraphql/ExecutionResult;)Lgraphql/language/Document;",
-            "line": 59,
+            "line": 60,
             "counters": {
               "line": {
                 "covered": 4,
@@ -160936,7 +160936,7 @@
           {
             "name": "createSchemaDefinition",
             "desc": "(Ljava/util/Map;)Lgraphql/language/Document;",
-            "line": 77,
+            "line": 78,
             "counters": {
               "line": {
                 "covered": 40,
@@ -160955,7 +160955,7 @@
           {
             "name": "createDirective",
             "desc": "(Ljava/util/Map;)Lgraphql/language/DirectiveDefinition;",
-            "line": 134,
+            "line": 135,
             "counters": {
               "line": {
                 "covered": 16,
@@ -160974,7 +160974,7 @@
           {
             "name": "createDirectiveLocations",
             "desc": "(Ljava/util/List;)Ljava/util/List;",
-            "line": 159,
+            "line": 160,
             "counters": {
               "line": {
                 "covered": 7,
@@ -160993,7 +160993,7 @@
           {
             "name": "createTypeDefinition",
             "desc": "(Ljava/util/Map;)Lgraphql/language/TypeDefinition;",
-            "line": 169,
+            "line": 170,
             "counters": {
               "line": {
                 "covered": 11,
@@ -161012,7 +161012,7 @@
           {
             "name": "createScalar",
             "desc": "(Ljava/util/Map;)Lgraphql/language/TypeDefinition;",
-            "line": 193,
+            "line": 194,
             "counters": {
               "line": {
                 "covered": 7,
@@ -161031,7 +161031,7 @@
           {
             "name": "createUnion",
             "desc": "(Ljava/util/Map;)Lgraphql/language/UnionTypeDefinition;",
-            "line": 206,
+            "line": 207,
             "counters": {
               "line": {
                 "covered": 10,
@@ -161050,7 +161050,7 @@
           {
             "name": "createEnum",
             "desc": "(Ljava/util/Map;)Lgraphql/language/EnumTypeDefinition;",
-            "line": 224,
+            "line": 225,
             "counters": {
               "line": {
                 "covered": 11,
@@ -161069,7 +161069,7 @@
           {
             "name": "createInterface",
             "desc": "(Ljava/util/Map;)Lgraphql/language/InterfaceTypeDefinition;",
-            "line": 246,
+            "line": 247,
             "counters": {
               "line": {
                 "covered": 10,
@@ -161088,14 +161088,14 @@
           {
             "name": "createInputObject",
             "desc": "(Ljava/util/Map;)Lgraphql/language/InputObjectTypeDefinition;",
-            "line": 267,
+            "line": 268,
             "counters": {
               "line": {
-                "covered": 8,
+                "covered": 10,
                 "missed": 0
               },
               "branch": {
-                "covered": 0,
+                "covered": 2,
                 "missed": 0
               },
               "method": {
@@ -161107,7 +161107,7 @@
           {
             "name": "createObject",
             "desc": "(Ljava/util/Map;)Lgraphql/language/ObjectTypeDefinition;",
-            "line": 282,
+            "line": 287,
             "counters": {
               "line": {
                 "covered": 9,
@@ -161126,7 +161126,7 @@
           {
             "name": "createFields",
             "desc": "(Ljava/util/List;)Ljava/util/List;",
-            "line": 299,
+            "line": 304,
             "counters": {
               "line": {
                 "covered": 12,
@@ -161145,15 +161145,15 @@
           {
             "name": "createDeprecatedDirective",
             "desc": "(Ljava/util/Map;Lgraphql/language/NodeDirectivesBuilder;)V",
-            "line": 316,
+            "line": 321,
             "counters": {
               "line": {
-                "covered": 7,
-                "missed": 1
+                "covered": 8,
+                "missed": 0
               },
               "branch": {
-                "covered": 3,
-                "missed": 1
+                "covered": 4,
+                "missed": 0
               },
               "method": {
                 "covered": 1,
@@ -161164,10 +161164,10 @@
           {
             "name": "createInputValueDefinitions",
             "desc": "(Ljava/util/List;)Ljava/util/List;",
-            "line": 329,
+            "line": 334,
             "counters": {
               "line": {
-                "covered": 12,
+                "covered": 13,
                 "missed": 0
               },
               "branch": {
@@ -161183,7 +161183,7 @@
           {
             "name": "createTypeIndirection",
             "desc": "(Ljava/util/Map;)Lgraphql/language/Type;",
-            "line": 347,
+            "line": 353,
             "counters": {
               "line": {
                 "covered": 5,
@@ -161202,7 +161202,7 @@
           {
             "name": "toDescription",
             "desc": "(Ljava/util/Map;)Lgraphql/language/Description;",
-            "line": 366,
+            "line": 372,
             "counters": {
               "line": {
                 "covered": 7,
@@ -161221,7 +161221,7 @@
           {
             "name": "lambda$createDirective$0",
             "desc": "(Lgraphql/language/DirectiveDefinition$Builder;Ljava/lang/Boolean;)V",
-            "line": 152,
+            "line": 153,
             "counters": {
               "line": {
                 "covered": 1,
