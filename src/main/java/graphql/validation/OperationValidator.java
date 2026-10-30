@@ -14,7 +14,6 @@ import graphql.execution.MergedSelectionSet;
 import graphql.execution.TypeFromAST;
 import graphql.execution.ValuesResolver;
 import graphql.i18n.I18nMsg;
-import graphql.introspection.GoodFaithIntrospection;
 import graphql.introspection.Introspection;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
@@ -350,14 +349,15 @@ public class OperationValidator implements DocumentVisitor {
     private int fieldCount = 0;
     private int currentFieldDepth = 0;
     private int maxFieldDepthSeen = 0;
-    private QueryComplexityLimits complexityLimits;
+    private final QueryComplexityLimits complexityLimits;
     // Fragment complexity calculated lazily during first spread
     private final Map<String, FragmentComplexityInfo> fragmentComplexityMap = new HashMap<>();
     // Max depth seen during current fragment traversal (for calculating fragment's internal depth)
     private int fragmentTraversalMaxDepth = 0;
 
     // --- State: Good Faith Introspection ---
-    private final Map<String, Integer> introspectionFieldCounts = new HashMap<>();
+    private @Nullable Map<Set<FieldAndType>, Map<String, Set<FieldAndType>>> mergedIntrospectionSelections;
+    private @Nullable Map<Set<FieldAndType>, @Nullable GoodFaithIntrospectionCounts> introspectionCounts;
     private boolean introspectionQueryDetected = false;
 
     // --- Track whether we're in a context where fragment spread rules should run ---
@@ -859,57 +859,6 @@ public class OperationValidator implements DocumentVisitor {
                 validateUniqueDirectiveNamesPerLocation(field, field.getDirectives());
             }
         }
-        // Good Faith Introspection also runs during fragment spread traversal in an operation
-        if (currentOperation != null && isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
-            checkGoodFaithIntrospection(field);
-        }
-    }
-
-    // --- GoodFaithIntrospection ---
-    private void checkGoodFaithIntrospection(Field field) {
-        GraphQLCompositeType parentType = getParentType();
-        if (parentType == null) {
-            return;
-        }
-        String fieldName = field.getName();
-        String key = null;
-
-        // Detect query-level introspection fields (__schema, __type) and tighten the complexity
-        // limits to the good faith bounds. Detection has to run during fragment spread traversal
-        // too, otherwise a __schema/__type reached only through a fragment keeps the looser default
-        // limits and the good faith field count / depth caps are never applied.
-        GraphQLObjectType queryType = validationContext.getSchema().getQueryType();
-        if (queryType != null && parentType.getName().equals(queryType.getName())) {
-            if (Introspection.SchemaMetaFieldDef.getName().equals(fieldName) || Introspection.TypeMetaFieldDef.getName().equals(fieldName)) {
-                if (!introspectionQueryDetected) {
-                    introspectionQueryDetected = true;
-                    complexityLimits = GoodFaithIntrospection.goodFaithLimits(complexityLimits);
-                }
-                // The once-per-operation cap stays at the structural level, so a __schema/__type
-                // that appears both directly and via a fragment spread (ENO merges these into one)
-                // is not falsely flagged as asking twice.
-                if (shouldRunDocumentLevelRules()) {
-                    key = parentType.getName() + "." + fieldName;
-                }
-            }
-        }
-
-        // Check __Type fields that can form cycles.
-        // Counted during ALL traversals (including fragment spreads) because each occurrence
-        // at a different depth represents a separate cycle risk.
-        if (Introspection.__Type.getName().equals(parentType.getName())) {
-            if ("fields".equals(fieldName) || "inputFields".equals(fieldName)
-                    || "interfaces".equals(fieldName) || "possibleTypes".equals(fieldName)) {
-                key = "__Type." + fieldName;
-            }
-        }
-
-        if (key != null) {
-            int count = introspectionFieldCounts.merge(key, 1, Integer::sum);
-            if (count > 1) {
-                throw GoodFaithIntrospectionExceeded.tooManyFields(key);
-            }
-        }
     }
 
     private void checkInlineFragment(InlineFragment inlineFragment) {
@@ -1040,7 +989,8 @@ public class OperationValidator implements DocumentVisitor {
     private void checkOperationDefinition(OperationDefinition operationDefinition) {
         currentOperation = operationDefinition;
 
-        if (isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
+        if (isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
+                || isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
             validateOverlappingFieldsCanBeMerged(operationDefinition);
         }
         if (isRuleEnabled(OperationValidationRule.LONE_ANONYMOUS_OPERATION)) {
@@ -1127,7 +1077,9 @@ public class OperationValidator implements DocumentVisitor {
         currentFieldDepth = 0;
         maxFieldDepthSeen = 0;
         fragmentTraversalMaxDepth = 0;
-        introspectionFieldCounts.clear();
+        introspectionQueryDetected = false;
+        mergedIntrospectionSelections = null;
+        introspectionCounts = null;
     }
 
     private void leaveSelectionSet() {
@@ -1450,6 +1402,43 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
+    // --- Good Faith Introspection ---
+    private boolean containsIntrospection(Map<String, Set<FieldAndType>> fields, @Nullable GraphQLType rootType) {
+        if (rootType != validationContext.getSchema().getQueryType()) {
+            return false;
+        }
+        for (Set<FieldAndType> group : fields.values()) {
+            if (containsIntrospectionField(group)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsIntrospectionField(Set<FieldAndType> fields) {
+        for (FieldAndType field : fields) {
+            String name = field.field.getName();
+            if (Introspection.SchemaMetaFieldDef.getName().equals(name) || Introspection.TypeMetaFieldDef.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private @Nullable String introspectionCoordinate(FieldAndType field) {
+        String name = field.field.getName();
+        if (field.parentType == validationContext.getSchema().getQueryType()
+                && (Introspection.SchemaMetaFieldDef.getName().equals(name) || Introspection.TypeMetaFieldDef.getName().equals(name))) {
+            return validationContext.getSchema().getQueryType().getName() + "." + name;
+        }
+        if (field.parentType instanceof GraphQLObjectType && Introspection.__Type.getName().equals(((GraphQLObjectType) field.parentType).getName())
+                && ("fields".equals(name) || "inputFields".equals(name)
+                || "interfaces".equals(name) || "possibleTypes".equals(name))) {
+            return Introspection.__Type.getName() + "." + name;
+        }
+        return null;
+    }
+
     // --- OverlappingFieldsCanBeMerged ---
     private void validateOverlappingFieldsCanBeMerged(OperationDefinition operationDefinition) {
         overlappingFieldsImpl(
@@ -1461,6 +1450,11 @@ public class OperationValidator implements DocumentVisitor {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>(selectionSet.getSelections().size());
         Set<String> visitedFragments = new LinkedHashSet<>();
         overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments);
+        if (isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION) && containsIntrospection(fieldMap, graphQLOutputType)) {
+            introspectionQueryDetected = true;
+            mergedIntrospectionSelections = new HashMap<>();
+            introspectionCounts = new HashMap<>();
+        }
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
             if (conflictsReported.contains(conflict.fields)) {
@@ -1510,9 +1504,8 @@ public class OperationValidator implements DocumentVisitor {
         String responseName = field.getResultKey();
         GraphQLOutputType fieldType = null;
         GraphQLUnmodifiedType unwrappedParent = parentType != null ? unwrapAll(parentType) : null;
-        if (unwrappedParent instanceof GraphQLFieldsContainer) {
-            GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) unwrappedParent;
-            GraphQLFieldDefinition fieldDefinition = validationContext.getSchema().getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
+        if (unwrappedParent instanceof GraphQLCompositeType) {
+            GraphQLFieldDefinition fieldDefinition = getFieldDefinition((GraphQLCompositeType) unwrappedParent, field.getName());
             fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
         }
         fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(new FieldAndType(field, fieldType, unwrappedParent));
@@ -1520,8 +1513,17 @@ public class OperationValidator implements DocumentVisitor {
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
         List<Conflict> result = new ArrayList<>();
-        sameResponseShapeByName(fieldMap, emptyList(), result);
-        sameForCommonParentsByName(fieldMap, emptyList(), result);
+        boolean checkMerging = isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
+        if (checkMerging && !introspectionQueryDetected) {
+            sameResponseShapeByName(fieldMap, emptyList(), result);
+        }
+        if (checkMerging || introspectionQueryDetected) {
+            sameForCommonParentsByName(fieldMap, emptyList(), result);
+        }
+        // Enforce Good Faith limits in the common-parent walk before the other recursive merge checks.
+        if (checkMerging && introspectionQueryDetected) {
+            sameResponseShapeByName(fieldMap, emptyList(), result);
+        }
         return result;
     }
 
@@ -1543,6 +1545,13 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private Map<String, Set<FieldAndType>> mergeSubSelections(Set<FieldAndType> sameNameFields) {
+        if (mergedIntrospectionSelections == null) {
+            return collectSubSelections(sameNameFields);
+        }
+        return mergedIntrospectionSelections.computeIfAbsent(sameNameFields, this::collectSubSelections);
+    }
+
+    private Map<String, Set<FieldAndType>> collectSubSelections(Set<FieldAndType> sameNameFields) {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>();
         for (FieldAndType fieldAndType : sameNameFields) {
             if (fieldAndType.field.getSelectionSet() != null) {
@@ -1553,24 +1562,62 @@ public class OperationValidator implements DocumentVisitor {
         return fieldMap;
     }
 
-    private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+    private @Nullable GoodFaithIntrospectionCounts sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap,
+                                                                              ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+        GoodFaithIntrospectionCounts counts = introspectionCounts == null ? null : new GoodFaithIntrospectionCounts();
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             List<Set<FieldAndType>> groups = groupByCommonParents(entry.getValue());
             ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
             for (Set<FieldAndType> group : groups) {
-                if (sameForCommonParentsChecked.contains(group)) {
-                    continue;
-                }
-                sameForCommonParentsChecked.add(group);
-                Conflict conflict = requireSameNameAndArguments(newPath, group);
-                if (conflict != null) {
-                    conflictsResult.add(conflict);
-                    continue;
-                }
-                Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group);
-                sameForCommonParentsByName(subSelections, newPath, conflictsResult);
+                sameForCommonParentGroup(group, newPath, conflictsResult, counts);
             }
         }
+        return counts;
+    }
+
+    private void sameForCommonParentGroup(Set<FieldAndType> group, ImmutableList<String> path, List<Conflict> conflictsResult,
+                                          @Nullable GoodFaithIntrospectionCounts selectionCounts) {
+        if (selectionCounts != null && reuseIntrospectionCounts(group, path.size() - 1, selectionCounts)) {
+            return;
+        }
+        boolean newlyChecked = sameForCommonParentsChecked.add(group);
+        if (!newlyChecked && selectionCounts == null) {
+            return;
+        }
+        if (newlyChecked && isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
+            Conflict conflict = requireSameNameAndArguments(path, group);
+            if (conflict != null) {
+                conflictsResult.add(conflict);
+                return;
+            }
+        }
+        GoodFaithIntrospectionCounts groupCounts = null;
+        if (selectionCounts != null) {
+            groupCounts = new GoodFaithIntrospectionCounts();
+            groupCounts.enterField(introspectionCoordinate(group.iterator().next()), path.size() - 1);
+            // A null value marks an in-progress group, stopping invalid fragment cycles.
+            Assert.assertNotNull(introspectionCounts).put(group, null);
+        }
+        Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group);
+        GoodFaithIntrospectionCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
+        if (groupCounts != null) {
+            groupCounts.addChildren(Assert.assertNotNull(children));
+            Assert.assertNotNull(introspectionCounts).put(group, groupCounts);
+            Assert.assertNotNull(selectionCounts).add(groupCounts);
+        }
+    }
+
+    private boolean reuseIntrospectionCounts(Set<FieldAndType> group, int parentDepth, GoodFaithIntrospectionCounts selectionCounts) {
+        Map<Set<FieldAndType>, @Nullable GoodFaithIntrospectionCounts> cache = Assert.assertNotNull(introspectionCounts);
+        if (!cache.containsKey(group)) {
+            return false;
+        }
+        GoodFaithIntrospectionCounts cached = cache.get(group);
+        if (cached != null) {
+            cached.checkDepth(parentDepth);
+            selectionCounts.add(cached);
+        }
+        return true;
     }
 
     private List<Set<FieldAndType>> groupByCommonParents(Set<FieldAndType> fields) {
