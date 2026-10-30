@@ -42,6 +42,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertValidName;
 import static graphql.collect.ImmutableKit.map;
+import static graphql.Directives.OneOfDirective;
 import static graphql.Directives.isBuiltInDirective;
 
 @SuppressWarnings("unchecked")
@@ -270,6 +271,10 @@ public class IntrospectionResultToSchema {
                 .name(assertValidName((String) input.get("name")))
                 .description(toDescription(input));
 
+        if (Boolean.TRUE.equals(input.get("isOneOf"))) {
+            inputObjectTypeDefinition.directive(Directive.newDirective().name(OneOfDirective.getName()).build());
+        }
+
         List<Map<String, Object>> fields = (List<Map<String, Object>>) input.get("inputFields");
         List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(fields);
         inputObjectTypeDefinition.inputValueDefinitions(inputValueDefinitions);
@@ -331,6 +336,7 @@ public class IntrospectionResultToSchema {
             Type argType = createTypeIndirection((Map<String, Object>) arg.get("type"));
             InputValueDefinition.Builder inputValueDefinition = InputValueDefinition.newInputValueDefinition().name(assertValidName((String) arg.get("name"))).type(argType);
             inputValueDefinition.description(toDescription(arg));
+            createDeprecatedDirective(arg, inputValueDefinition);
 
             String valueLiteral = (String) arg.get("defaultValue");
             if (valueLiteral != null) {
