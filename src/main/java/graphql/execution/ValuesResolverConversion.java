@@ -434,8 +434,8 @@ class ValuesResolverConversion {
         return externalValueToInternalValueImpl(null, variableName, inputInterceptor, fieldVisibility, graphQLType, originalValue, graphqlContext, locale);
     }
 
-    static Object externalValueToInternalValueImpl(
-            GraphQLSchema schema,
+    private static Object externalValueToInternalValueImpl(
+            @Nullable GraphQLSchema schema,
             String variableName,
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
@@ -523,7 +523,7 @@ class ValuesResolverConversion {
      * performs validation
      */
     private static Map<String, Object> externalValueToInternalValueForObject(
-            GraphQLSchema schema,
+            @Nullable GraphQLSchema schema,
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
             GraphQLInputObjectType inputObjectType,
@@ -612,7 +612,7 @@ class ValuesResolverConversion {
      * including validation
      */
     private static List externalValueToInternalValueForList(
-            GraphQLSchema schema,
+            @Nullable GraphQLSchema schema,
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
             GraphQLList graphQLList,

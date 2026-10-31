@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.AssertException
 import graphql.Directives
 import graphql.ErrorType
 import graphql.GraphQLContext
@@ -212,7 +213,7 @@ class ValuesResolverTest extends Specification {
         ValuesResolver.getArgumentValues(schema.queryType.getFieldDefinition('q').arguments, supplied, CoercedVariables.emptyVariables(), graphQLContext, locale)
 
         then:
-        thrown(graphql.AssertException)
+        thrown(AssertException)
     }
 
     def "oneOf reachable through a self-referencing input type is still validated"() {

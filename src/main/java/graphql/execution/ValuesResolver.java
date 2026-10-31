@@ -210,6 +210,20 @@ public class ValuesResolver {
         return getArgumentValuesImpl(null, inputInterceptor, codeRegistry.getFieldVisibility(), argumentTypes, arguments, coercedVariables, graphqlContext, locale);
     }
 
+    @Internal
+    public static Map<String, Object> getArgumentValues(
+            GraphQLSchema schema,
+            GraphQLCodeRegistry codeRegistry,
+            List<GraphQLArgument> argumentTypes,
+            List<Argument> arguments,
+            CoercedVariables coercedVariables,
+            GraphQLContext graphqlContext,
+            Locale locale
+    ) {
+        InputInterceptor inputInterceptor = graphqlContext.get(InputInterceptor.class);
+        return getArgumentValuesImpl(schema, inputInterceptor, codeRegistry.getFieldVisibility(), argumentTypes, arguments, coercedVariables, graphqlContext, locale);
+    }
+
     /**
      * Takes a value which can be in different states (internal, literal, external value) and converts into Literal
      * <p>
@@ -316,20 +330,6 @@ public class ValuesResolver {
                 locale);
     }
 
-
-    @Internal
-    public static Map<String, Object> getArgumentValues(
-            GraphQLSchema schema,
-            GraphQLCodeRegistry codeRegistry,
-            List<GraphQLArgument> argumentTypes,
-            List<Argument> arguments,
-            CoercedVariables coercedVariables,
-            GraphQLContext graphqlContext,
-            Locale locale
-    ) {
-        InputInterceptor inputInterceptor = graphqlContext.get(InputInterceptor.class);
-        return getArgumentValuesImpl(schema, inputInterceptor, codeRegistry.getFieldVisibility(), argumentTypes, arguments, coercedVariables, graphqlContext, locale);
-    }
 
     @NonNull
     private static Map<String, Object> getArgumentValuesImpl(
