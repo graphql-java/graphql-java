@@ -76,7 +76,7 @@ public class ExecutionStepInfoFactory {
         Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         Supplier<ImmutableMapWithNullValues<String, Object>> argValuesSupplier = () -> {
-            Map<String, Object> resolvedValues = ValuesResolver.getArgumentValues(codeRegistry,
+            Map<String, Object> resolvedValues = ValuesResolver.getArgumentValues(executionContext.getGraphQLSchema(), codeRegistry,
                     fieldArgDefs,
                     fieldArgs,
                     executionContext.getCoercedVariables(),

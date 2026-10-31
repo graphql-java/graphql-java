@@ -179,6 +179,42 @@ class ValuesResolverTest extends Specification {
         er.errors[0].message.contains("OneOf type field 'OneOf.a' must be non-null.")
     }
 
+    def "schema-aware argument coercion validates detached types and schema-less coercion retains validation"() {
+        given:
+        def plain = TestUtil.schema('input Choice { a: Int, b: Int } type Query { q(arg: Choice): Boolean }')
+        def oneOf = TestUtil.schema('input Choice @oneOf { a: Int, b: Int } type Query { q(arg: Choice): Boolean }')
+        def arguments = [newArgument().name('arg').type(oneOf.getType('Choice')).build()]
+        def supplied = [Argument.newArgument().name('arg').value(buildObjectLiteral([a: IntValue.of(1), b: IntValue.of(2)])).build()]
+
+        when:
+        ValuesResolver.getArgumentValues(plain, plain.codeRegistry, arguments, supplied, CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then:
+        thrown(OneOfTooManyKeysException)
+
+        when:
+        ValuesResolver.getArgumentValues(arguments, supplied, CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then:
+        thrown(OneOfTooManyKeysException)
+    }
+
+    def "schema-less argument coercion retains duplicate object field assertion"() {
+        given:
+        def schema = TestUtil.schema('input Plain { value: Int } type Query { q(arg: Plain): Boolean }')
+        def duplicate = ObjectValue.newObjectValue().objectFields([
+                ObjectField.newObjectField().name('value').value(IntValue.of(1)).build(),
+                ObjectField.newObjectField().name('value').value(IntValue.of(2)).build()
+        ]).build()
+        def supplied = [Argument.newArgument().name('arg').value(duplicate).build()]
+
+        when:
+        ValuesResolver.getArgumentValues(schema.queryType.getFieldDefinition('q').arguments, supplied, CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then:
+        thrown(graphql.AssertException)
+    }
+
     def "oneOf reachable through a self-referencing input type is still validated"() {
         def sdl = '''
             input OneOf @oneOf { a: Int, b: Int }

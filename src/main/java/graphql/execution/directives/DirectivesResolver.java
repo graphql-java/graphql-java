@@ -34,7 +34,7 @@ public class DirectivesResolver {
         directives.forEach(directive -> {
             GraphQLDirective protoType = schema.getDirective(directive.getName());
             if (protoType != null) {
-                GraphQLDirective graphQLDirective = protoType.transform(builder -> buildArguments(builder, codeRegistry, protoType, directive, variables, graphQLContext, locale));
+                GraphQLDirective graphQLDirective = protoType.transform(builder -> buildArguments(builder, schema, codeRegistry, protoType, directive, variables, graphQLContext, locale));
                 directiveMap.put(graphQLDirective, directive);
             }
         });
@@ -42,13 +42,14 @@ public class DirectivesResolver {
     }
 
     private void buildArguments(GraphQLDirective.Builder directiveBuilder,
+                                GraphQLSchema schema,
                                 GraphQLCodeRegistry codeRegistry,
                                 GraphQLDirective protoType,
                                 Directive fieldDirective,
                                 CoercedVariables variables,
                                 GraphQLContext graphQLContext,
                                 Locale locale) {
-        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), variables, graphQLContext, locale);
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(schema, codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), variables, graphQLContext, locale);
         directiveBuilder.clearArguments();
         protoType.getArguments().forEach(protoArg -> {
             if (argumentValues.containsKey(protoArg.getName())) {

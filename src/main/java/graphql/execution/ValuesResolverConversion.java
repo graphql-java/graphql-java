@@ -376,6 +376,7 @@ class ValuesResolverConversion {
                         coercedValues.put(variableName, null);
                     } else {
                         Object coercedValue = externalValueToInternalValueImpl(
+                                schema,
                                 variableName,
                                 inputInterceptor,
                                 fieldVisibility,
@@ -430,8 +431,22 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
+        return externalValueToInternalValueImpl(null, variableName, inputInterceptor, fieldVisibility, graphQLType, originalValue, graphqlContext, locale);
+    }
+
+    static Object externalValueToInternalValueImpl(
+            GraphQLSchema schema,
+            String variableName,
+            InputInterceptor inputInterceptor,
+            GraphqlFieldVisibility fieldVisibility,
+            GraphQLInputType graphQLType,
+            Object originalValue,
+            GraphQLContext graphqlContext,
+            Locale locale
+    ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         if (isNonNull(graphQLType)) {
             Object returnValue = externalValueToInternalValueImpl(
+                    schema,
                     variableName,
                     inputInterceptor,
                     fieldVisibility,
@@ -471,6 +486,7 @@ class ValuesResolverConversion {
                     locale);
         } else if (graphQLType instanceof GraphQLList) {
             return externalValueToInternalValueForList(
+                    schema,
                     inputInterceptor,
                     fieldVisibility,
                     (GraphQLList) graphQLType,
@@ -482,6 +498,7 @@ class ValuesResolverConversion {
                 GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) graphQLType;
                 //noinspection unchecked
                 Map<String, Object> coercedMap = externalValueToInternalValueForObject(
+                        schema,
                         inputInterceptor,
                         fieldVisibility,
                         inputObjectType,
@@ -489,7 +506,7 @@ class ValuesResolverConversion {
                         graphqlContext,
                         locale);
 
-                ValuesResolverOneOfValidation.validateOneOfInputTypes(inputObjectType, coercedMap, null, variableName, locale);
+                ValuesResolverOneOfValidation.validateOneOfInputTypes(schema, inputObjectType, coercedMap, null, variableName, locale);
                 return coercedMap;
             } else {
                 throw CoercingParseValueException.newCoercingParseValueException()
@@ -506,6 +523,7 @@ class ValuesResolverConversion {
      * performs validation
      */
     private static Map<String, Object> externalValueToInternalValueForObject(
+            GraphQLSchema schema,
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
             GraphQLInputObjectType inputObjectType,
@@ -545,6 +563,8 @@ class ValuesResolverConversion {
                     coercedValues.put(fieldName, null);
                 } else {
                     value = externalValueToInternalValueImpl(
+                            schema,
+                            "externalValue",
                             inputInterceptor,
                             fieldVisibility,
                             fieldType,
@@ -592,6 +612,7 @@ class ValuesResolverConversion {
      * including validation
      */
     private static List externalValueToInternalValueForList(
+            GraphQLSchema schema,
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
             GraphQLList graphQLList,
@@ -605,6 +626,8 @@ class ValuesResolverConversion {
         List<Object> list = FpKit.arrayListSizedTo(listOrSingletonList);
         for (Object val : listOrSingletonList) {
             list.add(externalValueToInternalValueImpl(
+                    schema,
+                    "externalValue",
                     inputInterceptor,
                     fieldVisibility,
                     wrappedType,

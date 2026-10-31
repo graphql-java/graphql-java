@@ -155,7 +155,7 @@ public class ValuesResolver {
             Locale locale
     ) {
         InputInterceptor inputInterceptor = graphqlContext.get(InputInterceptor.class);
-        return getArgumentValuesImpl(inputInterceptor, DEFAULT_FIELD_VISIBILITY, argumentTypes, arguments, coercedVariables, graphqlContext, locale);
+        return getArgumentValuesImpl(null, inputInterceptor, DEFAULT_FIELD_VISIBILITY, argumentTypes, arguments, coercedVariables, graphqlContext, locale);
     }
 
     /**
@@ -207,7 +207,7 @@ public class ValuesResolver {
             Locale locale
     ) {
         InputInterceptor inputInterceptor = graphqlContext.get(InputInterceptor.class);
-        return getArgumentValuesImpl(inputInterceptor, codeRegistry.getFieldVisibility(), argumentTypes, arguments, coercedVariables, graphqlContext, locale);
+        return getArgumentValuesImpl(null, inputInterceptor, codeRegistry.getFieldVisibility(), argumentTypes, arguments, coercedVariables, graphqlContext, locale);
     }
 
     /**
@@ -317,8 +317,23 @@ public class ValuesResolver {
     }
 
 
+    @Internal
+    public static Map<String, Object> getArgumentValues(
+            GraphQLSchema schema,
+            GraphQLCodeRegistry codeRegistry,
+            List<GraphQLArgument> argumentTypes,
+            List<Argument> arguments,
+            CoercedVariables coercedVariables,
+            GraphQLContext graphqlContext,
+            Locale locale
+    ) {
+        InputInterceptor inputInterceptor = graphqlContext.get(InputInterceptor.class);
+        return getArgumentValuesImpl(schema, inputInterceptor, codeRegistry.getFieldVisibility(), argumentTypes, arguments, coercedVariables, graphqlContext, locale);
+    }
+
     @NonNull
     private static Map<String, Object> getArgumentValuesImpl(
+            @Nullable GraphQLSchema schema,
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
             List<GraphQLArgument> argumentTypes,
@@ -375,7 +390,7 @@ public class ValuesResolver {
                     coercedValues.put(argumentName, value);
                 }
 
-                ValuesResolverOneOfValidation.validateOneOfInputTypes(argumentType, value, argumentValue, argumentName, locale);
+                ValuesResolverOneOfValidation.validateOneOfInputTypes(schema, argumentType, value, argumentValue, argumentName, locale);
 
             }
         }

@@ -166,7 +166,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
         Map<String, Object> argumentValues;
         if (options.isCoerceFieldArguments()) {
-            argumentValues = ValuesResolver.getArgumentValues(codeRegistry,
+            argumentValues = ValuesResolver.getArgumentValues(schema, codeRegistry,
                     fieldDefinition.getArguments(),
                     field.getArguments(),
                     CoercedVariables.of(variables),
