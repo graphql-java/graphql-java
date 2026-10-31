@@ -1058,7 +1058,7 @@ many lines''']
         given:
 
         when:
-        def input = newExecutionInput().query('query($var:String){ hello(arg: $var) }').variables(null).build()
+        def input = newExecutionInput().query('query($var:String){ hello(arg: $var) }').variables((Map<String, Object>) null).build()
 
         then:
         def assEx = thrown(AssertException)
