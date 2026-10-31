@@ -8,7 +8,7 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * The result of supplying more than one variable map to {@link GraphQL#executeAsync(ExecutionInput)}.
- * Execution starts when the results publisher is subscribed to and receives demand. Each entry contains an ordinary
+ * Preparation can run eagerly; field execution starts when the publisher receives demand. Each entry contains an ordinary
  * execution result, including its own errors and, when applicable, its incremental publisher.
  * {@link #getData()} returns the same publisher as {@link #getResults()}.
  * <p>
@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  * initial results. Incremental publishers retain their existing lifecycle: the consumer must
  * subscribe to each one to receive subsequent payloads and control their consumption separately.
  * Cancelling the input also cancels entries whose initial results have already been delivered.
- * Subscription operations are not supported in a variable batch.
+ * Subscription operations are rejected with {@link IllegalArgumentException} as soon as the selected operation is known.
  */
 @ExperimentalApi
 @NullMarked

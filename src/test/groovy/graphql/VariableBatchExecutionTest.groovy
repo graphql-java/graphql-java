@@ -7,10 +7,11 @@ import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.DocumentAndVariables
 import graphql.execution.preparsed.PreparsedDocumentEntry
 import graphql.execution.preparsed.PreparsedDocumentProvider
-import graphql.execution.preparsed.VariableBatchPreparsedDocumentProvider
 import graphql.extensions.ExtensionsBuilder
 import graphql.incremental.IncrementalExecutionResult
 import graphql.parser.Parser
+import graphql.parser.ParserOptions
+import graphql.parser.ParsingListener
 import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
@@ -96,7 +97,7 @@ class VariableBatchExecutionTest extends Specification {
         results.every { !it.errors.empty && !it.dataPresent }
 
         where:
-        query << ['{', '{ missing }', 'query A { value } query B { value }']
+        query << ['{', '{ missing }', 'query A { value } query B { value }', 'fragment F on Query { value }']
     }
 
     def "shared dataloaders combine entries and cache repeated keys"() {
@@ -242,19 +243,136 @@ class VariableBatchExecutionTest extends Specification {
         invoked == [1]
     }
 
-    def "subscriptions are rejected without invoking a subscription fetcher"() {
+    def "subscription batches throw before producing a batch result"() {
         given:
         def invoked = false
         def subscriptionSchema = TestUtil.schema('type Query { value:Int } type Subscription { value:Int }',
                 [Subscription: [value: { invoked = true } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput(query).operationName(operationName).variables([[:], [:]]).build()
 
         when:
-        def results = batch(GraphQL.newGraphQL(subscriptionSchema).build(), 'subscription { value }', [[:], [:]])
+        GraphQL.newGraphQL(subscriptionSchema).build().execute(input)
+
+        then:
+        def error = thrown(IllegalArgumentException)
+        error.message == 'Variable batching does not support subscription operations; supply at most one variable map.'
+        !invoked
+
+        where:
+        query                                             | operationName
+        'subscription { value }'                          | null
+        '# comment\nsubscription S { value }'              | 'S'
+        'subscription { missing }'                        | null
+        'query Q { value } subscription S { value }'       | 'S'
+    }
+
+    def "async subscription batches fail before instrumentation or variable coercion"() {
+        given:
+        def instrumentation = Mock(graphql.execution.instrumentation.Instrumentation)
+        def input = ExecutionInput.newExecutionInput('subscription($id:Int!) { value(id:$id) }')
+                .variables([[id: 'bad'], [:]]).build()
+
+        when:
+        def result = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build().executeAsync(input)
+        result.get(5, TimeUnit.SECONDS)
+
+        then:
+        def error = thrown(java.util.concurrent.ExecutionException)
+        error.cause instanceof IllegalArgumentException
+        error.cause.message.contains('subscription operations')
+        0 * instrumentation._
+    }
+
+    def "empty and singleton variable lists still allow ordinary subscriptions"() {
+        given:
+        def subscriptionSchema = TestUtil.schema('type Query { value:Int } type Subscription { value:Int }',
+                [Subscription: [value: { Flux.just(7) } as DataFetcher]])
+
+        when:
+        def result = GraphQL.newGraphQL(subscriptionSchema).build().execute(
+                ExecutionInput.newExecutionInput('subscription { value }').variables(variables).build())
+        def events = Flux.from(result.data).collectList().block(Duration.ofSeconds(5))
+
+        then:
+        !(result instanceof VariableBatchExecutionResult)
+        events*.data == [[value: 7]]
+
+        where:
+        variables << [[], [[:]]]
+    }
+
+    def "a query can be selected from a document that also contains a subscription"() {
+        given:
+        def subscriptionSchema = TestUtil.schema('type Query { value:Int } type Subscription { value:Int }',
+                [Query: [value: { 7 } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput('query Q { value } subscription S { value }')
+                .operationName('Q').variables([[:], [:]]).build()
+
+        when:
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(subscriptionSchema).build().execute(input)
+
+        then:
+        result.resultsAsync.get(5, TimeUnit.SECONDS)*.toSpecification() == [[data: [value: 7]], [data: [value: 7]]]
+    }
+
+    def "cached persisted subscriptions fail the whole batch before any resolver runs"() {
+        given:
+        def invoked = false
+        def subscriptionSchema = TestUtil.schema('type Query { value:Int } type Subscription { value:Int }',
+                [Subscription: [value: { invoked = true; Flux.just(7) } as DataFetcher]])
+        def provider = { input, compute -> CompletableFuture.completedFuture(
+                new PreparsedDocumentEntry(Parser.parse('subscription { value }'))) } as PreparsedDocumentProvider
+        def input = ExecutionInput.newExecutionInput(ExecutionInput.PERSISTED_QUERY_MARKER).variables([[:], [:]]).build()
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(subscriptionSchema).preparsedDocumentProvider(provider).build().execute(input)
+
+        when:
+        result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        def error = thrown(java.util.concurrent.ExecutionException)
+        error.cause instanceof IllegalArgumentException
+        error.cause.message.contains('subscription operations')
+        !invoked
+    }
+
+    def "document instrumentation cannot introduce a batched subscription"() {
+        given:
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables value,
+                    InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                value.transform { it.document(Parser.parse('subscription { missing }')) }
+            }
+        }
+
+        when:
+        batch(GraphQL.newGraphQL(schema).instrumentation(instrumentation).build(), '{ value }', [[:], [:]])
                 .resultsAsync.get(5, TimeUnit.SECONDS)
 
         then:
-        !invoked
-        results.every { !it.errors.empty }
+        def error = thrown(java.util.concurrent.ExecutionException)
+        error.cause instanceof IllegalArgumentException
+        error.cause.message.contains('subscription operations')
+    }
+
+    def "replacing an execution input cannot bypass the subscription batch restriction"() {
+        given:
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            ExecutionInput instrumentExecutionInput(ExecutionInput input, InstrumentationExecutionParameters parameters,
+                                                      InstrumentationState state) {
+                ExecutionInput.newExecutionInput('subscription { value }').build()
+            }
+        }
+
+        when:
+        batch(GraphQL.newGraphQL(schema).instrumentation(instrumentation).build(), '{ value }', [[:], [:]])
+                .resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        def error = thrown(java.util.concurrent.ExecutionException)
+        error.cause instanceof IllegalArgumentException
+        error.cause.message.contains('subscription operations')
     }
 
     def "batch limits are checked before fetching and survive GraphQL transform"() {
@@ -391,23 +509,25 @@ class VariableBatchExecutionTest extends Specification {
         entries*.data == [[value: 11], [value: 12]]
     }
 
-    def "batch preparation computes only once including common errors"() {
+    def "default batch preparation runs eagerly and is reused by every entry"() {
         given:
-        def provider = new VariableBatchPreparsedDocumentProvider()
         def calls = new AtomicInteger()
-        def input = ExecutionInput.newExecutionInput('{ value }').build()
-        def compute = { ignored ->
-            calls.incrementAndGet()
-            new PreparsedDocumentEntry(Parser.parse('{ value }'))
-        } as java.util.function.Function
+        def listener = { token -> if (token.text == 'query') calls.incrementAndGet() } as ParsingListener
+        def options = ParserOptions.newParserOptions().parsingListener(listener).build()
+        def input = ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                .variables([[id: 1], [id: 2]]).graphQLContext([(ParserOptions): options]).build()
 
         when:
-        def first = provider.getDocumentAsync(input, compute)
-        def second = provider.getDocumentAsync(input.transform { it.variables([id: 2]) }, compute)
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(schema).build().execute(input)
 
         then:
-        first.is(second)
-        first.join().document != null
+        calls.get() == 1
+
+        when:
+        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        entries*.data == [[value: 1], [value: 2]]
         calls.get() == 1
     }
 

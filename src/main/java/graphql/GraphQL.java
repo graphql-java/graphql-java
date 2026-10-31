@@ -11,6 +11,7 @@ import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ExecutionStrategy;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.SubscriptionExecutionStrategy;
+import graphql.execution.UnknownOperationException;
 import graphql.execution.ValueUnboxer;
 import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.Instrumentation;
@@ -23,10 +24,11 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
-import graphql.execution.preparsed.VariableBatchPreparsedDocumentProvider;
 import graphql.execution.reactive.VariableBatchPublisher;
 import graphql.introspection.GoodFaithIntrospection;
 import graphql.language.Document;
+import graphql.language.NodeUtil;
+import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.GoodFaithIntrospectionExceeded;
 import graphql.validation.OperationValidationRule;
@@ -34,6 +36,7 @@ import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationError;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -514,7 +517,8 @@ public class GraphQL {
      * <p>
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
-     * Multiple variable maps return a lazy {@link VariableBatchExecutionResult}; see that type for consumption.
+     * Multiple variable maps return a {@link VariableBatchExecutionResult}; preparation can run eagerly,
+     * while field execution starts on demand. Batched subscription operations fail with {@link IllegalArgumentException}.
      * @param executionInput {@link ExecutionInput}
      *
      * @return a promise to an {@link ExecutionResult} which can include errors
@@ -544,7 +548,7 @@ public class GraphQL {
 
                     GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
 
-                    CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState, engineRunningState, profiler);
+                    CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState, engineRunningState, profiler, executionInput.getVariableIndex() != null);
                     //
                     // finish up instrumentation
                     executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation));
@@ -565,17 +569,47 @@ public class GraphQL {
             return CompletableFuture.failedFuture(new AbortExecutionException(
                     "Variable batch has " + size + " entries which exceeds maximum allowed " + maxVariableBatchSize));
         }
-        ExecutionId batchId = assertNotNull(ensureInputHasId(input).getExecutionId());
-        GraphQL executor = this;
-        // Custom providers and instrumentation retain their existing per-execution semantics.
-        if (preparsedDocumentProvider == NoOpPreparsedDocumentProvider.INSTANCE
-                && instrumentation.getClass() == SimplePerformantInstrumentation.class) {
-            executor = transform(builder -> builder
-                    .preparsedDocumentProvider(new VariableBatchPreparsedDocumentProvider())
-                    .valueUnboxer(valueUnboxer));
+        try {
+            GraphQL executor = prepareVariableBatch(input);
+            ExecutionId batchId = assertNotNull(ensureInputHasId(input).getExecutionId());
+            VariableBatchPublisher publisher = new VariableBatchPublisher(input, batchId, maxVariableBatchConcurrency, executor::executeAsync);
+            return CompletableFuture.completedFuture(new VariableBatchExecutionResultImpl(publisher, size));
+        } catch (RuntimeException exception) {
+            return CompletableFuture.failedFuture(exception);
         }
-        VariableBatchPublisher publisher = new VariableBatchPublisher(input, batchId, maxVariableBatchConcurrency, executor::executeAsync);
-        return CompletableFuture.completedFuture(new VariableBatchExecutionResultImpl(publisher, size));
+    }
+
+    private GraphQL prepareVariableBatch(ExecutionInput input) {
+        // Custom providers and instrumentation retain their existing per-execution semantics.
+        if (preparsedDocumentProvider != NoOpPreparsedDocumentProvider.INSTANCE
+                || instrumentation.getClass() != SimplePerformantInstrumentation.class) {
+            assertVariableBatchOperationSupported(true, input, ParseAndValidate.parse(input).getDocument());
+            return this;
+        }
+        PreparsedDocumentEntry prepared = parseAndValidate(new AtomicReference<>(input), graphQLSchema, null, true);
+        CompletableFuture<PreparsedDocumentEntry> preparedFuture = CompletableFuture.completedFuture(prepared);
+        return transform(builder -> builder
+                .preparsedDocumentProvider((entry, compute) -> preparedFuture)
+                .valueUnboxer(valueUnboxer));
+    }
+
+    private void assertVariableBatchOperationSupported(boolean variableBatch, ExecutionInput input, @Nullable Document document) {
+        if (!variableBatch || document == null) {
+            return;
+        }
+        if (document.getDefinitionsOfType(OperationDefinition.class).isEmpty()) {
+            return;
+        }
+        OperationDefinition operation;
+        try {
+            operation = NodeUtil.getOperation(document, input.getOperationName()).operationDefinition;
+        } catch (UnknownOperationException exception) {
+            // Keep the normal operation-selection errors when no operation can be selected.
+            return;
+        }
+        if (operation.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
+            throw new IllegalArgumentException("Variable batching does not support subscription operations; supply at most one variable map.");
+        }
     }
 
 
@@ -595,15 +629,16 @@ public class GraphQL {
     }
 
 
-    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, EngineRunningState engineRunningState, Profiler profiler) {
+    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, EngineRunningState engineRunningState, Profiler profiler, boolean variableBatch) {
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
         Function<ExecutionInput, PreparsedDocumentEntry> computeFunction = transformedInput -> {
             // if they change the original query in the pre-parser, then we want to see it downstream from then on
             executionInputRef.set(transformedInput);
-            return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
+            return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState, variableBatch);
         };
         CompletableFuture<PreparsedDocumentEntry> preparsedDoc = preparsedDocumentProvider.getDocumentAsync(executionInput, computeFunction);
         return engineRunningState.compose(preparsedDoc, (preparsedDocumentEntry -> {
+            assertVariableBatchOperationSupported(variableBatch, assertNotNull(executionInputRef.get()), preparsedDocumentEntry.getDocument());
             if (preparsedDocumentEntry.hasErrors()) {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
@@ -615,7 +650,7 @@ public class GraphQL {
         }));
     }
 
-    private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, @Nullable InstrumentationState instrumentationState, boolean variableBatch) {
 
         ExecutionInput executionInput = assertNotNull(executionInputRef.get());
 
@@ -624,6 +659,7 @@ public class GraphQL {
             return new PreparsedDocumentEntry(assertNotNull(parseResult.getSyntaxException(), "Parse result syntax exception cannot be null when failed").toInvalidSyntaxError());
         } else {
             final Document document = assertNotNull(parseResult.getDocument(), "Document cannot be null when parse succeeded");
+            assertVariableBatchOperationSupported(variableBatch, executionInput, document);
             // they may have changed the document and the variables via instrumentation so update the reference to it
             executionInput = executionInput.transform(builder -> builder.variables(parseResult.getVariables()));
             executionInputRef.set(executionInput);
@@ -642,7 +678,7 @@ public class GraphQL {
         }
     }
 
-    private ParseAndValidateResult parse(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private ParseAndValidateResult parse(ExecutionInput executionInput, GraphQLSchema graphQLSchema, @Nullable InstrumentationState instrumentationState) {
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(executionInput, graphQLSchema);
         InstrumentationContext<Document> parseInstrumentationCtx = nonNullCtx(instrumentation.beginParse(parameters, instrumentationState));
         parseInstrumentationCtx.onDispatched();
@@ -661,7 +697,7 @@ public class GraphQL {
         }
     }
 
-    private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, @Nullable InstrumentationState instrumentationState) {
         InstrumentationContext<List<ValidationError>> validationCtx = nonNullCtx(instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema), instrumentationState));
         validationCtx.onDispatched();
 

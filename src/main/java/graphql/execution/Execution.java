@@ -90,10 +90,6 @@ public class Execution {
         Supplier<NormalizedVariables> normalizedVariableValues;
         try {
             getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
-            if (executionInput.getVariableIndex() != null
-                    && getOperationResult.operationDefinition.getOperation() == OperationDefinition.Operation.SUBSCRIPTION) {
-                throw new AbortExecutionException("Variable batching does not support subscriptions");
-            }
             coercedVariables = coerceVariableValues(graphQLSchema, executionInput, getOperationResult.operationDefinition);
             normalizedVariableValues = normalizedVariableValues(graphQLSchema, executionInput, getOperationResult);
         } catch (RuntimeException rte) {

@@ -517,7 +517,7 @@ public class ExecutionInput {
         /**
          * Supplies complete variable maps for the same selected operation. An empty list executes once
          * with empty variables; a singleton executes normally. Larger lists return a
-         * {@link VariableBatchExecutionResult}. Entries are never deduplicated.
+         * {@link VariableBatchExecutionResult}. Entries are never deduplicated. Subscriptions cannot be batched.
          *
          * @param variables the maps in input order; neither the list nor its entries may be null
          * @return this builder
