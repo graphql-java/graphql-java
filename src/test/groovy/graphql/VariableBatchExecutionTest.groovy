@@ -61,7 +61,6 @@ class VariableBatchExecutionTest extends Specification {
         ExecutionInput.newExecutionInput('{ value }').variables([id: 1]).build().variablesList == [[id: 1]]
         input.variablesList == [[id: 1], [id: null]]
         input.transform { it.operationName('Op') }.variablesList == [[id: 1], [id: null]]
-        input.variables == [id: 1]
 
         when:
         input.variablesList[0].put('id', 4)

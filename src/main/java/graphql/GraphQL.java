@@ -547,13 +547,14 @@ public class GraphQL {
     }
 
     private GraphQL prepareVariableBatch(ExecutionInput input) {
+        ExecutionInput preparationInput = input.transform(builder -> builder.variables(List.of()));
         // Custom providers and instrumentation retain their existing per-execution semantics.
         if (preparsedDocumentProvider != NoOpPreparsedDocumentProvider.INSTANCE
                 || instrumentation.getClass() != SimplePerformantInstrumentation.class) {
-            assertVariableBatchOperationSupported(true, input, ParseAndValidate.parse(input).getDocument());
+            assertVariableBatchOperationSupported(true, preparationInput, ParseAndValidate.parse(preparationInput).getDocument());
             return this;
         }
-        PreparsedDocumentEntry prepared = parseAndValidate(new AtomicReference<>(input), graphQLSchema, null, true);
+        PreparsedDocumentEntry prepared = parseAndValidate(new AtomicReference<>(preparationInput), graphQLSchema, null, true);
         CompletableFuture<PreparsedDocumentEntry> preparedFuture = CompletableFuture.completedFuture(prepared);
         return transform(builder -> {
             builder.preparsedDocumentProvider((entry, compute) -> preparedFuture).valueUnboxer(valueUnboxer);

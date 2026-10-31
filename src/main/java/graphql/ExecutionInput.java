@@ -150,6 +150,7 @@ public class ExecutionInput {
 
     /**
      * @return a map of raw variables that can be referenced via $syntax in the query.
+     * @throws AssertException if more than one variable map is present; use {@link #getVariablesList()} instead
      */
     public Map<String, Object> getVariables() {
         return getRawVariables().toMap();
@@ -157,16 +158,19 @@ public class ExecutionInput {
 
     /**
      * @return a map of raw variables that can be referenced via $syntax in the query.
+     * @throws AssertException if more than one variable map is present; use {@link #getVariablesList()} instead
      */
     public RawVariables getRawVariables() {
+        Assert.assertTrue(rawVariablesList.size() <= 1,
+                "getRawVariables() requires at most one variable map; use getVariablesList() for variable batches");
         return rawVariablesList.isEmpty() ? RawVariables.emptyVariables() : rawVariablesList.get(0);
     }
 
     /**
      * Returns the variable maps in input order. An empty list or a singleton uses ordinary execution;
      * a larger list executes the selected operation once per map, sharing the DataLoader registry.
-     * The legacy {@link #getVariables()} and {@link #getRawVariables()} accessors return the first map,
-     * or an empty map when the list is empty.
+     * The {@link #getVariables()} and {@link #getRawVariables()} accessors require at most one map,
+     * and return an empty map when the list is empty.
      *
      * @return the immutable list of immutable variable maps (values can be null)
      */
