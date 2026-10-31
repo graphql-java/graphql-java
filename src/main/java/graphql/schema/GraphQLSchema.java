@@ -17,6 +17,7 @@ import graphql.introspection.Introspection;
 import graphql.language.SchemaDefinition;
 import graphql.language.SchemaExtensionDefinition;
 import graphql.schema.impl.GraphQLTypeCollectingVisitor;
+import graphql.schema.impl.OneOfInputTypeReachability;
 import graphql.schema.impl.SchemaUtil;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
@@ -72,6 +73,7 @@ public class GraphQLSchema {
     private final GraphQLCodeRegistry codeRegistry;
 
     private final ImmutableMap<String, GraphQLNamedType> typeMap;
+    private final ImmutableMap<String, Boolean> inputTypeContainsOneOf;
     private final ImmutableMap<String, ImmutableList<GraphQLObjectType>> interfaceNameToObjectTypes;
     private final ImmutableMap<String, ImmutableList<String>> interfaceNameToObjectTypeNames;
 
@@ -104,6 +106,7 @@ public class GraphQLSchema {
 
         this.codeRegistry = builder.codeRegistry;
         this.typeMap = ImmutableKit.emptyMap();
+        this.inputTypeContainsOneOf = ImmutableKit.emptyMap();
         this.interfaceNameToObjectTypes = ImmutableKit.emptyMap();
         this.interfaceNameToObjectTypeNames = ImmutableKit.emptyMap();
     }
@@ -134,6 +137,7 @@ public class GraphQLSchema {
         this.description = existingSchema.description;
         this.codeRegistry = codeRegistry;
         this.typeMap = typeMap;
+        this.inputTypeContainsOneOf = OneOfInputTypeReachability.compute(typeMap);
         this.interfaceNameToObjectTypes = interfaceNameToObjectTypes;
         this.interfaceNameToObjectTypeNames = buildInterfacesToObjectName(interfaceNameToObjectTypes);
     }
@@ -159,6 +163,7 @@ public class GraphQLSchema {
         this.definition = existingSchema.definition;
         this.extensionDefinitions = existingSchema.extensionDefinitions;
         this.typeMap = existingSchema.typeMap;
+        this.inputTypeContainsOneOf = existingSchema.inputTypeContainsOneOf;
         this.interfaceNameToObjectTypes = existingSchema.interfaceNameToObjectTypes;
         this.interfaceNameToObjectTypeNames = existingSchema.interfaceNameToObjectTypeNames;
 
@@ -220,6 +225,7 @@ public class GraphQLSchema {
         this.description = fastBuilder.description;
         this.codeRegistry = fastBuilder.codeRegistryBuilder.build();
         this.typeMap = finalTypeMap;
+        this.inputTypeContainsOneOf = OneOfInputTypeReachability.compute(finalTypeMap);
         this.interfaceNameToObjectTypes = finalInterfaceMap;
         this.interfaceNameToObjectTypeNames = finalInterfaceNameMap;
     }
@@ -252,6 +258,22 @@ public class GraphQLSchema {
             map.put(e.getKey(), objectTypeNames);
         }
         return map.build();
+    }
+
+    @Internal
+    public boolean inputTypeContainsOneOf(GraphQLType inputType) {
+        GraphQLType namedType = GraphQLTypeUtil.unwrapAllAs(inputType);
+        if (namedType instanceof GraphQLTypeReference) {
+            return inputTypeContainsOneOf.getOrDefault(((GraphQLTypeReference) namedType).getName(), true);
+        }
+        if (!(namedType instanceof GraphQLInputObjectType)) {
+            return false;
+        }
+        String name = ((GraphQLInputObjectType) namedType).getName();
+        if (typeMap.get(name) != namedType) {
+            return true;
+        }
+        return inputTypeContainsOneOf.getOrDefault(name, true);
     }
 
     public GraphQLCodeRegistry getCodeRegistry() {

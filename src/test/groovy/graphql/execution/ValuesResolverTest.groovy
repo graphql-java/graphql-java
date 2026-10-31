@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.AssertException
 import graphql.Directives
 import graphql.ErrorType
 import graphql.GraphQLContext
@@ -177,6 +178,101 @@ class ValuesResolverTest extends Specification {
         then:
         er.errors.size() == 1
         er.errors[0].message.contains("OneOf type field 'OneOf.a' must be non-null.")
+    }
+
+    def "schema-aware argument coercion validates detached types and schema-less coercion retains validation"() {
+        given:
+        def plain = TestUtil.schema('input Choice { a: Int, b: Int } type Query { q(arg: Choice): Boolean }')
+        def oneOf = TestUtil.schema('input Choice @oneOf { a: Int, b: Int } type Query { q(arg: Choice): Boolean }')
+        def arguments = [newArgument().name('arg').type(oneOf.getType('Choice')).build()]
+        def supplied = [Argument.newArgument().name('arg').value(buildObjectLiteral([a: IntValue.of(1), b: IntValue.of(2)])).build()]
+
+        when:
+        ValuesResolver.getArgumentValues(plain, plain.codeRegistry, arguments, supplied, CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then:
+        thrown(OneOfTooManyKeysException)
+
+        when:
+        ValuesResolver.getArgumentValues(arguments, supplied, CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then:
+        thrown(OneOfTooManyKeysException)
+    }
+
+    def "schema-less argument coercion retains duplicate object field assertion"() {
+        given:
+        def schema = TestUtil.schema('input Plain { value: Int } type Query { q(arg: Plain): Boolean }')
+        def duplicate = ObjectValue.newObjectValue().objectFields([
+                ObjectField.newObjectField().name('value').value(IntValue.of(1)).build(),
+                ObjectField.newObjectField().name('value').value(IntValue.of(2)).build()
+        ]).build()
+        def supplied = [Argument.newArgument().name('arg').value(duplicate).build()]
+
+        when:
+        ValuesResolver.getArgumentValues(schema.queryType.getFieldDefinition('q').arguments, supplied, CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then:
+        thrown(AssertException)
+    }
+
+    def "oneOf reachable through a self-referencing input type is still validated"() {
+        def sdl = '''
+            input OneOf @oneOf { a: Int, b: Int }
+            input Recursive { oneOfField: OneOf, self: Recursive }
+            type Query { q(arg: Recursive): Boolean }
+        '''
+
+        DataFetcher q = { env -> return !env.getArguments().isEmpty() }
+        def graphQL = TestUtil.graphQL(sdl, [Query: [q: q]]).build()
+
+        when: "a variable value violates the nested oneOf constraint"
+        def er = graphQL.execute(
+                newExecutionInput('query ($arg: Recursive) { q(arg: $arg) }')
+                        .variables([arg: [self: [oneOfField: [a: 1, b: 2]]]]))
+
+        then:
+        er.errors.size() == 1
+        er.errors[0].message == "Exactly one key must be specified for OneOf type 'OneOf'."
+
+        when: "the nested oneOf value is valid"
+        er = graphQL.execute(
+                newExecutionInput('query ($arg: Recursive) { q(arg: $arg) }')
+                        .variables([arg: [self: [self: [oneOfField: [a: 1]]]]]))
+
+        then:
+        er.errors.isEmpty()
+
+        when: "a literal value violates the nested oneOf constraint"
+        er = graphQL.execute('{ q(arg: {self: {oneOfField: {a: 1, b: 2}}}) }')
+
+        then:
+        er.errors.size() == 1
+        er.errors[0].message.contains("Exactly one key must be specified for OneOf type 'OneOf'.")
+    }
+
+    def "self-referencing input types without oneOf execute without infinite recursion"() {
+        def sdl = '''
+            input Plain { x: Int, self: Plain }
+            type Query { q(arg: Plain): Boolean }
+        '''
+
+        DataFetcher q = { env -> return !env.getArguments().isEmpty() }
+        def graphQL = TestUtil.graphQL(sdl, [Query: [q: q]]).build()
+
+        when: "a variable value uses a self-referencing input type with no reachable @oneOf"
+        def er = graphQL.execute(
+                newExecutionInput('query ($arg: Plain) { q(arg: $arg) }')
+                        .variables([arg: [self: [self: [x: 1]]]]))
+
+        then:
+        er.errors.isEmpty()
+
+        when: "a literal value uses a self-referencing input type with no reachable @oneOf"
+        er = graphQL.execute('{ q(arg: {self: {self: {x: 1}}}) }')
+
+        then:
+        er.errors.isEmpty()
     }
 
 

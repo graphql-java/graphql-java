@@ -11,8 +11,10 @@ import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -23,6 +25,13 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 
 @Internal
 final class ValuesResolverOneOfValidation {
+
+    public static void validateOneOfInputTypes(@Nullable GraphQLSchema schema, GraphQLType type, Object inputValue, Value<?> argumentValue, String argumentName, Locale locale) {
+        if (schema != null && !schema.inputTypeContainsOneOf(type)) {
+            return;
+        }
+        validateOneOfInputTypes(type, inputValue, argumentValue, argumentName, locale);
+    }
 
     @SuppressWarnings("unchecked")
     static void validateOneOfInputTypes(GraphQLType type, Object inputValue, Value<?> argumentValue, String argumentName, Locale locale) {
