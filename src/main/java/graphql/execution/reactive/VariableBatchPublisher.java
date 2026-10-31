@@ -8,8 +8,6 @@ import graphql.VariableBatchResult;
 import graphql.execution.ExecutionId;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.execution.instrumentation.dataloader.VariableBatchDataLoaderDispatcher;
-import graphql.incremental.IncrementalExecutionResult;
-import graphql.incremental.IncrementalExecutionResultImpl;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
@@ -17,9 +15,9 @@ import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,13 +34,12 @@ public final class VariableBatchPublisher implements Publisher<VariableBatchResu
     private final VariableBatchDataLoaderDispatcher dispatcher;
     private final NonBlockingMutexExecutor mutex = new NonBlockingMutexExecutor();
     private final AtomicBoolean subscribed = new AtomicBoolean();
-    private final List<ExecutionInput> entries = new ArrayList<>();
+    private final Map<Integer, ExecutionInput> activeEntries = new LinkedHashMap<>();
     private final Deque<VariableBatchResult> ready = new ArrayDeque<>();
     private @Nullable Subscriber<? super VariableBatchResult> subscriber;
     private @Nullable Throwable failure;
     private long demand;
     private int next;
-    private int active;
     private volatile boolean cancelled;
     private boolean terminated;
 
@@ -54,11 +51,7 @@ public final class VariableBatchPublisher implements Publisher<VariableBatchResu
         this.concurrency = concurrency;
         this.execute = execute;
         this.dispatcher = new VariableBatchDataLoaderDispatcher(input.getDataLoaderRegistry(), this::fail);
-        input.getCancellationFuture().thenRun(() -> mutex.execute(() -> {
-            cancelEntries();
-            failure = new CancellationException("Variable batch cancelled");
-            drain();
-        }));
+        input.getCancellationFuture().thenRun(() -> fail(new CancellationException("Variable batch cancelled")));
     }
 
     @Override
@@ -116,7 +109,7 @@ public final class VariableBatchPublisher implements Publisher<VariableBatchResu
         if (cancelled) {
             return;
         }
-        if (next == size && active == 0 && ready.isEmpty()) {
+        if (next == size && activeEntries.isEmpty() && ready.isEmpty()) {
             terminated = true;
             subscriber.onComplete();
             return;
@@ -136,8 +129,8 @@ public final class VariableBatchPublisher implements Publisher<VariableBatchResu
         // Async continuations can request further dispatches without waiting for another entry to finish.
         dispatcher.pause();
         try {
-            while (!cancelled && next < size && active + ready.size() < concurrency
-                    && active + ready.size() < demand) {
+            while (!cancelled && next < size && activeEntries.size() + ready.size() < concurrency
+                    && activeEntries.size() + ready.size() < demand) {
                 startEntry(next++);
             }
         } finally {
@@ -150,8 +143,7 @@ public final class VariableBatchPublisher implements Publisher<VariableBatchResu
         entry.getGraphQLContext().put(VariableBatchDataLoaderDispatcher.class, dispatcher);
         DataLoaderDispatchingContextKeys.setEnableDataLoaderChaining(entry.getGraphQLContext(), false);
         DataLoaderDispatchingContextKeys.setEnableDataLoaderExhaustedDispatching(entry.getGraphQLContext(), true);
-        entries.add(entry);
-        active++;
+        activeEntries.put(index, entry);
         try {
             execute.apply(entry).whenComplete((result, failure) -> mutex.execute(() -> finishEntry(index, result, failure)));
         } catch (Throwable failure) {
@@ -160,7 +152,7 @@ public final class VariableBatchPublisher implements Publisher<VariableBatchResu
     }
 
     private void finishEntry(int index, @Nullable ExecutionResult result, @Nullable Throwable failure) {
-        active--;
+        activeEntries.remove(index);
         if (cancelled || terminated) {
             return;
         }
@@ -168,23 +160,14 @@ public final class VariableBatchPublisher implements Publisher<VariableBatchResu
             this.failure = failure;
         } else {
             ready.addLast(VariableBatchResult.newVariableBatchResult()
-                    .variableIndex(index).executionResult(wrapIncremental(index, Assert.assertNotNull(result))).build());
+                    .variableIndex(index).executionResult(Assert.assertNotNull(result)).build());
         }
         drain();
     }
 
-    private ExecutionResult wrapIncremental(int index, ExecutionResult result) {
-        if (!(result instanceof IncrementalExecutionResult)) {
-            return result;
-        }
-        IncrementalExecutionResult incremental = (IncrementalExecutionResult) result;
-        return IncrementalExecutionResultImpl.fromIncrementalExecutionResult(incremental)
-                .incrementalItemPublisher(new VariableBatchIncrementalPublisher(incremental.getIncrementalItemPublisher(), entries.get(index)))
-                .build();
-    }
-
     private void cancelEntries() {
-        entries.forEach(ExecutionInput::cancel);
+        activeEntries.values().forEach(ExecutionInput::cancel);
+        activeEntries.clear();
         ready.clear();
     }
 }

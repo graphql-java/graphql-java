@@ -53,7 +53,7 @@ class VariableBatchExecutionTest extends Specification {
     def "legacy variables become a singleton and transforms preserve every map"() {
         given:
         def maps = [[id: 1], [id: null]]
-        def input = ExecutionInput.newExecutionInput('{ value }').variables(maps).profileExecution(true).build()
+        def input = ExecutionInput.newExecutionInput('{ value }').variables(maps).build()
         maps[0].id = 99
         maps.add([id: 3])
 
@@ -61,7 +61,6 @@ class VariableBatchExecutionTest extends Specification {
         ExecutionInput.newExecutionInput('{ value }').variables([id: 1]).build().variablesList == [[id: 1]]
         input.variablesList == [[id: 1], [id: null]]
         input.transform { it.operationName('Op') }.variablesList == [[id: 1], [id: null]]
-        input.transform { it.operationName('Op') }.profileExecution
         input.variables == [id: 1]
 
         when:
@@ -533,6 +532,15 @@ class VariableBatchExecutionTest extends Specification {
 
     def "incremental execution remains available per variable entry"() {
         given:
+        def seen = []
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult result,
+                    InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                seen.add(result)
+                CompletableFuture.completedFuture(result)
+            }
+        }
         def registry = new DataLoaderRegistry()
         registry.register('values', DataLoaderFactory.newDataLoader({ keys -> CompletableFuture.completedFuture(keys) } as BatchLoader))
         def localSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
@@ -542,7 +550,7 @@ class VariableBatchExecutionTest extends Specification {
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true]).build()
 
         when:
-        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema).build().execute(input)
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema).instrumentation(instrumentation).build().execute(input)
         def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
         def payloads = entries.collect { IncrementalExecutionResult entry ->
             Flux.from(entry.incrementalItemPublisher).collectList().block(Duration.ofSeconds(5))
@@ -550,6 +558,8 @@ class VariableBatchExecutionTest extends Specification {
 
         then:
         entries.every { it instanceof IncrementalExecutionResult }
+        entries[0].is(seen[0])
+        entries[1].is(seen[1])
         payloads.collect { it[0].incremental[0].data } == [[value: 1], [value: 2]]
     }
 
@@ -626,26 +636,6 @@ class VariableBatchExecutionTest extends Specification {
 
         where:
         beforeSubscription << [true, false]
-    }
-
-    def "batch cancellation still reaches deferred executions after initial results complete"() {
-        given:
-        def called = []
-        def localSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
-                [Query: [value: { env -> called.add(env.getArgument('id')); env.getArgument('id') } as DataFetcher]])
-        def input = ExecutionInput.newExecutionInput('query($id:Int!) { ... @defer { value(id:$id) } }')
-                .variables([[id: 1], [id: 2]]).graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true]).build()
-        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema).build().execute(input)
-        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
-
-        when:
-        input.cancel()
-        Flux.from((entries[0] as IncrementalExecutionResult).incrementalItemPublisher)
-                .collectList().block(Duration.ofSeconds(5))
-
-        then:
-        thrown(java.util.concurrent.CancellationException)
-        called.empty
     }
 
     def "publisher rejects nonpositive demand and repeated subscriptions"() {
@@ -743,46 +733,6 @@ class VariableBatchExecutionTest extends Specification {
         then:
         result.resultsAsync.get(5, TimeUnit.SECONDS)*.data == [[value: 1], [value: 2]]
         seen == ['known-query', 'known-query']
-    }
-
-    def "cancelling a deferred subscription leaves other entries available"() {
-        given:
-        def pending = new CompletableFuture<Integer>()
-        def localSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
-                [Query: [value: { env -> env.getArgument('id') == 1 ? pending : 2 } as DataFetcher]])
-        def input = ExecutionInput.newExecutionInput('query($id:Int!) { ... @defer { value(id:$id) } }')
-                .variables([[id: 1], [id: 2]]).graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true]).build()
-        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema).build().execute(input)
-        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
-        def first = Flux.from((entries[0] as IncrementalExecutionResult).incrementalItemPublisher).collectList().toFuture()
-
-        when:
-        first.cancel(false)
-        pending.complete(1)
-        def second = Flux.from((entries[1] as IncrementalExecutionResult).incrementalItemPublisher)
-                .collectList().block(Duration.ofSeconds(5))
-
-        then:
-        first.cancelled
-        !pending.cancelled
-        second[0].incremental[0].data == [value: 2]
-    }
-
-    def "input cancellation terminates an already subscribed deferred publisher"() {
-        given:
-        def localSchema = TestUtil.schema('type Query { value:Int! }',
-                [Query: [value: { new CompletableFuture<Integer>() } as DataFetcher]])
-        def input = ExecutionInput.newExecutionInput('{ ... @defer { value } }')
-                .variables([[:], [:]]).graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true]).build()
-        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema).build().execute(input)
-        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
-        def deferred = Flux.from((entries[0] as IncrementalExecutionResult).incrementalItemPublisher).collectList().toFuture()
-
-        when:
-        input.cancel()
-
-        then:
-        deferred.completedExceptionally
     }
 
     def "variable lists reject a null list or a null entry"() {

@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
  * The configured concurrency limit bounds executions up to their initial result and buffered
  * initial results. Incremental publishers retain their existing lifecycle: the consumer must
  * subscribe to each one to receive subsequent payloads and control their consumption separately.
- * Cancelling the input also cancels entries whose initial results have already been delivered.
+ * Cancelling the input stops queued entries and cancels executions still awaiting their initial result.
  * Subscription operations are rejected with {@link IllegalArgumentException} as soon as the selected operation is known.
  */
 @ExperimentalApi

@@ -320,8 +320,7 @@ public class ExecutionInput {
                 .dataLoaderRegistry(this.dataLoaderRegistry)
                 .extensions(this.extensions)
                 .executionId(this.executionId)
-                .locale(this.locale)
-                .profileExecution(this.profileExecution);
+                .locale(this.locale);
         builder.rawVariablesList = this.rawVariablesList;
         builder.variableIndex = this.variableIndex;
         builder.variableBatchId = this.variableBatchId;
