@@ -22,7 +22,6 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.execution.instrumentation.dataloader.ExhaustedDataLoaderDispatchStrategy;
-import graphql.execution.instrumentation.dataloader.VariableBatchDataLoaderDispatcher;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -293,10 +292,6 @@ public class Execution {
     }
 
     private DataLoaderDispatchStrategy createDataLoaderDispatchStrategy(ExecutionContext executionContext, ExecutionStrategy executionStrategy) {
-        VariableBatchDataLoaderDispatcher batchDispatcher = executionContext.getGraphQLContext().get(VariableBatchDataLoaderDispatcher.class);
-        if (batchDispatcher != null) {
-            return new ExhaustedDataLoaderDispatchStrategy(executionContext, batchDispatcher);
-        }
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }

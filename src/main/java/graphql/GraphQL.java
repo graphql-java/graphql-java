@@ -24,7 +24,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
-import graphql.execution.reactive.VariableBatchPublisher;
 import graphql.introspection.GoodFaithIntrospection;
 import graphql.language.Document;
 import graphql.language.NodeUtil;
@@ -38,6 +37,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
@@ -170,8 +170,6 @@ public class GraphQL {
     private final PreparsedDocumentProvider preparsedDocumentProvider;
     private final ValueUnboxer valueUnboxer;
     private final boolean doNotAutomaticallyDispatchDataLoader;
-    private final int maxVariableBatchSize;
-    private final int maxVariableBatchConcurrency;
 
 
     private GraphQL(Builder builder) {
@@ -184,8 +182,6 @@ public class GraphQL {
         this.preparsedDocumentProvider = assertNotNull(builder.preparsedDocumentProvider, "preparsedDocumentProvider must be non null");
         this.valueUnboxer = assertNotNull(builder.valueUnboxer, "valueUnboxer must not be null");
         this.doNotAutomaticallyDispatchDataLoader = builder.doNotAutomaticallyDispatchDataLoader;
-        this.maxVariableBatchSize = builder.maxVariableBatchSize;
-        this.maxVariableBatchConcurrency = builder.maxVariableBatchConcurrency;
     }
 
     /**
@@ -275,8 +271,6 @@ public class GraphQL {
                 .subscriptionExecutionStrategy(this.subscriptionStrategy)
                 .executionIdProvider(this.idProvider)
                 .instrumentation(this.instrumentation)
-                .maxVariableBatchSize(this.maxVariableBatchSize)
-                .maxVariableBatchConcurrency(this.maxVariableBatchConcurrency)
                 .preparsedDocumentProvider(this.preparsedDocumentProvider);
 
         builderConsumer.accept(builder);
@@ -297,8 +291,6 @@ public class GraphQL {
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
         private boolean doNotAutomaticallyDispatchDataLoader = false;
         private ValueUnboxer valueUnboxer = ValueUnboxer.DEFAULT;
-        private int maxVariableBatchSize = 1024;
-        private int maxVariableBatchConcurrency = 16;
 
         public Builder(GraphQLSchema graphQLSchema) {
             this.graphQLSchema = graphQLSchema;
@@ -347,32 +339,6 @@ public class GraphQL {
             return this;
         }
 
-        /**
-         * Limits variable batch entries, checked before any execution starts. Defaults to 1024.
-         * @param maximum a positive limit
-         * @return this builder
-         */
-        @ExperimentalApi
-        public Builder maxVariableBatchSize(int maximum) {
-            Assert.assertTrue(maximum > 0, () -> "maxVariableBatchSize must be positive");
-            maxVariableBatchSize = maximum;
-            return this;
-        }
-
-        /**
-         * Limits active executions up to their initial result and buffered initial results. Defaults to 16.
-         * Set to one for serial initial execution across variable maps. Mutation root fields remain serial
-         * within each execution. Incremental publishers retain their separate lifecycle and consumption.
-         * @param maximum a positive limit
-         * @return this builder
-         */
-        @ExperimentalApi
-        public Builder maxVariableBatchConcurrency(int maximum) {
-            Assert.assertTrue(maximum > 0, () -> "maxVariableBatchConcurrency must be positive");
-            maxVariableBatchConcurrency = maximum;
-            return this;
-        }
-
         public Builder executionIdProvider(ExecutionIdProvider executionIdProvider) {
             this.idProvider = assertNotNull(executionIdProvider, "ExecutionIdProvider must be non null");
             return this;
@@ -382,7 +348,7 @@ public class GraphQL {
         /**
          * Deactivates the automatic dispatching of DataLoaders.
          * If deactivated the user is responsible for dispatching the DataLoaders manually.
-         * Variable batches always coordinate dispatch automatically.
+         *
          * @return this builder
          */
         public Builder doNotAutomaticallyDispatchDataLoader() {
@@ -517,8 +483,8 @@ public class GraphQL {
      * <p>
      * This will return a promise (aka {@link CompletableFuture}) to provide a {@link ExecutionResult}
      * which is the result of executing the provided query.
-     * Multiple variable maps return a {@link VariableBatchExecutionResult}; preparation can run eagerly,
-     * while field execution starts on demand. Batched subscription operations fail with {@link IllegalArgumentException}.
+     * Multiple variable maps start one execution per map immediately and return a {@link VariableBatchExecutionResult}
+     * containing their futures in input order. Batched subscription operations fail with {@link IllegalArgumentException}.
      * @param executionInput {@link ExecutionInput}
      *
      * @return a promise to an {@link ExecutionResult} which can include errors
@@ -565,15 +531,16 @@ public class GraphQL {
 
     private CompletableFuture<ExecutionResult> executeVariableBatch(ExecutionInput input) {
         int size = input.getVariablesList().size();
-        if (size > maxVariableBatchSize) {
-            return CompletableFuture.failedFuture(new AbortExecutionException(
-                    "Variable batch has " + size + " entries which exceeds maximum allowed " + maxVariableBatchSize));
-        }
         try {
             GraphQL executor = prepareVariableBatch(input);
             ExecutionId batchId = assertNotNull(ensureInputHasId(input).getExecutionId());
-            VariableBatchPublisher publisher = new VariableBatchPublisher(input, batchId, maxVariableBatchConcurrency, executor::executeAsync);
-            return CompletableFuture.completedFuture(new VariableBatchExecutionResultImpl(publisher, size));
+            List<CompletableFuture<ExecutionResult>> results = new ArrayList<>(size);
+            for (int index = 0; index < size; index++) {
+                ExecutionInput entry = input.newVariableBatchEntry(index, batchId);
+                input.getCancellationFuture().thenRun(entry::cancel);
+                results.add(executor.executeAsync(entry));
+            }
+            return CompletableFuture.completedFuture(new VariableBatchExecutionResultImpl(results));
         } catch (RuntimeException exception) {
             return CompletableFuture.failedFuture(exception);
         }
@@ -588,9 +555,12 @@ public class GraphQL {
         }
         PreparsedDocumentEntry prepared = parseAndValidate(new AtomicReference<>(input), graphQLSchema, null, true);
         CompletableFuture<PreparsedDocumentEntry> preparedFuture = CompletableFuture.completedFuture(prepared);
-        return transform(builder -> builder
-                .preparsedDocumentProvider((entry, compute) -> preparedFuture)
-                .valueUnboxer(valueUnboxer));
+        return transform(builder -> {
+            builder.preparsedDocumentProvider((entry, compute) -> preparedFuture).valueUnboxer(valueUnboxer);
+            if (doNotAutomaticallyDispatchDataLoader) {
+                builder.doNotAutomaticallyDispatchDataLoader();
+            }
+        });
     }
 
     private void assertVariableBatchOperationSupported(boolean variableBatch, ExecutionInput input, @Nullable Document document) {

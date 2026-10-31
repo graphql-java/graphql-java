@@ -1,7 +1,7 @@
 package graphql;
 
+import graphql.execution.Async;
 import org.jspecify.annotations.NullMarked;
-import org.reactivestreams.Publisher;
 
 import java.util.List;
 import java.util.Map;
@@ -10,34 +10,28 @@ import java.util.concurrent.CompletableFuture;
 @Internal
 @NullMarked
 public final class VariableBatchExecutionResultImpl extends ExecutionResultImpl implements VariableBatchExecutionResult {
-    private final Publisher<VariableBatchResult> results;
-    private final int size;
-
-    public VariableBatchExecutionResultImpl(Publisher<VariableBatchResult> results, int size) {
-        super(results, List.of());
-        this.results = results;
-        this.size = size;
+    public VariableBatchExecutionResultImpl(List<CompletableFuture<ExecutionResult>> results) {
+        super(List.copyOf(results), List.of());
     }
 
     @Override
-    public Publisher<VariableBatchResult> getResults() {
-        return results;
+    public List<CompletableFuture<ExecutionResult>> getResults() {
+        return Assert.assertNotNull(getData());
     }
 
     @Override
     public int getSize() {
-        return size;
+        return getResults().size();
     }
 
     @Override
     public CompletableFuture<List<ExecutionResult>> getResultsAsync() {
-        VariableBatchResultCollector collector = new VariableBatchResultCollector(size);
-        results.subscribe(collector);
-        return collector.getResult();
+        return Async.<CompletableFuture<ExecutionResult>, ExecutionResult>each(getResults(), result -> result)
+                .thenApply(List::copyOf);
     }
 
     @Override
     public Map<String, Object> toSpecification() {
-        throw new UnsupportedOperationException("Serialize each VariableBatchResult's executionResult instead of the batch");
+        throw new UnsupportedOperationException("Serialize each execution result instead of the batch");
     }
 }

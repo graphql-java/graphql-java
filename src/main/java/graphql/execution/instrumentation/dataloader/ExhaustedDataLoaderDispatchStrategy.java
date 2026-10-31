@@ -7,8 +7,6 @@ import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.incremental.AlternativeCallContext;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import graphql.VisibleForTesting;
@@ -21,7 +19,6 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
 
 @Internal
 @NullMarked
@@ -31,7 +28,6 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
     private final ExecutionContext executionContext;
 
     private final Profiler profiler;
-    private @Nullable VariableBatchDataLoaderDispatcher batchDispatcher;
 
     private final Map<AlternativeCallContext, CallStack> alternativeCallContextMap = new ConcurrentHashMap<>();
 
@@ -134,22 +130,6 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
 
     public ExhaustedDataLoaderDispatchStrategy(ExecutionContext executionContext) {
         this(executionContext, new CallStack());
-    }
-
-    public ExhaustedDataLoaderDispatchStrategy(ExecutionContext executionContext, VariableBatchDataLoaderDispatcher batchDispatcher) {
-        this(executionContext);
-        Assert.assertTrue(executionContext.getDataLoaderRegistry() == batchDispatcher.getRegistry(),
-                () -> "Variable batch executions must share their DataLoader registry");
-        this.batchDispatcher = batchDispatcher;
-    }
-
-    @Override
-    public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters parameters,
-                             DataFetcher<?> dataFetcher, Object fetchedValue,
-                             Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
-        if (batchDispatcher != null) {
-            newDataLoaderInvocationMaybeDispatch(getCallStack(parameters));
-        }
     }
 
     @VisibleForTesting
@@ -284,10 +264,6 @@ public class ExhaustedDataLoaderDispatchStrategy implements DataLoaderDispatchSt
             }
         }
 
-        if (batchDispatcher != null) {
-            batchDispatcher.dispatch().whenComplete((ignored, failure) -> dispatchImpl(callStack));
-            return;
-        }
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
         List<DataLoader<?, ?>> dataLoaders = dataLoaderRegistry.getDataLoaders();
         List<CompletableFuture<? extends List<?>>> allDispatchedCFs = new ArrayList<>();
