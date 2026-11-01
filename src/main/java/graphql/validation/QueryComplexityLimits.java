@@ -5,8 +5,20 @@ import org.jspecify.annotations.NullMarked;
 
 /**
  * Configuration class for query complexity limits enforced during validation.
- * This provides a lightweight alternative to ExecutableNormalizedOperation (ENO) for tracking
- * query depth and field count.
+ * Limits the number and depth of merged fields using the same selections as field-merging validation.
+ * Fields with the same response name (alias, or field name when unaliased) and a common parent type
+ * count once at each response position. Their child selections are combined before counting.
+ * For example, {@code { node { name name } }} has two fields, while
+ * {@code { a: node { name } b: node { name } }} has four.
+ * Repeated fragment spreads at the same response position merge; a fragment used at different
+ * response positions contributes at each position.
+ *
+ * <p>Selections on different concrete parent types count separately. Interface and union selections
+ * are included in each concrete group when concrete selections are present; otherwise they form
+ * one group. This is a structural limit, not an estimate of resolver cost or list result sizes.
+ * All selections count regardless of {@code @skip} or {@code @include}; validation does not coerce
+ * variables or expand selections for each possible runtime object type.
+ * Parser limits independently bound source size, token count and syntactic nesting.
  *
  * <p>By default, validation enforces limits (maxDepth=100, maxFieldsCount=100000).
  * To customize limits per-request, put a custom instance in the GraphQLContext:
@@ -91,14 +103,14 @@ public class QueryComplexityLimits {
     }
 
     /**
-     * @return the maximum allowed depth for queries, where depth is measured as the number of nested Field nodes
+     * @return the maximum allowed depth for queries, where depth is the number of fields on the deepest response path
      */
     public int getMaxDepth() {
         return maxDepth;
     }
 
     /**
-     * @return the maximum allowed number of fields in a query, counting fields at each fragment spread site
+     * @return the maximum allowed number of merged fields in each operation
      */
     public int getMaxFieldsCount() {
         return maxFieldsCount;
@@ -133,7 +145,7 @@ public class QueryComplexityLimits {
 
         /**
          * Sets the maximum allowed depth for queries.
-         * Depth is measured as the number of nested Field nodes.
+         * Depth is measured as the number of fields on the deepest response path.
          *
          * @param maxDepth the maximum depth (must be positive)
          * @return this builder
@@ -147,8 +159,8 @@ public class QueryComplexityLimits {
         }
 
         /**
-         * Sets the maximum allowed number of fields in a query.
-         * Fields inside fragments are counted at each spread site.
+         * Sets the maximum allowed number of merged fields in each operation.
+         * Merged child selections contribute again at each distinct response position.
          *
          * @param maxFieldsCount the maximum field count (must be positive)
          * @return this builder

@@ -13,9 +13,9 @@ public class QueryComplexityLimitsExceeded extends RuntimeException {
 
     private final ValidationErrorType errorType;
     private final int limit;
-    private final int actual;
+    private final long actual;
 
-    public QueryComplexityLimitsExceeded(ValidationErrorType errorType, int limit, int actual) {
+    public QueryComplexityLimitsExceeded(ValidationErrorType errorType, int limit, long actual) {
         super(errorType.name() + ": limit=" + limit + ", actual=" + actual);
         this.errorType = errorType;
         this.limit = limit;
@@ -30,7 +30,7 @@ public class QueryComplexityLimitsExceeded extends RuntimeException {
         return limit;
     }
 
-    public int getActual() {
+    public long getActual() {
         return actual;
     }
 

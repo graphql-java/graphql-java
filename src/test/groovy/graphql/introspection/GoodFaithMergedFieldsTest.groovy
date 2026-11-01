@@ -196,15 +196,23 @@ class GoodFaithMergedFieldsTest extends Specification {
         rejected('{ __type(name: "Query") { name } node { ' + 'child { ' * 20 + 'name' + ' }' * 20 + ' } }')
     }
 
-    def "generic AST work limits remain independent of merged field limits"() {
+    def "general limits use merged fields for introspection too"() {
         given:
         def graphQL = GraphQL.newGraphQL(schema).build()
-        def limits = QueryComplexityLimits.newLimits().maxFieldsCount(5).build()
+        def limits = QueryComplexityLimits.newLimits().maxFieldsCount(limit).build()
         def input = ExecutionInput.newExecutionInput('{ __schema { types { name name name name } } }')
                 .graphQLContext([(QueryComplexityLimits.KEY): limits]).build()
 
         expect:
-        graphQL.execute(input).errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        def errors = graphQL.execute(input).errors
+        errors.empty == accepted
+        errors.empty || errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+
+        where:
+        limit | accepted
+        5     | true
+        3     | true
+        2     | false
     }
 
     def "a tighter generic depth limit still applies to introspection"() {

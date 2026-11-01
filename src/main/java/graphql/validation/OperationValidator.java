@@ -343,17 +343,10 @@ public class OperationValidator implements DocumentVisitor {
     // --- State: SubscriptionUniqueRootField ---
     private final FieldCollector fieldCollector = new FieldCollector();
 
-    // --- State: Query Complexity Limits ---
-    private int fieldCount = 0;
-    private int currentFieldDepth = 0;
-    private int maxFieldDepthSeen = 0;
     private final QueryComplexityLimits complexityLimits;
-    // Fragment complexity calculated lazily during first spread
-    private final Map<String, FragmentComplexityInfo> fragmentComplexityMap = new HashMap<>();
-    // Max depth seen during current fragment traversal (for calculating fragment's internal depth)
-    private int fragmentTraversalMaxDepth = 0;
+    private final boolean generalComplexityEnabled;
 
-    // --- State: Merged selections and Good Faith Introspection ---
+    // --- State: Merged selections and complexity limits ---
     // Caches merge-check progress and merged child selections for the whole document.
     // All FieldAndType entries in a key set have the same response name
     // (the alias if present, otherwise the field name).
@@ -371,8 +364,8 @@ public class OperationValidator implements DocumentVisitor {
     // a relative depth of 2, and one occurrence of the restricted coordinate __Type.fields.
     // Cached summaries contribute again at each response position where the set occurs.
     // A present key with a null value marks counting in progress, preventing recursion through fragment cycles.
-    // This cache is scoped to one operation and is null when Good Faith counting is inactive.
-    private @Nullable Map<Set<FieldAndType>, @Nullable GoodFaithIntrospectionCounts> introspectionCounts;
+    // This cache is scoped to one operation and is null when neither general nor Good Faith limits are active.
+    private @Nullable Map<Set<FieldAndType>, @Nullable QueryComplexityCounts> complexityCounts;
     private boolean introspectionQueryDetected = false;
 
     // --- Track whether we're in a context where fragment spread rules should run ---
@@ -388,6 +381,8 @@ public class OperationValidator implements DocumentVisitor {
         this.rulePredicate = rulePredicate;
         this.allRulesEnabled = detectAllRulesEnabled(rulePredicate);
         this.complexityLimits = validationContext.getQueryComplexityLimits();
+        this.generalComplexityEnabled = complexityLimits.getMaxFieldsCount() != Integer.MAX_VALUE
+                || complexityLimits.getMaxDepth() != Integer.MAX_VALUE;
         if (isRuleEnabled(OperationValidationRule.NO_FRAGMENT_CYCLES)) {
             prepareFragmentSpreadsMap();
             findFragmentCycles();
@@ -659,37 +654,6 @@ public class OperationValidator implements DocumentVisitor {
         return currentOperation != null;
     }
 
-    // ==================== Query Complexity Limit Helpers ====================
-
-    private void checkFieldCountLimit() {
-        if (fieldCount > complexityLimits.getMaxFieldsCount()) {
-            if (introspectionQueryDetected) {
-                throw GoodFaithIntrospectionExceeded.tooBigOperation(
-                        "Query has " + fieldCount + " fields which exceeds maximum allowed " + complexityLimits.getMaxFieldsCount());
-            }
-            throw new QueryComplexityLimitsExceeded(
-                    ValidationErrorType.MaxQueryFieldsExceeded,
-                    complexityLimits.getMaxFieldsCount(),
-                    fieldCount);
-        }
-    }
-
-    private void checkDepthLimit(int depth) {
-        if (depth > maxFieldDepthSeen) {
-            maxFieldDepthSeen = depth;
-            if (maxFieldDepthSeen > complexityLimits.getMaxDepth()) {
-                if (introspectionQueryDetected) {
-                    throw GoodFaithIntrospectionExceeded.tooBigOperation(
-                            "Query depth " + maxFieldDepthSeen + " exceeds maximum allowed depth " + complexityLimits.getMaxDepth());
-                }
-                throw new QueryComplexityLimitsExceeded(
-                        ValidationErrorType.MaxQueryDepthExceeded,
-                        complexityLimits.getMaxDepth(),
-                        maxFieldDepthSeen);
-            }
-        }
-    }
-
     @Override
     public void enter(Node node, List<Node> ancestors) {
         enterTraversal(node, ancestors);
@@ -703,17 +667,6 @@ public class OperationValidator implements DocumentVisitor {
         } else if (node instanceof VariableDefinition) {
             checkVariableDefinition((VariableDefinition) node);
         } else if (node instanceof Field) {
-            // Track complexity only during operation scope
-            if (currentOperation != null) {
-                fieldCount++;
-                currentFieldDepth++;
-                checkFieldCountLimit();
-                checkDepthLimit(currentFieldDepth);
-                // Track max depth during fragment traversal for storing later
-                if (fragmentRetraversalDepth > 0 && currentFieldDepth > fragmentTraversalMaxDepth) {
-                    fragmentTraversalMaxDepth = currentFieldDepth;
-                }
-            }
             checkField((Field) node);
         } else if (node instanceof InlineFragment) {
             checkInlineFragment((InlineFragment) node);
@@ -746,10 +699,6 @@ public class OperationValidator implements DocumentVisitor {
             leaveSelectionSet();
         } else if (node instanceof FragmentDefinition) {
             leaveFragmentDefinition();
-        } else if (node instanceof Field) {
-            if (currentOperation != null) {
-                currentFieldDepth--;
-            }
         }
     }
 
@@ -931,52 +880,16 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
 
-        // Handle complexity tracking and fragment traversal
-        if (currentOperation != null) {
-            String fragmentName = node.getName();
-            FragmentDefinition fragment = validationContext.getFragment(fragmentName);
-
-            if (visitedFragmentSpreads.contains(fragmentName)) {
-                // Subsequent spread - add stored complexity (don't traverse again)
-                FragmentComplexityInfo info = fragmentComplexityMap.get(fragmentName);
-                if (info != null) {
-                    fieldCount += info.getFieldCount();
-                    checkFieldCountLimit();
-                    int potentialDepth = currentFieldDepth + info.getMaxDepth();
-                    checkDepthLimit(potentialDepth);
-                    // Update max depth if we're inside a fragment traversal
-                    if (fragmentRetraversalDepth > 0 && potentialDepth > fragmentTraversalMaxDepth) {
-                        fragmentTraversalMaxDepth = potentialDepth;
-                    }
-                }
-            } else if (fragment != null) {
-                // First spread - traverse and track complexity
-                visitedFragmentSpreads.add(fragmentName);
-
-                int fieldCountBefore = fieldCount;
-                int depthAtEntry = currentFieldDepth;
-                int previousFragmentMaxDepth = fragmentTraversalMaxDepth;
-
-                // Initialize max depth tracking for this fragment
-                fragmentTraversalMaxDepth = currentFieldDepth;
-
-                fragmentRetraversalDepth++;
-                new LanguageTraversal(ancestors).traverse(fragment, this);
-                fragmentRetraversalDepth--;
-
-                // Calculate and store fragment complexity
-                int fragmentFieldCount = fieldCount - fieldCountBefore;
-                int fragmentMaxInternalDepth = fragmentTraversalMaxDepth - depthAtEntry;
-
-                fragmentComplexityMap.put(fragmentName,
-                        new FragmentComplexityInfo(fragmentFieldCount, fragmentMaxInternalDepth));
-
-                // Restore max depth for outer fragment (if nested)
-                if (fragmentRetraversalDepth > 0 && previousFragmentMaxDepth > fragmentTraversalMaxDepth) {
-                    fragmentTraversalMaxDepth = previousFragmentMaxDepth;
-                }
-            }
+        if (currentOperation == null || !visitedFragmentSpreads.add(node.getName())) {
+            return;
         }
+        FragmentDefinition fragment = validationContext.getFragment(node.getName());
+        if (fragment == null) {
+            return;
+        }
+        fragmentRetraversalDepth++;
+        new LanguageTraversal(ancestors).traverse(fragment, this);
+        fragmentRetraversalDepth--;
     }
 
     private void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
@@ -1004,7 +917,7 @@ public class OperationValidator implements DocumentVisitor {
     private void checkOperationDefinition(OperationDefinition operationDefinition) {
         currentOperation = operationDefinition;
 
-        if (isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
+        if (generalComplexityEnabled || isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
                 || isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
             validateOverlappingFieldsCanBeMerged(operationDefinition);
         }
@@ -1087,13 +1000,8 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
 
-        // Reset complexity counters for next operation
-        fieldCount = 0;
-        currentFieldDepth = 0;
-        maxFieldDepthSeen = 0;
-        fragmentTraversalMaxDepth = 0;
         introspectionQueryDetected = false;
-        introspectionCounts = null;
+        complexityCounts = null;
     }
 
     private void leaveSelectionSet() {
@@ -1466,7 +1374,9 @@ public class OperationValidator implements DocumentVisitor {
         overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments);
         if (isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION) && containsIntrospection(fieldMap, graphQLOutputType)) {
             introspectionQueryDetected = true;
-            introspectionCounts = new HashMap<>();
+        }
+        if (generalComplexityEnabled || introspectionQueryDetected) {
+            complexityCounts = new HashMap<>();
         }
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
@@ -1527,17 +1437,28 @@ public class OperationValidator implements DocumentVisitor {
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
         List<Conflict> result = new ArrayList<>();
         boolean checkMerging = isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
-        if (checkMerging && !introspectionQueryDetected) {
+        if (checkMerging && complexityCounts == null) {
             sameResponseShapeByName(fieldMap, emptyList(), result);
         }
-        if (checkMerging || introspectionQueryDetected) {
+        if (checkMerging || complexityCounts != null) {
             sameForCommonParentsByName(fieldMap, emptyList(), result);
         }
-        // Enforce Good Faith limits in the common-parent walk before the other recursive merge checks.
-        if (checkMerging && introspectionQueryDetected) {
-            sameResponseShapeByName(fieldMap, emptyList(), result);
+        // Bound the common-parent walk before the other recursive merge checks.
+        if (checkMerging && complexityCounts != null) {
+            responseShapeAfterCounting(fieldMap, result);
         }
         return result;
+    }
+
+    private void responseShapeAfterCounting(Map<String, Set<FieldAndType>> fieldMap, List<Conflict> conflicts) {
+        if (!introspectionQueryDetected && !conflicts.isEmpty()) {
+            List<Conflict> commonParentConflicts = new ArrayList<>(conflicts);
+            conflicts.clear();
+            sameResponseShapeByName(fieldMap, emptyList(), conflicts);
+            conflicts.addAll(commonParentConflicts);
+            return;
+        }
+        sameResponseShapeByName(fieldMap, emptyList(), conflicts);
     }
 
     private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
@@ -1582,9 +1503,9 @@ public class OperationValidator implements DocumentVisitor {
         return fieldMap == null ? Collections.emptyMap() : fieldMap;
     }
 
-    private @Nullable GoodFaithIntrospectionCounts sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap,
-                                                                              ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
-        GoodFaithIntrospectionCounts counts = introspectionCounts == null ? null : new GoodFaithIntrospectionCounts();
+    private @Nullable QueryComplexityCounts sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap,
+                                                                            ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+        QueryComplexityCounts counts = complexityCounts == null ? null : new QueryComplexityCounts(complexityLimits, introspectionQueryDetected);
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             List<Set<FieldAndType>> groups = groupByCommonParents(entry.getValue());
             ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
@@ -1596,8 +1517,8 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void sameForCommonParentGroup(Set<FieldAndType> group, ImmutableList<String> path, List<Conflict> conflictsResult,
-                                          @Nullable GoodFaithIntrospectionCounts selectionCounts) {
-        if (selectionCounts != null && reuseIntrospectionCounts(group, path.size() - 1, selectionCounts)) {
+                                          @Nullable QueryComplexityCounts selectionCounts) {
+        if (selectionCounts != null && reuseComplexityCounts(group, path.size() - 1, selectionCounts)) {
             return;
         }
         FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(group, fields -> new FieldValidationState<>());
@@ -1605,35 +1526,42 @@ public class OperationValidator implements DocumentVisitor {
         if (!newlyChecked && selectionCounts == null) {
             return;
         }
-        if (newlyChecked && isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
-            Conflict conflict = requireSameNameAndArguments(path, group);
-            if (conflict != null) {
-                conflictsResult.add(conflict);
-                return;
-            }
+        boolean compatible = !newlyChecked || !isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
+                || checkCommonParentFields(group, path, conflictsResult);
+        if (!compatible && selectionCounts == null) {
+            return;
         }
-        GoodFaithIntrospectionCounts groupCounts = null;
+        QueryComplexityCounts groupCounts = null;
         if (selectionCounts != null) {
-            groupCounts = new GoodFaithIntrospectionCounts();
-            groupCounts.enterField(introspectionCoordinate(group.iterator().next()), path.size() - 1);
+            groupCounts = new QueryComplexityCounts(complexityLimits, introspectionQueryDetected);
+            groupCounts.enterField(introspectionQueryDetected ? introspectionCoordinate(group.iterator().next()) : null, path.size() - 1);
             // A null value marks an in-progress group, stopping invalid fragment cycles.
-            Assert.assertNotNull(introspectionCounts).put(group, null);
+            Assert.assertNotNull(complexityCounts).put(group, null);
         }
         Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group, state);
-        GoodFaithIntrospectionCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
+        QueryComplexityCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
         if (groupCounts != null) {
             groupCounts.addChildren(Assert.assertNotNull(children));
-            Assert.assertNotNull(introspectionCounts).put(group, groupCounts);
+            Assert.assertNotNull(complexityCounts).put(group, groupCounts);
             Assert.assertNotNull(selectionCounts).add(groupCounts);
         }
     }
 
-    private boolean reuseIntrospectionCounts(Set<FieldAndType> group, int parentDepth, GoodFaithIntrospectionCounts selectionCounts) {
-        Map<Set<FieldAndType>, @Nullable GoodFaithIntrospectionCounts> cache = Assert.assertNotNull(introspectionCounts);
+    private boolean checkCommonParentFields(Set<FieldAndType> fields, ImmutableList<String> path, List<Conflict> conflicts) {
+        Conflict conflict = requireSameNameAndArguments(path, fields);
+        if (conflict == null) {
+            return true;
+        }
+        conflicts.add(conflict);
+        return false;
+    }
+
+    private boolean reuseComplexityCounts(Set<FieldAndType> group, int parentDepth, QueryComplexityCounts selectionCounts) {
+        Map<Set<FieldAndType>, @Nullable QueryComplexityCounts> cache = Assert.assertNotNull(complexityCounts);
         if (!cache.containsKey(group)) {
             return false;
         }
-        GoodFaithIntrospectionCounts cached = cache.get(group);
+        QueryComplexityCounts cached = cache.get(group);
         if (cached != null) {
             cached.checkDepth(parentDepth);
             selectionCounts.add(cached);
