@@ -4,6 +4,8 @@
 
 该组件是 [GraphQL 规范](https://github.com/graphql/graphql-spec) 的 Java 实现。
 
+当前开发版本需要 **Java 17 或更高版本**才能运行。Gradle 构建使用 JDK 25 工具链。
+
 [![Build](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml/badge.svg)](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml)
 [![Latest Release](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?versionPrefix=24.)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
 [![Latest Snapshot](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?label=maven-central%20snapshot&versionPrefix=0)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
