@@ -9,8 +9,8 @@ import spock.lang.Specification
 class MergedQueryComplexityTest extends Specification {
     def schema = TestUtil.schema('''
         type Query { name: String node: Node }
-        type Mutation { node: Node }
-        type Subscription { node: Node }
+        type Mutation { name: String node: Node }
+        type Subscription { name: String node: Node }
         type Node { name: String child: Node }
     ''')
 
@@ -33,6 +33,66 @@ class MergedQueryComplexityTest extends Specification {
         '{ node { name @skip(if: true) child @include(if: false) { name } } }'                                       | 4      | 3
         'query($yes: Boolean!) { node { name child @include(if: $yes) { name } } }'                                  | 4      | 3
         '{ node { ...F } } fragment F on Node { child { ...G } ...G } fragment G on Node { name }'                   | 4      | 3
+        '{ node { child { child { name } } name } }'                                                                | 5      | 4
+        '{ node { name child { child { name } } } }'                                                                | 5      | 4
+    }
+
+    def "leaf-only #operation merges duplicate response names at depth one"() {
+        expect:
+        validate(operation + ' { name name }', 1, 1).empty
+        validate(operation + ' { name name __typename @skip(if: true) }', 2, 1).empty
+        validate(operation + ' { name name __typename @skip(if: true) }', 1, 1)*.validationErrorType ==
+                [ValidationErrorType.MaxQueryFieldsExceeded]
+
+        where:
+        operation << ['query', 'mutation', 'subscription']
+    }
+
+    def "large shared leaf sets are counted at every response position across operations"() {
+        given:
+        def first = 'query First { first: node { ...Leaves } }'
+        def second = 'query Second { a: node { ...Leaves } b: node { ...Leaves } }'
+        def query = (firstBeforeSecond ? first + second : second + first) +
+                'fragment Leaves on Node { ' + 'name ' * 500 + '}'
+
+        expect:
+        validate(query, 4, 2).empty
+        validate(query, 3, 2)*.validationErrorType == [ValidationErrorType.MaxQueryFieldsExceeded]
+        validate(query, 4, 1)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
+
+        where:
+        firstBeforeSecond << [true, false]
+    }
+
+    def "missing introspection sub-selections still enforce restricted coordinates for #selection"() {
+        given:
+        def document = Parser.parse('{ ' + selection + ' }')
+
+        when:
+        new Validator().validateDocument(schema, document, { rule -> true }, Locale.ENGLISH, limits)
+
+        then:
+        thrown(GoodFaithIntrospectionExceeded)
+
+        where:
+        [selection, limits] << [
+                ['a: __schema b: __schema',
+                 '__schema { a: types { fields } b: types { fields } }',
+                 '__schema { a: types { inputFields } b: types { inputFields } }',
+                 '__schema { a: types { interfaces } b: types { interfaces } }',
+                 '__schema { a: types { possibleTypes } b: types { possibleTypes } }'],
+                [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.NONE]
+        ].combinations()
+    }
+
+    def "distinct or merged introspection coordinates retain normal missing-selection errors"() {
+        expect:
+        validate(query, 500, 20)*.validationErrorType == expected
+
+        where:
+        query                                      | expected
+        '{ __schema __type(name: "Query") }'       | [ValidationErrorType.SubselectionRequired, ValidationErrorType.SubselectionRequired]
+        '{ __schema __schema }'                    | [ValidationErrorType.SubselectionRequired, ValidationErrorType.SubselectionRequired]
     }
 
     def "configuration applies through GraphQL execution"() {
@@ -196,6 +256,14 @@ class MergedQueryComplexityTest extends Specification {
     def "invalid names and arguments do not bypass the depth bound"() {
         given:
         def query = '{ node { same: name same: child { ' + 'child { ' * 105 + 'name' + ' }' * 105 + ' } } }'
+
+        expect:
+        validate(query, 100_000, 100)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
+    }
+
+    def "invalid selections on scalar fields still count their AST children"() {
+        given:
+        def query = '{ node { name { ' + 'child { ' * 105 + 'name' + ' }' * 105 + ' } } }'
 
         expect:
         validate(query, 100_000, 100)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]

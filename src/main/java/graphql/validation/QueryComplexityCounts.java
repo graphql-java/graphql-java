@@ -34,6 +34,16 @@ public final class QueryComplexityCounts {
         checkDepth(parentDepth);
     }
 
+    public void addLeafField(@Nullable String coordinate, int parentDepth) {
+        checkDepth(parentDepth, 1);
+        fieldCount++;
+        depth = Math.max(depth, 1);
+        if (coordinate != null) {
+            addCoordinate(coordinate);
+        }
+        checkLimits();
+    }
+
     public void add(QueryComplexityCounts other) {
         fieldCount += other.fieldCount;
         depth = Math.max(depth, other.depth);
@@ -57,9 +67,16 @@ public final class QueryComplexityCounts {
             return;
         }
         for (String coordinate : other.coordinates) {
-            if (!coordinates.add(coordinate)) {
-                throw GoodFaithIntrospectionExceeded.tooManyFields(coordinate);
-            }
+            addCoordinate(coordinate);
+        }
+    }
+
+    private void addCoordinate(String coordinate) {
+        if (coordinates == null) {
+            coordinates = new LinkedHashSet<>();
+        }
+        if (!coordinates.add(coordinate)) {
+            throw GoodFaithIntrospectionExceeded.tooManyFields(coordinate);
         }
     }
 
@@ -74,7 +91,11 @@ public final class QueryComplexityCounts {
     }
 
     public void checkDepth(int parentDepth) {
-        long actualDepth = (long) parentDepth + depth;
+        checkDepth(parentDepth, depth);
+    }
+
+    private void checkDepth(int parentDepth, int selectionDepth) {
+        long actualDepth = (long) parentDepth + selectionDepth;
         if (actualDepth <= maxDepth) {
             return;
         }

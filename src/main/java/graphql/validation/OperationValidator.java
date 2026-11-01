@@ -1531,7 +1531,8 @@ public class OperationValidator implements DocumentVisitor {
     private void sameForCommonParentGroup(Set<FieldAndType> group, List<String> path, List<Conflict> conflictsResult,
                                           @Nullable QueryComplexityCounts selectionCounts) {
         FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(group, fields -> new FieldValidationState<>());
-        if (selectionCounts != null && reuseComplexityCounts(state, path.size() - 1, selectionCounts)) {
+        boolean noSubSelections = selectionCounts != null && hasNoSubSelections(group, state);
+        if (selectionCounts != null && !noSubSelections && reuseComplexityCounts(state, path.size() - 1, selectionCounts)) {
             return;
         }
         boolean newlyChecked = state.markSameForCommonParentsChecked();
@@ -1541,6 +1542,10 @@ public class OperationValidator implements DocumentVisitor {
         boolean compatible = !newlyChecked || !isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
                 || checkCommonParentFields(group, path, conflictsResult);
         if (!compatible && selectionCounts == null) {
+            return;
+        }
+        if (noSubSelections) {
+            Assert.assertNotNull(selectionCounts).addLeafField(introspectionQueryDetected ? introspectionCoordinate(group.iterator().next()) : null, path.size() - 1);
             return;
         }
         QueryComplexityCounts groupCounts = null;
@@ -1559,6 +1564,20 @@ public class OperationValidator implements DocumentVisitor {
             Assert.assertNotNull(complexityCounts).put(state, groupCounts);
             Assert.assertNotNull(selectionCounts).add(groupCounts);
         }
+    }
+
+    private boolean hasNoSubSelections(Set<FieldAndType> fields, FieldValidationState<FieldAndType> state) {
+        Map<String, Set<FieldAndType>> subSelections = state.getMergedSubSelections();
+        if (subSelections != null) {
+            return subSelections.isEmpty();
+        }
+        for (FieldAndType field : fields) {
+            if (field.field.getSelectionSet() != null) {
+                return false;
+            }
+        }
+        state.setMergedSubSelections(Collections.emptyMap());
+        return true;
     }
 
     private boolean checkCommonParentFields(Set<FieldAndType> fields, List<String> path, List<Conflict> conflicts) {

@@ -36,7 +36,7 @@ import static graphql.Assert.assertTrue;
 public class GeneralQueryComplexityBenchmark {
     @Param({"tiny", "minimal", "simple", "wideScalars", "wideTree", "fragments", "fragmentHeavy",
             "duplicates", "deep", "mixedAbstract", "multiOperation", "directives", "introspection",
-            "aliasFanout", "duplicateFanout", "invalidFields"})
+            "aliasFanout", "duplicateFanout", "invalidFields", "mixedUnion", "mutation", "subscription", "sharedLeafGroup"})
     public String scenario;
 
     @Param({"default"})
@@ -62,12 +62,14 @@ public class GeneralQueryComplexityBenchmark {
     }
 
     private String schemaDefinition() {
-        if ("mixedAbstract".equals(scenario)) {
-            return "type Query { node: Node } interface Node { name: String child: Node } "
+        if ("mixedAbstract".equals(scenario) || "mixedUnion".equals(scenario)) {
+            String rootType = "mixedUnion".equals(scenario) ? "Result" : "Node";
+            return "type Query { node: " + rootType + " } union Result = A | B interface Node { name: String child: Node } "
                     + "type A implements Node { name: String child: A extraA: String } "
                     + "type B implements Node { name: String child: B extraB: String }";
         }
-        return "type Query { name: String node: Node } type Node { name: String child: Node }";
+        return "type Query { name: String node: Node } type Mutation { node: Node } "
+                + "type Subscription { node: Node } type Node { name: String child: Node }";
     }
 
     private String query() {
@@ -93,6 +95,15 @@ public class GeneralQueryComplexityBenchmark {
             case "mixedAbstract":
                 return repeatedFields(200, "node { name child { name } "
                         + "... on A { name child { name extraA } } ... on B { name child { name extraB } } }");
+            case "mixedUnion":
+                return repeatedFields(200, "node { ... on A { name child { name extraA } } "
+                        + "... on B { name child { name extraB } } }");
+            case "mutation":
+                return "mutation " + repeatedFields(500, "node { name child { name } }");
+            case "subscription":
+                return "subscription { node " + repeatedFields(1000, "child { name }") + " }";
+            case "sharedLeafGroup":
+                return repeatedFields(200, "node { ...Leaves }") + "fragment Leaves on Node { " + "name ".repeat(500) + "}";
             case "multiOperation":
                 return multipleOperations();
             case "directives":
