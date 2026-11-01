@@ -9,6 +9,8 @@ import spock.lang.Specification
 class MergedQueryComplexityTest extends Specification {
     def schema = TestUtil.schema('''
         type Query { name: String node: Node }
+        type Mutation { node: Node }
+        type Subscription { node: Node }
         type Node { name: String child: Node }
     ''')
 
@@ -21,6 +23,8 @@ class MergedQueryComplexityTest extends Specification {
         where:
         query                                                                                                      | fields | depth
         '{ node { name name } }'                                                                                   | 2      | 2
+        'mutation { node { name name } }'                                                                          | 2      | 2
+        'subscription { node { name name } }'                                                                      | 2      | 2
         '{ node { name } node { child { name } } }'                                                                 | 4      | 3
         '{ a: node { name } b: node { name } }'                                                                     | 4      | 2
         '{ node { ...F ...F ...G } } fragment F on Node { name } fragment G on Node { ...F child { name } }'         | 4      | 3
@@ -62,6 +66,31 @@ class MergedQueryComplexityTest extends Specification {
                 { rule -> rule != OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED },
                 { rule -> rule != OperationValidationRule.GOOD_FAITH_INTROSPECTION },
         ]
+    }
+
+    def "disabling general limits preserves merging errors"() {
+        given:
+        def document = Parser.parse('{ node { same: name same: child { name } } }')
+
+        expect:
+        new Validator().validateDocument(schema, document, { rule -> true }, Locale.ENGLISH, QueryComplexityLimits.NONE)
+                .any { it.validationErrorType == ValidationErrorType.FieldsConflict }
+    }
+
+    def "Good Faith remains independent when general limits and other rules are disabled"() {
+        given:
+        def predicate = { rule -> rule == OperationValidationRule.GOOD_FAITH_INTROSPECTION }
+        def normal = Parser.parse('{ node { ' + 'child { ' * 22 + 'name' + ' }' * 22 + ' } }')
+        def introspection = Parser.parse('{ __schema { a: types { fields { name } } b: types { fields { name } } } }')
+
+        expect:
+        new Validator().validateDocument(schema, normal, predicate, Locale.ENGLISH, QueryComplexityLimits.NONE).empty
+
+        when:
+        new Validator().validateDocument(schema, introspection, predicate, Locale.ENGLISH, QueryComplexityLimits.NONE)
+
+        then:
+        thrown(GoodFaithIntrospectionExceeded)
     }
 
     def "shared document caches do not carry counts or depth between operations"() {

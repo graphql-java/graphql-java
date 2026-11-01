@@ -37,8 +37,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * interface and union selections, these groups can differ from the runtime-type variants counted
  * by executable normalization.
  * All selections are counted as if {@code @skip} were false and {@code @include} were true,
- * without coercing variables during validation. General {@link QueryComplexityLimits} continue
- * to bound AST traversal independently of these merged-field limits.
+ * without coercing variables during validation. General {@link QueryComplexityLimits} use the
+ * same merged-field calculation; tighter general limits also apply to introspection operations.
  * <p>
  * This allows the standard and common introspection queries to work so tooling such as graphiql can work.
  */
