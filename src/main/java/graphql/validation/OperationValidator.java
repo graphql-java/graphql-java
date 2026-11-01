@@ -1535,8 +1535,7 @@ public class OperationValidator implements DocumentVisitor {
     private void sameForCommonParentGroup(Set<FieldAndType> group, List<String> path, List<Conflict> conflictsResult,
                                           @Nullable QueryComplexityCounts selectionCounts) {
         FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(group, fields -> new FieldValidationState<>());
-        boolean noSubSelections = selectionCounts != null && hasNoSubSelections(group, state);
-        if (selectionCounts != null && !noSubSelections && reuseComplexityCounts(state, path.size() - 1, selectionCounts)) {
+        if (selectionCounts != null && hasMergedSubSelections(state) && reuseComplexityCounts(state, path.size() - 1, selectionCounts)) {
             return;
         }
         boolean newlyChecked = state.markSameForCommonParentsChecked();
@@ -1548,18 +1547,21 @@ public class OperationValidator implements DocumentVisitor {
         if (!compatible && selectionCounts == null) {
             return;
         }
-        if (noSubSelections) {
-            Assert.assertNotNull(selectionCounts).addLeafField(introspectionCoordinate(group), path.size() - 1);
+        if (selectionCounts != null) {
+            selectionCounts.checkFieldDepth(path.size() - 1);
+        }
+        Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group, state);
+        if (selectionCounts != null && subSelections.isEmpty()) {
+            selectionCounts.addLeafField(introspectionCoordinate(group));
             return;
         }
         QueryComplexityCounts groupCounts = null;
         if (selectionCounts != null) {
             groupCounts = new QueryComplexityCounts(complexityLimits, introspectionQueryDetected);
-            groupCounts.enterField(introspectionCoordinate(group), path.size() - 1);
+            groupCounts.enterField(introspectionCoordinate(group));
             // A null value marks an in-progress group, stopping invalid fragment cycles.
             Assert.assertNotNull(complexityCounts).put(state, null);
         }
-        Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group, state);
         QueryComplexityCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
         if (groupCounts != null) {
             if (children != null) {
@@ -1570,18 +1572,9 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
-    private boolean hasNoSubSelections(Set<FieldAndType> fields, FieldValidationState<FieldAndType> state) {
+    private boolean hasMergedSubSelections(FieldValidationState<FieldAndType> state) {
         Map<String, Set<FieldAndType>> subSelections = state.getMergedSubSelections();
-        if (subSelections != null) {
-            return subSelections.isEmpty();
-        }
-        for (FieldAndType field : fields) {
-            if (field.field.getSelectionSet() != null) {
-                return false;
-            }
-        }
-        state.setMergedSubSelections(Collections.emptyMap());
-        return true;
+        return subSelections != null && !subSelections.isEmpty();
     }
 
     private boolean checkCommonParentFields(Set<FieldAndType> fields, List<String> path, List<Conflict> conflicts) {

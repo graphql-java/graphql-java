@@ -283,6 +283,22 @@ class MergedQueryComplexityTest extends Specification {
                 .any { it.validationErrorType == ValidationErrorType.FragmentCycle }
     }
 
+    def "an in-progress group stops cycles before checking the repeated position depth"() {
+        expect:
+        validate('{ node { ...F } } fragment F on Node { child { ...F } }', 100, 2)
+                .any { it.validationErrorType == ValidationErrorType.FragmentCycle }
+    }
+
+    def "depth is checked before expanding child fragments"() {
+        given:
+        def query = '{ node { child { ...F0 } } }' + (0..<1500).collect {
+            "fragment F$it on Node { ...F${it + 1} }"
+        }.join(' ') + 'fragment F1500 on Node { name }'
+
+        expect:
+        validate(query, 100_000, 1)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
+    }
+
     private List<ValidationError> validate(String query, int fields, int depth) {
         def limits = QueryComplexityLimits.newLimits().maxFieldsCount(fields).maxDepth(depth).build()
         new Validator().validateDocument(schema, Parser.parse(query), { rule -> true }, Locale.ENGLISH, limits)

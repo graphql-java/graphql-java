@@ -24,18 +24,20 @@ public final class QueryComplexityCounts {
         maxDepth = introspection ? Math.min(limits.getMaxDepth(), GoodFaithIntrospection.GOOD_FAITH_MAX_DEPTH_COUNT) : limits.getMaxDepth();
     }
 
-    public void enterField(@Nullable String coordinate, int parentDepth) {
+    public void enterField(@Nullable String coordinate) {
         fieldCount = 1;
         depth = 1;
         if (coordinate != null) {
             coordinates = new LinkedHashSet<>();
             coordinates.add(coordinate);
         }
-        checkDepth(parentDepth);
     }
 
-    public void addLeafField(@Nullable String coordinate, int parentDepth) {
+    public void checkFieldDepth(int parentDepth) {
         checkDepth(parentDepth, 1);
+    }
+
+    public void addLeafField(@Nullable String coordinate) {
         fieldCount++;
         depth = Math.max(depth, 1);
         if (coordinate != null) {
