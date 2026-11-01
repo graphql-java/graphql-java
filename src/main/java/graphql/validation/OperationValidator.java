@@ -1347,6 +1347,10 @@ public class OperationValidator implements DocumentVisitor {
         return false;
     }
 
+    private @Nullable String introspectionCoordinate(Set<FieldAndType> fields) {
+        return introspectionQueryDetected ? introspectionCoordinate(fields.iterator().next()) : null;
+    }
+
     private @Nullable String introspectionCoordinate(FieldAndType field) {
         String name = field.field.getName();
         if (field.parentType == validationContext.getSchema().getQueryType()
@@ -1545,13 +1549,13 @@ public class OperationValidator implements DocumentVisitor {
             return;
         }
         if (noSubSelections) {
-            Assert.assertNotNull(selectionCounts).addLeafField(introspectionQueryDetected ? introspectionCoordinate(group.iterator().next()) : null, path.size() - 1);
+            Assert.assertNotNull(selectionCounts).addLeafField(introspectionCoordinate(group), path.size() - 1);
             return;
         }
         QueryComplexityCounts groupCounts = null;
         if (selectionCounts != null) {
             groupCounts = new QueryComplexityCounts(complexityLimits, introspectionQueryDetected);
-            groupCounts.enterField(introspectionQueryDetected ? introspectionCoordinate(group.iterator().next()) : null, path.size() - 1);
+            groupCounts.enterField(introspectionCoordinate(group), path.size() - 1);
             // A null value marks an in-progress group, stopping invalid fragment cycles.
             Assert.assertNotNull(complexityCounts).put(state, null);
         }
