@@ -1570,6 +1570,9 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private List<Set<FieldAndType>> groupByCommonParents(Set<FieldAndType> fields) {
+        if (fields.size() == 1) {
+            return Collections.singletonList(fields);
+        }
         // Single-pass: partition into abstract types and concrete groups simultaneously
         List<FieldAndType> abstractTypes = null;
         Map<GraphQLType, Set<FieldAndType>> concreteGroups = null;
