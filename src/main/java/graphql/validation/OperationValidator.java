@@ -363,9 +363,10 @@ public class OperationValidator implements DocumentVisitor {
     // Example: `fields { name } fields { description }` on __Type caches a count of 3 fields,
     // a relative depth of 2, and one occurrence of the restricted coordinate __Type.fields.
     // Cached summaries contribute again at each response position where the set occurs.
+    // Keys are the shared validation states for those sets, avoiding repeated hashing of their AST nodes.
     // A present key with a null value marks counting in progress, preventing recursion through fragment cycles.
     // This cache is scoped to one operation and is null when neither general nor Good Faith limits are active.
-    private @Nullable Map<Set<FieldAndType>, @Nullable QueryComplexityCounts> complexityCounts;
+    private @Nullable Map<FieldValidationState<FieldAndType>, @Nullable QueryComplexityCounts> complexityCounts;
     private boolean introspectionQueryDetected = false;
 
     // --- Track whether we're in a context where fragment spread rules should run ---
@@ -1518,10 +1519,10 @@ public class OperationValidator implements DocumentVisitor {
 
     private void sameForCommonParentGroup(Set<FieldAndType> group, ImmutableList<String> path, List<Conflict> conflictsResult,
                                           @Nullable QueryComplexityCounts selectionCounts) {
-        if (selectionCounts != null && reuseComplexityCounts(group, path.size() - 1, selectionCounts)) {
+        FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(group, fields -> new FieldValidationState<>());
+        if (selectionCounts != null && reuseComplexityCounts(state, path.size() - 1, selectionCounts)) {
             return;
         }
-        FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(group, fields -> new FieldValidationState<>());
         boolean newlyChecked = state.markSameForCommonParentsChecked();
         if (!newlyChecked && selectionCounts == null) {
             return;
@@ -1536,13 +1537,13 @@ public class OperationValidator implements DocumentVisitor {
             groupCounts = new QueryComplexityCounts(complexityLimits, introspectionQueryDetected);
             groupCounts.enterField(introspectionQueryDetected ? introspectionCoordinate(group.iterator().next()) : null, path.size() - 1);
             // A null value marks an in-progress group, stopping invalid fragment cycles.
-            Assert.assertNotNull(complexityCounts).put(group, null);
+            Assert.assertNotNull(complexityCounts).put(state, null);
         }
         Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group, state);
         QueryComplexityCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
         if (groupCounts != null) {
             groupCounts.addChildren(Assert.assertNotNull(children));
-            Assert.assertNotNull(complexityCounts).put(group, groupCounts);
+            Assert.assertNotNull(complexityCounts).put(state, groupCounts);
             Assert.assertNotNull(selectionCounts).add(groupCounts);
         }
     }
@@ -1556,12 +1557,12 @@ public class OperationValidator implements DocumentVisitor {
         return false;
     }
 
-    private boolean reuseComplexityCounts(Set<FieldAndType> group, int parentDepth, QueryComplexityCounts selectionCounts) {
-        Map<Set<FieldAndType>, @Nullable QueryComplexityCounts> cache = Assert.assertNotNull(complexityCounts);
-        if (!cache.containsKey(group)) {
+    private boolean reuseComplexityCounts(FieldValidationState<FieldAndType> state, int parentDepth, QueryComplexityCounts selectionCounts) {
+        Map<FieldValidationState<FieldAndType>, @Nullable QueryComplexityCounts> cache = Assert.assertNotNull(complexityCounts);
+        if (!cache.containsKey(state)) {
             return false;
         }
-        QueryComplexityCounts cached = cache.get(group);
+        QueryComplexityCounts cached = cache.get(state);
         if (cached != null) {
             cached.checkDepth(parentDepth);
             selectionCounts.add(cached);
