@@ -22,9 +22,6 @@ jobs:
         include:
           - gradle-argument: 'assemble && ./gradlew check -x test -x testng'
             label: 'check'
-          - gradle-argument: 'testWithJava11 testngWithJava11'
-            label: 'java11'
-            test-results-dirs: 'testWithJava11 testngWithJava11'
           - gradle-argument: 'testWithJava17 testngWithJava17'
             label: 'java17'
             test-results-dirs: 'testWithJava17 testngWithJava17'
