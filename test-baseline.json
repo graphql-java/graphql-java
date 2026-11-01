@@ -1,32 +1,25 @@
 {
   "tests": {
-    "java11": {
-      "total": 6178,
-      "passed": 6122,
+    "java17": {
+      "total": 6177,
+      "passed": 6121,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
-    "java17": {
-      "total": 6178,
-      "passed": 6121,
-      "failed": 0,
-      "errors": 0,
-      "skipped": 57
-    },
     "java21": {
-      "total": 6178,
+      "total": 6177,
       "passed": 6121,
       "failed": 0,
       "errors": 0,
-      "skipped": 57
+      "skipped": 56
     },
     "java25": {
-      "total": 6178,
+      "total": 6177,
       "passed": 6121,
       "failed": 0,
       "errors": 0,
-      "skipped": 57
+      "skipped": 56
     },
     "jcstress": {
       "total": 32,

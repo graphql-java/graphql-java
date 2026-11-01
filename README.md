@@ -4,6 +4,8 @@ Discuss and ask questions in our Discussions: https://github.com/graphql-java/gr
 
 This is a [GraphQL](https://github.com/graphql/graphql-spec) Java implementation.
 
+The current development version requires **Java 17 or later** to run. The Gradle build uses a JDK 25 toolchain.
+
 Latest build in Maven central: https://repo1.maven.org/maven2/com/graphql-java/graphql-java/
 
 [![Build](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml/badge.svg)](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml)
