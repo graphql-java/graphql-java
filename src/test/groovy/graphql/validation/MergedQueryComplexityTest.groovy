@@ -77,6 +77,31 @@ class MergedQueryComplexityTest extends Specification {
                 .any { it.validationErrorType == ValidationErrorType.FieldsConflict }
     }
 
+    def "conflict paths and ordering stay independent across nested siblings"() {
+        given:
+        def conflictSchema = TestUtil.schema('''
+            type Query { node: Node }
+            type Node { name: String nickname: String age: Int child: Node }
+        ''')
+        def document = Parser.parse('''
+            {
+                first: node { same: name same: nickname }
+                second: node { inner: child { same: name same: age } }
+                third: node { same: name same: nickname }
+            }
+        ''')
+
+        expect:
+        new Validator().validateDocument(conflictSchema, document, { rule -> true }, Locale.ENGLISH, limits)*.message == [
+                "Validation error (FieldsConflict) : 'second/inner/same' : returns different types 'String' and 'Int'",
+                "Validation error (FieldsConflict) : 'first/same' : 'name' and 'nickname' are different fields",
+                "Validation error (FieldsConflict) : 'third/same' : 'name' and 'nickname' are different fields",
+        ]
+
+        where:
+        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.NONE]
+    }
+
     def "Good Faith remains independent when general limits and other rules are disabled"() {
         given:
         def predicate = { rule -> rule == OperationValidationRule.GOOD_FAITH_INTROSPECTION }

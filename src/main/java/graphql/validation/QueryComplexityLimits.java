@@ -18,6 +18,7 @@ import org.jspecify.annotations.NullMarked;
  * one group. This is a structural limit, not an estimate of resolver cost or list result sizes.
  * All selections count regardless of {@code @skip} or {@code @include}; validation does not coerce
  * variables or expand selections for each possible runtime object type.
+ * Duplicate selections still require validation work even when they merge to one field.
  * Parser limits independently bound source size, token count and syntactic nesting.
  *
  * <p>By default, validation enforces limits (maxDepth=100, maxFieldsCount=100000).

@@ -1,6 +1,5 @@
 package graphql.validation;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import graphql.Assert;
 import graphql.Directives;
@@ -73,6 +72,7 @@ import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -84,8 +84,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static graphql.collect.ImmutableKit.addToList;
-import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isInput;
 import static graphql.schema.GraphQLTypeUtil.isLeaf;
@@ -275,6 +273,7 @@ import static graphql.validation.ValidationErrorType.UniqueObjectFieldName;
 @NullMarked
 @SuppressWarnings("rawtypes")
 public class OperationValidator implements DocumentVisitor {
+    private static final OperationValidationRule[] VALIDATION_RULES = OperationValidationRule.values();
 
     // --- Infrastructure ---
     private final ValidationContext validationContext;
@@ -391,7 +390,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private static boolean detectAllRulesEnabled(Predicate<OperationValidationRule> predicate) {
-        for (OperationValidationRule rule : OperationValidationRule.values()) {
+        for (OperationValidationRule rule : VALIDATION_RULES) {
             if (!predicate.test(rule)) {
                 return false;
             }
@@ -1377,7 +1376,7 @@ public class OperationValidator implements DocumentVisitor {
             introspectionQueryDetected = true;
         }
         if (generalComplexityEnabled || introspectionQueryDetected) {
-            complexityCounts = new HashMap<>();
+            complexityCounts = new IdentityHashMap<>(fieldMap.size());
         }
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
@@ -1437,46 +1436,54 @@ public class OperationValidator implements DocumentVisitor {
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
         List<Conflict> result = new ArrayList<>();
+        // Both walks restore this path after each field; conflicts capture its string value.
+        List<String> path = new ArrayList<>();
         boolean checkMerging = isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
         if (checkMerging && complexityCounts == null) {
-            sameResponseShapeByName(fieldMap, emptyList(), result);
+            sameResponseShapeByName(fieldMap, path, result);
         }
         if (checkMerging || complexityCounts != null) {
-            sameForCommonParentsByName(fieldMap, emptyList(), result);
+            sameForCommonParentsByName(fieldMap, path, result);
         }
         // Bound the common-parent walk before the other recursive merge checks.
         if (checkMerging && complexityCounts != null) {
-            responseShapeAfterCounting(fieldMap, result);
+            responseShapeAfterCounting(fieldMap, path, result);
         }
         return result;
     }
 
-    private void responseShapeAfterCounting(Map<String, Set<FieldAndType>> fieldMap, List<Conflict> conflicts) {
+    private void responseShapeAfterCounting(Map<String, Set<FieldAndType>> fieldMap, List<String> path, List<Conflict> conflicts) {
         if (!introspectionQueryDetected && !conflicts.isEmpty()) {
             List<Conflict> commonParentConflicts = new ArrayList<>(conflicts);
             conflicts.clear();
-            sameResponseShapeByName(fieldMap, emptyList(), conflicts);
+            sameResponseShapeByName(fieldMap, path, conflicts);
             conflicts.addAll(commonParentConflicts);
             return;
         }
-        sameResponseShapeByName(fieldMap, emptyList(), conflicts);
+        sameResponseShapeByName(fieldMap, path, conflicts);
     }
 
-    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, List<String> currentPath, List<Conflict> conflictsResult) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(entry.getValue(), fields -> new FieldValidationState<>());
             if (!state.markResponseShapeChecked()) {
                 continue;
             }
-            ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
-            Conflict conflict = requireSameOutputTypeShape(newPath, entry.getValue());
-            if (conflict != null) {
-                conflictsResult.add(conflict);
-                continue;
-            }
-            Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(entry.getValue(), state);
-            sameResponseShapeByName(subSelections, newPath, conflictsResult);
+            currentPath.add(entry.getKey());
+            sameResponseShape(entry.getValue(), state, currentPath, conflictsResult);
+            currentPath.remove(currentPath.size() - 1);
         }
+    }
+
+    private void sameResponseShape(Set<FieldAndType> fields, FieldValidationState<FieldAndType> state,
+                                  List<String> path, List<Conflict> conflicts) {
+        Conflict conflict = requireSameOutputTypeShape(path, fields);
+        if (conflict != null) {
+            conflicts.add(conflict);
+            return;
+        }
+        Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fields, state);
+        sameResponseShapeByName(subSelections, path, conflicts);
     }
 
     private Map<String, Set<FieldAndType>> mergeSubSelections(Set<FieldAndType> sameNameFields, FieldValidationState<FieldAndType> state) {
@@ -1505,19 +1512,23 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private @Nullable QueryComplexityCounts sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap,
-                                                                            ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+                                                                      List<String> currentPath, List<Conflict> conflictsResult) {
+        if (fieldMap.isEmpty()) {
+            return null;
+        }
         QueryComplexityCounts counts = complexityCounts == null ? null : new QueryComplexityCounts(complexityLimits, introspectionQueryDetected);
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             List<Set<FieldAndType>> groups = groupByCommonParents(entry.getValue());
-            ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
+            currentPath.add(entry.getKey());
             for (Set<FieldAndType> group : groups) {
-                sameForCommonParentGroup(group, newPath, conflictsResult, counts);
+                sameForCommonParentGroup(group, currentPath, conflictsResult, counts);
             }
+            currentPath.remove(currentPath.size() - 1);
         }
         return counts;
     }
 
-    private void sameForCommonParentGroup(Set<FieldAndType> group, ImmutableList<String> path, List<Conflict> conflictsResult,
+    private void sameForCommonParentGroup(Set<FieldAndType> group, List<String> path, List<Conflict> conflictsResult,
                                           @Nullable QueryComplexityCounts selectionCounts) {
         FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(group, fields -> new FieldValidationState<>());
         if (selectionCounts != null && reuseComplexityCounts(state, path.size() - 1, selectionCounts)) {
@@ -1542,13 +1553,15 @@ public class OperationValidator implements DocumentVisitor {
         Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group, state);
         QueryComplexityCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
         if (groupCounts != null) {
-            groupCounts.addChildren(Assert.assertNotNull(children));
+            if (children != null) {
+                groupCounts.addChildren(children);
+            }
             Assert.assertNotNull(complexityCounts).put(state, groupCounts);
             Assert.assertNotNull(selectionCounts).add(groupCounts);
         }
     }
 
-    private boolean checkCommonParentFields(Set<FieldAndType> fields, ImmutableList<String> path, List<Conflict> conflicts) {
+    private boolean checkCommonParentFields(Set<FieldAndType> fields, List<String> path, List<Conflict> conflicts) {
         Conflict conflict = requireSameNameAndArguments(path, fields);
         if (conflict == null) {
             return true;
@@ -1614,7 +1627,7 @@ public class OperationValidator implements DocumentVisitor {
         return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType;
     }
 
-    private @Nullable Conflict requireSameNameAndArguments(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
+    private @Nullable Conflict requireSameNameAndArguments(List<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -1641,7 +1654,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private String pathToString(ImmutableList<String> path) {
+    private String pathToString(List<String> path) {
         return String.join("/", path);
     }
 
@@ -1670,7 +1683,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private @Nullable Conflict requireSameOutputTypeShape(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
+    private @Nullable Conflict requireSameOutputTypeShape(List<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -1720,7 +1733,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private Conflict mkNotSameTypeError(ImmutableList<String> path, List<Field> fields, @Nullable GraphQLType typeA, @Nullable GraphQLType typeB) {
+    private Conflict mkNotSameTypeError(List<String> path, List<Field> fields, @Nullable GraphQLType typeA, @Nullable GraphQLType typeB) {
         String name1 = typeA != null ? simplePrint(typeA) : "null";
         String name2 = typeB != null ? simplePrint(typeB) : "null";
         String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentReturnTypes", pathToString(path), name1, name2);
