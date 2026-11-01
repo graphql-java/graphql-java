@@ -1564,9 +1564,7 @@ public class OperationValidator implements DocumentVisitor {
         }
         QueryComplexityCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
         if (groupCounts != null) {
-            if (children != null) {
-                groupCounts.addChildren(children);
-            }
+            groupCounts.addChildren(Assert.assertNotNull(children));
             Assert.assertNotNull(complexityCounts).put(state, groupCounts);
             Assert.assertNotNull(selectionCounts).add(groupCounts);
         }
