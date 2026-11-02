@@ -343,7 +343,7 @@ public class OperationValidator implements DocumentVisitor {
     private final FieldCollector fieldCollector = new FieldCollector();
 
     private final QueryComplexityLimits complexityLimits;
-    private final boolean generalComplexityEnabled;
+    private final boolean generalMergedLimitsEnabled;
 
     private final int maxFieldOccurrences;
     private long fieldOccurrences;
@@ -364,15 +364,16 @@ public class OperationValidator implements DocumentVisitor {
     // and caches their combined children under response names `a` and `b`, both selecting `name`.
     private final Map<Set<FieldAndType>, FieldValidationState<FieldAndType>> fieldValidationStates = new HashMap<>();
 
-    // Caches field count, relative depth and restricted coordinates for each common-parent validation set.
+    // Caches merged field count, relative field depth and restricted coordinates for each common-parent validation set.
     // These are sets of fields checked together for matching field names and arguments.
-    // Example: `fields { name } fields { description }` on __Type caches a count of 3 fields,
+    // Example: `fields { name } fields { description }` on __Type caches a count of 3 merged fields,
     // a relative depth of 2, and one occurrence of the restricted coordinate __Type.fields.
+    // Its 4 expanded field occurrences are counted separately by fieldOccurrences.
     // Cached summaries contribute again at each response position where the set occurs.
     // Keys are the shared validation states for those sets, avoiding repeated hashing of their AST nodes.
     // A present key with a null value marks counting in progress, preventing recursion through fragment cycles.
     // This cache is scoped to one operation and is null when neither general nor Good Faith limits are active.
-    private @Nullable Map<FieldValidationState<FieldAndType>, @Nullable QueryComplexityCounts> complexityCounts;
+    private @Nullable Map<FieldValidationState<FieldAndType>, @Nullable MergedFieldComplexityCounts> mergedFieldCounts;
     private boolean introspectionQueryDetected = false;
 
     // --- Track whether we're in a context where fragment spread rules should run ---
@@ -388,7 +389,7 @@ public class OperationValidator implements DocumentVisitor {
         this.rulePredicate = rulePredicate;
         this.allRulesEnabled = detectAllRulesEnabled(rulePredicate);
         this.complexityLimits = validationContext.getQueryComplexityLimits();
-        this.generalComplexityEnabled = complexityLimits.getMaxFieldsCount() != Integer.MAX_VALUE
+        this.generalMergedLimitsEnabled = complexityLimits.getMaxFieldsCount() != Integer.MAX_VALUE
                 || complexityLimits.getMaxDepth() != Integer.MAX_VALUE;
         this.maxFieldOccurrences = complexityLimits.getMaxFieldOccurrences();
         if (isRuleEnabled(OperationValidationRule.NO_FRAGMENT_CYCLES)) {
@@ -966,7 +967,7 @@ public class OperationValidator implements DocumentVisitor {
         currentOperation = operationDefinition;
         fieldOccurrences = 0;
 
-        if (generalComplexityEnabled || isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
+        if (generalMergedLimitsEnabled || isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
                 || isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
             validateOverlappingFieldsCanBeMerged(operationDefinition);
         }
@@ -1050,7 +1051,7 @@ public class OperationValidator implements DocumentVisitor {
         }
 
         introspectionQueryDetected = false;
-        complexityCounts = null;
+        mergedFieldCounts = null;
     }
 
     private void leaveSelectionSet() {
@@ -1428,8 +1429,8 @@ public class OperationValidator implements DocumentVisitor {
         if (isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION) && containsIntrospection(fieldMap, graphQLOutputType)) {
             introspectionQueryDetected = true;
         }
-        if (generalComplexityEnabled || introspectionQueryDetected) {
-            complexityCounts = new IdentityHashMap<>(fieldMap.size());
+        if (generalMergedLimitsEnabled || introspectionQueryDetected) {
+            mergedFieldCounts = new IdentityHashMap<>(fieldMap.size());
         }
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
@@ -1492,14 +1493,14 @@ public class OperationValidator implements DocumentVisitor {
         // Both walks restore this path after each field; conflicts capture its string value.
         List<String> path = new ArrayList<>();
         boolean checkMerging = isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
-        if (checkMerging && complexityCounts == null) {
+        if (checkMerging && mergedFieldCounts == null) {
             sameResponseShapeByName(fieldMap, path, result);
         }
-        if (checkMerging || complexityCounts != null) {
+        if (checkMerging || mergedFieldCounts != null) {
             sameForCommonParentsByName(fieldMap, path, result);
         }
         // Bound the common-parent walk before the other recursive merge checks.
-        if (checkMerging && complexityCounts != null) {
+        if (checkMerging && mergedFieldCounts != null) {
             responseShapeAfterCounting(fieldMap, path, result);
         }
         return result;
@@ -1564,12 +1565,12 @@ public class OperationValidator implements DocumentVisitor {
         return fieldMap == null ? Collections.emptyMap() : fieldMap;
     }
 
-    private @Nullable QueryComplexityCounts sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap,
+    private @Nullable MergedFieldComplexityCounts sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap,
                                                                       List<String> currentPath, List<Conflict> conflictsResult) {
         if (fieldMap.isEmpty()) {
             return null;
         }
-        QueryComplexityCounts counts = complexityCounts == null ? null : new QueryComplexityCounts(complexityLimits, introspectionQueryDetected);
+        MergedFieldComplexityCounts counts = mergedFieldCounts == null ? null : new MergedFieldComplexityCounts(complexityLimits, introspectionQueryDetected);
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             List<Set<FieldAndType>> groups = groupByCommonParents(entry.getValue());
             currentPath.add(entry.getKey());
@@ -1582,9 +1583,9 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void sameForCommonParentGroup(Set<FieldAndType> group, List<String> path, List<Conflict> conflictsResult,
-                                          @Nullable QueryComplexityCounts selectionCounts) {
+                                          @Nullable MergedFieldComplexityCounts selectionCounts) {
         FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(group, fields -> new FieldValidationState<>());
-        if (selectionCounts != null && hasMergedSubSelections(state) && reuseComplexityCounts(state, path.size() - 1, selectionCounts)) {
+        if (selectionCounts != null && hasMergedSubSelections(state) && reuseMergedFieldCounts(state, path.size() - 1, selectionCounts)) {
             return;
         }
         boolean newlyChecked = state.markSameForCommonParentsChecked();
@@ -1604,17 +1605,17 @@ public class OperationValidator implements DocumentVisitor {
             selectionCounts.addLeafField(introspectionCoordinate(group));
             return;
         }
-        QueryComplexityCounts groupCounts = null;
+        MergedFieldComplexityCounts groupCounts = null;
         if (selectionCounts != null) {
-            groupCounts = new QueryComplexityCounts(complexityLimits, introspectionQueryDetected);
+            groupCounts = new MergedFieldComplexityCounts(complexityLimits, introspectionQueryDetected);
             groupCounts.enterField(introspectionCoordinate(group));
             // A null value marks an in-progress group, stopping invalid fragment cycles.
-            Assert.assertNotNull(complexityCounts).put(state, null);
+            Assert.assertNotNull(mergedFieldCounts).put(state, null);
         }
-        QueryComplexityCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
+        MergedFieldComplexityCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
         if (groupCounts != null) {
             groupCounts.addChildren(Assert.assertNotNull(children));
-            Assert.assertNotNull(complexityCounts).put(state, groupCounts);
+            Assert.assertNotNull(mergedFieldCounts).put(state, groupCounts);
             Assert.assertNotNull(selectionCounts).add(groupCounts);
         }
     }
@@ -1633,12 +1634,12 @@ public class OperationValidator implements DocumentVisitor {
         return false;
     }
 
-    private boolean reuseComplexityCounts(FieldValidationState<FieldAndType> state, int parentDepth, QueryComplexityCounts selectionCounts) {
-        Map<FieldValidationState<FieldAndType>, @Nullable QueryComplexityCounts> cache = Assert.assertNotNull(complexityCounts);
+    private boolean reuseMergedFieldCounts(FieldValidationState<FieldAndType> state, int parentDepth, MergedFieldComplexityCounts selectionCounts) {
+        Map<FieldValidationState<FieldAndType>, @Nullable MergedFieldComplexityCounts> cache = Assert.assertNotNull(mergedFieldCounts);
         if (!cache.containsKey(state)) {
             return false;
         }
-        QueryComplexityCounts cached = cache.get(state);
+        MergedFieldComplexityCounts cached = cache.get(state);
         if (cached != null) {
             cached.checkDepth(parentDepth);
             selectionCounts.add(cached);

@@ -8,24 +8,34 @@ import org.jspecify.annotations.Nullable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * Summarizes merged validation fields: their count, relative field depth, and restricted
+ * introspection coordinates. General complexity limits and Good Faith introspection share this summary.
+ * Fields grouped by response name and common parent type count once at each response position;
+ * their merged children also contribute. A cached summary contributes again at each position where it is used.
+ *
+ * <p>For example, {@code { node { name name } }} has two merged fields and a field depth of two.
+ * Its three expanded field occurrences are counted separately by {@link OperationValidator}
+ * for {@link QueryComplexityLimits#getMaxFieldOccurrences()}.
+ */
 @Internal
 @NullMarked
-public final class QueryComplexityCounts {
-    private final int maxFieldsCount;
+public final class MergedFieldComplexityCounts {
+    private final int maxMergedFieldsCount;
     private final int maxDepth;
     private final boolean introspection;
-    private long fieldCount;
+    private long mergedFieldCount;
     private int depth;
     private @Nullable Set<String> coordinates;
 
-    public QueryComplexityCounts(QueryComplexityLimits limits, boolean introspection) {
+    public MergedFieldComplexityCounts(QueryComplexityLimits limits, boolean introspection) {
         this.introspection = introspection;
-        maxFieldsCount = introspection ? Math.min(limits.getMaxFieldsCount(), GoodFaithIntrospection.GOOD_FAITH_MAX_FIELDS_COUNT) : limits.getMaxFieldsCount();
+        maxMergedFieldsCount = introspection ? Math.min(limits.getMaxFieldsCount(), GoodFaithIntrospection.GOOD_FAITH_MAX_FIELDS_COUNT) : limits.getMaxFieldsCount();
         maxDepth = introspection ? Math.min(limits.getMaxDepth(), GoodFaithIntrospection.GOOD_FAITH_MAX_DEPTH_COUNT) : limits.getMaxDepth();
     }
 
     public void enterField(@Nullable String coordinate) {
-        fieldCount = 1;
+        mergedFieldCount = 1;
         depth = 1;
         if (coordinate != null) {
             coordinates = new LinkedHashSet<>();
@@ -38,7 +48,7 @@ public final class QueryComplexityCounts {
     }
 
     public void addLeafField(@Nullable String coordinate) {
-        fieldCount++;
+        mergedFieldCount++;
         depth = Math.max(depth, 1);
         if (coordinate != null) {
             addCoordinate(coordinate);
@@ -46,21 +56,21 @@ public final class QueryComplexityCounts {
         checkLimits();
     }
 
-    public void add(QueryComplexityCounts other) {
-        fieldCount += other.fieldCount;
+    public void add(MergedFieldComplexityCounts other) {
+        mergedFieldCount += other.mergedFieldCount;
         depth = Math.max(depth, other.depth);
         addCoordinates(other);
         checkLimits();
     }
 
-    public void addChildren(QueryComplexityCounts children) {
-        fieldCount += children.fieldCount;
+    public void addChildren(MergedFieldComplexityCounts children) {
+        mergedFieldCount += children.mergedFieldCount;
         depth = children.depth + 1;
         addCoordinates(children);
         checkLimits();
     }
 
-    private void addCoordinates(QueryComplexityCounts other) {
+    private void addCoordinates(MergedFieldComplexityCounts other) {
         if (other.coordinates == null) {
             return;
         }
@@ -83,11 +93,11 @@ public final class QueryComplexityCounts {
     }
 
     private void checkLimits() {
-        if (fieldCount > maxFieldsCount) {
+        if (mergedFieldCount > maxMergedFieldsCount) {
             if (introspection) {
-                throw GoodFaithIntrospectionExceeded.tooBigOperation("Query has " + fieldCount + " fields which exceeds maximum allowed " + maxFieldsCount);
+                throw GoodFaithIntrospectionExceeded.tooBigOperation("Query has " + mergedFieldCount + " fields which exceeds maximum allowed " + maxMergedFieldsCount);
             }
-            throw new QueryComplexityLimitsExceeded(ValidationErrorType.MaxQueryFieldsExceeded, maxFieldsCount, fieldCount);
+            throw new QueryComplexityLimitsExceeded(ValidationErrorType.MaxQueryFieldsExceeded, maxMergedFieldsCount, mergedFieldCount);
         }
         checkDepth(0);
     }
