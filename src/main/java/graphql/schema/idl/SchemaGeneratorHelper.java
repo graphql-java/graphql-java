@@ -960,21 +960,24 @@ public class SchemaGeneratorHelper {
 
     void buildSchemaDirectivesAndExtensions(BuildContext buildCtx, GraphQLSchema.Builder schemaBuilder) {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
-        List<Directive> schemaDirectiveList = SchemaExtensionsChecker.gatherSchemaDirectives(typeRegistry);
-        Set<GraphQLDirective> runtimeDirectives = buildCtx.getDirectives();
-        Pair<List<GraphQLDirective>, List<GraphQLAppliedDirective>> appliedDirectives = buildAppliedDirectives(
-                buildCtx,
-                inputTypeFactory(buildCtx),
-                schemaDirectiveList,
-                emptyList(),
-                DirectiveLocation.SCHEMA,
-                runtimeDirectives,
-                buildCtx.getComparatorRegistry());
+        Pair<List<GraphQLDirective>, List<GraphQLAppliedDirective>> appliedDirectives = buildSchemaAppliedDirectives(buildCtx);
         schemaBuilder.withSchemaDirectives(appliedDirectives.first);
         schemaBuilder.withSchemaAppliedDirectives(appliedDirectives.second);
 
         schemaBuilder.definition(buildCtx.isCaptureAstDefinitions() ? typeRegistry.schemaDefinition().orElse(null) : null);
         schemaBuilder.extensionDefinitions(buildCtx.isCaptureAstDefinitions() ? typeRegistry.getSchemaExtensionDefinitions() : emptyList());
+    }
+
+    Pair<List<GraphQLDirective>, List<GraphQLAppliedDirective>> buildSchemaAppliedDirectives(BuildContext buildCtx) {
+        List<Directive> schemaDirectiveList = SchemaExtensionsChecker.gatherSchemaDirectives(buildCtx.getTypeRegistry());
+        return buildAppliedDirectives(
+                buildCtx,
+                inputTypeFactory(buildCtx),
+                schemaDirectiveList,
+                emptyList(),
+                DirectiveLocation.SCHEMA,
+                buildCtx.getDirectives(),
+                buildCtx.getComparatorRegistry());
     }
 
     List<InputObjectTypeExtensionDefinition> inputObjectTypeExtensions(InputObjectTypeDefinition typeDefinition, BuildContext buildCtx) {
