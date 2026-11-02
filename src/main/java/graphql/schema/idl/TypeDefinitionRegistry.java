@@ -863,10 +863,6 @@ public class TypeDefinitionRegistry implements Serializable {
      * @return true if maybeSubType is covariant or equal to superType
      */
     public boolean isSubTypeOf(Type maybeSubType, Type superType) {
-        if (hasSameOuterWrappingAndName(maybeSubType, superType)) {
-            return true;
-        }
-
         // If superType is non-null, maybeSubType must also be non-null.
         if (superType instanceof NonNullType) {
             if (maybeSubType instanceof NonNullType) {
@@ -891,6 +887,11 @@ public class TypeDefinitionRegistry implements Serializable {
             return false;
         }
 
+        // Equivalent type is a valid subtype
+        if (typeName(maybeSubType).equals(typeName(superType))) {
+            return true;
+        }
+
         // If superType type is an abstract type, maybeSubType type may be a currently
         // possible object type.
         TypeDefinition<?> superTypeDef = getTypeOrNull(superType);
@@ -902,13 +903,6 @@ public class TypeDefinitionRegistry implements Serializable {
             return false;
         }
         return isPossibleTypeDef(superTypeDef, maybeSubTypeDef);
-    }
-
-    // mirrors TypeInfo.equals, which only compares the outermost wrapper and the innermost name
-    private static boolean hasSameOuterWrappingAndName(Type a, Type b) {
-        return (a instanceof NonNullType) == (b instanceof NonNullType)
-                && (a instanceof ListType) == (b instanceof ListType)
-                && TypeInfo.getTypeName(a).getName().equals(TypeInfo.getTypeName(b).getName());
     }
 
 }

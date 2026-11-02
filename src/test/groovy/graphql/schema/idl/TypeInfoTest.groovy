@@ -114,6 +114,11 @@ class TypeInfoTest extends Specification {
 
         assertNotEqualsAndHashCode(new NonNullType(new ListType(new TypeName("A"))), new ListType(new TypeName("A")))
         assertNotEqualsAndHashCode(new NonNullType(new ListType(new TypeName("A"))), new NonNullType(new ListType(new TypeName("B"))))
+
+        assertEqualsAndHashCode(new ListType(new NonNullType(new TypeName("A"))), new ListType(new NonNullType(new TypeName("A"))))
+        assertNotEqualsAndHashCode(new ListType(new TypeName("A")), new ListType(new NonNullType(new TypeName("A"))))
+        assertNotEqualsAndHashCode(new ListType(new ListType(new TypeName("A"))), new ListType(new TypeName("A")))
+        assertNotEqualsAndHashCode(new NonNullType(new ListType(new TypeName("A"))), new NonNullType(new ListType(new NonNullType(new TypeName("A")))))
     }
 
 
