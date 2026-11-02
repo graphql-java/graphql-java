@@ -50,15 +50,31 @@ public class GeneralQueryComplexityBenchmark {
     public void setup() {
         schema = SchemaGenerator.createdMockedSchema(schemaDefinition());
         document = Parser.parse(query());
-        complexityLimits = "disabled".equals(limits) ? QueryComplexityLimits.NONE : QueryComplexityLimits.DEFAULT;
+        complexityLimits = configuredLimits();
         List<ValidationError> errors = validate();
-        // This document has a small merged count but an exponentially larger AST expansion.
-        if ("duplicateFanout".equals(scenario)) {
-            assertTrue(errors.stream().allMatch(error -> error.getValidationErrorType() == ValidationErrorType.MaxQueryFieldsExceeded));
+        if ("duplicateFanout".equals(scenario) || "sharedLeafGroup".equals(scenario)) {
+            int occurrences = "duplicateFanout".equals(scenario) ? 262_145 : 100_200;
+            boolean rejected = complexityLimits.getMaxFieldOccurrences() < occurrences;
+            assertTrue(errors.isEmpty() != rejected, () -> scenario + ": " + errors);
+            assertTrue(errors.stream().allMatch(error -> error.getValidationErrorType() == ValidationErrorType.MaxQueryFieldOccurrencesExceeded));
             return;
         }
         boolean rejected = "invalidFields".equals(scenario) || ("aliasFanout".equals(scenario) && !"disabled".equals(limits));
         assertTrue(errors.isEmpty() != rejected, () -> scenario + ": " + errors);
+    }
+
+    private QueryComplexityLimits configuredLimits() {
+        if ("disabled".equals(limits)) {
+            return QueryComplexityLimits.NONE;
+        }
+        if ("withoutOccurrences".equals(limits)) {
+            return QueryComplexityLimits.newLimits().maxDepth(100).maxFieldsCount(10_000).build();
+        }
+        if ("highOccurrences".equals(limits)) {
+            return QueryComplexityLimits.newLimits().maxDepth(100).maxFieldsCount(10_000)
+                    .maxFieldOccurrences(Integer.MAX_VALUE - 1).build();
+        }
+        return QueryComplexityLimits.DEFAULT;
     }
 
     private String schemaDefinition() {

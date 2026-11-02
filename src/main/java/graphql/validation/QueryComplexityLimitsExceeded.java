@@ -4,7 +4,7 @@ import graphql.Internal;
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Exception thrown when query complexity limits (depth or field count) are exceeded during validation.
+ * Exception thrown when depth, merged field count or field occurrence limits are exceeded during validation.
  * This exception is caught by the Validator and converted to a ValidationError.
  */
 @Internal

@@ -157,7 +157,8 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
     def "default limits are applied automatically"() {
         expect:
         QueryComplexityLimits.DEFAULT.getMaxDepth() == 100
-        QueryComplexityLimits.DEFAULT.getMaxFieldsCount() == 100_000
+        QueryComplexityLimits.DEFAULT.getMaxFieldsCount() == 10_000
+        QueryComplexityLimits.DEFAULT.getMaxFieldOccurrences() == 100_000
         QueryComplexityLimits.getDefaultLimits() == QueryComplexityLimits.DEFAULT
     }
 
@@ -416,6 +417,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         expect:
         QueryComplexityLimits.NONE.getMaxDepth() == Integer.MAX_VALUE
         QueryComplexityLimits.NONE.getMaxFieldsCount() == Integer.MAX_VALUE
+        QueryComplexityLimits.NONE.getMaxFieldOccurrences() == Integer.MAX_VALUE
     }
 
     def "builder validates positive values"() {

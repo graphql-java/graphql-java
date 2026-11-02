@@ -2,6 +2,7 @@ package graphql.validation;
 
 import graphql.PublicApi;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Configuration class for query complexity limits enforced during validation.
@@ -21,12 +22,21 @@ import org.jspecify.annotations.NullMarked;
  * Duplicate selections still require validation work even when they merge to one field.
  * Parser limits independently bound source size, token count and syntactic nesting.
  *
- * <p>By default, validation enforces limits (maxDepth=100, maxFieldsCount=100000).
+ * <p>Field occurrences count every field again at each fragment spread, without merging duplicate
+ * selections. Fragment spreads and inline fragments do not themselves count as fields.
+ * For example, {@code { node { name name } }} has three field occurrences and two merged fields.
+ * Occurrences are limited separately for each operation, regardless of directives or runtime types.
+ * Complexity limits are enforced independently of the validation-rule predicate.
+ *
+ * <p>By default, validation enforces limits (maxDepth=100, maxFieldsCount=10000,
+ * maxFieldOccurrences=100000). Explicitly built limits replace these defaults;
+ * unspecified builder limits are unlimited.
  * To customize limits per-request, put a custom instance in the GraphQLContext:
  * <pre>{@code
  * QueryComplexityLimits limits = QueryComplexityLimits.newLimits()
  *     .maxDepth(10)
  *     .maxFieldsCount(100)
+ *     .maxFieldOccurrences(100_000)
  *     .build();
  *
  * ExecutionInput executionInput = ExecutionInput.newExecutionInput()
@@ -57,7 +67,12 @@ public class QueryComplexityLimits {
     /**
      * Default maximum field count.
      */
-    public static final int DEFAULT_MAX_FIELDS_COUNT = 100_000;
+    public static final int DEFAULT_MAX_FIELDS_COUNT = 10_000;
+
+    /**
+     * Default maximum number of field occurrences after fragment expansion.
+     */
+    public static final int DEFAULT_MAX_FIELD_OCCURRENCES = 100_000;
 
     /**
      * The key used to store QueryComplexityLimits in GraphQLContext.
@@ -65,14 +80,14 @@ public class QueryComplexityLimits {
     public static final String KEY = "graphql.validation.QueryComplexityLimits";
 
     /**
-     * Standard limits (maxDepth=100, maxFieldsCount=100000).
+     * Standard limits (maxDepth=100, maxFieldsCount=10000, maxFieldOccurrences=100000).
      */
-    public static final QueryComplexityLimits DEFAULT = new QueryComplexityLimits(DEFAULT_MAX_DEPTH, DEFAULT_MAX_FIELDS_COUNT);
+    public static final QueryComplexityLimits DEFAULT = new QueryComplexityLimits(DEFAULT_MAX_DEPTH, DEFAULT_MAX_FIELDS_COUNT, DEFAULT_MAX_FIELD_OCCURRENCES);
 
     /**
      * No limits (all limits set to Integer.MAX_VALUE). Use this to disable complexity checking.
      */
-    public static final QueryComplexityLimits NONE = new QueryComplexityLimits(Integer.MAX_VALUE, Integer.MAX_VALUE);
+    public static final QueryComplexityLimits NONE = new QueryComplexityLimits(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
 
     private static volatile QueryComplexityLimits defaultLimits = DEFAULT;
 
@@ -97,10 +112,12 @@ public class QueryComplexityLimits {
 
     private final int maxDepth;
     private final int maxFieldsCount;
+    private final int maxFieldOccurrences;
 
-    private QueryComplexityLimits(int maxDepth, int maxFieldsCount) {
+    private QueryComplexityLimits(int maxDepth, int maxFieldsCount, int maxFieldOccurrences) {
         this.maxDepth = maxDepth;
         this.maxFieldsCount = maxFieldsCount;
+        this.maxFieldOccurrences = maxFieldOccurrences;
     }
 
     /**
@@ -118,7 +135,15 @@ public class QueryComplexityLimits {
     }
 
     /**
-     * @return a new builder for creating QueryComplexityLimits
+     * @return the maximum field occurrences in each operation after fragment expansion,
+     * or {@link Integer#MAX_VALUE} when occurrence counting is disabled
+     */
+    public int getMaxFieldOccurrences() {
+        return maxFieldOccurrences;
+    }
+
+    /**
+     * @return a new builder with all limits initially unlimited
      */
     public static Builder newLimits() {
         return new Builder();
@@ -129,6 +154,7 @@ public class QueryComplexityLimits {
         return "QueryComplexityLimits{" +
                 "maxDepth=" + maxDepth +
                 ", maxFieldsCount=" + maxFieldsCount +
+                ", maxFieldOccurrences=" + maxFieldOccurrences +
                 '}';
     }
 
@@ -136,10 +162,11 @@ public class QueryComplexityLimits {
      * Builder for QueryComplexityLimits.
      */
     @PublicApi
-    @NullMarked
+    @NullUnmarked
     public static class Builder {
         private int maxDepth = Integer.MAX_VALUE;
         private int maxFieldsCount = Integer.MAX_VALUE;
+        private int maxFieldOccurrences = Integer.MAX_VALUE;
 
         private Builder() {
         }
@@ -175,10 +202,27 @@ public class QueryComplexityLimits {
         }
 
         /**
+         * Sets the maximum number of field occurrences in each operation. A fragment's fields
+         * contribute at every spread, even when their response names merge. All selections count
+         * regardless of {@code @skip} or {@code @include}. Fragment definitions that are not
+         * referenced by an operation do not contribute to its count.
+         *
+         * @param maxFieldOccurrences the positive limit, or {@link Integer#MAX_VALUE} to disable it
+         * @return this builder
+         */
+        public Builder maxFieldOccurrences(int maxFieldOccurrences) {
+            if (maxFieldOccurrences <= 0) {
+                throw new IllegalArgumentException("maxFieldOccurrences must be positive");
+            }
+            this.maxFieldOccurrences = maxFieldOccurrences;
+            return this;
+        }
+
+        /**
          * @return a new QueryComplexityLimits instance
          */
         public QueryComplexityLimits build() {
-            return new QueryComplexityLimits(maxDepth, maxFieldsCount);
+            return new QueryComplexityLimits(maxDepth, maxFieldsCount, maxFieldOccurrences);
         }
     }
 }

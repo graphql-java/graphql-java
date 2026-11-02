@@ -109,6 +109,7 @@ public class GoodFaithIntrospection {
         return QueryComplexityLimits.newLimits()
                 .maxFieldsCount(maxFields)
                 .maxDepth(maxDepth)
+                .maxFieldOccurrences(existing.getMaxFieldOccurrences())
                 .build();
     }
 

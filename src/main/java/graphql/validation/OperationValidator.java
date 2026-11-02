@@ -345,6 +345,13 @@ public class OperationValidator implements DocumentVisitor {
     private final QueryComplexityLimits complexityLimits;
     private final boolean generalComplexityEnabled;
 
+    private final int maxFieldOccurrences;
+    private long fieldOccurrences;
+    // Completed fragment totals are shared across operations; each spread adds its total again.
+    private @Nullable Map<String, Long> fragmentFieldOccurrences;
+    // Changes when a traversal encounters a cycle or missing fragment, whose total is incomplete.
+    private int incompleteFragmentOccurrences;
+
     // --- State: Merged selections and complexity limits ---
     // Caches merge-check progress and merged child selections for the whole document.
     // All FieldAndType entries in a key set have the same response name
@@ -383,6 +390,7 @@ public class OperationValidator implements DocumentVisitor {
         this.complexityLimits = validationContext.getQueryComplexityLimits();
         this.generalComplexityEnabled = complexityLimits.getMaxFieldsCount() != Integer.MAX_VALUE
                 || complexityLimits.getMaxDepth() != Integer.MAX_VALUE;
+        this.maxFieldOccurrences = complexityLimits.getMaxFieldOccurrences();
         if (isRuleEnabled(OperationValidationRule.NO_FRAGMENT_CYCLES)) {
             prepareFragmentSpreadsMap();
             findFragmentCycles();
@@ -806,6 +814,9 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkField(Field field) {
+        if (maxFieldOccurrences != Integer.MAX_VALUE && currentOperation != null) {
+            addFieldOccurrences(1);
+        }
         if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.FIELDS_ON_CORRECT_TYPE)) {
                 validateFieldsOnCorrectType(field);
@@ -880,16 +891,53 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
 
-        if (currentOperation == null || !visitedFragmentSpreads.add(node.getName())) {
+        if (currentOperation == null) {
+            return;
+        }
+        if (!visitedFragmentSpreads.add(node.getName())) {
+            addRepeatedFragmentOccurrences(node.getName());
             return;
         }
         FragmentDefinition fragment = validationContext.getFragment(node.getName());
         if (fragment == null) {
+            incompleteFragmentOccurrences++;
             return;
         }
+        long occurrencesBefore = fieldOccurrences;
+        int incompleteBefore = incompleteFragmentOccurrences;
         fragmentRetraversalDepth++;
         new LanguageTraversal(ancestors).traverse(fragment, this);
         fragmentRetraversalDepth--;
+        if (maxFieldOccurrences != Integer.MAX_VALUE && incompleteBefore == incompleteFragmentOccurrences) {
+            cacheFragmentOccurrences(node.getName(), fieldOccurrences - occurrencesBefore);
+        }
+    }
+
+    private void addFieldOccurrences(long occurrences) {
+        fieldOccurrences += occurrences;
+        if (fieldOccurrences > maxFieldOccurrences) {
+            throw new QueryComplexityLimitsExceeded(ValidationErrorType.MaxQueryFieldOccurrencesExceeded,
+                    maxFieldOccurrences, fieldOccurrences);
+        }
+    }
+
+    private void addRepeatedFragmentOccurrences(String fragmentName) {
+        if (maxFieldOccurrences == Integer.MAX_VALUE) {
+            return;
+        }
+        Long occurrences = fragmentFieldOccurrences == null ? null : fragmentFieldOccurrences.get(fragmentName);
+        if (occurrences == null) {
+            incompleteFragmentOccurrences++;
+            return;
+        }
+        addFieldOccurrences(occurrences);
+    }
+
+    private void cacheFragmentOccurrences(String fragmentName, long occurrences) {
+        if (fragmentFieldOccurrences == null) {
+            fragmentFieldOccurrences = new HashMap<>();
+        }
+        fragmentFieldOccurrences.putIfAbsent(fragmentName, occurrences);
     }
 
     private void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
@@ -916,6 +964,7 @@ public class OperationValidator implements DocumentVisitor {
 
     private void checkOperationDefinition(OperationDefinition operationDefinition) {
         currentOperation = operationDefinition;
+        fieldOccurrences = 0;
 
         if (generalComplexityEnabled || isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
                 || isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {

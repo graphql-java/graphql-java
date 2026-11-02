@@ -352,7 +352,7 @@ class GoodFaithMergedFieldsTest extends Specification {
 
     def "public limit helper preserves tighter caller limits"() {
         given:
-        def requested = QueryComplexityLimits.newLimits().maxFieldsCount(fields).maxDepth(depth).build()
+        def requested = QueryComplexityLimits.newLimits().maxFieldsCount(fields).maxDepth(depth).maxFieldOccurrences(1234).build()
 
         when:
         def bounded = GoodFaithIntrospection.goodFaithLimits(requested)
@@ -360,6 +360,7 @@ class GoodFaithMergedFieldsTest extends Specification {
         then:
         bounded.maxFieldsCount == expectedFields
         bounded.maxDepth == expectedDepth
+        bounded.maxFieldOccurrences == 1234
         requested.maxFieldsCount == fields
         requested.maxDepth == depth
 
