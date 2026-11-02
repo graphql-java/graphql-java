@@ -389,7 +389,7 @@ public class OperationValidator implements DocumentVisitor {
         this.rulePredicate = rulePredicate;
         this.allRulesEnabled = detectAllRulesEnabled(rulePredicate);
         this.complexityLimits = validationContext.getQueryComplexityLimits();
-        this.generalMergedLimitsEnabled = complexityLimits.getMaxFieldsCount() != Integer.MAX_VALUE
+        this.generalMergedLimitsEnabled = complexityLimits.getMaxMergedFieldCount() != Integer.MAX_VALUE
                 || complexityLimits.getMaxDepth() != Integer.MAX_VALUE;
         this.maxFieldOccurrences = complexityLimits.getMaxFieldOccurrences();
         if (isRuleEnabled(OperationValidationRule.NO_FRAGMENT_CYCLES)) {

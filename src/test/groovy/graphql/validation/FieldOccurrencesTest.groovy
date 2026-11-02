@@ -60,7 +60,7 @@ class FieldOccurrencesTest extends Specification {
         expect:
         validateWithLimits("{ $roots } $fragment", QueryComplexityLimits.DEFAULT).empty
         validateWithLimits("{ $roots name } $fragment", QueryComplexityLimits.DEFAULT)*.validationErrorType ==
-                [ValidationErrorType.MaxQueryFieldsExceeded]
+                [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
     }
 
     def "cached fragment totals and running totals are independent across operations"() {
@@ -145,7 +145,7 @@ class FieldOccurrencesTest extends Specification {
     def "the exact benchmark document is rejected by default and can disable only occurrence counting"() {
         given:
         def query = doublingFragments(25)
-        def mergedOnly = QueryComplexityLimits.newLimits().maxFieldsCount(2).maxDepth(2)
+        def mergedOnly = QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxDepth(2)
                 .maxFieldOccurrences(Integer.MAX_VALUE).build()
         def occurrenceOnly = QueryComplexityLimits.newLimits().maxFieldOccurrences(100_000).build()
 
@@ -180,7 +180,7 @@ class FieldOccurrencesTest extends Specification {
         def depthOnly = QueryComplexityLimits.newLimits().maxDepth(10).build()
 
         expect:
-        empty.maxFieldsCount == Integer.MAX_VALUE
+        empty.maxMergedFieldCount == Integer.MAX_VALUE
         empty.maxDepth == Integer.MAX_VALUE
         empty.maxFieldOccurrences == Integer.MAX_VALUE
         depthOnly.maxFieldOccurrences == Integer.MAX_VALUE

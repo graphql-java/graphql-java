@@ -5,12 +5,7 @@ import graphql.parser.Parser
 
 class QueryComplexityLimitsTest extends SpecValidationBase {
 
-    // ==================== ENO Parity Tests ====================
-    // These tests verify that our complexity tracking matches ExecutableNormalizedOperation (ENO)
-
-    def "ENO parity - depth and field count match ENO calculation"() {
-        // This test mirrors ExecutableNormalizedOperationFactoryTest."can capture depth and field count"
-        // ENO reports: depth=7, fieldCount=8
+    def "nested object selections have mergedFieldCount 8 and depth 7"() {
         def schema = TestUtil.schema("""
             type Query {
                 foo: Foo
@@ -28,29 +23,28 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         def query = "{ foo { bar { foo { bar { foo { stop bar { stop }}}}}}}"
         def document = new Parser().parseDocument(query)
 
-        when: "we set limits that would fail if counts don't match ENO"
-        // ENO says fieldCount=8, so limit of 7 should fail
-        def limitsFieldCount = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(7)
+        when: "the mergedFieldCount limit is below the query's count"
+        def limitsMergedFieldCount = QueryComplexityLimits.newLimits()
+                .maxMergedFieldCount(7)
                 .build()
-        def errorsFieldCount = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limitsFieldCount)
+        def errorsMergedFieldCount = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limitsMergedFieldCount)
 
-        then: "field count of 8 exceeds limit of 7"
-        errorsFieldCount.size() == 1
-        errorsFieldCount[0].validationErrorType == ValidationErrorType.MaxQueryFieldsExceeded
-        errorsFieldCount[0].message.contains("8")
+        then: "mergedFieldCount of 8 exceeds limit of 7"
+        errorsMergedFieldCount.size() == 1
+        errorsMergedFieldCount[0].validationErrorType == ValidationErrorType.MaxQueryMergedFieldCountExceeded
+        errorsMergedFieldCount[0].message.contains("8")
 
-        when: "we set limits that match ENO exactly"
+        when: "the mergedFieldCount and depth limits match the query exactly"
         def limitsExact = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(8)
+                .maxMergedFieldCount(8)
                 .maxDepth(7)
                 .build()
         def errorsExact = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limitsExact)
 
-        then: "validation passes with exact ENO counts"
+        then: "validation passes at both boundaries"
         errorsExact.isEmpty()
 
-        when: "depth limit of 6 should fail (ENO says depth=7)"
+        when: "the depth limit is below the query's depth"
         def limitsDepth = QueryComplexityLimits.newLimits()
                 .maxDepth(6)
                 .build()
@@ -62,11 +56,8 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         errorsDepth[0].message.contains("7")
     }
 
-    def "ENO parity - fragment spread counts fields at each site"() {
-        // This test mirrors ExecutableNormalizedOperationFactoryTest."query with fragment definition"
-        // Query: {foo { ...fooData moreFoos { ...fooData }}} fragment fooData on Foo { subFoo }
-        // ENO output: ['Query.foo', 'Foo.subFoo', 'Foo.moreFoos', 'Foo.subFoo']
-        // So subFoo is counted TWICE (once per spread) = 4 total fields
+    def "fragment selections contribute to mergedFieldCount at distinct response positions"() {
+        // subFoo contributes at foo/subFoo and foo/moreFoos/subFoo, giving mergedFieldCount=4.
         def schema = TestUtil.schema("""
             type Query {
                 foo: Foo
@@ -80,20 +71,20 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         def query = "{foo { ...fooData moreFoos { ...fooData }}} fragment fooData on Foo { subFoo }"
         def document = new Parser().parseDocument(query)
 
-        when: "limit of 3 should fail (ENO counts 4 fields)"
+        when: "mergedFieldCount of 4 exceeds the limit of 3"
         def limits = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(3)
+                .maxMergedFieldCount(3)
                 .build()
         def errors = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limits)
 
         then:
         errors.size() == 1
-        errors[0].validationErrorType == ValidationErrorType.MaxQueryFieldsExceeded
+        errors[0].validationErrorType == ValidationErrorType.MaxQueryMergedFieldCountExceeded
         errors[0].message.contains("4")  // foo + subFoo + moreFoos + subFoo = 4
 
         when: "limit of 4 should pass"
         def limitsPass = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(4)
+                .maxMergedFieldCount(4)
                 .build()
         def errorsPass = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limitsPass)
 
@@ -101,9 +92,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         errorsPass.isEmpty()
     }
 
-    def "ENO parity - deeply nested fragments multiply field counts"() {
-        // Similar to ExecutableNormalizedOperationFactoryTest."factory has a default max node count"
-        // Each fragment spreads 3 times, creating exponential growth
+    def "aliases keep fragment selections separate in mergedFieldCount"() {
         def schema = TestUtil.schema("""
             type Query {
                 foo: Foo
@@ -114,9 +103,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """)
 
-        // F1 spreads F2 three times, F2 has just 'name'
-        // F1 contributes: 3 * F2's fields = 3 * 1 = 3 fields
-        // Query: foo + F1's fields = 1 + 3 = 4 fields
+        // Each alias contributes a foo and a name; the root foo adds one, giving mergedFieldCount=7.
         def query = """
             { foo { ...F1 }}
             fragment F1 on Foo {
@@ -131,20 +118,19 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         def document = new Parser().parseDocument(query)
 
         when:
-        // foo (1) + a:foo (1) + b:foo (1) + c:foo (1) + name*3 (3) = 7 fields
         def limits = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(6)
+                .maxMergedFieldCount(6)
                 .build()
         def errors = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limits)
 
         then:
         errors.size() == 1
-        errors[0].validationErrorType == ValidationErrorType.MaxQueryFieldsExceeded
+        errors[0].validationErrorType == ValidationErrorType.MaxQueryMergedFieldCountExceeded
         errors[0].message.contains("7")
 
         when: "limit of 7 should pass"
         def limitsPass = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(7)
+                .maxMergedFieldCount(7)
                 .build()
         def errorsPass = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limitsPass)
 
@@ -152,12 +138,10 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         errorsPass.isEmpty()
     }
 
-    // ==================== Original Tests ====================
-
     def "default limits are applied automatically"() {
         expect:
         QueryComplexityLimits.DEFAULT.getMaxDepth() == 100
-        QueryComplexityLimits.DEFAULT.getMaxFieldsCount() == 10_000
+        QueryComplexityLimits.DEFAULT.getMaxMergedFieldCount() == 10_000
         QueryComplexityLimits.DEFAULT.getMaxFieldOccurrences() == 100_000
         QueryComplexityLimits.getDefaultLimits() == QueryComplexityLimits.DEFAULT
     }
@@ -167,7 +151,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         def originalDefault = QueryComplexityLimits.getDefaultLimits()
 
         when: "we set custom default limits"
-        def customLimits = QueryComplexityLimits.newLimits().maxDepth(5).maxFieldsCount(10).build()
+        def customLimits = QueryComplexityLimits.newLimits().maxDepth(5).maxMergedFieldCount(10).build()
         QueryComplexityLimits.setDefaultLimits(customLimits)
 
         then:
@@ -208,8 +192,6 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             type B { c: C }
             type C { d: String }
         """)
-        // This query has depth 4, which exceeds default of 50? No, 4 < 50. Let me create a deeper one.
-        // Actually let's just verify NONE works by setting a very low custom limit first, then NONE
         def query = "{ a { b { c { d }}}}"
         def document = new Parser().parseDocument(query)
 
@@ -220,7 +202,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         errors.isEmpty()
     }
 
-    def "field count limit is enforced"() {
+    def "mergedFieldCount limit is enforced"() {
         def query = """
             query {
                 dog {
@@ -232,7 +214,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         """
         when:
         def limits = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(3)
+                .maxMergedFieldCount(3)
                 .build()
         def document = new Parser().parseDocument(query)
         def validationErrors = new Validator().validateDocument(
@@ -240,7 +222,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
 
         then:
         validationErrors.size() == 1
-        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryFieldsExceeded
+        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryMergedFieldCountExceeded
         validationErrors[0].message.contains("4")  // actual
         validationErrors[0].message.contains("3")  // limit
     }
@@ -270,9 +252,8 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         validationErrors[0].message.contains("2")  // limit
     }
 
-    def "fragment fields are counted at each spread site"() {
-        // Fragment F has 2 fields (name, nickname)
-        // Query has: dog1, dog2, dog3 = 3 fields + 3 spreads * 2 fields = 9 total fields
+    def "fragment selections contribute to mergedFieldCount under each alias"() {
+        // Three dog aliases each contribute a dog, name and nickname, giving mergedFieldCount=9.
         def query = """
             fragment F on Dog { name nickname }
             query {
@@ -283,7 +264,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         """
         when:
         def limits = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(8)
+                .maxMergedFieldCount(8)
                 .build()
         def document = new Parser().parseDocument(query)
         def validationErrors = new Validator().validateDocument(
@@ -291,7 +272,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
 
         then:
         validationErrors.size() == 1
-        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryFieldsExceeded
+        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryMergedFieldCountExceeded
         validationErrors[0].message.contains("9")  // actual
         validationErrors[0].message.contains("8")  // limit
     }
@@ -318,8 +299,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
     }
 
     def "nested fragments are handled correctly"() {
-        // Fragment A spreads fragment B, each has 1 field
-        // Total: dog (1) + A's name (1) + B's nickname (1) = 3 fields
+        // dog, A's name and B's nickname give mergedFieldCount=3.
         def query = """
             fragment A on Dog { name ...B }
             fragment B on Dog { nickname }
@@ -329,7 +309,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         """
         when:
         def limits = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(2)
+                .maxMergedFieldCount(2)
                 .build()
         def document = new Parser().parseDocument(query)
         def validationErrors = new Validator().validateDocument(
@@ -337,7 +317,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
 
         then:
         validationErrors.size() == 1
-        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryFieldsExceeded
+        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryMergedFieldCountExceeded
     }
 
     def "multiple operations each have separate limits"() {
@@ -352,19 +332,19 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         """
         when:
         def limits = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(3)
+                .maxMergedFieldCount(3)
                 .build()
         def document = new Parser().parseDocument(query)
         def validationErrors = new Validator().validateDocument(
                 SpecValidationSchema.specValidationSchema, document, { r -> true }, Locale.ENGLISH, limits)
 
         then:
-        // Second operation has 4 fields (dog + 3 scalar fields), which exceeds limit of 3
+        // The second operation has mergedFieldCount=4 (dog + 3 scalar fields), exceeding the limit of 3.
         validationErrors.size() == 1
-        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryFieldsExceeded
+        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryMergedFieldCountExceeded
     }
 
-    def "inline fragments count their fields"() {
+    def "inline fragment selections contribute to mergedFieldCount"() {
         def query = """
             query {
                 dog {
@@ -377,16 +357,16 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         """
         when:
         def limits = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(2)
+                .maxMergedFieldCount(2)
                 .build()
         def document = new Parser().parseDocument(query)
         def validationErrors = new Validator().validateDocument(
                 SpecValidationSchema.specValidationSchema, document, { r -> true }, Locale.ENGLISH, limits)
 
         then:
-        // dog (1) + name (1) + nickname (1) = 3 fields
+        // dog, name and nickname give mergedFieldCount=3.
         validationErrors.size() == 1
-        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryFieldsExceeded
+        validationErrors[0].validationErrorType == ValidationErrorType.MaxQueryMergedFieldCountExceeded
     }
 
     def "passes when within limits"() {
@@ -402,7 +382,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         """
         when:
         def limits = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(10)
+                .maxMergedFieldCount(10)
                 .maxDepth(5)
                 .build()
         def document = new Parser().parseDocument(query)
@@ -416,7 +396,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
     def "QueryComplexityLimits.NONE has no limits"() {
         expect:
         QueryComplexityLimits.NONE.getMaxDepth() == Integer.MAX_VALUE
-        QueryComplexityLimits.NONE.getMaxFieldsCount() == Integer.MAX_VALUE
+        QueryComplexityLimits.NONE.getMaxMergedFieldCount() == Integer.MAX_VALUE
         QueryComplexityLimits.NONE.getMaxFieldOccurrences() == Integer.MAX_VALUE
     }
 
@@ -428,7 +408,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         thrown(IllegalArgumentException)
 
         when:
-        QueryComplexityLimits.newLimits().maxFieldsCount(-1).build()
+        QueryComplexityLimits.newLimits().maxMergedFieldCount(-1).build()
 
         then:
         thrown(IllegalArgumentException)
@@ -446,7 +426,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         """
         when:
         def limits = QueryComplexityLimits.newLimits()
-                .maxFieldsCount(100)
+                .maxMergedFieldCount(100)
                 .maxDepth(100)
                 .build()
         def document = new Parser().parseDocument(query)

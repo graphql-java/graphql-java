@@ -28,14 +28,14 @@ import org.jspecify.annotations.NullUnmarked;
  * Occurrences are limited separately for each operation, regardless of directives or runtime types.
  * Complexity limits are enforced independently of the validation-rule predicate.
  *
- * <p>By default, validation enforces limits (maxDepth=100, maxFieldsCount=10000,
+ * <p>By default, validation enforces limits (maxDepth=100, maxMergedFieldCount=10000,
  * maxFieldOccurrences=100000). Explicitly built limits replace these defaults;
  * unspecified builder limits are unlimited.
  * To customize limits per-request, put a custom instance in the GraphQLContext:
  * <pre>{@code
  * QueryComplexityLimits limits = QueryComplexityLimits.newLimits()
  *     .maxDepth(10)
- *     .maxFieldsCount(100)
+ *     .maxMergedFieldCount(100)
  *     .maxFieldOccurrences(100_000)
  *     .build();
  *
@@ -65,9 +65,9 @@ public class QueryComplexityLimits {
     public static final int DEFAULT_MAX_DEPTH = 100;
 
     /**
-     * Default maximum field count.
+     * Default maximum merged field count.
      */
-    public static final int DEFAULT_MAX_FIELDS_COUNT = 10_000;
+    public static final int DEFAULT_MAX_MERGED_FIELD_COUNT = 10_000;
 
     /**
      * Default maximum number of field occurrences after fragment expansion.
@@ -80,9 +80,9 @@ public class QueryComplexityLimits {
     public static final String KEY = "graphql.validation.QueryComplexityLimits";
 
     /**
-     * Standard limits (maxDepth=100, maxFieldsCount=10000, maxFieldOccurrences=100000).
+     * Standard limits (maxDepth=100, maxMergedFieldCount=10000, maxFieldOccurrences=100000).
      */
-    public static final QueryComplexityLimits DEFAULT = new QueryComplexityLimits(DEFAULT_MAX_DEPTH, DEFAULT_MAX_FIELDS_COUNT, DEFAULT_MAX_FIELD_OCCURRENCES);
+    public static final QueryComplexityLimits DEFAULT = new QueryComplexityLimits(DEFAULT_MAX_DEPTH, DEFAULT_MAX_MERGED_FIELD_COUNT, DEFAULT_MAX_FIELD_OCCURRENCES);
 
     /**
      * No limits (all limits set to Integer.MAX_VALUE). Use this to disable complexity checking.
@@ -111,12 +111,12 @@ public class QueryComplexityLimits {
     }
 
     private final int maxDepth;
-    private final int maxFieldsCount;
+    private final int maxMergedFieldCount;
     private final int maxFieldOccurrences;
 
-    private QueryComplexityLimits(int maxDepth, int maxFieldsCount, int maxFieldOccurrences) {
+    private QueryComplexityLimits(int maxDepth, int maxMergedFieldCount, int maxFieldOccurrences) {
         this.maxDepth = maxDepth;
-        this.maxFieldsCount = maxFieldsCount;
+        this.maxMergedFieldCount = maxMergedFieldCount;
         this.maxFieldOccurrences = maxFieldOccurrences;
     }
 
@@ -130,8 +130,8 @@ public class QueryComplexityLimits {
     /**
      * @return the maximum allowed number of merged fields in each operation
      */
-    public int getMaxFieldsCount() {
-        return maxFieldsCount;
+    public int getMaxMergedFieldCount() {
+        return maxMergedFieldCount;
     }
 
     /**
@@ -153,7 +153,7 @@ public class QueryComplexityLimits {
     public String toString() {
         return "QueryComplexityLimits{" +
                 "maxDepth=" + maxDepth +
-                ", maxFieldsCount=" + maxFieldsCount +
+                ", maxMergedFieldCount=" + maxMergedFieldCount +
                 ", maxFieldOccurrences=" + maxFieldOccurrences +
                 '}';
     }
@@ -165,7 +165,7 @@ public class QueryComplexityLimits {
     @NullUnmarked
     public static class Builder {
         private int maxDepth = Integer.MAX_VALUE;
-        private int maxFieldsCount = Integer.MAX_VALUE;
+        private int maxMergedFieldCount = Integer.MAX_VALUE;
         private int maxFieldOccurrences = Integer.MAX_VALUE;
 
         private Builder() {
@@ -190,14 +190,14 @@ public class QueryComplexityLimits {
          * Sets the maximum allowed number of merged fields in each operation.
          * Merged child selections contribute again at each distinct response position.
          *
-         * @param maxFieldsCount the maximum field count (must be positive)
+         * @param maxMergedFieldCount the maximum merged field count (must be positive)
          * @return this builder
          */
-        public Builder maxFieldsCount(int maxFieldsCount) {
-            if (maxFieldsCount <= 0) {
-                throw new IllegalArgumentException("maxFieldsCount must be positive");
+        public Builder maxMergedFieldCount(int maxMergedFieldCount) {
+            if (maxMergedFieldCount <= 0) {
+                throw new IllegalArgumentException("maxMergedFieldCount must be positive");
             }
-            this.maxFieldsCount = maxFieldsCount;
+            this.maxMergedFieldCount = maxMergedFieldCount;
             return this;
         }
 
@@ -222,7 +222,7 @@ public class QueryComplexityLimits {
          * @return a new QueryComplexityLimits instance
          */
         public QueryComplexityLimits build() {
-            return new QueryComplexityLimits(maxDepth, maxFieldsCount, maxFieldOccurrences);
+            return new QueryComplexityLimits(maxDepth, maxMergedFieldCount, maxFieldOccurrences);
         }
     }
 }

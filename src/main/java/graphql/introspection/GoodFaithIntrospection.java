@@ -29,10 +29,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * <li>Only one {@code __schema} and one {@code __type} field can appear per operation</li>
  * <li>The {@code __Type} fields {@code fields}, {@code inputFields}, {@code interfaces}, and {@code possibleTypes}
  * can each only appear once (preventing cyclic traversals)</li>
- * <li>The query complexity is limited to {@link #GOOD_FAITH_MAX_FIELDS_COUNT} fields and
+ * <li>The query complexity is limited to {@link #GOOD_FAITH_MAX_MERGED_FIELD_COUNT} merged fields and
  * {@link #GOOD_FAITH_MAX_DEPTH_COUNT} depth</li>
  * </ul>
- * Field and depth limits cover the entire operation, including any non-introspection selections.
+ * Merged field count and depth limits cover the entire operation, including any non-introspection selections.
  * Fields are counted using the common-parent groups checked by field-merge validation. For
  * interface and union selections, these groups can differ from the runtime-type variants counted
  * by executable normalization.
@@ -56,7 +56,7 @@ public class GoodFaithIntrospection {
     /**
      * This is the maximum number of merged validation field groups in a good faith introspection query
      */
-    public static final int GOOD_FAITH_MAX_FIELDS_COUNT = 500;
+    public static final int GOOD_FAITH_MAX_MERGED_FIELD_COUNT = 500;
     /**
      * This is the maximum depth a good faith introspection query can be
      */
@@ -104,10 +104,10 @@ public class GoodFaithIntrospection {
      * @return complexity limits with good faith bounds applied
      */
     public static QueryComplexityLimits goodFaithLimits(QueryComplexityLimits existing) {
-        int maxFields = Math.min(existing.getMaxFieldsCount(), GOOD_FAITH_MAX_FIELDS_COUNT);
+        int maxMergedFieldCount = Math.min(existing.getMaxMergedFieldCount(), GOOD_FAITH_MAX_MERGED_FIELD_COUNT);
         int maxDepth = Math.min(existing.getMaxDepth(), GOOD_FAITH_MAX_DEPTH_COUNT);
         return QueryComplexityLimits.newLimits()
-                .maxFieldsCount(maxFields)
+                .maxMergedFieldCount(maxMergedFieldCount)
                 .maxDepth(maxDepth)
                 .maxFieldOccurrences(existing.getMaxFieldOccurrences())
                 .build();

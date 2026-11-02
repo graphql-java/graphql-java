@@ -68,10 +68,10 @@ public class GeneralQueryComplexityBenchmark {
             return QueryComplexityLimits.NONE;
         }
         if ("withoutOccurrences".equals(limits)) {
-            return QueryComplexityLimits.newLimits().maxDepth(100).maxFieldsCount(10_000).build();
+            return QueryComplexityLimits.newLimits().maxDepth(100).maxMergedFieldCount(10_000).build();
         }
         if ("highOccurrences".equals(limits)) {
-            return QueryComplexityLimits.newLimits().maxDepth(100).maxFieldsCount(10_000)
+            return QueryComplexityLimits.newLimits().maxDepth(100).maxMergedFieldCount(10_000)
                     .maxFieldOccurrences(Integer.MAX_VALUE - 1).build();
         }
         return QueryComplexityLimits.DEFAULT;

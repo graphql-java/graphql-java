@@ -16,12 +16,12 @@ class MergedQueryComplexityTest extends Specification {
 
     def "merged count and depth have inclusive boundaries for #query"() {
         expect:
-        validate(query, fields, depth).empty
-        validate(query, fields - 1, depth)*.validationErrorType == [ValidationErrorType.MaxQueryFieldsExceeded]
-        validate(query, fields, depth - 1)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
+        validate(query, mergedFieldCount, depth).empty
+        validate(query, mergedFieldCount - 1, depth)*.validationErrorType == [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
+        validate(query, mergedFieldCount, depth - 1)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
 
         where:
-        query                                                                                                      | fields | depth
+        query                                                                                                      | mergedFieldCount | depth
         '{ node { name name } }'                                                                                   | 2      | 2
         'mutation { node { name name } }'                                                                          | 2      | 2
         'subscription { node { name name } }'                                                                      | 2      | 2
@@ -42,7 +42,7 @@ class MergedQueryComplexityTest extends Specification {
         validate(operation + ' { name name }', 1, 1).empty
         validate(operation + ' { name name __typename @skip(if: true) }', 2, 1).empty
         validate(operation + ' { name name __typename @skip(if: true) }', 1, 1)*.validationErrorType ==
-                [ValidationErrorType.MaxQueryFieldsExceeded]
+                [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
 
         where:
         operation << ['query', 'mutation', 'subscription']
@@ -57,7 +57,7 @@ class MergedQueryComplexityTest extends Specification {
 
         expect:
         validate(query, 4, 2).empty
-        validate(query, 3, 2)*.validationErrorType == [ValidationErrorType.MaxQueryFieldsExceeded]
+        validate(query, 3, 2)*.validationErrorType == [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
         validate(query, 4, 1)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
 
         where:
@@ -99,7 +99,7 @@ class MergedQueryComplexityTest extends Specification {
         given:
         def graphQL = GraphQL.newGraphQL(schema).build()
         def input = ExecutionInput.newExecutionInput('{ node { name name name } }')
-                .graphQLContext([(QueryComplexityLimits.KEY): QueryComplexityLimits.newLimits().maxFieldsCount(limit).build()])
+                .graphQLContext([(QueryComplexityLimits.KEY): QueryComplexityLimits.newLimits().maxMergedFieldCount(limit).build()])
                 .build()
 
         expect:
@@ -114,11 +114,11 @@ class MergedQueryComplexityTest extends Specification {
     def "general limits apply independently of enabled validation rules"() {
         given:
         def document = Parser.parse('{ node { name child { name } } }')
-        def limits = QueryComplexityLimits.newLimits().maxFieldsCount(3).build()
+        def limits = QueryComplexityLimits.newLimits().maxMergedFieldCount(3).build()
 
         expect:
         new Validator().validateDocument(schema, document, predicate, Locale.ENGLISH, limits)*.validationErrorType ==
-                [ValidationErrorType.MaxQueryFieldsExceeded]
+                [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
 
         where:
         predicate << [
@@ -185,14 +185,14 @@ class MergedQueryComplexityTest extends Specification {
         def query = (firstBeforeSecond ? first + second : second + first) + 'fragment F on Node { name name }'
 
         expect:
-        validate(query, fields, depth)*.validationErrorType == errors
+        validate(query, mergedFieldCount, depth)*.validationErrorType == errors
 
         where:
-        firstBeforeSecond | selection           | fields | depth | errors
+        firstBeforeSecond | selection           | mergedFieldCount | depth | errors
         true              | ''                  | 2      | 2     | []
         false             | ''                  | 2      | 2     | []
-        true              | 'child { ...F }'    | 3      | 3     | [ValidationErrorType.MaxQueryFieldsExceeded]
-        false             | 'child { ...F }'    | 3      | 3     | [ValidationErrorType.MaxQueryFieldsExceeded]
+        true              | 'child { ...F }'    | 3      | 3     | [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
+        false             | 'child { ...F }'    | 3      | 3     | [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
         true              | 'child { ...F }'    | 4      | 2     | [ValidationErrorType.MaxQueryDepthExceeded]
         false             | 'child { ...F }'    | 4      | 2     | [ValidationErrorType.MaxQueryDepthExceeded]
     }
@@ -207,16 +207,16 @@ class MergedQueryComplexityTest extends Specification {
             union U = A | B
         ''')
         def document = Parser.parse("{ $selection } $fragments")
-        def exact = QueryComplexityLimits.newLimits().maxFieldsCount(fields).build()
-        def below = QueryComplexityLimits.newLimits().maxFieldsCount(fields - 1).build()
+        def exact = QueryComplexityLimits.newLimits().maxMergedFieldCount(mergedFieldCount).build()
+        def below = QueryComplexityLimits.newLimits().maxMergedFieldCount(mergedFieldCount - 1).build()
 
         expect:
         new Validator().validateDocument(abstractSchema, document, { rule -> true }, Locale.ENGLISH, exact).empty
         new Validator().validateDocument(abstractSchema, document, { rule -> true }, Locale.ENGLISH, below)*.validationErrorType ==
-                [ValidationErrorType.MaxQueryFieldsExceeded]
+                [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
 
         where:
-        selection                                                                    | fragments                 | fields
+        selection                                                                    | fragments                 | mergedFieldCount
         'node { name name }'                                                          | ''                        | 2
         'node { ...on I { name } ...on A { name } }'                                   | ''                        | 2
         'node { ...on A { name } ...on B { name } }'                                   | ''                        | 3
@@ -234,7 +234,7 @@ class MergedQueryComplexityTest extends Specification {
 
         expect:
         validate(query, 2, 2).empty
-        validate(query, 1, 2)*.validationErrorType == [ValidationErrorType.MaxQueryFieldsExceeded]
+        validate(query, 1, 2)*.validationErrorType == [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
     }
 
     def "aliased fragment amplification is bounded without integer overflow"() {
@@ -244,10 +244,10 @@ class MergedQueryComplexityTest extends Specification {
         }.join(' ') + "fragment F$levels on Node { name }"
 
         expect:
-        validate(query, maxFields, 100)*.validationErrorType == [ValidationErrorType.MaxQueryFieldsExceeded]
+        validate(query, maxMergedFieldCount, 100)*.validationErrorType == [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
 
         where:
-        levels | maxFields
+        levels | maxMergedFieldCount
         18     | 100_000
         40     | Integer.MAX_VALUE - 1
         40     | Integer.MAX_VALUE
@@ -299,8 +299,8 @@ class MergedQueryComplexityTest extends Specification {
         validate(query, 100_000, 1)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
     }
 
-    private List<ValidationError> validate(String query, int fields, int depth) {
-        def limits = QueryComplexityLimits.newLimits().maxFieldsCount(fields).maxDepth(depth).build()
+    private List<ValidationError> validate(String query, int mergedFieldCount, int depth) {
+        def limits = QueryComplexityLimits.newLimits().maxMergedFieldCount(mergedFieldCount).maxDepth(depth).build()
         new Validator().validateDocument(schema, Parser.parse(query), { rule -> true }, Locale.ENGLISH, limits)
     }
 }

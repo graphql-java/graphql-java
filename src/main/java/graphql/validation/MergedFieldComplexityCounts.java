@@ -21,7 +21,7 @@ import java.util.Set;
 @Internal
 @NullMarked
 public final class MergedFieldComplexityCounts {
-    private final int maxMergedFieldsCount;
+    private final int maxMergedFieldCount;
     private final int maxDepth;
     private final boolean introspection;
     private long mergedFieldCount;
@@ -30,7 +30,7 @@ public final class MergedFieldComplexityCounts {
 
     public MergedFieldComplexityCounts(QueryComplexityLimits limits, boolean introspection) {
         this.introspection = introspection;
-        maxMergedFieldsCount = introspection ? Math.min(limits.getMaxFieldsCount(), GoodFaithIntrospection.GOOD_FAITH_MAX_FIELDS_COUNT) : limits.getMaxFieldsCount();
+        maxMergedFieldCount = introspection ? Math.min(limits.getMaxMergedFieldCount(), GoodFaithIntrospection.GOOD_FAITH_MAX_MERGED_FIELD_COUNT) : limits.getMaxMergedFieldCount();
         maxDepth = introspection ? Math.min(limits.getMaxDepth(), GoodFaithIntrospection.GOOD_FAITH_MAX_DEPTH_COUNT) : limits.getMaxDepth();
     }
 
@@ -93,11 +93,11 @@ public final class MergedFieldComplexityCounts {
     }
 
     private void checkLimits() {
-        if (mergedFieldCount > maxMergedFieldsCount) {
+        if (mergedFieldCount > maxMergedFieldCount) {
             if (introspection) {
-                throw GoodFaithIntrospectionExceeded.tooBigOperation("Query has " + mergedFieldCount + " fields which exceeds maximum allowed " + maxMergedFieldsCount);
+                throw GoodFaithIntrospectionExceeded.tooBigOperation("Query has " + mergedFieldCount + " merged fields, exceeding the maximum allowed " + maxMergedFieldCount);
             }
-            throw new QueryComplexityLimitsExceeded(ValidationErrorType.MaxQueryFieldsExceeded, maxMergedFieldsCount, mergedFieldCount);
+            throw new QueryComplexityLimitsExceeded(ValidationErrorType.MaxQueryMergedFieldCountExceeded, maxMergedFieldCount, mergedFieldCount);
         }
         checkDepth(0);
     }
