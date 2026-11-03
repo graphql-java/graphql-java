@@ -307,8 +307,7 @@ class DataLoaderHangingTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Product source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
-            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
+            DataLoader<Integer, Person> personDL = environment.getDataLoader("person")
             return personDL.load(source.getSuppliedById()).thenApply({ person ->
                 if (person.id == 0) {
                     throw new RuntimeException("Failure in suppliedByDF for person with ID == 0.")
@@ -322,8 +321,7 @@ class DataLoaderHangingTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Person source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
-            DataLoader<Integer, Company> companyDL = dlRegistry.getDataLoader("company")
+            DataLoader<Integer, Company> companyDL = environment.getDataLoader("company")
             return companyDL.load(source.getCompanyId())
         }
     }
@@ -372,16 +370,18 @@ class DataLoaderHangingTest extends Specification {
 
         ExecutionInput executionInput = newExecutionInput()
                 .query(query)
-                .graphQLContext(["registry": registry])
-                .graphQLContext([(ENABLE_DATA_LOADER_CHAINING): false])
+                .graphQLContext(dispatchConfiguration)
                 .dataLoaderRegistry(registry)
                 .build()
 
-        def executionResult = graphQL.execute(executionInput)
+        def executionResult = graphQL.executeAsync(executionInput).get(10, java.util.concurrent.TimeUnit.SECONDS)
 
 
         then:
 
         (executionResult.errors.size() > 0)
+
+        where:
+        dispatchConfiguration << [[:], [(ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING): false], [(ENABLE_DATA_LOADER_CHAINING): true]]
     }
 }
