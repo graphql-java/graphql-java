@@ -34,7 +34,8 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private boolean parallel;
     private Map<String, List<TraverserContext<T>>> children;
     private Phase phase;
-    private final List<Breadcrumb<T>> breadcrumbs;
+    private final Breadcrumb<T> breadcrumb;
+    private volatile List<Breadcrumb<T>> breadcrumbs;
 
     public DefaultTraverserContext(T curNode,
                                    TraverserContext<T> parent,
@@ -54,13 +55,17 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         this.parallel = parallel;
 
         if (parent == null || parent.isRootContext()) {
+            this.breadcrumb = null;
             this.breadcrumbs = ImmutableKit.emptyList();
         } else {
-            this.breadcrumbs = ImmutableList.<Breadcrumb<T>>builderWithExpectedSize(parent.getBreadcrumbs().size() + 1)
-                    .add(new Breadcrumb<>(this.parent.thisNode(), this.location))
-                    .addAll(parent.getBreadcrumbs())
-                    .build();
-
+            // Capture the parent now: visitors can change or delete it before breadcrumbs are requested.
+            this.breadcrumb = new Breadcrumb<>(parent.thisNode(), location);
+            if (parent.getClass() != DefaultTraverserContext.class) {
+                this.breadcrumbs = ImmutableList.<Breadcrumb<T>>builderWithExpectedSize(parent.getBreadcrumbs().size() + 1)
+                        .add(breadcrumb)
+                        .addAll(parent.getBreadcrumbs())
+                        .build();
+            }
         }
     }
 
@@ -130,6 +135,15 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public List<Breadcrumb<T>> getBreadcrumbs() {
+        if (breadcrumbs == null) {
+            ImmutableList.Builder<Breadcrumb<T>> builder = ImmutableList.builder();
+            DefaultTraverserContext<T> context = this;
+            while (context.breadcrumbs == null) {
+                builder.add(context.breadcrumb);
+                context = (DefaultTraverserContext<T>) context.parent;
+            }
+            breadcrumbs = builder.addAll(context.breadcrumbs).build();
+        }
         return breadcrumbs;
     }
 
