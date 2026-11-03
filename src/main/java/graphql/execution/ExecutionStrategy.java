@@ -5,6 +5,7 @@ import graphql.DuckTyped;
 import graphql.EngineRunningState;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicSpi;
@@ -12,6 +13,7 @@ import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
+import graphql.execution.conditional.ConditionalNodeDecision;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.incremental.AlternativeCallContext;
@@ -55,6 +57,7 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -1043,19 +1046,7 @@ public abstract class ExecutionStrategy {
     protected Object completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
-        FieldCollectorParameters collectorParameters = newParameters()
-                .schema(executionContext.getGraphQLSchema())
-                .objectType(resolvedObjectType)
-                .fragments(executionContext.getFragmentsByName())
-                .variables(executionContext.getCoercedVariables().toMap())
-                .graphQLContext(executionContext.getGraphQLContext())
-                .build();
-
-        MergedSelectionSet subFields = fieldCollector.collectFields(
-                collectorParameters,
-                parameters.getField(),
-                executionContext.hasIncrementalSupport()
-        );
+        MergedSelectionSet subFields = collectSubFields(executionContext, parameters.getField(), resolvedObjectType);
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
 
@@ -1065,6 +1056,34 @@ public abstract class ExecutionStrategy {
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
         return executionContext.getQueryStrategy().executeObject(executionContext, newParameters);
+    }
+
+    private MergedSelectionSet collectSubFields(ExecutionContext executionContext, MergedField field, GraphQLObjectType objectType) {
+        // deferred executions are captured per collection and a custom decision callback may not be deterministic
+        // so in those cases we always collect the fields
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
+        if (executionContext.hasIncrementalSupport() || (graphQLContext != null && graphQLContext.get(ConditionalNodeDecision.class) != null)) {
+            return collectSubFieldsImpl(executionContext, field, objectType);
+        }
+        Map<GraphQLObjectType, MergedSelectionSet> byObjectType = executionContext.getCollectedSubFields().computeIfAbsent(field, k -> new ConcurrentHashMap<>());
+        MergedSelectionSet subFields = byObjectType.get(objectType);
+        if (subFields == null) {
+            subFields = collectSubFieldsImpl(executionContext, field, objectType);
+            byObjectType.put(objectType, subFields);
+        }
+        return subFields;
+    }
+
+    private MergedSelectionSet collectSubFieldsImpl(ExecutionContext executionContext, MergedField field, GraphQLObjectType objectType) {
+        FieldCollectorParameters collectorParameters = newParameters()
+                .schema(executionContext.getGraphQLSchema())
+                .objectType(objectType)
+                .fragments(executionContext.getFragmentsByName())
+                .variables(executionContext.getCoercedVariables().toMap())
+                .graphQLContext(executionContext.getGraphQLContext())
+                .build();
+
+        return fieldCollector.collectFields(collectorParameters, field, executionContext.hasIncrementalSupport());
     }
 
     @SuppressWarnings("SameReturnValue")
