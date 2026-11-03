@@ -13,7 +13,7 @@ class DeferDirectiveOnRootLevelTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        def graphQLContext = GraphQLContext.newContext().build().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
+        GraphQLContext graphQLContext = GraphQLContext.newContext().build().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
         ValidationContext validationContext = new ValidationContext(
                 SpecValidationSchema.specValidationSchema,
                 document,
