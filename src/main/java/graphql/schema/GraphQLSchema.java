@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -173,7 +174,8 @@ public class GraphQLSchema {
     @Internal
     private GraphQLSchema(FastBuilder fastBuilder) {
         // Build immutable collections from FastBuilder's mutable state
-        ImmutableMap<String, GraphQLNamedType> finalTypeMap = ImmutableMap.copyOf(fastBuilder.typeMap);
+        // sorted by name to match the standard Builder (see GraphQLTypeCollectingVisitor.getResult)
+        ImmutableMap<String, GraphQLNamedType> finalTypeMap = ImmutableMap.copyOf(new TreeMap<>(fastBuilder.typeMap));
         ImmutableList<GraphQLDirective> finalDirectives = ImmutableList.copyOf(fastBuilder.directiveMap.values());
 
         // Get interface-to-object-type-names map from collector (already sorted)
@@ -1504,8 +1506,7 @@ public class GraphQLSchema {
             // Replace type references
             shallowTypeRefCollector.replaceTypes(typeMap);
 
-            // Add built-in directives if missing
-            Directives.BUILT_IN_DIRECTIVES.forEach(this::addDirectiveIfMissing);
+            ensureBuiltInDirectives();
 
             // Create schema via private constructor
             GraphQLSchema schema = new GraphQLSchema(this);
@@ -1521,10 +1522,17 @@ public class GraphQLSchema {
             return schema;
         }
 
-        private void addDirectiveIfMissing(GraphQLDirective directive) {
-            if (!directiveMap.containsKey(directive.getName())) {
-                directiveMap.put(directive.getName(), directive);
+        // same ordering as Builder.ensureBuiltInDirectives: built-ins first, user overrides keep their position
+        private void ensureBuiltInDirectives() {
+            Map<String, GraphQLDirective> ordered = new LinkedHashMap<>();
+            for (GraphQLDirective builtIn : Directives.BUILT_IN_DIRECTIVES) {
+                if (!directiveMap.containsKey(builtIn.getName())) {
+                    ordered.put(builtIn.getName(), builtIn);
+                }
             }
+            ordered.putAll(directiveMap);
+            directiveMap.clear();
+            directiveMap.putAll(ordered);
         }
     }
 }
