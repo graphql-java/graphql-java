@@ -1,5 +1,6 @@
 package benchmark;
 
+import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.FastSchemaGenerator;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -11,44 +12,42 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3)
+@Warmup(iterations = 10, time = 10)
+@Measurement(iterations = 5, time = 10)
 @Fork(2)
+@Threads(1)
 @State(Scope.Benchmark)
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class BuildSchemaBenchmark {
 
-    static String largeSDL = BenchmarkUtils.loadResource("large-schema-4.graphqls");
+    @Param({"large-schema-1.graphqls", "large-schema-2.graphqls", "large-schema-3.graphqls",
+            "large-schema-4.graphqls", "large-schema-5.graphqls"})
+    public String schemaFile;
 
     private TypeDefinitionRegistry registry;
 
     @Setup
     public void setup() {
-        // Parse SDL once before benchmarks run
-        registry = new SchemaParser().parse(largeSDL);
+        registry = new SchemaParser().parse(BenchmarkUtils.loadLargeSchema(schemaFile));
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchmarkBuildSchemaAvgTime(Blackhole blackhole) {
-        blackhole.consume(new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING));
+    public GraphQLSchema benchmarkBuildSchemaAvgTime() {
+        return new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING);
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchmarkBuildSchemaAvgTimeFast(Blackhole blackhole) {
-        blackhole.consume(new FastSchemaGenerator().makeExecutableSchema(
-                SchemaGenerator.Options.defaultOptions().withValidation(false),
-                registry,
-                RuntimeWiring.MOCKED_WIRING));
+    public GraphQLSchema benchmarkBuildSchemaAvgTimeFast() {
+        return new FastSchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING);
     }
 }
