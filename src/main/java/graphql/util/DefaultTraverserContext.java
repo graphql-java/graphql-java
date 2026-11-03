@@ -3,8 +3,10 @@ package graphql.util;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +25,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     private final TraverserContext<T> parent;
     private final Set<T> visited;
-    private final Map<Class<?>, Object> vars;
+    private @Nullable Map<Class<?>, Object> vars;
     private final Object sharedContextData;
 
     private Object newAccValue;
@@ -40,7 +42,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     public DefaultTraverserContext(T curNode,
                                    TraverserContext<T> parent,
                                    Set<T> visited,
-                                   Map<Class<?>, Object> vars,
+                                   @Nullable Map<Class<?>, Object> vars,
                                    Object sharedContextData,
                                    NodeLocation location,
                                    boolean isRootContext,
@@ -167,11 +169,17 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public <S> S getVar(Class<? super S> key) {
+        if (vars == null) {
+            return null;
+        }
         return (S) key.cast(vars.get(key));
     }
 
     @Override
     public <S> TraverserContext<T> setVar(Class<? super S> key, S value) {
+        if (vars == null) {
+            vars = new LinkedHashMap<>();
+        }
         vars.put(key, value);
         return this;
     }
