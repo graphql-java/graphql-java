@@ -1,0 +1,1162 @@
+[
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTime",
+    "schema": "large-schema-1.graphqls",
+    "baseline_time": {
+      "mean": 2.941849738463693,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        2.8815601098960673,
+        3.0021393670313183
+      ],
+      "fork_means": [
+        2.9058784630854326,
+        2.906124606482257,
+        3.0135461458233883
+      ]
+    },
+    "optimized_time": {
+      "mean": 2.713788984840898,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        2.6885931844412703,
+        2.7389847852405254
+      ],
+      "fork_means": [
+        2.6923732722046525,
+        2.7438422615105424,
+        2.705151420807498
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 8368507.550763405,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        8193337.291825288,
+        8543677.809701523
+      ],
+      "fork_means": [
+        8273387.489600031,
+        8240563.489179289,
+        8591571.673510898
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 7502427.32943288,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        7379535.677738657,
+        7625318.981127102
+      ],
+      "fork_means": [
+        7394379.302657617,
+        7655163.366449893,
+        7457739.319191129
+      ]
+    },
+    "time_reduction_percent": 7.752291037879244,
+    "allocation_reduction_percent": 10.34927931984143
+  },
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTimeFast",
+    "schema": "large-schema-1.graphqls",
+    "baseline_time": {
+      "mean": 1.8064817285432184,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        1.79823974544202,
+        1.8147237116444168
+      ],
+      "fork_means": [
+        1.810435871227595,
+        1.8031255915759221,
+        1.8058837228261386
+      ]
+    },
+    "optimized_time": {
+      "mean": 1.7246100199868375,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        1.6951355640449484,
+        1.7540844759287266
+      ],
+      "fork_means": [
+        1.7169409529899715,
+        1.697558166680246,
+        1.7593309402902948
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 4368191.183886109,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        4336093.306807966,
+        4400289.060964252
+      ],
+      "fork_means": [
+        4409161.915794677,
+        4345945.816704503,
+        4349465.819159147
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 4214401.821296183,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        4155961.2942119576,
+        4272842.348380409
+      ],
+      "fork_means": [
+        4279817.729729364,
+        4150481.9616981205,
+        4212905.772461067
+      ]
+    },
+    "time_reduction_percent": 4.532108311020888,
+    "allocation_reduction_percent": 3.5206646439203904
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTime",
+    "schema": "large-schema-1.graphqls",
+    "baseline_time": {
+      "mean": 4.258382867303928,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        4.226442361525341,
+        4.290323373082516
+      ],
+      "fork_means": [
+        4.289903052895282,
+        4.227328203393045,
+        4.257917345623459
+      ]
+    },
+    "optimized_time": {
+      "mean": 4.022967310285251,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        3.9733150833450384,
+        4.0726195372254645
+      ],
+      "fork_means": [
+        4.028083789611962,
+        3.9682207999755272,
+        4.0725973412682634
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 10477377.843337392,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        10450746.678752825,
+        10504009.00792196
+      ],
+      "fork_means": [
+        10445772.543468276,
+        10482244.476921868,
+        10504116.509622037
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 9720233.664073573,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        9590677.878639482,
+        9849789.449507665
+      ],
+      "fork_means": [
+        9646308.37046312,
+        9628892.202659527,
+        9885500.419098066
+      ]
+    },
+    "time_reduction_percent": 5.528285369223351,
+    "allocation_reduction_percent": 7.226466302780999
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast",
+    "schema": "large-schema-1.graphqls",
+    "baseline_time": {
+      "mean": 3.170170148865705,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        3.149677707960569,
+        3.1906625897708407
+      ],
+      "fork_means": [
+        3.150136957375724,
+        3.1887919548286625,
+        3.171581534392726
+      ]
+    },
+    "optimized_time": {
+      "mean": 3.0505321790919724,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        3.0204506647518694,
+        3.0806136934320754
+      ],
+      "fork_means": [
+        3.0362451158010635,
+        3.028588647910186,
+        3.0867627735646668
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 6582381.917990473,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        6549369.784138135,
+        6615394.0518428115
+      ],
+      "fork_means": [
+        6559075.173109497,
+        6624491.221796375,
+        6563579.359065547
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 6390995.181811398,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        6355412.166960902,
+        6426578.196661894
+      ],
+      "fork_means": [
+        6394275.217222268,
+        6350075.138454516,
+        6428635.189757412
+      ]
+    },
+    "time_reduction_percent": 3.773865885922223,
+    "allocation_reduction_percent": 2.907560493504502
+  },
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTime",
+    "schema": "large-schema-2.graphqls",
+    "baseline_time": {
+      "mean": 46.41692308829409,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        45.95646298068039,
+        46.87738319590779
+      ],
+      "fork_means": [
+        46.8370067904797,
+        46.00085349394977,
+        46.41290898045281
+      ]
+    },
+    "optimized_time": {
+      "mean": 43.5102780946347,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        43.179054018777414,
+        43.841502170491985
+      ],
+      "fork_means": [
+        43.776543079475985,
+        43.621624723207326,
+        43.13266648122079
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 142391879.58096755,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        140706271.10612252,
+        144077488.05581257
+      ],
+      "fork_means": [
+        141629529.25448927,
+        141028183.19766617,
+        144517926.29074714
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 131415196.3171933,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        129822020.12833089,
+        133008372.50605571
+      ],
+      "fork_means": [
+        132443037.64541484,
+        132423403.39583324,
+        129379147.91033189
+      ]
+    },
+    "time_reduction_percent": 6.262037205978476,
+    "allocation_reduction_percent": 7.70878458524219
+  },
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTimeFast",
+    "schema": "large-schema-2.graphqls",
+    "baseline_time": {
+      "mean": 30.689950528084765,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        30.23642980491189,
+        31.14347125125764
+      ],
+      "fork_means": [
+        31.13394639207066,
+        30.764961456050624,
+        30.17094373613302
+      ]
+    },
+    "optimized_time": {
+      "mean": 29.230069910368787,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        28.726915950713977,
+        29.733223870023597
+      ],
+      "fork_means": [
+        29.854177437030607,
+        28.822202161060755,
+        29.013830133014995
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 87845720.72200046,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        87844683.02308777,
+        87846758.42091316
+      ],
+      "fork_means": [
+        87845066.19205998,
+        87845053.88477255,
+        87847042.08916894
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 83882319.10876177,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        83877364.61317313,
+        83887273.60435042
+      ],
+      "fork_means": [
+        83888648.38979755,
+        83879073.09619287,
+        83879235.84029488
+      ]
+    },
+    "time_reduction_percent": 4.75686859247304,
+    "allocation_reduction_percent": 4.511775395162854
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTime",
+    "schema": "large-schema-2.graphqls",
+    "baseline_time": {
+      "mean": 62.63399528674896,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        62.11336890046409,
+        63.15462167303384
+      ],
+      "fork_means": [
+        62.77984831625,
+        63.043129112465564,
+        62.07900843153132
+      ]
+    },
+    "optimized_time": {
+      "mean": 59.957317116558286,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        59.68721147490668,
+        60.22742275820989
+      ],
+      "fork_means": [
+        59.79389614727962,
+        59.900681111377246,
+        60.17737409101797
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 171286095.87708238,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        170937954.75127688,
+        171634237.00288787
+      ],
+      "fork_means": [
+        170929338.10691825,
+        171234234.13790146,
+        171694715.38642743
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 159728763.19064063,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        159479971.8887604,
+        159977554.49252087
+      ],
+      "fork_means": [
+        159857375.10263193,
+        159412633.38665524,
+        159916281.08263472
+      ]
+    },
+    "time_reduction_percent": 4.2735229613509285,
+    "allocation_reduction_percent": 6.747385202086386
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast",
+    "schema": "large-schema-2.graphqls",
+    "baseline_time": {
+      "mean": 47.435115726673004,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        47.029844484505304,
+        47.840386968840704
+      ],
+      "fork_means": [
+        47.86943549752773,
+        47.070902487320055,
+        47.36500919517124
+      ]
+    },
+    "optimized_time": {
+      "mean": 46.404750445977534,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        45.568437536049146,
+        47.24106335590592
+      ],
+      "fork_means": [
+        46.67115183710578,
+        45.3833041894529,
+        47.159795311373905
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 118360155.66798577,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        118297966.74088185,
+        118422344.59508969
+      ],
+      "fork_means": [
+        118439526.34602942,
+        118317003.6825546,
+        118323936.97537333
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 115430641.5362194,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        114611139.3971923,
+        116250143.6752465
+      ],
+      "fork_means": [
+        115518103.34171636,
+        114483069.80310982,
+        116290751.46383205
+      ]
+    },
+    "time_reduction_percent": 2.1721571981241916,
+    "allocation_reduction_percent": 2.4750847235990414
+  },
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTime",
+    "schema": "large-schema-3.graphqls",
+    "baseline_time": {
+      "mean": 138.7185649675877,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        137.1891406681636,
+        140.2479892670118
+      ],
+      "fork_means": [
+        138.65312640928462,
+        137.174987198408,
+        140.32758129507042
+      ]
+    },
+    "optimized_time": {
+      "mean": 122.05932951147682,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        119.70057633378863,
+        124.418082689165
+      ],
+      "fork_means": [
+        123.88648112839506,
+        119.09829382392157,
+        123.19321358211383
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 336493989.06008154,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        336041495.1864801,
+        336946482.933683
+      ],
+      "fork_means": [
+        336204805.7050228,
+        336204885.00229543,
+        337072276.47292644
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 276052587.73811215,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        266871564.203938,
+        285233611.2722863
+      ],
+      "fork_means": [
+        287620621.6691358,
+        268568828.29714286,
+        271968313.2480578
+      ]
+    },
+    "time_reduction_percent": 12.009377014535428,
+    "allocation_reduction_percent": 17.962104313006755
+  },
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTimeFast",
+    "schema": "large-schema-3.graphqls",
+    "baseline_time": {
+      "mean": 79.65165106730545,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        79.13241898486537,
+        80.17088314974553
+      ],
+      "fork_means": [
+        80.05217822619683,
+        79.52340354999775,
+        79.37937142572179
+      ]
+    },
+    "optimized_time": {
+      "mean": 73.68312010721364,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        73.14250019380994,
+        74.22374002061734
+      ],
+      "fork_means": [
+        73.79289196909451,
+        74.12952869985416,
+        73.12693965269227
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 139361750.7715301,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        137951212.39039782,
+        140772289.15266237
+      ],
+      "fork_means": [
+        141109510.737473,
+        138870248.01301277,
+        138105493.5641045
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 124308745.48960099,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        121526434.53644404,
+        127091056.44275793
+      ],
+      "fork_means": [
+        125874223.7347741,
+        126290914.39682372,
+        120761098.33720511
+      ]
+    },
+    "time_reduction_percent": 7.493292204386847,
+    "allocation_reduction_percent": 10.801389332864385
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTime",
+    "schema": "large-schema-3.graphqls",
+    "baseline_time": {
+      "mean": 203.50452968329253,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        202.3894685099721,
+        204.61959085661297
+      ],
+      "fork_means": [
+        203.62785153763267,
+        203.52513651012245,
+        203.36060100212245
+      ]
+    },
+    "optimized_time": {
+      "mean": 188.32214203834147,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        187.4548453483494,
+        189.18943872833353
+      ],
+      "fork_means": [
+        187.9734012925926,
+        188.73511538287912,
+        188.25790943955275
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 433566696.4795646,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        426547913.37602985,
+        440585479.58309937
+      ],
+      "fork_means": [
+        439049144.00391835,
+        436973874.26481634,
+        424677071.1699592
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 389586311.7148847,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        387096192.51529926,
+        392076430.91447014
+      ],
+      "fork_means": [
+        390050459.82222223,
+        386627694.7287212,
+        392080780.59371066
+      ]
+    },
+    "time_reduction_percent": 7.460466687684509,
+    "allocation_reduction_percent": 10.143856786461647
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast",
+    "schema": "large-schema-3.graphqls",
+    "baseline_time": {
+      "mean": 145.04638518935818,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        144.01244818386164,
+        146.08032219485472
+      ],
+      "fork_means": [
+        145.456127057971,
+        144.01740254,
+        145.66562597010352
+      ]
+    },
+    "optimized_time": {
+      "mean": 136.59486325190588,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        135.82058388638765,
+        137.3691426174241
+      ],
+      "fork_means": [
+        136.9888361747501,
+        136.4937621769715,
+        136.30199140399606
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 243808084.7593651,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        243668030.5594767,
+        243948138.95925352
+      ],
+      "fork_means": [
+        243798548.63768116,
+        243967625.80571428,
+        243658079.8346998
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 228718175.56149903,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        228286005.3232378,
+        229150345.79976025
+      ],
+      "fork_means": [
+        228797426.83835617,
+        229151904.67560163,
+        228205195.17053932
+      ]
+    },
+    "time_reduction_percent": 5.826771847101764,
+    "allocation_reduction_percent": 6.189257100624701
+  },
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTime",
+    "schema": "large-schema-4.graphqls",
+    "baseline_time": {
+      "mean": 1813.4196274555554,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        1798.101794293655,
+        1828.7374606174558
+      ],
+      "fork_means": [
+        1810.9515951333333,
+        1823.2000312,
+        1806.1072560333332
+      ]
+    },
+    "optimized_time": {
+      "mean": 1525.7047460761903,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        1512.5388532406582,
+        1538.8706389117224
+      ],
+      "fork_means": [
+        1527.6786106285715,
+        1517.6865469142856,
+        1531.7490806857143
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 3972454817.1555552,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        3965313156.6909776,
+        3979596477.620133
+      ],
+      "fork_means": [
+        3964398202.4,
+        3980197346.4,
+        3972768902.6666665
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 2989373102.628572,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        2970206370.430203,
+        3008539834.826941
+      ],
+      "fork_means": [
+        2964879164.7999997,
+        3001413954.9714284,
+        3001826188.1142855
+      ]
+    },
+    "time_reduction_percent": 15.865874451963634,
+    "allocation_reduction_percent": 24.747461199090772
+  },
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTimeFast",
+    "schema": "large-schema-4.graphqls",
+    "baseline_time": {
+      "mean": 989.2094486387879,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        976.2163650608582,
+        1002.2025322167176
+      ],
+      "fork_means": [
+        999.8899374218182,
+        992.5408680763636,
+        975.1975404181818
+      ]
+    },
+    "optimized_time": {
+      "mean": 864.8814445722222,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        849.1920322613781,
+        880.5708568830663
+      ],
+      "fork_means": [
+        852.4144582833334,
+        883.4469293166667,
+        858.7829461166667
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 1529264893.2460608,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        1501063974.254462,
+        1557465812.2376597
+      ],
+      "fork_means": [
+        1565278977.1345453,
+        1512458767.4763637,
+        1510056935.1272726
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 1243442727.7333333,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        1196283487.418497,
+        1290601968.0481696
+      ],
+      "fork_means": [
+        1218159710.6666667,
+        1303464500.2666667,
+        1208703972.2666667
+      ]
+    },
+    "time_reduction_percent": 12.56842059461204,
+    "allocation_reduction_percent": 18.690167202232267
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTime",
+    "schema": "large-schema-4.graphqls",
+    "baseline_time": {
+      "mean": 2276.8709134133333,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        2246.1157031007483,
+        2307.626123725918
+      ],
+      "fork_means": [
+        2281.58921004,
+        2297.58701684,
+        2251.43651336
+      ]
+    },
+    "optimized_time": {
+      "mean": 2034.0548135688887,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        1994.9386730534561,
+        2073.1709540843212
+      ],
+      "fork_means": [
+        2028.16735792,
+        2074.71795396,
+        1999.2791288266667
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 4682689405.119999,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        4583813030.944824,
+        4781565779.295174
+      ],
+      "fork_means": [
+        4736540232.639999,
+        4754763855.36,
+        4556764127.36
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 3905566393.102221,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        3783548082.3436055,
+        4027584703.8608365
+      ],
+      "fork_means": [
+        3986914949.12,
+        3980107771.8399997,
+        3749676458.3466663
+      ]
+    },
+    "time_reduction_percent": 10.66446492043024,
+    "allocation_reduction_percent": 16.5956557180171
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast",
+    "schema": "large-schema-4.graphqls",
+    "baseline_time": {
+      "mean": 1458.1091073619048,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        1441.188475907609,
+        1475.0297388162005
+      ],
+      "fork_means": [
+        1448.5717562571429,
+        1448.3085587714286,
+        1477.4470070571429
+      ]
+    },
+    "optimized_time": {
+      "mean": 1332.1420062166665,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        1324.279131762702,
+        1340.0048806706309
+      ],
+      "fork_means": [
+        1335.49254705,
+        1330.9905528250001,
+        1329.942918775
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 2316139687.4666667,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        2308620137.905045,
+        2323659237.0282884
+      ],
+      "fork_means": [
+        2307682732.7999997,
+        2316415525.714286,
+        2324320803.885714
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 2067034225.8666666,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        2030376172.1669571,
+        2103692279.566376
+      ],
+      "fork_means": [
+        2095818094.8,
+        2084653411.6,
+        2020631171.2
+      ]
+    },
+    "time_reduction_percent": 8.639072378688128,
+    "allocation_reduction_percent": 10.75520025618425
+  },
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTime",
+    "schema": "large-schema-5.graphqls",
+    "baseline_time": {
+      "mean": 8855.375903333334,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        8664.818207820956,
+        9045.933598845711
+      ],
+      "fork_means": [
+        8786.1252264,
+        9047.4638472,
+        8732.5386364
+      ]
+    },
+    "optimized_time": {
+      "mean": 6947.898251799999,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        6759.107734060294,
+        7136.6887695397045
+      ],
+      "fork_means": [
+        6847.3998934,
+        6926.3389149,
+        7069.9559471
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 18603744765.333332,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        18222505050.550167,
+        18984984480.116497
+      ],
+      "fork_means": [
+        18748204403.2,
+        18934490617.6,
+        18128539275.2
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 12963798549.333334,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        12849494127.092451,
+        13078102971.574217
+      ],
+      "fork_means": [
+        12902915672.0,
+        12879241182.4,
+        13109238793.6
+      ]
+    },
+    "time_reduction_percent": 21.54033518571835,
+    "allocation_reduction_percent": 30.316187881214162
+  },
+  {
+    "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTimeFast",
+    "schema": "large-schema-5.graphqls",
+    "baseline_time": {
+      "mean": 4470.475267133333,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        4405.473954639915,
+        4535.47657962675
+      ],
+      "fork_means": [
+        4497.394221466667,
+        4444.013010466667,
+        4470.018569466667
+      ]
+    },
+    "optimized_time": {
+      "mean": 3372.869659122223,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        3261.6816741601,
+        3484.0576440843456
+      ],
+      "fork_means": [
+        3475.3615466,
+        3346.6663303166665,
+        3296.58110045
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 6419218870.577778,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        6400318106.209278,
+        6438119634.946278
+      ],
+      "fork_means": [
+        6396462701.866667,
+        6423587559.466666,
+        6437606350.4
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 4534541107.644444,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        4371697031.54116,
+        4697385183.747729
+      ],
+      "fork_means": [
+        4623027738.666667,
+        4653427863.866667,
+        4327167720.4
+      ]
+    },
+    "time_reduction_percent": 24.55232480717745,
+    "allocation_reduction_percent": 29.35992370616424
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTime",
+    "schema": "large-schema-5.graphqls",
+    "baseline_time": {
+      "mean": 9617.202465200002,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        9415.696896939768,
+        9818.708033460236
+      ],
+      "fork_means": [
+        9768.2971851,
+        9698.2775091,
+        9385.0327014
+      ]
+    },
+    "optimized_time": {
+      "mean": 7990.659925466667,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        7767.107074506485,
+        8214.21277642685
+      ],
+      "fork_means": [
+        8161.8865862,
+        7975.9147894,
+        7834.1784007999995
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 20013353529.333332,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        19521279023.21614,
+        20505428035.450523
+      ],
+      "fork_means": [
+        20323379227.2,
+        20332178797.6,
+        19384502563.2
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 14399463099.466667,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        14294810570.701742,
+        14504115628.231592
+      ],
+      "fork_means": [
+        14452681636.0,
+        14479116866.4,
+        14266590796.0
+      ]
+    },
+    "time_reduction_percent": 16.912844931974803,
+    "allocation_reduction_percent": 28.050723341485238
+  },
+  {
+    "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast",
+    "schema": "large-schema-5.graphqls",
+    "baseline_time": {
+      "mean": 5271.364757233333,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        5144.403522290495,
+        5398.325992176171
+      ],
+      "fork_means": [
+        5364.0643171,
+        5262.3705124,
+        5187.6594422
+      ]
+    },
+    "optimized_time": {
+      "mean": 4228.057450377778,
+      "unit": "ms/op",
+      "jmh_99_9_percent_confidence_interval": [
+        4163.929693344686,
+        4292.18520741087
+      ],
+      "fork_means": [
+        4230.330209933333,
+        4231.096070533334,
+        4222.746070666667
+      ]
+    },
+    "baseline_allocation": {
+      "mean": 7667309178.933333,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        7542261495.904208,
+        7792356861.962459
+      ],
+      "fork_means": [
+        7780529856.8,
+        7513023961.6,
+        7708373718.4
+      ]
+    },
+    "optimized_allocation": {
+      "mean": 5993468458.311111,
+      "unit": "B/op",
+      "jmh_99_9_percent_confidence_interval": [
+        5970758666.182328,
+        6016178250.439895
+      ],
+      "fork_means": [
+        6010501478.933333,
+        6005302955.733334,
+        5964600940.266666
+      ]
+    },
+    "time_reduction_percent": 19.791977123645932,
+    "allocation_reduction_percent": 21.83087549438152
+  }
+]

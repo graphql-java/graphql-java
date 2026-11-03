@@ -1,0 +1,182 @@
+{
+  "final_measurements_pending": false,
+  "production_baseline_commit": "b88bb44f5eff9c520121806dec4ba2224ae4ad6d",
+  "variants": {
+    "baseline": {
+      "source_commit": "ca944d6c1e1c53008d3448c314feca1e5d8e5a6f",
+      "jar_sha256": "ffe3e1ebc380b7764c62fc796e4c1c1e020e72a5943a07de77ddd4c957a54c18",
+      "started_utc": "2026-11-03T09:53:27.220955+00:00"
+    },
+    "round1": {
+      "source_commit": "86c4cf21a72442126de826ba5890a19d319ef9aa",
+      "jar_sha256": "394d53259176954f39aecf25eccced8efabd8c375e0b4a31683988a7430d6160",
+      "started_utc": "2026-11-03T11:25:34.961962+00:00"
+    },
+    "round2": {
+      "source_commit": "d12442110ac2231c894de23ad93ac7add2a71392",
+      "jar_sha256": "6bb6a399f5b0616ab048fa6a48385d955d782ebed18c3aac2c3ea74761f0243a",
+      "started_utc": "2026-11-03T12:59:42.685301+00:00"
+    },
+    "round3": {
+      "source_commit": "f32f89bd7899eacc7a607972d7be86b0f3f704ff",
+      "jar_sha256": "53b324268161656a2182d2c6902b68a3f98b4c2af3d34947763f2e31d168f020",
+      "started_utc": "2026-11-03T14:40:17.412376+00:00"
+    }
+  },
+  "runtime": "openjdk version \"25.0.4.1\" 2026-08-18\nOpenJDK Runtime Environment (build 25.0.4.1+1-1-26.04.4-Ubuntu)\nOpenJDK 64-Bit Server VM (build 25.0.4.1+1-1-26.04.4-Ubuntu, mixed mode, sharing)",
+  "jmh_version": "1.37",
+  "hardware": {
+    "cpu": "AMD Ryzen 5 3600",
+    "physical_cores": 6,
+    "logical_cpus": 12,
+    "memory_gib": 64
+  },
+  "operating_system": "Ubuntu 26.04, Linux 7.0.0-22-generic",
+  "jvm_arguments": "-Xms24g -Xmx24g -XX:+UseZGC -XX:+UseCompactObjectHeaders -XX:+UseDynamicNumberOfGCThreads -XX:+AlwaysPreTouch -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -Xlog:gc:file=gc-%p.log:uptime,level,tags",
+  "gc": {
+    "collector": "ZGC",
+    "compact_object_headers": true,
+    "compressed_oops": false,
+    "compressed_class_pointers": true,
+    "parallel_gc_threads": 8,
+    "concurrent_gc_threads": 3,
+    "dynamic_gc_workers": true
+  },
+  "warmup": {
+    "iterations": 10,
+    "minimum_seconds_per_iteration": 10
+  },
+  "timing": {
+    "iterations": 5,
+    "minimum_seconds_per_iteration": 10,
+    "threads": 1,
+    "exploratory_forks": 1,
+    "final_forks_per_version": 3,
+    "profiler": "JMH gc allocation counters only"
+  },
+  "profiling": {
+    "tool": "async-profiler 4.5 via existing ap-loader-all 4.5-13",
+    "events": [
+      "cpu",
+      "alloc=1m"
+    ],
+    "forks": 1,
+    "warmup_iterations": 10,
+    "warmup_seconds": 10,
+    "measurement_iterations": 3,
+    "measurement_seconds": 10,
+    "schemas": [
+      4,
+      5
+    ],
+    "methods": [
+      "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTime",
+      "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTimeFast",
+      "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTime",
+      "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast"
+    ],
+    "variants": [
+      "baseline",
+      "round1",
+      "round2"
+    ],
+    "separate_from_timing_runs": true
+  },
+  "isolation": "One benchmark JVM at a time; global exclusive lock. Profiling and conversion were separate stages. No overlapping server builds, tests, or large transfers. CPU governor performance; RAID sync finished; update services paused.",
+  "workloads": {
+    "generation_only": "Reuse a registry parsed during trial setup.",
+    "parsing_and_generation": "Parse a fresh registry in every operation.",
+    "wiring": "RuntimeWiring.MOCKED_WIRING",
+    "schema_validation": "Enabled for both generators.",
+    "file_io": "Excluded; SDL is loaded during setup.",
+    "methods": [
+      "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTime",
+      "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTimeFast",
+      "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTime",
+      "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast"
+    ]
+  },
+  "fixtures": [
+    {
+      "name": "large-schema-1.graphqls",
+      "source_bytes": 13773,
+      "source_sha256": "dfea2f74c0d1695ad5d90bf71f6b672f47d002a4907d4506e894773b1ebf8840",
+      "registry_types": 59,
+      "schema_types": 74,
+      "schema_printer_sha256": "fdf58b359f75d66dded059467648ac85dc8436fbe7a41193848f482136a2c6ef"
+    },
+    {
+      "name": "large-schema-2.graphqls",
+      "source_bytes": 184185,
+      "source_sha256": "d7e79df55755ae1d18fa1b953a8d9984bd54a9b881f5e2fd84bd1b74668cc512",
+      "registry_types": 253,
+      "schema_types": 272,
+      "schema_printer_sha256": "01a73f2974de6d59d33a5206097b9d779123d3dddc30b05a8bef350bf540a89f"
+    },
+    {
+      "name": "large-schema-3.graphqls",
+      "source_bytes": 673448,
+      "source_sha256": "3cbfed0aaa5bf3a65c13790ed49e397d1f59ed49ce6c770ad268de3ed7178821",
+      "registry_types": 4084,
+      "schema_types": 4124,
+      "schema_printer_sha256": "8f44e2f09191cdddfc591c31698dbce57a3aa0f27dcf5893a113fe32ae75095d"
+    },
+    {
+      "name": "large-schema-4.graphqls",
+      "source_bytes": 6065808,
+      "source_sha256": "c6a1e0f3f8314756e0ef3f7f738a7db103aba57e54b3227326327bad233e9e7e",
+      "registry_types": 18830,
+      "schema_types": 18850,
+      "schema_printer_sha256": "438e125824cff15c51139540aae4623e793d49eab23788cab9b1dcdc25bdadf5"
+    },
+    {
+      "name": "large-schema-5.graphqls",
+      "source_bytes": 11281538,
+      "source_sha256": "96d9caad94ed4af89ca9d9f38430705ccefc12f7baa86bbb8044c57413a7285a",
+      "registry_types": 25733,
+      "schema_types": 25754,
+      "schema_printer_sha256": "2e58d1820f2a4563d0af7ad5969d8bb728a35b622340159a0f8db7bfca8d30b7"
+    }
+  ],
+  "correctness": {
+    "schema_prints_match": "Both generators, all five fixtures, every candidate.",
+    "java25_spock_suite": {
+      "passed": 6029,
+      "existing_skips": 7,
+      "failures": 0,
+      "includes_preexisting_untracked_parser_tests": true
+    },
+    "java25_testng_suite": {
+      "passed": 141,
+      "expected_skips": 49,
+      "failures": 0
+    },
+    "build_checks": [
+      "assemble",
+      "check",
+      "jacocoTestReport"
+    ],
+    "per_class_coverage_gate": {
+      "classes_checked": 993,
+      "regressions": 0
+    }
+  },
+  "excluded_from_speedup_claims": [
+    "Superseded G1 trials",
+    "All superseded 8 GiB trials",
+    "Profiling timings",
+    "Smoke timings",
+    "Exploratory one-fork timings"
+  ],
+  "final_comparison": {
+    "started": "2026-11-03T15:49:33.376616+00:00",
+    "ordering": "Alternate A/B and B/A by method and reverse that order for each successive schema; never overlapping",
+    "jars": {
+      "baseline-zgc24": "ffe3e1ebc380b7764c62fc796e4c1c1e020e72a5943a07de77ddd4c957a54c18",
+      "round3-zgc24": "53b324268161656a2182d2c6902b68a3f98b4c2af3d34947763f2e31d168f020"
+    },
+    "finished": "2026-11-03T22:05:45.857504+00:00"
+  },
+  "final_review_complete": true,
+  "host_settings_restored_utc": "2026-11-03T22:13:40.971443+00:00"
+}
