@@ -370,4 +370,84 @@ class FastSchemaGeneratorTest extends Specification {
         schema != null
     }
 
+    def "schema directives from schema definition and schema extensions match standard SchemaGenerator"() {
+        given:
+        def sdl = '''
+            directive @link(url: String!, purpose: Purpose, opts: LinkOpts) repeatable on SCHEMA
+            directive @owner(team: String!) on SCHEMA
+
+            enum Purpose { SECURITY EXECUTION }
+            input LinkOpts { strict: Boolean }
+
+            schema @link(url: "https://a.dev", purpose: SECURITY, opts: { strict: true }) {
+                query: Query
+            }
+
+            extend schema @owner(team: "graph") @link(url: "https://b.dev")
+
+            type Query { hello: String }
+        '''
+        def registry = new SchemaParser().parse(sdl)
+
+        when:
+        def standardSchema = new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+        def fastSchema = new FastSchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+
+        then:
+        fastSchema.schemaAppliedDirectives.collect { it.name } == ["link", "owner", "link"]
+        fastSchema.schemaAppliedDirectives.collect { it.name } == standardSchema.schemaAppliedDirectives.collect { it.name }
+        fastSchema.getSchemaAppliedDirectives("link").collect { it.getArgument("url").value } == ["https://a.dev", "https://b.dev"]
+        fastSchema.getSchemaAppliedDirective("owner").getArgument("team").value == "graph"
+        fastSchema.schemaDirectives.collect { it.name } == standardSchema.schemaDirectives.collect { it.name }
+
+        def options = SchemaPrinter.Options.defaultOptions().includeSchemaDefinition(true)
+        new SchemaPrinter(options).print(fastSchema) == new SchemaPrinter(options).print(standardSchema)
+    }
+
+    def "schema extension definitions are captured like standard SchemaGenerator"() {
+        given:
+        def sdl = '''
+            directive @owner(team: String!) on SCHEMA
+
+            schema { query: Query }
+            extend schema @owner(team: "graph")
+            extend schema { mutation: Mutation }
+
+            type Query { hello: String }
+            type Mutation { bump: Int }
+        '''
+        def registry = new SchemaParser().parse(sdl)
+
+        when:
+        def standardSchema = new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+        def fastSchema = new FastSchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+
+        then:
+        fastSchema.mutationType.name == "Mutation"
+        fastSchema.definition != null
+        fastSchema.extensionDefinitions.size() == 2
+        fastSchema.extensionDefinitions == standardSchema.extensionDefinitions
+    }
+
+    def "schema AST definitions are not captured when captureAstDefinitions is false"() {
+        given:
+        def sdl = '''
+            directive @owner(team: String!) on SCHEMA
+
+            schema { query: Query }
+            extend schema @owner(team: "graph")
+
+            type Query { hello: String }
+        '''
+        def options = SchemaGenerator.Options.defaultOptions().captureAstDefinitions(false)
+
+        when:
+        def fastSchema = new FastSchemaGenerator().makeExecutableSchema(options, new SchemaParser().parse(sdl), RuntimeWiring.MOCKED_WIRING)
+
+        then:
+        fastSchema.definition == null
+        fastSchema.extensionDefinitions.isEmpty()
+        fastSchema.getSchemaAppliedDirective("owner") != null
+    }
+
 }
