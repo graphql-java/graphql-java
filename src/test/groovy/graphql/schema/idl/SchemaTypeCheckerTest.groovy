@@ -12,6 +12,7 @@ import graphql.schema.TypeResolver
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError
 import graphql.schema.idl.errors.DirectiveIllegalLocationError
 import graphql.schema.idl.errors.DirectiveUndeclaredError
+import graphql.schema.idl.errors.InterfaceFieldRedefinitionError
 import graphql.schema.idl.errors.MissingTypeError
 import graphql.schema.idl.errors.NonUniqueNameError
 import graphql.schema.idl.errors.QueryOperationMissingError
@@ -593,6 +594,34 @@ class SchemaTypeCheckerTest extends Specification {
         expect:
 
         result.get(0).getMessage().contains("has tried to redefine field 'fieldA' defined via interface 'InterfaceType'")
+    }
+
+    def "test object when redefining interface field with different inner list wrapping"() {
+
+        def spec = """
+            interface InterfaceType {
+                nullability : [String!]
+                depth : [String]
+            }
+
+            type BaseType implements InterfaceType {
+                nullability : [String]
+                depth : [[String]]
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.size() == 2
+        result.every { it instanceof InterfaceFieldRedefinitionError }
+        result.any { it.getMessage().contains("has tried to redefine field 'nullability' defined via interface 'InterfaceType'") }
+        result.any { it.getMessage().contains("has tried to redefine field 'depth' defined via interface 'InterfaceType'") }
     }
 
     def "test type extension when redefining interface field"() {

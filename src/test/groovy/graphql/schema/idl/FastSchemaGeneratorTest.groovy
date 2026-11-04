@@ -76,6 +76,46 @@ class FastSchemaGeneratorTest extends Specification {
         standardUser.fieldDefinitions.size() == fastUser.fieldDefinitions.size()
     }
 
+    def "typeMap order matches standard SchemaGenerator"() {
+        given:
+        def sdl = '''
+            type Query { z: Zebra, a: Apple, m: Mango, n: Node }
+            interface Node { id: ID! }
+            type Zebra implements Node { id: ID! }
+            type Apple implements Node { id: ID! }
+            type Mango { id: ID! }
+            enum Color { RED }
+            input Filter { c: Color }
+        '''
+        def registry = new SchemaParser().parse(sdl)
+
+        when:
+        def standardSchema = new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+        def fastSchema = new FastSchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+
+        then:
+        fastSchema.typeMap.keySet().toList() == standardSchema.typeMap.keySet().toList()
+    }
+
+    def "directive order matches standard SchemaGenerator"() {
+        given:
+        def sdl = '''
+            directive @zeta on FIELD_DEFINITION
+            directive @alpha on FIELD_DEFINITION
+            directive @deprecated(reason: String = "No longer supported") on FIELD_DEFINITION | ENUM_VALUE | ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+            directive @mid on OBJECT
+            type Query { a: String @alpha, z: String @zeta }
+        '''
+        def registry = new SchemaParser().parse(sdl)
+
+        when:
+        def standardSchema = new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+        def fastSchema = new FastSchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+
+        then:
+        fastSchema.directives*.name == standardSchema.directives*.name
+    }
+
     def "handles schema with interfaces"() {
         given:
         def sdl = '''

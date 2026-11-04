@@ -13,6 +13,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.util.Pair;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,7 +108,7 @@ public class FastSchemaGenerator {
         // Extract operation types by name from built types (all types from buildCtx are named types)
         Set<GraphQLNamedType> allBuiltTypes = buildCtx.getTypes().stream()
                 .map(t -> (GraphQLNamedType) t)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // Get the actual type names from operationTypeDefinitions, defaulting to standard names
         String queryTypeName = getOperationTypeName(operationTypeDefinitions, "query", "Query");
