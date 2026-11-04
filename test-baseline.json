@@ -1,22 +1,22 @@
 {
   "tests": {
     "java17": {
-      "total": 6186,
-      "passed": 6130,
+      "total": 6231,
+      "passed": 6175,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java21": {
-      "total": 6186,
-      "passed": 6130,
+      "total": 6231,
+      "passed": 6175,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java25": {
-      "total": 6186,
-      "passed": 6130,
+      "total": 6231,
+      "passed": 6175,
       "failed": 0,
       "errors": 0,
       "skipped": 56
@@ -32,11 +32,11 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8958,
+        "covered": 8960,
         "missed": 1506
       },
       "line": {
-        "covered": 30335,
+        "covered": 30337,
         "missed": 3079
       },
       "method": {
@@ -179303,11 +179303,11 @@
       },
       "graphql.execution.ExecutionStrategy": {
         "line": {
-          "covered": 452,
+          "covered": 454,
           "missed": 12
         },
         "branch": {
-          "covered": 119,
+          "covered": 121,
           "missed": 11
         },
         "method": {
@@ -179663,11 +179663,11 @@
             "line": 611,
             "counters": {
               "line": {
-                "covered": 9,
+                "covered": 11,
                 "missed": 0
               },
               "branch": {
-                "covered": 2,
+                "covered": 4,
                 "missed": 0
               },
               "method": {
@@ -179679,7 +179679,7 @@
           {
             "name": "getNormalizedField",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Ljava/util/function/Supplier;)Ljava/util/function/Supplier;",
-            "line": 625,
+            "line": 629,
             "counters": {
               "line": {
                 "covered": 2,
@@ -179698,7 +179698,7 @@
           {
             "name": "unboxPossibleDataFetcherResult",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Ljava/lang/Object;)Ljava/lang/Object;",
-            "line": 644,
+            "line": 648,
             "counters": {
               "line": {
                 "covered": 10,
@@ -179717,7 +179717,7 @@
           {
             "name": "addExtensionsIfPresent",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/DataFetcherResult;)V",
-            "line": 664,
+            "line": 668,
             "counters": {
               "line": {
                 "covered": 6,
@@ -179736,7 +179736,7 @@
           {
             "name": "handleFetchingException",
             "desc": "(Lgraphql/schema/DataFetchingEnvironment;Lgraphql/execution/ExecutionStrategyParameters;Ljava/lang/Throwable;)Ljava/util/concurrent/CompletableFuture;",
-            "line": 678,
+            "line": 682,
             "counters": {
               "line": {
                 "covered": 11,
@@ -179755,7 +179755,7 @@
           {
             "name": "asyncHandleException",
             "desc": "(Lgraphql/execution/DataFetcherExceptionHandler;Lgraphql/execution/DataFetcherExceptionHandlerParameters;)Ljava/util/concurrent/CompletableFuture;",
-            "line": 696,
+            "line": 700,
             "counters": {
               "line": {
                 "covered": 1,
@@ -179774,7 +179774,7 @@
           {
             "name": "completeField",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Ljava/lang/Object;)Lgraphql/execution/FieldValueInfo;",
-            "line": 723,
+            "line": 727,
             "counters": {
               "line": {
                 "covered": 5,
@@ -179793,7 +179793,7 @@
           {
             "name": "completeField",
             "desc": "(Lgraphql/schema/GraphQLFieldDefinition;Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Ljava/lang/Object;)Lgraphql/execution/FieldValueInfo;",
-            "line": 732,
+            "line": 736,
             "counters": {
               "line": {
                 "covered": 17,
@@ -179812,7 +179812,7 @@
           {
             "name": "completeValue",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;)Lgraphql/execution/FieldValueInfo;",
-            "line": 775,
+            "line": 779,
             "counters": {
               "line": {
                 "covered": 20,
@@ -179831,7 +179831,7 @@
           {
             "name": "handleUnresolvedTypeProblem",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/execution/UnresolvedTypeException;)V",
-            "line": 809,
+            "line": 813,
             "counters": {
               "line": {
                 "covered": 3,
@@ -179850,7 +179850,7 @@
           {
             "name": "getFieldValueInfoForNull",
             "desc": "(Lgraphql/execution/ExecutionStrategyParameters;)Lgraphql/execution/FieldValueInfo;",
-            "line": 824,
+            "line": 828,
             "counters": {
               "line": {
                 "covered": 2,
@@ -179869,7 +179869,7 @@
           {
             "name": "completeValueForNull",
             "desc": "(Lgraphql/execution/ExecutionStrategyParameters;)Ljava/lang/Object;",
-            "line": 840,
+            "line": 844,
             "counters": {
               "line": {
                 "covered": 3,
@@ -179888,7 +179888,7 @@
           {
             "name": "completeValueForList",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Ljava/lang/Object;)Lgraphql/execution/FieldValueInfo;",
-            "line": 857,
+            "line": 861,
             "counters": {
               "line": {
                 "covered": 6,
@@ -179907,7 +179907,7 @@
           {
             "name": "completeValueForList",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Ljava/lang/Iterable;)Lgraphql/execution/FieldValueInfo;",
-            "line": 881,
+            "line": 885,
             "counters": {
               "line": {
                 "covered": 33,
@@ -179926,7 +179926,7 @@
           {
             "name": "handleValueException",
             "desc": "(Ljava/util/concurrent/CompletableFuture;Ljava/lang/Throwable;Lgraphql/execution/ExecutionContext;)V",
-            "line": 957,
+            "line": 961,
             "counters": {
               "line": {
                 "covered": 14,
@@ -179945,7 +179945,7 @@
           {
             "name": "completeValueForScalar",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/schema/GraphQLScalarType;Ljava/lang/Object;)Ljava/lang/Object;",
-            "line": 993,
+            "line": 997,
             "counters": {
               "line": {
                 "covered": 7,
@@ -179964,7 +179964,7 @@
           {
             "name": "completeValueForEnum",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/schema/GraphQLEnumType;Ljava/lang/Object;)Ljava/lang/Object;",
-            "line": 1020,
+            "line": 1024,
             "counters": {
               "line": {
                 "covered": 7,
@@ -179983,7 +179983,7 @@
           {
             "name": "completeValueForObject",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/schema/GraphQLObjectType;Ljava/lang/Object;)Ljava/lang/Object;",
-            "line": 1044,
+            "line": 1048,
             "counters": {
               "line": {
                 "covered": 14,
@@ -180002,7 +180002,7 @@
           {
             "name": "handleCoercionProblem",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/schema/CoercingSerializeException;)Ljava/lang/Object;",
-            "line": 1072,
+            "line": 1076,
             "counters": {
               "line": {
                 "covered": 3,
@@ -180021,7 +180021,7 @@
           {
             "name": "resolveType",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/schema/GraphQLType;)Lgraphql/schema/GraphQLObjectType;",
-            "line": 1081,
+            "line": 1085,
             "counters": {
               "line": {
                 "covered": 3,
@@ -180040,7 +180040,7 @@
           {
             "name": "toIterable",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Ljava/lang/Object;)Ljava/lang/Iterable;",
-            "line": 1088,
+            "line": 1092,
             "counters": {
               "line": {
                 "covered": 4,
@@ -180059,7 +180059,7 @@
           {
             "name": "handleTypeMismatchProblem",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;)V",
-            "line": 1097,
+            "line": 1101,
             "counters": {
               "line": {
                 "covered": 3,
@@ -180078,7 +180078,7 @@
           {
             "name": "incrementAndCheckMaxNodesExceeded",
             "desc": "(Lgraphql/execution/ExecutionContext;)Z",
-            "line": 1111,
+            "line": 1115,
             "counters": {
               "line": {
                 "covered": 6,
@@ -180097,7 +180097,7 @@
           {
             "name": "getFieldDef",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/language/Field;)Lgraphql/schema/GraphQLFieldDefinition;",
-            "line": 1132,
+            "line": 1136,
             "counters": {
               "line": {
                 "covered": 2,
@@ -180116,7 +180116,7 @@
           {
             "name": "getFieldDef",
             "desc": "(Lgraphql/schema/GraphQLSchema;Lgraphql/schema/GraphQLObjectType;Lgraphql/language/Field;)Lgraphql/schema/GraphQLFieldDefinition;",
-            "line": 1146,
+            "line": 1150,
             "counters": {
               "line": {
                 "covered": 1,
@@ -180135,7 +180135,7 @@
           {
             "name": "assertNonNullFieldPrecondition",
             "desc": "(Lgraphql/execution/NonNullableFieldWasNullException;)V",
-            "line": 1164,
+            "line": 1168,
             "counters": {
               "line": {
                 "covered": 0,
@@ -180154,7 +180154,7 @@
           {
             "name": "assertNonNullFieldPrecondition",
             "desc": "(Lgraphql/execution/NonNullableFieldWasNullException;Ljava/util/concurrent/CompletableFuture;)V",
-            "line": 1171,
+            "line": 1175,
             "counters": {
               "line": {
                 "covered": 4,
@@ -180173,7 +180173,7 @@
           {
             "name": "handleNonNullException",
             "desc": "(Lgraphql/execution/ExecutionContext;Ljava/util/concurrent/CompletableFuture;Ljava/lang/Throwable;)Lgraphql/ExecutionResult;",
-            "line": 1178,
+            "line": 1182,
             "counters": {
               "line": {
                 "covered": 16,
@@ -180192,7 +180192,7 @@
           {
             "name": "createExecutionStepInfo",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/schema/GraphQLFieldDefinition;Lgraphql/schema/GraphQLObjectType;)Lgraphql/execution/ExecutionStepInfo;",
-            "line": 1214,
+            "line": 1218,
             "counters": {
               "line": {
                 "covered": 1,
@@ -180211,7 +180211,7 @@
           {
             "name": "createExecutionStepInfo",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;)Ljava/util/function/Supplier;",
-            "line": 1221,
+            "line": 1225,
             "counters": {
               "line": {
                 "covered": 2,
@@ -180230,7 +180230,7 @@
           {
             "name": "addErrorToRightContext",
             "desc": "(Lgraphql/GraphQLError;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/execution/ExecutionContext;)V",
-            "line": 1227,
+            "line": 1231,
             "counters": {
               "line": {
                 "covered": 5,
@@ -180249,7 +180249,7 @@
           {
             "name": "addErrorsToRightContext",
             "desc": "(Ljava/util/List;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/execution/ExecutionContext;)V",
-            "line": 1236,
+            "line": 1240,
             "counters": {
               "line": {
                 "covered": 5,
@@ -180268,7 +180268,7 @@
           {
             "name": "lambda$createExecutionStepInfo$0",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/schema/GraphQLFieldDefinition;)Lgraphql/execution/ExecutionStepInfo;",
-            "line": 1222,
+            "line": 1226,
             "counters": {
               "line": {
                 "covered": 1,
@@ -180287,7 +180287,7 @@
           {
             "name": "lambda$completeValueForList$1",
             "desc": "(Lgraphql/execution/ExecutionContext;Ljava/util/concurrent/CompletableFuture;Ljava/util/List;Ljava/lang/Throwable;)V",
-            "line": 926,
+            "line": 930,
             "counters": {
               "line": {
                 "covered": 14,
@@ -180306,7 +180306,7 @@
           {
             "name": "lambda$completeValueForList$0",
             "desc": "(Lgraphql/execution/ExecutionStepInfo;)Lgraphql/execution/ExecutionStepInfo;",
-            "line": 884,
+            "line": 888,
             "counters": {
               "line": {
                 "covered": 1,
@@ -180325,7 +180325,7 @@
           {
             "name": "lambda$completeField$0",
             "desc": "(Lgraphql/execution/ExecutionStepInfo;)Lgraphql/execution/ExecutionStepInfo;",
-            "line": 736,
+            "line": 740,
             "counters": {
               "line": {
                 "covered": 1,
@@ -180344,7 +180344,7 @@
           {
             "name": "lambda$asyncHandleException$0",
             "desc": "(Lgraphql/execution/DataFetcherExceptionHandlerResult;)Lgraphql/execution/DataFetcherResult;",
-            "line": 697,
+            "line": 701,
             "counters": {
               "line": {
                 "covered": 1,
@@ -180363,7 +180363,7 @@
           {
             "name": "lambda$getNormalizedField$0",
             "desc": "(Ljava/util/function/Supplier;Lgraphql/execution/ExecutionStrategyParameters;Ljava/util/function/Supplier;)Lgraphql/normalized/ExecutableNormalizedField;",
-            "line": 626,
+            "line": 630,
             "counters": {
               "line": {
                 "covered": 1,
