@@ -55,4 +55,25 @@ class InMemoryPersistedQueryCacheTest extends Specification {
         then:
         printAstCompact(doc) == "{foo bar baz}"
     }
+
+    def "known queries take precedence over the query text in the execution input"() {
+        def hash = "knownhash"
+        def inMemCache = InMemoryPersistedQueryCache.newInMemoryPersistedQueryCache()
+                .addQuery(hash, "{foo bar baz}")
+                .build()
+        def ei = mkEI(hash, "{ somethingElse }")
+
+        when:
+        def getDoc = inMemCache.getPersistedQueryDocumentAsync(hash, ei, onMiss).join()
+        def doc = getDoc.document
+        then:
+        printAstCompact(doc) == "{foo bar baz}"
+
+        // a later request that only sends the id must not see the text from the earlier request
+        when:
+        def laterEi = mkEI(hash, PersistedQuerySupport.PERSISTED_QUERY_MARKER)
+        def laterDoc = inMemCache.getPersistedQueryDocumentAsync(hash, laterEi, onMiss).join().document
+        then:
+        printAstCompact(laterDoc) == "{foo bar baz}"
+    }
 }
