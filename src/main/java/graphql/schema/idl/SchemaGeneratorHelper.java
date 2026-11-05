@@ -64,6 +64,7 @@ import graphql.schema.idl.errors.NotAnInputTypeError;
 import graphql.schema.idl.errors.NotAnOutputTypeError;
 import graphql.util.FpKit;
 import graphql.util.Pair;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -119,6 +120,7 @@ public class SchemaGeneratorHelper {
         private final Map<String, GraphQLNamedOutputType> outputGTypes = new LinkedHashMap<>();
         private final Map<String, GraphQLNamedInputType> inputGTypes = new LinkedHashMap<>();
         private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
+        private final Map<String, GraphQLDirective> directivesByName = new LinkedHashMap<>();
         private final GraphQLCodeRegistry.Builder codeRegistry;
         public final Map<String, OperationTypeDefinition> operationTypeDefs;
         public final SchemaGenerator.Options options;
@@ -200,10 +202,15 @@ public class SchemaGeneratorHelper {
 
         public void addDirectiveDefinition(GraphQLDirective directive) {
             this.directives.add(directive);
+            this.directivesByName.putIfAbsent(directive.getName(), directive);
         }
 
         public void addDirectives(Set<GraphQLDirective> directives) {
-            this.directives.addAll(directives);
+            directives.forEach(this::addDirectiveDefinition);
+        }
+
+        public @Nullable GraphQLDirective getDirectiveDefinition(String name) {
+            return directivesByName.get(name);
         }
 
         public Set<GraphQLDirective> getDirectives() {
@@ -319,7 +326,6 @@ public class SchemaGeneratorHelper {
                 typeDefinition.getDirectives(),
                 directivesOf(extensions),
                 INPUT_OBJECT,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
 
         buildAppliedDirectives(buildCtx, builder, appliedDirectives);
@@ -358,7 +364,6 @@ public class SchemaGeneratorHelper {
                 fieldDef.getDirectives(),
                 emptyList(),
                 INPUT_FIELD_DEFINITION,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
 
         buildAppliedDirectives(buildCtx, fieldBuilder, appliedDirectives);
@@ -395,7 +400,6 @@ public class SchemaGeneratorHelper {
                 typeDefinition.getDirectives(),
                 directivesOf(extensions),
                 ENUM,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
 
         buildAppliedDirectives(buildCtx, builder, appliedDirectives);
@@ -432,7 +436,6 @@ public class SchemaGeneratorHelper {
                 evd.getDirectives(),
                 emptyList(),
                 ENUM_VALUE,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
 
         buildAppliedDirectives(buildCtx, builder, appliedDirectives);
@@ -465,7 +468,6 @@ public class SchemaGeneratorHelper {
                     typeDefinition.getDirectives(),
                     directivesOf(extensions),
                     SCALAR,
-                    buildCtx.getDirectives(),
                     buildCtx.getComparatorRegistry());
 
             scalar = scalar.transform(builder -> {
@@ -601,7 +603,6 @@ public class SchemaGeneratorHelper {
                 typeDefinition.getDirectives(),
                 directivesOf(extensions),
                 OBJECT,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
         buildAppliedDirectives(buildCtx, builder, appliedDirectives);
 
@@ -642,7 +643,6 @@ public class SchemaGeneratorHelper {
                 typeDefinition.getDirectives(),
                 directivesOf(extensions),
                 OBJECT,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
         buildAppliedDirectives(buildCtx, builder, appliedDirectives);
 
@@ -716,7 +716,6 @@ public class SchemaGeneratorHelper {
                 typeDefinition.getDirectives(),
                 directivesOf(extensions),
                 UNION,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
         buildAppliedDirectives(buildCtx, builder, appliedDirectives);
 
@@ -800,7 +799,6 @@ public class SchemaGeneratorHelper {
                 inputTypeFactory(buildCtx),
                 fieldDef.getDirectives(),
                 emptyList(), FIELD_DEFINITION,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
 
         buildAppliedDirectives(buildCtx, builder, appliedDirectives);
@@ -900,7 +898,6 @@ public class SchemaGeneratorHelper {
                 valueDefinition.getDirectives(),
                 emptyList(),
                 ARGUMENT_DEFINITION,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
         buildAppliedDirectives(buildCtx, builder, appliedDirectives);
 
@@ -976,7 +973,6 @@ public class SchemaGeneratorHelper {
                 schemaDirectiveList,
                 emptyList(),
                 DirectiveLocation.SCHEMA,
-                buildCtx.getDirectives(),
                 buildCtx.getComparatorRegistry());
     }
 
