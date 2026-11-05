@@ -64,8 +64,8 @@ class SchemaGeneratorAppliedDirectiveHelper {
             List<Directive> extensionDirectives,
             Introspection.DirectiveLocation directiveLocation,
             GraphqlTypeComparatorRegistry comparatorRegistry) {
-        directives = directives != null ? directives : emptyList();
-        extensionDirectives = extensionDirectives != null ? extensionDirectives : emptyList();
+        directives = Optional.ofNullable(directives).orElse(emptyList());
+        extensionDirectives = Optional.ofNullable(extensionDirectives).orElse(emptyList());
         if (directives.isEmpty() && extensionDirectives.isEmpty()) {
             return pair(emptyList(), emptyList());
         }

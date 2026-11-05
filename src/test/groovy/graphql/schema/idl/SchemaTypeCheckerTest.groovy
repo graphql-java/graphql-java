@@ -16,6 +16,7 @@ import graphql.schema.idl.errors.DirectiveUndeclaredError
 import graphql.schema.idl.errors.DirectiveUnknownArgumentError
 import graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError
 import graphql.schema.idl.errors.InterfaceFieldRedefinitionError
+import graphql.schema.idl.errors.MissingInterfaceFieldArgumentsError
 import graphql.schema.idl.errors.MissingTypeError
 import graphql.schema.idl.errors.NonUniqueNameError
 import graphql.schema.idl.errors.QueryOperationMissingError
@@ -195,6 +196,36 @@ class SchemaTypeCheckerTest extends Specification {
         'Int'         | '[Int]'        | false
         'Int!'        | '[Int]'        | false
         '[Int]'       | 'Int!'         | false
+    }
+
+    def "interface arguments must match by name even when their counts and types match"() {
+        given:
+        def sdl = '''
+            interface InterfaceType { field(expected: Int): String }
+            type Query implements InterfaceType { field(other: Int): String }
+        '''
+
+        when:
+        def errors = check(sdl)
+
+        then:
+        errors.size() == 1
+        errors[0] instanceof MissingInterfaceFieldArgumentsError
+    }
+
+    def "duplicate fields on an implementing type report a schema error instead of failing field lookup"() {
+        given:
+        def sdl = '''
+            interface InterfaceType { field: String }
+            type Query implements InterfaceType { field: String field: String }
+        '''
+
+        when:
+        def errors = check(sdl)
+
+        then:
+        errors.size() == 1
+        errors[0] instanceof NonUniqueNameError
     }
 
     def "each directive usage is checked independently against shared argument definitions"() {

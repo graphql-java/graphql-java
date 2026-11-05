@@ -119,7 +119,6 @@ public class SchemaGeneratorHelper {
 
         private final Map<String, GraphQLNamedOutputType> outputGTypes = new LinkedHashMap<>();
         private final Map<String, GraphQLNamedInputType> inputGTypes = new LinkedHashMap<>();
-        private final Set<GraphQLDirective> directives = new LinkedHashSet<>();
         private final Map<String, GraphQLDirective> directivesByName = new LinkedHashMap<>();
         private final GraphQLCodeRegistry.Builder codeRegistry;
         public final Map<String, OperationTypeDefinition> operationTypeDefs;
@@ -201,20 +200,11 @@ public class SchemaGeneratorHelper {
         }
 
         public void addDirectiveDefinition(GraphQLDirective directive) {
-            this.directives.add(directive);
             this.directivesByName.putIfAbsent(directive.getName(), directive);
-        }
-
-        public void addDirectives(Set<GraphQLDirective> directives) {
-            directives.forEach(this::addDirectiveDefinition);
         }
 
         public @Nullable GraphQLDirective getDirectiveDefinition(String name) {
             return directivesByName.get(name);
-        }
-
-        public Set<GraphQLDirective> getDirectives() {
-            return directives;
         }
 
         /**
