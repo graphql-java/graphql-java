@@ -374,7 +374,7 @@ class DeferWithDataLoaderTest extends Specification {
         combined.errors == null
         combined.data == expectedExpensiveData
 
-        if (contextKey == ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING) {
+        if (contextKey == ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING || contextKey == null) {
             // based on the timing of shops vs expensiveShops DF it could be one or two batch loader calls
             batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1 || batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 2
         } else {

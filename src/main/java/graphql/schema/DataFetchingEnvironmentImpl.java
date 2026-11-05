@@ -236,7 +236,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return null;
         }
         if (!graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)
-            && !graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, false)) {
+            && !graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, true)) {
             return dataLoader;
         }
         return new DataLoaderWithContext<>(this, dataLoaderName, dataLoader);
