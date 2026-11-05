@@ -1,10 +1,12 @@
 package graphql.validation;
 
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.i18n.I18n;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -37,12 +39,16 @@ public class Validator {
     }
 
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<OperationValidationRule> rulePredicate, Locale locale) {
-        return validateDocument(schema, document, rulePredicate, locale, null);
+        return validateDocument(schema, document, rulePredicate, locale, null, null);
     }
 
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<OperationValidationRule> rulePredicate, Locale locale, QueryComplexityLimits limits) {
+        return validateDocument(schema, document, rulePredicate, locale, limits, null);
+    }
+
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<OperationValidationRule> rulePredicate, Locale locale, QueryComplexityLimits limits, @Nullable GraphQLContext graphQLContext) {
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, locale);
-        ValidationContext validationContext = new ValidationContext(schema, document, i18n, limits);
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n, limits, graphQLContext);
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector(MAX_VALIDATION_ERRORS);
         OperationValidator operationValidator = new OperationValidator(validationContext, validationErrorCollector, rulePredicate);

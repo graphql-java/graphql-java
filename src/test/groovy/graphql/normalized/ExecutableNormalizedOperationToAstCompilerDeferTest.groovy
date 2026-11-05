@@ -496,6 +496,133 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
 '''
     }
 
+    def "shared deferred selection compiles to one multi field fragment - #directive"() {
+        given:
+        String query = """
+            query q {
+                dog {
+                    name
+                    ...Sidebar
+                    ...Details
+                }
+            }
+            fragment Sidebar on Dog {
+                ...OwnerField
+            }
+            fragment Details on Dog {
+                ...OwnerField
+            }
+            fragment OwnerField on Dog {
+                owner {
+                    ...OwnerData $directive
+                }
+            }
+            fragment OwnerData on Person {
+                firstname
+                lastname
+            }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def tree = createNormalizedTree(schema, query)
+
+        when:
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        printed == """{
+  dog {
+    name
+    owner {
+      ... $directive {
+        firstname
+        lastname
+      }
+    }
+  }
+}
+"""
+
+        where:
+        directive << ['@defer(label: "owner-data")', '@defer']
+    }
+
+    def "distinct defers of the same fragment compile separately - #firstDirective #secondDirective"() {
+        given:
+        String query = """
+            query q {
+                dog {
+                    ...DogData $firstDirective
+                    ...DogData $secondDirective
+                }
+            }
+            fragment DogData on Dog {
+                name
+                breed
+            }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def tree = createNormalizedTree(schema, query)
+
+        when:
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        printed == """{
+  dog {
+    ... $firstDirective {
+      breed
+      name
+    }
+    ... $secondDirective {
+      breed
+      name
+    }
+  }
+}
+"""
+
+        where:
+        firstDirective           | secondDirective
+        '@defer(label: "first")' | '@defer(label: "second")'
+        '@defer'                 | '@defer'
+    }
+
+    def "shared defer compiles once after accumulating narrow and broad type coverage"() {
+        given:
+        String query = '''
+            query q {
+                animal {
+                    ... on Dog { ...AnimalFields }
+                    ... on Animal { ...AnimalFields }
+                }
+            }
+            fragment AnimalFields on Animal {
+                ...AnimalData @defer(label: "animal-data")
+            }
+            fragment AnimalData on Animal {
+                name
+            }
+        '''
+        GraphQLSchema schema = mkSchema(sdl)
+        def tree = createNormalizedTree(schema, query)
+
+        when:
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        printed == '''{
+  animal {
+    ... @defer(label: "animal-data") {
+      name
+    }
+  }
+}
+'''
+    }
+
     private ExecutableNormalizedOperation createNormalizedTree(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
         assertValidQuery(schema, query, variables)
         Document originalDocument = TestUtil.parseQuery(query)
