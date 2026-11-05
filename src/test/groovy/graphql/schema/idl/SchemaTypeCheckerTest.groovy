@@ -11,7 +11,10 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError
 import graphql.schema.idl.errors.DirectiveIllegalLocationError
+import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError
 import graphql.schema.idl.errors.DirectiveUndeclaredError
+import graphql.schema.idl.errors.DirectiveUnknownArgumentError
+import graphql.schema.idl.errors.InterfaceFieldArgumentRedefinitionError
 import graphql.schema.idl.errors.InterfaceFieldRedefinitionError
 import graphql.schema.idl.errors.MissingTypeError
 import graphql.schema.idl.errors.NonUniqueNameError
@@ -141,6 +144,102 @@ class SchemaTypeCheckerTest extends Specification {
             runtimeBuilder.type(TypeRuntimeWiring.newTypeWiring(name).typeResolver(resolver))
         }
         return new SchemaTypeChecker().checkTypeRegistry(types.readOnly(), runtimeBuilder.build())
+    }
+
+    def "missing field types are reported before missing argument types in source order"() {
+        given:
+        def sdl = '''type Query {
+    first(arg: [MissingInput!]!): [MissingOutput!]!
+    second(arg: OtherInput): OtherOutput
+}'''
+
+        when:
+        def errors = check(sdl)
+
+        then:
+        errors*.class == [MissingTypeError, MissingTypeError, MissingTypeError, MissingTypeError]
+        errors*.message == [
+                "The field type 'MissingOutput' is not present when resolving type 'Query' [@1:1]",
+                "The field type 'OtherOutput' is not present when resolving type 'Query' [@1:1]",
+                "The field input type 'MissingInput' is not present when resolving type 'Query' [@1:1]",
+                "The field input type 'OtherInput' is not present when resolving type 'Query' [@1:1]"
+        ]
+        errors.every { it.locations*.line == [1] && it.locations*.column == [1] }
+    }
+
+    def "interface argument types compare every wrapper and name for implementations declared in extensions"() {
+        given:
+        def sdl = """
+            interface InterfaceType { field(arg: $interfaceType): String }
+            type Query { other: String }
+            extend type Query implements InterfaceType { field(arg: $objectType): String }
+        """
+
+        when:
+        def errors = check(sdl)
+
+        then:
+        errors.size() == (matches ? 0 : 1)
+        matches || errors[0] instanceof InterfaceFieldArgumentRedefinitionError
+        matches || errors[0].message.endsWith("from 'arg:$interfaceType' to 'arg:$objectType")
+
+        where:
+        interfaceType | objectType     | matches
+        'String'      | 'String'       | true
+        '[[Int!]!]!'  | '[[Int!]!]!'   | true
+        '[[Int!]!]!'  | '[[String!]!]!' | false
+        '[[Int!]!]!'  | '[[Int]!]!'    | false
+        '[[Int!]!]!'  | '[[Int!]]!'    | false
+        '[[Int!]!]!'  | '[[Int!]!]'    | false
+        '[Int]'       | 'Int'          | false
+        'Int'         | '[Int]'        | false
+        'Int!'        | '[Int]'        | false
+        '[Int]'       | 'Int!'         | false
+    }
+
+    def "each directive usage is checked independently against shared argument definitions"() {
+        given:
+        def sdl = '''
+            directive @check(required: Int!, optional: String, defaulted: Int! = 7) on FIELD_DEFINITION
+            type Query {
+                first: String @check(required: 1)
+                unknown: String @check(required: 2, extra: 3)
+                missing: String @check(optional: "text")
+                invalid: String @check(required: "wrong")
+                explicitNull: String @check(required: null)
+                last: String @check(required: 3, optional: null, defaulted: 4)
+            }
+        '''
+
+        when:
+        def errors = check(sdl)
+
+        then:
+        errors*.class == [DirectiveUnknownArgumentError, DirectiveMissingNonNullArgumentError,
+                         DirectiveIllegalArgumentTypeError, DirectiveIllegalArgumentTypeError]
+        errors[0].message.contains("unknown argument 'extra'")
+        errors[1].message.contains("non null argument 'required'")
+        errors[2].message.contains("'invalid'")
+        errors[3].message.contains("'explicitNull'")
+    }
+
+    def "directive argument definitions do not leak between registry checks"() {
+        given:
+        def checker = new SchemaTypeChecker()
+        def wiring = RuntimeWiring.newRuntimeWiring().build()
+        def intRegistry = parseSDL('''
+            directive @check(value: Int!) on FIELD_DEFINITION
+            type Query { first: String @check(value: 1) second: String @check(value: 2) }
+        ''')
+        def stringRegistry = parseSDL('''
+            directive @check(value: String!) on FIELD_DEFINITION
+            type Query { first: String @check(value: "a") second: String @check(value: "b") }
+        ''')
+
+        expect:
+        checker.checkTypeRegistry(intRegistry.readOnly(), wiring).empty
+        checker.checkTypeRegistry(stringRegistry.readOnly(), wiring).empty
+        checker.checkTypeRegistry(intRegistry.readOnly(), wiring).empty
     }
 
     def "test missing type in object"() {
