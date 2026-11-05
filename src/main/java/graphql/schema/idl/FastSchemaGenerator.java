@@ -5,12 +5,15 @@ import graphql.GraphQLError;
 import graphql.language.OperationTypeDefinition;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.errors.SchemaProblem;
+import graphql.util.Pair;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -86,6 +89,9 @@ public class FastSchemaGenerator {
         // Build directives
         Set<GraphQLDirective> additionalDirectives = schemaGeneratorHelper.buildAdditionalDirectiveDefinitions(buildCtx);
 
+        // Build directives applied to the schema (from both schema definition and schema extensions)
+        Pair<List<GraphQLDirective>, List<GraphQLAppliedDirective>> schemaDirectives = schemaGeneratorHelper.buildSchemaAppliedDirectives(buildCtx);
+
         // Use a dummy builder to trigger type building (this populates buildCtx)
         GraphQLSchema.Builder tempBuilder = GraphQLSchema.newSchema();
         schemaGeneratorHelper.buildOperations(buildCtx, tempBuilder);
@@ -102,7 +108,7 @@ public class FastSchemaGenerator {
         // Extract operation types by name from built types (all types from buildCtx are named types)
         Set<GraphQLNamedType> allBuiltTypes = buildCtx.getTypes().stream()
                 .map(t -> (GraphQLNamedType) t)
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
 
         // Get the actual type names from operationTypeDefinitions, defaulting to standard names
         String queryTypeName = getOperationTypeName(operationTypeDefinitions, "query", "Query");
@@ -131,12 +137,19 @@ public class FastSchemaGenerator {
         // Add all directive definitions
         fastBuilder.additionalDirectives(additionalDirectives);
 
-        // Add schema description and definition if present
+        // Add directives applied to the schema
+        fastBuilder.withSchemaDirectives(schemaDirectives.first);
+        fastBuilder.withSchemaAppliedDirectives(schemaDirectives.second);
+
+        // Add schema description, and AST definitions if captured
         typeRegistry.schemaDefinition().ifPresent(schemaDefinition -> {
             String description = buildDescription(buildCtx, schemaDefinition, schemaDefinition.getDescription());
             fastBuilder.description(description);
-            fastBuilder.definition(schemaDefinition);
         });
+        if (buildCtx.isCaptureAstDefinitions()) {
+            typeRegistry.schemaDefinition().ifPresent(fastBuilder::definition);
+            fastBuilder.extensionDefinitions(typeRegistry.getSchemaExtensionDefinitions());
+        }
 
         // Configure validation
         fastBuilder.withValidation(options.isWithValidation());
