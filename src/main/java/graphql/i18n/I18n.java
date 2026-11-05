@@ -89,6 +89,7 @@ public class I18n {
         } catch (MissingResourceException e) {
             assertShouldNeverHappen("There must be a resource bundle key called %s", msgKey);
         }
-        return new MessageFormat(msgPattern).format(msgArgs);
+        // format any arguments (eg numbers) with the same locale as the message rather than the JVM default locale
+        return new MessageFormat(msgPattern, locale).format(msgArgs);
     }
 }

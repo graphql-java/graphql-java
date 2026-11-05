@@ -5,6 +5,7 @@ import graphql.parser.Parser;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 class QueryGeneratorPrinter {
@@ -39,7 +40,7 @@ class QueryGeneratorPrinter {
             @Nullable String operationName,
             @Nullable String arguments
     ) {
-        String operation = fieldPathParts[0].toLowerCase();
+        String operation = fieldPathParts[0].toLowerCase(Locale.ROOT);
         StringBuilder sb = new StringBuilder();
         sb.append(operation);
 

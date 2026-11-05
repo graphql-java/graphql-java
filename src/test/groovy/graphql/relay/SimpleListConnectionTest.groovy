@@ -14,6 +14,10 @@ class SimpleListConnectionTest extends Specification {
         newDataFetchingEnvironment().arguments(["after": cursor]).build()
     }
 
+    DataFetchingEnvironment beforeCursorEnv(String cursor) {
+        newDataFetchingEnvironment().arguments(["before": cursor]).build()
+    }
+
     def createCursor(int offset) {
         def string = SimpleListConnection.DUMMY_CURSOR_PREFIX + Integer.toString(offset)
         return Base64.getEncoder().encodeToString(string.getBytes(StandardCharsets.UTF_8))
@@ -92,5 +96,45 @@ class SimpleListConnectionTest extends Specification {
 
         then:
         connection.getEdges().size() == 0
+    }
+
+    def "after cursor offset at Integer.MAX_VALUE gives an empty connection"() {
+        given:
+        def listConnection = new SimpleListConnection(["a", "b"])
+
+        when:
+        def connection = listConnection.get(afterCursorEnv(createCursor(Integer.MAX_VALUE)))
+
+        then:
+        connection.getEdges().isEmpty()
+    }
+
+    def "negative cursor offsets throw exception"() {
+        given:
+        def listConnection = new SimpleListConnection(["a", "b"])
+
+        when:
+        listConnection.get(beforeCursorEnv(createCursor(-5)))
+
+        then:
+        thrown(InvalidCursorException)
+
+        when:
+        listConnection.get(afterCursorEnv(createCursor(-5)))
+
+        then:
+        thrown(InvalidCursorException)
+    }
+
+    def "cursor with a different prefix throws exception"() {
+        given:
+        def listConnection = new SimpleListConnection(["a", "b"])
+        def cursor = Base64.getEncoder().encodeToString("custom-cursor1".getBytes(StandardCharsets.UTF_8))
+
+        when:
+        listConnection.get(afterCursorEnv(cursor))
+
+        then:
+        thrown(InvalidCursorException)
     }
 }

@@ -5,6 +5,9 @@ import graphql.Internal;
 @Internal
 public final class EscapeUtil {
 
+    private static final String THREE_QUOTES = "\"\"\"";
+    private static final String ESCAPED_THREE_QUOTES = "\\\"\"\"";
+
     private EscapeUtil() {
     }
 
@@ -19,6 +22,18 @@ public final class EscapeUtil {
         StringBuilder sb = new StringBuilder(stringValue.length());
         escapeJsonStringTo(sb, stringValue);
         return sb.toString();
+    }
+
+    /**
+     * Encodes the value for use inside a graphql block string by escaping the triple quote
+     * sequences that would otherwise end the block string
+     *
+     * @param stringValue the value to encode as a block string
+     *
+     * @return the encoded string
+     */
+    public static String escapeBlockString(String stringValue) {
+        return stringValue.replace(THREE_QUOTES, ESCAPED_THREE_QUOTES);
     }
 
     public static void escapeJsonStringTo(StringBuilder output, String stringValue) {

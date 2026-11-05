@@ -658,7 +658,13 @@ class ValuesResolverConversion {
     ) {
         if (inputValue instanceof VariableReference) {
             String variableName = ((VariableReference) inputValue).getName();
-            return coercedVariables.get(variableName);
+            Object variableValue = coercedVariables.get(variableName);
+            // a nullable variable with a default value is allowed in a non null position (eg a list item), so an explicit null
+            // has to be rejected here rather than ending up in a non null list
+            if (variableValue == null && isNonNull(type)) {
+                throw new NonNullableValueCoercedAsNullException(type);
+            }
+            return variableValue;
         }
         if (inputValue instanceof NullValue) {
             return null;
@@ -808,7 +814,8 @@ class ValuesResolverConversion {
                         locale);
                 coercedValues.put(fieldName, coercedDefaultValue);
             } else if (isNonNull(fieldType) && (!hasValue || isNullValue(value))) {
-                return assertShouldNeverHappen("Should have been validated before");
+                // a nullable variable with a default value is allowed in a non null position, so an explicit null gets here
+                throw new NonNullableValueCoercedAsNullException(fieldName, emptyList(), fieldType);
             } else if (hasValue) {
                 if (isNullValue(value)) {
                     coercedValues.put(fieldName, value);

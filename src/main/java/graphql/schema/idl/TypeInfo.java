@@ -10,6 +10,7 @@ import graphql.schema.GraphQLType;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.Objects;
 
 import static graphql.Assert.assertNotNull;
@@ -174,17 +175,31 @@ public class TypeInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TypeInfo typeInfo = (TypeInfo) o;
-        return isNonNull() == typeInfo.isNonNull() &&
-                isList() == typeInfo.isList() &&
-                Objects.equals(typeName.getName(), typeInfo.typeName.getName());
+        return Objects.equals(typeName.getName(), typeInfo.typeName.getName()) &&
+                sameDecoration(decoration, typeInfo.decoration);
+    }
+
+    private static boolean sameDecoration(Deque<Class<?>> a, Deque<Class<?>> b) {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        Iterator<Class<?>> itA = a.iterator();
+        Iterator<Class<?>> itB = b.iterator();
+        while (itA.hasNext()) {
+            if (itA.next() != itB.next()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public int hashCode() {
         int result = 1;
         result = 31 * result + Objects.hashCode(typeName.getName());
-        result = 31 * result + Boolean.hashCode(isNonNull());
-        result = 31 * result + Boolean.hashCode(isList());
+        for (Class<?> wrapper : decoration) {
+            result = 31 * result + wrapper.hashCode();
+        }
         return result;
     }
 
