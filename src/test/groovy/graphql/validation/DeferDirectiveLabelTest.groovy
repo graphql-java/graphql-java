@@ -75,6 +75,29 @@ class DeferDirectiveLabelTest extends Specification {
         errorCollector.containsValidationError(ValidationErrorType.DuplicateIncrementalLabel)
     }
 
+    def "duplicate deferred fragment spreads with the same label are rejected"() {
+        given:
+        String query = '''
+            query q {
+                dog {
+                    ...DogData @defer(label: "DogField$defer$DogData")
+                    ...DogData @defer(label: "DogField$defer$DogData")
+                }
+            }
+
+            fragment DogData on Dog {
+                name
+                nickname
+            }
+        '''
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors*.validationErrorType == [ValidationErrorType.DuplicateIncrementalLabel]
+    }
+
     def "Multiple use of Defer directive is valid"() {
         given:
         def query = """

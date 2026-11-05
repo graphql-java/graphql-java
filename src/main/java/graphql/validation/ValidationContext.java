@@ -27,14 +27,18 @@ public class ValidationContext {
     private final QueryComplexityLimits queryComplexityLimits;
 
     public ValidationContext(GraphQLSchema schema, Document document, I18n i18n) {
-        this(schema, document, i18n, null);
+        this(schema, document, i18n, null, null);
     }
 
     public ValidationContext(GraphQLSchema schema, Document document, I18n i18n, @Nullable QueryComplexityLimits limits) {
+        this(schema, document, i18n, limits, null);
+    }
+
+    public ValidationContext(GraphQLSchema schema, Document document, I18n i18n, @Nullable QueryComplexityLimits limits, @Nullable GraphQLContext graphQLContext) {
         this.schema = schema;
         this.document = document;
         this.i18n = i18n;
-        this.graphQLContext = GraphQLContext.newContext().of(Locale.class, i18n.getLocale()).build();
+        this.graphQLContext = graphQLContext != null ? graphQLContext : GraphQLContext.newContext().of(Locale.class, i18n.getLocale()).build();
         this.queryComplexityLimits = limits != null ? limits : QueryComplexityLimits.getDefaultLimits();
         buildFragmentMap();
     }

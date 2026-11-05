@@ -10,7 +10,6 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.Profiler;
 import graphql.PublicApi;
-import graphql.collect.ImmutableKit;
 import graphql.execution.directives.OperationDirectivesResolver;
 import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.incremental.IncrementalCallState;
@@ -27,16 +26,15 @@ import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static graphql.Assert.assertNotNull;
 import static graphql.normalized.ExecutableNormalizedOperationFactory.Options;
 import static graphql.normalized.ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation;
 
@@ -61,7 +59,8 @@ public class ExecutionContext {
     private final GraphQLContext graphQLContext;
     private final @Nullable Object localContext;
     private final Instrumentation instrumentation;
-    private final AtomicReference<ImmutableList<GraphQLError>> errors = new AtomicReference<>(ImmutableKit.emptyList());
+    // errors and errorPaths are guarded by errorsLock
+    private final List<GraphQLError> errors = new ArrayList<>();
     private final LockKit.ReentrantLock errorsLock = new LockKit.ReentrantLock();
     private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
@@ -104,7 +103,7 @@ public class ExecutionContext {
         this.locale = builder.locale;
         this.valueUnboxer = builder.valueUnboxer;
         this.responseMapFactory = builder.responseMapFactory;
-        this.errors.set(builder.errors);
+        this.errors.addAll(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
@@ -288,7 +287,7 @@ public class ExecutionContext {
             if (!errorPaths.add(fieldPath)) {
                 return;
             }
-            this.errors.set(ImmutableKit.addToList(assertNotNull(this.errors.get(), "errors list must not be null"), error));
+            this.errors.add(error);
         });
     }
 
@@ -307,7 +306,7 @@ public class ExecutionContext {
                 ResultPath path = ResultPath.fromList(error.getPath());
                 this.errorPaths.add(path);
             }
-            this.errors.set(ImmutableKit.addToList(assertNotNull(this.errors.get(), "errors list must not be null"), error));
+            this.errors.add(error);
         });
     }
 
@@ -321,8 +320,7 @@ public class ExecutionContext {
         if (errors.isEmpty()) {
             return;
         }
-        // we are locked because we set two fields at once - but we only ever read one of them later
-        // in getErrors so no need for synchronised there.
+        // we are locked because we set two fields at once
         errorsLock.runLocked(() -> {
             Set<ResultPath> newErrorPaths = new HashSet<>();
             for (GraphQLError error : errors) {
@@ -335,7 +333,7 @@ public class ExecutionContext {
                 }
             }
             this.errorPaths.addAll(newErrorPaths);
-            this.errors.set(ImmutableKit.concatLists(assertNotNull(this.errors.get(), "errors list must not be null"), errors));
+            this.errors.addAll(errors);
         });
     }
 
@@ -348,7 +346,7 @@ public class ExecutionContext {
      * @return the total list of errors for this execution context
      */
     public List<GraphQLError> getErrors() {
-        return assertNotNull(errors.get(), "errors list must not be null");
+        return errorsLock.callLocked(() -> ImmutableList.copyOf(errors));
     }
 
     public ExecutionStrategy getQueryStrategy() {

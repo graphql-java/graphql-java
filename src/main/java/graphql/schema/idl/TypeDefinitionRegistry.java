@@ -11,6 +11,8 @@ import graphql.language.ImplementingTypeDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
+import graphql.language.ListType;
+import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
@@ -40,7 +42,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.idl.SchemaExtensionsChecker.defineOperationDefs;
@@ -796,6 +797,10 @@ public class TypeDefinitionRegistry implements Serializable {
         }
         TypeDefinition possibleTypeDef = assertNotNull(getTypeOrNull(possibleType));
         TypeDefinition abstractTypeDef = assertNotNull(getTypeOrNull(abstractType));
+        return isPossibleTypeDef(abstractTypeDef, possibleTypeDef);
+    }
+
+    private boolean isPossibleTypeDef(TypeDefinition<?> abstractTypeDef, TypeDefinition<?> possibleTypeDef) {
         if (abstractTypeDef instanceof UnionTypeDefinition) {
             return isUnionMember((UnionTypeDefinition) abstractTypeDef, possibleTypeDef);
         }
@@ -807,12 +812,25 @@ public class TypeDefinitionRegistry implements Serializable {
     private boolean implementsInterface(
             ImplementingTypeDefinition<?> implementingType,
             InterfaceTypeDefinition targetInterface) {
-        return Stream.concat(
-                        Stream.of(implementingType),
-                        getImplementingTypeExtensions(implementingType).stream())
-                .flatMap(type -> type.getImplements().stream())
-                .map(TypeInfo::typeName)
-                .anyMatch(targetInterface.getName()::equals);
+        String targetName = targetInterface.getName();
+        if (containsTypeNamed(implementingType.getImplements(), targetName)) {
+            return true;
+        }
+        for (ImplementingTypeDefinition<?> extension : getImplementingTypeExtensions(implementingType)) {
+            if (containsTypeNamed(extension.getImplements(), targetName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsTypeNamed(List<Type> types, String name) {
+        for (Type type : types) {
+            if (TypeInfo.getTypeName(type).getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<? extends ImplementingTypeDefinition<?>> getImplementingTypeExtensions(
@@ -824,12 +842,16 @@ public class TypeDefinitionRegistry implements Serializable {
     }
 
     private boolean isUnionMember(UnionTypeDefinition unionType, TypeDefinition<?> possibleType) {
-        return Stream.concat(
-                        unionType.getMemberTypes().stream(),
-                        unionTypeExtensions.getOrDefault(unionType.getName(), List.of()).stream()
-                                .flatMap(extension -> extension.getMemberTypes().stream()))
-                .map(TypeInfo::typeName)
-                .anyMatch(possibleType.getName()::equals);
+        String possibleName = possibleType.getName();
+        if (containsTypeNamed(unionType.getMemberTypes(), possibleName)) {
+            return true;
+        }
+        for (UnionTypeExtensionDefinition extension : unionTypeExtensions.getOrDefault(unionType.getName(), List.of())) {
+            if (containsTypeNamed(extension.getMemberTypes(), possibleName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -840,50 +862,47 @@ public class TypeDefinitionRegistry implements Serializable {
      *
      * @return true if maybeSubType is covariant or equal to superType
      */
-    @SuppressWarnings("SimplifiableIfStatement")
     public boolean isSubTypeOf(Type maybeSubType, Type superType) {
-        TypeInfo maybeSubTypeInfo = TypeInfo.typeInfo(maybeSubType);
-        TypeInfo superTypeInfo = TypeInfo.typeInfo(superType);
-        // Equivalent type is a valid subtype
-        if (maybeSubTypeInfo.equals(superTypeInfo)) {
-            return true;
-        }
-
-
         // If superType is non-null, maybeSubType must also be non-null.
-        if (superTypeInfo.isNonNull()) {
-            if (maybeSubTypeInfo.isNonNull()) {
-                return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
+        if (superType instanceof NonNullType) {
+            if (maybeSubType instanceof NonNullType) {
+                return isSubTypeOf(((NonNullType) maybeSubType).getType(), ((NonNullType) superType).getType());
             }
             return false;
         }
-        if (maybeSubTypeInfo.isNonNull()) {
+        if (maybeSubType instanceof NonNullType) {
             // If superType is nullable, maybeSubType may be non-null or nullable.
-            return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superType);
+            return isSubTypeOf(((NonNullType) maybeSubType).getType(), superType);
         }
 
         // If superType type is a list, maybeSubType type must also be a list.
-        if (superTypeInfo.isList()) {
-            if (maybeSubTypeInfo.isList()) {
-                return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
+        if (superType instanceof ListType) {
+            if (maybeSubType instanceof ListType) {
+                return isSubTypeOf(((ListType) maybeSubType).getType(), ((ListType) superType).getType());
             }
             return false;
         }
-        if (maybeSubTypeInfo.isList()) {
+        if (maybeSubType instanceof ListType) {
             // If superType is not a list, maybeSubType must also be not a list.
             return false;
         }
 
-        // If superType type is an abstract type, maybeSubType type may be a currently
-        // possible object type.
-        if (isInterfaceOrUnion(superType) &&
-                isObjectTypeOrInterface(maybeSubType) &&
-                isPossibleType(superType, maybeSubType)) {
+        // Equivalent type is a valid subtype
+        if (typeName(maybeSubType).equals(typeName(superType))) {
             return true;
         }
 
-        // Otherwise, the child type is not a valid subtype of the parent type.
-        return false;
+        // If superType type is an abstract type, maybeSubType type may be a currently
+        // possible object type.
+        TypeDefinition<?> superTypeDef = getTypeOrNull(superType);
+        if (!(superTypeDef instanceof UnionTypeDefinition || superTypeDef instanceof InterfaceTypeDefinition)) {
+            return false;
+        }
+        TypeDefinition<?> maybeSubTypeDef = getTypeOrNull(maybeSubType);
+        if (!(maybeSubTypeDef instanceof ObjectTypeDefinition || maybeSubTypeDef instanceof InterfaceTypeDefinition)) {
+            return false;
+        }
+        return isPossibleTypeDef(superTypeDef, maybeSubTypeDef);
     }
 
 }
