@@ -1,10 +1,12 @@
 package graphql
 
 import graphql.execution.ExecutionId
+import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
@@ -768,10 +770,7 @@ class ExecutionInputTest extends Specification {
     }
 
     def "without capturePartialResultsOnCancel a late cancel discards even fully gathered nested data"() {
-        // capture is OFF, so there is no cancellation race; the top-level 'outer' field value info
-        // completes quickly while its nested 'value' is still resolving. Cancelling at that point and
-        // then letting 'value' finish means the field values are fully gathered, but because capture
-        // is disabled the gathered data must be discarded and only the cancel error returned.
+        given:
         def sdl = '''
             type Query {
                 outer : Inner
@@ -780,36 +779,24 @@ class ExecutionInputTest extends Specification {
                 value : String
             }
         '''
-
-        CountDownLatch valueStarted = new CountDownLatch(1)
-        CountDownLatch valueRelease = new CountDownLatch(1)
-
+        def valueResult = new CompletableFuture<String>()
         DataFetcher outerDf = { DataFetchingEnvironment env -> [:] }
-        DataFetcher valueDf = { DataFetchingEnvironment env ->
-            return CompletableFuture.supplyAsync {
-                valueStarted.countDown()
-                valueRelease.await()
-                return "value"
-            }
-        }
+        DataFetcher valueDf = { DataFetchingEnvironment env -> valueResult }
+        def schema = TestUtil.schema(sdl, ["Query": ["outer": outerDf], "Inner": ["value": valueDf]])
+        def executionInput = ExecutionInput.newExecutionInput("{ outer { value } }").build()
 
-        def fetcherMap = ["Query": ["outer": outerDf], "Inner": ["value": valueDf]]
-        def schema = TestUtil.schema(sdl, fetcherMap)
-        def graphQL = GraphQL.newGraphQL(schema).build()
+        // Cancel after the nested values have been gathered, before the object result is assembled.
+        def objectInstrumentation = Stub(ExecuteObjectInstrumentationContext) {
+            onFieldValuesInfo(_) >> { executionInput.cancel() }
+        }
+        def instrumentation = Spy(SimplePerformantInstrumentation) {
+            beginExecuteObject(_, _) >> objectInstrumentation
+        }
+        def graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
 
         when:
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query("{ outer { value } }")
-                .build() // capturePartialResultsOnCancel NOT enabled
-
         def cf = graphQL.executeAsync(executionInput)
-
-        // the nested value DF has started, so 'outer' field value info is already done
-        valueStarted.await()
-        // cancel while the nested value is still resolving, then let it finish
-        executionInput.cancel()
-        valueRelease.countDown()
-
+        valueResult.complete("value")
         await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
         def er = cf.join()
 
@@ -817,7 +804,6 @@ class ExecutionInputTest extends Specification {
         !cf.isCompletedExceptionally()
         !er.errors.isEmpty()
         er.errors[0]["message"] == "Execution has been asked to be cancelled"
-        // capture disabled - even though the data was fully gathered, it is discarded
         er.data == null
     }
 

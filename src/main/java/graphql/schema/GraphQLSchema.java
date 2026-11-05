@@ -32,6 +32,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -173,7 +174,8 @@ public class GraphQLSchema {
     @Internal
     private GraphQLSchema(FastBuilder fastBuilder) {
         // Build immutable collections from FastBuilder's mutable state
-        ImmutableMap<String, GraphQLNamedType> finalTypeMap = ImmutableMap.copyOf(fastBuilder.typeMap);
+        // sorted by name to match the standard Builder (see GraphQLTypeCollectingVisitor.getResult)
+        ImmutableMap<String, GraphQLNamedType> finalTypeMap = ImmutableMap.copyOf(new TreeMap<>(fastBuilder.typeMap));
         ImmutableList<GraphQLDirective> finalDirectives = ImmutableList.copyOf(fastBuilder.directiveMap.values());
 
         // Get interface-to-object-type-names map from collector (already sorted)
@@ -714,6 +716,9 @@ public class GraphQLSchema {
     /**
      * This helps you transform the current GraphQLSchema object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
+     * <p>
+     * The original AST definition and extension definitions are retained unless explicitly replaced or cleared.
+     * They are not updated to reflect changes to the runtime schema.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
      *
@@ -728,6 +733,7 @@ public class GraphQLSchema {
     /**
      * This helps you transform the current GraphQLSchema object into another one by using a builder that only allows you to change
      * simple values and does not involve changing the complex schema type graph.
+     * The original AST definition and extension definitions are retained without modification.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
      *
@@ -749,6 +755,7 @@ public class GraphQLSchema {
     /**
      * This allows you to build a schema from an existing schema.  It copies everything from the existing
      * schema and then allows you to replace them.
+     * The original AST definition and extension definitions are retained by reference, not rewritten.
      *
      * @param existingSchema the existing schema
      *
@@ -759,6 +766,7 @@ public class GraphQLSchema {
                 .query(existingSchema.getQueryType())
                 .mutation(existingSchema.getMutationType())
                 .subscription(existingSchema.getSubscriptionType())
+                .definition(existingSchema.getDefinition())
                 .extensionDefinitions(existingSchema.getExtensionDefinitions())
                 .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
                 .codeRegistry(existingSchema.getCodeRegistry())
@@ -1498,8 +1506,7 @@ public class GraphQLSchema {
             // Replace type references
             shallowTypeRefCollector.replaceTypes(typeMap);
 
-            // Add built-in directives if missing
-            Directives.BUILT_IN_DIRECTIVES.forEach(this::addDirectiveIfMissing);
+            ensureBuiltInDirectives();
 
             // Create schema via private constructor
             GraphQLSchema schema = new GraphQLSchema(this);
@@ -1515,10 +1522,17 @@ public class GraphQLSchema {
             return schema;
         }
 
-        private void addDirectiveIfMissing(GraphQLDirective directive) {
-            if (!directiveMap.containsKey(directive.getName())) {
-                directiveMap.put(directive.getName(), directive);
+        // same ordering as Builder.ensureBuiltInDirectives: built-ins first, user overrides keep their position
+        private void ensureBuiltInDirectives() {
+            Map<String, GraphQLDirective> ordered = new LinkedHashMap<>();
+            for (GraphQLDirective builtIn : Directives.BUILT_IN_DIRECTIVES) {
+                if (!directiveMap.containsKey(builtIn.getName())) {
+                    ordered.put(builtIn.getName(), builtIn);
+                }
             }
+            ordered.putAll(directiveMap);
+            directiveMap.clear();
+            directiveMap.putAll(ordered);
         }
     }
 }

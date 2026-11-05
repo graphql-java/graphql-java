@@ -628,6 +628,14 @@ class TypeDefinitionRegistryTest extends Specification {
         registry.isSubTypeOf(listType(nonNullType(listType(type("Canine")))), listType(nonNullType(listType(type("Mammal")))))
         !registry.isSubTypeOf(listType(nonNullType(listType(type("Turtle")))), listType(nonNullType(listType(type("Mammal")))))
 
+        // inner wrappers must match, not just the outermost one
+        registry.isSubTypeOf(listType(nonNullType("Mammal")), listType(nonNullType("Mammal")))
+        registry.isSubTypeOf(listType(nonNullType("Mammal")), listType(type("Mammal")))
+        !registry.isSubTypeOf(listType(type("Mammal")), listType(nonNullType("Mammal")))
+        !registry.isSubTypeOf(listType(listType(type("Mammal"))), listType(type("Mammal")))
+        !registry.isSubTypeOf(listType(type("Mammal")), listType(listType(type("Mammal"))))
+        !registry.isSubTypeOf(nonNullType(listType(type("Mammal"))), nonNullType(listType(nonNullType("Mammal"))))
+
 
         where:
         typeOfReg   | _

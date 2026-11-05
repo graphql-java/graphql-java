@@ -39,7 +39,11 @@ import static graphql.util.NodeZipper.ModificationType.REPLACE;
 import static graphql.util.TraversalControl.CONTINUE;
 
 /**
- * Transforms a {@link GraphQLSchema} object by calling bac on a provided visitor.
+ * Transforms a {@link GraphQLSchema} object by calling back on a provided visitor.
+ * <p>
+ * Rebuilding the schema retains its original AST definition and extension definitions. Schema elements
+ * copied or transformed through their builders also retain their original AST metadata unless explicitly
+ * replaced or cleared. The AST nodes are not rewritten to reflect changes to the runtime schema.
  * <p>
  * To change a {@link GraphQLSchemaElement} node in the schema you need
  * to return {@link GraphQLTypeVisitor#changeNode(TraverserContext, GraphQLSchemaElement)}
@@ -741,6 +745,8 @@ public class SchemaTransformer {
                     .withSchemaAppliedDirectives(this.schemaAppliedDirectives)
                     .codeRegistry(codeRegistry.build())
                     .description(schema.getDescription())
+                    .definition(schema.getDefinition())
+                    .extensionDefinitions(schema.getExtensionDefinitions())
                     .build();
         }
     }

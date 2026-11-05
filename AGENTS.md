@@ -18,4 +18,5 @@
 ./gradlew test
 ```
 
-This runs tests on Java 25 only. Other JVM versions (11, 17, 21) require explicit tasks (e.g. `testWithJava11`).
+The library requires Java 17 or later; the build toolchain uses Java 25.
+This runs tests on Java 25 only. Other supported JVM versions (17, 21) require explicit tasks (e.g. `testWithJava17`).
