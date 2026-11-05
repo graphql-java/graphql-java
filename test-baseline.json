@@ -1,22 +1,22 @@
 {
   "tests": {
     "java17": {
-      "total": 6261,
-      "passed": 6205,
+      "total": 6262,
+      "passed": 6206,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java21": {
-      "total": 6261,
-      "passed": 6205,
+      "total": 6262,
+      "passed": 6206,
       "failed": 0,
       "errors": 0,
       "skipped": 56
     },
     "java25": {
-      "total": 6261,
-      "passed": 6205,
+      "total": 6262,
+      "passed": 6206,
       "failed": 0,
       "errors": 0,
       "skipped": 56
@@ -32,15 +32,15 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 8970,
+        "covered": 8972,
         "missed": 1504
       },
       "line": {
-        "covered": 30352,
+        "covered": 30357,
         "missed": 3079
       },
       "method": {
-        "covered": 8100,
+        "covered": 8101,
         "missed": 1187
       }
     },
@@ -175700,22 +175700,22 @@
       },
       "graphql.execution.SubscriptionExecutionStrategy": {
         "line": {
-          "covered": 86,
+          "covered": 91,
           "missed": 1
         },
         "branch": {
-          "covered": 9,
+          "covered": 11,
           "missed": 1
         },
         "method": {
-          "covered": 22,
+          "covered": 23,
           "missed": 0
         },
         "methods": [
           {
             "name": "&lt;init&gt;",
             "desc": "()V",
-            "line": 58,
+            "line": 59,
             "counters": {
               "line": {
                 "covered": 2,
@@ -175734,7 +175734,7 @@
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/execution/DataFetcherExceptionHandler;)V",
-            "line": 62,
+            "line": 63,
             "counters": {
               "line": {
                 "covered": 2,
@@ -175753,7 +175753,7 @@
           {
             "name": "execute",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;)Ljava/util/concurrent/CompletableFuture;",
-            "line": 67,
+            "line": 68,
             "counters": {
               "line": {
                 "covered": 9,
@@ -175772,7 +175772,7 @@
           {
             "name": "keepOrdered",
             "desc": "(Lgraphql/GraphQLContext;)Z",
-            "line": 102,
+            "line": 103,
             "counters": {
               "line": {
                 "covered": 1,
@@ -175791,7 +175791,7 @@
           {
             "name": "createSourceEventStream",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;)Ljava/util/concurrent/CompletableFuture;",
-            "line": 121,
+            "line": 122,
             "counters": {
               "line": {
                 "covered": 3,
@@ -175810,7 +175810,7 @@
           {
             "name": "mkReactivePublisher",
             "desc": "(Ljava/lang/Object;)Lorg/reactivestreams/Publisher;",
-            "line": 140,
+            "line": 141,
             "counters": {
               "line": {
                 "covered": 7,
@@ -175829,10 +175829,10 @@
           {
             "name": "executeSubscriptionEvent",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Ljava/lang/Object;)Ljava/util/concurrent/CompletableFuture;",
-            "line": 168,
+            "line": 169,
             "counters": {
               "line": {
-                "covered": 24,
+                "covered": 25,
                 "missed": 0
               },
               "branch": {
@@ -175848,10 +175848,10 @@
           {
             "name": "wrapWithRootFieldName",
             "desc": "(Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/ExecutionResult;)Lgraphql/ExecutionResult;",
-            "line": 211,
+            "line": 213,
             "counters": {
               "line": {
-                "covered": 4,
+                "covered": 5,
                 "missed": 0
               },
               "branch": {
@@ -175865,9 +175865,28 @@
             }
           },
           {
+            "name": "extensionsFromEventPayload",
+            "desc": "(Ljava/lang/Object;)Ljava/util/Map;",
+            "line": 222,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 2,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
             "name": "getRootFieldName",
             "desc": "(Lgraphql/execution/ExecutionStrategyParameters;)Ljava/lang/String;",
-            "line": 219,
+            "line": 229,
             "counters": {
               "line": {
                 "covered": 2,
@@ -175886,7 +175905,7 @@
           {
             "name": "firstFieldOfSubscriptionSelection",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Z)Lgraphql/execution/ExecutionStrategyParameters;",
-            "line": 226,
+            "line": 236,
             "counters": {
               "line": {
                 "covered": 5,
@@ -175905,7 +175924,7 @@
           {
             "name": "createSubscribedFieldStepInfo",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;)Lgraphql/execution/ExecutionStepInfo;",
-            "line": 247,
+            "line": 257,
             "counters": {
               "line": {
                 "covered": 4,
@@ -175924,7 +175943,7 @@
           {
             "name": "lambda$firstFieldOfSubscriptionSelection$0",
             "desc": "(Lgraphql/execution/MergedField;Lgraphql/execution/ResultPath;Lgraphql/execution/NonNullableFieldValidator;ZLgraphql/execution/ExecutionStrategyParameters$Builder;)V",
-            "line": 234,
+            "line": 244,
             "counters": {
               "line": {
                 "covered": 7,
@@ -175943,7 +175962,7 @@
           {
             "name": "lambda$executeSubscriptionEvent$5",
             "desc": "(Lgraphql/execution/instrumentation/Instrumentation;Lgraphql/execution/instrumentation/parameters/InstrumentationExecutionParameters;Lgraphql/execution/ExecutionContext;Lgraphql/ExecutionResult;)Ljava/util/concurrent/CompletionStage;",
-            "line": 206,
+            "line": 208,
             "counters": {
               "line": {
                 "covered": 1,
@@ -175962,7 +175981,7 @@
           {
             "name": "lambda$executeSubscriptionEvent$4",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/incremental/AlternativeCallContext;Lgraphql/ExecutionResult;Ljava/lang/Throwable;)V",
-            "line": 195,
+            "line": 197,
             "counters": {
               "line": {
                 "covered": 2,
@@ -175981,7 +176000,7 @@
           {
             "name": "lambda$executeSubscriptionEvent$3",
             "desc": "(Lgraphql/execution/ExecutionStrategyParameters;Lgraphql/ExecutionResultImpl;)Lgraphql/ExecutionResult;",
-            "line": 193,
+            "line": 195,
             "counters": {
               "line": {
                 "covered": 1,
@@ -175999,8 +176018,8 @@
           },
           {
             "name": "lambda$executeSubscriptionEvent$2",
-            "desc": "(Lgraphql/execution/incremental/AlternativeCallContext;Ljava/lang/Object;)Lgraphql/ExecutionResultImpl;",
-            "line": 192,
+            "desc": "(Lgraphql/execution/incremental/AlternativeCallContext;Ljava/util/Map;Ljava/lang/Object;)Lgraphql/ExecutionResultImpl;",
+            "line": 194,
             "counters": {
               "line": {
                 "covered": 1,
@@ -176019,7 +176038,7 @@
           {
             "name": "lambda$executeSubscriptionEvent$1",
             "desc": "(Lgraphql/execution/ExecutionStepInfo;)Lgraphql/execution/ExecutionStepInfo;",
-            "line": 177,
+            "line": 178,
             "counters": {
               "line": {
                 "covered": 1,
@@ -176038,7 +176057,7 @@
           {
             "name": "lambda$executeSubscriptionEvent$0",
             "desc": "(Ljava/lang/Object;Lgraphql/execution/ExecutionContextBuilder;)V",
-            "line": 170,
+            "line": 171,
             "counters": {
               "line": {
                 "covered": 3,
@@ -176057,7 +176076,7 @@
           {
             "name": "lambda$createSourceEventStream$0",
             "desc": "(Ljava/lang/Object;)Lorg/reactivestreams/Publisher;",
-            "line": 125,
+            "line": 126,
             "counters": {
               "line": {
                 "covered": 2,
@@ -176076,7 +176095,7 @@
           {
             "name": "lambda$execute$0",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Lorg/reactivestreams/Publisher;)Lgraphql/ExecutionResult;",
-            "line": 80,
+            "line": 81,
             "counters": {
               "line": {
                 "covered": 9,
@@ -176095,7 +176114,7 @@
           {
             "name": "lambda$execute$2",
             "desc": "(Lgraphql/execution/instrumentation/InstrumentationContext;Ljava/lang/Throwable;)V",
-            "line": 91,
+            "line": 92,
             "counters": {
               "line": {
                 "covered": 1,
@@ -176114,7 +176133,7 @@
           {
             "name": "lambda$execute$1",
             "desc": "(Lgraphql/execution/ExecutionContext;Lgraphql/execution/ExecutionStrategyParameters;Ljava/lang/Object;)Ljava/util/concurrent/CompletionStage;",
-            "line": 83,
+            "line": 84,
             "counters": {
               "line": {
                 "covered": 1,
