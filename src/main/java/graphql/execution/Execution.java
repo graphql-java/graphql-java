@@ -14,6 +14,7 @@ import graphql.GraphQLUnusualConfiguration;
 import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.Profiler;
+import graphql.execution.conditional.ConditionalDirectiveCoercionException;
 import graphql.execution.directives.OperationDirectivesResolver;
 import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.incremental.IncrementalCallState;
@@ -212,11 +213,15 @@ public class Execution {
                 .graphQLContext(graphQLContext)
                 .build();
 
-        MergedSelectionSet fields = fieldCollector.collectFields(
-                collectorParameters,
-                operationDefinition.getSelectionSet(),
-                executionContext.hasIncrementalSupport()
-        );
+        MergedSelectionSet fields;
+        try {
+            fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet(), executionContext.hasIncrementalSupport());
+        } catch (ConditionalDirectiveCoercionException exception) {
+            ExecutionResult errorResult = new ExecutionResultImpl(null, Collections.singletonList(exception));
+            executeOperationCtx.onDispatched();
+            executeOperationCtx.onCompleted(errorResult, exception);
+            return completedFuture(errorResult);
+        }
 
         ResultPath path = ResultPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();

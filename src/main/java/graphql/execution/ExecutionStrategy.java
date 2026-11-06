@@ -6,12 +6,14 @@ import graphql.EngineRunningState;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
+import graphql.GraphqlErrorBuilder;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
+import graphql.execution.conditional.ConditionalDirectiveCoercionException;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.incremental.AlternativeCallContext;
@@ -800,6 +802,8 @@ public abstract class ExecutionStrategy {
         try {
             resolvedObjectType = resolveType(executionContext, parameters, fieldType);
             fieldValue = completeValueForObject(executionContext, parameters, resolvedObjectType, result);
+        } catch (ConditionalDirectiveCoercionException ex) {
+            return completeConditionalDirectiveError(executionContext, parameters, ex);
         } catch (UnresolvedTypeException ex) {
             // consider the result to be null and add the error on the context
             handleUnresolvedTypeProblem(executionContext, parameters, ex);
@@ -807,6 +811,23 @@ public abstract class ExecutionStrategy {
             return getFieldValueInfoForNull(parameters);
         }
         return new FieldValueInfo(OBJECT, fieldValue);
+    }
+
+    private FieldValueInfo completeConditionalDirectiveError(ExecutionContext context, ExecutionStrategyParameters parameters, ConditionalDirectiveCoercionException exception) {
+        GraphQLError error = GraphqlErrorBuilder.newError()
+                .message("%s", exception.getMessage())
+                .locations(exception.getLocations())
+                .path(parameters.getPath())
+                .errorType(exception.getErrorType())
+                .build();
+        addErrorToRightContext(error, parameters, context);
+        // The coercion error is already recorded, including in subscription and deferred contexts.
+        // Propagate null without reporting a second error for the same response position.
+        if (parameters.getExecutionStepInfo().isNonNullType() && context.propagateErrorsOnNonNullContractFailure()) {
+            return new FieldValueInfo(NULL, exceptionallyCompletedFuture(
+                    new NonNullableFieldWasNullException(parameters.getExecutionStepInfo(), parameters.getPath())));
+        }
+        return new FieldValueInfo(NULL, null);
     }
 
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
