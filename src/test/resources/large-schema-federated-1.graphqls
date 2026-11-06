@@ -39,6 +39,12 @@ directive @nonNull on FIELD
 "Indicates an Input Object is a OneOf Input Object."
 directive @oneOf on INPUT_OBJECT
 
+"Indicates that a position is semantically non null: it is only null if there is a matching error in the `errors` array."
+directive @semanticNonNull(
+    "The list dimensions that are semantically non null, with 0 being the outermost position."
+    levels: [Int!]! = [0]
+  ) on FIELD_DEFINITION
+
 "For federated schema composition. When a service wants to expose a field that another service already exposes, it may use this directive to claim the field."
 directive @override(
     "Service to override the field from."
