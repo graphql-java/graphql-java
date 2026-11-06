@@ -3,8 +3,8 @@ package graphql.execution.conditional;
 import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
-import graphql.execution.AbortExecutionException;
 import graphql.execution.CoercedVariables;
+import graphql.execution.NonNullableValueCoercedAsNullException;
 import graphql.language.Argument;
 import graphql.language.BooleanValue;
 import graphql.language.Directive;
@@ -147,15 +147,13 @@ public class ConditionalNodes {
                     return ((BooleanValue) value).isValue();
                 }
                 if (value instanceof VariableReference && variables != null) {
-                    String variableName = ((VariableReference) value).getName();
-                    Object variableValue = variables.get(variableName);
+                    VariableReference variableReference = (VariableReference) value;
+                    Object variableValue = variables.get(variableReference.getName());
                     // the 'if' argument is Boolean! - a nullable variable with a non null default value is a legal
                     // usage here, so an explicit null variable value reaches this point and must be rejected as a
                     // coercion error rather than throwing a NullPointerException while unboxing
                     if (variableValue == null) {
-                        throw new AbortExecutionException(String.format(
-                                "Variable '%s' has coerced Null value for the non-null 'if' argument of directive '@%s'",
-                                variableName, directiveName));
+                        throw new NonNullableValueCoercedAsNullException(directiveName, variableReference);
                     }
                     return (Boolean) variableValue;
                 }
