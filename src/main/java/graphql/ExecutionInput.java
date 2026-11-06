@@ -2,6 +2,7 @@ package graphql;
 
 import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
+import graphql.execution.OnError;
 import graphql.execution.RawVariables;
 import graphql.execution.preparsed.persisted.PersistedQuerySupport;
 import org.dataloader.DataLoaderRegistry;
@@ -37,6 +38,7 @@ public class ExecutionInput {
     private final Locale locale;
     private final CompletableFuture<Void> cancellationFuture;
     private final boolean profileExecution;
+    private final OnError onError;
 
     /**
      * In order for {@link #getQuery()} to never be null, use this to mark
@@ -63,6 +65,7 @@ public class ExecutionInput {
         this.extensions = builder.extensions;
         this.cancellationFuture = builder.cancellationFuture;
         this.profileExecution = builder.profileExecution;
+        this.onError = builder.onError;
     }
 
     private static String assertQuery(Builder builder) {
@@ -239,6 +242,10 @@ public class ExecutionInput {
         return profileExecution;
     }
 
+    public OnError getOnError() {
+        return onError;
+    }
+
     /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -260,7 +267,8 @@ public class ExecutionInput {
                 .variables(this.rawVariables.toMap())
                 .extensions(this.extensions)
                 .executionId(this.executionId)
-                .locale(this.locale);
+                .locale(this.locale)
+                .onError(this.onError);
 
         builderConsumer.accept(builder);
 
@@ -279,6 +287,7 @@ public class ExecutionInput {
                 ", dataLoaderRegistry=" + dataLoaderRegistry +
                 ", executionId= " + executionId +
                 ", locale= " + locale +
+                ", onError= " + onError +
                 '}';
     }
 
@@ -320,6 +329,7 @@ public class ExecutionInput {
         private ExecutionId executionId;
         private CompletableFuture<Void> cancellationFuture = new CompletableFuture<>();
         private boolean profileExecution;
+        private OnError onError = OnError.PROPAGATE;
 
         /**
          * Package level access to the graphql context
@@ -469,6 +479,11 @@ public class ExecutionInput {
 
         public Builder profileExecution(boolean profileExecution) {
             this.profileExecution = profileExecution;
+            return this;
+        }
+
+        public Builder onError(OnError onError) {
+            this.onError = onError;
             return this;
         }
 
