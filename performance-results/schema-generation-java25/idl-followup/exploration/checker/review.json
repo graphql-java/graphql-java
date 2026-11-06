@@ -1,0 +1,1371 @@
+{
+  "baseline": "idl-base-20261106",
+  "candidate": "idl-a-20261106",
+  "forks": 1,
+  "cases": [
+    {
+      "fixture": 1,
+      "scope": "SchemaGenerator generation",
+      "baseline_ms": 2.682533883625606,
+      "candidate_ms": 2.263385132018884,
+      "time_reduction_pct": 15.625105582644771,
+      "allocation_reduction_pct": 24.073376443935835,
+      "baseline_bytes_per_op": 7450380.004762942,
+      "candidate_bytes_per_op": 5656821.979712634,
+      "baseline_fork_means": [
+        2.682533883625606
+      ],
+      "candidate_fork_means": [
+        2.263385132018884
+      ],
+      "baseline_allocation_fork_means": [
+        7450380.004762941
+      ],
+      "candidate_allocation_fork_means": [
+        5656821.979712635
+      ],
+      "baseline_jmh_score_confidence": [
+        2.6720863700658177,
+        2.692981397185394
+      ],
+      "candidate_jmh_score_confidence": [
+        2.2590949535296345,
+        2.267675310508133
+      ]
+    },
+    {
+      "fixture": 1,
+      "scope": "FastSchemaGenerator generation",
+      "baseline_ms": 1.7235600246059417,
+      "candidate_ms": 1.2777722470078121,
+      "time_reduction_pct": 25.86436046519762,
+      "allocation_reduction_pct": 40.37819531571702,
+      "baseline_bytes_per_op": 4222873.812313255,
+      "candidate_bytes_per_op": 2517753.576441143,
+      "baseline_fork_means": [
+        1.7235600246059417
+      ],
+      "candidate_fork_means": [
+        1.277772247007812
+      ],
+      "baseline_allocation_fork_means": [
+        4222873.812313255
+      ],
+      "candidate_allocation_fork_means": [
+        2517753.576441143
+      ],
+      "baseline_jmh_score_confidence": [
+        1.6961142028179168,
+        1.7510058463939666
+      ],
+      "candidate_jmh_score_confidence": [
+        1.2637808183400443,
+        1.29176367567558
+      ]
+    },
+    {
+      "fixture": 1,
+      "scope": "SchemaGenerator parse + generation",
+      "baseline_ms": 4.053296213458152,
+      "candidate_ms": 3.575164454790451,
+      "time_reduction_pct": 11.796121810198844,
+      "allocation_reduction_pct": 18.287034206523288,
+      "baseline_bytes_per_op": 9651036.397555437,
+      "candidate_bytes_per_op": 7886148.070250461,
+      "baseline_fork_means": [
+        4.053296213458153
+      ],
+      "candidate_fork_means": [
+        3.5751644547904515
+      ],
+      "baseline_allocation_fork_means": [
+        9651036.397555437
+      ],
+      "candidate_allocation_fork_means": [
+        7886148.070250461
+      ],
+      "baseline_jmh_score_confidence": [
+        4.0038912926648225,
+        4.102701134251482
+      ],
+      "candidate_jmh_score_confidence": [
+        3.502137663430917,
+        3.648191246149985
+      ]
+    },
+    {
+      "fixture": 1,
+      "scope": "FastSchemaGenerator parse + generation",
+      "baseline_ms": 3.0788326224656637,
+      "candidate_ms": 2.6988816430832627,
+      "time_reduction_pct": 12.340748133236279,
+      "allocation_reduction_pct": 27.459478737530574,
+      "baseline_bytes_per_op": 6416611.201810228,
+      "candidate_bytes_per_op": 4654643.213179143,
+      "baseline_fork_means": [
+        3.0788326224656632
+      ],
+      "candidate_fork_means": [
+        2.6988816430832627
+      ],
+      "baseline_allocation_fork_means": [
+        6416611.201810227
+      ],
+      "candidate_allocation_fork_means": [
+        4654643.213179142
+      ],
+      "baseline_jmh_score_confidence": [
+        3.05036152316326,
+        3.1073037217680675
+      ],
+      "candidate_jmh_score_confidence": [
+        2.6840508497731914,
+        2.713712436393334
+      ]
+    },
+    {
+      "fixture": 2,
+      "scope": "SchemaGenerator generation",
+      "baseline_ms": 43.299624274137926,
+      "candidate_ms": 30.79647724197569,
+      "time_reduction_pct": 28.875878813641663,
+      "allocation_reduction_pct": 39.77415506407137,
+      "baseline_bytes_per_op": 128970241.6925511,
+      "candidate_bytes_per_op": 77673417.7752482,
+      "baseline_fork_means": [
+        43.29962427413793
+      ],
+      "candidate_fork_means": [
+        30.796477241975694
+      ],
+      "baseline_allocation_fork_means": [
+        128970241.69255112
+      ],
+      "candidate_allocation_fork_means": [
+        77673417.7752482
+      ],
+      "baseline_jmh_score_confidence": [
+        42.87798118042364,
+        43.721267367852214
+      ],
+      "candidate_jmh_score_confidence": [
+        30.603445207178268,
+        30.989509276773113
+      ]
+    },
+    {
+      "fixture": 2,
+      "scope": "FastSchemaGenerator generation",
+      "baseline_ms": 28.64797384707655,
+      "candidate_ms": 16.34010679230995,
+      "time_reduction_pct": 42.962434692471575,
+      "allocation_reduction_pct": 62.10516043651618,
+      "baseline_bytes_per_op": 84911550.2526795,
+      "candidate_bytes_per_op": 32177095.739119835,
+      "baseline_fork_means": [
+        28.647973847076546
+      ],
+      "candidate_fork_means": [
+        16.340106792309953
+      ],
+      "baseline_allocation_fork_means": [
+        84911550.2526795
+      ],
+      "candidate_allocation_fork_means": [
+        32177095.739119835
+      ],
+      "baseline_jmh_score_confidence": [
+        28.589528293180386,
+        28.706419400972713
+      ],
+      "candidate_jmh_score_confidence": [
+        15.829612489728612,
+        16.850601094891285
+      ]
+    },
+    {
+      "fixture": 2,
+      "scope": "SchemaGenerator parse + generation",
+      "baseline_ms": 60.290045588298106,
+      "candidate_ms": 48.29960071435773,
+      "time_reduction_pct": 19.88793466141887,
+      "allocation_reduction_pct": 32.43775222426998,
+      "baseline_bytes_per_op": 159853350.14841643,
+      "candidate_bytes_per_op": 108000516.5050784,
+      "baseline_fork_means": [
+        60.2900455882981
+      ],
+      "candidate_fork_means": [
+        48.29960071435773
+      ],
+      "baseline_allocation_fork_means": [
+        159853350.14841643
+      ],
+      "candidate_allocation_fork_means": [
+        108000516.50507842
+      ],
+      "baseline_jmh_score_confidence": [
+        59.92580160927313,
+        60.65428956732308
+      ],
+      "candidate_jmh_score_confidence": [
+        47.64508229502146,
+        48.954119133694
+      ]
+    },
+    {
+      "fixture": 2,
+      "scope": "FastSchemaGenerator parse + generation",
+      "baseline_ms": 45.97280285955735,
+      "candidate_ms": 33.61261033489933,
+      "time_reduction_pct": 26.88587981554499,
+      "allocation_reduction_pct": 45.63670570765317,
+      "baseline_bytes_per_op": 115512837.92543462,
+      "candidate_bytes_per_op": 62796584.02684565,
+      "baseline_fork_means": [
+        45.972802859557355
+      ],
+      "candidate_fork_means": [
+        33.61261033489933
+      ],
+      "baseline_allocation_fork_means": [
+        115512837.92543462
+      ],
+      "candidate_allocation_fork_means": [
+        62796584.026845634
+      ],
+      "baseline_jmh_score_confidence": [
+        45.49041623308998,
+        46.455189486024715
+      ],
+      "candidate_jmh_score_confidence": [
+        33.484680072606416,
+        33.74054059719224
+      ]
+    },
+    {
+      "fixture": 3,
+      "scope": "SchemaGenerator generation",
+      "baseline_ms": 122.14634258163385,
+      "candidate_ms": 120.87996776738382,
+      "time_reduction_pct": 1.0367685085647782,
+      "allocation_reduction_pct": -0.6333298692516198,
+      "baseline_bytes_per_op": 272032944.0655892,
+      "candidate_bytes_per_op": 273755809.9545611,
+      "baseline_fork_means": [
+        122.14634258163386
+      ],
+      "candidate_fork_means": [
+        120.87996776738382
+      ],
+      "baseline_allocation_fork_means": [
+        272032944.0655892
+      ],
+      "candidate_allocation_fork_means": [
+        273755809.9545611
+      ],
+      "baseline_jmh_score_confidence": [
+        120.7971381204724,
+        123.4955470427953
+      ],
+      "candidate_jmh_score_confidence": [
+        119.8061148948502,
+        121.95382063991744
+      ]
+    },
+    {
+      "fixture": 3,
+      "scope": "FastSchemaGenerator generation",
+      "baseline_ms": 72.54587981014492,
+      "candidate_ms": 69.27448877655172,
+      "time_reduction_pct": 4.509409827483724,
+      "allocation_reduction_pct": 11.070679612357836,
+      "baseline_bytes_per_op": 121094384.99710146,
+      "candidate_bytes_per_op": 107688413.60551724,
+      "baseline_fork_means": [
+        72.54587981014492
+      ],
+      "candidate_fork_means": [
+        69.27448877655172
+      ],
+      "baseline_allocation_fork_means": [
+        121094384.99710144
+      ],
+      "candidate_allocation_fork_means": [
+        107688413.60551724
+      ],
+      "baseline_jmh_score_confidence": [
+        72.44153034780913,
+        72.65022927248071
+      ],
+      "candidate_jmh_score_confidence": [
+        68.96587789426316,
+        69.58309965884028
+      ]
+    },
+    {
+      "fixture": 3,
+      "scope": "SchemaGenerator parse + generation",
+      "baseline_ms": 188.48400414654088,
+      "candidate_ms": 183.4489612619529,
+      "time_reduction_pct": 2.671336969620719,
+      "allocation_reduction_pct": 3.3777450689185695,
+      "baseline_bytes_per_op": 388887529.1141859,
+      "candidate_bytes_per_op": 375751899.77589226,
+      "baseline_fork_means": [
+        188.48400414654088
+      ],
+      "candidate_fork_means": [
+        183.44896126195286
+      ],
+      "baseline_allocation_fork_means": [
+        388887529.11418587
+      ],
+      "candidate_allocation_fork_means": [
+        375751899.77589226
+      ],
+      "baseline_jmh_score_confidence": [
+        186.13002097703603,
+        190.83798731604574
+      ],
+      "candidate_jmh_score_confidence": [
+        178.02825354556091,
+        188.86966897834486
+      ]
+    },
+    {
+      "fixture": 3,
+      "scope": "FastSchemaGenerator parse + generation",
+      "baseline_ms": 139.136880806621,
+      "candidate_ms": 132.87871116052634,
+      "time_reduction_pct": 4.497851044104239,
+      "allocation_reduction_pct": 6.198056581052269,
+      "baseline_bytes_per_op": 229270626.2547945,
+      "candidate_bytes_per_op": 215060303.11578947,
+      "baseline_fork_means": [
+        139.136880806621
+      ],
+      "candidate_fork_means": [
+        132.8787111605263
+      ],
+      "baseline_allocation_fork_means": [
+        229270626.25479454
+      ],
+      "candidate_allocation_fork_means": [
+        215060303.11578947
+      ],
+      "baseline_jmh_score_confidence": [
+        136.29787388513,
+        141.975887728112
+      ],
+      "candidate_jmh_score_confidence": [
+        131.82149503017484,
+        133.93592729087783
+      ]
+    },
+    {
+      "fixture": 4,
+      "scope": "SchemaGenerator generation",
+      "baseline_ms": 1565.5145052285714,
+      "candidate_ms": 1506.2738346571427,
+      "time_reduction_pct": 3.7841023110021688,
+      "allocation_reduction_pct": 8.90502266022095,
+      "baseline_bytes_per_op": 3198709601.6,
+      "candidate_bytes_per_op": 2913863786.7428565,
+      "baseline_fork_means": [
+        1565.5145052285714
+      ],
+      "candidate_fork_means": [
+        1506.2738346571427
+      ],
+      "baseline_allocation_fork_means": [
+        3198709601.6
+      ],
+      "candidate_allocation_fork_means": [
+        2913863786.742857
+      ],
+      "baseline_jmh_score_confidence": [
+        1539.7350529025514,
+        1591.2939575545913
+      ],
+      "candidate_jmh_score_confidence": [
+        1468.4013238365587,
+        1544.1463454777268
+      ]
+    },
+    {
+      "fixture": 4,
+      "scope": "FastSchemaGenerator generation",
+      "baseline_ms": 866.2352210666666,
+      "candidate_ms": 836.1115644730769,
+      "time_reduction_pct": 3.4775377242795447,
+      "allocation_reduction_pct": 7.615298109317359,
+      "baseline_bytes_per_op": 1291122244.5333333,
+      "candidate_bytes_per_op": 1192799436.6564105,
+      "baseline_fork_means": [
+        866.2352210666667
+      ],
+      "candidate_fork_means": [
+        836.1115644730769
+      ],
+      "baseline_allocation_fork_means": [
+        1291122244.5333333
+      ],
+      "candidate_allocation_fork_means": [
+        1192799436.6564102
+      ],
+      "baseline_jmh_score_confidence": [
+        853.3403012887962,
+        879.1301408445369
+      ],
+      "candidate_jmh_score_confidence": [
+        795.8392699107593,
+        876.3838590353945
+      ]
+    },
+    {
+      "fixture": 4,
+      "scope": "SchemaGenerator parse + generation",
+      "baseline_ms": 2007.1936773266668,
+      "candidate_ms": 1984.424809,
+      "time_reduction_pct": 1.1343632945771343,
+      "allocation_reduction_pct": -3.1508885924008023,
+      "baseline_bytes_per_op": 3804501224.9066668,
+      "candidate_bytes_per_op": 3924376820.0,
+      "baseline_fork_means": [
+        2007.1936773266666
+      ],
+      "candidate_fork_means": [
+        1984.424809
+      ],
+      "baseline_allocation_fork_means": [
+        3804501224.9066668
+      ],
+      "candidate_allocation_fork_means": [
+        3924376820.0
+      ],
+      "baseline_jmh_score_confidence": [
+        1934.3250532044215,
+        2080.062301448912
+      ],
+      "candidate_jmh_score_confidence": [
+        1910.6833980432739,
+        2058.1662199567263
+      ]
+    },
+    {
+      "fixture": 4,
+      "scope": "FastSchemaGenerator parse + generation",
+      "baseline_ms": 1332.0758319249999,
+      "candidate_ms": 1290.5831939,
+      "time_reduction_pct": 3.1148855816292675,
+      "allocation_reduction_pct": 1.4350394144713507,
+      "baseline_bytes_per_op": 2015648929.8,
+      "candidate_bytes_per_op": 1986723573.2,
+      "baseline_fork_means": [
+        1332.075831925
+      ],
+      "candidate_fork_means": [
+        1290.5831939
+      ],
+      "baseline_allocation_fork_means": [
+        2015648929.8
+      ],
+      "candidate_allocation_fork_means": [
+        1986723573.2
+      ],
+      "baseline_jmh_score_confidence": [
+        1285.9660857981219,
+        1378.1855780518779
+      ],
+      "candidate_jmh_score_confidence": [
+        1257.3250651677433,
+        1323.8413226322566
+      ]
+    },
+    {
+      "fixture": 5,
+      "scope": "SchemaGenerator generation",
+      "baseline_ms": 6919.909515000001,
+      "candidate_ms": 7055.407920600001,
+      "time_reduction_pct": -1.9580950488772286,
+      "allocation_reduction_pct": -0.1741674357893519,
+      "baseline_bytes_per_op": 12901133152.8,
+      "candidate_bytes_per_op": 12923602725.6,
+      "baseline_fork_means": [
+        6919.909515
+      ],
+      "candidate_fork_means": [
+        7055.4079206
+      ],
+      "baseline_allocation_fork_means": [
+        12901133152.8
+      ],
+      "candidate_allocation_fork_means": [
+        12923602725.6
+      ],
+      "baseline_jmh_score_confidence": [
+        6260.566030738047,
+        7579.252999261956
+      ],
+      "candidate_jmh_score_confidence": [
+        6380.760371510033,
+        7730.055469689968
+      ]
+    },
+    {
+      "fixture": 5,
+      "scope": "FastSchemaGenerator generation",
+      "baseline_ms": 3375.2844992833334,
+      "candidate_ms": 3330.2633947166664,
+      "time_reduction_pct": 1.3338462158145825,
+      "allocation_reduction_pct": 4.535542505045209,
+      "baseline_bytes_per_op": 4662535410.0,
+      "candidate_bytes_per_op": 4451064134.666666,
+      "baseline_fork_means": [
+        3375.2844992833334
+      ],
+      "candidate_fork_means": [
+        3330.2633947166664
+      ],
+      "baseline_allocation_fork_means": [
+        4662535410.0
+      ],
+      "candidate_allocation_fork_means": [
+        4451064134.666667
+      ],
+      "baseline_jmh_score_confidence": [
+        3226.084539118939,
+        3524.4844594477277
+      ],
+      "candidate_jmh_score_confidence": [
+        3141.0325488654153,
+        3519.4942405679176
+      ]
+    },
+    {
+      "fixture": 5,
+      "scope": "SchemaGenerator parse + generation",
+      "baseline_ms": 7785.8692744,
+      "candidate_ms": 8156.179275799999,
+      "time_reduction_pct": -4.756180566986679,
+      "allocation_reduction_pct": -0.30391726048863976,
+      "baseline_bytes_per_op": 14233104079.2,
+      "candidate_bytes_per_op": 14276360939.2,
+      "baseline_fork_means": [
+        7785.8692744
+      ],
+      "candidate_fork_means": [
+        8156.1792758
+      ],
+      "baseline_allocation_fork_means": [
+        14233104079.2
+      ],
+      "candidate_allocation_fork_means": [
+        14276360939.2
+      ],
+      "baseline_jmh_score_confidence": [
+        7273.8441351692,
+        8297.8944136308
+      ],
+      "candidate_jmh_score_confidence": [
+        7683.501112964531,
+        8628.857438635468
+      ]
+    },
+    {
+      "fixture": 5,
+      "scope": "FastSchemaGenerator parse + generation",
+      "baseline_ms": 4287.247704933334,
+      "candidate_ms": 4186.949031599999,
+      "time_reduction_pct": 2.339465322190759,
+      "allocation_reduction_pct": 2.954281334435438,
+      "baseline_bytes_per_op": 6019859446.933333,
+      "candidate_bytes_per_op": 5842015862.933333,
+      "baseline_fork_means": [
+        4287.247704933333
+      ],
+      "candidate_fork_means": [
+        4186.9490316
+      ],
+      "baseline_allocation_fork_means": [
+        6019859446.933333
+      ],
+      "candidate_allocation_fork_means": [
+        5842015862.933333
+      ],
+      "baseline_jmh_score_confidence": [
+        4221.788053677971,
+        4352.707356188696
+      ],
+      "candidate_jmh_score_confidence": [
+        3979.37659543242,
+        4394.5214677675785
+      ]
+    }
+  ],
+  "warmup": [
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTime-1.log",
+      "fork": 1,
+      "warmup_values": [
+        2.557,
+        2.273,
+        2.272,
+        2.273,
+        2.265,
+        2.265,
+        2.268,
+        2.265,
+        2.284,
+        2.262
+      ],
+      "last_five_cv_pct": 0.3860125889599973,
+      "last_five_fitted_drift_pct": 0.17630465444287352,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTime-2.log",
+      "fork": 1,
+      "warmup_values": [
+        34.072,
+        31.136,
+        31.07,
+        31.237,
+        31.043,
+        31.053,
+        30.934,
+        30.976,
+        30.788,
+        31.028
+      ],
+      "last_five_cv_pct": 0.33765459631862854,
+      "last_five_fitted_drift_pct": -0.2532643317245945,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTime-3.log",
+      "fork": 1,
+      "warmup_values": [
+        139.166,
+        121.739,
+        121.965,
+        123.021,
+        121.549,
+        121.623,
+        121.255,
+        121.327,
+        121.001,
+        121.097
+      ],
+      "last_five_cv_pct": 0.19771938206142717,
+      "last_five_fitted_drift_pct": -0.43080769846100436,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTime-4.log",
+      "fork": 1,
+      "warmup_values": [
+        1831.571,
+        1493.153,
+        1513.961,
+        1510.519,
+        1504.209,
+        1499.528,
+        1510.907,
+        1516.597,
+        1511.092,
+        1516.911
+      ],
+      "last_five_cv_pct": 0.4654954416778839,
+      "last_five_fitted_drift_pct": 0.9252372755387697,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTime-5.log",
+      "fork": 1,
+      "warmup_values": [
+        8107.95,
+        7429.337,
+        7192.213,
+        7163.34,
+        7072.672,
+        6858.147,
+        7148.062,
+        7111.122,
+        7199.731,
+        6795.463
+      ],
+      "last_five_cv_pct": 2.6023278674228623,
+      "last_five_fitted_drift_pct": -0.4197875259611807,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTimeFast-1.log",
+      "fork": 1,
+      "warmup_values": [
+        1.469,
+        1.284,
+        1.282,
+        1.284,
+        1.283,
+        1.282,
+        1.285,
+        1.283,
+        1.281,
+        1.281
+      ],
+      "last_five_cv_pct": 0.13048347263475873,
+      "last_five_fitted_drift_pct": -0.18714909544604577,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTimeFast-2.log",
+      "fork": 1,
+      "warmup_values": [
+        18.425,
+        16.484,
+        16.445,
+        16.585,
+        16.514,
+        16.37,
+        16.543,
+        16.505,
+        16.554,
+        16.528
+      ],
+      "last_five_cv_pct": 0.4542827523691457,
+      "last_five_fitted_drift_pct": 0.7927272727272597,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTimeFast-3.log",
+      "fork": 1,
+      "warmup_values": [
+        82.86,
+        69.969,
+        69.274,
+        69.047,
+        69.098,
+        69.121,
+        68.991,
+        69.463,
+        68.69,
+        69.098
+      ],
+      "last_five_cv_pct": 0.40202253019409606,
+      "last_five_fitted_drift_pct": -0.20094798805893754,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTimeFast-4.log",
+      "fork": 1,
+      "warmup_values": [
+        1026.176,
+        839.925,
+        834.639,
+        827.702,
+        832.054,
+        841.88,
+        844.048,
+        829.21,
+        832.237,
+        828.312
+      ],
+      "last_five_cv_pct": 0.877859803667686,
+      "last_five_fitted_drift_pct": -1.8654175947574618,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkBuildSchemaAvgTimeFast-5.log",
+      "fork": 1,
+      "warmup_values": [
+        4086.497,
+        3404.279,
+        3360.391,
+        3402.468,
+        3356.16,
+        3308.281,
+        3382.403,
+        3317.505,
+        3344.117,
+        3292.695
+      ],
+      "last_five_cv_pct": 1.0577701103086385,
+      "last_five_fitted_drift_pct": -0.8345809051017681,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTime-1.log",
+      "fork": 1,
+      "warmup_values": [
+        4.328,
+        3.661,
+        3.67,
+        3.591,
+        3.586,
+        3.606,
+        3.606,
+        3.575,
+        3.574,
+        3.562
+      ],
+      "last_five_cv_pct": 0.5633559820385106,
+      "last_five_fitted_drift_pct": -1.339061541036658,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTime-2.log",
+      "fork": 1,
+      "warmup_values": [
+        55.895,
+        48.87,
+        48.919,
+        48.68,
+        48.432,
+        48.624,
+        48.545,
+        48.578,
+        48.59,
+        48.339
+      ],
+      "last_five_cv_pct": 0.23335524875334307,
+      "last_five_fitted_drift_pct": -0.4326756663205308,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTime-3.log",
+      "fork": 1,
+      "warmup_values": [
+        219.467,
+        184.243,
+        183.724,
+        183.171,
+        183.154,
+        184.783,
+        184.731,
+        182.861,
+        182.772,
+        183.095
+      ],
+      "last_five_cv_pct": 0.5548795303505358,
+      "last_five_fitted_drift_pct": -1.1620030449489307,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTime-4.log",
+      "fork": 1,
+      "warmup_values": [
+        2629.017,
+        2018.034,
+        1992.745,
+        2010.908,
+        1985.778,
+        1994.06,
+        1988.364,
+        1993.474,
+        2001.454,
+        1982.457
+      ],
+      "last_five_cv_pct": 0.3550479220019909,
+      "last_five_fitted_drift_pct": -0.2031364256081569,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTime-5.log",
+      "fork": 1,
+      "warmup_values": [
+        9085.6,
+        8226.446,
+        8364.428,
+        8178.278,
+        8180.864,
+        8091.635,
+        7695.971,
+        7769.391,
+        8007.805,
+        8033.857
+      ],
+      "last_five_cv_pct": 2.2142064352134985,
+      "last_five_fitted_drift_pct": 0.9913366005651871,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTimeFast-1.log",
+      "fork": 1,
+      "warmup_values": [
+        3.161,
+        2.77,
+        2.715,
+        2.7,
+        2.701,
+        2.726,
+        2.714,
+        2.707,
+        2.701,
+        2.694
+      ],
+      "last_five_cv_pct": 0.45415767602082263,
+      "last_five_fitted_drift_pct": -1.137202776547038,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTimeFast-2.log",
+      "fork": 1,
+      "warmup_values": [
+        38.651,
+        33.719,
+        33.623,
+        33.479,
+        33.659,
+        33.747,
+        33.421,
+        33.725,
+        33.511,
+        33.703
+      ],
+      "last_five_cv_pct": 0.43488644232658774,
+      "last_five_fitted_drift_pct": 0.002379436906267496,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTimeFast-3.log",
+      "fork": 1,
+      "warmup_values": [
+        160.811,
+        134.878,
+        133.723,
+        133.7,
+        133.327,
+        133.697,
+        133.368,
+        133.445,
+        134.872,
+        132.851
+      ],
+      "last_five_cv_pct": 0.5618526748387245,
+      "last_five_fitted_drift_pct": -0.05626779880670011,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTimeFast-4.log",
+      "fork": 1,
+      "warmup_values": [
+        1681.834,
+        1299.156,
+        1298.207,
+        1287.43,
+        1276.756,
+        1308.233,
+        1304.626,
+        1275.358,
+        1307.519,
+        1281.801
+      ],
+      "last_five_cv_pct": 1.2102026856264134,
+      "last_five_fitted_drift_pct": -1.5429012601549017,
+      "inspect": false
+    },
+    {
+      "log": "idl-a-20261106-benchmarkLargeSchemaCreateAvgTimeFast-5.log",
+      "fork": 1,
+      "warmup_values": [
+        5270.593,
+        4242.581,
+        4225.004,
+        4338.529,
+        4164.327,
+        4098.374,
+        4162.388,
+        4102.84,
+        4124.2,
+        4122.234
+      ],
+      "last_five_cv_pct": 0.6139007155851925,
+      "last_five_fitted_drift_pct": 0.0924986254269625,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTime-1.log",
+      "fork": 1,
+      "warmup_values": [
+        2.992,
+        2.743,
+        2.688,
+        2.682,
+        2.68,
+        2.695,
+        2.695,
+        2.696,
+        2.687,
+        2.682
+      ],
+      "last_five_cv_pct": 0.23057736243015464,
+      "last_five_fitted_drift_pct": -0.5053883314752852,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTime-2.log",
+      "fork": 1,
+      "warmup_values": [
+        47.495,
+        43.422,
+        43.536,
+        43.277,
+        43.226,
+        43.246,
+        43.259,
+        43.227,
+        43.319,
+        43.232
+      ],
+      "last_five_cv_pct": 0.0856703082316809,
+      "last_five_fitted_drift_pct": 0.029590860123076226,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTime-3.log",
+      "fork": 1,
+      "warmup_values": [
+        144.61,
+        123.165,
+        122.257,
+        122.169,
+        122.41,
+        122.32,
+        122.14,
+        122.219,
+        122.205,
+        122.061
+      ],
+      "last_five_cv_pct": 0.07882002247089367,
+      "last_five_fitted_drift_pct": -0.1482948546923126,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTime-4.log",
+      "fork": 1,
+      "warmup_values": [
+        1916.596,
+        1566.094,
+        1562.963,
+        1565.067,
+        1572.042,
+        1559.239,
+        1559.507,
+        1574.077,
+        1551.647,
+        1555.746
+      ],
+      "last_five_cv_pct": 0.5428204283407078,
+      "last_five_fitted_drift_pct": -0.3806561254201167,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTime-5.log",
+      "fork": 1,
+      "warmup_values": [
+        8067.909,
+        6860.812,
+        7129.717,
+        6809.404,
+        7039.179,
+        7067.689,
+        7147.375,
+        6863.374,
+        7017.098,
+        6931.977
+      ],
+      "last_five_cv_pct": 1.5917169367649784,
+      "last_five_fitted_drift_pct": -2.293631294919516,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-1.log",
+      "fork": 1,
+      "warmup_values": [
+        1.956,
+        1.766,
+        1.743,
+        1.723,
+        1.725,
+        1.726,
+        1.723,
+        1.729,
+        1.738,
+        1.741
+      ],
+      "last_five_cv_pct": 0.448498756112214,
+      "last_five_fitted_drift_pct": 1.0396211158600013,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-2.log",
+      "fork": 1,
+      "warmup_values": [
+        31.729,
+        28.917,
+        28.799,
+        28.781,
+        28.702,
+        29.016,
+        28.92,
+        29.013,
+        28.944,
+        28.727
+      ],
+      "last_five_cv_pct": 0.40765061233043404,
+      "last_five_fitted_drift_pct": -0.7661457613054882,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-3.log",
+      "fork": 1,
+      "warmup_values": [
+        87.139,
+        73.114,
+        73.265,
+        72.763,
+        72.718,
+        72.581,
+        72.796,
+        72.681,
+        72.699,
+        72.567
+      ],
+      "last_five_cv_pct": 0.1291574616134909,
+      "last_five_fitted_drift_pct": -0.06880910702294835,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-4.log",
+      "fork": 1,
+      "warmup_values": [
+        1032.651,
+        868.327,
+        866.844,
+        865.659,
+        858.235,
+        862.719,
+        867.903,
+        866.213,
+        868.318,
+        856.845
+      ],
+      "last_five_cv_pct": 0.5512241447519386,
+      "last_five_fitted_drift_pct": -0.5244333754897659,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-5.log",
+      "fork": 1,
+      "warmup_values": [
+        4095.26,
+        3541.469,
+        3438.417,
+        3367.381,
+        3367.442,
+        3397.798,
+        3387.984,
+        3401.94,
+        3348.917,
+        3351.78
+      ],
+      "last_five_cv_pct": 0.7544578485699545,
+      "last_five_fitted_drift_pct": -1.5525787227330061,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-1.log",
+      "fork": 1,
+      "warmup_values": [
+        4.863,
+        4.12,
+        4.1,
+        4.061,
+        4.059,
+        4.085,
+        4.031,
+        4.034,
+        4.047,
+        4.035
+      ],
+      "last_five_cv_pct": 0.5541518947478841,
+      "last_five_fitted_drift_pct": -0.8303677342823214,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-2.log",
+      "fork": 1,
+      "warmup_values": [
+        69.276,
+        60.836,
+        60.129,
+        59.967,
+        59.794,
+        60.136,
+        60.107,
+        59.918,
+        60.477,
+        60.432
+      ],
+      "last_five_cv_pct": 0.39110594012183897,
+      "last_five_fitted_drift_pct": 0.6390540405885649,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-3.log",
+      "fork": 1,
+      "warmup_values": [
+        230.98,
+        189.349,
+        188.022,
+        187.792,
+        189.927,
+        188.364,
+        187.576,
+        189.05,
+        189.659,
+        187.265
+      ],
+      "last_five_cv_pct": 0.5291458631797463,
+      "last_five_fitted_drift_pct": -0.024418365158610556,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-4.log",
+      "fork": 1,
+      "warmup_values": [
+        2578.146,
+        2055.403,
+        2012.671,
+        2023.843,
+        2020.15,
+        2036.7,
+        2003.114,
+        1993.587,
+        2002.141,
+        2001.363
+      ],
+      "last_five_cv_pct": 0.8379483539689804,
+      "last_five_fitted_drift_pct": -1.4276711795120096,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-5.log",
+      "fork": 1,
+      "warmup_values": [
+        8784.973,
+        7988.516,
+        7978.693,
+        7618.799,
+        7737.843,
+        7798.362,
+        8026.337,
+        7981.863,
+        7963.081,
+        7564.103
+      ],
+      "last_five_cv_pct": 2.4141481593241996,
+      "last_five_fitted_drift_pct": -2.703907225108945,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-1.log",
+      "fork": 1,
+      "warmup_values": [
+        3.617,
+        3.147,
+        3.121,
+        3.12,
+        3.103,
+        3.104,
+        3.106,
+        3.084,
+        3.11,
+        3.078
+      ],
+      "last_five_cv_pct": 0.46442780034226955,
+      "last_five_fitted_drift_pct": -0.6200749257201975,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-2.log",
+      "fork": 1,
+      "warmup_values": [
+        53.425,
+        46.211,
+        46.183,
+        45.93,
+        45.978,
+        45.743,
+        45.757,
+        45.674,
+        46.067,
+        45.844
+      ],
+      "last_five_cv_pct": 0.33236071073733764,
+      "last_five_fitted_drift_pct": 0.44699565663400087,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-3.log",
+      "fork": 1,
+      "warmup_values": [
+        170.381,
+        141.015,
+        139.486,
+        142.212,
+        140.351,
+        139.276,
+        139.079,
+        139.022,
+        138.96,
+        138.835
+      ],
+      "last_five_cv_pct": 0.11697941702701407,
+      "last_five_fitted_drift_pct": -0.28798628253151876,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-4.log",
+      "fork": 1,
+      "warmup_values": [
+        1685.092,
+        1347.271,
+        1331.503,
+        1349.029,
+        1350.427,
+        1332.345,
+        1333.251,
+        1318.2,
+        1357.585,
+        1329.159
+      ],
+      "last_five_cv_pct": 1.0814070320554212,
+      "last_five_fitted_drift_pct": 0.5385471041325055,
+      "inspect": false
+    },
+    {
+      "log": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-5.log",
+      "fork": 1,
+      "warmup_values": [
+        5458.707,
+        4280.142,
+        4316.373,
+        4329.434,
+        4318.481,
+        4284.293,
+        4244.817,
+        4404.809,
+        4295.301,
+        4329.894
+      ],
+      "last_five_cv_pct": 1.3960398471188538,
+      "last_five_fitted_drift_pct": 1.3143953874913552,
+      "inspect": false
+    }
+  ],
+  "allocation_stalls": [],
+  "note": "Warmup flags require review; do not discard or selectively replace observations. One-fork results are exploratory."
+}

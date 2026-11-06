@@ -1,5 +1,9 @@
 # Schema generation on Java 25
 
+The later [direct SDL checking and directive construction study](idl-followup/README.md)
+reports incremental results against this PR plus newer master fixes. Its results
+are separate from the original traversal study below.
+
 This comparison measures `SchemaGenerator` and `FastSchemaGenerator` with all five
 large-schema fixtures. It covers generation from an existing registry and parsing
 followed by generation. Both generators perform schema validation and use
