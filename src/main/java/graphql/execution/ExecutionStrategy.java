@@ -6,6 +6,7 @@ import graphql.EngineRunningState;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLError;
+import graphql.GraphqlErrorBuilder;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.SerializationError;
@@ -805,8 +806,24 @@ public abstract class ExecutionStrategy {
             handleUnresolvedTypeProblem(executionContext, parameters, ex);
             // complete field as null, validating it is nullable
             return getFieldValueInfoForNull(parameters);
+        } catch (NonNullableValueCoercedAsNullException ex) {
+            // a @skip / @include 'if' argument in the sub selection coerced to null - this is a field error
+            // on this field, so null it (propagating as usual) rather than failing the whole operation
+            handleSubSelectionCoercionProblem(executionContext, parameters, ex);
+            return getFieldValueInfoForNull(parameters);
         }
         return new FieldValueInfo(OBJECT, fieldValue);
+    }
+
+    private void handleSubSelectionCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, NonNullableValueCoercedAsNullException e) {
+        GraphQLError error = GraphqlErrorBuilder.newError()
+                .message(e.getMessage())
+                .locations(e.getLocations())
+                .path(parameters.getPath())
+                .errorType(e.getErrorType())
+                .build();
+
+        addErrorToRightContext(error, parameters, context);
     }
 
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
