@@ -361,6 +361,7 @@ public class Parser {
     @NonNull
     private static GraphqlLexer setupGraphqlLexer(ParserEnvironment environment, MultiSourceReader multiSourceReader, CodePointCharStream charStream) {
         GraphqlLexer lexer = new GraphqlLexer(charStream);
+        lexer.setInterpreter(new GraphqlLexerATNSimulator(lexer));
         lexer.removeErrorListeners();
         lexer.addErrorListener(new BaseErrorListener() {
             @Override
