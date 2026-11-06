@@ -80,7 +80,7 @@ final class ValuesResolverOneOfValidation {
         }
     }
 
-    private static void validateOneOfInputTypesInternal(GraphQLInputObjectType oneOfInputType, Value<?> argumentValue, Map<String, Object> objectMap, Locale locale) {
+    static void validateOneOfInputTypesInternal(GraphQLInputObjectType oneOfInputType, Value<?> argumentValue, Map<String, Object> objectMap, Locale locale) {
         final String fieldName;
         if (argumentValue instanceof ObjectValue) {
             List<ObjectField> objectFields = ((ObjectValue) argumentValue).getObjectFields();

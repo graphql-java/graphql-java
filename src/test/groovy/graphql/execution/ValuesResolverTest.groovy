@@ -180,6 +180,139 @@ class ValuesResolverTest extends Specification {
     }
 
 
+    def nestedOneOfSdl = '''
+        input OneOf @oneOf { a: Int, b: Int, nested: OneOf }
+        input Level3 { leaf: OneOf, leaves: [OneOf] }
+        input Level2 { level3: Level3, level3s: [Level3] }
+        input Level1 { level2: Level2, other: Int }
+        type Query { f(arg: Level1, args: [Level1], oneOf: OneOf, oneOfs: [OneOf]): Boolean }
+    '''
+
+    @Unroll
+    def "getVariableValues: nested oneOf violations in variables are reported - #testCase"() {
+        given:
+        def schema = TestUtil.schema(nestedOneOfSdl)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", variableType)
+
+        when:
+        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]), graphQLContext, locale)
+
+        then:
+        def e = thrown(expectedException)
+        e.message == expectedMessage
+
+        where:
+        testCase                                  | variableType                             | inputValue                                                                  || expectedException          | expectedMessage
+        "depth 3 too many keys"                   | new TypeName("Level1")                   | [level2: [level3: [leaf: [a: 1, b: 2]]]]                                    || OneOfTooManyKeysException  | "Exactly one key must be specified for OneOf type 'OneOf'."
+        "depth 3 null value"                      | new TypeName("Level1")                   | [level2: [level3: [leaf: [a: null]]]]                                       || OneOfNullValueException    | "OneOf type field 'OneOf.a' must be non-null."
+        "depth 3 empty"                           | new TypeName("Level1")                   | [level2: [level3: [leaf: [:]]]]                                             || OneOfTooManyKeysException  | "Exactly one key must be specified for OneOf type 'OneOf'."
+        "oneOf nested in oneOf"                   | new TypeName("Level1")                   | [level2: [level3: [leaf: [nested: [nested: [a: 1, b: 2]]]]]]                || OneOfTooManyKeysException  | "Exactly one key must be specified for OneOf type 'OneOf'."
+        "oneOf nested in oneOf null value"        | new TypeName("OneOf")                    | [nested: [nested: [b: null]]]                                               || OneOfNullValueException    | "OneOf type field 'OneOf.b' must be non-null."
+        "list of oneOf inside non-oneOf parents"  | new TypeName("Level1")                   | [level2: [level3: [leaves: [[a: 1], [a: 1, b: 2]]]]]                        || OneOfTooManyKeysException  | "Exactly one key must be specified for OneOf type 'OneOf'."
+        "list of parents containing oneOf"        | new TypeName("Level1")                   | [level2: [level3s: [[leaf: [a: 1]], [leaf: [b: null]]]]]                    || OneOfNullValueException    | "OneOf type field 'OneOf.b' must be non-null."
+        "top level list of parents"               | new ListType(new TypeName("Level1"))     | [[level2: [level3: [leaf: [a: 1]]]], [level2: [level3: [leaf: [:]]]]]       || OneOfTooManyKeysException  | "Exactly one key must be specified for OneOf type 'OneOf'."
+        "single value coerced to list"            | new ListType(new TypeName("OneOf"))      | [a: 1, b: 2]                                                                || OneOfTooManyKeysException  | "Exactly one key must be specified for OneOf type 'OneOf'."
+        "single value coerced to nested list"     | new TypeName("Level1")                   | [level2: [level3s: [leaves: [a: null]]]]                                    || OneOfNullValueException    | "OneOf type field 'OneOf.a' must be non-null."
+    }
+
+    def "getVariableValues: valid nested oneOf variables are accepted"() {
+        given:
+        def schema = TestUtil.schema(nestedOneOfSdl)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Level1"))
+        def inputValue = [level2: [level3: [leaf: [nested: [a: 1]], leaves: [[a: 1], [b: 2]]], level3s: [[leaves: [b: 3]]]], other: 1]
+
+        when:
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]), graphQLContext, locale)
+
+        then:
+        resolvedValues.get('variable') == [level2: [level3: [leaf: [nested: [a: 1]], leaves: [[a: 1], [b: 2]]], level3s: [[leaves: [[b: 3]]]]], other: 1]
+    }
+
+    @Unroll
+    def "getVariableValues: error precedence between nested oneOf violations and sibling coercion errors - #testCase"() {
+        given:
+        def sdl = '''
+            input OneOf @oneOf { a: Int, b: Int }
+            input Parent { first: OneOf, second: Int, third: OneOf }
+            type Query { f(arg: Parent): Boolean }
+        '''
+        def schema = TestUtil.schema(sdl)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Parent"))
+
+        when:
+        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]), graphQLContext, locale)
+
+        then:
+        def e = thrown(GraphQLException)
+        e.class == expectedException
+
+        where:
+        testCase                              | inputValue                                         || expectedException
+        "oneOf violation before bad sibling"  | [first: [a: 1, b: 2], second: "notAnInt"]          || OneOfTooManyKeysException
+        "bad sibling before oneOf violation"  | [second: "notAnInt", third: [a: 1, b: 2]]          || CoercingParseValueException
+    }
+
+    @Unroll
+    def "getVariableValues: oneOf violations in nested non-external default values are reported - #testCase"() {
+        given:
+        def oneOfType = newInputObject()
+                .name("OneOf")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField().name("a").type(GraphQLInt))
+                .field(newInputObjectField().name("b").type(GraphQLInt))
+                .build()
+        def childField = newInputObjectField().name("child").type(oneOfType)
+        defaultSetter(childField)
+        def inner = newInputObject()
+                .name("Inner")
+                .field(childField)
+                .field(newInputObjectField().name("x").type(GraphQLInt))
+                .build()
+        def outer = newInputObject()
+                .name("Outer")
+                .field(newInputObjectField().name("inner").type(inner))
+                .build()
+        def schema = TestUtil.schemaWithInputType(outer)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Outer"))
+
+        when:
+        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: [inner: [x: 1]]]), graphQLContext, locale)
+
+        then:
+        def e = thrown(expectedException)
+        e.message == expectedMessage
+
+        where:
+        testCase             | defaultSetter                                                                                                          || expectedException         | expectedMessage
+        "internal default"   | { it.defaultValue([a: 1, b: 2]) }                                                                                      || OneOfTooManyKeysException | "Exactly one key must be specified for OneOf type 'OneOf'."
+        "literal default"    | { it.defaultValueLiteral(ObjectValue.newObjectValue().objectField(new ObjectField("a", NullValue.of())).build()) }     || OneOfNullValueException   | "OneOf type field 'OneOf.a' must be non-null."
+    }
+
+    def "getVariableValues: oneOf violations in nested external default values are reported"() {
+        given:
+        def oneOfType = newInputObject()
+                .name("OneOf")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField().name("a").type(GraphQLInt))
+                .field(newInputObjectField().name("b").type(GraphQLInt))
+                .build()
+        def inner = newInputObject()
+                .name("Inner")
+                .field(newInputObjectField().name("child").type(oneOfType).defaultValueProgrammatic([a: 1, b: 2]))
+                .field(newInputObjectField().name("x").type(GraphQLInt))
+                .build()
+        def outer = newInputObject()
+                .name("Outer")
+                .field(newInputObjectField().name("inner").type(inner))
+                .build()
+
+        when: "the schema is built"
+        TestUtil.schemaWithInputType(outer)
+
+        then: "external defaults are coerced, and so oneOf validated, during schema validation"
+        thrown(OneOfTooManyKeysException)
+    }
+
     class Person {
         def name = ""
         def id = 0
