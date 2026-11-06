@@ -1,0 +1,43 @@
+type Query {
+  check(input: Cycle0): Boolean
+}
+
+input Cycle0 @oneOf {
+  next: Cycle1
+}
+
+input Cycle1 {
+  next: Cycle2!
+}
+
+input Cycle2 @oneOf {
+  next: Cycle3
+}
+
+input Cycle3 {
+  next: Cycle4!
+}
+
+input Cycle4 @oneOf {
+  next: Cycle5
+}
+
+input Cycle5 {
+  next: Cycle6!
+}
+
+input Cycle6 @oneOf {
+  next: Cycle7
+}
+
+input Cycle7 {
+  next: Cycle8!
+}
+
+input Cycle8 @oneOf {
+  next: Cycle9
+}
+
+input Cycle9 {
+  next: Cycle0!
+}

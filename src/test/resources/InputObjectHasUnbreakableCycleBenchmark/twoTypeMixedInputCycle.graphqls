@@ -1,0 +1,11 @@
+type Query {
+  check(input: Cycle0): Boolean
+}
+
+input Cycle0 @oneOf {
+  next: Cycle1
+}
+
+input Cycle1 {
+  next: Cycle0!
+}

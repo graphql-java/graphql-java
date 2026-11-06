@@ -1,0 +1,133 @@
+type Query {
+  check(input: Wide0): Boolean
+}
+
+input Wide0 {
+  requiredNext: Wide1!
+  reference1: Wide1
+  reference2: Wide2
+  reference3: Wide3
+  reference4: Wide4
+  reference5: Wide5
+  reference6: Wide6
+  reference7: Wide7
+  reference8: Wide8
+  reference9: Wide9
+}
+
+input Wide1 {
+  requiredNext: Wide2!
+  reference1: Wide2
+  reference2: Wide3
+  reference3: Wide4
+  reference4: Wide5
+  reference5: Wide6
+  reference6: Wide7
+  reference7: Wide8
+  reference8: Wide9
+  reference9: Wide0
+}
+
+input Wide2 {
+  requiredNext: Wide3!
+  reference1: Wide3
+  reference2: Wide4
+  reference3: Wide5
+  reference4: Wide6
+  reference5: Wide7
+  reference6: Wide8
+  reference7: Wide9
+  reference8: Wide0
+  reference9: Wide1
+}
+
+input Wide3 {
+  requiredNext: Wide4!
+  reference1: Wide4
+  reference2: Wide5
+  reference3: Wide6
+  reference4: Wide7
+  reference5: Wide8
+  reference6: Wide9
+  reference7: Wide0
+  reference8: Wide1
+  reference9: Wide2
+}
+
+input Wide4 {
+  requiredNext: Wide5!
+  reference1: Wide5
+  reference2: Wide6
+  reference3: Wide7
+  reference4: Wide8
+  reference5: Wide9
+  reference6: Wide0
+  reference7: Wide1
+  reference8: Wide2
+  reference9: Wide3
+}
+
+input Wide5 {
+  requiredNext: Wide6!
+  reference1: Wide6
+  reference2: Wide7
+  reference3: Wide8
+  reference4: Wide9
+  reference5: Wide0
+  reference6: Wide1
+  reference7: Wide2
+  reference8: Wide3
+  reference9: Wide4
+}
+
+input Wide6 {
+  requiredNext: Wide7!
+  reference1: Wide7
+  reference2: Wide8
+  reference3: Wide9
+  reference4: Wide0
+  reference5: Wide1
+  reference6: Wide2
+  reference7: Wide3
+  reference8: Wide4
+  reference9: Wide5
+}
+
+input Wide7 {
+  requiredNext: Wide8!
+  reference1: Wide8
+  reference2: Wide9
+  reference3: Wide0
+  reference4: Wide1
+  reference5: Wide2
+  reference6: Wide3
+  reference7: Wide4
+  reference8: Wide5
+  reference9: Wide6
+}
+
+input Wide8 {
+  requiredNext: Wide9!
+  reference1: Wide9
+  reference2: Wide0
+  reference3: Wide1
+  reference4: Wide2
+  reference5: Wide3
+  reference6: Wide4
+  reference7: Wide5
+  reference8: Wide6
+  reference9: Wide7
+}
+
+input Wide9 {
+  requiredNext: Wide0!
+  reference1: Wide0
+  reference2: Wide1
+  reference3: Wide2
+  reference4: Wide3
+  reference5: Wide4
+  reference6: Wide5
+  reference7: Wide6
+  reference8: Wide7
+  reference9: Wide8
+}
