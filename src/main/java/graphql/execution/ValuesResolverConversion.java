@@ -481,16 +481,14 @@ class ValuesResolverConversion {
             if (value instanceof Map) {
                 GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) graphQLType;
                 //noinspection unchecked
-                Map<String, Object> coercedMap = externalValueToInternalValueForObject(
+                return externalValueToInternalValueForObject(
+                        variableName,
                         inputInterceptor,
                         fieldVisibility,
                         inputObjectType,
                         (Map<String, Object>) value,
                         graphqlContext,
                         locale);
-
-                ValuesResolverOneOfValidation.validateOneOfInputTypes(inputObjectType, coercedMap, null, variableName, locale);
-                return coercedMap;
             } else {
                 throw CoercingParseValueException.newCoercingParseValueException()
                         .message("Expected type 'Map' but was '" + value.getClass().getSimpleName() +
@@ -506,6 +504,7 @@ class ValuesResolverConversion {
      * performs validation
      */
     private static Map<String, Object> externalValueToInternalValueForObject(
+            String variableName,
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
             GraphQLInputObjectType inputObjectType,
@@ -522,6 +521,10 @@ class ValuesResolverConversion {
         }
 
         Map<String, Object> coercedValues = new LinkedHashMap<>();
+        // Fields filled from a literal or internal default. Unlike provided values and external defaults,
+        // these don't go through externalValueToInternalValueImpl, so nothing has oneOf-validated their
+        // nested input objects yet. Tracked so they can get a full recursive walk below.
+        List<GraphQLInputObjectField> nonExternalDefaultFields = null;
 
         for (GraphQLInputObjectField inputFieldDefinition : fieldDefinitions) {
             GraphQLInputType fieldType = inputFieldDefinition.getType();
@@ -538,6 +541,12 @@ class ValuesResolverConversion {
                         graphqlContext,
                         locale);
                 coercedValues.put(fieldName, coercedDefaultValue);
+                if (!defaultValue.isExternal()) {
+                    if (nonExternalDefaultFields == null) {
+                        nonExternalDefaultFields = new ArrayList<>(1);
+                    }
+                    nonExternalDefaultFields.add(inputFieldDefinition);
+                }
             } else if (isNonNull(fieldType) && (!hasValue || value == null)) {
                 throw new NonNullableValueCoercedAsNullException(fieldName, emptyList(), fieldType);
             } else if (hasValue) {
@@ -553,6 +562,24 @@ class ValuesResolverConversion {
                             locale);
                     coercedValues.put(fieldName, value);
                 }
+            }
+        }
+
+        // OneOf validation happens here, once per input object, as each object finishes conversion.
+        //
+        // This object: only its own oneOf rule is checked (no recursion). Every nested input object that came
+        // from a provided value or an external default was converted by externalValueToInternalValueImpl,
+        // which ends up back in this method for that object and checks it there. Re-walking the subtree from
+        // every ancestor would re-check the same objects at each level (O(depth x size)).
+        //
+        // Literal and internal defaults: these never reached this method for their nested objects, so they get
+        // the full recursive walk. It runs after this object's own check to keep the same error order.
+        if (inputObjectType.isOneOf()) {
+            ValuesResolverOneOfValidation.validateOneOfInputTypesInternal(inputObjectType, null, coercedValues, locale);
+        }
+        if (nonExternalDefaultFields != null) {
+            for (GraphQLInputObjectField defaultField : nonExternalDefaultFields) {
+                ValuesResolverOneOfValidation.validateOneOfInputTypes(defaultField.getType(), coercedValues.get(defaultField.getName()), null, variableName, locale);
             }
         }
         return coercedValues;
