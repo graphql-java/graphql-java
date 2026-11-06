@@ -3,6 +3,7 @@ package graphql.execution.conditional;
 import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.execution.AbortExecutionException;
 import graphql.execution.CoercedVariables;
 import graphql.language.Argument;
 import graphql.language.BooleanValue;
@@ -133,12 +134,12 @@ public class ConditionalNodes {
     private @Nullable Boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {
         Directive foundDirective = NodeUtil.findNodeByName(directives, directiveName);
         if (foundDirective != null) {
-            return getIfValue(foundDirective.getArguments(), variables);
+            return getIfValue(directiveName, foundDirective.getArguments(), variables);
         }
         return defaultValue;
     }
 
-    private @Nullable Boolean getIfValue(List<Argument> arguments, @Nullable Map<String, Object> variables) {
+    private @Nullable Boolean getIfValue(String directiveName, List<Argument> arguments, @Nullable Map<String, Object> variables) {
         for (Argument argument : arguments) {
             if (argument.getName().equals("if")) {
                 Object value = argument.getValue();
@@ -146,7 +147,17 @@ public class ConditionalNodes {
                     return ((BooleanValue) value).isValue();
                 }
                 if (value instanceof VariableReference && variables != null) {
-                    return (boolean) variables.get(((VariableReference) value).getName());
+                    String variableName = ((VariableReference) value).getName();
+                    Object variableValue = variables.get(variableName);
+                    // the 'if' argument is Boolean! - a nullable variable with a non null default value is a legal
+                    // usage here, so an explicit null variable value reaches this point and must be rejected as a
+                    // coercion error rather than throwing a NullPointerException while unboxing
+                    if (variableValue == null) {
+                        throw new AbortExecutionException(String.format(
+                                "Variable '%s' has coerced Null value for the non-null 'if' argument of directive '@%s'",
+                                variableName, directiveName));
+                    }
+                    return (Boolean) variableValue;
                 }
                 return null;
             }

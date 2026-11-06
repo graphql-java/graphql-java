@@ -78,4 +78,29 @@ class SkipAndInclude extends Specification {
         true    | true
         false   | false
     }
+
+    def "null value for the #directive if argument is a coerced null error, not a NullPointerException"() {
+        given:
+        // a nullable variable with a non null default value is a legal usage in the non null 'if' position,
+        // so an explicit null variable value reaches the directive and must be reported as a coercion error
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query("""
+                    query(\$flag: Boolean = true) {
+                        field @$directive(if: \$flag)
+                    }
+                    """)
+                .variables([flag: null])
+                .build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+        executionResult.data == null
+        executionResult.errors.size() == 1
+        executionResult.errors[0].message.contains("coerced Null value for the non-null 'if' argument of directive '@$directive'")
+
+        where:
+        directive << ["skip", "include"]
+    }
 }
