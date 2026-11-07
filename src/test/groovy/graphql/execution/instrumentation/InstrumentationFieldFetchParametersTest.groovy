@@ -2,6 +2,7 @@ package graphql.execution.instrumentation
 
 import graphql.ExecutionInput
 import graphql.TestUtil
+import graphql.execution.ExecutionStepInfo
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.schema.DataFetchingEnvironment
@@ -37,7 +38,7 @@ class InstrumentationFieldFetchParametersTest extends Specification {
         given:
         def fieldDef = newFieldDefinition().name("name").type(GraphQLString).build()
         def callCount = new AtomicInteger()
-        def stepInfo = Mock(graphql.execution.ExecutionStepInfo) {
+        def stepInfo = Mock(ExecutionStepInfo) {
             getFieldDefinition() >> fieldDef
         }
         def environment = Mock(DataFetchingEnvironment) {
@@ -58,7 +59,7 @@ class InstrumentationFieldFetchParametersTest extends Specification {
     def "InstrumentationFieldParameters getField does not invoke the step info supplier when the field definition is supplied"() {
         given:
         def fieldDef = newFieldDefinition().name("name").type(GraphQLString).build()
-        Supplier<graphql.execution.ExecutionStepInfo> throwingSupplier = { throw new IllegalStateException("step info should not be built") }
+        Supplier<ExecutionStepInfo> throwingSupplier = { throw new IllegalStateException("step info should not be built") }
 
         def parameters = new InstrumentationFieldParameters(null, fieldDef, throwingSupplier)
 

@@ -45,10 +45,9 @@ public class InstrumentationFieldParameters {
     /**
      * This returns the {@link GraphQLFieldDefinition} of the field being instrumented.
      * <p>
-     * When the field definition was supplied at construction time (as the engine does), this is a cheap call that
-     * does NOT invoke the {@link ExecutionStepInfo} supplier and hence does not build a
-     * {@link graphql.schema.DataFetchingEnvironment} for the field.  Otherwise it falls back
-     * to {@link #getExecutionStepInfo()} to find the field definition.
+     * When the field definition was supplied at construction time, this is a cheap call that does NOT invoke
+     * the {@link ExecutionStepInfo} supplier.  Otherwise it falls back to {@link #getExecutionStepInfo()}
+     * to find the field definition, which may be an expensive call depending on what the supplier has to build.
      *
      * @return the field definition of the field being instrumented
      */
