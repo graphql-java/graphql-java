@@ -2,18 +2,41 @@ package graphql.validation;
 
 import graphql.PublicApi;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 /**
  * Configuration class for query complexity limits enforced during validation.
- * This provides a lightweight alternative to ExecutableNormalizedOperation (ENO) for tracking
- * query depth and field count.
+ * Limits the number and depth of merged fields using the same selections as field-merging validation.
+ * Fields with the same response name (alias, or field name when unaliased) and a common parent type
+ * count once at each response position. Their child selections are combined before counting.
+ * For example, {@code { node { name name } }} has two fields, while
+ * {@code { a: node { name } b: node { name } }} has four.
+ * Repeated fragment spreads at the same response position merge; a fragment used at different
+ * response positions contributes at each position.
  *
- * <p>By default, validation enforces limits (maxDepth=100, maxFieldsCount=100000).
+ * <p>Selections on different concrete parent types count separately. Interface and union selections
+ * are included in each concrete group when concrete selections are present; otherwise they form
+ * one group. This is a structural limit, not an estimate of resolver cost or list result sizes.
+ * All selections count regardless of {@code @skip} or {@code @include}; validation does not coerce
+ * variables or expand selections for each possible runtime object type.
+ * Duplicate selections still require validation work even when they merge to one field.
+ * Parser limits independently bound source size, token count and syntactic nesting.
+ *
+ * <p>Field occurrences count every field again at each fragment spread, without merging duplicate
+ * selections. Fragment spreads and inline fragments do not themselves count as fields.
+ * For example, {@code { node { name name } }} has three field occurrences and two merged fields.
+ * Occurrences are limited separately for each operation, regardless of directives or runtime types.
+ * Complexity limits are enforced independently of the validation-rule predicate.
+ *
+ * <p>By default, validation enforces limits (maxDepth=100, maxMergedFieldCount=10000,
+ * maxFieldOccurrences=100000). Explicitly built limits replace these defaults;
+ * unspecified builder limits are unlimited.
  * To customize limits per-request, put a custom instance in the GraphQLContext:
  * <pre>{@code
  * QueryComplexityLimits limits = QueryComplexityLimits.newLimits()
  *     .maxDepth(10)
- *     .maxFieldsCount(100)
+ *     .maxMergedFieldCount(100)
+ *     .maxFieldOccurrences(100_000)
  *     .build();
  *
  * ExecutionInput executionInput = ExecutionInput.newExecutionInput()
@@ -42,9 +65,14 @@ public class QueryComplexityLimits {
     public static final int DEFAULT_MAX_DEPTH = 100;
 
     /**
-     * Default maximum field count.
+     * Default maximum merged field count.
      */
-    public static final int DEFAULT_MAX_FIELDS_COUNT = 100_000;
+    public static final int DEFAULT_MAX_MERGED_FIELD_COUNT = 10_000;
+
+    /**
+     * Default maximum number of field occurrences after fragment expansion.
+     */
+    public static final int DEFAULT_MAX_FIELD_OCCURRENCES = 100_000;
 
     /**
      * The key used to store QueryComplexityLimits in GraphQLContext.
@@ -52,14 +80,14 @@ public class QueryComplexityLimits {
     public static final String KEY = "graphql.validation.QueryComplexityLimits";
 
     /**
-     * Standard limits (maxDepth=100, maxFieldsCount=100000).
+     * Standard limits (maxDepth=100, maxMergedFieldCount=10000, maxFieldOccurrences=100000).
      */
-    public static final QueryComplexityLimits DEFAULT = new QueryComplexityLimits(DEFAULT_MAX_DEPTH, DEFAULT_MAX_FIELDS_COUNT);
+    public static final QueryComplexityLimits DEFAULT = new QueryComplexityLimits(DEFAULT_MAX_DEPTH, DEFAULT_MAX_MERGED_FIELD_COUNT, DEFAULT_MAX_FIELD_OCCURRENCES);
 
     /**
      * No limits (all limits set to Integer.MAX_VALUE). Use this to disable complexity checking.
      */
-    public static final QueryComplexityLimits NONE = new QueryComplexityLimits(Integer.MAX_VALUE, Integer.MAX_VALUE);
+    public static final QueryComplexityLimits NONE = new QueryComplexityLimits(Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE);
 
     private static volatile QueryComplexityLimits defaultLimits = DEFAULT;
 
@@ -83,29 +111,39 @@ public class QueryComplexityLimits {
     }
 
     private final int maxDepth;
-    private final int maxFieldsCount;
+    private final int maxMergedFieldCount;
+    private final int maxFieldOccurrences;
 
-    private QueryComplexityLimits(int maxDepth, int maxFieldsCount) {
+    private QueryComplexityLimits(int maxDepth, int maxMergedFieldCount, int maxFieldOccurrences) {
         this.maxDepth = maxDepth;
-        this.maxFieldsCount = maxFieldsCount;
+        this.maxMergedFieldCount = maxMergedFieldCount;
+        this.maxFieldOccurrences = maxFieldOccurrences;
     }
 
     /**
-     * @return the maximum allowed depth for queries, where depth is measured as the number of nested Field nodes
+     * @return the maximum allowed depth for queries, where depth is the number of fields on the deepest response path
      */
     public int getMaxDepth() {
         return maxDepth;
     }
 
     /**
-     * @return the maximum allowed number of fields in a query, counting fields at each fragment spread site
+     * @return the maximum allowed number of merged fields in each operation
      */
-    public int getMaxFieldsCount() {
-        return maxFieldsCount;
+    public int getMaxMergedFieldCount() {
+        return maxMergedFieldCount;
     }
 
     /**
-     * @return a new builder for creating QueryComplexityLimits
+     * @return the maximum field occurrences in each operation after fragment expansion,
+     * or {@link Integer#MAX_VALUE} when occurrence counting is disabled
+     */
+    public int getMaxFieldOccurrences() {
+        return maxFieldOccurrences;
+    }
+
+    /**
+     * @return a new builder with all limits initially unlimited
      */
     public static Builder newLimits() {
         return new Builder();
@@ -115,7 +153,8 @@ public class QueryComplexityLimits {
     public String toString() {
         return "QueryComplexityLimits{" +
                 "maxDepth=" + maxDepth +
-                ", maxFieldsCount=" + maxFieldsCount +
+                ", maxMergedFieldCount=" + maxMergedFieldCount +
+                ", maxFieldOccurrences=" + maxFieldOccurrences +
                 '}';
     }
 
@@ -123,17 +162,18 @@ public class QueryComplexityLimits {
      * Builder for QueryComplexityLimits.
      */
     @PublicApi
-    @NullMarked
+    @NullUnmarked
     public static class Builder {
         private int maxDepth = Integer.MAX_VALUE;
-        private int maxFieldsCount = Integer.MAX_VALUE;
+        private int maxMergedFieldCount = Integer.MAX_VALUE;
+        private int maxFieldOccurrences = Integer.MAX_VALUE;
 
         private Builder() {
         }
 
         /**
          * Sets the maximum allowed depth for queries.
-         * Depth is measured as the number of nested Field nodes.
+         * Depth is measured as the number of fields on the deepest response path.
          *
          * @param maxDepth the maximum depth (must be positive)
          * @return this builder
@@ -147,17 +187,34 @@ public class QueryComplexityLimits {
         }
 
         /**
-         * Sets the maximum allowed number of fields in a query.
-         * Fields inside fragments are counted at each spread site.
+         * Sets the maximum allowed number of merged fields in each operation.
+         * Merged child selections contribute again at each distinct response position.
          *
-         * @param maxFieldsCount the maximum field count (must be positive)
+         * @param maxMergedFieldCount the maximum merged field count (must be positive)
          * @return this builder
          */
-        public Builder maxFieldsCount(int maxFieldsCount) {
-            if (maxFieldsCount <= 0) {
-                throw new IllegalArgumentException("maxFieldsCount must be positive");
+        public Builder maxMergedFieldCount(int maxMergedFieldCount) {
+            if (maxMergedFieldCount <= 0) {
+                throw new IllegalArgumentException("maxMergedFieldCount must be positive");
             }
-            this.maxFieldsCount = maxFieldsCount;
+            this.maxMergedFieldCount = maxMergedFieldCount;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of field occurrences in each operation. A fragment's fields
+         * contribute at every spread, even when their response names merge. All selections count
+         * regardless of {@code @skip} or {@code @include}. Fragment definitions that are not
+         * referenced by an operation do not contribute to its count.
+         *
+         * @param maxFieldOccurrences the positive limit, or {@link Integer#MAX_VALUE} to disable it
+         * @return this builder
+         */
+        public Builder maxFieldOccurrences(int maxFieldOccurrences) {
+            if (maxFieldOccurrences <= 0) {
+                throw new IllegalArgumentException("maxFieldOccurrences must be positive");
+            }
+            this.maxFieldOccurrences = maxFieldOccurrences;
             return this;
         }
 
@@ -165,7 +222,7 @@ public class QueryComplexityLimits {
          * @return a new QueryComplexityLimits instance
          */
         public QueryComplexityLimits build() {
-            return new QueryComplexityLimits(maxDepth, maxFieldsCount);
+            return new QueryComplexityLimits(maxDepth, maxMergedFieldCount, maxFieldOccurrences);
         }
     }
 }
