@@ -87,7 +87,7 @@ public class NoDefaultValueCircularRefs extends GraphQLTypeVisitorStub {
             }
             return;
         }
-        if (FpKit.isIterable(value)) {
+        if (FpKit.isIterableOrArray(value)) {
             for (Object itemValue : FpKit.toIterable(value)) {
                 checkValue(inputObject, itemValue, errorCollector);
             }
