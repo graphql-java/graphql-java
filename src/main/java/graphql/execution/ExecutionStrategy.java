@@ -451,7 +451,7 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<Object> fieldCtx = nonNullCtx(instrumentation.beginFieldExecution(
-                new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
+                new InstrumentationFieldParameters(executionContext, fieldDef, executionStepInfo), executionContext.getInstrumentationState()
         ));
 
         Object fetchedValueObj = fetchField(executionContext, parameters);
@@ -554,7 +554,7 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, originalDataFetcher instanceof TrivialDataFetcher);
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, fieldDef, dataFetchingEnvironment, parameters, originalDataFetcher instanceof TrivialDataFetcher);
         FieldFetchingInstrumentationContext fetchCtx = FieldFetchingInstrumentationContext.nonNullCtx(instrumentation.beginFieldFetching(instrumentationFieldFetchParams,
                 executionContext.getInstrumentationState())
         );
