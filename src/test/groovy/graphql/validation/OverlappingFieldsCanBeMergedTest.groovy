@@ -7,7 +7,6 @@ import graphql.parser.Parser
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaGenerator
-import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
@@ -42,9 +41,9 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         ValidationContext validationContext = new ValidationContext(schema, document, i18n)
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 { r -> r == OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED })
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, operationValidator)
+
+        operationValidator.validate()
     }
 
     def "shared fragments preserve both merge checks across operations"() {

@@ -4,7 +4,6 @@ import graphql.TestUtil
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
 import graphql.validation.SpecValidationSchema
@@ -25,8 +24,8 @@ class NoUnusedFragmentsTest extends Specification {
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 { r -> r == OperationValidationRule.NO_UNUSED_FRAGMENTS })
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, operationValidator)
+
+        operationValidator.validate()
     }
 
     def "all fragment names are used"() {

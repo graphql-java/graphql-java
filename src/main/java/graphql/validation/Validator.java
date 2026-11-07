@@ -52,9 +52,9 @@ public class Validator {
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector(MAX_VALIDATION_ERRORS);
         OperationValidator operationValidator = new OperationValidator(validationContext, validationErrorCollector, rulePredicate);
-        LanguageTraversal languageTraversal = new LanguageTraversal();
+
         try {
-            languageTraversal.traverse(document, operationValidator);
+            operationValidator.validate();
         } catch (ValidationErrorCollector.MaxValidationErrorsReached ignored) {
             // if we have generated enough errors, then we can shortcut out
         } catch (QueryComplexityLimitsExceeded e) {
