@@ -22,11 +22,11 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 animal: Animal
                 mammal: Mammal
             }
-            
+
             interface LivingThing {
                 age: Int
             }
-            
+
             interface Animal implements LivingThing {
                 name: String
                 age: Int
@@ -38,7 +38,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 breed: String
                 owner: Person
             }
-            
+
             type Cat implements Animal & LivingThing  {
                 name: String
                 age: Int
@@ -46,18 +46,18 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 color: String
                 siblings: [Cat]
             }
-            
+
             type Fish implements Animal & LivingThing  {
                 name: String
                 age: Int
             }
-            
+
             type Person {
                 firstname: String
                 lastname: String
                 bestFriend: Person
             }
-            
+
             union Mammal = Dog | Cat
         """
 
@@ -414,14 +414,14 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 ... @defer {
                     name
                 }
-                
+
                 ... on Dog @defer {
-                    name 
+                    name
                     breed
                 }
-                
+
                 ... on Cat @defer {
-                    name 
+                    name
                     breed
                 }
             }
@@ -509,14 +509,14 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         String query = '''
           query q {
             dog {
-                ... DogFrag @defer(label: "breed-defer") 
+                ... DogFrag @defer(label: "breed-defer")
             }
           }
-          
+
           fragment DogFrag on Dog {
             name
             breed
-          } 
+          }
         '''
 
         Map<String, Object> variables = [:]
@@ -531,6 +531,428 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         ]
     }
 
+    def "shared deferred selection is collected once through multiple fragments - label #label inline #inlineFragment"() {
+        given:
+        String directive = label == null ? '@defer' : "@defer(label: \"$label\")"
+        String deferredSelection = inlineFragment
+                ? "... $directive { firstname lastname }"
+                : "...OwnerData $directive"
+        String dataFragment = inlineFragment ? '' : '''
+            fragment OwnerData on Person {
+                firstname
+                lastname
+            }
+        '''
+        String query = """
+            query q {
+                dog {
+                    name
+                    ...Sidebar
+                    ...Details
+                }
+            }
+            fragment Sidebar on Dog {
+                ...OwnerField
+            }
+            fragment Details on Dog {
+                ...OwnerField
+            }
+            fragment OwnerField on Dog {
+                owner {
+                    $deferredSelection
+                }
+            }
+            $dataFragment
+        """
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [:])
+
+        then:
+        def firstname = findField(operation, 'Person', 'firstname')
+        def lastname = findField(operation, 'Person', 'lastname')
+        firstname.deferredExecutions.size() == 1
+        firstname.deferredExecutions == lastname.deferredExecutions
+        firstname.deferredExecutions.first().label == label
+        firstname.deferredExecutions.first().possibleTypes*.name == ['Person']
+        printTreeWithIncrementalExecutionDetails(operation) == [
+                'Query.dog',
+                'Dog.name',
+                'Dog.owner',
+                "Person.firstname defer{[label=$label;types=[Person]]}",
+                "Person.lastname defer{[label=$label;types=[Person]]}",
+        ]
+
+        where:
+        label                        | inlineFragment
+        'OwnerField$defer$OwnerData' | false
+        null                         | false
+        'owner-data'                 | true
+        null                         | true
+    }
+
+    def "shared defer is reused when distinct parent AST fields merge"() {
+        given:
+        String query = '''
+            query q {
+                dog { owner { ...PersonFields } }
+                dog { owner { ...PersonFields } }
+            }
+            fragment PersonFields on Person {
+                ...PersonData @defer(label: "person-data")
+            }
+            fragment PersonData on Person {
+                firstname
+                lastname
+            }
+        '''
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [:])
+
+        then:
+        operation.topLevelFields*.fieldName == ['dog']
+        def dog = operation.topLevelFields[0]
+        dog.children*.fieldName == ['owner']
+        def fields = dog.children[0].children
+        fields*.fieldName == ['firstname', 'lastname']
+        fields[0].deferredExecutions.size() == 1
+        fields[0].deferredExecutions == fields[1].deferredExecutions
+        fields[0].deferredExecutions.first().label == 'person-data'
+        fields[0].deferredExecutions.first().possibleTypes*.name == ['Person']
+    }
+
+    def "shared defer has separate execution objects for different root aliases"() {
+        given:
+        String query = '''
+            query q {
+                first: dog { ...DogFields }
+                second: dog { ...DogFields }
+            }
+            fragment DogFields on Dog {
+                ...DogData @defer(label: "dog-data")
+            }
+            fragment DogData on Dog {
+                name
+                age
+            }
+        '''
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [:])
+
+        then:
+        operation.topLevelFields*.resultKey == ['first', 'second']
+        def firstFields = operation.topLevelFields[0].children
+        def secondFields = operation.topLevelFields[1].children
+        firstFields*.fieldName == ['name', 'age']
+        secondFields*.fieldName == ['name', 'age']
+        firstFields[0].deferredExecutions.size() == 1
+        secondFields[0].deferredExecutions.size() == 1
+        firstFields[0].deferredExecutions == firstFields[1].deferredExecutions
+        secondFields[0].deferredExecutions == secondFields[1].deferredExecutions
+        def firstExecution = firstFields[0].deferredExecutions.first()
+        def secondExecution = secondFields[0].deferredExecutions.first()
+        firstExecution.label == 'dog-data'
+        secondExecution.label == 'dog-data'
+        !firstExecution.is(secondExecution)
+    }
+
+    def "shared defer has separate execution objects at different nesting depths"() {
+        given:
+        String query = '''
+            query q {
+                dog {
+                    owner {
+                        ...PersonFields
+                        bestFriend { ...PersonFields }
+                    }
+                }
+            }
+            fragment PersonFields on Person {
+                ...PersonData @defer(label: "person-data")
+            }
+            fragment PersonData on Person {
+                firstname
+                lastname
+            }
+        '''
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [:])
+
+        then:
+        def ownerFields = operation.topLevelFields[0].children[0].children
+        ownerFields*.fieldName == ['firstname', 'lastname', 'bestFriend']
+        def friendFields = ownerFields[2].children
+        friendFields*.fieldName == ['firstname', 'lastname']
+        ownerFields[0].deferredExecutions.size() == 1
+        friendFields[0].deferredExecutions.size() == 1
+        ownerFields[0].deferredExecutions == ownerFields[1].deferredExecutions
+        friendFields[0].deferredExecutions == friendFields[1].deferredExecutions
+        def ownerExecution = ownerFields[0].deferredExecutions.first()
+        def friendExecution = friendFields[0].deferredExecutions.first()
+        ownerExecution.label == 'person-data'
+        friendExecution.label == 'person-data'
+        !ownerExecution.is(friendExecution)
+    }
+
+    def "distinct defers selecting the same fragment remain separate - #expectedLabels"() {
+        given:
+        String query = """
+            query q {
+                dog {
+                    ...DogData $firstDirective
+                    ...DogData $secondDirective
+                }
+            }
+            fragment DogData on Dog {
+                name
+                age
+            }
+        """
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [:])
+
+        then:
+        def nameExecutions = findField(operation, 'Dog', 'name').deferredExecutions.toList()
+        def ageExecutions = findField(operation, 'Dog', 'age').deferredExecutions.toList()
+        nameExecutions*.label == expectedLabels
+        ageExecutions*.label == expectedLabels
+        !nameExecutions[0].is(nameExecutions[1])
+        nameExecutions[0].is(ageExecutions[0])
+        nameExecutions[1].is(ageExecutions[1])
+
+        where:
+        firstDirective           | secondDirective           | expectedLabels
+        '@defer(label: "first")' | '@defer(label: "second")' | ['first', 'second']
+        '@defer'                 | '@defer'                  | [null, null]
+    }
+
+    def "shared defer accumulates type coverage across #firstType then #secondType"() {
+        given:
+        String query = """
+            query q {
+                animal {
+                    ... on $firstType { ...AnimalFields }
+                    ... on $secondType { ...AnimalFields }
+                }
+            }
+            fragment AnimalFields on Animal {
+                ...AnimalData @defer(label: "animal-data")
+            }
+            fragment AnimalData on Animal {
+                name
+                age
+            }
+        """
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [:])
+
+        then:
+        def fields = operation.topLevelFields[0].children
+        fields*.fieldName == ['name', 'age']
+        fields[0].objectTypeNames.toList().sort() == expectedTypes
+        fields[1].objectTypeNames.toList().sort() == expectedTypes
+        fields[0].deferredExecutions.size() == 1
+        fields[0].deferredExecutions == fields[1].deferredExecutions
+        def execution = fields[0].deferredExecutions.first()
+        execution.label == 'animal-data'
+        execution.possibleTypes*.name.sort() == expectedTypes
+
+        where:
+        firstType | secondType | expectedTypes
+        'Dog'     | 'Cat'      | ['Cat', 'Dog']
+        'Cat'     | 'Dog'      | ['Cat', 'Dog']
+        'Dog'     | 'Animal'   | ['Cat', 'Dog', 'Fish']
+        'Animal'  | 'Dog'      | ['Cat', 'Dog', 'Fish']
+        'Animal'  | 'Mammal'   | ['Cat', 'Dog', 'Fish']
+        'Mammal'  | 'Animal'   | ['Cat', 'Dog', 'Fish']
+    }
+
+    def "shared fragment merges eager Dog and deferred Cat selections - reversed #reversed"() {
+        given:
+        String dogSelection = '... on Dog { ...Shared }'
+        String catSelection = '... on Cat { ...Shared @defer(label: "cat-data") }'
+        String selections = reversed ? "$catSelection $dogSelection" : "$dogSelection $catSelection"
+        String query = """
+            query q {
+                animal {
+                    $selections
+                }
+            }
+            fragment Shared on Animal {
+                name
+            }
+        """
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [:])
+
+        then:
+        def fields = operation.topLevelFields[0].children
+        fields.size() == 1
+        fields[0].objectTypeNames.toList().sort() == ['Cat', 'Dog']
+        fields[0].deferredExecutions.size() == 1
+        fields[0].fieldName == 'name'
+        fields[0].deferredExecutions.first().label == 'cat-data'
+        fields[0].deferredExecutions.first().possibleTypes*.name == ['Cat']
+
+        where:
+        reversed << [false, true]
+    }
+
+    def "shared defer respects conditional collection - enabled #enabled skipDog #skipDog"() {
+        given:
+        String query = '''
+            query q($enabled: Boolean!, $skipDog: Boolean!) {
+                animal {
+                    ... on Dog { ...AnimalFields @skip(if: $skipDog) }
+                    ... on Cat { ...AnimalFields }
+                }
+            }
+            fragment AnimalFields on Animal {
+                ...AnimalData @defer(if: $enabled, label: "animal-data")
+            }
+            fragment AnimalData on Animal {
+                name
+                age
+            }
+        '''
+        def expectedTypes = skipDog ? ['Cat'] : ['Cat', 'Dog']
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [enabled: enabled, skipDog: skipDog])
+
+        then:
+        def fields = operation.topLevelFields[0].children
+        fields*.fieldName == ['name', 'age']
+        fields[0].objectTypeNames.toList().sort() == expectedTypes
+        fields[1].objectTypeNames.toList().sort() == expectedTypes
+        fields[0].deferredExecutions == fields[1].deferredExecutions
+        fields[0].deferredExecutions*.label == (enabled ? ['animal-data'] : [])
+        fields[0].deferredExecutions.collect { it.possibleTypes*.name.sort() } == (enabled ? [expectedTypes] : [])
+
+        where:
+        enabled | skipDog
+        true    | false
+        true    | true
+        false   | false
+        false   | true
+    }
+
+    def "field merging preserves shared defer identity across common and type specific fields"() {
+        given:
+        String query = '''
+            query q {
+                animal {
+                    ...DogFields
+                    ...DogFields
+                    ...CatFields
+                    ...CatFields
+                }
+            }
+            fragment DogFields on Dog {
+                ...DogData @defer(label: "dog-data")
+            }
+            fragment DogData on Dog {
+                name
+                breed
+            }
+            fragment CatFields on Cat {
+                ...CatData @defer(label: "cat-data")
+            }
+            fragment CatData on Cat {
+                name
+                breed
+            }
+        '''
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [:])
+
+        then:
+        operation.topLevelFields[0].children*.fieldName == ['name', 'breed', 'breed']
+        def name = operation.topLevelFields[0].children[0]
+        name.objectTypeNames.toList().sort() == ['Cat', 'Dog']
+        def dogBreed = findField(operation, 'Dog', 'breed')
+        def catBreed = findField(operation, 'Cat', 'breed')
+        dogBreed.deferredExecutions.size() == 1
+        catBreed.deferredExecutions.size() == 1
+        def dogExecution = dogBreed.deferredExecutions.first()
+        def catExecution = catBreed.deferredExecutions.first()
+        dogExecution.label == 'dog-data'
+        catExecution.label == 'cat-data'
+        dogExecution.possibleTypes*.name == ['Dog']
+        catExecution.possibleTypes*.name == ['Cat']
+        name.deferredExecutions == ([dogExecution, catExecution] as Set)
+        !dogExecution.is(catExecution)
+    }
+
+    def "shared defer keeps type coverage separate between parent fields"() {
+        given:
+        String query = '''
+            query q {
+                dog { ...AnimalFields }
+                animal { ...AnimalFields }
+            }
+            fragment AnimalFields on Animal {
+                ...AnimalData @defer(label: "animal-data")
+            }
+            fragment AnimalData on Animal {
+                name
+                age
+            }
+        '''
+
+        when:
+        def operation = createExecutableNormalizedOperations(query, [:])
+
+        then:
+        operation.topLevelFields*.fieldName == ['dog', 'animal']
+        def dogFields = operation.topLevelFields[0].children
+        def animalFields = operation.topLevelFields[1].children
+        dogFields*.fieldName == ['name', 'age']
+        animalFields*.fieldName == ['name', 'age']
+        dogFields[0].deferredExecutions.size() == 1
+        animalFields[0].deferredExecutions.size() == 1
+        dogFields[0].deferredExecutions == dogFields[1].deferredExecutions
+        animalFields[0].deferredExecutions == animalFields[1].deferredExecutions
+        def dogExecution = dogFields[0].deferredExecutions.first()
+        def animalExecution = animalFields[0].deferredExecutions.first()
+        dogExecution.label == 'animal-data'
+        animalExecution.label == 'animal-data'
+        dogExecution.possibleTypes*.name == ['Dog']
+        animalExecution.possibleTypes*.name.sort() == ['Cat', 'Dog', 'Fish']
+        !dogExecution.is(animalExecution)
+    }
+
+    def "duplicate deferred fragment spreads with the same label are rejected"() {
+        given:
+        String query = '''
+          query q {
+            dog {
+                ...DogData @defer(label: "DogField$defer$DogData")
+                ...DogData @defer(label: "DogField$defer$DogData")
+            }
+          }
+
+          fragment DogData on Dog {
+            name
+            breed
+          }
+        '''
+
+        when:
+        createExecutableNormalizedOperations(query, [:])
+
+        then:
+        def exception = thrown(AssertException)
+        exception.message == 'Internal error: should never happen: Duplicated @defer labels are not allowed: [DogField$defer$DogData]'
+    }
+
     def "multiple defer on same field with different labels"() {
         given:
 
@@ -538,15 +960,15 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
           query q {
             dog {
                 ... @defer(label: "name-defer") {
-                    name 
+                    name
                 }
-                
+
                 ... @defer(label: "another-name-defer") {
-                    name 
+                    name
                 }
             }
           }
-          
+
         '''
 
         Map<String, Object> variables = [:]
@@ -567,15 +989,15 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
           query q {
             dog {
                 ... @defer(label: "name-defer") {
-                    name 
+                    name
                 }
-                
+
                 ... {
-                    name 
+                    name
                 }
             }
           }
-          
+
         '''
 
         Map<String, Object> variables = [:]
@@ -596,15 +1018,15 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
           query q {
             dog {
                 ... @defer {
-                    name 
+                    name
                 }
-                
+
                 ... {
-                    name 
+                    name
                 }
             }
           }
-          
+
         '''
 
         Map<String, Object> variables = [:]
@@ -624,16 +1046,15 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         String query = '''
           query q {
             dog {
-                ... @defer {
-                    name 
-                }
-                
-                ... @defer {
-                    name 
-                }
+              ... @defer {
+                  name
+              }
+              ... @defer {
+                  name
+              }
             }
           }
-          
+
         '''
 
         Map<String, Object> variables = [:]
@@ -658,13 +1079,13 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                     owner {
                         firstname
                         ... @defer {
-                            lastname 
+                            lastname
                         }
                     }
                 }
             }
           }
-          
+
         '''
 
         Map<String, Object> variables = [:]
@@ -692,7 +1113,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                     owner {
                         firstname
                         ... @defer(label: "lastname-defer") {
-                            lastname 
+                            lastname
                         }
                     }
                 }
@@ -725,7 +1146,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                     owner {
                         firstname
                         ... @defer(label: "lastname-defer") {
-                            lastname 
+                            lastname
                         }
                     }
                 }
@@ -756,7 +1177,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
               ... @defer(label: "one") {
                 ... @defer(label: "two") {
                   ... @defer(label: "three") {
-                    name      
+                    name
                   }
                 }
               }
@@ -782,15 +1203,15 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
           query q {
             dog {
                 ... @defer(if: false, label: "name-defer") {
-                    name 
+                    name
                 }
-                
+
                 ... @defer(if: true, label: "another-name-defer") {
-                    name 
+                    name
                 }
             }
           }
-          
+
         '''
 
         Map<String, Object> variables = [:]
@@ -811,15 +1232,15 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
           query q($if1: Boolean, $if2: Boolean)  {
             dog {
                 ... @defer(if: $if1, label: "name-defer") {
-                    name 
+                    name
                 }
-                
+
                 ... @defer(if: $if2, label: "another-name-defer") {
-                    name 
+                    name
                 }
             }
           }
-          
+
         '''
 
         Map<String, Object> variables = [if1: false, if2: true]

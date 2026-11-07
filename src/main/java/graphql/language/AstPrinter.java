@@ -11,10 +11,12 @@ import java.io.Writer;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.util.EscapeUtil.escapeBlockString;
 import static graphql.util.EscapeUtil.escapeJsonStringTo;
 
 /**
@@ -391,7 +393,7 @@ public class AstPrinter {
             } else {
                 description(out, node);
                 OperationDefinition.Operation op = node.getOperation();
-                out.append(op.toString().toLowerCase());
+                out.append(op.toString().toLowerCase(Locale.ROOT));
                 if (!isEmpty(name)) {
                     out.append(' ');
                     out.append(name);
@@ -700,7 +702,7 @@ public class AstPrinter {
             if (description.getContent().isEmpty() || description.getContent().charAt(0) != '\n') {
                 out.append('\n');
             }
-            out.append(description.getContent());
+            out.append(escapeBlockString(description.getContent()));
             out.append("\n\"\"\"\n");
         } else {
             out.append('"');

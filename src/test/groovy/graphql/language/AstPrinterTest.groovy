@@ -590,6 +590,26 @@ scalar Demo
 '''
     }
 
+    def "escapes triple quotes in multi line descriptions"() {
+        def query = '''
+"""
+x \\""" scalar Injected \\"""
+"""
+scalar Demo
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''"""
+x \\""" scalar Injected \\"""
+"""
+scalar Demo
+'''
+        isParseableAst(output)
+        parse(output).definitions.collect { it.name } == ["Demo"]
+    }
+
     def "print type extensions"() {
         def query = '''
     extend schema {
@@ -846,5 +866,23 @@ extend input Input @directive {
   query: QueryType
   mutation: Mutation
 }"""
+    }
+
+    def "operation keyword is printed independently of the default locale"() {
+        // see https://github.com/graphql-java/graphql-java/issues/3385
+        given:
+        Locale oldLocale = Locale.getDefault()
+        Locale.setDefault(new Locale("tr", "TR"))
+
+        when:
+        String output = printAst("mutation M { f } subscription S { f }")
+
+        then:
+        output.contains("mutation M")
+        output.contains("subscription S")
+        isParseableAst(output)
+
+        cleanup:
+        Locale.setDefault(oldLocale)
     }
 }

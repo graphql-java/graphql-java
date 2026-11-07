@@ -5,20 +5,18 @@ import graphql.Internal;
 import graphql.i18n.I18n;
 import graphql.language.SourceLocation;
 
-import java.io.StringWriter;
-
 /**
  * Contains parsing code for the StringValue types in the grammar
  */
 @Internal
 public class StringValueParsing {
-    private final static String ESCAPED_TRIPLE_QUOTES = "\\\\\"\"\""; // ahh Java + Regex
+    private final static String ESCAPED_TRIPLE_QUOTES = "\\\"\"\"";
     private final static String THREE_QUOTES = "\"\"\"";
 
     public static String parseTripleQuotedString(String strText) {
         int end = strText.length() - 3;
         String s = strText.substring(3, end);
-        s = s.replaceAll(ESCAPED_TRIPLE_QUOTES, THREE_QUOTES);
+        s = s.replace(ESCAPED_TRIPLE_QUOTES, THREE_QUOTES);
         return removeIndentation(s);
     }
 
@@ -26,7 +24,7 @@ public class StringValueParsing {
        See https://github.com/facebook/graphql/pull/327/files#diff-fe406b08746616e2f5f00909488cce66R758
      */
     public static String removeIndentation(String rawValue) {
-        String[] lines = rawValue.split("\\n");
+        String[] lines = rawValue.split("\n");
         Integer commonIndent = null;
         for (int i = 0; i < lines.length; i++) {
             if (i == 0) {
@@ -82,40 +80,40 @@ public class StringValueParsing {
     }
 
     public static String parseSingleQuotedString(I18n i18n, String string, SourceLocation sourceLocation) {
-        StringWriter writer = new StringWriter(string.length() - 2);
+        StringBuilder writer = new StringBuilder(string.length() - 2);
         int end = string.length() - 1;
         for (int i = 1; i < end; i++) {
             char c = string.charAt(i);
             if (c != '\\') {
-                writer.write(c);
+                writer.append(c);
                 continue;
             }
             char escaped = string.charAt(i + 1);
             i += 1;
             switch (escaped) {
                 case '"':
-                    writer.write('"');
+                    writer.append('"');
                     continue;
                 case '/':
-                    writer.write('/');
+                    writer.append('/');
                     continue;
                 case '\\':
-                    writer.write('\\');
+                    writer.append('\\');
                     continue;
                 case 'b':
-                    writer.write('\b');
+                    writer.append('\b');
                     continue;
                 case 'f':
-                    writer.write('\f');
+                    writer.append('\f');
                     continue;
                 case 'n':
-                    writer.write('\n');
+                    writer.append('\n');
                     continue;
                 case 'r':
-                    writer.write('\r');
+                    writer.append('\r');
                     continue;
                 case 't':
-                    writer.write('\t');
+                    writer.append('\t');
                     continue;
                 case 'u':
                     i = UnicodeUtil.parseAndWriteUnicode(i18n, writer, string, i, sourceLocation);

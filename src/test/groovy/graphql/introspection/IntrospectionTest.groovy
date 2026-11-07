@@ -849,6 +849,50 @@ class IntrospectionTest extends Specification {
         er.errors.isEmpty()
     }
 
+    def "introspection disablement applies when the query type is reached through a nested field"() {
+        def graphQL = TestUtil.graphQL('''
+            type Query { viewer : Query f : String }
+            type Mutation { doIt : Payload }
+            type Payload { query : Query }
+        ''').build()
+        def root = [viewer: [:], doIt: [query: [:]]]
+
+        def nestedSchema = ExecutionInput.newExecutionInput('{ viewer { __schema { queryType { name } } } }').root(root).build()
+        def nestedType = ExecutionInput.newExecutionInput('{ viewer { __type(name : "Query") { name } } }').root(root).build()
+        def throughMutation = ExecutionInput.newExecutionInput('mutation { doIt { query { __schema { queryType { name } } } } }').root(root)
+                .graphQLContext(Map.of(Introspection.INTROSPECTION_DISABLED, true)).build()
+
+        when:
+        def er = graphQL.execute(nestedSchema)
+
+        then:
+        er.errors.isEmpty()
+        er.data == [viewer: [__schema: [queryType: [name: "Query"]]]]
+
+        when:
+        Introspection.enabledJvmWide(false)
+        er = graphQL.execute(nestedSchema)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.data == [viewer: null]
+
+        when:
+        er = graphQL.execute(nestedType)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.data == [viewer: [__type: null]]
+
+        when:
+        Introspection.enabledJvmWide(true)
+        er = graphQL.execute(throughMutation)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.data == [doIt: [query: null]]
+    }
+
     private static void assertIncludeDeprecatedArgument(Map field) {
         def argument = (field["args"] as List).find { it["name"] == "includeDeprecated" }
         assert argument["defaultValue"] == "false"

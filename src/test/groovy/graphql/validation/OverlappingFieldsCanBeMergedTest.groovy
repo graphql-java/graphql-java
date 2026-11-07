@@ -47,6 +47,32 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         languageTraversal.traverse(document, operationValidator)
     }
 
+    def "shared fragments preserve both merge checks across operations"() {
+        given:
+        def schema = SchemaGenerator.createdMockedSchema("""
+            type Query { node: Node }
+            type Node { name: String nickname: String number: Int child: Node }
+        """)
+        def query = """
+            query First { node { ...Shared } }
+            query Second { node { ...Shared } }
+            fragment Shared on Node { child { same: name same: $field } }
+        """
+
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.errors.size() == conflicts
+        errorCollector.errors.every { it.validationErrorType == ValidationErrorType.FieldsConflict }
+
+        where:
+        field      | conflicts
+        'name'     | 0
+        'nickname' | 1
+        'number'   | 1
+    }
+
     def "identical fields are ok"() {
         given:
         def query = """

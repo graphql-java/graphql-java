@@ -12,6 +12,7 @@ import graphql.schema.TypeResolver
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError
 import graphql.schema.idl.errors.DirectiveIllegalLocationError
 import graphql.schema.idl.errors.DirectiveUndeclaredError
+import graphql.schema.idl.errors.InterfaceFieldRedefinitionError
 import graphql.schema.idl.errors.MissingTypeError
 import graphql.schema.idl.errors.NonUniqueNameError
 import graphql.schema.idl.errors.QueryOperationMissingError
@@ -595,6 +596,34 @@ class SchemaTypeCheckerTest extends Specification {
         result.get(0).getMessage().contains("has tried to redefine field 'fieldA' defined via interface 'InterfaceType'")
     }
 
+    def "test object when redefining interface field with different inner list wrapping"() {
+
+        def spec = """
+            interface InterfaceType {
+                nullability : [String!]
+                depth : [String]
+            }
+
+            type BaseType implements InterfaceType {
+                nullability : [String]
+                depth : [[String]]
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.size() == 2
+        result.every { it instanceof InterfaceFieldRedefinitionError }
+        result.any { it.getMessage().contains("has tried to redefine field 'nullability' defined via interface 'InterfaceType'") }
+        result.any { it.getMessage().contains("has tried to redefine field 'depth' defined via interface 'InterfaceType'") }
+    }
+
     def "test type extension when redefining interface field"() {
 
         def spec = """                        
@@ -700,10 +729,10 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
+        result.size() == 3
         result.get(0).getMessage().contains("field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType'")
-        result.get(1).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
-        result.get(2).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
-        result.get(3).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+        result.get(1).getMessage().contains("from 'arg2:String' to 'arg2:String!")
+        result.get(2).getMessage().contains("from 'arg3:Int' to 'arg3:String")
 
     }
 
@@ -841,10 +870,10 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
+        result.size() == 3
         result.get(0).getMessage().contains("field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType'")
-        result.get(1).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
-        result.get(2).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
-        result.get(3).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+        result.get(1).getMessage().contains("from 'arg2:String' to 'arg2:String!")
+        result.get(2).getMessage().contains("from 'arg3:Int' to 'arg3:String")
     }
 
     def "test field arguments on object type extensions must match the interface"() {
@@ -872,10 +901,10 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
+        result.size() == 3
         result.get(0).getMessage().contains("field 'fieldA' does not have the same number of arguments as specified via interface 'InterfaceType'")
-        result.get(1).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
-        result.get(2).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
-        result.get(3).getMessage().contains("has tried to redefine field 'fieldB' arguments defined via interface 'InterfaceType'")
+        result.get(1).getMessage().contains("from 'arg2:String' to 'arg2:String!")
+        result.get(2).getMessage().contains("from 'arg3:Int' to 'arg3:String")
     }
 
     def "test object interface is all ok"() {

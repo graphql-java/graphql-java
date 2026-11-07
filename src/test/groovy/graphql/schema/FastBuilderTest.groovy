@@ -55,6 +55,49 @@ class FastBuilderTest extends Specification {
         thrown(AssertException)
     }
 
+    def "typeMap is sorted by name regardless of insertion order"() {
+        given:
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("value").type(GraphQLString))
+                .build()
+        def scalars = ["Zebra", "Mango", "Apple"].collect {
+            newScalar().name(it).coercing(GraphQLString.getCoercing()).build()
+        }
+
+        when:
+        def schema = new GraphQLSchema.FastBuilder(GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .addTypes(scalars)
+                .build()
+
+        then:
+        def names = schema.typeMap.keySet().toList()
+        names == names.toSorted()
+        schema.additionalTypes*.name == schema.additionalTypes*.name.toSorted()
+    }
+
+    def "built-in directives come before additional directives, matching standard Builder"() {
+        given:
+        def queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("value").type(GraphQLString))
+                .build()
+        def custom = newDirective().name("custom").validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION).build()
+
+        when:
+        def fastSchema = new GraphQLSchema.FastBuilder(GraphQLCodeRegistry.newCodeRegistry(), queryType, null, null)
+                .additionalDirective(custom)
+                .build()
+        def standardSchema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .additionalDirective(custom)
+                .build()
+
+        then:
+        fastSchema.directives*.name == standardSchema.directives*.name
+        fastSchema.directives*.name.last() == "custom"
+    }
+
     def "same type instance can be added multiple times"() {
         given: "a scalar type"
         def scalar = newScalar()

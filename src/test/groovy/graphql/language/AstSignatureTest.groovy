@@ -1162,6 +1162,54 @@ fragment ResultFields on SearchResult {
         transformed.inputObjectFieldCoordinates == result.inputObjectFieldCoordinates
     }
 
+    def describedQuery = '''
+            "operation note 4111 1111 1111 1111"
+            query Test("variable note hunter2" $term: String) {
+                search(term: $term) {
+                    ...Result
+                }
+            }
+
+            """
+            fragment note secretPicture
+            """
+            fragment Result on SearchResult {
+                id
+            }
+'''
+
+    def "signature and privacy safe queries drop executable descriptions"() {
+        def expectedQuery = '''query Test($var1: String) {
+  search(term: $var1) {
+    ...Result
+  }
+}
+
+fragment Result on SearchResult {
+  id
+}
+'''
+        def doc = TestUtil.parseQuery(describedQuery)
+
+        expect:
+        printAst(new AstSignature().signatureQuery(doc, "Test")) == expectedQuery
+        printAst(new AstSignature().privacySafeQuery(doc, "Test")) == expectedQuery
+    }
+
+    def "signature with input drops executable descriptions"() {
+        expect:
+        signatureWithInput(describedQuery, [term: "secret"]) == '''query Test($var1: String) {
+  search(term: "") {
+    ...Result
+  }
+}
+
+fragment Result on SearchResult {
+  id
+}
+'''
+    }
+
     def signatureWithInput(String query, Map<String, Object> variables = [:], String operationName = "Test") {
         signatureWithInput(query, variables, operationName, inputSignatureSchema())
     }

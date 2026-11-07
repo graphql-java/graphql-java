@@ -1218,7 +1218,8 @@ public class SchemaPrinter {
         if (!isNullOrEmpty(descriptionText)) {
             List<String> lines = Arrays.asList(descriptionText.split("\n"));
             if (options.isDescriptionsAsHashComments()) {
-                printMultiLineHashDescription(out, prefix, lines);
+                // a # comment ends at a carriage return as well as a line feed
+                printMultiLineHashDescription(out, prefix, Arrays.asList(descriptionText.split("\r\n|\r|\n")));
             } else if (!lines.isEmpty()) {
                 if (lines.size() > 1) {
                     printMultiLineDescription(out, prefix, lines);

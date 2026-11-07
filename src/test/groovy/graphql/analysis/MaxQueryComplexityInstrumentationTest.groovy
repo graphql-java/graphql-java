@@ -165,6 +165,35 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         e.message == "maximum query complexity exceeded 1 > 0"
     }
 
+    def "sibling complexity sum does not overflow below the max"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                users(first: Int): [User]
+            }
+            type User {
+                id: ID
+            }
+        """)
+        def query = createQuery("""
+            { a: users(first: 2147483647) { id } b: users(first: 2147483647) { id } }
+            """)
+        FieldComplexityCalculator calculator = { FieldComplexityEnvironment env, int childComplexity ->
+            Integer first = env.getArguments().get("first") as Integer
+            long cost = (first == null ? 1L : first) * (1L + childComplexity)
+            return (int) Math.min(cost, Integer.MAX_VALUE)
+        } as FieldComplexityCalculator
+        MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(1000, calculator)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        def state = createInstrumentationState(queryComplexityInstrumentation)
+        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema, state)
+        when:
+        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters, state)
+        then:
+        def e = thrown(AbortExecutionException)
+        e.message == "maximum query complexity exceeded 2147483647 > 1000"
+    }
+
     private InstrumentationExecuteOperationParameters createExecuteOperationParameters(MaxQueryComplexityInstrumentation queryComplexityInstrumentation, ExecutionInput executionInput, Document query, GraphQLSchema schema, InstrumentationState state) {
         // we need to run N steps to create instrumentation state
         def validationParameters = new InstrumentationValidationParameters(executionInput, query, schema)

@@ -14,6 +14,7 @@ import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -193,7 +194,7 @@ public class LambdaFetchingSupport {
         if (name.length() == 0) {
             return name;
         }
-        return name.substring(0, 1).toLowerCase() + name.substring(1);
+        return name.substring(0, 1).toLowerCase(Locale.ROOT) + name.substring(1);
     }
 
 
