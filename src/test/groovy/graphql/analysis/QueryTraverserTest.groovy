@@ -429,6 +429,66 @@ class QueryTraverserTest extends Specification {
 
     }
 
+    def "fields of a fragment are visited for every spread of it"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+            }
+            type Foo {
+                subFoo: String
+                foo: Foo
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+                {
+                    a: foo { ...F }
+                    b: foo { foo { ...F } }
+                }
+                fragment F on Foo {
+                    subFoo
+                }
+                """)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl env -> env.field.name == "subFoo" && env.parentEnvironment.field.alias == "a" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl env -> env.field.name == "subFoo" && env.parentEnvironment.parentEnvironment.field.alias == "b" })
+    }
+
+    def "a fragment spread inside the same fragment is not followed again"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+            }
+            type Foo {
+                subFoo: String
+                foo: Foo
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+                {
+                    foo { ...F }
+                }
+                fragment F on Foo {
+                    subFoo
+                    foo { ...F }
+                }
+                """)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl env -> env.field.name == "subFoo" })
+        2 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl env -> env.field.name == "foo" })
+    }
+
 
     def "test preOrder and postOrder order for fragment definitions and raw variables"() {
         given:
