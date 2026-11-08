@@ -9,7 +9,7 @@ import spock.lang.Specification
 
 import java.util.function.Predicate
 
-class RulesVisitorTest extends Specification {
+class OperationValidatorTest extends Specification {
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
@@ -21,11 +21,11 @@ class RulesVisitorTest extends Specification {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(schema, document, i18n)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector, rulePredicate))
+
+        new OperationValidator(validationContext, errorCollector, rulePredicate).validate()
     }
 
-    def "RulesVisitor does not repeatedly spread directly recursive fragments leading to a stackoverflow"() {
+    def "OperationValidator does not repeatedly spread directly recursive fragments leading to a stackoverflow"() {
         given:
         def query = """
         query directFragmentRecursion {
@@ -48,7 +48,7 @@ class RulesVisitorTest extends Specification {
         notThrown(StackOverflowError)
     }
 
-    def "RulesVisitor does not repeatedly spread indirectly recursive fragments leading to a stackoverflow"() {
+    def "OperationValidator does not repeatedly spread indirectly recursive fragments leading to a stackoverflow"() {
         given:
         def query = """
         query directFragmentRecursion {
