@@ -3,7 +3,6 @@ package graphql.validation
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
@@ -19,10 +18,10 @@ class PossibleFragmentSpreadsTest extends Specification {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(Harness.Schema, document, i18n)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
-                { rule -> rule == OperationValidationRule.POSSIBLE_FRAGMENT_SPREADS }))
+
+        new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.POSSIBLE_FRAGMENT_SPREADS }).validate()
     }
 
     def 'of the same object'() {

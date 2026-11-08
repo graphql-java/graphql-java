@@ -21,9 +21,8 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                 QueryComplexityLimits.getDefaultLimits(),
                 graphQLContext)
 
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
-                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_ON_ROOT_LEVEL }))
+        new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_ON_ROOT_LEVEL }).validate()
     }
 
 

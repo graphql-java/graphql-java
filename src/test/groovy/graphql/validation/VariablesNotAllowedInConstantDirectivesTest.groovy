@@ -31,8 +31,8 @@ class VariablesNotAllowedInConstantDirectivesTest extends Specification {
         ValidationContext validationContext = new ValidationContext(schema, document, i18n)
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 { r -> r == OperationValidationRule.VARIABLES_NOT_ALLOWED_IN_DIRECTIVES_ON_VARIABLE_DEFINITIONS })
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, operationValidator)
+
+        operationValidator.validate()
     }
 
     def "variable reference in directive argument on variable definition is rejected"() {
