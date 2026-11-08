@@ -202,6 +202,7 @@ public class OperationValidator {
 
     // --- State: OverlappingFieldsCanBeMerged ---
     private final Set<Set<Field>> conflictsReported = new LinkedHashSet<>();
+    private @Nullable Deque<SelectionSetTraversalFrame<GraphQLType>> fieldCollectionFrames;
 
     // --- State: LoneAnonymousOperation ---
     private boolean hasAnonymousOp = false;
@@ -305,11 +306,15 @@ public class OperationValidator {
     }
 
     private void visitChild(Node node, Deque<OperationValidationFrame> frames, List<Node> ancestors) {
-        if (node instanceof FragmentSpread) {
+        if (node instanceof FragmentSpread && currentOperation != null
+                && !visitedFragmentSpreads.contains(((FragmentSpread) node).getName())) {
             frames.push(new OperationValidationFrame(node));
             return;
         }
         enter(node, ancestors);
+        if (node instanceof FragmentSpread && currentOperation != null) {
+            addFragmentComplexity(((FragmentSpread) node).getName());
+        }
         List<Node> children = node.getChildren();
         if (children.isEmpty()) {
             leave(node);
@@ -323,10 +328,6 @@ public class OperationValidator {
             return false;
         }
         String fragmentName = ((FragmentSpread) node).getName();
-        if (visitedFragmentSpreads.contains(fragmentName)) {
-            addFragmentComplexity(fragmentName);
-            return false;
-        }
         FragmentDefinition fragment = validationContext.getFragment(fragmentName);
         if (fragment == null) {
             return false;
@@ -1404,7 +1405,11 @@ public class OperationValidator {
     }
 
     private void overlappingFields_collectFields(Map<String, Set<FieldAndType>> fieldMap, SelectionSet selectionSet, @Nullable GraphQLType parentType, Set<String> visitedFragments) {
-        Deque<SelectionSetTraversalFrame<GraphQLType>> frames = new ArrayDeque<>();
+        Deque<SelectionSetTraversalFrame<GraphQLType>> frames = fieldCollectionFrames;
+        if (frames == null) {
+            frames = new ArrayDeque<>();
+            fieldCollectionFrames = frames;
+        }
         frames.push(new SelectionSetTraversalFrame<>(selectionSet, parentType));
         while (!frames.isEmpty()) {
             SelectionSetTraversalFrame<GraphQLType> frame = frames.getFirst();
@@ -1569,6 +1574,9 @@ public class OperationValidator {
     }
 
     private List<Set<FieldAndType>> groupByCommonParents(Set<FieldAndType> fields) {
+        if (fields.size() <= 1) {
+            return Collections.singletonList(fields);
+        }
         // Single-pass: partition into abstract types and concrete groups simultaneously
         List<FieldAndType> abstractTypes = null;
         Map<GraphQLType, Set<FieldAndType>> concreteGroups = null;

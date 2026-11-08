@@ -88,6 +88,51 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.errors.isEmpty()
     }
 
+    def "single-field parent groups still check nested conflicts for #selection"() {
+        given:
+        def schema = SchemaGenerator.createdMockedSchema('''
+            interface Node { name: String nickname: String child: Node }
+            type Person implements Node { name: String nickname: String child: Person }
+            union Result = Person
+            type Query { person: Person node: Node result: Result }
+        ''')
+
+        when:
+        traverse("{ $selection }", schema)
+
+        then:
+        errorCollector.errors*.validationErrorType == [ValidationErrorType.FieldsConflict]
+        errorCollector.errors[0].locations.size() == 2
+
+        where:
+        selection << [
+                'person { child { same: name same: nickname } }',
+                'node { child { same: name same: nickname } }',
+                'result { ... on Person { child { same: name same: nickname } } }',
+        ]
+    }
+
+    def "fragment collection remains independent across sibling selection sets"() {
+        given:
+        def schema = SchemaGenerator.createdMockedSchema('''
+            type Query { node: Node }
+            type Node { name: String nickname: String }
+        ''')
+
+        when:
+        traverse('''
+            {
+                first: node { ...Shared }
+                second: node { ...Shared same: nickname }
+            }
+            fragment Shared on Node { same: name }
+        ''', schema)
+
+        then:
+        errorCollector.errors*.validationErrorType == [ValidationErrorType.FieldsConflict]
+        errorCollector.errors[0].description.contains('second/same')
+    }
+
     def "identical fields are ok 2"() {
         given:
         def query = """
