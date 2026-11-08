@@ -5,16 +5,13 @@ import graphql.language.ArrayValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.Value;
-import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.InputValueWithState;
 import graphql.util.FpKit;
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -43,24 +40,17 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * @see <a href="https://spec.graphql.org/draft/#sec-Input-Objects.Type-Validation">Input Objects Type Validation</a>
  */
 @Internal
-public class NoDefaultValueCircularRefs extends GraphQLTypeVisitorStub {
+public class NoDefaultValueCircularRefs {
 
     private final Set<String> checkedFields = new LinkedHashSet<>();
     private final LinkedHashSet<String> fieldPath = new LinkedHashSet<>();
 
-    @Override
-    public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType type, TraverserContext<GraphQLSchemaElement> context) {
-        checkType(type, getErrorCollector(context));
-        return TraversalControl.CONTINUE;
-    }
-
-    @Override
-    public TraversalControl visitGraphQLArgument(GraphQLArgument argument, TraverserContext<GraphQLSchemaElement> context) {
-        GraphQLType namedType = unwrapAll(argument.getType());
-        if (namedType instanceof GraphQLInputObjectType) {
-            checkType((GraphQLInputObjectType) namedType, getErrorCollector(context));
+    public void checkSchema(GraphQLSchema schema, SchemaValidationErrorCollector errorCollector) {
+        for (GraphQLNamedType type : schema.getTypeMap().values()) {
+            if (type instanceof GraphQLInputObjectType) {
+                checkType((GraphQLInputObjectType) type, errorCollector);
+            }
         }
-        return TraversalControl.CONTINUE;
     }
 
     private void checkType(GraphQLInputObjectType type, SchemaValidationErrorCollector errorCollector) {
@@ -182,9 +172,5 @@ public class NoDefaultValueCircularRefs extends GraphQLTypeVisitorStub {
             valueMap.put(field.getName(), field.getValue());
         }
         return valueMap;
-    }
-
-    private SchemaValidationErrorCollector getErrorCollector(TraverserContext<GraphQLSchemaElement> context) {
-        return context.getVarFromParents(SchemaValidationErrorCollector.class);
     }
 }

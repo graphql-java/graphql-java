@@ -17,7 +17,6 @@ public class SchemaValidator {
     public List<GraphQLTypeVisitor> getRules() {
         List<GraphQLTypeVisitor> rules = new ArrayList<>();
         rules.add(new NoUnbrokenInputCycles());
-        rules.add(new NoDefaultValueCircularRefs());
         rules.add(new TypesImplementInterfaces());
         rules.add(new TypeAndFieldRule());
         rules.add(new DefaultValuesAreValid());
@@ -31,6 +30,10 @@ public class SchemaValidator {
 
     public Set<SchemaValidationError> validateSchema(GraphQLSchema schema) {
         SchemaValidationErrorCollector validationErrorCollector = new SchemaValidationErrorCollector();
+        new NoDefaultValueCircularRefs().checkSchema(schema, validationErrorCollector);
+        if (!validationErrorCollector.getErrors().isEmpty()) {
+            return validationErrorCollector.getErrors();
+        }
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(GraphQLSchema.class, schema);
         rootVars.put(SchemaValidationErrorCollector.class, validationErrorCollector);

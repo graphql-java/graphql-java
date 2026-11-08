@@ -15,7 +15,6 @@ class SchemaValidatorTest extends Specification {
         then:
         rules*.class == [
                 NoUnbrokenInputCycles,
-                NoDefaultValueCircularRefs,
                 TypesImplementInterfaces,
                 TypeAndFieldRule,
                 DefaultValuesAreValid,
@@ -25,6 +24,6 @@ class SchemaValidatorTest extends Specification {
                 OneOfInputObjectRules,
                 DeprecatedInputObjectAndArgumentsAreValid,
         ]
-        rules[1] !== nextRules[1]
+        (0..<rules.size()).every { rules[it] !== nextRules[it] }
     }
 }
