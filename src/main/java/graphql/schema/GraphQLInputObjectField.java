@@ -318,7 +318,6 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
          */
         @Deprecated(since = "2021-05-10")
         public Builder defaultValue(Object defaultValue) {
-            DefaultValueSupport.assertValidDefaultValue(defaultValue);
             this.defaultValue = InputValueWithState.newInternalValue(defaultValue);
             return this;
         }
@@ -330,16 +329,13 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
 
         /**
          * Sets a programmatic default value. Iterators and streams, including nested values,
-         * are not supported; use an iterable or array instead.
+         * are rejected during schema validation; use an iterable or array instead.
          *
          * @param defaultValue the default value, which can be null
          *
          * @return this builder
-         *
-         * @throws graphql.AssertException if the default value contains an iterator or stream
          */
         public Builder defaultValueProgrammatic(Object defaultValue) {
-            DefaultValueSupport.assertValidDefaultValue(defaultValue);
             this.defaultValue = InputValueWithState.newExternalValue(defaultValue);
             return this;
         }

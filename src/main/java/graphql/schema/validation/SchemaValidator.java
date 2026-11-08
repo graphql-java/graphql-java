@@ -30,14 +30,19 @@ public class SchemaValidator {
 
     public Set<SchemaValidationError> validateSchema(GraphQLSchema schema) {
         SchemaValidationErrorCollector validationErrorCollector = new SchemaValidationErrorCollector();
+        Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
+        rootVars.put(GraphQLSchema.class, schema);
+        rootVars.put(SchemaValidationErrorCollector.class, validationErrorCollector);
+        SchemaTraverser traverser = new SchemaTraverser();
+        traverser.depthFirstFullSchema(List.of(new DefaultValueContainersAreValid()), schema, rootVars);
+        if (!validationErrorCollector.getErrors().isEmpty()) {
+            return validationErrorCollector.getErrors();
+        }
         new NoDefaultValueCircularRefs().checkSchema(schema, validationErrorCollector);
         if (!validationErrorCollector.getErrors().isEmpty()) {
             return validationErrorCollector.getErrors();
         }
-        Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
-        rootVars.put(GraphQLSchema.class, schema);
-        rootVars.put(SchemaValidationErrorCollector.class, validationErrorCollector);
-        new SchemaTraverser().depthFirstFullSchema(getRules(), schema, rootVars);
+        traverser.depthFirstFullSchema(getRules(), schema, rootVars);
         return validationErrorCollector.getErrors();
     }
 

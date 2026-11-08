@@ -1,14 +1,19 @@
 package graphql.schema
 
-import graphql.AssertException
 import graphql.GraphQL
+import graphql.schema.validation.InvalidSchemaException
+import graphql.schema.validation.SchemaValidationErrorType
+import graphql.schema.validation.SchemaValidator
 import spock.lang.Specification
 
 import java.util.stream.IntStream
 import java.util.stream.Stream
 
+import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION
 import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
@@ -18,26 +23,28 @@ import static graphql.schema.GraphQLSchema.newSchema
 
 class ProgrammaticDefaultValuesTest extends Specification {
 
-    def "#element #setter rejects #kind inside #shape without consuming it"() {
+    def "validation rejects #element #setter #kind inside #shape without consuming it - fast #fast"() {
         given:
-        def builder = element == 'argument' ? newArgument() : newInputObjectField()
         def singleUseValue = singleUseValue(kind)
         def defaultValue = wrapValue(singleUseValue, shape)
+        def builder = schemaBuilderWithDefault(element, setter, defaultValue, fast)
 
         when:
-        builder."$setter"(defaultValue)
+        builder.build()
 
         then:
-        def exception = thrown(AssertException)
-        exception.message == 'Default values must not contain an Iterator or a Stream'
+        def exception = thrown(InvalidSchemaException)
+        exception.errors*.classification == [SchemaValidationErrorType.InvalidDefaultValue]
+        exception.message.contains('default values must not contain an Iterator or a Stream')
         kind == 'iterator' ? singleUseValue.next() == 'ok' : singleUseValue.count() == 1
 
         where:
-        [element, setter, kind, shape] << [
-                ['argument', 'input field'],
+        [element, setter, kind, shape, fast] << [
+                ['argument', 'input field', 'directive argument'],
                 ['defaultValueProgrammatic', 'defaultValue'],
                 ['iterator', 'stream', 'primitive stream'],
-                ['direct', 'map', 'list', 'array', 'nested containers']
+                ['direct', 'map', 'list', 'array', 'nested containers'],
+                [false, true]
         ].combinations()
     }
 
@@ -82,22 +89,128 @@ class ProgrammaticDefaultValuesTest extends Specification {
     }
 
     def "null and primitive arrays remain supported defaults"() {
+        given:
+        def input = newInputObject().name('Input')
+                .field(newInputObjectField().name('items').type(list(GraphQLInt))
+                        .defaultValueProgrammatic([1, 2] as int[]))
+                .field(newInputObjectField().name('name').type(GraphQLString)
+                        .defaultValueProgrammatic(null)).build()
+        def query = newObject().name('Query')
+                .field(newFieldDefinition().name('test').type(GraphQLString)
+                        .argument(newArgument().name('input').type(input))
+                        .argument(newArgument().name('items').type(list(GraphQLInt))
+                                .defaultValueProgrammatic([1, 2] as int[]))
+                        .argument(newArgument().name('name').type(GraphQLString)
+                                .defaultValueProgrammatic(null))).build()
+
         expect:
-        newArgument().defaultValueProgrammatic(null) != null
-        newInputObjectField().defaultValueProgrammatic(null) != null
-        newArgument().defaultValueProgrammatic([1, 2] as int[]) != null
-        newInputObjectField().defaultValueProgrammatic([1, 2] as int[]) != null
+        newSchema().query(query).build() != null
     }
 
-    def "checking defaults handles shared and recursive Java containers by identity"() {
+    def "default setters do not traverse values"() {
+        given:
+        def value = Mock(Iterable)
+
+        when:
+        newArgument().defaultValueProgrammatic(value)
+        newInputObjectField().defaultValueProgrammatic(value)
+        newArgument().defaultValue(value)
+        newInputObjectField().defaultValue(value)
+
+        then:
+        0 * value.iterator()
+    }
+
+    def "validation catches an iterator added after setting the default"() {
+        given:
+        def value = [name: 'ok']
+        def builder = schemaBuilderWithDefault('argument', 'defaultValueProgrammatic', value, false)
+        def iterator = ['later'].iterator()
+        value['later'] = iterator
+
+        when:
+        builder.build()
+
+        then:
+        thrown(InvalidSchemaException)
+        iterator.next() == 'later'
+    }
+
+    def "unchecked FastBuilder defers rejection until explicit schema validation"() {
+        given:
+        def value = Stream.of('ok')
+        def builder = schemaBuilderWithDefault('argument', 'defaultValueProgrammatic', value, true)
+        def schema = builder.withValidation(false).build()
+
+        when:
+        def errors = new SchemaValidator().validateSchema(schema)
+
+        then:
+        errors*.classification == [SchemaValidationErrorType.InvalidDefaultValue]
+        value.count() == 1
+    }
+
+    def "input field defaults are rejected before argument coercion expands them"() {
+        given:
+        def value = Stream.of('ok')
+        def input = newInputObject().name('Input')
+                .field(newInputObjectField().name('items').type(list(GraphQLString))
+                        .defaultValueProgrammatic(value)).build()
+        def query = newObject().name('Query')
+                .field(newFieldDefinition().name('test').type(GraphQLString)
+                        .argument(newArgument().name('arg').type(input).defaultValueProgrammatic([:]))).build()
+
+        when:
+        newSchema().query(query).build()
+
+        then:
+        def exception = thrown(InvalidSchemaException)
+        exception.errors*.classification == [SchemaValidationErrorType.InvalidDefaultValue]
+        exception.message.contains("Invalid default value for 'items'")
+        value.count() == 1
+    }
+
+    def "validation handles shared and recursive containers without overlooking an iterator"() {
         given:
         def shared = [name: 'ok']
         def value = [first: shared, second: shared]
         value['self'] = value
+        def iterator = ['ok'].iterator()
+        value['iterator'] = iterator
+        def builder = schemaBuilderWithDefault('argument', 'defaultValueProgrammatic', value, false)
 
-        expect:
-        newArgument().defaultValueProgrammatic(value) != null
-        newInputObjectField().defaultValueProgrammatic(value) != null
+        when:
+        builder.build()
+
+        then:
+        thrown(InvalidSchemaException)
+        iterator.next() == 'ok'
+    }
+
+    private static Object schemaBuilderWithDefault(String element, String setter, Object value, boolean fast) {
+        def argument = newArgument().name('arg').type(GraphQLString)
+        def types = []
+        def directive = newDirective().name('probe').validLocation(FIELD_DEFINITION)
+        if (element == 'input field') {
+            def field = newInputObjectField().name('value').type(GraphQLString)
+            field."$setter"(value)
+            def input = newInputObject().name('Input').field(field).build()
+            argument.type(input)
+            types.add(input)
+        } else {
+            argument."$setter"(value)
+        }
+        def queryField = newFieldDefinition().name('test').type(GraphQLString)
+        if (element == 'directive argument') {
+            directive.argument(argument)
+        } else {
+            queryField.argument(argument)
+        }
+        def query = newObject().name('Query').field(queryField).build()
+        return fast
+                ? new GraphQLSchema.FastBuilder(GraphQLCodeRegistry.newCodeRegistry(), query, null, null)
+                        .addTypes(types).additionalDirective(directive.build()).withValidation(true)
+                : newSchema().query(query).additionalDirective(directive.build())
     }
 
     private static Object singleUseValue(String kind) {
