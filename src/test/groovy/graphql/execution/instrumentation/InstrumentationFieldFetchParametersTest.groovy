@@ -85,9 +85,17 @@ class InstrumentationFieldFetchParametersTest extends Specification {
         def graphQL = TestUtil.graphQL(sdl).build()
 
         Map<String, Boolean> leafByField = [:]
+        List<Object> suppliedFieldDefinitions = []
         def instrumentation = new SimplePerformantInstrumentation() {
             @Override
+            InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+                suppliedFieldDefinitions.add(suppliedFieldDefinition(parameters))
+                return SimpleInstrumentationContext.noOp()
+            }
+
+            @Override
             FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+                suppliedFieldDefinitions.add(suppliedFieldDefinition(parameters))
                 GraphQLFieldDefinition fieldDef = parameters.getField()
                 leafByField.put(fieldDef.getName(), GraphQLTypeUtil.isLeaf(fieldDef.getType()))
                 return FieldFetchingInstrumentationContext.NOOP
@@ -101,5 +109,14 @@ class InstrumentationFieldFetchParametersTest extends Specification {
         then:
         result.errors.isEmpty()
         leafByField == [hero: false, name: true, friends: false]
+        // every field execution and field fetch was given the field definition eagerly by the engine
+        !suppliedFieldDefinitions.isEmpty()
+        suppliedFieldDefinitions.every { it != null }
+    }
+
+    private static Object suppliedFieldDefinition(InstrumentationFieldParameters parameters) {
+        def field = InstrumentationFieldParameters.getDeclaredField("fieldDefinition")
+        field.setAccessible(true)
+        return field.get(parameters)
     }
 }

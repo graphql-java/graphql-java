@@ -46,8 +46,8 @@ public class InstrumentationFieldParameters {
      * This returns the {@link GraphQLFieldDefinition} of the field being instrumented.
      * <p>
      * When the field definition was supplied at construction time, this is a cheap call that does NOT invoke
-     * the {@link ExecutionStepInfo} supplier.  Otherwise it falls back to {@link #getExecutionStepInfo()}
-     * to find the field definition, which may be an expensive call depending on what the supplier has to build.
+     * the {@link ExecutionStepInfo} supplier.  Otherwise it reads the field definition from the
+     * {@link ExecutionStepInfo} supplier, which may be expensive depending on what the supplier has to build.
      *
      * @return the field definition of the field being instrumented
      */
