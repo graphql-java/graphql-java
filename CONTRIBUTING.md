@@ -49,7 +49,7 @@ To bypass the hooks temporarily (not recommended), use `git commit --no-verify`.
 The same checks are also enforced by the "Validate Files" GitHub Action on all pull requests and pushes. This ensures that even if the local hook is bypassed, incompatible files will be caught during CI.
 
 
-If you have any question please consider asking in our [Discussions](https://github.com/graphql-java/graphql-java/discussions). For bug reports or specific code related topics create a new issue.
+If you have any questions please consider asking in our [Discussions](https://github.com/graphql-java/graphql-java/discussions). For bug reports or specific code related topics create a new issue.
 
 Thanks!
 
