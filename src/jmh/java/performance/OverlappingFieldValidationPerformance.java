@@ -8,7 +8,6 @@ import graphql.language.Document;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
-import graphql.validation.LanguageTraversal;
 import graphql.validation.OperationValidationRule;
 import graphql.validation.OperationValidator;
 import graphql.validation.ValidationContext;
@@ -152,8 +151,8 @@ public class OverlappingFieldValidationPerformance {
         ValidationContext validationContext = new ValidationContext(schema, document, i18n);
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 rule -> rule == OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
-        LanguageTraversal languageTraversal = new LanguageTraversal();
-        languageTraversal.traverse(document, operationValidator);
+
+        operationValidator.validate();
         Assert.assertTrue(errorCollector.getErrors().size() == 0);
         return errorCollector.getErrors();
     }
