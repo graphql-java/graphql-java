@@ -103,9 +103,9 @@ class GoodFaithMergedFieldsTest extends Specification {
         [rootField, placement, protection] << [
                 ['__schema', '__type'],
                 ['inline', 'named chain', 'shared fragments'],
-                ['field count', 'depth', 'restricted field', 'root aliases']
+                ['merged field count', 'depth', 'restricted field', 'root aliases']
         ].combinations()
-        expectedDetail = ['field count': '501 fields', 'depth': 'Query depth 21',
+        expectedDetail = ['merged field count': '501 merged fields', 'depth': 'Query depth 21',
                           'restricted field': '__Type.fields', 'root aliases': "Query.$rootField"][protection]
     }
 
@@ -185,7 +185,7 @@ class GoodFaithMergedFieldsTest extends Specification {
         validate(normal + introspection).empty
     }
 
-    def "ordinary operations are not subject to the 500 field limit"() {
+    def "ordinary operations are not subject to the 500 merged field limit"() {
         expect:
         validate('{ __typename ' + (1..501).collect { "n$it: normalField" }.join(' ') + ' }').empty
     }
@@ -196,21 +196,29 @@ class GoodFaithMergedFieldsTest extends Specification {
         rejected('{ __type(name: "Query") { name } node { ' + 'child { ' * 20 + 'name' + ' }' * 20 + ' } }')
     }
 
-    def "generic AST work limits remain independent of merged field limits"() {
+    def "general limits use merged fields for introspection too"() {
         given:
         def graphQL = GraphQL.newGraphQL(schema).build()
-        def limits = QueryComplexityLimits.newLimits().maxFieldsCount(5).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(limit).build()
         def input = ExecutionInput.newExecutionInput('{ __schema { types { name name name name } } }')
                 .graphQLContext([(QueryComplexityLimits.KEY): limits]).build()
 
         expect:
-        graphQL.execute(input).errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        def errors = graphQL.execute(input).errors
+        errors.empty == accepted
+        errors.empty || errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+
+        where:
+        limit | accepted
+        5     | true
+        3     | true
+        2     | false
     }
 
     def "a tighter generic depth limit still applies to introspection"() {
         given:
         def graphQL = GraphQL.newGraphQL(schema).build()
-        def limits = QueryComplexityLimits.newLimits().maxDepth(2).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(2).build()
         def input = ExecutionInput.newExecutionInput('{ __type(name: "Query") { ofType { name } } }')
                 .graphQLContext([(QueryComplexityLimits.KEY): limits]).build()
 
@@ -254,12 +262,12 @@ class GoodFaithMergedFieldsTest extends Specification {
         def base = "{ __type(name: \"Query\") { name } $selection } $fragments"
         def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(abstractSchema, Parser.parse(base),
                 null, CoercedVariables.emptyVariables())
-        def padding = (1..(500 - validationFields)).collect { "p$it: normalField" }.join(' ')
+        def padding = (1..(500 - mergedFieldCount)).collect { "p$it: normalField" }.join(' ')
         def atLimit = "{ __type(name: \"Query\") { name } $padding $selection } $fragments"
         def aboveLimit = "{ __type(name: \"Query\") { name } extra: normalField $padding $selection } $fragments"
 
         expect:
-        eno.operationFieldCount == normalizationFields
+        eno.operationFieldCount == normalizationFieldCount
         new Validator().validateDocument(abstractSchema, Parser.parse(atLimit), Locale.ENGLISH).empty
 
         when:
@@ -269,7 +277,7 @@ class GoodFaithMergedFieldsTest extends Specification {
         thrown(GoodFaithIntrospectionExceeded)
 
         where:
-        selection                                                                        | fragments                      | validationFields | normalizationFields
+        selection                                                                        | fragments                      | mergedFieldCount | normalizationFieldCount
         'node { name name }'                                                              | ''                             | 4                | 4
         'node { ...on I { name } ...on A { name } }'                                       | ''                             | 4                | 5
         'node { ...on A { name } ...on B { name } }'                                       | ''                             | 5                | 5
@@ -344,19 +352,20 @@ class GoodFaithMergedFieldsTest extends Specification {
 
     def "public limit helper preserves tighter caller limits"() {
         given:
-        def requested = QueryComplexityLimits.newLimits().maxFieldsCount(fields).maxDepth(depth).build()
+        def requested = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFieldCount).maxDepth(depth).maxFieldOccurrences(1234).build()
 
         when:
         def bounded = GoodFaithIntrospection.goodFaithLimits(requested)
 
         then:
-        bounded.maxFieldsCount == expectedFields
+        bounded.maxMergedFieldCount == expectedMergedFieldCount
         bounded.maxDepth == expectedDepth
-        requested.maxFieldsCount == fields
+        bounded.maxFieldOccurrences == 1234
+        requested.maxMergedFieldCount == mergedFieldCount
         requested.maxDepth == depth
 
         where:
-        fields | depth | expectedFields | expectedDepth
+        mergedFieldCount | depth | expectedMergedFieldCount | expectedDepth
         1000   | 100   | 500            | 20
         50     | 10    | 50             | 10
         1000   | 10    | 500            | 10
@@ -391,7 +400,7 @@ class GoodFaithMergedFieldsTest extends Specification {
     private String rootIntrospectionViolation(String rootField, String protection) {
         int rootDepth = rootField == '__schema' ? 2 : 1
         switch (protection) {
-            case 'field count':
+            case 'merged field count':
                 return rootIntrospection(rootField, (1..(501 - rootDepth)).collect { "n$it: name" }.join(' '))
             case 'depth':
                 int wrappers = 20 - rootDepth

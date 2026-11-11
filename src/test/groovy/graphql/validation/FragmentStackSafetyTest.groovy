@@ -29,7 +29,7 @@ class FragmentStackSafetyTest extends Specification {
         String query = '{ node { ...F0 } }' + chain('Node', 'name')
         // Parsing uses the default limits: shallow definitions fit even though references form a long chain.
         Document document = Parser.parse(query)
-        def limits = QueryComplexityLimits.newLimits().maxFieldsCount(2).maxDepth(2).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(2).maxFieldOccurrences(2).maxDepth(2).build()
         def graphql = GraphQL.newGraphQL(schema).build()
         def input = ExecutionInput.newExecutionInput().query(query).root([node: [name: 'value']]).build()
         def validation = new FutureTask({ ->
@@ -61,7 +61,7 @@ class FragmentStackSafetyTest extends Specification {
         def document = new Document([operation])
 
         expect:
-        validate(document, QueryComplexityLimits.newLimits().maxFieldsCount(2).maxDepth(2).build()).empty
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(2).maxFieldOccurrences(2).maxDepth(2).build()).empty
     }
 
     def "long root fragment chains preserve #operation validation"() {
@@ -84,16 +84,17 @@ class FragmentStackSafetyTest extends Specification {
         def document = Parser.parse("{ node { $selection } }" + chain('Node', 'name'))
 
         expect:
-        validate(document, QueryComplexityLimits.newLimits().maxFieldsCount(fields).maxDepth(depth).build()).empty
-        validate(document, QueryComplexityLimits.newLimits().maxFieldsCount(fields - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryFieldsExceeded]
-        validate(document, QueryComplexityLimits.newLimits().maxDepth(depth - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFields).maxFieldOccurrences(occurrences).maxDepth(depth).build()).empty
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFields - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(occurrences - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryFieldOccurrencesExceeded]
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxDepth(depth - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
 
         where:
-        selection                        | fields | depth
-        '...F0'                          | 2      | 2
-        '...F0 ...F0'                    | 3      | 2
-        'child { ...F0 } ...F0'           | 4      | 3
-        '...F0 child { ...F0 } name'      | 5      | 3
+        selection                        | mergedFields | occurrences | depth
+        '...F0'                          | 2            | 2           | 2
+        '...F0 ...F0'                    | 2            | 3           | 2
+        'child { ...F0 } ...F0'           | 4            | 4           | 3
+        '...F0 child { ...F0 } name'      | 4            | 5           | 3
     }
 
     def "operation scoped variable checks follow shared long chains in either definition order"() {

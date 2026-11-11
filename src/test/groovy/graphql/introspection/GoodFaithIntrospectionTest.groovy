@@ -31,7 +31,7 @@ class GoodFaithIntrospectionTest extends Specification {
                 "IntrospectionQuery", CoercedVariables.emptyVariables())
 
         then:
-        eno.getOperationFieldCount() < GoodFaithIntrospection.GOOD_FAITH_MAX_FIELDS_COUNT  // currently 189
+        eno.getOperationFieldCount() < GoodFaithIntrospection.GOOD_FAITH_MAX_MERGED_FIELD_COUNT  // currently 189
         eno.getOperationDepth() < GoodFaithIntrospection.GOOD_FAITH_MAX_DEPTH_COUNT  // currently 13
     }
 
@@ -290,7 +290,7 @@ class GoodFaithIntrospectionTest extends Specification {
 
     def "good faith limits are applied on top of custom user limits"() {
         given:
-        def limits = QueryComplexityLimits.newLimits().maxFieldsCount(200).maxDepth(15).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(200).maxDepth(15).build()
         def executionInput = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
                 .graphQLContext([(QueryComplexityLimits.KEY): limits])
                 .build()
@@ -302,9 +302,9 @@ class GoodFaithIntrospectionTest extends Specification {
         er.errors.isEmpty()
     }
 
-    def "introspection query exceeding field count limit is detected as bad faith"() {
+    def "introspection query exceeding merged field count limit is detected as bad faith"() {
         given:
-        // Build a wide introspection query that exceeds GOOD_FAITH_MAX_FIELDS_COUNT (500)
+        // Build a wide introspection query that exceeds GOOD_FAITH_MAX_MERGED_FIELD_COUNT (500)
         // using non-cycle-forming fields (aliases of 'name') so the tooManyFields check
         // does not fire first, exercising the tooBigOperation code path instead
         def sb = new StringBuilder()

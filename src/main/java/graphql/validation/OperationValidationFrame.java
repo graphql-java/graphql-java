@@ -15,16 +15,15 @@ import static graphql.Assert.assertNotNull;
 public final class OperationValidationFrame {
     private final Node<?> node;
     private final boolean fragmentExpansion;
-    private final int fieldCountBefore;
-    private final int depthAtEntry;
-    private final int previousFragmentMaxDepth;
+    private final long fieldOccurrencesBefore;
+    private final int incompleteOccurrencesBefore;
     private boolean entered;
     private boolean childrenStarted;
     private @Nullable List<Node> children;
     private int nextChild;
 
     public OperationValidationFrame(Node<?> node) {
-        this(node, false, 0, 0, 0);
+        this(node, false, 0, 0);
     }
 
     public OperationValidationFrame(Node<?> node, List<Node> children) {
@@ -33,16 +32,15 @@ public final class OperationValidationFrame {
         this.children = children;
     }
 
-    public OperationValidationFrame(FragmentDefinition fragment, int fieldCountBefore, int depthAtEntry, int previousFragmentMaxDepth) {
-        this(fragment, true, fieldCountBefore, depthAtEntry, previousFragmentMaxDepth);
+    public OperationValidationFrame(FragmentDefinition fragment, long fieldOccurrencesBefore, int incompleteOccurrencesBefore) {
+        this(fragment, true, fieldOccurrencesBefore, incompleteOccurrencesBefore);
     }
 
-    private OperationValidationFrame(Node<?> node, boolean fragmentExpansion, int fieldCountBefore, int depthAtEntry, int previousFragmentMaxDepth) {
+    private OperationValidationFrame(Node<?> node, boolean fragmentExpansion, long fieldOccurrencesBefore, int incompleteOccurrencesBefore) {
         this.node = node;
         this.fragmentExpansion = fragmentExpansion;
-        this.fieldCountBefore = fieldCountBefore;
-        this.depthAtEntry = depthAtEntry;
-        this.previousFragmentMaxDepth = previousFragmentMaxDepth;
+        this.fieldOccurrencesBefore = fieldOccurrencesBefore;
+        this.incompleteOccurrencesBefore = incompleteOccurrencesBefore;
     }
 
     public Node<?> getNode() {
@@ -83,15 +81,11 @@ public final class OperationValidationFrame {
         return fragmentExpansion;
     }
 
-    public int getFieldCountBefore() {
-        return fieldCountBefore;
+    public long getFieldOccurrencesBefore() {
+        return fieldOccurrencesBefore;
     }
 
-    public int getDepthAtEntry() {
-        return depthAtEntry;
-    }
-
-    public int getPreviousFragmentMaxDepth() {
-        return previousFragmentMaxDepth;
+    public int getIncompleteOccurrencesBefore() {
+        return incompleteOccurrencesBefore;
     }
 }
