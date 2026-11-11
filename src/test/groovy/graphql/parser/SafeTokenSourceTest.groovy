@@ -114,11 +114,11 @@ class SafeTokenSourceTest extends Specification {
         then:
         def exception = thrown(IllegalStateException)
         exception.message == "stop at 100"
-        offendingToken.type == GraphqlLexer.IntValue
+        offendingToken.type == Token.INVALID_TYPE
         offendingToken.stopIndex - offendingToken.startIndex + 1 == 101
     }
 
-    def "can stop numeric input before the lexer consumes it"() {
+    def "can stop numeric input while the lexer matches it"() {
         given:
         GraphqlLexer graphqlLexer = lexer("${numericInput}")
         Token offendingToken = null
@@ -140,23 +140,42 @@ class SafeTokenSourceTest extends Specification {
         then:
         def exception = thrown(IllegalStateException)
         exception.message == "stop at $expectedLimit"
-        graphqlLexer.inputStream.index() == 0
-        offendingToken.type == expectedType
+        graphqlLexer.inputStream.index() <= offendingToken.stopIndex + 1
+        offendingToken.type == Token.INVALID_TYPE
         offendingToken.text == numericInput.substring(0, offendingToken.stopIndex + 1)
 
         where:
-        numericInput                                      | configuredLimit | expectedLimit | expectedType
-        "9" * 101                                        | 100             | 100           | GraphqlLexer.IntValue
-        "9" * 1001                                       | 2000            | 1000          | GraphqlLexer.IntValue
-        "-" + "9" * 1001                                 | 2000            | 1000          | GraphqlLexer.IntValue
-        "9" * 400 + "." + "9" * 400 + "e+" + "9" * 201 | 2000            | 1000          | GraphqlLexer.FloatValue
-        "1e" + "9" * 1000 + "x"                          | 2000            | 1000          | GraphqlLexer.FloatValue
-        "0" * 1001 + "x"                                 | 2000            | 1000          | GraphqlLexer.IntValue
+        numericInput                                      | configuredLimit | expectedLimit
+        "9" * 101                                        | 100             | 100
+        "9" * 1001                                       | 2000            | 1000
+        "-" + "9" * 1001                                 | 2000            | 1000
+        "9" * 400 + "." + "9" * 400 + "e+" + "9" * 201 | 2000            | 1000
+        "1e" + "9" * 1000 + "x"                          | 2000            | 1000
+        "9" * 10_000                                      | 2000            | 1000
     }
 
     def "digit ceiling is applied to each numeric token separately"() {
         given:
         GraphqlLexer graphqlLexer = lexer("${"9" * 600}-${"9" * 600}")
+        def tokenSource = new SafeTokenSource(
+                graphqlLexer,
+                1000,
+                200_000,
+                2000,
+                { max, token -> },
+                { max, token -> throw new IllegalStateException("unexpected numeric limit") }
+        )
+
+        when:
+        consumeAllTokens(tokenSource)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def "numeric punctuation does not count toward the digit ceiling"() {
+        given:
+        GraphqlLexer graphqlLexer = lexer("${"9" * 500}.${"9" * 500}")
         def tokenSource = new SafeTokenSource(
                 graphqlLexer,
                 1000,

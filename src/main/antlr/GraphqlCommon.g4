@@ -107,7 +107,7 @@ fragment FractionalPart: '.' Digit+;
 fragment ExponentPart :  ExponentIndicator Sign? Digit+;
 fragment ExponentIndicator: 'e' | 'E';
 fragment Sign: '+'|'-';
-fragment Digit : '0'..'9';
+fragment Digit : '0'..'9' { numericDigitCountWithinLimit() }?;
 
 // StringValue
 StringValue:

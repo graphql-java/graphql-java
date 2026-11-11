@@ -2,6 +2,7 @@ package graphql.parser;
 
 import graphql.Internal;
 import graphql.parser.antlr.GraphqlLexer;
+import graphql.parser.antlr.NumericLiteralTooLongException;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
@@ -48,13 +49,21 @@ public class SafeTokenSource implements TokenSource {
         // we only have 3 channels - but they are 0,2 and 3 so use 5 for safety - still faster than a map get/put
         // if we ever add another channel beyond 5 it will IOBEx during tests so future changes will be handled before release!
         this.channelCounts = new int[]{0, 0, 0, 0, 0};
+        if (lexer instanceof GraphqlLexer) {
+            ((GraphqlLexer) lexer).setMaxNumericDigits(Math.min(maxNumericLiteralCharacters, MAX_NUMERIC_LITERAL_DIGITS));
+        }
     }
 
 
     @Override
     public Token nextToken() {
-        callbackIfNumericInputTooLong();
-        Token token = lexer.nextToken();
+        Token token;
+        try {
+            token = lexer.nextToken();
+        } catch (NumericLiteralTooLongException exception) {
+            reportOversizedNumericInput(exception);
+            throw exception;
+        }
         if (token != null) {
             callbackIfNumericLiteralTooLong(token);
             int channel = token.getChannel();
@@ -69,74 +78,15 @@ public class SafeTokenSource implements TokenSource {
         return token;
     }
 
-    private void callbackIfNumericInputTooLong() {
-        // Inspect a bounded numeric prefix before ANTLR tries to match the whole token.
-        CharStream input = lexer.getInputStream();
-        int first = input.LA(1);
-        if (!isDigit(first) && first != '-') {
-            return;
-        }
-
-        int offset = first == '-' ? 2 : 1;
-        if (!isDigit(input.LA(offset))) {
-            return;
-        }
-
-        int maxDigits = Math.min(maxNumericLiteralCharacters, MAX_NUMERIC_LITERAL_DIGITS);
-        int digits = 0;
-        boolean hasFraction = false;
-        boolean hasExponent = false;
-        while (true) {
-            int next = input.LA(offset);
-            if (isDigit(next)) {
-                if (++digits > maxDigits) {
-                    reportOversizedNumericInput(input, offset, hasFraction || hasExponent, maxDigits);
-                    return;
-                }
-                offset++;
-                continue;
-            }
-            if (next == '.' && !hasFraction && !hasExponent && isDigit(input.LA(offset + 1))) {
-                hasFraction = true;
-                offset++;
-                continue;
-            }
-            if ((next == 'e' || next == 'E') && !hasExponent) {
-                int prefixLength = exponentPrefixLength(input, offset);
-                if (prefixLength > 0) {
-                    hasExponent = true;
-                    offset += prefixLength;
-                    continue;
-                }
-            }
-            return;
-        }
-    }
-
-    private int exponentPrefixLength(CharStream input, int offset) {
-        int next = input.LA(offset + 1);
-        if (isDigit(next)) {
-            return 1;
-        }
-        if ((next == '+' || next == '-') && isDigit(input.LA(offset + 2))) {
-            return 2;
-        }
-        return 0;
-    }
-
-    private boolean isDigit(int character) {
-        return character >= '0' && character <= '9';
-    }
-
-    private void reportOversizedNumericInput(CharStream input, int offset, boolean isFloat, int maxDigits) {
-        int startIndex = input.index();
-        CommonToken token = new CommonToken(isFloat ? GraphqlLexer.FloatValue : GraphqlLexer.IntValue);
-        token.setLine(lexer.getLine());
-        token.setCharPositionInLine(lexer.getCharPositionInLine());
-        token.setStartIndex(startIndex);
-        token.setStopIndex(startIndex + offset - 1);
-        token.setText(input.getText(Interval.of(startIndex, startIndex + offset - 1)));
-        whenMaxNumericLiteralCharactersExceeded.accept(maxDigits, token);
+    private void reportOversizedNumericInput(NumericLiteralTooLongException exception) {
+        // ANTLR has not emitted a token yet; the callback needs its start location.
+        CommonToken token = new CommonToken(Token.INVALID_TYPE);
+        token.setLine(exception.getLine());
+        token.setCharPositionInLine(exception.getColumn());
+        token.setStartIndex(exception.getStartIndex());
+        token.setStopIndex(exception.getStopIndex());
+        token.setText(lexer.getInputStream().getText(Interval.of(exception.getStartIndex(), exception.getStopIndex())));
+        whenMaxNumericLiteralCharactersExceeded.accept(exception.getMaxDigits(), token);
     }
 
     private void callbackIfNumericLiteralTooLong(Token token) {
