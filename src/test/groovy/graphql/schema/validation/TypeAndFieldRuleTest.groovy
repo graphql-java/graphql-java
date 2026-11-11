@@ -7,6 +7,11 @@ import graphql.schema.GraphQLTypeReference
 import graphql.schema.TypeResolverProxy
 import spock.lang.Specification
 
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLEnumType.newEnum
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLUnionType.newUnionType
 
 class TypeAndFieldRuleTest extends Specification {
@@ -164,5 +169,38 @@ class TypeAndFieldRuleTest extends Specification {
         InvalidSchemaException e = thrown(InvalidSchemaException)
         !e.getErrors().isEmpty()
         e.getErrors()[0].classification == SchemaValidationErrorType.RepetitiveElementError
+    }
+
+    def "enum value name must not begin with __"() {
+        given:
+        def enumType = newEnum().name("EnumType").value("__reserved").value("OK").build()
+        def query = newObject().name("Query").field(newFieldDefinition().name("e").type(enumType)).build()
+
+        when:
+        newSchema().query(query).build()
+
+        then:
+        InvalidSchemaException e = thrown(InvalidSchemaException)
+        e.errors*.description == ['EnumValueDefinition "__reserved" in  "EnumType"  must not begin with "__", which is reserved by GraphQL introspection.']
+    }
+
+    def "union type must include one or more member types"() {
+        given:
+        def object = newObject().name("Object").field(newFieldDefinition().name("dummy").type(GraphQLString)).build()
+        def union = newUnionType().name("EmptyUnion").possibleType(object).build()
+        def query = newObject().name("Query").field(newFieldDefinition().name("u").type(union)).build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().typeResolver("EmptyUnion", { null }).build()
+        def schema = new graphql.schema.GraphQLSchema.FastBuilder(GraphQLCodeRegistry.newCodeRegistry(codeRegistry), query, null, null)
+                .addType(object)
+                .addType(union)
+                .build()
+        // the union builder rejects empty member lists, so the members are cleared after the schema is built
+        union.replaceTypes([])
+
+        when:
+        def errors = new SchemaValidator().validateSchema(schema)
+
+        then:
+        errors*.description == ['Union type "EmptyUnion" must include one or more unique member types.']
     }
 }

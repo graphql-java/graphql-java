@@ -90,4 +90,33 @@ class InputAndOutputTypesUsedAppropriatelyTest extends Specification {
         def errors = schemaException.getErrors().collect { it.description }
         errors.contains("The input type 'Person' has been used in a output type context : 'Query.outputField'")
     }
+
+    def "output type as field argument is caught"() {
+        given:
+        GraphQLObjectType OutputType = newObject()
+                .name("OutputType")
+                .field(newFieldDefinition().name("field").type(GraphQLString))
+                .build()
+
+        GraphQLObjectType queryType = newObject()
+                .name("Query")
+                .field(newFieldDefinition()
+                        .name("exists")
+                        .type(GraphQLBoolean)
+                        .argument(GraphQLArgument.newArgument()
+                                .name("arg")
+                                .type(list(typeRef("OutputType")))))
+                .build()
+
+        when:
+        GraphQLSchema.newSchema()
+                .query(queryType)
+                .additionalTypes([OutputType] as Set)
+                .build()
+
+        then:
+        def schemaException = thrown(InvalidSchemaException)
+        def errors = schemaException.getErrors().collect { it.description }
+        errors.contains("The output type 'OutputType' has been used in an input type context : 'Query.exists.arg'")
+    }
 }
