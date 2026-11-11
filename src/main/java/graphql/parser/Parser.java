@@ -12,6 +12,7 @@ import graphql.language.Value;
 import graphql.parser.antlr.GraphqlBaseListener;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
+import graphql.parser.antlr.NumericLiteralTooLongException;
 import graphql.parser.exceptions.ParseCancelledException;
 import graphql.parser.exceptions.ParseCancelledTooDeepException;
 import graphql.parser.exceptions.ParseCancelledTooManyCharsException;
@@ -240,6 +241,16 @@ public class Parser {
 
         MultiSourceReader multiSourceReader = setupMultiSourceReader(environment, parserOptions);
 
+        try {
+            return parseImpl(environment, nodeFunction, parserOptions, multiSourceReader);
+        } catch (NumericLiteralTooLongException exception) {
+            SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, exception.getLine(), exception.getColumn());
+            throw new ParseCancelledTooManyNumericLiteralCharactersException(environment.getI18N(), sourceLocation, exception.getMaxCharacters());
+        }
+    }
+
+    private Node<?> parseImpl(ParserEnvironment environment, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction,
+                              ParserOptions parserOptions, MultiSourceReader multiSourceReader) {
         SafeTokenReader safeTokenReader = setupSafeTokenReader(environment, parserOptions, multiSourceReader);
 
         CodePointCharStream charStream = setupCharStream(safeTokenReader);
@@ -394,17 +405,12 @@ public class Parser {
                 maxTokenCount,
                 multiSourceReader,
                 ParseCancelledException.class);
-        BiConsumer<Integer, Token> onTooManyNumericLiteralCharacters = (maxCharacters, token) -> {
-            SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token);
-            throw new ParseCancelledTooManyNumericLiteralCharactersException(environment.getI18N(), sourceLocation, maxCharacters);
-        };
         return new SafeTokenSource(
                 lexer,
                 maxTokens,
                 maxWhitespaceTokens,
                 maxNumericLiteralCharacters,
-                onTooManyTokens,
-                onTooManyNumericLiteralCharacters
+                onTooManyTokens
         );
     }
 
