@@ -51,8 +51,8 @@ class FieldOccurrencesTest extends Specification {
                 [ValidationErrorType.MaxQueryFieldOccurrencesExceeded]
 
         where:
-        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.newLimits().build(),
-                   QueryComplexityLimits.newLimits().maxDepth(50).build()]
+        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.newLimitsWithDefaults().build(),
+                   QueryComplexityLimits.newLimitsWithDefaults().maxDepth(50).build()]
     }
 
     def "default merged limit accepts 10000 and rejects 10001"() {
@@ -67,8 +67,8 @@ class FieldOccurrencesTest extends Specification {
                 [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
 
         where:
-        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.newLimits().build(),
-                   QueryComplexityLimits.newLimits().maxDepth(50).build()]
+        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.newLimitsWithDefaults().build(),
+                   QueryComplexityLimits.newLimitsWithDefaults().maxDepth(50).build()]
     }
 
     def "default depth limit remains enabled when other limits are customized"() {
@@ -81,9 +81,9 @@ class FieldOccurrencesTest extends Specification {
         validateWithLimits(above, limits)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
 
         where:
-        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.newLimits().build(),
-                   QueryComplexityLimits.newLimits().maxMergedFieldCount(50_000).build(),
-                   QueryComplexityLimits.newLimits().maxFieldOccurrences(200_000).build()]
+        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.newLimitsWithDefaults().build(),
+                   QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(50_000).build(),
+                   QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(200_000).build()]
     }
 
     def "cached fragment totals and running totals are independent across operations"() {
@@ -124,16 +124,16 @@ class FieldOccurrencesTest extends Specification {
 
         expect:
         new Validator().validateDocument(abstractSchema, document, { rule -> true }, Locale.ENGLISH,
-                QueryComplexityLimits.newLimits().maxFieldOccurrences(6).build()).empty
+                QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(6).build()).empty
         new Validator().validateDocument(abstractSchema, document, { rule -> true }, Locale.ENGLISH,
-                QueryComplexityLimits.newLimits().maxFieldOccurrences(5).build())*.validationErrorType ==
+                QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(5).build())*.validationErrorType ==
                 [ValidationErrorType.MaxQueryFieldOccurrencesExceeded]
     }
 
     def "fragment occurrence accounting also works when every validation rule is disabled"() {
         given:
         def document = Parser.parse('{ node { ...F ...F } } fragment F on Node { name name }')
-        def limits = QueryComplexityLimits.newLimits().maxFieldOccurrences(4).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(4).build()
 
         expect:
         new Validator().validateDocument(schema, document, { rule -> false }, Locale.ENGLISH, limits)*.validationErrorType ==
@@ -142,7 +142,7 @@ class FieldOccurrencesTest extends Specification {
 
     def "occurrence limits are independent of validation rule selection"() {
         given:
-        def limits = QueryComplexityLimits.newLimits().maxFieldOccurrences(2).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(2).build()
         def document = Parser.parse('{ node { name name } }')
 
         expect:
@@ -168,9 +168,9 @@ class FieldOccurrencesTest extends Specification {
     def "the exact benchmark document is rejected by default and can disable only occurrence counting"() {
         given:
         def query = doublingFragments(25)
-        def mergedOnly = QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxDepth(2)
+        def mergedOnly = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(2).maxDepth(2)
                 .maxFieldOccurrences(Integer.MAX_VALUE).build()
-        def occurrenceOnly = QueryComplexityLimits.newLimits().maxMergedFieldCount(Integer.MAX_VALUE)
+        def occurrenceOnly = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(Integer.MAX_VALUE)
                 .maxDepth(Integer.MAX_VALUE).maxFieldOccurrences(100_000).build()
 
         expect:
@@ -200,8 +200,8 @@ class FieldOccurrencesTest extends Specification {
 
     def "explicit builders enable standard limits and NONE disables all limits"() {
         given:
-        def empty = QueryComplexityLimits.newLimits().build()
-        def depthOnly = QueryComplexityLimits.newLimits().maxDepth(10).build()
+        def empty = QueryComplexityLimits.newLimitsWithDefaults().build()
+        def depthOnly = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(10).build()
 
         expect:
         empty.maxMergedFieldCount == QueryComplexityLimits.DEFAULT.maxMergedFieldCount
@@ -213,12 +213,12 @@ class FieldOccurrencesTest extends Specification {
         QueryComplexityLimits.NONE.maxDepth == Integer.MAX_VALUE
         QueryComplexityLimits.NONE.maxMergedFieldCount == Integer.MAX_VALUE
         QueryComplexityLimits.NONE.maxFieldOccurrences == Integer.MAX_VALUE
-        QueryComplexityLimits.newLimits().maxFieldOccurrences(123).build().toString().contains('maxFieldOccurrences=123')
+        QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(123).build().toString().contains('maxFieldOccurrences=123')
     }
 
     def "occurrence limits must be positive"() {
         when:
-        QueryComplexityLimits.newLimits().maxFieldOccurrences(limit).build()
+        QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(limit).build()
 
         then:
         thrown(IllegalArgumentException)
@@ -231,7 +231,7 @@ class FieldOccurrencesTest extends Specification {
         given:
         def graphQL = GraphQL.newGraphQL(schema).build()
         def input = ExecutionInput.newExecutionInput('{ node { name name } }')
-                .graphQLContext([(QueryComplexityLimits.KEY): QueryComplexityLimits.newLimits().maxFieldOccurrences(limit).build()])
+                .graphQLContext([(QueryComplexityLimits.KEY): QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(limit).build()])
                 .build()
 
         expect:
@@ -259,7 +259,7 @@ class FieldOccurrencesTest extends Specification {
     }
 
     private List<ValidationError> validate(String query, int occurrences) {
-        validateWithLimits(query, QueryComplexityLimits.newLimits().maxFieldOccurrences(occurrences).build())
+        validateWithLimits(query, QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(occurrences).build())
     }
 
     private List<ValidationError> validateWithLimits(String query, QueryComplexityLimits limits) {

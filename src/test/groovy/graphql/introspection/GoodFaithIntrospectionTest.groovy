@@ -290,7 +290,7 @@ class GoodFaithIntrospectionTest extends Specification {
 
     def "good faith limits are applied on top of custom user limits"() {
         given:
-        def limits = QueryComplexityLimits.newLimits().maxMergedFieldCount(200).maxDepth(15).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(200).maxDepth(15).build()
         def executionInput = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
                 .graphQLContext([(QueryComplexityLimits.KEY): limits])
                 .build()

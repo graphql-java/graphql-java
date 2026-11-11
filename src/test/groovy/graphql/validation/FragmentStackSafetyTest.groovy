@@ -29,7 +29,7 @@ class FragmentStackSafetyTest extends Specification {
         String query = '{ node { ...F0 } }' + chain('Node', 'name')
         // Parsing uses the default limits: shallow definitions fit even though references form a long chain.
         Document document = Parser.parse(query)
-        def limits = QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxFieldOccurrences(2).maxDepth(2).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(2).maxFieldOccurrences(2).maxDepth(2).build()
         def graphql = GraphQL.newGraphQL(schema).build()
         def input = ExecutionInput.newExecutionInput().query(query).root([node: [name: 'value']]).build()
         def validation = new FutureTask({ ->
@@ -61,7 +61,7 @@ class FragmentStackSafetyTest extends Specification {
         def document = new Document([operation])
 
         expect:
-        validate(document, QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxFieldOccurrences(2).maxDepth(2).build()).empty
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(2).maxFieldOccurrences(2).maxDepth(2).build()).empty
     }
 
     def "long root fragment chains preserve #operation validation"() {
@@ -84,10 +84,10 @@ class FragmentStackSafetyTest extends Specification {
         def document = Parser.parse("{ node { $selection } }" + chain('Node', 'name'))
 
         expect:
-        validate(document, QueryComplexityLimits.newLimits().maxMergedFieldCount(mergedFields).maxFieldOccurrences(occurrences).maxDepth(depth).build()).empty
-        validate(document, QueryComplexityLimits.newLimits().maxMergedFieldCount(mergedFields - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
-        validate(document, QueryComplexityLimits.newLimits().maxFieldOccurrences(occurrences - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryFieldOccurrencesExceeded]
-        validate(document, QueryComplexityLimits.newLimits().maxDepth(depth - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFields).maxFieldOccurrences(occurrences).maxDepth(depth).build()).empty
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFields - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxFieldOccurrences(occurrences - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryFieldOccurrencesExceeded]
+        validate(document, QueryComplexityLimits.newLimitsWithDefaults().maxDepth(depth - 1).build())*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
 
         where:
         selection                        | mergedFields | occurrences | depth

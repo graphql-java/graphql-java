@@ -24,7 +24,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         def document = new Parser().parseDocument(query)
 
         when: "the mergedFieldCount limit is below the query's count"
-        def limitsMergedFieldCount = QueryComplexityLimits.newLimits()
+        def limitsMergedFieldCount = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(7)
                 .build()
         def errorsMergedFieldCount = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limitsMergedFieldCount)
@@ -35,7 +35,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         errorsMergedFieldCount[0].message.contains("8")
 
         when: "the mergedFieldCount and depth limits match the query exactly"
-        def limitsExact = QueryComplexityLimits.newLimits()
+        def limitsExact = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(8)
                 .maxDepth(7)
                 .build()
@@ -45,7 +45,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         errorsExact.isEmpty()
 
         when: "the depth limit is below the query's depth"
-        def limitsDepth = QueryComplexityLimits.newLimits()
+        def limitsDepth = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxDepth(6)
                 .build()
         def errorsDepth = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limitsDepth)
@@ -72,7 +72,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         def document = new Parser().parseDocument(query)
 
         when: "mergedFieldCount of 4 exceeds the limit of 3"
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(3)
                 .build()
         def errors = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limits)
@@ -83,7 +83,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         errors[0].message.contains("4")  // foo + subFoo + moreFoos + subFoo = 4
 
         when: "limit of 4 should pass"
-        def limitsPass = QueryComplexityLimits.newLimits()
+        def limitsPass = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(4)
                 .build()
         def errorsPass = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limitsPass)
@@ -118,7 +118,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         def document = new Parser().parseDocument(query)
 
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(6)
                 .build()
         def errors = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limits)
@@ -129,7 +129,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         errors[0].message.contains("7")
 
         when: "limit of 7 should pass"
-        def limitsPass = QueryComplexityLimits.newLimits()
+        def limitsPass = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(7)
                 .build()
         def errorsPass = new Validator().validateDocument(schema, document, { r -> true }, Locale.ENGLISH, limitsPass)
@@ -151,7 +151,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         def originalDefault = QueryComplexityLimits.getDefaultLimits()
 
         when: "we set custom default limits"
-        def customLimits = QueryComplexityLimits.newLimits().maxDepth(5).maxMergedFieldCount(10).build()
+        def customLimits = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(5).maxMergedFieldCount(10).build()
         QueryComplexityLimits.setDefaultLimits(customLimits)
 
         then:
@@ -170,12 +170,12 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
     def "customizing #setting preserves the other JVM-wide limits"() {
         given:
         def originalDefault = QueryComplexityLimits.getDefaultLimits()
-        def defaults = QueryComplexityLimits.newLimits().maxDepth(30).maxMergedFieldCount(2_000)
+        def defaults = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(30).maxMergedFieldCount(2_000)
                 .maxFieldOccurrences(20_000).build()
         QueryComplexityLimits.setDefaultLimits(defaults)
 
         when:
-        def builder = QueryComplexityLimits.newLimits()
+        def builder = QueryComplexityLimits.newLimitsWithDefaults()
         builder."$setting"(123)
         def limits = builder.build()
 
@@ -200,8 +200,8 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         QueryComplexityLimits.setDefaultLimits(QueryComplexityLimits.NONE)
 
         when:
-        def limits = QueryComplexityLimits.newLimits().build()
-        def customDepth = QueryComplexityLimits.newLimits().maxDepth(10).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().build()
+        def customDepth = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(10).build()
 
         then:
         limits.maxDepth == Integer.MAX_VALUE
@@ -218,18 +218,18 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
     def "builders snapshot JVM-wide defaults at creation"() {
         given:
         def originalDefault = QueryComplexityLimits.getDefaultLimits()
-        def firstDefaults = QueryComplexityLimits.newLimits().maxDepth(30).maxMergedFieldCount(2_000)
+        def firstDefaults = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(30).maxMergedFieldCount(2_000)
                 .maxFieldOccurrences(20_000).build()
-        def secondDefaults = QueryComplexityLimits.newLimits().maxDepth(40).maxMergedFieldCount(3_000)
+        def secondDefaults = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(40).maxMergedFieldCount(3_000)
                 .maxFieldOccurrences(30_000).build()
         QueryComplexityLimits.setDefaultLimits(firstDefaults)
-        def existingBuilder = QueryComplexityLimits.newLimits().maxDepth(10)
+        def existingBuilder = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(10)
         def existingLimits = existingBuilder.build()
 
         when:
         QueryComplexityLimits.setDefaultLimits(secondDefaults)
         def fromExistingBuilder = existingBuilder.build()
-        def fromNewBuilder = QueryComplexityLimits.newLimits().build()
+        def fromNewBuilder = QueryComplexityLimits.newLimitsWithDefaults().build()
 
         then:
         fromExistingBuilder.maxDepth == 10
@@ -253,10 +253,10 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
     def "custom depth preserves enforcement of JVM-wide field budgets"() {
         given:
         def originalDefault = QueryComplexityLimits.getDefaultLimits()
-        def defaults = QueryComplexityLimits.newLimits().maxDepth(30).maxMergedFieldCount(2)
+        def defaults = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(30).maxMergedFieldCount(2)
                 .maxFieldOccurrences(3).build()
         QueryComplexityLimits.setDefaultLimits(defaults)
-        def limits = QueryComplexityLimits.newLimits().maxDepth(10).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(10).build()
         def schema = TestUtil.schema('type Query { node: Node } type Node { name: String child: Node }')
         def document = Parser.parse(query)
 
@@ -319,7 +319,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(3)
                 .build()
         def document = new Parser().parseDocument(query)
@@ -344,7 +344,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxDepth(2)
                 .build()
         def document = new Parser().parseDocument(query)
@@ -369,7 +369,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(8)
                 .build()
         def document = new Parser().parseDocument(query)
@@ -392,7 +392,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxDepth(1)
                 .build()
         def document = new Parser().parseDocument(query)
@@ -414,7 +414,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(2)
                 .build()
         def document = new Parser().parseDocument(query)
@@ -437,7 +437,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(3)
                 .build()
         def document = new Parser().parseDocument(query)
@@ -462,7 +462,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(2)
                 .build()
         def document = new Parser().parseDocument(query)
@@ -487,7 +487,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(10)
                 .maxDepth(5)
                 .build()
@@ -508,13 +508,13 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
 
     def "builder validates positive values"() {
         when:
-        QueryComplexityLimits.newLimits().maxDepth(0).build()
+        QueryComplexityLimits.newLimitsWithDefaults().maxDepth(0).build()
 
         then:
         thrown(IllegalArgumentException)
 
         when:
-        QueryComplexityLimits.newLimits().maxMergedFieldCount(-1).build()
+        QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(-1).build()
 
         then:
         thrown(IllegalArgumentException)
@@ -531,7 +531,7 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
             }
         """
         when:
-        def limits = QueryComplexityLimits.newLimits()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(100)
                 .maxDepth(100)
                 .build()

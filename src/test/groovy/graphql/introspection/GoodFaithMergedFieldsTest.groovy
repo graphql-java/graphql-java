@@ -199,7 +199,7 @@ class GoodFaithMergedFieldsTest extends Specification {
     def "general limits use merged fields for introspection too"() {
         given:
         def graphQL = GraphQL.newGraphQL(schema).build()
-        def limits = QueryComplexityLimits.newLimits().maxMergedFieldCount(limit).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(limit).build()
         def input = ExecutionInput.newExecutionInput('{ __schema { types { name name name name } } }')
                 .graphQLContext([(QueryComplexityLimits.KEY): limits]).build()
 
@@ -218,7 +218,7 @@ class GoodFaithMergedFieldsTest extends Specification {
     def "a tighter generic depth limit still applies to introspection"() {
         given:
         def graphQL = GraphQL.newGraphQL(schema).build()
-        def limits = QueryComplexityLimits.newLimits().maxDepth(2).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(2).build()
         def input = ExecutionInput.newExecutionInput('{ __type(name: "Query") { ofType { name } } }')
                 .graphQLContext([(QueryComplexityLimits.KEY): limits]).build()
 
@@ -352,7 +352,7 @@ class GoodFaithMergedFieldsTest extends Specification {
 
     def "public limit helper preserves tighter caller limits"() {
         given:
-        def requested = QueryComplexityLimits.newLimits().maxMergedFieldCount(mergedFieldCount).maxDepth(depth).maxFieldOccurrences(1234).build()
+        def requested = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFieldCount).maxDepth(depth).maxFieldOccurrences(1234).build()
 
         when:
         def bounded = GoodFaithIntrospection.goodFaithLimits(requested)

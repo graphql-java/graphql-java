@@ -35,7 +35,7 @@ import org.jspecify.annotations.NullUnmarked;
  * to disable all general complexity limits.
  * To customize limits per-request, put a custom instance in the GraphQLContext:
  * <pre>{@code
- * QueryComplexityLimits limits = QueryComplexityLimits.newLimits()
+ * QueryComplexityLimits limits = QueryComplexityLimits.newLimitsWithDefaults()
  *     .maxDepth(10)
  *     .maxMergedFieldCount(100)
  *     .maxFieldOccurrences(100_000)
@@ -152,7 +152,7 @@ public class QueryComplexityLimits {
      *
      * @return a new builder initialized with the current JVM-wide defaults
      */
-    public static Builder newLimits() {
+    public static Builder newLimitsWithDefaults() {
         return new Builder(getDefaultLimits());
     }
 

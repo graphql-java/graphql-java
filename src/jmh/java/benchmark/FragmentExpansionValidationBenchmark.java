@@ -64,7 +64,7 @@ public class FragmentExpansionValidationBenchmark {
         if ("default".equals(occurrences)) {
             occurrenceLimit = QueryComplexityLimits.DEFAULT_MAX_FIELD_OCCURRENCES;
         }
-        complexityLimits = QueryComplexityLimits.newLimits().maxDepth(100).maxMergedFieldCount(10_000)
+        complexityLimits = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(100).maxMergedFieldCount(10_000)
                 .maxFieldOccurrences(occurrenceLimit).build();
         verifyFixture(query);
         verifyMergedFieldCount();
@@ -121,10 +121,10 @@ public class FragmentExpansionValidationBenchmark {
     }
 
     private void verifyMergedFieldCount() {
-        QueryComplexityLimits twoFields = QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxDepth(2)
+        QueryComplexityLimits twoFields = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(2).maxDepth(2)
                 .maxFieldOccurrences(Integer.MAX_VALUE).build();
         assertTrue(new Validator().validateDocument(schema, document, rule -> true, Locale.ENGLISH, twoFields).isEmpty());
-        QueryComplexityLimits oneField = QueryComplexityLimits.newLimits().maxMergedFieldCount(1).maxDepth(2)
+        QueryComplexityLimits oneField = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(1).maxDepth(2)
                 .maxFieldOccurrences(Integer.MAX_VALUE).build();
         List<ValidationError> errors = new Validator().validateDocument(schema, document, rule -> true, Locale.ENGLISH, oneField);
         assertTrue(errors.size() == 1 && errors.get(0).getValidationErrorType() == ValidationErrorType.MaxQueryMergedFieldCountExceeded);

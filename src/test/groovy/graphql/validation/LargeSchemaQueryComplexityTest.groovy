@@ -67,9 +67,9 @@ class LargeSchemaQueryComplexityTest extends Specification {
 
     def "large schema query has exact #metric boundary #count"() {
         given:
-        def exact = QueryComplexityLimits.newLimits()
+        def exact = QueryComplexityLimits.newLimitsWithDefaults()
         exact."$metric"(count)
-        def below = QueryComplexityLimits.newLimits()
+        def below = QueryComplexityLimits.newLimitsWithDefaults()
         below."$metric"(count - 1)
 
         expect:

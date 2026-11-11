@@ -99,7 +99,7 @@ class MergedQueryComplexityTest extends Specification {
         given:
         def graphQL = GraphQL.newGraphQL(schema).build()
         def input = ExecutionInput.newExecutionInput('{ node { name name name } }')
-                .graphQLContext([(QueryComplexityLimits.KEY): QueryComplexityLimits.newLimits().maxMergedFieldCount(limit).build()])
+                .graphQLContext([(QueryComplexityLimits.KEY): QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(limit).build()])
                 .build()
 
         expect:
@@ -114,7 +114,7 @@ class MergedQueryComplexityTest extends Specification {
     def "general limits apply independently of enabled validation rules"() {
         given:
         def document = Parser.parse('{ node { name child { name } } }')
-        def limits = QueryComplexityLimits.newLimits().maxMergedFieldCount(3).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(3).build()
 
         expect:
         new Validator().validateDocument(schema, document, predicate, Locale.ENGLISH, limits)*.validationErrorType ==
@@ -207,8 +207,8 @@ class MergedQueryComplexityTest extends Specification {
             union U = A | B
         ''')
         def document = Parser.parse("{ $selection } $fragments")
-        def exact = QueryComplexityLimits.newLimits().maxMergedFieldCount(mergedFieldCount).build()
-        def below = QueryComplexityLimits.newLimits().maxMergedFieldCount(mergedFieldCount - 1).build()
+        def exact = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFieldCount).build()
+        def below = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFieldCount - 1).build()
 
         expect:
         new Validator().validateDocument(abstractSchema, document, { rule -> true }, Locale.ENGLISH, exact).empty
@@ -231,7 +231,7 @@ class MergedQueryComplexityTest extends Specification {
         def query = '{ node { ...F0 } }' + (0..<40).collect {
             "fragment F$it on Node { ...F${it + 1} ...F${it + 1} }"
         }.join(' ') + 'fragment F40 on Node { name name }'
-        def limits = QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxDepth(2)
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(2).maxDepth(2)
                 .maxFieldOccurrences(Integer.MAX_VALUE).build()
 
         expect:
@@ -302,7 +302,7 @@ class MergedQueryComplexityTest extends Specification {
     }
 
     private List<ValidationError> validate(String query, int mergedFieldCount, int depth) {
-        def limits = QueryComplexityLimits.newLimits().maxMergedFieldCount(mergedFieldCount).maxDepth(depth).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFieldCount).maxDepth(depth).build()
         new Validator().validateDocument(schema, Parser.parse(query), { rule -> true }, Locale.ENGLISH, limits)
     }
 }

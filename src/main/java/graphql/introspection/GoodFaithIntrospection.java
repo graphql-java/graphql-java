@@ -106,7 +106,7 @@ public class GoodFaithIntrospection {
     public static QueryComplexityLimits goodFaithLimits(QueryComplexityLimits existing) {
         int maxMergedFieldCount = Math.min(existing.getMaxMergedFieldCount(), GOOD_FAITH_MAX_MERGED_FIELD_COUNT);
         int maxDepth = Math.min(existing.getMaxDepth(), GOOD_FAITH_MAX_DEPTH_COUNT);
-        return QueryComplexityLimits.newLimits()
+        return QueryComplexityLimits.newLimitsWithDefaults()
                 .maxMergedFieldCount(maxMergedFieldCount)
                 .maxDepth(maxDepth)
                 .maxFieldOccurrences(existing.getMaxFieldOccurrences())
