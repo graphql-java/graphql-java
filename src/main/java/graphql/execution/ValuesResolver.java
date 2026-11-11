@@ -92,7 +92,8 @@ public class ValuesResolver {
 
 
     /**
-     * Normalized variables values are Literals with type information. No validation here!
+     * Normalized variable values are Literals with type information. Variable values are assumed
+     * to be valid, but external input depth is still limited.
      *
      * @param schema              the schema to use
      * @param variableDefinitions the list of variable definitions

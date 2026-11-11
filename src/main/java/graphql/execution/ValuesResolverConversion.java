@@ -157,7 +157,7 @@ class ValuesResolverConversion {
     }
 
     /**
-     * No validation: the external value is assumed to be valid.
+     * The external value is assumed to be valid, apart from its nesting depth.
      */
     static Object externalValueToLiteral(
             GraphqlFieldVisibility fieldVisibility,
@@ -166,6 +166,20 @@ class ValuesResolverConversion {
             ValuesResolver.ValueMode valueMode,
             GraphQLContext graphqlContext,
             Locale locale
+    ) {
+        return externalValueToLiteral(fieldVisibility, value, type, valueMode, graphqlContext, locale,
+                0, maxInputDepth(graphqlContext));
+    }
+
+    private static Object externalValueToLiteral(
+            GraphqlFieldVisibility fieldVisibility,
+            @Nullable Object value,
+            GraphQLInputType type,
+            ValuesResolver.ValueMode valueMode,
+            GraphQLContext graphqlContext,
+            Locale locale,
+            int depth,
+            int maxDepth
     ) {
         if (value == null) {
             return newNullValue().build();
@@ -177,7 +191,9 @@ class ValuesResolverConversion {
                     (GraphQLInputType) unwrapNonNull(type),
                     valueMode,
                     graphqlContext,
-                    locale);
+                    locale,
+                    depth,
+                    maxDepth);
         }
         if (type instanceof GraphQLScalarType) {
             return externalValueToLiteralForScalar(
@@ -192,21 +208,27 @@ class ValuesResolverConversion {
                     graphqlContext,
                     locale);
         } else if (type instanceof GraphQLList) {
+            checkInputDepth(depth, maxDepth);
             return externalValueToLiteralForList(
                     fieldVisibility,
                     (GraphQLList) type,
                     value,
                     valueMode,
                     graphqlContext,
-                    locale);
+                    locale,
+                    depth + 1,
+                    maxDepth);
         } else if (type instanceof GraphQLInputObjectType) {
+            checkInputDepth(depth, maxDepth);
             return externalValueToLiteralForObject(
                     fieldVisibility,
                     (GraphQLInputObjectType) type,
                     value,
                     valueMode,
                     graphqlContext,
-                    locale);
+                    locale,
+                    depth + 1,
+                    maxDepth);
         } else {
             return assertShouldNeverHappen("unexpected type %s", type);
         }
@@ -249,7 +271,9 @@ class ValuesResolverConversion {
             Object value,
             ValuesResolver.ValueMode valueMode,
             GraphQLContext graphqlContext,
-            Locale locale
+            Locale locale,
+            int depth,
+            int maxDepth
     ) {
         GraphQLInputType wrappedType = (GraphQLInputType) listType.getWrappedType();
         List<Object> valueList = FpKit.toListOrSingletonList(value);
@@ -261,7 +285,9 @@ class ValuesResolverConversion {
                     wrappedType,
                     valueMode,
                     graphqlContext,
-                    locale));
+                    locale,
+                    depth,
+                    maxDepth));
         }
         ImmutableList<?> result = resultBuilder.build();
 
@@ -282,7 +308,9 @@ class ValuesResolverConversion {
             Object inputValue,
             ValuesResolver.ValueMode valueMode,
             GraphQLContext graphqlContext,
-            Locale locale
+            Locale locale,
+            int depth,
+            int maxDepth
     ) {
         assertTrue(inputValue instanceof Map, "Expect Map as input");
         Map<String, Object> inputMap = (Map<String, Object>) inputValue;
@@ -322,7 +350,8 @@ class ValuesResolverConversion {
                             fieldValue,
                             fieldType,
                             valueMode,
-                            graphqlContext, locale);
+                            graphqlContext, locale,
+                            depth, maxDepth);
                     if (valueMode == NORMALIZED) {
                         normalizedResult.put(fieldName, new NormalizedInputValue(simplePrint(fieldType), literal));
                     } else {
@@ -430,6 +459,21 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
+        return externalValueToInternalValueImpl(variableName, inputInterceptor, fieldVisibility, graphQLType,
+                originalValue, graphqlContext, locale, 0, maxInputDepth(graphqlContext));
+    }
+
+    private static Object externalValueToInternalValueImpl(
+            String variableName,
+            InputInterceptor inputInterceptor,
+            GraphqlFieldVisibility fieldVisibility,
+            GraphQLInputType graphQLType,
+            Object originalValue,
+            GraphQLContext graphqlContext,
+            Locale locale,
+            int depth,
+            int maxDepth
+    ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         if (isNonNull(graphQLType)) {
             Object returnValue = externalValueToInternalValueImpl(
                     variableName,
@@ -438,7 +482,9 @@ class ValuesResolverConversion {
                     unwrapOneAs(graphQLType),
                     originalValue,
                     graphqlContext,
-                    locale);
+                    locale,
+                    depth,
+                    maxDepth);
             if (returnValue == null) {
                 throw new NonNullableValueCoercedAsNullException(graphQLType);
             }
@@ -470,15 +516,19 @@ class ValuesResolverConversion {
                     graphqlContext,
                     locale);
         } else if (graphQLType instanceof GraphQLList) {
+            checkInputDepth(depth, maxDepth);
             return externalValueToInternalValueForList(
                     inputInterceptor,
                     fieldVisibility,
                     (GraphQLList) graphQLType,
                     value,
                     graphqlContext,
-                    locale);
+                    locale,
+                    depth + 1,
+                    maxDepth);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
             if (value instanceof Map) {
+                checkInputDepth(depth, maxDepth);
                 GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) graphQLType;
                 //noinspection unchecked
                 Map<String, Object> coercedMap = externalValueToInternalValueForObject(
@@ -487,7 +537,9 @@ class ValuesResolverConversion {
                         inputObjectType,
                         (Map<String, Object>) value,
                         graphqlContext,
-                        locale);
+                        locale,
+                        depth + 1,
+                        maxDepth);
 
                 ValuesResolverOneOfValidation.validateOneOfInputTypes(inputObjectType, coercedMap, null, variableName, locale);
                 return coercedMap;
@@ -511,7 +563,9 @@ class ValuesResolverConversion {
             GraphQLInputObjectType inputObjectType,
             Map<String, Object> inputMap,
             GraphQLContext graphqlContext,
-            Locale locale
+            Locale locale,
+            int depth,
+            int maxDepth
     ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
         List<String> fieldNames = map(fieldDefinitions, GraphQLInputObjectField::getName);
@@ -545,12 +599,15 @@ class ValuesResolverConversion {
                     coercedValues.put(fieldName, null);
                 } else {
                     value = externalValueToInternalValueImpl(
+                            "externalValue",
                             inputInterceptor,
                             fieldVisibility,
                             fieldType,
                             value,
                             graphqlContext,
-                            locale);
+                            locale,
+                            depth,
+                            maxDepth);
                     coercedValues.put(fieldName, value);
                 }
             }
@@ -597,7 +654,9 @@ class ValuesResolverConversion {
             GraphQLList graphQLList,
             Object value,
             GraphQLContext graphqlContext,
-            Locale locale
+            Locale locale,
+            int depth,
+            int maxDepth
     ) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
 
         GraphQLInputType wrappedType = (GraphQLInputType) graphQLList.getWrappedType();
@@ -605,14 +664,28 @@ class ValuesResolverConversion {
         List<Object> list = FpKit.arrayListSizedTo(listOrSingletonList);
         for (Object val : listOrSingletonList) {
             list.add(externalValueToInternalValueImpl(
+                    "externalValue",
                     inputInterceptor,
                     fieldVisibility,
                     wrappedType,
                     val,
                     graphqlContext,
-                    locale));
+                    locale,
+                    depth,
+                    maxDepth));
         }
         return list;
+    }
+
+    private static int maxInputDepth(GraphQLContext graphqlContext) {
+        InputCoercionLimits limits = graphqlContext.get(InputCoercionLimits.KEY);
+        return (limits != null ? limits : InputCoercionLimits.getDefaultLimits()).getMaxDepth();
+    }
+
+    private static void checkInputDepth(int depth, int maxDepth) {
+        if (depth >= maxDepth) {
+            throw new CoercingParseValueException("Input value exceeds the maximum depth of " + maxDepth + ".");
+        }
     }
 
     /**
