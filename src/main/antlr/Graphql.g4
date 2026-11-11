@@ -16,7 +16,7 @@ import GraphqlSDL, GraphqlOperation, GraphqlCommon;
         int start = _tokenStartCharIndex;
         int end = _input.index();
         if (end - start > maxNumericLiteralCharacters) {
-            throw new NumericLiteralTooLongException(_tokenStartLine, _tokenStartCharPositionInLine, start, end - 1, maxNumericLiteralCharacters);
+            throw new NumericLiteralTooLongException(_tokenStartLine, _tokenStartCharPositionInLine, maxNumericLiteralCharacters);
         }
         return true;
     }

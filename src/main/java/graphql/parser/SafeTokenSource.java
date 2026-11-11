@@ -2,13 +2,10 @@ package graphql.parser;
 
 import graphql.Internal;
 import graphql.parser.antlr.GraphqlLexer;
-import graphql.parser.antlr.NumericLiteralTooLongException;
 import org.antlr.v4.runtime.CharStream;
-import org.antlr.v4.runtime.CommonToken;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenFactory;
 import org.antlr.v4.runtime.TokenSource;
-import org.antlr.v4.runtime.misc.Interval;
 
 import java.util.function.BiConsumer;
 
@@ -30,17 +27,14 @@ public class SafeTokenSource implements TokenSource {
     private final int maxTokens;
     private final int maxWhitespaceTokens;
     private final BiConsumer<Integer, Token> whenMaxTokensExceeded;
-    private final BiConsumer<Integer, Token> whenMaxNumericLiteralCharactersExceeded;
     private final int channelCounts[];
 
     public SafeTokenSource(GraphqlLexer lexer, int maxTokens, int maxWhitespaceTokens, int maxNumericLiteralCharacters,
-                           BiConsumer<Integer, Token> whenMaxTokensExceeded,
-                           BiConsumer<Integer, Token> whenMaxNumericLiteralCharactersExceeded) {
+                           BiConsumer<Integer, Token> whenMaxTokensExceeded) {
         this.lexer = lexer;
         this.maxTokens = maxTokens;
         this.maxWhitespaceTokens = maxWhitespaceTokens;
         this.whenMaxTokensExceeded = whenMaxTokensExceeded;
-        this.whenMaxNumericLiteralCharactersExceeded = whenMaxNumericLiteralCharactersExceeded;
         // this could be a Map<int,int> however we want it to be faster as possible.
         // we only have 3 channels - but they are 0,2 and 3 so use 5 for safety - still faster than a map get/put
         // if we ever add another channel beyond 5 it will IOBEx during tests so future changes will be handled before release!
@@ -51,13 +45,7 @@ public class SafeTokenSource implements TokenSource {
 
     @Override
     public Token nextToken() {
-        Token token;
-        try {
-            token = lexer.nextToken();
-        } catch (NumericLiteralTooLongException exception) {
-            reportOversizedNumericInput(exception);
-            throw exception;
-        }
+        Token token = lexer.nextToken();
         if (token != null) {
             int channel = token.getChannel();
             int currentCount = ++channelCounts[channel];
@@ -69,17 +57,6 @@ public class SafeTokenSource implements TokenSource {
             }
         }
         return token;
-    }
-
-    private void reportOversizedNumericInput(NumericLiteralTooLongException exception) {
-        // ANTLR has not emitted a token yet; the callback needs its start location.
-        CommonToken token = new CommonToken(Token.INVALID_TYPE);
-        token.setLine(exception.getLine());
-        token.setCharPositionInLine(exception.getColumn());
-        token.setStartIndex(exception.getStartIndex());
-        token.setStopIndex(exception.getStopIndex());
-        token.setText(lexer.getInputStream().getText(Interval.of(exception.getStartIndex(), exception.getStopIndex())));
-        whenMaxNumericLiteralCharactersExceeded.accept(exception.getMaxCharacters(), token);
     }
 
     private void callbackIfMaxExceeded(int maxCount, int currentCount, Token token) {
