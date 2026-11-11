@@ -1,6 +1,7 @@
 package graphql.parser
 
 import graphql.parser.antlr.GraphqlLexer
+import graphql.parser.antlr.NumericLiteralTooLongException
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.Token
 import spock.lang.Specification
@@ -116,6 +117,28 @@ class SafeTokenSourceTest extends Specification {
         exception.message == "stop at 100"
         offendingToken.type == Token.INVALID_TYPE
         offendingToken.stopIndex - offendingToken.startIndex + 1 == 101
+    }
+
+    def "oversized numeric literal still stops lexing when callback returns"() {
+        given:
+        GraphqlLexer graphqlLexer = lexer("9" * 101)
+        Token offendingToken = null
+        def tokenSource = new SafeTokenSource(
+                graphqlLexer,
+                1000,
+                200_000,
+                100,
+                { max, token -> },
+                { max, token -> offendingToken = token }
+        )
+
+        when:
+        tokenSource.nextToken()
+
+        then:
+        def exception = thrown(NumericLiteralTooLongException)
+        exception.maxCharacters == 100
+        offendingToken.text == "9" * 101
     }
 
     def "can stop numeric input while the lexer matches it"() {
