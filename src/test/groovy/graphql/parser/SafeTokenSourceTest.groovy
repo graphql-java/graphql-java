@@ -147,21 +147,53 @@ class SafeTokenSourceTest extends Specification {
         where:
         numericInput                                      | configuredLimit | expectedLimit
         "9" * 101                                        | 100             | 100
-        "9" * 1001                                       | 2000            | 1000
-        "-" + "9" * 1001                                 | 2000            | 1000
-        "9" * 400 + "." + "9" * 400 + "e+" + "9" * 201 | 2000            | 1000
-        "1e" + "9" * 1000 + "x"                          | 2000            | 1000
-        "9" * 10_000                                      | 2000            | 1000
+        "9" * 2001                                       | 2000            | 2000
+        "-" + "9" * 2000                                 | 2000            | 2000
+        "9" * 800 + "." + "9" * 800 + "e+" + "9" * 398 | 2000            | 2000
+        "1e" + "9" * 1999 + "x"                          | 2000            | 2000
+        "9" * 10_000                                      | 2000            | 2000
+        "-1"                                             | 1               | 1
+        "0"                                              | 0               | 0
+        "9"                                              | 0               | 0
+        "0.1"                                            | 2               | 2
+        "1e+2"                                           | 3               | 3
     }
 
-    def "digit ceiling is applied to each numeric token separately"() {
+    def "numeric literals at the configured character limit are accepted"() {
         given:
-        GraphqlLexer graphqlLexer = lexer("${"9" * 600}-${"9" * 600}")
+        GraphqlLexer graphqlLexer = lexer(numericInput)
         def tokenSource = new SafeTokenSource(
                 graphqlLexer,
                 1000,
                 200_000,
-                2000,
+                configuredLimit,
+                { max, token -> },
+                { max, token -> throw new IllegalStateException("unexpected numeric limit") }
+        )
+
+        when:
+        consumeAllTokens(tokenSource)
+
+        then:
+        noExceptionThrown()
+
+        where:
+        numericInput | configuredLimit
+        "0"          | 1
+        "9"          | 1
+        "-0"         | 2
+        "-1"         | 2
+        "1e+2"       | 4
+    }
+
+    def "character limit is applied to each numeric token separately"() {
+        given:
+        GraphqlLexer graphqlLexer = lexer("${"9" * 600}-${"9" * 599}")
+        def tokenSource = new SafeTokenSource(
+                graphqlLexer,
+                1000,
+                200_000,
+                600,
                 { max, token -> },
                 { max, token -> throw new IllegalStateException("unexpected numeric limit") }
         )
@@ -173,14 +205,14 @@ class SafeTokenSourceTest extends Specification {
         noExceptionThrown()
     }
 
-    def "numeric punctuation does not count toward the digit ceiling"() {
+    def "numeric punctuation fits exactly at the character limit"() {
         given:
         GraphqlLexer graphqlLexer = lexer("${"9" * 500}.${"9" * 500}")
         def tokenSource = new SafeTokenSource(
                 graphqlLexer,
                 1000,
                 200_000,
-                2000,
+                1001,
                 { max, token -> },
                 { max, token -> throw new IllegalStateException("unexpected numeric limit") }
         )

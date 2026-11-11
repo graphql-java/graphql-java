@@ -9,14 +9,14 @@ public class NumericLiteralTooLongException extends RuntimeException {
     private final int column;
     private final int startIndex;
     private final int stopIndex;
-    private final int maxDigits;
+    private final int maxCharacters;
 
-    public NumericLiteralTooLongException(int line, int column, int startIndex, int stopIndex, int maxDigits) {
+    public NumericLiteralTooLongException(int line, int column, int startIndex, int stopIndex, int maxCharacters) {
         this.line = line;
         this.column = column;
         this.startIndex = startIndex;
         this.stopIndex = stopIndex;
-        this.maxDigits = maxDigits;
+        this.maxCharacters = maxCharacters;
     }
 
     public int getLine() {
@@ -35,7 +35,7 @@ public class NumericLiteralTooLongException extends RuntimeException {
         return stopIndex;
     }
 
-    public int getMaxDigits() {
-        return maxDigits;
+    public int getMaxCharacters() {
+        return maxCharacters;
     }
 }

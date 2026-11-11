@@ -245,13 +245,13 @@ class ParserStressTest extends Specification {
         "9" * 99 + ".0" | "9" * 100 + ".0"
     }
 
-    def "numeric input has a fixed digit ceiling even with a larger configured character limit"() {
+    def "a larger numeric character limit is enforced while lexing"() {
         given:
         def parserOptions = defaultOperationOptions.transform {
             it.maxNumericLiteralCharacters(2000)
         }
         def accepted = newParserEnvironment()
-                .document("query { f(arg: ${"9" * 1000}) }")
+                .document("query { f(arg: ${"9" * 2000}) }")
                 .parserOptions(parserOptions)
                 .build()
 
@@ -260,14 +260,14 @@ class ParserStressTest extends Specification {
 
         when:
         def rejected = newParserEnvironment()
-                .document("query {\n  f(arg: ${"9" * 1001})\n}")
+                .document("query {\n  f(arg: ${"9" * 2001})\n}")
                 .parserOptions(parserOptions)
                 .build()
         Parser.parse(rejected)
 
         then:
         def exception = thrown(ParseCancelledTooManyNumericLiteralCharactersException)
-        exception.message.contains("more than 1,000 characters")
+        exception.message.contains("more than 2,000 characters")
         exception.location.line == 2
         exception.location.column == 10
     }
@@ -277,7 +277,7 @@ class ParserStressTest extends Specification {
         def parserOptions = defaultOperationOptions.transform {
             it.maxNumericLiteralCharacters(2000)
         }
-        def document = "# ${"9" * 1001}\nquery { f(arg: \"${"9" * 1001}\") }"
+        def document = "# ${"9" * 2001}\nquery { f(arg: \"${"9" * 2001}\") }"
         def environment = newParserEnvironment().document(document).parserOptions(parserOptions).build()
 
         expect:

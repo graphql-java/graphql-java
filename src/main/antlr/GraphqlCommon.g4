@@ -94,7 +94,8 @@ NAME: [_A-Za-z][_0-9A-Za-z]*;
 
 
 // Int Value
-IntValue :  IntegerPart { !isDigit(_input.LA(1)) && !isDot(_input.LA(1)) && !isNameStart(_input.LA(1))  }?;
+// Digit checks longer numeric values while matching; this also covers single-digit integers.
+IntValue :  IntegerPart { !isDigit(_input.LA(1)) && !isDot(_input.LA(1)) && !isNameStart(_input.LA(1)) && numericLiteralLengthWithinLimit() }?;
 fragment IntegerPart : NegativeSign? '0' | NegativeSign? NonZeroDigit Digit*;
 fragment NegativeSign : '-';
 fragment NonZeroDigit: '1'..'9';
@@ -107,7 +108,7 @@ fragment FractionalPart: '.' Digit+;
 fragment ExponentPart :  ExponentIndicator Sign? Digit+;
 fragment ExponentIndicator: 'e' | 'E';
 fragment Sign: '+'|'-';
-fragment Digit : '0'..'9' { numericDigitCountWithinLimit() }?;
+fragment Digit : '0'..'9' { numericLiteralLengthWithinLimit() }?;
 
 // StringValue
 StringValue:
