@@ -3,9 +3,11 @@ package graphql.schema.validation
 import graphql.Directives
 import graphql.TestUtil
 import graphql.collect.ImmutableKit
+import graphql.execution.InputValueLimits
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLTypeReference
 import graphql.schema.idl.FastSchemaGenerator
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
@@ -136,6 +138,39 @@ class SchemaValidatorTest extends Specification {
                     .withValidation(true)
                     .build()
         } == ['"__bad" in "Query" must not begin with "__", which is reserved by GraphQL introspection.'] as Set
+    }
+
+    def "default values nested beyond the input depth limit stop validation early"() {
+        given:
+        Map<String, Object> tooDeep = [:]
+        (InputValueLimits.DEFAULT_MAX_DEPTH + 1).times { tooDeep = [next: tooDeep] }
+        def recursive = newInputObject().name("Recursive")
+                .field(newInputObjectField().name("next").type(GraphQLTypeReference.typeRef("Recursive")))
+                .build()
+        def query = newObject().name("Query")
+                .field(newFieldDefinition().name("echo").type(GraphQLString)
+                        .argument(newArgument().name("arg").type(recursive).defaultValueProgrammatic(tooDeep)))
+                .field(newFieldDefinition().name("__bad").type(GraphQLString))
+                .build()
+
+        when:
+        def errors = errors { newSchema().query(query).build() }
+
+        then:
+        errors.size() == 1
+        errors.every { it.contains("exceeds the maximum depth of " + InputValueLimits.DEFAULT_MAX_DEPTH) }
+    }
+
+    def "named types other than the schema type kinds are skipped"() {
+        given:
+        def query = newObject().name("Query").field(newFieldDefinition().name("hello").type(GraphQLString)).build()
+        def schema = new GraphQLSchema.FastBuilder(GraphQLCodeRegistry.newCodeRegistry(), query, null, null)
+                .addType(GraphQLTypeReference.typeRef("Dangling"))
+                .build()
+
+        expect:
+        schema.getType("Dangling") instanceof GraphQLTypeReference
+        new SchemaValidator().validateSchema(schema).isEmpty()
     }
 
     def "applied directives without a definition are rejected"() {

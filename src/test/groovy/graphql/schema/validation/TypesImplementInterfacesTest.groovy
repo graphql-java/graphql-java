@@ -190,6 +190,31 @@ class TypesImplementInterfacesTest extends Specification {
         newObject().name("Actor").field(newFieldDefinition().name("name").type(GraphQLString)).withInterface(person).build()
     }
 
+    def "list and non-list types are not interchangeable: #scenario"() {
+        given:
+        def interfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("field").type(interfaceFieldType))
+                .field(newFieldDefinition().name("withArg").type(GraphQLString)
+                        .argument(newArgument().name("arg").type(interfaceArgType)))
+                .build()
+        def objType = newObject()
+                .name("Object")
+                .withInterface(interfaceType)
+                .field(newFieldDefinition().name("field").type(objectFieldType))
+                .field(newFieldDefinition().name("withArg").type(GraphQLString)
+                        .argument(newArgument().name("arg").type(objectArgType)))
+                .build()
+
+        expect:
+        errorsFor(objType) == expected as Set
+
+        where:
+        scenario               | interfaceFieldType   | objectFieldType | interfaceArgType     | objectArgType || expected
+        "field list vs scalar" | list(GraphQLString)  | GraphQLString   | GraphQLString        | GraphQLString || ["object type 'Object' does not implement interface 'Interface' because field 'field' is defined as 'String' type and not as '[String]' type"]
+        "argument list vs scalar" | GraphQLString     | GraphQLString   | list(GraphQLString)  | GraphQLString || ["object type 'Object' does not implement interface 'Interface' because field 'withArg' argument 'arg' is defined differently"]
+    }
+
     def "field is a non null object"() {
         given:
         def memberInterface = newInterface()
