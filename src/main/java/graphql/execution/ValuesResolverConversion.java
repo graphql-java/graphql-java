@@ -90,7 +90,8 @@ class ValuesResolverConversion {
                     (GraphQLInputType) type,
                     valueMode,
                     graphqlContext,
-                    locale);
+                    locale,
+                    0, Integer.MAX_VALUE);
         }
         return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
@@ -146,12 +147,14 @@ class ValuesResolverConversion {
         }
         if (inputValueWithState.isExternal()) {
             return externalValueToInternalValueImpl(
+                    "externalValue",
                     inputInterceptor,
                     fieldVisibility,
                     inputType,
                     inputValueWithState.getValue(),
                     graphqlContext,
-                    locale);
+                    locale,
+                    0, Integer.MAX_VALUE);
         }
         return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
@@ -678,8 +681,8 @@ class ValuesResolverConversion {
     }
 
     private static int maxInputDepth(GraphQLContext graphqlContext) {
-        InputCoercionLimits limits = graphqlContext.get(InputCoercionLimits.KEY);
-        return (limits != null ? limits : InputCoercionLimits.getDefaultLimits()).getMaxDepth();
+        InputValueLimits limits = graphqlContext.get(InputValueLimits.KEY);
+        return (limits != null ? limits : InputValueLimits.getDefaultLimits()).getMaxDepth();
     }
 
     private static void checkInputDepth(int depth, int maxDepth) {
@@ -951,14 +954,16 @@ class ValuesResolverConversion {
                     locale);
         }
         if (defaultValue.isExternal()) {
-            // performs validation too
+            // The schema already validated the default's depth; request overrides only bound supplied values.
             return externalValueToInternalValueImpl(
+                    "externalValue",
                     inputInterceptor,
                     fieldVisibility,
                     type,
                     defaultValue.getValue(),
                     graphqlContext,
-                    locale);
+                    locale,
+                    0, Integer.MAX_VALUE);
         }
         return assertShouldNeverHappen();
     }

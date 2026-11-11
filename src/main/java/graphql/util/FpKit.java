@@ -178,6 +178,10 @@ public class FpKit {
         return result.getClass().isArray() || result instanceof Iterable || result instanceof Stream || result instanceof Iterator;
     }
 
+    public static boolean isCollectionOrArray(Object result) {
+        return result instanceof Collection || result.getClass().isArray();
+    }
+
 
     @SuppressWarnings("unchecked")
     public static <T> Iterable<T> toIterable(Object iterableResult) {

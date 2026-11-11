@@ -7,55 +7,64 @@ import org.jspecify.annotations.NullUnmarked;
 import java.util.function.Consumer;
 
 /**
- * Limits the nesting of external input values during coercion. Each list or input object value
+ * Limits the nesting of supplied variable values and schema default values. Each list or input object value
  * on a path increases the depth by one. Sibling values do not add to each other's depth,
  * Non-Null wrappers do not count, and scalar values are not traversed. A value coerced to a
  * singleton list counts as one list level.
  *
+ * <p>Schema defaults, whether SDL literals or programmatic values, are checked independently
+ * when the schema is validated, using the current JVM-wide limit. Defaults are not checked
+ * again against request overrides when they are used or exposed through introspection.
+ * Scalar payloads and defaults filled in for omitted fields do not add to the supplied value's depth.
+ * Programmatic list defaults must use collections or arrays; iterators, streams and other iterables
+ * are rejected during schema validation without being consumed.
+ *
  * <p>Put an instance under {@link #KEY} in {@code ExecutionInput.getGraphQLContext()} to
- * override the JVM-wide default of 128 for a request. Use {@link #NONE} to disable the limit.
+ * override the JVM-wide default of 128 for supplied variable values in a request.
+ * Use {@link #NONE} to disable the limit.
  * <pre>{@code
- * InputCoercionLimits limits = InputCoercionLimits.newInputCoercionLimits()
+ * InputValueLimits limits = InputValueLimits.newInputValueLimits()
  *         .maxDepth(64)
  *         .build();
- * executionInput.getGraphQLContext().put(InputCoercionLimits.KEY, limits);
+ * executionInput.getGraphQLContext().put(InputValueLimits.KEY, limits);
  * }</pre>
  */
 @PublicApi
 @NullMarked
-public class InputCoercionLimits {
+public class InputValueLimits {
 
     public static final int DEFAULT_MAX_DEPTH = 128;
-    public static final String KEY = "graphql.execution.InputCoercionLimits";
-    public static final InputCoercionLimits DEFAULT = new InputCoercionLimits(DEFAULT_MAX_DEPTH);
-    public static final InputCoercionLimits NONE = new InputCoercionLimits(Integer.MAX_VALUE);
+    public static final String KEY = "graphql.execution.InputValueLimits";
+    public static final InputValueLimits DEFAULT = new InputValueLimits(DEFAULT_MAX_DEPTH);
+    public static final InputValueLimits NONE = new InputValueLimits(Integer.MAX_VALUE);
 
-    private static volatile InputCoercionLimits defaultLimits = DEFAULT;
+    private static volatile InputValueLimits defaultLimits = DEFAULT;
 
     private final int maxDepth;
 
-    private InputCoercionLimits(int maxDepth) {
+    private InputValueLimits(int maxDepth) {
         this.maxDepth = maxDepth;
     }
 
     /**
-     * Sets the JVM-wide default used when a request has no override.
+     * Sets the limit used for subsequent schema validation and for requests without an override.
+     * This does not revalidate existing schemas.
      */
-    public static void setDefaultLimits(InputCoercionLimits limits) {
+    public static void setDefaultLimits(InputValueLimits limits) {
         defaultLimits = limits;
     }
 
     /**
      * Returns the JVM-wide default.
      */
-    public static InputCoercionLimits getDefaultLimits() {
+    public static InputValueLimits getDefaultLimits() {
         return defaultLimits;
     }
 
     /**
      * Creates a builder initialized from the current JVM-wide default.
      */
-    public static Builder newInputCoercionLimits() {
+    public static Builder newInputValueLimits() {
         return new Builder(getDefaultLimits());
     }
 
@@ -69,7 +78,7 @@ public class InputCoercionLimits {
     /**
      * Creates a copy with the changes made by the builder consumer.
      */
-    public InputCoercionLimits transform(Consumer<Builder> builderConsumer) {
+    public InputValueLimits transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
@@ -80,7 +89,7 @@ public class InputCoercionLimits {
     public static class Builder {
         private int maxDepth;
 
-        private Builder(InputCoercionLimits limits) {
+        private Builder(InputValueLimits limits) {
             this.maxDepth = limits.maxDepth;
         }
 
@@ -98,8 +107,8 @@ public class InputCoercionLimits {
         /**
          * Creates the limits instance.
          */
-        public InputCoercionLimits build() {
-            return new InputCoercionLimits(maxDepth);
+        public InputValueLimits build() {
+            return new InputValueLimits(maxDepth);
         }
     }
 }

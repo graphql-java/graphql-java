@@ -12,7 +12,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.scalars.ObjectScalar
 import spock.lang.Specification
 
-class InputCoercionLimitsTest extends Specification {
+class InputValueLimitsTest extends Specification {
 
     private static final String QUERY = 'query($v: Recursive) { echo(arg: $v) }'
 
@@ -31,20 +31,20 @@ class InputCoercionLimitsTest extends Specification {
         GraphQL.newGraphQL(schema).build()
     }
 
-    private static ExecutionInput input(Object value, InputCoercionLimits limits) {
+    private static ExecutionInput input(Object value, InputValueLimits limits) {
         ExecutionInput.newExecutionInput(QUERY)
                 .variables([v: value])
-                .graphQLContext { it.put(InputCoercionLimits.KEY, limits) }
+                .graphQLContext { it.put(InputValueLimits.KEY, limits) }
                 .build()
     }
 
     def 'builder retains the default and rejects a nonpositive depth'() {
         expect:
-        InputCoercionLimits.newInputCoercionLimits().build().maxDepth == InputCoercionLimits.getDefaultLimits().maxDepth
-        InputCoercionLimits.DEFAULT.transform { it.maxDepth(4) }.maxDepth == 4
+        InputValueLimits.newInputValueLimits().build().maxDepth == InputValueLimits.getDefaultLimits().maxDepth
+        InputValueLimits.DEFAULT.transform { it.maxDepth(4) }.maxDepth == 4
 
         when:
-        InputCoercionLimits.newInputCoercionLimits().maxDepth(0)
+        InputValueLimits.newInputValueLimits().maxDepth(0)
 
         then:
         thrown(IllegalArgumentException)
@@ -53,7 +53,7 @@ class InputCoercionLimitsTest extends Specification {
     def 'the input object depth limit accepts its boundary and rejects the next level'() {
         given:
         def graphQL = graphQL()
-        def limits = InputCoercionLimits.newInputCoercionLimits().maxDepth(3).build()
+        def limits = InputValueLimits.newInputValueLimits().maxDepth(3).build()
 
         when:
         def accepted = graphQL.execute(input(nestedObjects(2), limits))
@@ -83,7 +83,7 @@ class InputCoercionLimitsTest extends Specification {
     def 'list nesting and singleton list coercion count toward depth'() {
         given:
         def graphQL = graphQL('[Recursive]')
-        def limits = InputCoercionLimits.newInputCoercionLimits().maxDepth(2).build()
+        def limits = InputValueLimits.newInputValueLimits().maxDepth(2).build()
 
         when:
         def accepted = graphQL.execute(input([next: []], limits))
@@ -98,17 +98,17 @@ class InputCoercionLimitsTest extends Specification {
     def 'request override and NONE can raise or disable the default depth'() {
         given:
         def graphQL = graphQL()
-        def value = nestedObjects(InputCoercionLimits.DEFAULT_MAX_DEPTH)
-        def raisedLimit = InputCoercionLimits.newInputCoercionLimits().maxDepth(130).build()
+        def value = nestedObjects(InputValueLimits.DEFAULT_MAX_DEPTH)
+        def raisedLimit = InputValueLimits.newInputValueLimits().maxDepth(130).build()
 
         expect:
         graphQL.execute(input(value, raisedLimit)).errors.empty
-        graphQL.execute(input(value, InputCoercionLimits.NONE)).errors.empty
+        graphQL.execute(input(value, InputValueLimits.NONE)).errors.empty
     }
 
     def 'async execution returns a request error instead of failing the future'() {
         given:
-        def limits = InputCoercionLimits.newInputCoercionLimits().maxDepth(2).build()
+        def limits = InputValueLimits.newInputValueLimits().maxDepth(2).build()
 
         when:
         def result = graphQL().executeAsync(input(nestedObjects(3), limits)).join()
@@ -120,13 +120,13 @@ class InputCoercionLimitsTest extends Specification {
 
     def 'an input interceptor cannot bypass the depth limit'() {
         given:
-        def limits = InputCoercionLimits.newInputCoercionLimits().maxDepth(2).build()
+        def limits = InputValueLimits.newInputValueLimits().maxDepth(2).build()
         InputInterceptor interceptor = { value, type, context, locale ->
             value == [next: [:]] ? nestedObjects(3) : value
         }
         def executionInput = ExecutionInput.newExecutionInput(QUERY)
                 .variables([v: [next: [:]]])
-                .graphQLContext { it.put(InputCoercionLimits.KEY, limits); it.put(InputInterceptor.class, interceptor) }
+                .graphQLContext { it.put(InputValueLimits.KEY, limits); it.put(InputInterceptor.class, interceptor) }
                 .build()
 
         when:
@@ -141,8 +141,8 @@ class InputCoercionLimitsTest extends Specification {
         given:
         def schema = TestUtil.schema('input Recursive { next: Recursive } type Query { echo(arg: Recursive): Boolean }')
         def definitions = [new VariableDefinition('v', new TypeName('Recursive'))]
-        def context = GraphQLContext.newContext().of(InputCoercionLimits.KEY,
-                InputCoercionLimits.newInputCoercionLimits().maxDepth(2).build()).build()
+        def context = GraphQLContext.newContext().of(InputValueLimits.KEY,
+                InputValueLimits.newInputValueLimits().maxDepth(2).build()).build()
 
         when:
         ValuesResolver.getNormalizedVariableValues(schema, definitions,
@@ -157,7 +157,7 @@ class InputCoercionLimitsTest extends Specification {
         given:
         Map<String, Object> cycle = [:]
         cycle.next = cycle
-        def limits = InputCoercionLimits.newInputCoercionLimits().maxDepth(3).build()
+        def limits = InputValueLimits.newInputValueLimits().maxDepth(3).build()
 
         when:
         def result = graphQL().execute(input(cycle, limits))
@@ -182,8 +182,8 @@ class InputCoercionLimitsTest extends Specification {
         def schema = TestUtil.schemaWithInputType(ObjectScalar.OBJECT_SCALAR)
         def definitions = [new VariableDefinition('v', new TypeName(ObjectScalar.OBJECT_SCALAR.name))]
         def value = nestedObjects(5000)
-        def context = GraphQLContext.newContext().of(InputCoercionLimits.KEY,
-                InputCoercionLimits.newInputCoercionLimits().maxDepth(1).build()).build()
+        def context = GraphQLContext.newContext().of(InputValueLimits.KEY,
+                InputValueLimits.newInputValueLimits().maxDepth(1).build()).build()
 
         when:
         def coerced = ValuesResolver.coerceVariableValues(schema, definitions,
