@@ -167,7 +167,13 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         QueryComplexityLimits.setDefaultLimits(originalDefault)
     }
 
-    def "customizing #setting preserves the other standard builder limits"() {
+    def "customizing #setting preserves the other JVM-wide limits"() {
+        given:
+        def originalDefault = QueryComplexityLimits.getDefaultLimits()
+        def defaults = QueryComplexityLimits.newLimits().maxDepth(30).maxMergedFieldCount(2_000)
+                .maxFieldOccurrences(20_000).build()
+        QueryComplexityLimits.setDefaultLimits(defaults)
+
         when:
         def builder = QueryComplexityLimits.newLimits()
         builder."$setting"(123)
@@ -178,28 +184,93 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         limits.maxMergedFieldCount == mergedFields
         limits.maxFieldOccurrences == occurrences
 
+        cleanup:
+        QueryComplexityLimits.setDefaultLimits(originalDefault)
+
         where:
         setting               | depth | mergedFields | occurrences
-        'maxDepth'            | 123   | 10_000       | 100_000
-        'maxMergedFieldCount' | 100   | 123          | 100_000
-        'maxFieldOccurrences' | 100   | 10_000       | 123
+        'maxDepth'            | 123   | 2_000        | 20_000
+        'maxMergedFieldCount' | 30    | 123          | 20_000
+        'maxFieldOccurrences' | 30    | 2_000        | 123
     }
 
-    def "new builders retain standard protections when global limits are disabled"() {
+    def "new builders inherit disabled JVM-wide limits"() {
         given:
         def originalDefault = QueryComplexityLimits.getDefaultLimits()
         QueryComplexityLimits.setDefaultLimits(QueryComplexityLimits.NONE)
 
         when:
         def limits = QueryComplexityLimits.newLimits().build()
+        def customDepth = QueryComplexityLimits.newLimits().maxDepth(10).build()
 
         then:
-        limits.maxDepth == QueryComplexityLimits.DEFAULT.maxDepth
-        limits.maxMergedFieldCount == QueryComplexityLimits.DEFAULT.maxMergedFieldCount
-        limits.maxFieldOccurrences == QueryComplexityLimits.DEFAULT.maxFieldOccurrences
+        limits.maxDepth == Integer.MAX_VALUE
+        limits.maxMergedFieldCount == Integer.MAX_VALUE
+        limits.maxFieldOccurrences == Integer.MAX_VALUE
+        customDepth.maxDepth == 10
+        customDepth.maxMergedFieldCount == Integer.MAX_VALUE
+        customDepth.maxFieldOccurrences == Integer.MAX_VALUE
 
         cleanup:
         QueryComplexityLimits.setDefaultLimits(originalDefault)
+    }
+
+    def "builders snapshot JVM-wide defaults at creation"() {
+        given:
+        def originalDefault = QueryComplexityLimits.getDefaultLimits()
+        def firstDefaults = QueryComplexityLimits.newLimits().maxDepth(30).maxMergedFieldCount(2_000)
+                .maxFieldOccurrences(20_000).build()
+        def secondDefaults = QueryComplexityLimits.newLimits().maxDepth(40).maxMergedFieldCount(3_000)
+                .maxFieldOccurrences(30_000).build()
+        QueryComplexityLimits.setDefaultLimits(firstDefaults)
+        def existingBuilder = QueryComplexityLimits.newLimits().maxDepth(10)
+        def existingLimits = existingBuilder.build()
+
+        when:
+        QueryComplexityLimits.setDefaultLimits(secondDefaults)
+        def fromExistingBuilder = existingBuilder.build()
+        def fromNewBuilder = QueryComplexityLimits.newLimits().build()
+
+        then:
+        fromExistingBuilder.maxDepth == 10
+        fromExistingBuilder.maxMergedFieldCount == 2_000
+        fromExistingBuilder.maxFieldOccurrences == 20_000
+        existingLimits.maxDepth == 10
+        existingLimits.maxMergedFieldCount == 2_000
+        existingLimits.maxFieldOccurrences == 20_000
+        fromNewBuilder.maxDepth == 40
+        fromNewBuilder.maxMergedFieldCount == 3_000
+        fromNewBuilder.maxFieldOccurrences == 30_000
+        QueryComplexityLimits.getDefaultLimits().is(secondDefaults)
+        QueryComplexityLimits.DEFAULT.maxDepth == 100
+        QueryComplexityLimits.DEFAULT.maxMergedFieldCount == 10_000
+        QueryComplexityLimits.DEFAULT.maxFieldOccurrences == 100_000
+
+        cleanup:
+        QueryComplexityLimits.setDefaultLimits(originalDefault)
+    }
+
+    def "custom depth preserves enforcement of JVM-wide field budgets"() {
+        given:
+        def originalDefault = QueryComplexityLimits.getDefaultLimits()
+        def defaults = QueryComplexityLimits.newLimits().maxDepth(30).maxMergedFieldCount(2)
+                .maxFieldOccurrences(3).build()
+        QueryComplexityLimits.setDefaultLimits(defaults)
+        def limits = QueryComplexityLimits.newLimits().maxDepth(10).build()
+        def schema = TestUtil.schema('type Query { node: Node } type Node { name: String child: Node }')
+        def document = Parser.parse(query)
+
+        expect:
+        new Validator().validateDocument(schema, document, { rule -> true }, Locale.ENGLISH, limits)*.validationErrorType == errors
+
+        cleanup:
+        QueryComplexityLimits.setDefaultLimits(originalDefault)
+
+        where:
+        query                                | errors
+        '{ node { name name } }'             | []
+        '{ node { name name name } }'        | [ValidationErrorType.MaxQueryFieldOccurrencesExceeded]
+        '{ node { name child { name } } }'   | [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
     }
 
     def "simple queries pass with default limits"() {

@@ -28,9 +28,9 @@ import org.jspecify.annotations.NullUnmarked;
  * Occurrences are limited separately for each operation, regardless of directives or runtime types.
  * Complexity limits are enforced independently of the validation-rule predicate.
  *
- * <p>By default, validation enforces limits (maxDepth=100, maxMergedFieldCount=10000,
- * maxFieldOccurrences=100000). New builders start with these standard defaults;
- * setting one limit leaves the other limits enabled at their defaults.
+ * <p>The JVM-wide defaults initially enforce limits (maxDepth=100, maxMergedFieldCount=10000,
+ * maxFieldOccurrences=100000). New builders copy the current JVM-wide defaults;
+ * setting one limit preserves the other inherited limits.
  * Set an individual limit to {@link Integer#MAX_VALUE} to disable it, or use {@link #NONE}
  * to disable all general complexity limits.
  * To customize limits per-request, put a custom instance in the GraphQLContext:
@@ -94,7 +94,8 @@ public class QueryComplexityLimits {
     private static volatile QueryComplexityLimits defaultLimits = DEFAULT;
 
     /**
-     * Sets the default limits used when no limits are specified in GraphQLContext.
+     * Sets the JVM-wide defaults used by new builders and by validation when no limits
+     * are specified in GraphQLContext. Existing builders and limits remain unchanged.
      * This is useful for testing or for applications that want different global defaults.
      *
      * @param limits the default limits to use (use {@link #NONE} to disable, {@link #DEFAULT} to restore)
@@ -145,14 +146,14 @@ public class QueryComplexityLimits {
     }
 
     /**
-     * Creates a builder initialized with the standard limits in {@link #DEFAULT}.
-     * Changing the global defaults with {@link #setDefaultLimits(QueryComplexityLimits)}
-     * does not change the starting values of new builders.
+     * Creates a builder initialized with the current JVM-wide limits from {@link #getDefaultLimits()}.
+     * The defaults are copied when this method is called. Later changes through
+     * {@link #setDefaultLimits(QueryComplexityLimits)} do not affect this builder or its built instances.
      *
-     * @return a new builder with the standard complexity limits enabled
+     * @return a new builder initialized with the current JVM-wide defaults
      */
     public static Builder newLimits() {
-        return new Builder();
+        return new Builder(getDefaultLimits());
     }
 
     @Override
@@ -170,11 +171,14 @@ public class QueryComplexityLimits {
     @PublicApi
     @NullUnmarked
     public static class Builder {
-        private int maxDepth = DEFAULT_MAX_DEPTH;
-        private int maxMergedFieldCount = DEFAULT_MAX_MERGED_FIELD_COUNT;
-        private int maxFieldOccurrences = DEFAULT_MAX_FIELD_OCCURRENCES;
+        private int maxDepth;
+        private int maxMergedFieldCount;
+        private int maxFieldOccurrences;
 
-        private Builder() {
+        private Builder(QueryComplexityLimits limits) {
+            this.maxDepth = limits.maxDepth;
+            this.maxMergedFieldCount = limits.maxMergedFieldCount;
+            this.maxFieldOccurrences = limits.maxFieldOccurrences;
         }
 
         /**
