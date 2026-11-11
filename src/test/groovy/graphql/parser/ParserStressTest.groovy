@@ -245,6 +245,45 @@ class ParserStressTest extends Specification {
         "9" * 99 + ".0" | "9" * 100 + ".0"
     }
 
+    def "numeric input has a fixed digit ceiling even with a larger configured character limit"() {
+        given:
+        def parserOptions = defaultOperationOptions.transform {
+            it.maxNumericLiteralCharacters(2000)
+        }
+        def accepted = newParserEnvironment()
+                .document("query { f(arg: ${"9" * 1000}) }")
+                .parserOptions(parserOptions)
+                .build()
+
+        expect:
+        Parser.parse(accepted) != null
+
+        when:
+        def rejected = newParserEnvironment()
+                .document("query {\n  f(arg: ${"9" * 1001})\n}")
+                .parserOptions(parserOptions)
+                .build()
+        Parser.parse(rejected)
+
+        then:
+        def exception = thrown(ParseCancelledTooManyNumericLiteralCharactersException)
+        exception.message.contains("more than 1,000 characters")
+        exception.location.line == 2
+        exception.location.column == 10
+    }
+
+    def "digits in comments and strings are not subject to the numeric ceiling"() {
+        given:
+        def parserOptions = defaultOperationOptions.transform {
+            it.maxNumericLiteralCharacters(2000)
+        }
+        def document = "# ${"9" * 1001}\nquery { f(arg: \"${"9" * 1001}\") }"
+        def environment = newParserEnvironment().document(document).parserOptions(parserOptions).build()
+
+        expect:
+        Parser.parse(environment) != null
+    }
+
     String mkDeepQuery(int howMany) {
         def field = 'f(a:"")'
         StringBuilder sb = new StringBuilder("query q{")

@@ -118,4 +118,59 @@ class SafeTokenSourceTest extends Specification {
         offendingToken.stopIndex - offendingToken.startIndex + 1 == 101
     }
 
+    def "can stop numeric input before the lexer consumes it"() {
+        given:
+        GraphqlLexer graphqlLexer = lexer("${numericInput}")
+        Token offendingToken = null
+        def tokenSource = new SafeTokenSource(
+                graphqlLexer,
+                1000,
+                200_000,
+                configuredLimit,
+                { max, token -> },
+                { max, token ->
+                    offendingToken = token
+                    throw new IllegalStateException("stop at $max")
+                }
+        )
+
+        when:
+        tokenSource.nextToken()
+
+        then:
+        def exception = thrown(IllegalStateException)
+        exception.message == "stop at $expectedLimit"
+        graphqlLexer.inputStream.index() == 0
+        offendingToken.type == expectedType
+        offendingToken.text == numericInput.substring(0, offendingToken.stopIndex + 1)
+
+        where:
+        numericInput                                      | configuredLimit | expectedLimit | expectedType
+        "9" * 101                                        | 100             | 100           | GraphqlLexer.IntValue
+        "9" * 1001                                       | 2000            | 1000          | GraphqlLexer.IntValue
+        "-" + "9" * 1001                                 | 2000            | 1000          | GraphqlLexer.IntValue
+        "9" * 400 + "." + "9" * 400 + "e+" + "9" * 201 | 2000            | 1000          | GraphqlLexer.FloatValue
+        "1e" + "9" * 1000 + "x"                          | 2000            | 1000          | GraphqlLexer.FloatValue
+        "0" * 1001 + "x"                                 | 2000            | 1000          | GraphqlLexer.IntValue
+    }
+
+    def "digit ceiling is applied to each numeric token separately"() {
+        given:
+        GraphqlLexer graphqlLexer = lexer("${"9" * 600}-${"9" * 600}")
+        def tokenSource = new SafeTokenSource(
+                graphqlLexer,
+                1000,
+                200_000,
+                2000,
+                { max, token -> },
+                { max, token -> throw new IllegalStateException("unexpected numeric limit") }
+        )
+
+        when:
+        consumeAllTokens(tokenSource)
+
+        then:
+        noExceptionThrown()
+    }
+
 }

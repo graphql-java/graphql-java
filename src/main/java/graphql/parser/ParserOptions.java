@@ -306,7 +306,8 @@ public class ParserOptions {
     /**
      * A numeric literal is represented by a single token, regardless of how many characters it contains. Converting
      * very large numeric literals into arbitrary precision numbers can consume excessive CPU and memory. This limit
-     * stops parsing before that conversion takes place.
+     * stops parsing before that conversion takes place. Numeric input is also limited to 1000 digits while lexing,
+     * even when this option allows more characters.
      *
      * @return the maximum number of characters permitted in an integer or floating-point literal
      */
@@ -416,7 +417,8 @@ public class ParserOptions {
 
         /**
          * Sets the maximum number of characters permitted in an integer or floating-point literal. Parsing is
-         * cancelled before converting a larger literal into an arbitrary precision number.
+         * cancelled before converting a larger literal into an arbitrary precision number. Numeric input is also
+         * limited to 1000 digits while lexing, even when this option allows more characters.
          *
          * @param maxNumericLiteralCharacters the maximum number of characters permitted in a numeric literal
          *
