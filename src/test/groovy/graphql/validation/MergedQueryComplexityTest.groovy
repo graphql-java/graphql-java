@@ -81,7 +81,7 @@ class MergedQueryComplexityTest extends Specification {
                  '__schema { a: types { inputFields } b: types { inputFields } }',
                  '__schema { a: types { interfaces } b: types { interfaces } }',
                  '__schema { a: types { possibleTypes } b: types { possibleTypes } }'],
-                [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.NONE]
+                [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.NONE.transform { it.introspectionLimitsEnabled(true) }]
         ].combinations()
     }
 
@@ -124,7 +124,6 @@ class MergedQueryComplexityTest extends Specification {
         predicate << [
                 { rule -> false },
                 { rule -> rule != OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED },
-                { rule -> rule != OperationValidationRule.GOOD_FAITH_INTROSPECTION },
         ]
     }
 
@@ -162,17 +161,18 @@ class MergedQueryComplexityTest extends Specification {
         limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.NONE]
     }
 
-    def "Good Faith remains independent when general limits and other rules are disabled"() {
+    def "introspection protections remain enabled with general limits and validation rules disabled"() {
         given:
-        def predicate = { rule -> rule == OperationValidationRule.GOOD_FAITH_INTROSPECTION }
+        def predicate = { rule -> false }
+        def limits = QueryComplexityLimits.NONE.transform { it.introspectionLimitsEnabled(true) }
         def normal = Parser.parse('{ node { ' + 'child { ' * 22 + 'name' + ' }' * 22 + ' } }')
         def introspection = Parser.parse('{ __schema { a: types { fields { name } } b: types { fields { name } } } }')
 
         expect:
-        new Validator().validateDocument(schema, normal, predicate, Locale.ENGLISH, QueryComplexityLimits.NONE).empty
+        new Validator().validateDocument(schema, normal, predicate, Locale.ENGLISH, limits).empty
 
         when:
-        new Validator().validateDocument(schema, introspection, predicate, Locale.ENGLISH, QueryComplexityLimits.NONE)
+        new Validator().validateDocument(schema, introspection, predicate, Locale.ENGLISH, limits)
 
         then:
         thrown(GoodFaithIntrospectionExceeded)

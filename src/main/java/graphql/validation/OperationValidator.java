@@ -898,7 +898,7 @@ public class OperationValidator {
         fieldOccurrences = 0;
 
         if (generalMergedLimitsEnabled || isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
-                || isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
+                || complexityLimits.isIntrospectionLimitsEnabled()) {
             validateOverlappingFieldsCanBeMerged(operationDefinition);
         }
         if (isRuleEnabled(OperationValidationRule.LONE_ANONYMOUS_OPERATION)) {
@@ -1361,7 +1361,7 @@ public class OperationValidator {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>(selectionSet.getSelections().size());
         Set<String> visitedFragments = new LinkedHashSet<>();
         overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments);
-        if (isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION) && containsIntrospection(fieldMap, graphQLOutputType)) {
+        if (complexityLimits.isIntrospectionLimitsEnabled() && containsIntrospection(fieldMap, graphQLOutputType)) {
             introspectionQueryDetected = true;
         }
         if (generalMergedLimitsEnabled || introspectionQueryDetected) {

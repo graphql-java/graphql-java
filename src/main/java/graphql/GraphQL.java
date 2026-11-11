@@ -23,7 +23,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
-import graphql.introspection.GoodFaithIntrospection;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.GoodFaithIntrospectionExceeded;
@@ -610,12 +609,6 @@ public class GraphQL {
         Predicate<OperationValidationRule> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
         Locale locale = executionInput.getLocale();
         QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
-
-        // Good Faith Introspection: disable the rule if good faith is off
-        if (!GoodFaithIntrospection.isEnabled(executionInput.getGraphQLContext())) {
-            Predicate<OperationValidationRule> existing = validationRulePredicate;
-            validationRulePredicate = rule -> rule != OperationValidationRule.GOOD_FAITH_INTROSPECTION && existing.test(rule);
-        }
 
         List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale, limits);
 

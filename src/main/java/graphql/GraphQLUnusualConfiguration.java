@@ -2,7 +2,6 @@ package graphql;
 
 import graphql.execution.ResponseMapFactory;
 import graphql.execution.incremental.IncrementalExecutionContextKeys;
-import graphql.introspection.GoodFaithIntrospection;
 import graphql.parser.ParserOptions;
 import graphql.schema.PropertyDataFetcherHelper;
 
@@ -35,14 +34,6 @@ public class GraphQLUnusualConfiguration {
      */
     public PropertyDataFetcherConfig propertyDataFetching() {
         return new PropertyDataFetcherConfig(this);
-    }
-
-    /**
-     * @return an element that allows you to control JVM wide configuration
-     * of {@link graphql.introspection.GoodFaithIntrospection}
-     */
-    public GoodFaithIntrospectionConfig goodFaithIntrospection() {
-        return new GoodFaithIntrospectionConfig(this);
     }
 
     private static class BaseConfig {
@@ -205,31 +196,6 @@ public class GraphQLUnusualConfiguration {
          */
         public boolean setUseNegativeCache(boolean flag) {
             return PropertyDataFetcherHelper.setUseNegativeCache(flag);
-        }
-    }
-
-    public static class GoodFaithIntrospectionConfig extends BaseConfig {
-        private GoodFaithIntrospectionConfig(GraphQLUnusualConfiguration configuration) {
-            super(configuration);
-        }
-
-        /**
-         * @return true if good faith introspection is enabled
-         */
-        public boolean isEnabledJvmWide() {
-            return GoodFaithIntrospection.isEnabledJvmWide();
-        }
-
-        /**
-         * This allows you to disable good faith introspection, which is on by default.
-         *
-         * @param enabled the desired state
-         *
-         * @return the previous state
-         */
-        public GoodFaithIntrospectionConfig enabledJvmWide(boolean enabled) {
-            GoodFaithIntrospection.enabledJvmWide(enabled);
-            return this;
         }
     }
 

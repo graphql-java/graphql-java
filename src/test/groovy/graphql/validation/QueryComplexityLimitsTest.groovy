@@ -210,6 +210,10 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         customDepth.maxDepth == 10
         customDepth.maxMergedFieldCount == Integer.MAX_VALUE
         customDepth.maxFieldOccurrences == Integer.MAX_VALUE
+        !limits.introspectionLimitsEnabled
+        !customDepth.introspectionLimitsEnabled
+        limits.maxIntrospectionMergedFieldCount == 500
+        limits.maxIntrospectionDepth == 20
 
         cleanup:
         QueryComplexityLimits.setDefaultLimits(originalDefault)
@@ -271,6 +275,115 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         '{ node { name name } }'             | []
         '{ node { name name name } }'        | [ValidationErrorType.MaxQueryFieldOccurrencesExceeded]
         '{ node { name child { name } } }'   | [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
+    }
+
+    def "introspection defaults and NONE retain thresholds when toggled"() {
+        expect:
+        QueryComplexityLimits.DEFAULT.introspectionLimitsEnabled
+        QueryComplexityLimits.DEFAULT.maxIntrospectionMergedFieldCount == 500
+        QueryComplexityLimits.DEFAULT.maxIntrospectionDepth == 20
+        !QueryComplexityLimits.NONE.introspectionLimitsEnabled
+        QueryComplexityLimits.NONE.maxIntrospectionMergedFieldCount == 500
+        QueryComplexityLimits.NONE.maxIntrospectionDepth == 20
+
+        when:
+        def enabled = QueryComplexityLimits.NONE.transform { it.introspectionLimitsEnabled(true) }
+        def customized = enabled.transform { it.maxIntrospectionMergedFieldCount(300).maxIntrospectionDepth(9) }
+        def disabled = customized.transform { it.introspectionLimitsEnabled(false) }
+        def reenabled = disabled.transform { it.introspectionLimitsEnabled(true) }
+
+        then:
+        enabled.introspectionLimitsEnabled
+        enabled.maxIntrospectionMergedFieldCount == 500
+        enabled.maxIntrospectionDepth == 20
+        enabled.maxDepth == Integer.MAX_VALUE
+        enabled.maxMergedFieldCount == Integer.MAX_VALUE
+        enabled.maxFieldOccurrences == Integer.MAX_VALUE
+        !disabled.introspectionLimitsEnabled
+        disabled.maxIntrospectionMergedFieldCount == 300
+        disabled.maxIntrospectionDepth == 9
+        reenabled.introspectionLimitsEnabled
+        reenabled.maxIntrospectionMergedFieldCount == 300
+        reenabled.maxIntrospectionDepth == 9
+        !QueryComplexityLimits.NONE.introspectionLimitsEnabled
+        disabled.toString().contains('introspectionLimitsEnabled=false')
+        disabled.toString().contains('maxIntrospectionMergedFieldCount=300')
+        disabled.toString().contains('maxIntrospectionDepth=9')
+    }
+
+    def "builders snapshot all introspection defaults and transform copies the instance"() {
+        given:
+        def original = QueryComplexityLimits.getDefaultLimits()
+        def defaults = QueryComplexityLimits.DEFAULT.transform {
+            it.maxDepth(30).maxMergedFieldCount(2000).maxFieldOccurrences(20000)
+                    .introspectionLimitsEnabled(false).maxIntrospectionMergedFieldCount(300).maxIntrospectionDepth(9)
+        }
+        QueryComplexityLimits.setDefaultLimits(defaults)
+        def builder = QueryComplexityLimits.newLimitsWithDefaults().maxDepth(10)
+        def built = builder.build()
+
+        when:
+        QueryComplexityLimits.setDefaultLimits(QueryComplexityLimits.DEFAULT)
+        def snapshot = builder.build()
+        def transformed = built.transform { it.introspectionLimitsEnabled(true) }
+        def fresh = QueryComplexityLimits.newLimitsWithDefaults().build()
+
+        then:
+        [built, snapshot, transformed].every {
+            it.maxDepth == 10 && it.maxMergedFieldCount == 2000 && it.maxFieldOccurrences == 20000 &&
+                    it.maxIntrospectionMergedFieldCount == 300 && it.maxIntrospectionDepth == 9
+        }
+        !built.introspectionLimitsEnabled
+        !snapshot.introspectionLimitsEnabled
+        transformed.introspectionLimitsEnabled
+        fresh.introspectionLimitsEnabled
+        fresh.maxIntrospectionMergedFieldCount == 500
+        fresh.maxIntrospectionDepth == 20
+
+        cleanup:
+        QueryComplexityLimits.setDefaultLimits(original)
+    }
+
+    def "customizing introspection #setting preserves other inherited limits"() {
+        given:
+        def original = QueryComplexityLimits.getDefaultLimits()
+        def defaults = QueryComplexityLimits.DEFAULT.transform {
+            it.maxDepth(30).maxMergedFieldCount(2000).maxFieldOccurrences(20000)
+                    .introspectionLimitsEnabled(false).maxIntrospectionMergedFieldCount(300).maxIntrospectionDepth(9)
+        }
+        QueryComplexityLimits.setDefaultLimits(defaults)
+
+        when:
+        def limits = QueryComplexityLimits.newLimitsWithDefaults()."$setting"(value).build()
+
+        then:
+        limits.maxDepth == 30
+        limits.maxMergedFieldCount == 2000
+        limits.maxFieldOccurrences == 20000
+        limits.introspectionLimitsEnabled == enabled
+        limits.maxIntrospectionMergedFieldCount == fields
+        limits.maxIntrospectionDepth == depth
+
+        cleanup:
+        QueryComplexityLimits.setDefaultLimits(original)
+
+        where:
+        setting                            | value | enabled | fields | depth
+        'introspectionLimitsEnabled'       | true  | true    | 300    | 9
+        'maxIntrospectionMergedFieldCount' | 123   | false   | 123    | 9
+        'maxIntrospectionDepth'            | 123   | false   | 300    | 123
+    }
+
+    def "introspection #setting requires a positive threshold even when disabled"() {
+        when:
+        QueryComplexityLimits.newLimitsWithDefaults().introspectionLimitsEnabled(false)."$setting"(value).build()
+
+        then:
+        def exception = thrown(IllegalArgumentException)
+        exception.message == "$setting must be positive"
+
+        where:
+        [setting, value] << [['maxIntrospectionMergedFieldCount', 'maxIntrospectionDepth'], [0, -1]].combinations()
     }
 
     def "simple queries pass with default limits"() {

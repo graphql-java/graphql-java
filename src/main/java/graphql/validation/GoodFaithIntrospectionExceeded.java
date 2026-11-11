@@ -1,13 +1,13 @@
 package graphql.validation;
 
 import graphql.Internal;
-import graphql.introspection.GoodFaithIntrospection;
+import graphql.introspection.BadFaithIntrospectionError;
 import org.jspecify.annotations.NullMarked;
 
 /**
  * Exception thrown when a good-faith introspection check fails during validation.
  * This exception is NOT caught by the Validator — it propagates up to GraphQL.parseAndValidate()
- * where it is converted to a {@link GoodFaithIntrospection.BadFaithIntrospectionError}.
+ * where it is converted to a {@link BadFaithIntrospectionError}.
  */
 @Internal
 @NullMarked
@@ -30,11 +30,11 @@ public class GoodFaithIntrospectionExceeded extends RuntimeException {
         return new GoodFaithIntrospectionExceeded(true, message);
     }
 
-    public GoodFaithIntrospection.BadFaithIntrospectionError toBadFaithError() {
+    public BadFaithIntrospectionError toBadFaithError() {
         if (tooBig) {
-            return GoodFaithIntrospection.BadFaithIntrospectionError.tooBigOperation(detail);
+            return BadFaithIntrospectionError.tooBigOperation(detail);
         }
-        return GoodFaithIntrospection.BadFaithIntrospectionError.tooManyFields(detail);
+        return BadFaithIntrospectionError.tooManyFields(detail);
     }
 
     @Override

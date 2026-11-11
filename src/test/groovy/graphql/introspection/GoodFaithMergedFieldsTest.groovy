@@ -168,10 +168,13 @@ class GoodFaithMergedFieldsTest extends Specification {
         new Validator().validateDocument(schema, Parser.parse('{ __schema { types { fields { name } fields { description } } } }'), predicate, Locale.ENGLISH).empty
     }
 
-    def "good faith can be disabled through its validation rule"() {
-        expect:
+    def "good faith remains active when every validation rule is disabled"() {
+        when:
         new Validator().validateDocument(schema, Parser.parse('{ __schema { a: types { fields { name } } b: types { fields { name } } } }'),
-                { rule -> rule != OperationValidationRule.GOOD_FAITH_INTROSPECTION }, Locale.ENGLISH).empty
+                { rule -> false }, Locale.ENGLISH)
+
+        then:
+        thrown(GoodFaithIntrospectionExceeded)
     }
 
     def "normal operations retain their limits in either document order"() {
@@ -206,7 +209,7 @@ class GoodFaithMergedFieldsTest extends Specification {
         expect:
         def errors = graphQL.execute(input).errors
         errors.empty == accepted
-        errors.empty || errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        errors.empty || errors[0] instanceof BadFaithIntrospectionError
 
         where:
         limit | accepted
@@ -348,28 +351,6 @@ class GoodFaithMergedFieldsTest extends Specification {
         then:
         def error = thrown(GoodFaithIntrospectionExceeded)
         error.toBadFaithError().message.contains('__Type.fields')
-    }
-
-    def "public limit helper preserves tighter caller limits"() {
-        given:
-        def requested = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(mergedFieldCount).maxDepth(depth).maxFieldOccurrences(1234).build()
-
-        when:
-        def bounded = GoodFaithIntrospection.goodFaithLimits(requested)
-
-        then:
-        bounded.maxMergedFieldCount == expectedMergedFieldCount
-        bounded.maxDepth == expectedDepth
-        bounded.maxFieldOccurrences == 1234
-        requested.maxMergedFieldCount == mergedFieldCount
-        requested.maxDepth == depth
-
-        where:
-        mergedFieldCount | depth | expectedMergedFieldCount | expectedDepth
-        1000   | 100   | 500            | 20
-        50     | 10    | 50             | 10
-        1000   | 10    | 500            | 10
-        50     | 100   | 50             | 20
     }
 
     private String rootIntrospection(String rootField, String selection, String alias = '') {
