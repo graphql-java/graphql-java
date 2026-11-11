@@ -68,7 +68,8 @@ public class GeneralQueryComplexityBenchmark {
             return QueryComplexityLimits.NONE;
         }
         if ("withoutOccurrences".equals(limits)) {
-            return QueryComplexityLimits.newLimits().maxDepth(100).maxMergedFieldCount(10_000).build();
+            return QueryComplexityLimits.newLimits().maxDepth(100).maxMergedFieldCount(10_000)
+                    .maxFieldOccurrences(Integer.MAX_VALUE).build();
         }
         if ("highOccurrences".equals(limits)) {
             return QueryComplexityLimits.newLimits().maxDepth(100).maxMergedFieldCount(10_000)

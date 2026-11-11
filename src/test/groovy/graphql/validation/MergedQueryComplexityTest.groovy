@@ -231,9 +231,11 @@ class MergedQueryComplexityTest extends Specification {
         def query = '{ node { ...F0 } }' + (0..<40).collect {
             "fragment F$it on Node { ...F${it + 1} ...F${it + 1} }"
         }.join(' ') + 'fragment F40 on Node { name name }'
+        def limits = QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxDepth(2)
+                .maxFieldOccurrences(Integer.MAX_VALUE).build()
 
         expect:
-        validate(query, 2, 2).empty
+        new Validator().validateDocument(schema, Parser.parse(query), { rule -> true }, Locale.ENGLISH, limits).empty
         validate(query, 1, 2)*.validationErrorType == [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
     }
 

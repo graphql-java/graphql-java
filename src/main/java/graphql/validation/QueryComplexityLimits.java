@@ -29,8 +29,10 @@ import org.jspecify.annotations.NullUnmarked;
  * Complexity limits are enforced independently of the validation-rule predicate.
  *
  * <p>By default, validation enforces limits (maxDepth=100, maxMergedFieldCount=10000,
- * maxFieldOccurrences=100000). Explicitly built limits replace these defaults;
- * unspecified builder limits are unlimited.
+ * maxFieldOccurrences=100000). New builders start with these standard defaults;
+ * setting one limit leaves the other limits enabled at their defaults.
+ * Set an individual limit to {@link Integer#MAX_VALUE} to disable it, or use {@link #NONE}
+ * to disable all general complexity limits.
  * To customize limits per-request, put a custom instance in the GraphQLContext:
  * <pre>{@code
  * QueryComplexityLimits limits = QueryComplexityLimits.newLimits()
@@ -143,7 +145,11 @@ public class QueryComplexityLimits {
     }
 
     /**
-     * @return a new builder with all limits initially unlimited
+     * Creates a builder initialized with the standard limits in {@link #DEFAULT}.
+     * Changing the global defaults with {@link #setDefaultLimits(QueryComplexityLimits)}
+     * does not change the starting values of new builders.
+     *
+     * @return a new builder with the standard complexity limits enabled
      */
     public static Builder newLimits() {
         return new Builder();
@@ -164,9 +170,9 @@ public class QueryComplexityLimits {
     @PublicApi
     @NullUnmarked
     public static class Builder {
-        private int maxDepth = Integer.MAX_VALUE;
-        private int maxMergedFieldCount = Integer.MAX_VALUE;
-        private int maxFieldOccurrences = Integer.MAX_VALUE;
+        private int maxDepth = DEFAULT_MAX_DEPTH;
+        private int maxMergedFieldCount = DEFAULT_MAX_MERGED_FIELD_COUNT;
+        private int maxFieldOccurrences = DEFAULT_MAX_FIELD_OCCURRENCES;
 
         private Builder() {
         }

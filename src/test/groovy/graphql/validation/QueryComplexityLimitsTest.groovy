@@ -167,6 +167,41 @@ class QueryComplexityLimitsTest extends SpecValidationBase {
         QueryComplexityLimits.setDefaultLimits(originalDefault)
     }
 
+    def "customizing #setting preserves the other standard builder limits"() {
+        when:
+        def builder = QueryComplexityLimits.newLimits()
+        builder."$setting"(123)
+        def limits = builder.build()
+
+        then:
+        limits.maxDepth == depth
+        limits.maxMergedFieldCount == mergedFields
+        limits.maxFieldOccurrences == occurrences
+
+        where:
+        setting               | depth | mergedFields | occurrences
+        'maxDepth'            | 123   | 10_000       | 100_000
+        'maxMergedFieldCount' | 100   | 123          | 100_000
+        'maxFieldOccurrences' | 100   | 10_000       | 123
+    }
+
+    def "new builders retain standard protections when global limits are disabled"() {
+        given:
+        def originalDefault = QueryComplexityLimits.getDefaultLimits()
+        QueryComplexityLimits.setDefaultLimits(QueryComplexityLimits.NONE)
+
+        when:
+        def limits = QueryComplexityLimits.newLimits().build()
+
+        then:
+        limits.maxDepth == QueryComplexityLimits.DEFAULT.maxDepth
+        limits.maxMergedFieldCount == QueryComplexityLimits.DEFAULT.maxMergedFieldCount
+        limits.maxFieldOccurrences == QueryComplexityLimits.DEFAULT.maxFieldOccurrences
+
+        cleanup:
+        QueryComplexityLimits.setDefaultLimits(originalDefault)
+    }
+
     def "simple queries pass with default limits"() {
         def query = """
             query deepQuery {

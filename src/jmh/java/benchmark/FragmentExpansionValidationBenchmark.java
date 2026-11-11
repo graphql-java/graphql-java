@@ -121,9 +121,11 @@ public class FragmentExpansionValidationBenchmark {
     }
 
     private void verifyMergedFieldCount() {
-        QueryComplexityLimits twoFields = QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxDepth(2).build();
+        QueryComplexityLimits twoFields = QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxDepth(2)
+                .maxFieldOccurrences(Integer.MAX_VALUE).build();
         assertTrue(new Validator().validateDocument(schema, document, rule -> true, Locale.ENGLISH, twoFields).isEmpty());
-        QueryComplexityLimits oneField = QueryComplexityLimits.newLimits().maxMergedFieldCount(1).maxDepth(2).build();
+        QueryComplexityLimits oneField = QueryComplexityLimits.newLimits().maxMergedFieldCount(1).maxDepth(2)
+                .maxFieldOccurrences(Integer.MAX_VALUE).build();
         List<ValidationError> errors = new Validator().validateDocument(schema, document, rule -> true, Locale.ENGLISH, oneField);
         assertTrue(errors.size() == 1 && errors.get(0).getValidationErrorType() == ValidationErrorType.MaxQueryMergedFieldCountExceeded);
     }

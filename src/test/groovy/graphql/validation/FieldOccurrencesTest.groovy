@@ -46,9 +46,13 @@ class FieldOccurrencesTest extends Specification {
         def above = "{ $roots name } $fragment"
 
         expect:
-        validateWithLimits(exact, QueryComplexityLimits.DEFAULT).empty
-        validateWithLimits(above, QueryComplexityLimits.DEFAULT)*.validationErrorType ==
+        validateWithLimits(exact, limits).empty
+        validateWithLimits(above, limits)*.validationErrorType ==
                 [ValidationErrorType.MaxQueryFieldOccurrencesExceeded]
+
+        where:
+        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.newLimits().build(),
+                   QueryComplexityLimits.newLimits().maxDepth(50).build()]
     }
 
     def "default merged limit accepts 10000 and rejects 10001"() {
@@ -58,9 +62,28 @@ class FieldOccurrencesTest extends Specification {
         def fragment = "fragment F on Node { $leaves }"
 
         expect:
-        validateWithLimits("{ $roots } $fragment", QueryComplexityLimits.DEFAULT).empty
-        validateWithLimits("{ $roots name } $fragment", QueryComplexityLimits.DEFAULT)*.validationErrorType ==
+        validateWithLimits("{ $roots } $fragment", limits).empty
+        validateWithLimits("{ $roots name } $fragment", limits)*.validationErrorType ==
                 [ValidationErrorType.MaxQueryMergedFieldCountExceeded]
+
+        where:
+        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.newLimits().build(),
+                   QueryComplexityLimits.newLimits().maxDepth(50).build()]
+    }
+
+    def "default depth limit remains enabled when other limits are customized"() {
+        given:
+        def exact = '{ node { ' + 'child { ' * 98 + 'name' + ' }' * 98 + ' } }'
+        def above = '{ node { ' + 'child { ' * 99 + 'name' + ' }' * 99 + ' } }'
+
+        expect:
+        validateWithLimits(exact, limits).empty
+        validateWithLimits(above, limits)*.validationErrorType == [ValidationErrorType.MaxQueryDepthExceeded]
+
+        where:
+        limits << [QueryComplexityLimits.DEFAULT, QueryComplexityLimits.newLimits().build(),
+                   QueryComplexityLimits.newLimits().maxMergedFieldCount(50_000).build(),
+                   QueryComplexityLimits.newLimits().maxFieldOccurrences(200_000).build()]
     }
 
     def "cached fragment totals and running totals are independent across operations"() {
@@ -147,7 +170,8 @@ class FieldOccurrencesTest extends Specification {
         def query = doublingFragments(25)
         def mergedOnly = QueryComplexityLimits.newLimits().maxMergedFieldCount(2).maxDepth(2)
                 .maxFieldOccurrences(Integer.MAX_VALUE).build()
-        def occurrenceOnly = QueryComplexityLimits.newLimits().maxFieldOccurrences(100_000).build()
+        def occurrenceOnly = QueryComplexityLimits.newLimits().maxMergedFieldCount(Integer.MAX_VALUE)
+                .maxDepth(Integer.MAX_VALUE).maxFieldOccurrences(100_000).build()
 
         expect:
         query.length() == 886
@@ -174,16 +198,20 @@ class FieldOccurrencesTest extends Specification {
                 [ValidationErrorType.UnusedFragment]
     }
 
-    def "explicit builders retain unlimited defaults"() {
+    def "explicit builders enable standard limits and NONE disables all limits"() {
         given:
         def empty = QueryComplexityLimits.newLimits().build()
         def depthOnly = QueryComplexityLimits.newLimits().maxDepth(10).build()
 
         expect:
-        empty.maxMergedFieldCount == Integer.MAX_VALUE
-        empty.maxDepth == Integer.MAX_VALUE
-        empty.maxFieldOccurrences == Integer.MAX_VALUE
-        depthOnly.maxFieldOccurrences == Integer.MAX_VALUE
+        empty.maxMergedFieldCount == QueryComplexityLimits.DEFAULT.maxMergedFieldCount
+        empty.maxDepth == QueryComplexityLimits.DEFAULT.maxDepth
+        empty.maxFieldOccurrences == QueryComplexityLimits.DEFAULT.maxFieldOccurrences
+        depthOnly.maxDepth == 10
+        depthOnly.maxMergedFieldCount == QueryComplexityLimits.DEFAULT.maxMergedFieldCount
+        depthOnly.maxFieldOccurrences == QueryComplexityLimits.DEFAULT.maxFieldOccurrences
+        QueryComplexityLimits.NONE.maxDepth == Integer.MAX_VALUE
+        QueryComplexityLimits.NONE.maxMergedFieldCount == Integer.MAX_VALUE
         QueryComplexityLimits.NONE.maxFieldOccurrences == Integer.MAX_VALUE
         QueryComplexityLimits.newLimits().maxFieldOccurrences(123).build().toString().contains('maxFieldOccurrences=123')
     }
