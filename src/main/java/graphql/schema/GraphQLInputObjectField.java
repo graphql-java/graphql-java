@@ -327,6 +327,14 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             return this;
         }
 
+        /**
+         * Sets a programmatic default value. Iterators and streams, including nested values,
+         * are rejected during schema validation; use an iterable or array instead.
+         *
+         * @param defaultValue the default value, which can be null
+         *
+         * @return this builder
+         */
         public Builder defaultValueProgrammatic(Object defaultValue) {
             this.defaultValue = InputValueWithState.newExternalValue(defaultValue);
             return this;

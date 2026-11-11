@@ -388,6 +388,9 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         }
 
         /**
+         * Sets a programmatic default value. Iterators and streams, including nested values,
+         * are rejected during schema validation; use an iterable or array instead.
+         *
          * @param defaultValue Can be null to represent null value
          *
          * @return this builder

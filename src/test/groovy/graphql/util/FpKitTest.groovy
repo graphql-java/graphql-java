@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList
 import spock.lang.Specification
 
 import java.util.function.Supplier
+import java.util.stream.IntStream
+import java.util.stream.Stream
 
 class FpKitTest extends Specification {
 
@@ -96,6 +98,24 @@ class FpKitTest extends Specification {
         l = FpKit.toListOrSingletonList("Parrot")
         then:
         l == ["Parrot"]
+    }
+
+    def "isIterableOrArray excludes iterators and streams"() {
+        expect:
+        FpKit.isIterableOrArray(value) == expected
+
+        where:
+        value                              | expected
+        [1, 2]                             | true
+        [1, 2] as Set                      | true
+        [1, 2] as Object[]                 | true
+        [1, 2] as int[]                    | true
+        new IterableThing([1, 2])          | true
+        [1, 2].iterator()                  | false
+        Stream.of(1, 2)                   | false
+        IntStream.of(1, 2)                 | false
+        [a: 1]                            | false
+        "hello"                           | false
     }
 
     class Person {
