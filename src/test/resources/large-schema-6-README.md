@@ -11,8 +11,9 @@ reproduces the supplied SDL byte for byte; the query is also unchanged.
 cat large-schema-6.graphqls.part{1,2,3,4} > large-schema-6.graphqls
 ```
 
-Tests can concatenate the four resources in that order without creating another
-file. `LargeSchemaQueryComplexityTest` demonstrates loading both fixtures.
+Tests can parse the four resources separately and merge their type registries to
+reduce peak parser memory. `LargeSchemaQueryComplexityTest` demonstrates this
+while retaining the complete schema and query.
 
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |

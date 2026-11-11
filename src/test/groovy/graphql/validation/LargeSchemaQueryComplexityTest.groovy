@@ -26,7 +26,10 @@ import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
+import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.SchemaParser
+import graphql.schema.idl.TypeDefinitionRegistry
 import spock.lang.Shared
 import spock.lang.Specification
 
@@ -38,8 +41,10 @@ class LargeSchemaQueryComplexityTest extends Specification {
     Document document
 
     def setupSpec() {
-        def sdl = (1..4).collect { loadResource("large-schema-6.graphqls.part$it") }.join('')
-        schema = SchemaGenerator.createdMockedSchema(sdl)
+        def registry = new TypeDefinitionRegistry()
+        // Parts end at definition boundaries; parsing separately avoids retaining the entire SDL parse tree.
+        (1..4).each { registry.merge(new SchemaParser().parse(loadResource("large-schema-6.graphqls.part$it"))) }
+        schema = new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
         // This fixture exceeds the default 15,000-token parser limit. Keep the override local.
         def options = ParserOptions.getDefaultParserOptions().transform { it.maxTokens(100_000) }
         document = Parser.parse(ParserEnvironment.newParserEnvironment()
