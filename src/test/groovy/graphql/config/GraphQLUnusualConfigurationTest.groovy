@@ -32,6 +32,23 @@ class GraphQLUnusualConfigurationTest extends Specification {
         defaultParserOptions.getMaxRuleDepth() == 99
     }
 
+    def "can chain JVM-wide configuration sections through the same parent"() {
+        given:
+        def configuration = GraphQL.unusualConfiguration()
+        def parserOptions = newParserOptions().maxRuleDepth(99).build()
+
+        when:
+        def propertyConfig = configuration.parsing().setDefaultParserOptions(parserOptions)
+                .then().propertyDataFetching()
+        def previous = propertyConfig.setUseNegativeCache(false)
+
+        then:
+        previous
+        propertyConfig.then().is(configuration)
+        propertyConfig.then().parsing().getDefaultParserOptions().is(parserOptions)
+        !propertyConfig.setUseNegativeCache(true)
+    }
+
     def "can set property data fetcher config"() {
         when:
         def prevValue = GraphQL.unusualConfiguration().propertyDataFetching().setUseNegativeCache(false)
