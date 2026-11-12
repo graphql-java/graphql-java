@@ -232,16 +232,8 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         errors.get(0).getMessage() == "'invalidExample' must not reference itself on 'arg''[@2:39]'"
     }
 
-    def "directive must not indirectly reference itself"() {
+    def "directive must not indirectly reference itself - #name"() {
         given:
-        def spec = '''
-            directive @foo(arg: String @bar) on ARGUMENT_DEFINITION
-            directive @bar(arg: String @foo) on ARGUMENT_DEFINITION
-
-            type Query {
-                f1 : String
-            }
-        '''
         def registry = parse(spec)
         def errors = []
 
@@ -251,30 +243,53 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
         then:
         errors.size() == 1
         errors.get(0) instanceof DirectiveIllegalReferenceError
-        errors.get(0).getMessage().contains("'foo' must not reference itself via directive cycle 'foo -> bar -> foo'")
+        errors.get(0).getMessage().contains(cycleMessage)
+
+        where:
+        name << ["two directives", "three directives"]
+        spec << [
+                '''
+                    directive @foo(arg: String @bar) on ARGUMENT_DEFINITION
+                    directive @bar(arg: String @foo) on ARGUMENT_DEFINITION
+
+                    type Query {
+                        f1 : String
+                    }
+                ''',
+                '''
+                    directive @dirA(x: Int @dirB(y: 1)) on ARGUMENT_DEFINITION
+                    directive @dirB(y: Int @dirC(z: 2)) on ARGUMENT_DEFINITION
+                    directive @dirC(z: Int @dirA(x: 3)) on ARGUMENT_DEFINITION
+
+                    type Query {
+                        f1 : String
+                    }
+                '''
+        ]
+        cycleMessage << [
+                "'foo' must not reference itself via directive cycle 'foo -> bar -> foo'",
+                "'dirA' must not reference itself via directive cycle 'dirA -> dirB -> dirC -> dirA'"
+        ]
     }
 
-    def "directive must not indirectly reference itself through a longer cycle"() {
+    def "acyclic directive references are allowed"() {
         given:
-        def spec = '''
-            directive @dirA(x: Int @dirB(y: 1)) on ARGUMENT_DEFINITION
-            directive @dirB(y: Int @dirC(z: 2)) on ARGUMENT_DEFINITION
-            directive @dirC(z: Int @dirA(x: 3)) on ARGUMENT_DEFINITION
+        def registry = parse('''
+            directive @foo(arg: String @bar) on ARGUMENT_DEFINITION
+            directive @bar(arg: String @baz) on ARGUMENT_DEFINITION
+            directive @baz on ARGUMENT_DEFINITION
 
             type Query {
                 f1 : String
             }
-        '''
-        def registry = parse(spec)
+        ''')
         def errors = []
 
         when:
         new SchemaTypeDirectivesChecker(registry, RuntimeWiring.newRuntimeWiring().build()).checkTypeDirectives(errors)
 
         then:
-        errors.size() == 1
-        errors.get(0) instanceof DirectiveIllegalReferenceError
-        errors.get(0).getMessage().contains("'dirA' must not reference itself via directive cycle 'dirA -> dirB -> dirC -> dirA'")
+        errors.isEmpty()
     }
 
     def "directive must not begin with '__'"() {
