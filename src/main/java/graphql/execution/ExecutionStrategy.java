@@ -512,7 +512,7 @@ public abstract class ExecutionStrategy {
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = parameters.getExecutionStepInfo().getUnwrappedNonNullTypeAs();
 
-        // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
+        // Keep the environment lazy for lightweight fetchers on fields without arguments.
 
         Supplier<DataFetchingEnvironment> dataFetchingEnvironment = FpKit.intraThreadMemoize(() -> {
 
@@ -607,6 +607,10 @@ public abstract class ExecutionStrategy {
     private Object invokeDataFetcher(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher) {
         Object fetchedValue;
         try {
+            // Coerce arguments before invoking user code, even when the fetcher never reads them.
+            if (!fieldDef.getArguments().isEmpty()) {
+                dataFetchingEnvironment.get().getArguments();
+            }
             Object fetchedValueRaw;
             if (dataFetcher instanceof LightDataFetcher) {
                 fetchedValueRaw = ((LightDataFetcher<?>) dataFetcher).get(fieldDef, parameters.getSource(), dataFetchingEnvironment);

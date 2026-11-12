@@ -56,8 +56,8 @@ class OverlappingFieldsCanBeMergedBenchmarkTest extends Specification {
         ValidationContext validationContext = new ValidationContext(schema, document, i18n, QueryComplexityLimits.NONE)
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 { r -> r == OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED })
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, operationValidator)
+
+        operationValidator.validate()
         return errorCollector.getErrors()
     }
 

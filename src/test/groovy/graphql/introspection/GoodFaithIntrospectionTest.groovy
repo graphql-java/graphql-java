@@ -15,12 +15,14 @@ class GoodFaithIntrospectionTest extends Specification {
 
     def graphql = TestUtil.graphQL("type Query { normalField : String }").build()
 
+    def originalLimits = QueryComplexityLimits.getDefaultLimits()
+
     def setup() {
-        GoodFaithIntrospection.enabledJvmWide(true)
+        QueryComplexityLimits.setDefaultLimits(QueryComplexityLimits.DEFAULT)
     }
 
     def cleanup() {
-        GoodFaithIntrospection.enabledJvmWide(true)
+        QueryComplexityLimits.setDefaultLimits(originalLimits)
     }
 
     def "standard introspection query is inside limits just in general"() {
@@ -31,8 +33,8 @@ class GoodFaithIntrospectionTest extends Specification {
                 "IntrospectionQuery", CoercedVariables.emptyVariables())
 
         then:
-        eno.getOperationFieldCount() < GoodFaithIntrospection.GOOD_FAITH_MAX_FIELDS_COUNT  // currently 189
-        eno.getOperationDepth() < GoodFaithIntrospection.GOOD_FAITH_MAX_DEPTH_COUNT  // currently 13
+        eno.getOperationFieldCount() < QueryComplexityLimits.DEFAULT_MAX_INTROSPECTION_MERGED_FIELD_COUNT  // currently 189
+        eno.getOperationDepth() < QueryComplexityLimits.DEFAULT_MAX_INTROSPECTION_DEPTH  // currently 13
     }
 
     def "test asking for introspection in good faith"() {
@@ -49,7 +51,7 @@ class GoodFaithIntrospectionTest extends Specification {
         ExecutionResult er = graphql.execute(query)
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0] instanceof BadFaithIntrospectionError
 
         where:
         query                                                                                                    | _
@@ -69,7 +71,7 @@ class GoodFaithIntrospectionTest extends Specification {
         """                                                                                           | _
         // a case for __Type possibleTypes
         """ query badActor {
-                __schema { types { inputFields { type { inputFields { name }}}}}
+                __schema { types { possibleTypes { possibleTypes { name }}}}
             }
         """                                                                                           | _
         // a case leading from __InputValue
@@ -121,27 +123,20 @@ class GoodFaithIntrospectionTest extends Specification {
         ExecutionResult er = graphql.execute(query)
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0] instanceof BadFaithIntrospectionError
         er.data == null // it stopped hard - it did not continue to normal business
     }
 
-    def "can be disabled"() {
-        when:
-        def currentState = GoodFaithIntrospection.isEnabledJvmWide()
-
-        then:
-        currentState
+    def "can be disabled through JVM-wide query complexity limits"() {
+        given:
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().introspectionLimitsEnabled(false).build()
 
         when:
-        def prevState = GoodFaithIntrospection.enabledJvmWide(false)
-
-        then:
-        prevState
-
-        when:
+        QueryComplexityLimits.setDefaultLimits(limits)
         ExecutionResult er = graphql.execute("query badActor{__schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}}")
 
         then:
+        !QueryComplexityLimits.getDefaultLimits().introspectionLimitsEnabled
         er.errors.isEmpty()
     }
 
@@ -152,7 +147,7 @@ class GoodFaithIntrospectionTest extends Specification {
 
         when:
         def context = [
-                (GoodFaithIntrospection.GOOD_FAITH_INTROSPECTION_DISABLED)    : true,
+                (QueryComplexityLimits.KEY): QueryComplexityLimits.newLimitsWithDefaults().introspectionLimitsEnabled(false).build(),
                 (ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT)         : customPredicate
         ]
         ExecutionInput executionInput = ExecutionInput.newExecutionInput("{ normalField }")
@@ -165,7 +160,7 @@ class GoodFaithIntrospectionTest extends Specification {
 
     def "can be disabled per request"() {
         when:
-        def context = [(GoodFaithIntrospection.GOOD_FAITH_INTROSPECTION_DISABLED): true]
+        def context = [(QueryComplexityLimits.KEY): QueryComplexityLimits.newLimitsWithDefaults().introspectionLimitsEnabled(false).build()]
         ExecutionInput executionInput = ExecutionInput.newExecutionInput("query badActor{__schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}}")
                 .graphQLContext(context).build()
         ExecutionResult er = graphql.execute(executionInput)
@@ -174,14 +169,14 @@ class GoodFaithIntrospectionTest extends Specification {
         er.errors.isEmpty()
 
         when:
-        context = [(GoodFaithIntrospection.GOOD_FAITH_INTROSPECTION_DISABLED): false]
+        context = [(QueryComplexityLimits.KEY): QueryComplexityLimits.newLimitsWithDefaults().introspectionLimitsEnabled(true).build()]
         executionInput = ExecutionInput.newExecutionInput("query badActor{__schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}}")
                 .graphQLContext(context).build()
         er = graphql.execute(executionInput)
 
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0] instanceof BadFaithIntrospectionError
     }
 
     def "can stop deep queries"() {
@@ -200,13 +195,13 @@ class GoodFaithIntrospectionTest extends Specification {
 
         where:
         depth | targetError
-        2     | GoodFaithIntrospection.BadFaithIntrospectionError.class
-        10  | GoodFaithIntrospection.BadFaithIntrospectionError.class
-        15  | GoodFaithIntrospection.BadFaithIntrospectionError.class
-        20  | GoodFaithIntrospection.BadFaithIntrospectionError.class
-        25  | GoodFaithIntrospection.BadFaithIntrospectionError.class
-        50  | GoodFaithIntrospection.BadFaithIntrospectionError.class
-        100 | GoodFaithIntrospection.BadFaithIntrospectionError.class
+        2     | BadFaithIntrospectionError.class
+        10  | BadFaithIntrospectionError.class
+        15  | BadFaithIntrospectionError.class
+        20  | BadFaithIntrospectionError.class
+        25  | BadFaithIntrospectionError.class
+        50  | BadFaithIntrospectionError.class
+        100 | BadFaithIntrospectionError.class
     }
 
     def "introspection via inline fragment on Query is detected as bad faith"() {
@@ -223,7 +218,7 @@ class GoodFaithIntrospectionTest extends Specification {
 
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0] instanceof BadFaithIntrospectionError
     }
 
     def "introspection via fragment spread is detected as bad faith"() {
@@ -241,7 +236,7 @@ class GoodFaithIntrospectionTest extends Specification {
 
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0] instanceof BadFaithIntrospectionError
     }
 
     def "wide introspection via fragment spread is detected as bad faith"() {
@@ -260,7 +255,7 @@ class GoodFaithIntrospectionTest extends Specification {
 
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0] instanceof BadFaithIntrospectionError
         er.errors[0].message.contains("too big")
     }
 
@@ -284,13 +279,13 @@ class GoodFaithIntrospectionTest extends Specification {
 
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0] instanceof BadFaithIntrospectionError
         er.errors[0].message.contains("too big")
     }
 
     def "good faith limits are applied on top of custom user limits"() {
         given:
-        def limits = QueryComplexityLimits.newLimits().maxFieldsCount(200).maxDepth(15).build()
+        def limits = QueryComplexityLimits.newLimitsWithDefaults().maxMergedFieldCount(200).maxDepth(15).build()
         def executionInput = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
                 .graphQLContext([(QueryComplexityLimits.KEY): limits])
                 .build()
@@ -302,9 +297,9 @@ class GoodFaithIntrospectionTest extends Specification {
         er.errors.isEmpty()
     }
 
-    def "introspection query exceeding field count limit is detected as bad faith"() {
+    def "introspection query exceeding merged field count limit is detected as bad faith"() {
         given:
-        // Build a wide introspection query that exceeds GOOD_FAITH_MAX_FIELDS_COUNT (500)
+        // Build a wide introspection query that exceeds DEFAULT_MAX_INTROSPECTION_MERGED_FIELD_COUNT (500)
         // using non-cycle-forming fields (aliases of 'name') so the tooManyFields check
         // does not fire first, exercising the tooBigOperation code path instead
         def sb = new StringBuilder()
@@ -319,14 +314,14 @@ class GoodFaithIntrospectionTest extends Specification {
 
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0] instanceof BadFaithIntrospectionError
         er.errors[0].message.contains("too big")
     }
 
     def "introspection query exceeding depth limit is detected as bad faith"() {
         given:
         // Build a deep introspection query using ofType (not a cycle-forming field)
-        // that exceeds GOOD_FAITH_MAX_DEPTH_COUNT (20)
+        // that exceeds DEFAULT_MAX_INTROSPECTION_DEPTH (20)
         def sb = new StringBuilder()
         sb.append("query { __schema { types { ")
         for (int i = 0; i < 20; i++) {
@@ -343,7 +338,7 @@ class GoodFaithIntrospectionTest extends Specification {
 
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.errors[0] instanceof BadFaithIntrospectionError
         er.errors[0].message.contains("too big")
     }
 

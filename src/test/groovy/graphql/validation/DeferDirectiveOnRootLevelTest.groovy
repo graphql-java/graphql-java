@@ -1,16 +1,10 @@
 package graphql.validation
 
 import graphql.ExperimentalApi
+import graphql.GraphQLContext
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.LanguageTraversal
-import graphql.validation.OperationValidationRule
-import graphql.validation.OperationValidator
-import graphql.validation.SpecValidationSchema
-import graphql.validation.ValidationContext
-import graphql.validation.ValidationErrorCollector
-import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
 class DeferDirectiveOnRootLevelTest extends Specification {
@@ -19,15 +13,16 @@ class DeferDirectiveOnRootLevelTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
+        GraphQLContext graphQLContext = GraphQLContext.newContext().build().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
         ValidationContext validationContext = new ValidationContext(
                 SpecValidationSchema.specValidationSchema,
                 document,
-                I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH))
-        validationContext.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
+                I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH),
+                QueryComplexityLimits.getDefaultLimits(),
+                graphQLContext)
 
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
-                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_ON_ROOT_LEVEL }))
+        new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_ON_ROOT_LEVEL }).validate()
     }
 
 

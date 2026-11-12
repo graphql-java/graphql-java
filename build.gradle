@@ -22,7 +22,7 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.gradleup.shadow" version "9.4.2"
+    id "com.gradleup.shadow" version "9.6.1"
     id "biz.aQute.bnd.builder" version "7.1.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
@@ -37,7 +37,7 @@ plugins {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25) // build on 25 - release on 11
+        languageVersion = JavaLanguageVersion.of(25) // build on 25 - release on 17
     }
 }
 
@@ -45,7 +45,7 @@ kotlin {
     compilerOptions {
         apiVersion = KotlinVersion.KOTLIN_2_0
         languageVersion = KotlinVersion.KOTLIN_2_0
-        jvmTarget = JvmTarget.JVM_11
+        jvmTarget = JvmTarget.JVM_17
         javaParameters = true
         freeCompilerArgs = [
                 '-Xemit-jvm-type-annotations',
@@ -176,7 +176,7 @@ def getDevelopmentVersion() {
 def reactiveStreamsVersion = '1.0.3'
 def releaseVersion = System.env.RELEASE_VERSION
 def antlrVersion = '4.13.2' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
-def guavaVersion = '33.7.2-jre'
+def guavaVersion = '33.8.0-jre'
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
@@ -568,7 +568,7 @@ def verifyShadedClassAnnotations = tasks.register('verifyShadedClassAnnotations'
 }
 
 /**
- * Compiles a small Java 11 consumer against only the completed shaded JAR.
+ * Compiles a small Java 17 consumer against only the completed shaded JAR.
  * Resolving {@code ExecutionContext.getOperationDirectives()} forces javac to
  * inspect the shaded ImmutableList signature; {@code -Xlint:classfile -Werror}
  * turns dangling annotation references into a build failure.
@@ -583,7 +583,7 @@ def compileShadedJarConsumer = tasks.register('compileShadedJarConsumer', JavaCo
     }
     classpath = files(buildFinalJar.flatMap { it.archiveFile })
     destinationDirectory = layout.buildDirectory.dir('classes/shaded-jar-consumer')
-    options.release = 11
+    options.release = 17
     options.compilerArgs.addAll(['-Xlint:classfile', '-Werror'])
 }
 
@@ -695,13 +695,13 @@ tasks.withType(GroovyCompile) {
     // Options when compiling Java using the Groovy plugin.
     // (Groovy itself defaults to UTF-8 for Groovy code)
     options.encoding = 'UTF-8'
-    sourceCompatibility = '11'
-    targetCompatibility = '11'
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
     groovyOptions.forkOptions.memoryMaximumSize = "4g"
 }
 
 tasks.withType(JavaCompile) {
-    options.release = 11
+    options.release = 17
     options.errorprone {
         disableAllChecks = true
         check("NullAway", CheckSeverity.ERROR)
@@ -812,21 +812,7 @@ tasks.register('testWithJava17', Test) {
 
 }
 
-tasks.register('testWithJava11', Test) {
-    javaLauncher = javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
-    testClassesDirs = sourceSets.test.output.classesDirs
-    classpath = sourceSets.test.runtimeClasspath
-
-    dependsOn tasks.named('testClasses')
-
-    classpath += sourceSets.jmh.output
-    dependsOn "jmhClasses"
-
-}
-
-['11', '17', '21'].each { ver ->
+['17', '21'].each { ver ->
     tasks.register("testngWithJava${ver}", Test) {
         useTestNG()
         javaLauncher = javaToolchains.launcherFor {

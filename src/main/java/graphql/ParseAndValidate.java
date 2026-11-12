@@ -32,7 +32,7 @@ public class ParseAndValidate {
 
     /**
      * This {@link GraphQLContext} hint can be used to supply a Predicate to the Validator so that certain rules can be skipped.
-     *
+     * <p>
      * This is an internal capability that you should use at your own risk.  While we intend for this to be present for some time, the validation
      * rule class names may change, as may this mechanism.
      */
@@ -44,14 +44,16 @@ public class ParseAndValidate {
      * for execution.
      *
      * @param graphQLSchema  the schema to validate against
-     * @param executionInput the execution input containing the query
+     * @param executionInput the execution input containing the query and request-specific complexity limits
      *
      * @return a result object that indicates how this operation went
      */
     public static ParseAndValidateResult parseAndValidate(@NonNull GraphQLSchema graphQLSchema, @NonNull ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
-            List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"), executionInput.getLocale());
+            QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
+            List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"),
+                    rule -> true, executionInput.getLocale(), limits);
             return result.transform(builder -> builder.validationErrors(errors));
         }
         return result;
@@ -123,6 +125,10 @@ public class ParseAndValidate {
         return validate(graphQLSchema, parsedDocument, rulePredicate, locale, null);
     }
 
+    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<OperationValidationRule> rulePredicate, Locale locale, @Nullable QueryComplexityLimits limits) {
+        return validate(graphQLSchema, parsedDocument, rulePredicate, locale, limits, null);
+    }
+
     /**
      * This can be called to validate a parsed graphql query.
      *
@@ -131,12 +137,13 @@ public class ParseAndValidate {
      * @param rulePredicate  this predicate is used to decide what validation rules will be applied
      * @param locale         the current locale
      * @param limits         optional query complexity limits to enforce
+     * @param graphQLContext the graphql context to use
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<OperationValidationRule> rulePredicate, Locale locale, @Nullable QueryComplexityLimits limits) {
+    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<OperationValidationRule> rulePredicate, Locale locale, @Nullable QueryComplexityLimits limits, @Nullable GraphQLContext graphQLContext) {
         Validator validator = new Validator();
-        return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale, limits);
+        return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale, limits, graphQLContext);
     }
 
     /**
