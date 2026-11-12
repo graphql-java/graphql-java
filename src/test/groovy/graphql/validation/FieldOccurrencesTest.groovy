@@ -153,7 +153,6 @@ class FieldOccurrencesTest extends Specification {
         predicate << [
                 { rule -> false },
                 { rule -> rule != OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED },
-                { rule -> rule != OperationValidationRule.GOOD_FAITH_INTROSPECTION },
         ]
     }
 

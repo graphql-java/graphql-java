@@ -1,7 +1,6 @@
 package graphql.validation;
 
 import graphql.Internal;
-import graphql.introspection.GoodFaithIntrospection;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -30,8 +29,8 @@ public final class MergedFieldComplexityCounts {
 
     public MergedFieldComplexityCounts(QueryComplexityLimits limits, boolean introspection) {
         this.introspection = introspection;
-        maxMergedFieldCount = introspection ? Math.min(limits.getMaxMergedFieldCount(), GoodFaithIntrospection.GOOD_FAITH_MAX_MERGED_FIELD_COUNT) : limits.getMaxMergedFieldCount();
-        maxDepth = introspection ? Math.min(limits.getMaxDepth(), GoodFaithIntrospection.GOOD_FAITH_MAX_DEPTH_COUNT) : limits.getMaxDepth();
+        maxMergedFieldCount = introspection ? Math.min(limits.getMaxMergedFieldCount(), limits.getMaxIntrospectionMergedFieldCount()) : limits.getMaxMergedFieldCount();
+        maxDepth = introspection ? Math.min(limits.getMaxDepth(), limits.getMaxIntrospectionDepth()) : limits.getMaxDepth();
     }
 
     public void enterField(@Nullable String coordinate) {
