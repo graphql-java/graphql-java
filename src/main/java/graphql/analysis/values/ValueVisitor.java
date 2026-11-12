@@ -108,7 +108,7 @@ public interface ValueVisitor {
      *
      * @return the same value or a new value
      */
-    default @Nullable Map<String, Object> visitInputObjectValue(@Nullable Map<String, Object> coercedValue, GraphQLInputObjectType inputObjectType, InputElements inputElements) {
+    default @Nullable Map<String, @Nullable Object> visitInputObjectValue(@Nullable Map<String, @Nullable Object> coercedValue, GraphQLInputObjectType inputObjectType, InputElements inputElements) {
         return coercedValue;
     }
 

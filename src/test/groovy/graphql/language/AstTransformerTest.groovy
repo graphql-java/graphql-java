@@ -14,6 +14,14 @@ import static graphql.util.TreeTransformerUtil.insertBefore
 
 class AstTransformerTest extends Specification {
 
+    def "null root variables use the default transformation context"() {
+        given:
+        def document = TestUtil.parseQuery('{ field }')
+
+        expect:
+        new AstTransformer().transform(document, new NodeVisitorStub(), null) == document
+    }
+
     def "modify multiple nodes"() {
         def document = TestUtil.parseQuery("{ root { foo { midA { leafA } midB { leafB } } bar { midC { leafC } midD { leafD } } } }")
 

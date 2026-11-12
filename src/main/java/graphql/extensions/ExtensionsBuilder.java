@@ -1,6 +1,5 @@
 package graphql.extensions;
 
-import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import org.jspecify.annotations.NullMarked;
@@ -30,7 +29,7 @@ import static graphql.Assert.assertNotNull;
 public class ExtensionsBuilder {
 
     // thread safe since there can be many changes say in DFs across threads
-    private final List<Map<Object, Object>> changes = new CopyOnWriteArrayList<>();
+    private final List<Map<Object, @Nullable Object>> changes = new CopyOnWriteArrayList<>();
     private final ExtensionsMerger extensionsMerger;
 
 
@@ -70,7 +69,7 @@ public class ExtensionsBuilder {
      *
      * @return this builder for fluent style reasons
      */
-    public ExtensionsBuilder addValues(Map<Object, Object> newValues) {
+    public ExtensionsBuilder addValues(Map<Object, @Nullable Object> newValues) {
         assertNotNull(newValues);
         if (!newValues.isEmpty()) {
             changes.add(newValues);
@@ -96,17 +95,17 @@ public class ExtensionsBuilder {
      *
      * @return a new extensions map
      */
-    public Map<Object, Object> buildExtensions() {
+    public Map<Object, @Nullable Object> buildExtensions() {
         if (changes.isEmpty()) {
-            return ImmutableMap.of();
+            return Collections.emptyMap();
         }
-        Map<Object, Object> firstChange = changes.get(0);
+        Map<Object, @Nullable Object> firstChange = changes.get(0);
         if (changes.size() == 1) {
             return firstChange;
         }
-        Map<Object, Object> outMap = new LinkedHashMap<>(firstChange);
+        Map<Object, @Nullable Object> outMap = new LinkedHashMap<>(firstChange);
         for (int i = 1; i < changes.size(); i++) {
-            Map<Object, Object> newMap = extensionsMerger.merge(outMap, changes.get(i));
+            Map<Object, @Nullable Object> newMap = extensionsMerger.merge(outMap, changes.get(i));
             assertNotNull(outMap, "You MUST provide a non null Map from ExtensionsMerger.merge()");
             outMap = newMap;
         }
@@ -123,7 +122,7 @@ public class ExtensionsBuilder {
     public ExecutionResult setExtensions(ExecutionResult executionResult) {
         assertNotNull(executionResult);
         Map<Object, Object> currentExtensions = executionResult.getExtensions();
-        Map<Object, Object> builderExtensions = buildExtensions();
+        Map<Object, @Nullable Object> builderExtensions = buildExtensions();
         // if there was no extensions map before, and we are not adding anything new
         // then leave it null
         if (currentExtensions == null && builderExtensions.isEmpty()) {

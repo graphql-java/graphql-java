@@ -69,6 +69,22 @@ import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
 class SchemaPrinterTest extends Specification {
 
+    def "prints a deprecated field when the applied directive has no reason argument"() {
+        given:
+        def field = GraphQLFieldDefinition.newFieldDefinition().name('field').type(GraphQLString)
+                .deprecate('legacy reason')
+                .withAppliedDirective(GraphQLAppliedDirective.newDirective().name('deprecated').build())
+                .build()
+        def query = GraphQLObjectType.newObject().name('Query').field(field).build()
+
+        when:
+        def printed = new SchemaPrinter().print(query)
+
+        then:
+        printed.contains('field: String @deprecated')
+        !printed.contains('reason:')
+    }
+
     def noDirectivesOption = defaultOptions().includeDirectives(false)
 
     GraphQLSchema starWarsSchema() {

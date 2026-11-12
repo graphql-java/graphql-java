@@ -47,7 +47,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public Map<String, Object> getArguments() {
+    public Map<String, @Nullable Object> getArguments() {
         return delegateEnvironment.getArguments();
     }
 
@@ -62,7 +62,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public <T> T getArgumentOrDefault(String name, T defaultValue) {
+    public <T> @Nullable T getArgumentOrDefault(String name, @Nullable T defaultValue) {
         return delegateEnvironment.getArgumentOrDefault(name, defaultValue);
     }
 
@@ -174,7 +174,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public Map<String, Object> getVariables() {
+    public Map<String, @Nullable Object> getVariables() {
         return delegateEnvironment.getVariables();
     }
 

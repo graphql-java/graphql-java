@@ -633,7 +633,7 @@ public class SchemaPrinter {
             }
 
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, Assert.assertNotNull(type.getDefinition()), type.getExtensionDefinitions());
+                printAsAst(out, Assert.assertNotNull(type.getDefinition(), "AST definition should exist when printing as AST"), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
                 if (type.getInterfaces().isEmpty()) {
@@ -669,7 +669,7 @@ public class SchemaPrinter {
             Comparator<? super GraphQLSchemaElement> comparator = getComparator(GraphQLUnionType.class, GraphQLOutputType.class);
 
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, Assert.assertNotNull(type.getDefinition()), type.getExtensionDefinitions());
+                printAsAst(out, Assert.assertNotNull(type.getDefinition(), "AST definition should exist when printing as AST"), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
                 out.format("union %s%s = ", type.getName(), directivesString(GraphQLUnionType.class, type));
@@ -707,7 +707,7 @@ public class SchemaPrinter {
                 return;
             }
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, Assert.assertNotNull(type.getDefinition()), type.getExtensionDefinitions());
+                printAsAst(out, Assert.assertNotNull(type.getDefinition(), "AST definition should exist when printing as AST"), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
                 if (type.getInterfaces().isEmpty()) {
@@ -740,7 +740,7 @@ public class SchemaPrinter {
                 return;
             }
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, Assert.assertNotNull(type.getDefinition()), type.getExtensionDefinitions());
+                printAsAst(out, Assert.assertNotNull(type.getDefinition(), "AST definition should exist when printing as AST"), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
 
@@ -1235,7 +1235,7 @@ public class SchemaPrinter {
 
         if (options.isIncludeAstDefinitionComments()) {
             String commentsText = getAstDefinitionComments(graphQLType);
-            if (commentsText != null && !commentsText.isEmpty()) {
+            if (commentsText != null) {
                 List<String> lines = Arrays.asList(commentsText.split("\n"));
                 if (!lines.isEmpty()) {
                     printMultiLineHashDescription(out, prefix, lines);

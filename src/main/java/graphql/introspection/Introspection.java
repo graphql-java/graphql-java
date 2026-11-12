@@ -352,7 +352,7 @@ public class Introspection {
 
     static {
         IntrospectionDataFetcher<?> argsDataFetcher = environment -> {
-            GraphQLFieldDefinition fieldDef = Assert.assertNotNull(environment.<GraphQLFieldDefinition>getSource());
+            GraphQLFieldDefinition fieldDef = Assert.assertNotNull(environment.<GraphQLFieldDefinition>getSource(), "introspection field source should not be null");
             boolean includeDeprecated = Boolean.TRUE.equals(environment.<Boolean>getArgument("includeDeprecated"));
             return ImmutableKit.filter(fieldDef.getArguments(),
                     arg -> includeDeprecated || !arg.isDeprecated());
@@ -646,11 +646,11 @@ public class Introspection {
 
     static {
         IntrospectionDataFetcher<?> locationsDataFetcher = environment -> {
-            GraphQLDirective directive = Assert.assertNotNull(environment.<GraphQLDirective>getSource());
+            GraphQLDirective directive = Assert.assertNotNull(environment.<GraphQLDirective>getSource(), "introspection directive source should not be null");
             return new ArrayList<>(directive.validLocations());
         };
         IntrospectionDataFetcher<?> argsDataFetcher = environment -> {
-            GraphQLDirective directive = Assert.assertNotNull(environment.<GraphQLDirective>getSource());
+            GraphQLDirective directive = Assert.assertNotNull(environment.<GraphQLDirective>getSource(), "introspection directive source should not be null");
             boolean includeDeprecated = Boolean.TRUE.equals(environment.<Boolean>getArgument("includeDeprecated"));
             return ImmutableKit.filter(directive.getArguments(),
                     arg -> includeDeprecated || !arg.isDeprecated());

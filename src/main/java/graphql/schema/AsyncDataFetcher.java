@@ -2,6 +2,7 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -14,7 +15,7 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 @NullMarked
-public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
+public class AsyncDataFetcher<T extends @Nullable Object> implements DataFetcher<CompletableFuture<T>> {
 
     /**
      * A factory method for creating asynchronous data fetchers so that when used with
@@ -30,7 +31,7 @@ public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
      *
      * @return a {@link DataFetcher} that will run the wrappedDataFetcher asynchronously
      */
-    public static <T> AsyncDataFetcher<T> async(DataFetcher<T> wrappedDataFetcher) {
+    public static <T extends @Nullable Object> AsyncDataFetcher<T> async(DataFetcher<T> wrappedDataFetcher) {
         return new AsyncDataFetcher<>(wrappedDataFetcher);
     }
 
@@ -48,7 +49,7 @@ public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
      * @return a {@link DataFetcher} that will run the wrappedDataFetcher asynchronously in
      * the given {@link Executor}
      */
-    public static <T> AsyncDataFetcher<T> async(DataFetcher<T> wrappedDataFetcher, Executor executor) {
+    public static <T extends @Nullable Object> AsyncDataFetcher<T> async(DataFetcher<T> wrappedDataFetcher, Executor executor) {
         return new AsyncDataFetcher<>(wrappedDataFetcher, executor);
     }
 

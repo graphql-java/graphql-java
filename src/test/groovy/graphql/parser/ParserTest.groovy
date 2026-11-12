@@ -1269,6 +1269,26 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         "\"\t\" scalar A"   | _
     }
 
+    def "null parser options use the default lexer error redaction setting"() {
+        given:
+        def originalOptions = ParserOptions.getDefaultParserOptions()
+        ParserOptions.setDefaultParserOptions(originalOptions.transform { builder -> builder.redactTokenParserErrorMessages(true) })
+        def environment = ParserEnvironment.newParserEnvironment()
+                .document('""" scalar SecretName')
+                .parserOptions(null)
+                .build()
+
+        when:
+        new Parser().parseDocument(environment)
+
+        then:
+        def error = thrown(InvalidSyntaxException)
+        error.message == 'Invalid syntax at line 1 column 1'
+
+        cleanup:
+        ParserOptions.setDefaultParserOptions(originalOptions)
+    }
+
     def "can redact tokens in InvalidSyntax parser error message"() {
         given:
         def input = '''""" scalar ComputerSaysNo'''

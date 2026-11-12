@@ -26,6 +26,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -37,7 +38,7 @@ import java.util.function.Supplier;
 public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Nullable
     private final Object source;
-    private final Supplier<Map<String, Object>> arguments;
+    private final Supplier<Map<String, @Nullable Object>> arguments;
     @Nullable
     private final Object context;
     private final GraphQLContext graphQLContext;
@@ -58,7 +59,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final Locale locale;
     private final OperationDefinition operationDefinition;
     private final Document document;
-    private final ImmutableMapWithNullValues<String, Object> variables;
+    private final ImmutableMapWithNullValues<String, @Nullable Object> variables;
     private final QueryDirectives queryDirectives;
     private final int level;
 
@@ -67,7 +68,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
-        this.arguments = builder.arguments == null ? ImmutableKit::emptyMap : builder.arguments;
+        this.arguments = builder.arguments == null ? Collections::emptyMap : builder.arguments;
         this.context = builder.context;
         this.graphQLContext = Assert.assertNotNull(builder.graphQLContext);
         this.localContext = builder.localContext;
@@ -129,7 +130,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public Map<String, Object> getArguments() {
+    public Map<String, @Nullable Object> getArguments() {
         return ImmutableMapWithNullValues.copyOf(arguments.get());
     }
 
@@ -144,7 +145,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <T> T getArgumentOrDefault(String name, T defaultValue) {
+    public <T> @Nullable T getArgumentOrDefault(String name, @Nullable T defaultValue) {
         return (T) arguments.get().getOrDefault(name, defaultValue);
     }
 
@@ -263,7 +264,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public Map<String, Object> getVariables() {
+    public Map<String, @Nullable Object> getVariables() {
         return variables;
     }
 
@@ -304,9 +305,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private Locale locale;
         private OperationDefinition operationDefinition;
         private Document document;
-        private Supplier<Map<String, Object>> arguments;
+        private Supplier<Map<String, @Nullable Object>> arguments;
         private ImmutableMap<String, FragmentDefinition> fragmentsByName;
-        private ImmutableMapWithNullValues<String, Object> variables;
+        private ImmutableMapWithNullValues<String, @Nullable Object> variables;
         private QueryDirectives queryDirectives;
         private DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
         private Profiler profiler;

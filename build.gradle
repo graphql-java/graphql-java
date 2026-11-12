@@ -761,6 +761,14 @@ tasks.withType(Test) {
         useJUnitPlatform()
     }
     maxHeapSize = "1g"
+    // Consumer contract tests use the build toolchain and the existing NullAway processor.
+    doFirst {
+        systemProperty 'nullability.javac', javaToolchains.compilerFor {
+            languageVersion = JavaLanguageVersion.of(25)
+        }.get().executablePath.asFile.absolutePath
+        systemProperty 'nullability.classpath', (sourceSets.main.output + sourceSets.main.compileClasspath).asPath
+        systemProperty 'nullability.processorpath', configurations.annotationProcessor.asPath
+    }
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"

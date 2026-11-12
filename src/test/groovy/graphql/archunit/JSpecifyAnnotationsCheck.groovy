@@ -6,7 +6,7 @@ import com.tngtech.archunit.core.importer.ImportOption
 import spock.lang.Specification
 
 /**
- * This test ensures that all public API and experimental API classes
+ * This test ensures that all public API, SPI, and experimental API classes
  * are properly annotated with JSpecify annotations.
  */
 class JSpecifyAnnotationsCheck extends Specification {
@@ -28,13 +28,45 @@ class JSpecifyAnnotationsCheck extends Specification {
             "graphql.util.querygenerator.QueryGeneratorResult"
     ] as Set
 
-    def "ensure all public API and experimental API classes have @NullMarked annotation"() {
+    // Existing SPI classes awaiting migration are tracked separately from completed API work.
+    private static final Set<String> JSPECIFY_SPI_EXEMPTION_LIST = [
+            "graphql.TrivialDataFetcher",
+            "graphql.analysis.values.ValueVisitor",
+            "graphql.execution.AbstractAsyncExecutionStrategy",
+            "graphql.execution.DataFetcherExceptionHandler",
+            "graphql.execution.ExecutionIdProvider",
+            "graphql.execution.ExecutionStrategy",
+            "graphql.execution.ValueUnboxer",
+            "graphql.execution.instrumentation.ExecuteObjectInstrumentationContext",
+            "graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext",
+            "graphql.execution.instrumentation.FieldFetchingInstrumentationContext",
+            "graphql.execution.instrumentation.Instrumentation",
+            "graphql.execution.instrumentation.InstrumentationState",
+            "graphql.execution.instrumentation.fieldvalidation.FieldValidation",
+            "graphql.execution.preparsed.PreparsedDocumentProvider",
+            "graphql.execution.preparsed.persisted.PersistedQueryCache",
+            "graphql.execution.preparsed.persisted.PersistedQuerySupport",
+            "graphql.extensions.ExtensionsMerger",
+            "graphql.normalized.VariablePredicate",
+            "graphql.parser.ParsingListener",
+            "graphql.schema.Coercing",
+            "graphql.schema.DataFetcher",
+            "graphql.schema.DataFetcherFactory",
+            "graphql.schema.TypeResolver",
+            "graphql.schema.diff.SchemaDiff",
+            "graphql.schema.diff.reporting.DifferenceReporter",
+            "graphql.schema.idl.EnumValuesProvider",
+            "graphql.schema.idl.WiringFactory",
+            "graphql.schema.visitor.GraphQLSchemaVisitor"
+    ] as Set
+
+    def "ensure all public API, SPI, and experimental API classes have @NullMarked annotation"() {
         given:
         def classes = new ClassFileImporter()
                 .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
                 .importPackages("graphql")
                 .stream()
-                .filter { it.isAnnotatedWith("graphql.PublicApi") || it.isAnnotatedWith("graphql.ExperimentalApi") }
+                .filter { it.isAnnotatedWith("graphql.PublicApi") || it.isAnnotatedWith("graphql.PublicSpi") || it.isAnnotatedWith("graphql.ExperimentalApi") }
                 .collect()
 
         when:
@@ -42,12 +74,12 @@ class JSpecifyAnnotationsCheck extends Specification {
                 .stream()
                 .filter { !isJSpecifyAnnotated(it) }
                 .map { it.name }
-                .filter { it -> !JSPECIFY_EXEMPTION_LIST.contains(it) }
+                .filter { it -> !JSPECIFY_EXEMPTION_LIST.contains(it) && !JSPECIFY_SPI_EXEMPTION_LIST.contains(it) }
                 .collect()
 
         then:
         if (!classesMissingAnnotation.isEmpty()) {
-            throw new AssertionError("""The following public API and experimental API classes are missing a JSpecify annotation:
+            throw new AssertionError("""The following public API, SPI, and experimental API classes are missing a JSpecify annotation:
 ${classesMissingAnnotation.sort().join("\n")}
 
 Add @NullMarked or @NullUnmarked to these public API classes. See documentation at https://jspecify.dev/docs/user-guide/#nullmarked""")
@@ -62,7 +94,7 @@ Add @NullMarked or @NullUnmarked to these public API classes. See documentation 
 
         when:
         def annotatedButExempted = classes.stream()
-                .filter { JSPECIFY_EXEMPTION_LIST.contains(it.name) }
+                .filter { (JSPECIFY_EXEMPTION_LIST + JSPECIFY_SPI_EXEMPTION_LIST).contains(it.name) }
                 .filter { isJSpecifyAnnotated(it) }
                 .map { it.name }
                 .collect()
@@ -79,6 +111,7 @@ Please remove them from the exemption list in ${JSpecifyAnnotationsCheck.class.s
     private static boolean isJSpecifyAnnotated(JavaClass javaClass) {
         return javaClass.isAnnotatedWith("org.jspecify.annotations.NullMarked") ||
                 javaClass.isAnnotatedWith("org.jspecify.annotations.NullUnmarked") ||
+                javaClass.enclosingClass.map { isJSpecifyAnnotated(it) }.orElse(false) ||
                 javaClass.package.isAnnotatedWith("org.jspecify.annotations.NullMarked") ||
                 javaClass.package.isAnnotatedWith("org.jspecify.annotations.NullUnmarked")
     }

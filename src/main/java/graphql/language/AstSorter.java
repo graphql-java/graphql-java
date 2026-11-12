@@ -233,7 +233,7 @@ public class AstSorter {
         };
 
         AstTransformer astTransformer = new AstTransformer();
-        Node newDoc = assertNotNull(astTransformer.transform(nodeToBeSorted, visitor));
+        Node newDoc = assertNotNull(astTransformer.transform(nodeToBeSorted, visitor), "sorting should preserve the root node");
         //noinspection unchecked
         return (T) newDoc;
     }

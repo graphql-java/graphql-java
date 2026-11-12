@@ -10,6 +10,21 @@ import spock.lang.Specification
 
 class SchemaUsageSupportTest extends Specification {
 
+    def "schema applied directives have no parent type back reference"() {
+        given:
+        def schema = TestUtil.schema('''
+            directive @schemaTag on SCHEMA
+            schema @schemaTag { query: Query }
+            type Query { field: String }
+        ''')
+
+        when:
+        def usage = SchemaUsageSupport.getSchemaUsage(schema)
+
+        then:
+        usage.directiveReferenceCounts.getOrDefault('schemaTag', 0) == 0
+    }
+
     def sdl = '''
             type Query {
                 f : Ref1

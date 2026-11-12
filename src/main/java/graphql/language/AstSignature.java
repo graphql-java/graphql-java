@@ -1081,7 +1081,7 @@ public class AstSignature {
 
     private Document transformDoc(Document document, NodeVisitorStub visitor) {
         AstTransformer astTransformer = new AstTransformer();
-        Node<?> newDoc = assertNotNull(astTransformer.transform(document, visitor));
+        Node<?> newDoc = assertNotNull(astTransformer.transform(document, visitor), "signature transformation should preserve the document");
         return (Document) newDoc;
     }
 

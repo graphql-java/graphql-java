@@ -165,9 +165,9 @@ public interface TraverserContext<T> {
      *
      * Can be retrieved by {@link #getNewAccumulate()}
      *
-     * @param accumulate to set
+     * @param accumulate to set, or null to clear the accumulated value
      */
-    void setAccumulate(Object accumulate);
+    void setAccumulate(@Nullable Object accumulate);
 
     /**
      * The new accumulate value, previously set by {@link #setAccumulate(Object)}
@@ -175,27 +175,27 @@ public interface TraverserContext<T> {
      *
      * @param <U> and me
      *
-     * @return the new accumulate value
+     * @return the new accumulate value, or null if none has been set
      */
-    <U> U getNewAccumulate();
+    <U> @Nullable U getNewAccumulate();
 
     /**
      * The current accumulate value used as "input" for the current step.
      *
      * @param <U> and me
      *
-     * @return the current accumulate value
+     * @return the current accumulate value, or null if none has been set
      */
-    <U> U getCurrentAccumulate();
+    <U> @Nullable U getCurrentAccumulate();
 
     /**
      * Used to share something across all TraverserContext.
      *
      * @param <U> and me
      *
-     * @return contextData
+     * @return contextData, or null if none was supplied
      */
-    <U> U getSharedContextData();
+    <U> @Nullable U getSharedContextData();
 
     /**
      * Returns true for the root context, which doesn't have a node or a position.
@@ -209,7 +209,7 @@ public interface TraverserContext<T> {
      *
      * @return the children contexts. If the childs are a simple list the key is null.
      */
-    Map<String, List<TraverserContext<T>>> getChildrenContexts();
+    Map<@Nullable String, List<TraverserContext<T>>> getChildrenContexts();
 
     /**
      * @return the phase in which the node visits currently happens (Enter,Leave or BackRef)

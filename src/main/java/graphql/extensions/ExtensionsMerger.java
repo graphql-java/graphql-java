@@ -2,6 +2,7 @@ package graphql.extensions;
 
 import graphql.PublicSpi;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 
@@ -41,5 +42,5 @@ public interface ExtensionsMerger {
      * @return a non null merged map
      */
     @NonNull
-    Map<Object, Object> merge(@NonNull Map<Object, Object> leftMap, @NonNull Map<Object, Object> rightMap);
+    Map<Object, @Nullable Object> merge(@NonNull Map<Object, @Nullable Object> leftMap, @NonNull Map<Object, @Nullable Object> rightMap);
 }

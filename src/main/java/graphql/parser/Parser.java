@@ -257,7 +257,7 @@ public class Parser {
 
         CodePointCharStream charStream = setupCharStream(safeTokenReader);
 
-        GraphqlLexer lexer = setupGraphqlLexer(environment, multiSourceReader, charStream);
+        GraphqlLexer lexer = setupGraphqlLexer(environment, parserOptions, multiSourceReader, charStream);
 
         // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
         SafeTokenSource safeTokenSource = getSafeTokenSource(environment, parserOptions, multiSourceReader, lexer);
@@ -369,7 +369,7 @@ public class Parser {
         }
     }
 
-    private static GraphqlLexer setupGraphqlLexer(ParserEnvironment environment, MultiSourceReader multiSourceReader, CodePointCharStream charStream) {
+    private static GraphqlLexer setupGraphqlLexer(ParserEnvironment environment, ParserOptions parserOptions, MultiSourceReader multiSourceReader, CodePointCharStream charStream) {
         GraphqlLexer lexer = new GraphqlLexer(charStream);
         lexer.setInterpreter(new GraphqlLexerATNSimulator(lexer));
         lexer.removeErrorListeners();
@@ -380,8 +380,7 @@ public class Parser {
                 String preview = AntlrHelper.createPreview(multiSourceReader, line);
                 String msgKey;
                 List<Object> args;
-                ParserOptions opts = environment.getParserOptions();
-                if (antlerMsg == null || (opts != null && opts.isRedactTokenParserErrorMessages())) {
+                if (antlerMsg == null || parserOptions.isRedactTokenParserErrorMessages()) {
                     msgKey = "InvalidSyntax.noMessage";
                     args = ImmutableList.of(sourceLocation.getLine(), sourceLocation.getColumn());
                 } else {

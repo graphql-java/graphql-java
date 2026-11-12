@@ -17,21 +17,21 @@ import java.util.Objects;
 @ExperimentalApi
 @NullMarked
 public class StreamPayload extends IncrementalPayload {
-    private final @Nullable List<Object> items;
+    private final @Nullable List<@Nullable Object> items;
 
-    private StreamPayload(@Nullable List<Object> items, List<Object> path, @Nullable String label, @Nullable List<GraphQLError> errors, @Nullable Map<Object, Object> extensions) {
+    private StreamPayload(@Nullable List<@Nullable Object> items, List<Object> path, @Nullable String label, @Nullable List<GraphQLError> errors, @Nullable Map<Object, Object> extensions) {
         super(path, label, errors, extensions);
         this.items = items;
     }
 
     /**
      * @param <T> the type to cast the result to
-     * @return the resolved list of items
+     * @return the resolved list of items, or null; individual items may also be null
      */
     @Nullable
-    public <T> List<T> getItems() {
+    public <T> List<@Nullable T> getItems() {
         // noinspection unchecked
-        return (List<T>) this.items;
+        return (List<@Nullable T>) this.items;
     }
 
     /**
