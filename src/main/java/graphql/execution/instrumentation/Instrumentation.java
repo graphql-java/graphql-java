@@ -18,11 +18,11 @@ import graphql.language.Document;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import org.jspecify.annotations.NullMarked;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
 

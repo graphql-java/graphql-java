@@ -19,19 +19,19 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLTypeUtil;
-import java.util.ArrayList;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import static java.util.Collections.unmodifiableList;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.analysis.values.ValueVisitor.ABSENCE_SENTINEL;
+import static java.util.Collections.unmodifiableList;
 
 /**
  * This class allows you to traverse a set of input values according to the type system and optional

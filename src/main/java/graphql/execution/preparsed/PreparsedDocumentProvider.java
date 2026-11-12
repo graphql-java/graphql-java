@@ -3,10 +3,10 @@ package graphql.execution.preparsed;
 
 import graphql.ExecutionInput;
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Interface that allows clients to hook in Document caching and/or the whitelisting of queries.

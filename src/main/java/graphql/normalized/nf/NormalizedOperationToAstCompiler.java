@@ -18,15 +18,15 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.jspecify.annotations.NullMarked;
-import static graphql.Assert.assertNotNull;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.Field.newField;
 import static graphql.language.InlineFragment.newInlineFragment;

@@ -3,9 +3,9 @@ package graphql.execution.preparsed.persisted;
 import graphql.ExecutionInput;
 import graphql.PublicSpi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.CompletableFuture;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * This interface is used to abstract an actual cache that can cache parsed persistent queries.

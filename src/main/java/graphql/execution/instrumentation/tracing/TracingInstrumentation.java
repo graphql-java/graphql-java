@@ -21,8 +21,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import static graphql.Assert.assertNotNull;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.execution.instrumentation.InstrumentationState.ofState;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
 

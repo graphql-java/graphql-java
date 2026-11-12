@@ -6,11 +6,11 @@ import graphql.GraphqlErrorBuilder;
 import graphql.PublicSpi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
-import org.jspecify.annotations.NullMarked;
 
 import static graphql.Assert.assertNotNull;
 import static java.util.concurrent.CompletableFuture.completedFuture;

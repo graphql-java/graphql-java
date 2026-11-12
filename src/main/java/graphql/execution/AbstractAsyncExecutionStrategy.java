@@ -3,13 +3,14 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
+
 import static graphql.Assert.assertNotNull;
 
 

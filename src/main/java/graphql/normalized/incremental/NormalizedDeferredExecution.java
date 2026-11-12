@@ -2,10 +2,10 @@ package graphql.normalized.incremental;
 
 import graphql.ExperimentalApi;
 import graphql.schema.GraphQLObjectType;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents details about the defer execution that can be associated with a {@link graphql.normalized.ExecutableNormalizedField}.

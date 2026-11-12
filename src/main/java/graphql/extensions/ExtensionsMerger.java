@@ -1,10 +1,10 @@
 package graphql.extensions;
 
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * This interface is a callback asking code to merge two maps with an eye to creating

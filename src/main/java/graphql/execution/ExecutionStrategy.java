@@ -45,6 +45,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.LightDataFetcher;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -57,9 +58,8 @@ import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.jspecify.annotations.NullMarked;
-import static graphql.Assert.assertNotNull;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CANCELLATION_FUTURE_KEY;
 import static graphql.GraphQLUnusualConfiguration.CancellationConfig.CAPTURE_PARTIAL_RESULTS_ON_CANCEL;
 import static graphql.execution.Async.CombinedBuilder.OnCancel.DROP_PENDING;

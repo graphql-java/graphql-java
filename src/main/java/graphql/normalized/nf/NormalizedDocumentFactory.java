@@ -34,6 +34,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.impl.SchemaUtil;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -45,7 +46,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jspecify.annotations.NullMarked;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;

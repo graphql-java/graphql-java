@@ -26,6 +26,8 @@ import graphql.language.UnionTypeDefinition;
 import graphql.language.Value;
 import graphql.schema.diff.reporting.DifferenceReporter;
 import graphql.schema.idl.TypeInfo;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -35,8 +37,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import static graphql.language.TypeKind.getTypeKind;
 import static graphql.schema.idl.TypeInfo.getAstDesc;

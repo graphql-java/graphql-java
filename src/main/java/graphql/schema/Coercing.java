@@ -5,11 +5,11 @@ import graphql.GraphQLContext;
 import graphql.PublicSpi;
 import graphql.execution.CoercedVariables;
 import graphql.language.Value;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Map;
-import org.jspecify.annotations.NullMarked;
 
 import static graphql.Assert.assertNotNull;
 

@@ -8,6 +8,8 @@ import graphql.schema.diffing.Edge;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.SchemaGraphFactory;
 import graphql.schema.diffing.Vertex;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -17,8 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
+
 import static graphql.Assert.assertNotNull;
 
 /**

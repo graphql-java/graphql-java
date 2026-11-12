@@ -10,11 +10,11 @@ import graphql.schema.GraphQLInputSchemaElement;
 import graphql.schema.GraphQLInputValueDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * A visitor callback used by {@link ValueTraverser}

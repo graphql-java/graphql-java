@@ -3,10 +3,10 @@ package graphql.util.querygenerator;
 import graphql.ExperimentalApi;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
-
-import java.util.function.Predicate;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+
+import java.util.function.Predicate;
 
 /**
  * Options for the {@link QueryGenerator} class.

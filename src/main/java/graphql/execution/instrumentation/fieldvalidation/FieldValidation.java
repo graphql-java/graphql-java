@@ -2,9 +2,9 @@ package graphql.execution.instrumentation.fieldvalidation;
 
 import graphql.GraphQLError;
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
-import org.jspecify.annotations.NullMarked;
 
 /**
  * This pluggable interface allows you to validate the fields and their argument inputs before query execution.

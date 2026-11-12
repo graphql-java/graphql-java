@@ -10,12 +10,12 @@ import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
-import org.jspecify.annotations.NullMarked;
-import static graphql.Assert.assertNotNull;
 
+import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
 
 /*

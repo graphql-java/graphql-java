@@ -20,6 +20,9 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
 import graphql.util.MutableRef;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -32,9 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;

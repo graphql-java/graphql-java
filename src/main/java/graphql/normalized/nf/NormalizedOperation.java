@@ -10,11 +10,11 @@ import graphql.language.Field;
 import graphql.language.OperationDefinition;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldsContainer;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
-import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 /**
  * A {@link NormalizedOperation} represent how the text of a graphql operation (sometimes known colloquially as a query)

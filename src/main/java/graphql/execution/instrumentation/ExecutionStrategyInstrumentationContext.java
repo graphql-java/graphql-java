@@ -4,10 +4,10 @@ import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.execution.FieldValueInfo;
-
-import java.util.List;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+
+import java.util.List;
 
 @NullMarked
 @PublicSpi
