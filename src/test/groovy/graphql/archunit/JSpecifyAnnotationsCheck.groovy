@@ -30,8 +30,7 @@ class JSpecifyAnnotationsCheck extends Specification {
 
     // Existing SPI classes awaiting migration are tracked separately from completed API work.
     private static final Set<String> JSPECIFY_SPI_EXEMPTION_LIST = [
-            "graphql.execution.AbstractAsyncExecutionStrategy",
-            "graphql.execution.ExecutionStrategy",
+
 
             "graphql.schema.diff.SchemaDiff",
 

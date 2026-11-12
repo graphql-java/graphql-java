@@ -8,8 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+import static graphql.Assert.assertNotNull;
 
 
+@NullMarked
 @PublicSpi
 public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
 
@@ -20,8 +24,8 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
         super(dataFetcherExceptionHandler);
     }
 
-    protected BiConsumer<List<Object>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
-        return (List<Object> results, Throwable exception) -> {
+    protected BiConsumer<@Nullable List<@Nullable Object>, @Nullable Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
+        return (@Nullable List<@Nullable Object> results, @Nullable Throwable exception) -> {
             exception = executionContext.possibleCancellation(exception);
 
             if (exception != null) {
@@ -38,12 +42,12 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 return;
             }
 
-            completeResultFuture(overallResult, executionContext, fieldNames, results);
+            completeResultFuture(overallResult, executionContext, fieldNames, assertNotNull(results, "Successful field completion must produce results"));
         };
     }
 
-    protected void completeResultFuture(CompletableFuture<ExecutionResult> overallResult, ExecutionContext executionContext, List<String> fieldNames, List<Object> results) {
-        Map<String, Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldNames, results);
+    protected void completeResultFuture(CompletableFuture<ExecutionResult> overallResult, ExecutionContext executionContext, List<String> fieldNames, List<@Nullable Object> results) {
+        Map<String, @Nullable Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldNames, results);
         overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors()));
     }
 }

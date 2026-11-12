@@ -185,7 +185,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 newParameters.getAlternativeCallContext(),
                 "alternativeCallContext must not be null");
         executionContext.getDataLoaderDispatcherStrategy().newSubscriptionExecution(alternativeCallContext);
-        Map<Object, Object> eventExtensions = extensionsFromEventPayload(eventPayload);
+        Map<Object, @Nullable Object> eventExtensions = extensionsFromEventPayload(eventPayload);
         Object fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, newParameters, eventPayload);
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
         executionContext.getDataLoaderDispatcherStrategy().subscriptionEventCompletionDone(alternativeCallContext);
@@ -218,7 +218,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         );
     }
 
-    private static @Nullable Map<Object, Object> extensionsFromEventPayload(Object eventPayload) {
+    private static @Nullable Map<Object, @Nullable Object> extensionsFromEventPayload(Object eventPayload) {
         if (eventPayload instanceof DataFetcherResult) {
             return ((DataFetcherResult<?>) eventPayload).getExtensions();
         }

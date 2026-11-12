@@ -19,12 +19,15 @@ class JSpecifyConsumerContractsTest extends Specification {
     @TempDir
     Path temporaryDirectory
 
-    def "nullable API usages compile with NullAway"() {
+    def "nullable API usages compile with NullAway: #fixture"() {
         when:
-        def result = compileConsumer('NullableApiUsage')
+        def result = compileConsumer(fixture)
 
         then:
         assert result.exitCode == 0: result.output
+
+        where:
+        fixture << ['NullableApiUsage', 'NullableExecutionStrategyUsage']
     }
 
     def "NullAway rejects dereferencing absent arguments and traversal state"() {

@@ -71,7 +71,7 @@ public class FieldValueInfo {
      *
      * @return a {@link CompletableFuture} promise to the value
      */
-    public CompletableFuture<Object> getFieldValueFuture() {
+    public CompletableFuture<@Nullable Object> getFieldValueFuture() {
         return Async.toCompletableFuture(fieldValueObject);
     }
 
