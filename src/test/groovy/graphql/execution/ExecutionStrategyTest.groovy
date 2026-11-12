@@ -69,6 +69,38 @@ class ExecutionStrategyTest extends Specification {
         }
     }
 
+    def "non-null field failure stops at a nullable parent or root"() {
+        given:
+        def parent = hasParent ? ExecutionStepInfo.newExecutionStepInfo().type(GraphQLString).path(ResultPath.rootPath()).build() : null
+        def step = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).parentInfo(parent).build()
+        def failure = new NonNullableFieldWasNullException(step, ResultPath.rootPath().segment("field"))
+
+        when:
+        executionStrategy.assertNonNullFieldPrecondition(failure)
+
+        then:
+        noExceptionThrown()
+
+        where:
+        hasParent << [false, true]
+    }
+
+    def "non-null field failure bubbles through a non-null parent"() {
+        given:
+        def parent = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).path(ResultPath.rootPath()).build()
+        def step = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).parentInfo(parent).build()
+        def failure = new NonNullableFieldWasNullException(step, ResultPath.rootPath().segment("field"))
+
+        when:
+        executionStrategy.assertNonNullFieldPrecondition(failure)
+
+        then:
+        def bubbled = thrown(NonNullableFieldWasNullException)
+        bubbled.cause.is(failure)
+        bubbled.executionStepInfo.is(parent)
+        bubbled.path == parent.path
+    }
+
 
     def buildContext(GraphQLSchema schema = null) {
         ExecutionId executionId = ExecutionId.from("executionId123")
