@@ -1,6 +1,7 @@
 package graphql.parser;
 
 import graphql.Internal;
+import graphql.parser.antlr.GraphqlLexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenFactory;
@@ -22,13 +23,14 @@ import java.util.function.BiConsumer;
 @Internal
 public class SafeTokenSource implements TokenSource {
 
-    private final TokenSource lexer;
+    private final GraphqlLexer lexer;
     private final int maxTokens;
     private final int maxWhitespaceTokens;
     private final BiConsumer<Integer, Token> whenMaxTokensExceeded;
     private final int channelCounts[];
 
-    public SafeTokenSource(TokenSource lexer, int maxTokens, int maxWhitespaceTokens, BiConsumer<Integer, Token> whenMaxTokensExceeded) {
+    public SafeTokenSource(GraphqlLexer lexer, int maxTokens, int maxWhitespaceTokens, int maxNumericLiteralCharacters,
+                           BiConsumer<Integer, Token> whenMaxTokensExceeded) {
         this.lexer = lexer;
         this.maxTokens = maxTokens;
         this.maxWhitespaceTokens = maxWhitespaceTokens;
@@ -37,6 +39,7 @@ public class SafeTokenSource implements TokenSource {
         // we only have 3 channels - but they are 0,2 and 3 so use 5 for safety - still faster than a map get/put
         // if we ever add another channel beyond 5 it will IOBEx during tests so future changes will be handled before release!
         this.channelCounts = new int[]{0, 0, 0, 0, 0};
+        lexer.setMaxNumericLiteralCharacters(maxNumericLiteralCharacters);
     }
 
 

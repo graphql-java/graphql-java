@@ -31,7 +31,7 @@ public class GraphqlBooleanCoercing implements Coercing<Boolean, Boolean> {
         if (input instanceof Boolean) {
             return (Boolean) input;
         } else if (input instanceof String) {
-            String lStr = ((String) input).toLowerCase();
+            String lStr = ((String) input).toLowerCase(Locale.ROOT);
             if (lStr.equals("true")) {
                 return true;
             }

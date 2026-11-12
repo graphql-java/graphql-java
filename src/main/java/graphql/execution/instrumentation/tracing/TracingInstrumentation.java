@@ -78,7 +78,7 @@ public class TracingInstrumentation extends SimplePerformantInstrumentation {
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState rawState) {
+    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState rawState) {
         Map<Object, Object> currentExt = executionResult.getExtensions();
 
         TracingSupport tracingSupport = ofState(rawState);
@@ -89,21 +89,21 @@ public class TracingInstrumentation extends SimplePerformantInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState rawState) {
         TracingSupport tracingSupport = ofState(rawState);
         TracingSupport.TracingContext ctx = tracingSupport.beginField(parameters.getEnvironment(), parameters.isTrivialDataFetcher());
         return whenCompleted((result, t) -> ctx.onEnd());
     }
 
     @Override
-    public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState rawState) {
+    public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, @Nullable InstrumentationState rawState) {
         TracingSupport tracingSupport = ofState(rawState);
         TracingSupport.TracingContext ctx = tracingSupport.beginParse();
         return whenCompleted((result, t) -> ctx.onEnd());
     }
 
     @Override
-    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState rawState) {
+    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, @Nullable InstrumentationState rawState) {
         TracingSupport tracingSupport = ofState(rawState);
         TracingSupport.TracingContext ctx = tracingSupport.beginValidation();
         return whenCompleted((result, t) -> ctx.onEnd());

@@ -15,7 +15,10 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import graphql.util.SelectionSetTraversalFrame;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -70,19 +73,32 @@ public class FieldCollector {
 
 
     private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, Set<String> visitedFragments, Map<String, MergedField> fields, DeferredExecution deferredExecution, boolean incrementalSupport) {
-
-        for (Selection selection : selectionSet.getSelections()) {
-            if (selection instanceof Field) {
-                collectField(parameters, fields, (Field) selection, deferredExecution);
-            } else if (selection instanceof InlineFragment) {
-                collectInlineFragment(parameters, visitedFragments, fields, (InlineFragment) selection, incrementalSupport);
-            } else if (selection instanceof FragmentSpread) {
-                collectFragmentSpread(parameters, visitedFragments, fields, (FragmentSpread) selection, incrementalSupport);
+        Deque<SelectionSetTraversalFrame<DeferredExecution>> frames = new ArrayDeque<>();
+        frames.push(new SelectionSetTraversalFrame<>(selectionSet, deferredExecution));
+        while (!frames.isEmpty()) {
+            SelectionSetTraversalFrame<DeferredExecution> frame = frames.getFirst();
+            Selection selection = frame.nextSelection();
+            if (selection == null) {
+                frames.pop();
+                continue;
             }
+            collectSelection(parameters, visitedFragments, fields, frames, frame.getContext(), selection, incrementalSupport);
         }
     }
 
-    private void collectFragmentSpread(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields, FragmentSpread fragmentSpread, boolean incrementalSupport) {
+    private void collectSelection(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields,
+                                  Deque<SelectionSetTraversalFrame<DeferredExecution>> frames, DeferredExecution deferredExecution,
+                                  Selection selection, boolean incrementalSupport) {
+        if (selection instanceof Field) {
+            collectField(parameters, fields, (Field) selection, deferredExecution);
+        } else if (selection instanceof InlineFragment) {
+            collectInlineFragment(parameters, frames, (InlineFragment) selection, incrementalSupport);
+        } else if (selection instanceof FragmentSpread) {
+            collectFragmentSpread(parameters, visitedFragments, frames, (FragmentSpread) selection, incrementalSupport);
+        }
+    }
+
+    private void collectFragmentSpread(FieldCollectorParameters parameters, Set<String> visitedFragments, Deque<SelectionSetTraversalFrame<DeferredExecution>> frames, FragmentSpread fragmentSpread, boolean incrementalSupport) {
         if (visitedFragments.contains(fragmentSpread.getName())) {
             return;
         }
@@ -111,10 +127,10 @@ public class FieldCollector {
                 DeferredExecution::new
         ) : null;
 
-        collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields, deferredExecution, incrementalSupport);
+        frames.push(new SelectionSetTraversalFrame<>(fragmentDefinition.getSelectionSet(), deferredExecution));
     }
 
-    private void collectInlineFragment(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields, InlineFragment inlineFragment, boolean incrementalSupport) {
+    private void collectInlineFragment(FieldCollectorParameters parameters, Deque<SelectionSetTraversalFrame<DeferredExecution>> frames, InlineFragment inlineFragment, boolean incrementalSupport) {
         if (!conditionalNodes.shouldInclude(inlineFragment,
                 parameters.getVariables(),
                 parameters.getGraphQLSchema(),
@@ -129,7 +145,7 @@ public class FieldCollector {
                 DeferredExecution::new
         ) : null;
 
-        collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, fields, deferredExecution, incrementalSupport);
+        frames.push(new SelectionSetTraversalFrame<>(inlineFragment.getSelectionSet(), deferredExecution));
     }
 
     private void collectField(FieldCollectorParameters parameters, Map<String, MergedField> fields, Field field, DeferredExecution deferredExecution) {

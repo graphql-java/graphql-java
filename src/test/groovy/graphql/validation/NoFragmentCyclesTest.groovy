@@ -4,7 +4,6 @@ import graphql.TestUtil
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
@@ -22,8 +21,8 @@ class NoFragmentCyclesTest extends Specification {
         ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 { r -> r == OperationValidationRule.NO_FRAGMENT_CYCLES })
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, operationValidator)
+
+        operationValidator.validate()
     }
 
     def 'single reference is valid'() {
@@ -231,13 +230,41 @@ class NoFragmentCyclesTest extends Specification {
         def operationValidator = new OperationValidator(validationContext, errorCollector,
                 { r -> r == OperationValidationRule.NO_FRAGMENT_CYCLES })
         when:
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, operationValidator)
+
+        operationValidator.validate()
 
         then:
 
         !errorCollector.getErrors().isEmpty()
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
         errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[MyFrag]) : Fragment cycles not allowed"
+    }
+
+    def "long acyclic fragment chains are valid"() {
+        when:
+        traverse(fragmentChain(1_000, false))
+
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
+    def "cycles at the end of long fragment chains are detected"() {
+        when:
+        traverse(fragmentChain(1_000, true))
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+    }
+
+    private static String fragmentChain(int fragmentCount, boolean cycle) {
+        (0..<fragmentCount).collect { index ->
+            String selection = "name"
+            if (index < fragmentCount - 1) {
+                selection = "...F${index + 1}"
+            } else if (cycle) {
+                selection = "...F${fragmentCount.intdiv(2)}"
+            }
+            "fragment F${index} on Dog { ${selection} }"
+        }.join("\n")
     }
 }

@@ -47,6 +47,16 @@ public class ParserOptions {
     public static final int MAX_WHITESPACE_TOKENS = 200_000;
 
     /**
+     * A numeric literal is represented by a single token, regardless of how many characters it contains. Converting
+     * very large numeric literals into arbitrary precision numbers can consume excessive CPU and memory. To prevent
+     * this for most users, graphql-java limits numeric literals to 100 characters.
+     * <p>
+     * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
+     * JVM wide.
+     */
+    public static final int MAX_NUMERIC_LITERAL_CHARACTERS = 100;
+
+    /**
      * A graphql hacking vector is to send nonsensical queries that have lots of grammar rule depth to them which
      * can cause stack overflow exceptions during the query parsing.  To prevent this for most users, graphql-java
      * sets this value to 500 grammar rules deep.
@@ -64,6 +74,7 @@ public class ParserOptions {
             .maxCharacters(MAX_QUERY_CHARACTERS)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
+            .maxNumericLiteralCharacters(MAX_NUMERIC_LITERAL_CHARACTERS)
             .maxRuleDepth(MAX_RULE_DEPTH)
             .redactTokenParserErrorMessages(false)
             .build();
@@ -76,6 +87,7 @@ public class ParserOptions {
             .maxCharacters(MAX_QUERY_CHARACTERS)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
+            .maxNumericLiteralCharacters(MAX_NUMERIC_LITERAL_CHARACTERS)
             .maxRuleDepth(MAX_RULE_DEPTH)
             .redactTokenParserErrorMessages(false)
             .build();
@@ -88,6 +100,7 @@ public class ParserOptions {
             .maxCharacters(Integer.MAX_VALUE)
             .maxTokens(Integer.MAX_VALUE) // we are less worried about a billion laughs with SDL parsing since the call path is not facing attackers
             .maxWhitespaceTokens(Integer.MAX_VALUE)
+            .maxNumericLiteralCharacters(MAX_NUMERIC_LITERAL_CHARACTERS)
             .maxRuleDepth(Integer.MAX_VALUE)
             .redactTokenParserErrorMessages(false)
             .build();
@@ -194,6 +207,7 @@ public class ParserOptions {
     private final int maxCharacters;
     private final int maxTokens;
     private final int maxWhitespaceTokens;
+    private final int maxNumericLiteralCharacters;
     private final int maxRuleDepth;
     private final boolean redactTokenParserErrorMessages;
     private final ParsingListener parsingListener;
@@ -206,6 +220,7 @@ public class ParserOptions {
         this.maxCharacters = builder.maxCharacters;
         this.maxTokens = builder.maxTokens;
         this.maxWhitespaceTokens = builder.maxWhitespaceTokens;
+        this.maxNumericLiteralCharacters = builder.maxNumericLiteralCharacters;
         this.maxRuleDepth = builder.maxRuleDepth;
         this.redactTokenParserErrorMessages = builder.redactTokenParserErrorMessages;
         this.parsingListener = builder.parsingListener;
@@ -292,6 +307,17 @@ public class ParserOptions {
     }
 
     /**
+     * A numeric literal is represented by a single token, regardless of how many characters it contains. Converting
+     * very large numeric literals into arbitrary precision numbers can consume excessive CPU and memory. This limit
+     * stops lexing before a larger literal is fully matched or converted.
+     *
+     * @return the maximum number of characters permitted in an integer or floating-point literal
+     */
+    public int getMaxNumericLiteralCharacters() {
+        return maxNumericLiteralCharacters;
+    }
+
+    /**
      * A graphql hacking vector is to send nonsensical queries that have lots of rule depth to them which
      * can cause stack overflow exceptions during the query parsing.  To prevent this you can set a value
      * that is the maximum depth allowed before an exception is thrown and the parsing is stopped.
@@ -337,6 +363,7 @@ public class ParserOptions {
         private int maxCharacters = MAX_QUERY_CHARACTERS;
         private int maxTokens = MAX_QUERY_TOKENS;
         private int maxWhitespaceTokens = MAX_WHITESPACE_TOKENS;
+        private int maxNumericLiteralCharacters = MAX_NUMERIC_LITERAL_CHARACTERS;
         private int maxRuleDepth = MAX_RULE_DEPTH;
         private boolean redactTokenParserErrorMessages = false;
 
@@ -350,6 +377,7 @@ public class ParserOptions {
             this.maxCharacters = parserOptions.maxCharacters;
             this.maxTokens = parserOptions.maxTokens;
             this.maxWhitespaceTokens = parserOptions.maxWhitespaceTokens;
+            this.maxNumericLiteralCharacters = parserOptions.maxNumericLiteralCharacters;
             this.maxRuleDepth = parserOptions.maxRuleDepth;
             this.redactTokenParserErrorMessages = parserOptions.redactTokenParserErrorMessages;
             this.parsingListener = parserOptions.parsingListener;
@@ -387,6 +415,19 @@ public class ParserOptions {
 
         public Builder maxWhitespaceTokens(int maxWhitespaceTokens) {
             this.maxWhitespaceTokens = maxWhitespaceTokens;
+            return this;
+        }
+
+        /**
+         * Sets the maximum number of characters permitted in an integer or floating-point literal. Parsing is
+         * cancelled before a larger literal is fully matched or converted into an arbitrary precision number.
+         *
+         * @param maxNumericLiteralCharacters the maximum number of characters permitted in a numeric literal
+         *
+         * @return this builder
+         */
+        public Builder maxNumericLiteralCharacters(int maxNumericLiteralCharacters) {
+            this.maxNumericLiteralCharacters = maxNumericLiteralCharacters;
             return this;
         }
 

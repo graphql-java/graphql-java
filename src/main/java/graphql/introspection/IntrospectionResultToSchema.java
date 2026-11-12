@@ -42,7 +42,9 @@ import static graphql.Assert.assertNotEmpty;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
+import static graphql.Assert.assertValidName;
 import static graphql.collect.ImmutableKit.map;
+import static graphql.Directives.OneOfDirective;
 import static graphql.Directives.isBuiltInDirective;
 
 @SuppressWarnings("unchecked")
@@ -78,7 +80,7 @@ public class IntrospectionResultToSchema {
         Map<String, Object> schema = assertNotNull((Map<String, Object>) introspectionResult.get("__schema"), "__schema expected");
 
         Map<String, Object> queryType = assertNotNull((Map<String, Object>) schema.get("queryType"), "queryType expected");
-        TypeName query = TypeName.newTypeName().name(assertNotNull((String) queryType.get("name"), "query name expected")).build();
+        TypeName query = TypeName.newTypeName().name(assertValidName((String) queryType.get("name"))).build();
         boolean nonDefaultQueryName = !"Query".equals(query.getName());
 
         SchemaDefinition.Builder schemaDefinition = SchemaDefinition.newSchemaDefinition();
@@ -88,7 +90,7 @@ public class IntrospectionResultToSchema {
         Map<String, Object> mutationType = (Map<String, Object>) schema.get("mutationType");
         boolean nonDefaultMutationName = false;
         if (mutationType != null) {
-            TypeName mutation = TypeName.newTypeName().name(assertNotNull((String) mutationType.get("name"), "mutation name expected")).build();
+            TypeName mutation = TypeName.newTypeName().name(assertValidName((String) mutationType.get("name"))).build();
             nonDefaultMutationName = !"Mutation".equals(mutation.getName());
             schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("mutation").typeName(mutation).build());
         }
@@ -96,7 +98,7 @@ public class IntrospectionResultToSchema {
         Map<String, Object> subscriptionType = (Map<String, Object>) schema.get("subscriptionType");
         boolean nonDefaultSubscriptionName = false;
         if (subscriptionType != null) {
-            TypeName subscription = TypeName.newTypeName().name(assertNotNull((String) subscriptionType.get("name"), "subscription name expected")).build();
+            TypeName subscription = TypeName.newTypeName().name(assertValidName((String) subscriptionType.get("name"))).build();
             nonDefaultSubscriptionName = !"Subscription".equals(subscription.getName());
             schemaDefinition.operationTypeDefinition(OperationTypeDefinition.newOperationTypeDefinition().name("subscription").typeName(subscription).build());
         }
@@ -130,7 +132,7 @@ public class IntrospectionResultToSchema {
     }
 
     private @Nullable DirectiveDefinition createDirective(Map<String, Object> input) {
-        String directiveName = assertNotNull((String) input.get("name"), "directive name expected");
+        String directiveName = assertValidName((String) input.get("name"));
         if (isBuiltInDirective(directiveName)) {
             return null;
         }
@@ -158,7 +160,7 @@ public class IntrospectionResultToSchema {
         assertNotEmpty(locations, "the locations of directive should not be empty.");
         List<DirectiveLocation> result = new ArrayList<>(locations.size());
         for (Object location : locations) {
-            DirectiveLocation directiveLocation = DirectiveLocation.newDirectiveLocation().name(location.toString()).build();
+            DirectiveLocation directiveLocation = DirectiveLocation.newDirectiveLocation().name(assertValidName(location.toString())).build();
             result.add(directiveLocation);
         }
         return result;
@@ -166,7 +168,7 @@ public class IntrospectionResultToSchema {
 
     private @Nullable TypeDefinition createTypeDefinition(Map<String, Object> type) {
         String kind = assertNotNull((String) type.get("kind"), "kind expected");
-        String name = assertNotNull((String) type.get("name"), "name expected");
+        String name = assertValidName((String) type.get("name"));
         if (name.startsWith("__")) {
             return null;
         }
@@ -189,7 +191,7 @@ public class IntrospectionResultToSchema {
     }
 
     private @Nullable TypeDefinition createScalar(Map<String, Object> input) {
-        String name = assertNotNull((String) input.get("name"), "name expected");
+        String name = assertValidName((String) input.get("name"));
         if (ScalarInfo.isGraphqlSpecifiedScalar(name)) {
             return null;
         }
@@ -204,13 +206,13 @@ public class IntrospectionResultToSchema {
         assertTrue("UNION".equals(input.get("kind")), "wrong input");
 
         UnionTypeDefinition.Builder unionTypeDefinition = UnionTypeDefinition.newUnionTypeDefinition();
-        unionTypeDefinition.name(assertNotNull((String) input.get("name"), "name expected"));
+        unionTypeDefinition.name(assertValidName((String) input.get("name")));
         unionTypeDefinition.description(toDescription(input));
 
         List<Map<String, Object>> possibleTypes = assertNotNull((List<Map<String, Object>>) input.get("possibleTypes"), "possibleTypes expected");
 
         for (Map<String, Object> possibleType : possibleTypes) {
-            TypeName typeName = TypeName.newTypeName().name(assertNotNull((String) possibleType.get("name"), "possibleType name expected")).build();
+            TypeName typeName = TypeName.newTypeName().name(assertValidName((String) possibleType.get("name"))).build();
             unionTypeDefinition.memberType(typeName);
         }
 
@@ -220,14 +222,14 @@ public class IntrospectionResultToSchema {
     EnumTypeDefinition createEnum(Map<String, Object> input) {
         assertTrue("ENUM".equals(input.get("kind")), "wrong input");
 
-        EnumTypeDefinition.Builder enumTypeDefinition = EnumTypeDefinition.newEnumTypeDefinition().name(assertNotNull((String) input.get("name"), "name expected"));
+        EnumTypeDefinition.Builder enumTypeDefinition = EnumTypeDefinition.newEnumTypeDefinition().name(assertValidName((String) input.get("name")));
         enumTypeDefinition.description(toDescription(input));
 
         List<Map<String, Object>> enumValues = assertNotNull((List<Map<String, Object>>) input.get("enumValues"), "enumValues expected");
 
         for (Map<String, Object> enumValue : enumValues) {
 
-            EnumValueDefinition.Builder enumValueDefinition = EnumValueDefinition.newEnumValueDefinition().name(assertNotNull((String) enumValue.get("name"), "enumValue name expected"));
+            EnumValueDefinition.Builder enumValueDefinition = EnumValueDefinition.newEnumValueDefinition().name(assertValidName((String) enumValue.get("name")));
             enumValueDefinition.description(toDescription(enumValue));
 
             createDeprecatedDirective(enumValue, enumValueDefinition);
@@ -241,7 +243,7 @@ public class IntrospectionResultToSchema {
     InterfaceTypeDefinition createInterface(Map<String, Object> input) {
         assertTrue("INTERFACE".equals(input.get("kind")), "wrong input");
 
-        InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name(assertNotNull((String) input.get("name"), "name expected"));
+        InterfaceTypeDefinition.Builder interfaceTypeDefinition = InterfaceTypeDefinition.newInterfaceTypeDefinition().name(assertValidName((String) input.get("name")));
         interfaceTypeDefinition.description(toDescription(input));
         List<Map<String, Object>> interfaces = (List<Map<String, Object>>) input.get("interfaces");
         if (interfaces != null) {
@@ -260,8 +262,12 @@ public class IntrospectionResultToSchema {
         assertTrue("INPUT_OBJECT".equals(input.get("kind")), "wrong input");
 
         InputObjectTypeDefinition.Builder inputObjectTypeDefinition = InputObjectTypeDefinition.newInputObjectDefinition()
-                .name(assertNotNull((String) input.get("name"), "name expected"))
+                .name(assertValidName((String) input.get("name")))
                 .description(toDescription(input));
+
+        if (Boolean.TRUE.equals(input.get("isOneOf"))) {
+            inputObjectTypeDefinition.directive(Directive.newDirective().name(OneOfDirective.getName()).build());
+        }
 
         List<Map<String, Object>> fields = assertNotNull((List<Map<String, Object>>) input.get("inputFields"), "inputFields expected");
         List<InputValueDefinition> inputValueDefinitions = createInputValueDefinitions(fields);
@@ -273,7 +279,7 @@ public class IntrospectionResultToSchema {
     ObjectTypeDefinition createObject(Map<String, Object> input) {
         assertTrue("OBJECT".equals(input.get("kind")), "wrong input");
 
-        ObjectTypeDefinition.Builder objectTypeDefinition = ObjectTypeDefinition.newObjectTypeDefinition().name(assertNotNull((String) input.get("name"), "name expected"));
+        ObjectTypeDefinition.Builder objectTypeDefinition = ObjectTypeDefinition.newObjectTypeDefinition().name(assertValidName((String) input.get("name")));
         objectTypeDefinition.description(toDescription(input));
         List<Map<String, Object>> interfaces = (List<Map<String, Object>>) input.get("interfaces");
         if (interfaces != null) {
@@ -291,7 +297,7 @@ public class IntrospectionResultToSchema {
     private List<FieldDefinition> createFields(List<Map<String, Object>> fields) {
         List<FieldDefinition> result = new ArrayList<>(fields.size());
         for (Map<String, Object> field : fields) {
-            FieldDefinition.Builder fieldDefinition = FieldDefinition.newFieldDefinition().name(assertNotNull((String) field.get("name"), "field name expected"));
+            FieldDefinition.Builder fieldDefinition = FieldDefinition.newFieldDefinition().name(assertValidName((String) field.get("name")));
             fieldDefinition.description(toDescription(field));
             fieldDefinition.type(createTypeIndirection(assertNotNull((Map<String, Object>) field.get("type"), "field type expected")));
 
@@ -321,8 +327,9 @@ public class IntrospectionResultToSchema {
         List<InputValueDefinition> result = new ArrayList<>(args.size());
         for (Map<String, Object> arg : args) {
             Type argType = createTypeIndirection(assertNotNull((Map<String, Object>) arg.get("type"), "arg type expected"));
-            InputValueDefinition.Builder inputValueDefinition = InputValueDefinition.newInputValueDefinition().name(assertNotNull((String) arg.get("name"), "arg name expected")).type(argType);
+            InputValueDefinition.Builder inputValueDefinition = InputValueDefinition.newInputValueDefinition().name(assertValidName((String) arg.get("name"))).type(argType);
             inputValueDefinition.description(toDescription(arg));
+            createDeprecatedDirective(arg, inputValueDefinition);
 
             String valueLiteral = (String) arg.get("defaultValue");
             if (valueLiteral != null) {
@@ -343,7 +350,7 @@ public class IntrospectionResultToSchema {
             case "ENUM":
             case "INPUT_OBJECT":
             case "SCALAR":
-                return TypeName.newTypeName().name(assertNotNull((String) type.get("name"), "name expected")).build();
+                return TypeName.newTypeName().name(assertValidName((String) type.get("name"))).build();
             case "NON_NULL":
                 return NonNullType.newNonNullType().type(createTypeIndirection(assertNotNull((Map<String, Object>) type.get("ofType"), "ofType expected"))).build();
             case "LIST":

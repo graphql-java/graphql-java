@@ -7,7 +7,6 @@ import graphql.parser.Parser
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaGenerator
-import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
@@ -42,9 +41,35 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         ValidationContext validationContext = new ValidationContext(schema, document, i18n)
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 { r -> r == OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED })
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
-        languageTraversal.traverse(document, operationValidator)
+
+        operationValidator.validate()
+    }
+
+    def "shared fragments preserve both merge checks across operations"() {
+        given:
+        def schema = SchemaGenerator.createdMockedSchema("""
+            type Query { node: Node }
+            type Node { name: String nickname: String number: Int child: Node }
+        """)
+        def query = """
+            query First { node { ...Shared } }
+            query Second { node { ...Shared } }
+            fragment Shared on Node { child { same: name same: $field } }
+        """
+
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.errors.size() == conflicts
+        errorCollector.errors.every { it.validationErrorType == ValidationErrorType.FieldsConflict }
+
+        where:
+        field      | conflicts
+        'name'     | 0
+        'nickname' | 1
+        'number'   | 1
     }
 
     def "identical fields are ok"() {
@@ -61,6 +86,51 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.errors.isEmpty()
+    }
+
+    def "single-field parent groups still check nested conflicts for #selection"() {
+        given:
+        def schema = SchemaGenerator.createdMockedSchema('''
+            interface Node { name: String nickname: String child: Node }
+            type Person implements Node { name: String nickname: String child: Person }
+            union Result = Person
+            type Query { person: Person node: Node result: Result }
+        ''')
+
+        when:
+        traverse("{ $selection }", schema)
+
+        then:
+        errorCollector.errors*.validationErrorType == [ValidationErrorType.FieldsConflict]
+        errorCollector.errors[0].locations.size() == 2
+
+        where:
+        selection << [
+                'person { child { same: name same: nickname } }',
+                'node { child { same: name same: nickname } }',
+                'result { ... on Person { child { same: name same: nickname } } }',
+        ]
+    }
+
+    def "fragment collection remains independent across sibling selection sets"() {
+        given:
+        def schema = SchemaGenerator.createdMockedSchema('''
+            type Query { node: Node }
+            type Node { name: String nickname: String }
+        ''')
+
+        when:
+        traverse('''
+            {
+                first: node { ...Shared }
+                second: node { ...Shared same: nickname }
+            }
+            fragment Shared on Node { same: name }
+        ''', schema)
+
+        then:
+        errorCollector.errors*.validationErrorType == [ValidationErrorType.FieldsConflict]
+        errorCollector.errors[0].description.contains('second/same')
     }
 
     def "identical fields are ok 2"() {

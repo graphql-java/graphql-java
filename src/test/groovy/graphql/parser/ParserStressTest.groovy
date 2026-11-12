@@ -6,6 +6,7 @@ import graphql.language.Document
 import graphql.parser.exceptions.ParseCancelledException
 import graphql.parser.exceptions.ParseCancelledTooDeepException
 import graphql.parser.exceptions.ParseCancelledTooManyCharsException
+import graphql.parser.exceptions.ParseCancelledTooManyNumericLiteralCharactersException
 import spock.lang.Specification
 
 import static graphql.parser.ParserEnvironment.newParserEnvironment
@@ -182,6 +183,105 @@ class ParserStressTest extends Specification {
 
         then:
         document != null // its parsed - its invalid of course but parsed
+    }
+
+    def "numeric literals longer than the default limit are prevented"() {
+        given:
+        def text = "query { f(arg: ${numericLiteral}) }"
+        def parserEnvironment = newParserEnvironment().document(text).parserOptions(defaultOperationOptions).build()
+
+        when:
+        Parser.parse(parserEnvironment)
+
+        then:
+        def exception = thrown(ParseCancelledTooManyNumericLiteralCharactersException)
+        exception.message.contains("more than 100 characters")
+        exception.offendingToken == null
+
+        where:
+        numericLiteral << ["9" * 101, "9" * 99 + ".0"]
+    }
+
+    def "numeric literals at the default limit are accepted"() {
+        given:
+        def text = "query { f(arg: ${numericLiteral}) }"
+        def parserEnvironment = newParserEnvironment().document(text).parserOptions(defaultOperationOptions).build()
+
+        when:
+        def document = Parser.parse(parserEnvironment)
+
+        then:
+        document != null
+
+        where:
+        numericLiteral << ["9" * 100, "9" * 98 + ".0"]
+    }
+
+    def "maximum numeric literal characters can be overridden"() {
+        given:
+        def parserOptions = defaultOperationOptions.transform {
+            it.maxNumericLiteralCharacters(101)
+        }
+        def acceptedText = "query { f(arg: ${acceptedLiteral}) }"
+        def acceptedEnvironment = newParserEnvironment().document(acceptedText).parserOptions(parserOptions).build()
+
+        when:
+        def document = Parser.parse(acceptedEnvironment)
+
+        then:
+        document != null
+
+        when:
+        def rejectedText = "query { f(arg: ${rejectedLiteral}) }"
+        def rejectedEnvironment = newParserEnvironment().document(rejectedText).parserOptions(parserOptions).build()
+        Parser.parse(rejectedEnvironment)
+
+        then:
+        thrown(ParseCancelledTooManyNumericLiteralCharactersException)
+
+        where:
+        acceptedLiteral    | rejectedLiteral
+        "9" * 101         | "9" * 102
+        "9" * 99 + ".0" | "9" * 100 + ".0"
+    }
+
+    def "a larger numeric character limit is enforced while lexing"() {
+        given:
+        def parserOptions = defaultOperationOptions.transform {
+            it.maxNumericLiteralCharacters(2000)
+        }
+        def accepted = newParserEnvironment()
+                .document("query { f(arg: ${"9" * 2000}) }")
+                .parserOptions(parserOptions)
+                .build()
+
+        expect:
+        Parser.parse(accepted) != null
+
+        when:
+        def rejected = newParserEnvironment()
+                .document("query {\n  f(arg: ${"9" * 2001})\n}")
+                .parserOptions(parserOptions)
+                .build()
+        Parser.parse(rejected)
+
+        then:
+        def exception = thrown(ParseCancelledTooManyNumericLiteralCharactersException)
+        exception.message.contains("more than 2,000 characters")
+        exception.location.line == 2
+        exception.location.column == 10
+    }
+
+    def "digits in comments and strings are not subject to the numeric ceiling"() {
+        given:
+        def parserOptions = defaultOperationOptions.transform {
+            it.maxNumericLiteralCharacters(2000)
+        }
+        def document = "# ${"9" * 2001}\nquery { f(arg: \"${"9" * 2001}\") }"
+        def environment = newParserEnvironment().document(document).parserOptions(parserOptions).build()
+
+        expect:
+        Parser.parse(environment) != null
     }
 
     String mkDeepQuery(int howMany) {

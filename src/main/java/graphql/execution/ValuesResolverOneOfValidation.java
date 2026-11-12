@@ -25,27 +25,32 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 final class ValuesResolverOneOfValidation {
 
     @SuppressWarnings("unchecked")
-    static void validateOneOfInputTypes(GraphQLType type, Object inputValue, Value<?> argumentValue, String argumentName, Locale locale) {
+    static void validateOneOfInputTypes(GraphQLType type, Object inputValue, Value<?> argumentValue, Locale locale) {
         GraphQLType unwrappedNonNullType = GraphQLTypeUtil.unwrapNonNull(type);
 
         if (isList(unwrappedNonNullType)
                 && !ValuesResolverConversion.isNullValue(inputValue)
-                && inputValue instanceof List
-                && argumentValue instanceof ArrayValue) {
+                && inputValue instanceof List) {
             GraphQLType elementType = ((GraphQLList) unwrappedNonNullType).getWrappedType();
             List<Object> inputList = (List<Object>) inputValue;
-            List<Value> argumentList = ((ArrayValue) argumentValue).getValues();
 
-            for (int i = 0; i < argumentList.size(); i++) {
-                validateOneOfInputTypes(elementType, inputList.get(i), argumentList.get(i), argumentName, locale);
+            if (argumentValue instanceof ArrayValue) {
+                List<Value> argumentList = ((ArrayValue) argumentValue).getValues();
+                for (int i = 0; i < argumentList.size(); i++) {
+                    validateOneOfInputTypes(elementType, inputList.get(i), argumentList.get(i), locale);
+                }
+            } else {
+                // a single literal coerced into a list, or a list resolved from a variable reference
+                for (Object inputElement : inputList) {
+                    validateOneOfInputTypes(elementType, inputElement, argumentValue, locale);
+                }
             }
         }
 
         if (unwrappedNonNullType instanceof GraphQLInputObjectType && !ValuesResolverConversion.isNullValue(inputValue)) {
-            Assert.assertTrue(inputValue instanceof Map, "The coerced argument %s GraphQLInputObjectType is unexpectedly not a map", argumentName);
-            Map<String, Object> objectMap = (Map<String, Object>) inputValue;
-
             GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) unwrappedNonNullType;
+            Assert.assertTrue(inputValue instanceof Map, "The coerced value for input type '%s' is unexpectedly not a map", inputObjectType.getName());
+            Map<String, Object> objectMap = (Map<String, Object>) inputValue;
 
             if (inputObjectType.isOneOf()) {
                 validateOneOfInputTypesInternal(inputObjectType, argumentValue, objectMap, locale);
@@ -63,12 +68,12 @@ final class ValuesResolverOneOfValidation {
                             .collect(Collectors.toList());
 
                     if (values.size() > 1) {
-                        Assert.assertShouldNeverHappen("argument %s has %s object fields with the same name: '%s'. A maximum of 1 is expected", argumentName, values.size(), childFieldName);
+                        Assert.assertShouldNeverHappen("Input value for type '%s' has %s occurrences of field '%s'; expected at most one", inputObjectType.getName(), values.size(), childFieldName);
                     } else if (!values.isEmpty()) {
-                        validateOneOfInputTypes(childFieldType, childFieldInputValue, values.get(0), argumentName, locale);
+                        validateOneOfInputTypes(childFieldType, childFieldInputValue, values.get(0), locale);
                     }
                 } else {
-                    validateOneOfInputTypes(childFieldType, childFieldInputValue, argumentValue, argumentName, locale);
+                    validateOneOfInputTypes(childFieldType, childFieldInputValue, argumentValue, locale);
                 }
             }
         }

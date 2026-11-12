@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
+import graphql.Directives;
 import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
@@ -50,6 +51,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -536,13 +538,14 @@ public class ExecutableNormalizedOperationFactory {
             }
             Set<GraphQLObjectType> possibleObjects;
             List<CollectedField> collectedFields;
+            Map<Directive, NormalizedDeferredExecution> deferredExecutions = new IdentityHashMap<>();
 
             // special handling for the root selection Set
             if (executableNormalizedField == null) {
                 GraphQLObjectType rootType = SchemaUtil.getOperationRootType(graphQLSchema, operationDefinition);
                 possibleObjects = ImmutableSet.of(rootType);
                 collectedFields = new ArrayList<>();
-                collectFromSelectionSet(operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects, null);
+                collectFromSelectionSet(operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects, null, deferredExecutions);
             } else {
                 List<GraphQLFieldDefinition> fieldDefs = executableNormalizedField.getFieldDefinitions(graphQLSchema);
                 possibleObjects = resolvePossibleObjects(fieldDefs);
@@ -564,7 +567,8 @@ public class ExecutableNormalizedOperationFactory {
                             collectedFields,
                             selectionSetType,
                             possibleObjects,
-                            null
+                            null,
+                            deferredExecutions
                     );
                 }
             }
@@ -786,22 +790,24 @@ public class ExecutableNormalizedOperationFactory {
                                              List<CollectedField> result,
                                              GraphQLCompositeType astTypeCondition,
                                              Set<GraphQLObjectType> possibleObjects,
-                                             @Nullable NormalizedDeferredExecution deferredExecution
+                                             @Nullable NormalizedDeferredExecution deferredExecution,
+                                             Map<Directive, NormalizedDeferredExecution> deferredExecutions
         ) {
             for (Selection<?> selection : selectionSet.getSelections()) {
                 if (selection instanceof Field) {
                     collectField(result, (Field) selection, possibleObjects, astTypeCondition, deferredExecution);
                 } else if (selection instanceof InlineFragment) {
-                    collectInlineFragment(result, (InlineFragment) selection, possibleObjects, astTypeCondition);
+                    collectInlineFragment(result, (InlineFragment) selection, possibleObjects, astTypeCondition, deferredExecutions);
                 } else if (selection instanceof FragmentSpread) {
-                    collectFragmentSpread(result, (FragmentSpread) selection, possibleObjects);
+                    collectFragmentSpread(result, (FragmentSpread) selection, possibleObjects, deferredExecutions);
                 }
             }
         }
 
         private void collectFragmentSpread(List<CollectedField> result,
                                            FragmentSpread fragmentSpread,
-                                           Set<GraphQLObjectType> possibleObjects
+                                           Set<GraphQLObjectType> possibleObjects,
+                                           Map<Directive, NormalizedDeferredExecution> deferredExecutions
         ) {
             if (!conditionalNodes.shouldInclude(fragmentSpread,
                     this.coercedVariableValues.toMap(),
@@ -822,15 +828,17 @@ public class ExecutableNormalizedOperationFactory {
 
             NormalizedDeferredExecution newDeferredExecution = buildDeferredExecution(
                     fragmentSpread.getDirectives(),
-                    newPossibleObjects);
+                    newPossibleObjects,
+                    deferredExecutions);
 
-            collectFromSelectionSet(fragmentDefinition.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferredExecution);
+            collectFromSelectionSet(fragmentDefinition.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferredExecution, deferredExecutions);
         }
 
         private void collectInlineFragment(List<CollectedField> result,
                                            InlineFragment inlineFragment,
                                            Set<GraphQLObjectType> possibleObjects,
-                                           GraphQLCompositeType astTypeCondition
+                                           GraphQLCompositeType astTypeCondition,
+                                           Map<Directive, NormalizedDeferredExecution> deferredExecutions
         ) {
             if (!conditionalNodes.shouldInclude(inlineFragment, this.coercedVariableValues.toMap(), this.graphQLSchema, this.options.graphQLContext)) {
                 return;
@@ -846,24 +854,39 @@ public class ExecutableNormalizedOperationFactory {
 
             NormalizedDeferredExecution newDeferredExecution = buildDeferredExecution(
                     inlineFragment.getDirectives(),
-                    newPossibleObjects
+                    newPossibleObjects,
+                    deferredExecutions
             );
 
-            collectFromSelectionSet(inlineFragment.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferredExecution);
+            collectFromSelectionSet(inlineFragment.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferredExecution, deferredExecutions);
         }
 
         private @Nullable NormalizedDeferredExecution buildDeferredExecution(
                 List<Directive> directives,
-                Set<GraphQLObjectType> newPossibleObjects) {
+                Set<GraphQLObjectType> newPossibleObjects,
+                Map<Directive, NormalizedDeferredExecution> deferredExecutions) {
             if (!options.deferSupport) {
                 return null;
             }
+            Directive deferDirective = NodeUtil.findNodeByName(directives, Directives.DeferDirective.getName());
+            if (deferDirective == null) {
+                return null;
+            }
+            NormalizedDeferredExecution deferredExecution = deferredExecutions.get(deferDirective);
+            if (deferredExecution != null) {
+                deferredExecution.getPossibleTypes().addAll(newPossibleObjects);
+                return deferredExecution;
+            }
 
-            return IncrementalUtils.createDeferredExecution(
+            deferredExecution = IncrementalUtils.createDeferredExecution(
                     this.coercedVariableValues.toMap(),
                     directives,
-                    (label) -> new NormalizedDeferredExecution(label, newPossibleObjects)
+                    (label) -> new NormalizedDeferredExecution(label, new LinkedHashSet<>(newPossibleObjects))
             );
+            if (deferredExecution != null) {
+                deferredExecutions.put(deferDirective, deferredExecution);
+            }
+            return deferredExecution;
         }
 
         private void collectField(List<CollectedField> result,
@@ -914,7 +937,7 @@ public class ExecutableNormalizedOperationFactory {
             if (type instanceof GraphQLObjectType) {
                 return ImmutableSet.of((GraphQLObjectType) type);
             } else if (type instanceof GraphQLInterfaceType) {
-                return ImmutableSet.copyOf(graphQLSchema.getImplementations((GraphQLInterfaceType) type));
+                return ImmutableSet.copyOf(assertNotNull(graphQLSchema.getImplementations((GraphQLInterfaceType) type), "implementations should not be null"));
             } else if (type instanceof GraphQLUnionType) {
                 List<GraphQLNamedOutputType> unionTypes = ((GraphQLUnionType) type).getTypes();
                 return ImmutableSet.copyOf(ImmutableKit.map(unionTypes, GraphQLObjectType.class::cast));

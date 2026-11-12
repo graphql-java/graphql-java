@@ -2,6 +2,7 @@ package graphql.introspection
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import graphql.Assert
+import graphql.AssertException
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
@@ -22,6 +23,7 @@ import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
@@ -1054,5 +1056,186 @@ scalar EmployeeRef
   episode: Episode, foo: String = \"bar\"): Character
 }"""
 
+    }
+
+    def "rejects names that are not valid graphql names in #site"() {
+        def injected = 'x: String }\n\nextend type Query { injected'
+        def stringType = [kind: "SCALAR", name: "String", ofType: null]
+        def field = [name: "hello", args: [], type: stringType, isDeprecated: false]
+        def other = [kind: "OBJECT", name: "Other", interfaces: [], fields: [field]]
+        def directive = [name: "dir", locations: ["FIELD_DEFINITION"], args: []]
+        def schema = [
+                queryType : [name: "Query"],
+                types     : [[kind: "OBJECT", name: "Query", interfaces: [], fields: [field]], other],
+                directives: [directive]
+        ]
+        mutate.call(field, other, directive, injected)
+
+        when:
+        introspectionResultToSchema.createSchemaDefinition([__schema: schema])
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("Name must be non-null, non-empty and match")
+
+        where:
+        site                 | mutate
+        "type name"          | { f, o, d, n -> o.name = n }
+        "field name"         | { f, o, d, n -> o.fields = [f + [name: n]] }
+        "argument name"      | { f, o, d, n -> o.fields = [f + [args: [[name: n, type: f.type, defaultValue: null]]]] }
+        "type reference"     | { f, o, d, n -> o.fields = [f + [type: [kind: "SCALAR", name: n, ofType: null]]] }
+        "directive name"     | { f, o, d, n -> d.name = n }
+        "directive location" | { f, o, d, n -> d.locations = [n] }
+    }
+
+    def "create input object keeps isOneOf as the @oneOf directive"() {
+        def input = """ {
+        "kind": "INPUT_OBJECT",
+        "name": "UserLookup",
+        "description": null,
+        "fields": null,
+        "isOneOf": $isOneOf,
+        "inputFields": [
+            {
+                "name": "byId",
+                "description": null,
+                "type": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+            },
+                "defaultValue": null
+            },
+            {
+                "name": "byEmail",
+                "description": null,
+                "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+            },
+                "defaultValue": null
+            }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+    }
+    """
+        def parsed = slurp(input)
+
+        when:
+        InputObjectTypeDefinition inputObjectTypeDefinition = introspectionResultToSchema.createInputObject(parsed)
+        def result = printAst(inputObjectTypeDefinition)
+
+        then:
+        result == expected
+
+        where:
+        isOneOf | expected
+        true    | "input UserLookup @oneOf {\n  byId: ID\n  byEmail: String\n}"
+        false   | "input UserLookup {\n  byId: ID\n  byEmail: String\n}"
+    }
+
+    def "create input value definitions keeps deprecation on arguments and input fields"() {
+        def objectInput = ''' {
+            "kind": "OBJECT",
+            "name": "QueryType",
+            "description": null,
+            "fields": [
+              {
+                "name": "hero",
+                "description": null,
+                "args": [
+                  {
+                    "name": "episode",
+                    "description": null,
+                    "type": {
+                      "kind": "ENUM",
+                      "name": "Episode",
+                      "ofType": null
+                    },
+                    "defaultValue": null,
+                    "isDeprecated": true,
+                    "deprecationReason": "use heroes"
+                  }
+                ],
+                "type": {
+                  "kind": "INTERFACE",
+                  "name": "Character",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "inputFields": null,
+            "interfaces": [],
+            "enumValues": null,
+            "possibleTypes": null
+      }
+      '''
+        def inputObjectInput = ''' {
+            "kind": "INPUT_OBJECT",
+            "name": "CharacterInput",
+            "description": null,
+            "fields": null,
+            "inputFields": [
+              {
+                "name": "firstName",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null,
+                "isDeprecated": true,
+                "deprecationReason": null
+              }
+            ],
+            "interfaces": null,
+            "enumValues": null,
+            "possibleTypes": null
+      }
+      '''
+
+        when:
+        def objectResult = printAst(introspectionResultToSchema.createObject(slurp(objectInput)))
+        def inputObjectResult = printAst(introspectionResultToSchema.createInputObject(slurp(inputObjectInput)))
+
+        then:
+        objectResult == """type QueryType {
+  hero(episode: Episode @deprecated(reason: "use heroes")): Character
+}"""
+        inputObjectResult == """input CharacterInput {
+  firstName: String @deprecated(reason: "No longer supported")
+}"""
+    }
+
+    def "oneOf input objects survive a round trip through introspection"() {
+        given:
+        def sdl = '''
+            input UserLookup @oneOf {
+                byId: ID
+                byEmail: String
+            }
+
+            type Query {
+                user(lookup: UserLookup!): String
+            }
+        '''
+        def graphQL = TestUtil.graphQL(sdl).build()
+        def introspectionResult = graphQL.execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(introspectionResult.data as Map)
+        def rebuilt = TestUtil.graphQL(printAst(document)).build()
+        def result = rebuilt.execute('{ user(lookup: {byId: "1", byEmail: "a@b.c"}) }')
+
+        then:
+        (rebuilt.getGraphQLSchema().getType("UserLookup") as GraphQLInputObjectType).isOneOf()
+        result.errors.size() == 1
+        result.errors[0].message.contains("Exactly one key must be specified for OneOf type 'UserLookup'")
     }
 }

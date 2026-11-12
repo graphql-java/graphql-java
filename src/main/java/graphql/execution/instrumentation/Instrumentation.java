@@ -73,12 +73,13 @@ public interface Instrumentation {
      * This is called right at the start of query execution, and it's the first step in the instrumentation chain.
      *
      * @param parameters the parameters to this step
-     * @param state      the state created during the call to {@link #createStateAsync(InstrumentationCreateStateParameters)}
+     * @param state      the state created during the call to {@link #createStateAsync(InstrumentationCreateStateParameters)},
+     *                   or {@code null} when createState/createStateAsync returns null
      *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -91,7 +92,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -104,7 +105,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -117,7 +118,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -132,7 +133,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<Void> beginReactiveResults(InstrumentationReactiveResultsParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<Void> beginReactiveResults(InstrumentationReactiveResultsParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -146,7 +147,7 @@ public interface Instrumentation {
      * @return a nullable {@link ExecutionStrategyInstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+    default ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, @Nullable InstrumentationState state) {
         return ExecutionStrategyInstrumentationContext.NOOP;
     }
 
@@ -160,7 +161,7 @@ public interface Instrumentation {
      * @return a nullable {@link ExecutionStrategyInstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+    default ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, @Nullable InstrumentationState state) {
         return ExecuteObjectInstrumentationContext.NOOP;
     }
 
@@ -176,7 +177,7 @@ public interface Instrumentation {
      */
     @ExperimentalApi
     @Nullable
-    default InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<Object> beginDeferredField(InstrumentationFieldParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -189,7 +190,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -202,7 +203,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -219,7 +220,7 @@ public interface Instrumentation {
      */
     @Deprecated(since = "2024-04-18")
     @Nullable
-    default InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -239,7 +240,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    default FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
         InstrumentationContext<Object> ctx = beginFieldFetch(parameters, state);
         if (ctx == noOp()) {
             return FieldFetchingInstrumentationContext.NOOP;
@@ -256,7 +257,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -269,7 +270,7 @@ public interface Instrumentation {
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
-    default InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, @Nullable InstrumentationState state) {
         return noOp();
     }
 
@@ -284,7 +285,7 @@ public interface Instrumentation {
      * @return a non-null instrumented ExecutionInput, the default is to return to the same object
      */
     @NonNull
-    default ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    default ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return executionInput;
     }
 
@@ -298,7 +299,7 @@ public interface Instrumentation {
      * @return a non-null instrumented DocumentAndVariables, the default is to return to the same objects
      */
     @NonNull
-    default DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    default DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return documentAndVariables;
     }
 
@@ -313,7 +314,7 @@ public interface Instrumentation {
      * @return a non-null instrumented GraphQLSchema, the default is to return to the same object
      */
     @NonNull
-    default GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    default GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return schema;
     }
 
@@ -328,7 +329,7 @@ public interface Instrumentation {
      * @return a non-null instrumented ExecutionContext, the default is to return to the same object
      */
     @NonNull
-    default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return executionContext;
     }
 
@@ -345,7 +346,7 @@ public interface Instrumentation {
      * @return a non-null instrumented DataFetcher, the default is to return to the same object
      */
     @NonNull
-    default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
         return dataFetcher;
     }
 
@@ -359,7 +360,7 @@ public interface Instrumentation {
      * @return a new execution result completable future
      */
     @NonNull
-    default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+    default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return CompletableFuture.completedFuture(executionResult);
     }
 }

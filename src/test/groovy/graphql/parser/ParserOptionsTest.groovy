@@ -26,6 +26,7 @@ class ParserOptionsTest extends Specification {
         defaultOptions.getMaxCharacters() == ONE_MB
         defaultOptions.getMaxTokens() == 15_000
         defaultOptions.getMaxWhitespaceTokens() == 200_000
+        defaultOptions.getMaxNumericLiteralCharacters() == 100
         defaultOptions.isCaptureSourceLocation()
         defaultOptions.isCaptureLineComments()
         !defaultOptions.isCaptureIgnoredChars()
@@ -34,6 +35,7 @@ class ParserOptionsTest extends Specification {
 
         defaultOperationOptions.getMaxTokens() == 15_000
         defaultOperationOptions.getMaxWhitespaceTokens() == 200_000
+        defaultOperationOptions.getMaxNumericLiteralCharacters() == 100
         defaultOperationOptions.isCaptureSourceLocation()
         !defaultOperationOptions.isCaptureLineComments()
         !defaultOperationOptions.isCaptureIgnoredChars()
@@ -43,6 +45,7 @@ class ParserOptionsTest extends Specification {
         defaultSdlOptions.getMaxCharacters() == Integer.MAX_VALUE
         defaultSdlOptions.getMaxTokens() == Integer.MAX_VALUE
         defaultSdlOptions.getMaxWhitespaceTokens() == Integer.MAX_VALUE
+        defaultSdlOptions.getMaxNumericLiteralCharacters() == 100
         defaultSdlOptions.isCaptureSourceLocation()
         defaultSdlOptions.isCaptureLineComments()
         !defaultSdlOptions.isCaptureIgnoredChars()
@@ -61,6 +64,7 @@ class ParserOptionsTest extends Specification {
                     it.captureIgnoredChars(true)
                             .captureLineComments(true)
                             .maxCharacters(1_000_000)
+                            .maxNumericLiteralCharacters(200)
                             .maxWhitespaceTokens(300_000)
                 })
         def newDefaultSDlOptions = defaultSdlOptions.transform(
@@ -84,6 +88,7 @@ class ParserOptionsTest extends Specification {
         currentDefaultOptions.getMaxCharacters() == ONE_MB
         currentDefaultOptions.getMaxTokens() == 15_000
         currentDefaultOptions.getMaxWhitespaceTokens() == 200_000
+        currentDefaultOptions.getMaxNumericLiteralCharacters() == 100
         currentDefaultOptions.isCaptureSourceLocation()
         currentDefaultOptions.isCaptureLineComments()
         currentDefaultOptions.isCaptureIgnoredChars()
@@ -93,6 +98,7 @@ class ParserOptionsTest extends Specification {
         currentDefaultOperationOptions.getMaxCharacters() == 1_000_000
         currentDefaultOperationOptions.getMaxTokens() == 15_000
         currentDefaultOperationOptions.getMaxWhitespaceTokens() == 300_000
+        currentDefaultOperationOptions.getMaxNumericLiteralCharacters() == 200
         currentDefaultOperationOptions.isCaptureSourceLocation()
         currentDefaultOperationOptions.isCaptureLineComments()
         currentDefaultOperationOptions.isCaptureIgnoredChars()
@@ -102,6 +108,7 @@ class ParserOptionsTest extends Specification {
         currentDefaultSdlOptions.getMaxCharacters() == Integer.MAX_VALUE
         currentDefaultSdlOptions.getMaxTokens() == Integer.MAX_VALUE
         currentDefaultSdlOptions.getMaxWhitespaceTokens() == 300_000
+        currentDefaultSdlOptions.getMaxNumericLiteralCharacters() == 100
         currentDefaultSdlOptions.isCaptureSourceLocation()
         currentDefaultSdlOptions.isCaptureLineComments()
         currentDefaultSdlOptions.isCaptureIgnoredChars()

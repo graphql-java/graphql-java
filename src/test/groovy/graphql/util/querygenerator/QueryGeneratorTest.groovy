@@ -4,6 +4,7 @@ package graphql.util.querygenerator
 import graphql.TestUtil
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
+import graphql.validation.QueryComplexityLimits
 import graphql.validation.Validator
 import spock.lang.Specification
 
@@ -1118,7 +1119,8 @@ $resultFields
     private static void executeQuery(String query, GraphQLSchema schema) {
         def document = new Parser().parseDocument(query)
 
-        def errors = new Validator().validateDocument(schema, document, Locale.ENGLISH)
+        // Check generated GraphQL independently of the server's configured complexity policy.
+        def errors = new Validator().validateDocument(schema, document, { rule -> true }, Locale.ENGLISH, QueryComplexityLimits.NONE)
 
         if (!errors.isEmpty()) {
             throw new Exception("Validation errors: " + errors.collect { it.getMessage() }.join(", "))

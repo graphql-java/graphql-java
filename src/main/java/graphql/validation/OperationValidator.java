@@ -1,6 +1,5 @@
 package graphql.validation;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import graphql.Assert;
 import graphql.Directives;
@@ -14,7 +13,6 @@ import graphql.execution.MergedSelectionSet;
 import graphql.execution.TypeFromAST;
 import graphql.execution.ValuesResolver;
 import graphql.i18n.I18nMsg;
-import graphql.introspection.GoodFaithIntrospection;
 import graphql.introspection.Introspection;
 import graphql.introspection.Introspection.DirectiveLocation;
 import graphql.language.Argument;
@@ -62,27 +60,31 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.InputValueWithState;
+import graphql.util.SelectionSetTraversalFrame;
 import graphql.util.StringKit;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static graphql.collect.ImmutableKit.addToList;
-import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isInput;
 import static graphql.schema.GraphQLTypeUtil.isLeaf;
@@ -136,142 +138,18 @@ import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 import static graphql.validation.ValidationErrorType.UniqueObjectFieldName;
 
 /**
- * Consolidated operation validator that implements all GraphQL validation rules
- * from the specification. Replaces the former 31 separate rule classes and the
- * RulesVisitor dispatch layer.
- *
- * <h2>Traversal Model</h2>
- *
- * <p>This validator tracks two independent state variables during traversal:
- *
- * <ul>
- *   <li><b>{@code fragmentRetraversalDepth}</b> - Tracks whether we are in the primary document
- *       traversal ({@code == 0}) or inside a manual re-traversal of a fragment via a spread
- *       ({@code > 0}).</li>
- *   <li><b>Operation scope</b> - {@code currentOperation} identifies the operation currently
- *       being traversed, or is {@code null} outside an operation.</li>
- * </ul>
- *
- * <h2>Traversal States</h2>
- *
- * <p>These two variables create four possible states, but only three actually occur:
- *
- * <pre>
- * ┌────────────────────────────────────────┬────────────────────────────────────────────────┐
- * │ State                                  │ Description                                    │
- * ├────────────────────────────────────────┼────────────────────────────────────────────────┤
- * │ depth=0, operationScope=false          │ PRIMARY TRAVERSAL, OUTSIDE OPERATION           │
- * │                                        │ Visiting document root or fragment definitions │
- * │                                        │ after all operations have been processed.      │
- * │                                        │ Example: FragmentDefinition at document level  │
- * ├────────────────────────────────────────┼────────────────────────────────────────────────┤
- * │ depth=0, operationScope=true           │ PRIMARY TRAVERSAL, INSIDE OPERATION            │
- * │                                        │ Visiting nodes directly within an operation.   │
- * │                                        │ Example: Field, InlineFragment in operation    │
- * ├────────────────────────────────────────┼────────────────────────────────────────────────┤
- * │ depth>0, operationScope=true           │ FRAGMENT RETRAVERSAL, INSIDE OPERATION         │
- * │                                        │ Manually traversing into a fragment via spread.│
- * │                                        │ Example: Nodes reached via ...FragmentName     │
- * ├────────────────────────────────────────┼────────────────────────────────────────────────┤
- * │ depth>0, operationScope=false          │ NEVER OCCURS                                   │
- * │                                        │ Retraversal only happens within an operation.  │
- * └────────────────────────────────────────┴────────────────────────────────────────────────┘
- * </pre>
- *
- * <h2>Rule Categories</h2>
- *
- * <p>Rules are categorized by which states they should run in:
- *
- * <pre>
- * ┌──────────────────────┬──────────────────────┬─────────────────────┬─────────────────────┐
- * │ Rule Category        │ depth=0              │ depth=0             │ depth>0             │
- * │                      │ operationScope=false │ operationScope=true │ operationScope=true │
- * ├──────────────────────┼──────────────────────┼─────────────────────┼─────────────────────┤
- * │ Document-Level Rules │         RUN          │        RUN          │        SKIP         │
- * ├──────────────────────┼──────────────────────┼─────────────────────┼─────────────────────┤
- * │ Operation-Scoped     │        SKIP          │        RUN          │        RUN          │
- * │ Rules                │                      │                     │                     │
- * └──────────────────────┴──────────────────────┴─────────────────────┴─────────────────────┘
- * </pre>
- *
- * <h3>Document-Level Rules</h3>
- * <p>Check: {@code fragmentRetraversalDepth == 0} (via {@link #shouldRunDocumentLevelRules()})
- * <p>Purpose: Validate each AST node exactly once. Skip during fragment retraversal to avoid
- * duplicate errors (the fragment was already validated at document level).
- * <p>Examples: {@code FieldsOnCorrectType}, {@code UniqueFragmentNames}, {@code ScalarLeaves}
- *
- * <h3>Operation-Scoped Rules</h3>
- * <p>Check: {@code currentOperation != null} (via {@link #shouldRunOperationScopedRules()})
- * <p>Purpose: Track state across an entire operation, including all fragments it references.
- * These rules need to "follow" fragment spreads to see variable usages, defer directives, etc.
- * <p>Examples: {@code NoUndefinedVariables}, {@code NoUnusedVariables}, {@code VariableTypesMatch}
- *
- * <h2>Traversal Example</h2>
- *
- * <p>Consider this GraphQL document:
- * <pre>{@code
- * query GetUser($id: ID!) {
- *   user(id: $id) {
- *     ...UserFields
- *   }
- * }
- *
- * fragment UserFields on User {
- *   name
- *   friends {
- *     ...UserFields   # recursive spread
- *   }
- * }
- * }</pre>
- *
- * <p>The traversal proceeds as follows:
- *
- * <pre>
- * STEP  NODE                        depth  operationScope  DOC-LEVEL  OP-SCOPED
- * ────  ──────────────────────────  ─────  ──────────────  ─────────  ─────────
- *  1    Document                      0        false          RUN       SKIP
- *  2    OperationDefinition           0        true           RUN       RUN
- *  3    ├─ VariableDefinition $id     0        true           RUN       RUN
- *  4    ├─ Field "user"               0        true           RUN       RUN
- *  5    │  └─ FragmentSpread          0        true           RUN       RUN
- *       │     ...UserFields
- *       │     ┌─────────────────────────────────────────────────────────────┐
- *       │     │ MANUAL RETRAVERSAL INTO FRAGMENT                            │
- *       │     └─────────────────────────────────────────────────────────────┘
- *  6    │     FragmentDefinition      1        true          SKIP       RUN
- *  7    │     ├─ Field "name"         1        true          SKIP       RUN
- *  8    │     ├─ Field "friends"      1        true          SKIP       RUN
- *  9    │     │  └─ FragmentSpread    1        true          SKIP       RUN
- *       │     │     ...UserFields
- *       │     │     (already visited - skip to avoid infinite loop)
- *       │     └─────────────────────────────────────────────────────────────┘
- * 10    └─ (leave OperationDef)       0        false      [finalize op-scoped rules]
- * 11    FragmentDefinition            0        false          RUN       SKIP
- *       "UserFields" (at doc level)
- * 12    ├─ Field "name"               0        false          RUN       SKIP
- * 13    ├─ Field "friends"            0        false          RUN       SKIP
- * 14    │  └─ FragmentSpread          0        false          RUN       SKIP
- * </pre>
- *
- * <h2>Key Observations</h2>
- *
- * <ul>
- *   <li><b>Steps 6-9:</b> During retraversal, document-level rules SKIP because the fragment
- *       will be validated at steps 11-14. This prevents duplicate "field not found" errors.</li>
- *   <li><b>Steps 6-9:</b> Operation-scoped rules RUN to track that variables used inside
- *       {@code UserFields} are defined in the operation.</li>
- *   <li><b>Steps 11-14:</b> Operation-scoped rules SKIP because there's no operation context
- *       to track variables against.</li>
- *   <li><b>Step 9:</b> Recursive fragment spreads are tracked via {@code visitedFragmentSpreads}
- *       to prevent infinite loops during retraversal.</li>
- * </ul>
- *
- * @see OperationValidationRule
+ * Validates the document and its operations with one iterative traversal.
+ * Document-level rules visit each AST node once. Operation-scoped rules also follow
+ * fragment spreads, visiting each referenced fragment once per operation. Repeated
+ * spreads contribute cached complexity without repeating the operation-scoped checks.
+ * Fragment visits finish before the spreading node's children, preserving validation
+ * order and ancestor paths without nesting Java calls for fragment references.
  */
 @Internal
 @NullMarked
 @SuppressWarnings("rawtypes")
-public class OperationValidator implements DocumentVisitor {
+public class OperationValidator {
+    private static final OperationValidationRule[] VALIDATION_RULES = OperationValidationRule.values();
 
     // --- Infrastructure ---
     private final ValidationContext validationContext;
@@ -292,7 +170,7 @@ public class OperationValidator implements DocumentVisitor {
      */
     private @Nullable OperationDefinition currentOperation;
     /**
-     * Depth of manual fragment traversal; 0 means primary document traversal.
+     * Number of active fragment expansions; 0 means primary document traversal.
      */
     private int fragmentRetraversalDepth = 0;
     /**
@@ -301,7 +179,8 @@ public class OperationValidator implements DocumentVisitor {
     private final Set<String> visitedFragmentSpreads = new HashSet<>();
 
     // --- State: NoFragmentCycles ---
-    private final Map<String, Set<String>> fragmentSpreadsMap = new HashMap<>();
+    private final Map<String, Set<String>> fragmentSpreadsMap = new LinkedHashMap<>();
+    private final Set<String> fragmentsWithCycleErrors = new HashSet<>();
 
     // --- State: NoUnusedFragments ---
     private final List<FragmentDefinition> allDeclaredFragments = new ArrayList<>();
@@ -321,9 +200,8 @@ public class OperationValidator implements DocumentVisitor {
     private @Nullable Map<String, VariableDefinition> variableDefinitionMap;
 
     // --- State: OverlappingFieldsCanBeMerged ---
-    private final Set<Set<FieldAndType>> sameResponseShapeChecked = new LinkedHashSet<>();
-    private final Set<Set<FieldAndType>> sameForCommonParentsChecked = new LinkedHashSet<>();
     private final Set<Set<Field>> conflictsReported = new LinkedHashSet<>();
+    private @Nullable Deque<SelectionSetTraversalFrame<GraphQLType>> fieldCollectionFrames;
 
     // --- State: LoneAnonymousOperation ---
     private boolean hasAnonymousOp = false;
@@ -341,22 +219,42 @@ public class OperationValidator implements DocumentVisitor {
     // --- State: SubscriptionUniqueRootField ---
     private final FieldCollector fieldCollector = new FieldCollector();
 
-    // --- State: Query Complexity Limits ---
-    private int fieldCount = 0;
-    private int currentFieldDepth = 0;
-    private int maxFieldDepthSeen = 0;
-    private QueryComplexityLimits complexityLimits;
-    // Fragment complexity calculated lazily during first spread
-    private final Map<String, FragmentComplexityInfo> fragmentComplexityMap = new HashMap<>();
-    // Max depth seen during current fragment traversal (for calculating fragment's internal depth)
-    private int fragmentTraversalMaxDepth = 0;
+    private final QueryComplexityLimits complexityLimits;
+    private final boolean generalMergedLimitsEnabled;
 
-    // --- State: Good Faith Introspection ---
-    private final Map<String, Integer> introspectionFieldCounts = new HashMap<>();
+    private final int maxFieldOccurrences;
+    private long fieldOccurrences;
+    // Completed fragment totals are shared across operations; each spread adds its total again.
+    private @Nullable Map<String, Long> fragmentFieldOccurrences;
+    // Changes when a traversal encounters a cycle or missing fragment, whose total is incomplete.
+    private int incompleteFragmentOccurrences;
+
+    // --- State: Merged selections and complexity limits ---
+    // Caches merge-check progress and merged child selections for the whole document.
+    // All FieldAndType entries in a key set have the same response name
+    // (the alias if present, otherwise the field name).
+    // FieldAndType is identified only by the AST node.
+    // Child selections depend on the document and schema, not the current operation.
+    // They are grouped by response name and shared between merge-validation traversals.
+    // Leaf-only sets share an empty map.
+    // Example: `fields { a: name } fields { b: name }` uses the two `fields` AST nodes as the key
+    // and caches their combined children under response names `a` and `b`, both selecting `name`.
+    private final Map<Set<FieldAndType>, FieldValidationState<FieldAndType>> fieldValidationStates = new HashMap<>();
+
+    // Caches merged field count, relative field depth and restricted coordinates for each common-parent validation set.
+    // These are sets of fields checked together for matching field names and arguments.
+    // Example: `fields { name } fields { description }` on __Type caches a count of 3 merged fields,
+    // a relative depth of 2, and one occurrence of the restricted coordinate __Type.fields.
+    // Its 4 expanded field occurrences are counted separately by fieldOccurrences.
+    // Cached summaries contribute again at each response position where the set occurs.
+    // Keys are the shared validation states for those sets, avoiding repeated hashing of their AST nodes.
+    // A present key with a null value marks counting in progress, preventing recursion through fragment cycles.
+    // This cache is scoped to one operation and is null when neither general nor Good Faith limits are active.
+    private @Nullable Map<FieldValidationState<FieldAndType>, @Nullable MergedFieldComplexityCounts> mergedFieldCounts;
     private boolean introspectionQueryDetected = false;
 
     // --- Track whether we're in a context where fragment spread rules should run ---
-    // fragmentRetraversalDepth == 0 means we're NOT inside a manually-traversed fragment => run non-fragment-spread checks
+    // Fragment expansions run operation-scoped rules; the primary AST walk also runs document-level rules.
     // A current operation means fragment traversal and operation-scoped rules are active
 
     private final boolean allRulesEnabled;
@@ -368,11 +266,93 @@ public class OperationValidator implements DocumentVisitor {
         this.rulePredicate = rulePredicate;
         this.allRulesEnabled = detectAllRulesEnabled(rulePredicate);
         this.complexityLimits = validationContext.getQueryComplexityLimits();
-        prepareFragmentSpreadsMap();
+        this.generalMergedLimitsEnabled = complexityLimits.getMaxMergedFieldCount() != Integer.MAX_VALUE
+                || complexityLimits.getMaxDepth() != Integer.MAX_VALUE;
+        this.maxFieldOccurrences = complexityLimits.getMaxFieldOccurrences();
+    }
+
+    public void validate() {
+        if (isRuleEnabled(OperationValidationRule.NO_FRAGMENT_CYCLES)) {
+            prepareFragmentSpreadsMap();
+            findFragmentCycles();
+        }
+        List<Node> ancestors = new ArrayList<>();
+        Deque<OperationValidationFrame> frames = new ArrayDeque<>();
+        frames.push(new OperationValidationFrame(validationContext.getDocument()));
+        while (!frames.isEmpty()) {
+            visitFrame(frames, ancestors);
+        }
+    }
+
+    private void visitFrame(Deque<OperationValidationFrame> frames, List<Node> ancestors) {
+        OperationValidationFrame frame = frames.getFirst();
+        Node node = frame.getNode();
+        if (frame.enter()) {
+            enter(node, ancestors);
+            if (scheduleFragment(node, frames)) {
+                return;
+            }
+        }
+        if (frame.startChildren()) {
+            ancestors.add(node);
+        }
+        Node child = frame.nextChild();
+        if (child != null) {
+            visitChild(child, frames, ancestors);
+            return;
+        }
+        ancestors.remove(ancestors.size() - 1);
+        leave(node);
+        frames.pop();
+        if (frame.isFragmentExpansion()) {
+            finishFragment(frame);
+        }
+    }
+
+    private void visitChild(Node node, Deque<OperationValidationFrame> frames, List<Node> ancestors) {
+        if (node instanceof FragmentSpread && currentOperation != null
+                && !visitedFragmentSpreads.contains(((FragmentSpread) node).getName())) {
+            frames.push(new OperationValidationFrame(node));
+            return;
+        }
+        enter(node, ancestors);
+        if (node instanceof FragmentSpread && currentOperation != null) {
+            addRepeatedFragmentOccurrences(((FragmentSpread) node).getName());
+        }
+        List<Node> children = node.getChildren();
+        if (children.isEmpty()) {
+            leave(node);
+            return;
+        }
+        frames.push(new OperationValidationFrame(node, children));
+    }
+
+    private boolean scheduleFragment(Node node, Deque<OperationValidationFrame> frames) {
+        if (!(node instanceof FragmentSpread) || currentOperation == null) {
+            return false;
+        }
+        String fragmentName = ((FragmentSpread) node).getName();
+        visitedFragmentSpreads.add(fragmentName);
+        FragmentDefinition fragment = validationContext.getFragment(fragmentName);
+        if (fragment == null) {
+            incompleteFragmentOccurrences++;
+            return false;
+        }
+        frames.push(new OperationValidationFrame(fragment, fieldOccurrences, incompleteFragmentOccurrences));
+        fragmentRetraversalDepth++;
+        return true;
+    }
+
+    private void finishFragment(OperationValidationFrame frame) {
+        fragmentRetraversalDepth--;
+        if (maxFieldOccurrences != Integer.MAX_VALUE && frame.getIncompleteOccurrencesBefore() == incompleteFragmentOccurrences) {
+            String fragmentName = ((FragmentDefinition) frame.getNode()).getName();
+            cacheFragmentOccurrences(fragmentName, fieldOccurrences - frame.getFieldOccurrencesBefore());
+        }
     }
 
     private static boolean detectAllRulesEnabled(Predicate<OperationValidationRule> predicate) {
-        for (OperationValidationRule rule : OperationValidationRule.values()) {
+        for (OperationValidationRule rule : VALIDATION_RULES) {
             if (!predicate.test(rule)) {
                 return false;
             }
@@ -636,39 +616,7 @@ public class OperationValidator implements DocumentVisitor {
         return currentOperation != null;
     }
 
-    // ==================== Query Complexity Limit Helpers ====================
-
-    private void checkFieldCountLimit() {
-        if (fieldCount > complexityLimits.getMaxFieldsCount()) {
-            if (introspectionQueryDetected) {
-                throw GoodFaithIntrospectionExceeded.tooBigOperation(
-                        "Query has " + fieldCount + " fields which exceeds maximum allowed " + complexityLimits.getMaxFieldsCount());
-            }
-            throw new QueryComplexityLimitsExceeded(
-                    ValidationErrorType.MaxQueryFieldsExceeded,
-                    complexityLimits.getMaxFieldsCount(),
-                    fieldCount);
-        }
-    }
-
-    private void checkDepthLimit(int depth) {
-        if (depth > maxFieldDepthSeen) {
-            maxFieldDepthSeen = depth;
-            if (maxFieldDepthSeen > complexityLimits.getMaxDepth()) {
-                if (introspectionQueryDetected) {
-                    throw GoodFaithIntrospectionExceeded.tooBigOperation(
-                            "Query depth " + maxFieldDepthSeen + " exceeds maximum allowed depth " + complexityLimits.getMaxDepth());
-                }
-                throw new QueryComplexityLimitsExceeded(
-                        ValidationErrorType.MaxQueryDepthExceeded,
-                        complexityLimits.getMaxDepth(),
-                        maxFieldDepthSeen);
-            }
-        }
-    }
-
-    @Override
-    public void enter(Node node, List<Node> ancestors) {
+    private void enter(Node node, List<Node> ancestors) {
         enterTraversal(node, ancestors);
 
         if (node instanceof Document) {
@@ -680,24 +628,13 @@ public class OperationValidator implements DocumentVisitor {
         } else if (node instanceof VariableDefinition) {
             checkVariableDefinition((VariableDefinition) node);
         } else if (node instanceof Field) {
-            // Track complexity only during operation scope
-            if (currentOperation != null) {
-                fieldCount++;
-                currentFieldDepth++;
-                checkFieldCountLimit();
-                checkDepthLimit(currentFieldDepth);
-                // Track max depth during fragment traversal for storing later
-                if (fragmentRetraversalDepth > 0 && currentFieldDepth > fragmentTraversalMaxDepth) {
-                    fragmentTraversalMaxDepth = currentFieldDepth;
-                }
-            }
             checkField((Field) node);
         } else if (node instanceof InlineFragment) {
             checkInlineFragment((InlineFragment) node);
         } else if (node instanceof Directive) {
             checkDirective((Directive) node, ancestors);
         } else if (node instanceof FragmentSpread) {
-            checkFragmentSpread((FragmentSpread) node, ancestors);
+            checkFragmentSpread((FragmentSpread) node);
         } else if (node instanceof FragmentDefinition) {
             checkFragmentDefinition((FragmentDefinition) node);
         } else if (node instanceof OperationDefinition) {
@@ -711,8 +648,7 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
-    @Override
-    public void leave(Node node, List<Node> ancestors) {
+    private void leave(Node node) {
         leaveTraversal(node);
 
         if (node instanceof Document) {
@@ -723,10 +659,6 @@ public class OperationValidator implements DocumentVisitor {
             leaveSelectionSet();
         } else if (node instanceof FragmentDefinition) {
             leaveFragmentDefinition();
-        } else if (node instanceof Field) {
-            if (currentOperation != null) {
-                currentFieldDepth--;
-            }
         }
     }
 
@@ -834,6 +766,9 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void checkField(Field field) {
+        if (maxFieldOccurrences != Integer.MAX_VALUE && currentOperation != null) {
+            addFieldOccurrences(1);
+        }
         if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.FIELDS_ON_CORRECT_TYPE)) {
                 validateFieldsOnCorrectType(field);
@@ -849,53 +784,6 @@ public class OperationValidator implements DocumentVisitor {
             }
             if (isRuleEnabled(OperationValidationRule.UNIQUE_DIRECTIVE_NAMES_PER_LOCATION)) {
                 validateUniqueDirectiveNamesPerLocation(field, field.getDirectives());
-            }
-        }
-        // Good Faith Introspection also runs during fragment spread traversal in an operation
-        if (currentOperation != null && isRuleEnabled(OperationValidationRule.GOOD_FAITH_INTROSPECTION)) {
-            checkGoodFaithIntrospection(field);
-        }
-    }
-
-    // --- GoodFaithIntrospection ---
-    private void checkGoodFaithIntrospection(Field field) {
-        GraphQLCompositeType parentType = getParentType();
-        if (parentType == null) {
-            return;
-        }
-        String fieldName = field.getName();
-        String key = null;
-
-        // Check query-level introspection fields (__schema, __type).
-        // Only counted at the structural level (not during fragment traversal) to match ENO merging
-        // behavior where the same field from a direct selection and a fragment spread merge into one.
-        if (shouldRunDocumentLevelRules()) {
-            GraphQLObjectType queryType = validationContext.getSchema().getQueryType();
-            if (parentType.getName().equals(queryType.getName())) {
-                if (Introspection.SchemaMetaFieldDef.getName().equals(fieldName) || Introspection.TypeMetaFieldDef.getName().equals(fieldName)) {
-                    key = parentType.getName() + "." + fieldName;
-                    if (!introspectionQueryDetected) {
-                        introspectionQueryDetected = true;
-                        complexityLimits = GoodFaithIntrospection.goodFaithLimits(complexityLimits);
-                    }
-                }
-            }
-        }
-
-        // Check __Type fields that can form cycles.
-        // Counted during ALL traversals (including fragment spreads) because each occurrence
-        // at a different depth represents a separate cycle risk.
-        if (Introspection.__Type.getName().equals(parentType.getName())) {
-            if ("fields".equals(fieldName) || "inputFields".equals(fieldName)
-                    || "interfaces".equals(fieldName) || "possibleTypes".equals(fieldName)) {
-                key = "__Type." + fieldName;
-            }
-        }
-
-        if (key != null) {
-            int count = introspectionFieldCounts.merge(key, 1, Integer::sum);
-            if (count > 1) {
-                throw GoodFaithIntrospectionExceeded.tooManyFields(key);
             }
         }
     }
@@ -939,7 +827,7 @@ public class OperationValidator implements DocumentVisitor {
         }
     }
 
-    private void checkFragmentSpread(FragmentSpread node, List<Node> ancestors) {
+    private void checkFragmentSpread(FragmentSpread node) {
         if (shouldRunDocumentLevelRules()) {
             if (isRuleEnabled(OperationValidationRule.KNOWN_FRAGMENT_NAMES)) {
                 validateKnownFragmentNames(node);
@@ -954,53 +842,33 @@ public class OperationValidator implements DocumentVisitor {
                 validateUniqueDirectiveNamesPerLocation(node, node.getDirectives());
             }
         }
+    }
 
-        // Handle complexity tracking and fragment traversal
-        if (currentOperation != null) {
-            String fragmentName = node.getName();
-            FragmentDefinition fragment = validationContext.getFragment(fragmentName);
-
-            if (visitedFragmentSpreads.contains(fragmentName)) {
-                // Subsequent spread - add stored complexity (don't traverse again)
-                FragmentComplexityInfo info = fragmentComplexityMap.get(fragmentName);
-                if (info != null) {
-                    fieldCount += info.getFieldCount();
-                    checkFieldCountLimit();
-                    int potentialDepth = currentFieldDepth + info.getMaxDepth();
-                    checkDepthLimit(potentialDepth);
-                    // Update max depth if we're inside a fragment traversal
-                    if (fragmentRetraversalDepth > 0 && potentialDepth > fragmentTraversalMaxDepth) {
-                        fragmentTraversalMaxDepth = potentialDepth;
-                    }
-                }
-            } else if (fragment != null) {
-                // First spread - traverse and track complexity
-                visitedFragmentSpreads.add(fragmentName);
-
-                int fieldCountBefore = fieldCount;
-                int depthAtEntry = currentFieldDepth;
-                int previousFragmentMaxDepth = fragmentTraversalMaxDepth;
-
-                // Initialize max depth tracking for this fragment
-                fragmentTraversalMaxDepth = currentFieldDepth;
-
-                fragmentRetraversalDepth++;
-                new LanguageTraversal(ancestors).traverse(fragment, this);
-                fragmentRetraversalDepth--;
-
-                // Calculate and store fragment complexity
-                int fragmentFieldCount = fieldCount - fieldCountBefore;
-                int fragmentMaxInternalDepth = fragmentTraversalMaxDepth - depthAtEntry;
-
-                fragmentComplexityMap.put(fragmentName,
-                        new FragmentComplexityInfo(fragmentFieldCount, fragmentMaxInternalDepth));
-
-                // Restore max depth for outer fragment (if nested)
-                if (fragmentRetraversalDepth > 0 && previousFragmentMaxDepth > fragmentTraversalMaxDepth) {
-                    fragmentTraversalMaxDepth = previousFragmentMaxDepth;
-                }
-            }
+    private void addFieldOccurrences(long occurrences) {
+        fieldOccurrences += occurrences;
+        if (fieldOccurrences > maxFieldOccurrences) {
+            throw new QueryComplexityLimitsExceeded(ValidationErrorType.MaxQueryFieldOccurrencesExceeded,
+                    maxFieldOccurrences, fieldOccurrences);
         }
+    }
+
+    private void addRepeatedFragmentOccurrences(String fragmentName) {
+        if (maxFieldOccurrences == Integer.MAX_VALUE) {
+            return;
+        }
+        Long occurrences = fragmentFieldOccurrences == null ? null : fragmentFieldOccurrences.get(fragmentName);
+        if (occurrences == null) {
+            incompleteFragmentOccurrences++;
+            return;
+        }
+        addFieldOccurrences(occurrences);
+    }
+
+    private void cacheFragmentOccurrences(String fragmentName, long occurrences) {
+        if (fragmentFieldOccurrences == null) {
+            fragmentFieldOccurrences = new HashMap<>();
+        }
+        fragmentFieldOccurrences.putIfAbsent(fragmentName, occurrences);
     }
 
     private void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
@@ -1027,8 +895,10 @@ public class OperationValidator implements DocumentVisitor {
 
     private void checkOperationDefinition(OperationDefinition operationDefinition) {
         currentOperation = operationDefinition;
+        fieldOccurrences = 0;
 
-        if (isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)) {
+        if (generalMergedLimitsEnabled || isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
+                || complexityLimits.isIntrospectionLimitsEnabled()) {
             validateOverlappingFieldsCanBeMerged(operationDefinition);
         }
         if (isRuleEnabled(OperationValidationRule.LONE_ANONYMOUS_OPERATION)) {
@@ -1110,12 +980,8 @@ public class OperationValidator implements DocumentVisitor {
             }
         }
 
-        // Reset complexity counters for next operation
-        fieldCount = 0;
-        currentFieldDepth = 0;
-        maxFieldDepthSeen = 0;
-        fragmentTraversalMaxDepth = 0;
-        introspectionFieldCounts.clear();
+        introspectionQueryDetected = false;
+        mergedFieldCounts = null;
     }
 
     private void leaveSelectionSet() {
@@ -1124,7 +990,7 @@ public class OperationValidator implements DocumentVisitor {
 
     private void leaveFragmentDefinition() {
         // No special handling needed - the fragment spread depth tracking
-        // is handled in checkFragmentSpread
+        // is handled when its traversal frame finishes
     }
 
     private void documentFinished() {
@@ -1306,62 +1172,81 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private Set<String> gatherSpreads(FragmentDefinition fragmentDefinition) {
-        final Set<String> spreads = new HashSet<>();
-        DocumentVisitor visitor = new DocumentVisitor() {
-            @Override
-            public void enter(Node node, List<Node> path) {
-                if (node instanceof FragmentSpread) {
-                    spreads.add(((FragmentSpread) node).getName());
-                }
+        Set<String> spreads = new LinkedHashSet<>();
+        Deque<Node> pending = new ArrayDeque<>();
+        pending.push(fragmentDefinition);
+        while (!pending.isEmpty()) {
+            Node node = pending.pop();
+            if (node instanceof FragmentSpread) {
+                spreads.add(((FragmentSpread) node).getName());
             }
-
-            @Override
-            public void leave(Node node, List<Node> path) {
-            }
-        };
-        new LanguageTraversal().traverse(fragmentDefinition, visitor);
+            pushChildren(pending, node);
+        }
         return spreads;
     }
 
-    private void validateNoFragmentCycles(FragmentDefinition fragmentDefinition) {
-        ArrayList<String> path = new ArrayList<>();
-        path.add(fragmentDefinition.getName());
-        Map<String, Set<String>> transitiveSpreads = buildTransitiveSpreads(path, new HashMap<>());
-
-        for (Map.Entry<String, Set<String>> entry : transitiveSpreads.entrySet()) {
-            if (entry.getValue().contains(entry.getKey())) {
-                String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
-                addError(FragmentCycle, Collections.singletonList(fragmentDefinition), message);
+    private void pushChildren(Deque<Node> pending, Node node) {
+        List<Node> children = node.getChildren();
+        for (int index = children.size() - 1; index >= 0; index--) {
+            Node child = children.get(index);
+            if (child != null) {
+                pending.push(child);
             }
         }
     }
 
-    private Map<String, Set<String>> buildTransitiveSpreads(ArrayList<String> path, Map<String, Set<String>> transitiveSpreads) {
-        String name = path.get(path.size() - 1);
-        if (transitiveSpreads.containsKey(name)) {
-            return transitiveSpreads;
+    private void validateNoFragmentCycles(FragmentDefinition fragmentDefinition) {
+        if (!fragmentsWithCycleErrors.contains(fragmentDefinition.getName())) {
+            return;
         }
-        Set<String> spreads = fragmentSpreadsMap.get(name);
-        if (spreads == null || spreads.isEmpty()) {
-            return transitiveSpreads;
-        }
-        for (String ancestor : path) {
-            Set<String> ancestorSpreads = transitiveSpreads.get(ancestor);
-            if (ancestorSpreads == null) {
-                ancestorSpreads = new HashSet<>();
-            }
-            ancestorSpreads.addAll(spreads);
-            transitiveSpreads.put(ancestor, ancestorSpreads);
-        }
-        for (String child : spreads) {
-            if (path.contains(child) || transitiveSpreads.containsKey(child)) {
+        String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
+        addError(FragmentCycle, Collections.singletonList(fragmentDefinition), message);
+    }
+
+    private void findFragmentCycles() {
+        Set<String> visitedFragments = new HashSet<>();
+        for (Map.Entry<String, Set<String>> entry : fragmentSpreadsMap.entrySet()) {
+            if (!visitedFragments.add(entry.getKey())) {
                 continue;
             }
-            ArrayList<String> childPath = new ArrayList<>(path);
-            childPath.add(child);
-            buildTransitiveSpreads(childPath, transitiveSpreads);
+            findFragmentCycles(entry.getKey(), entry.getValue(), visitedFragments);
         }
-        return transitiveSpreads;
+    }
+
+    private void findFragmentCycles(String firstFragment, Set<String> firstSpreads, Set<String> visitedFragments) {
+        Set<String> visitingFragments = new HashSet<>();
+        Deque<String> fragmentStack = new ArrayDeque<>();
+        Deque<Iterator<String>> spreadIteratorStack = new ArrayDeque<>();
+        visitingFragments.add(firstFragment);
+        fragmentStack.push(firstFragment);
+        spreadIteratorStack.push(firstSpreads.iterator());
+
+        while (!fragmentStack.isEmpty()) {
+            Iterator<String> spreadIterator = spreadIteratorStack.getFirst();
+            if (!spreadIterator.hasNext()) {
+                visitingFragments.remove(fragmentStack.pop());
+                spreadIteratorStack.pop();
+                continue;
+            }
+
+            String childFragment = spreadIterator.next();
+            Set<String> childSpreads = fragmentSpreadsMap.get(childFragment);
+            if (childSpreads == null) {
+                continue;
+            }
+            if (visitingFragments.contains(childFragment)) {
+                fragmentsWithCycleErrors.add(childFragment);
+                fragmentsWithCycleErrors.add(fragmentStack.getFirst());
+                continue;
+            }
+            if (!visitedFragments.add(childFragment)) {
+                continue;
+            }
+
+            visitingFragments.add(childFragment);
+            fragmentStack.push(childFragment);
+            spreadIteratorStack.push(childSpreads.iterator());
+        }
     }
 
     // --- NoUndefinedVariables ---
@@ -1413,16 +1298,56 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void collectUsedFragmentsInDefinition(Set<String> result, String fragmentName) {
-        if (!result.add(fragmentName)) {
-            return;
+        Deque<String> pending = new ArrayDeque<>();
+        pending.push(fragmentName);
+        while (!pending.isEmpty()) {
+            String name = pending.pop();
+            if (!result.add(name)) {
+                continue;
+            }
+            pending.addAll(spreadsInDefinition.getOrDefault(name, Collections.emptyList()));
         }
-        List<String> spreadList = spreadsInDefinition.get(fragmentName);
-        if (spreadList == null) {
-            return;
+    }
+
+    // --- Good Faith Introspection ---
+    private boolean containsIntrospection(Map<String, Set<FieldAndType>> fields, @Nullable GraphQLType rootType) {
+        if (rootType != validationContext.getSchema().getQueryType()) {
+            return false;
         }
-        for (String fragment : spreadList) {
-            collectUsedFragmentsInDefinition(result, fragment);
+        for (Set<FieldAndType> group : fields.values()) {
+            if (containsIntrospectionField(group)) {
+                return true;
+            }
         }
+        return false;
+    }
+
+    private boolean containsIntrospectionField(Set<FieldAndType> fields) {
+        for (FieldAndType field : fields) {
+            String name = field.field.getName();
+            if (Introspection.SchemaMetaFieldDef.getName().equals(name) || Introspection.TypeMetaFieldDef.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private @Nullable String introspectionCoordinate(Set<FieldAndType> fields) {
+        return introspectionQueryDetected ? introspectionCoordinate(fields.iterator().next()) : null;
+    }
+
+    private @Nullable String introspectionCoordinate(FieldAndType field) {
+        String name = field.field.getName();
+        if (field.parentType == validationContext.getSchema().getQueryType()
+                && (Introspection.SchemaMetaFieldDef.getName().equals(name) || Introspection.TypeMetaFieldDef.getName().equals(name))) {
+            return validationContext.getSchema().getQueryType().getName() + "." + name;
+        }
+        if (field.parentType instanceof GraphQLObjectType && Introspection.__Type.getName().equals(((GraphQLObjectType) field.parentType).getName())
+                && ("fields".equals(name) || "inputFields".equals(name)
+                || "interfaces".equals(name) || "possibleTypes".equals(name))) {
+            return Introspection.__Type.getName() + "." + name;
+        }
+        return null;
     }
 
     // --- OverlappingFieldsCanBeMerged ---
@@ -1436,6 +1361,12 @@ public class OperationValidator implements DocumentVisitor {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>(selectionSet.getSelections().size());
         Set<String> visitedFragments = new LinkedHashSet<>();
         overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments);
+        if (complexityLimits.isIntrospectionLimitsEnabled() && containsIntrospection(fieldMap, graphQLOutputType)) {
+            introspectionQueryDetected = true;
+        }
+        if (generalMergedLimitsEnabled || introspectionQueryDetected) {
+            mergedFieldCounts = new IdentityHashMap<>(fieldMap.size());
+        }
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
             if (conflictsReported.contains(conflict.fields)) {
@@ -1447,47 +1378,52 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private void overlappingFields_collectFields(Map<String, Set<FieldAndType>> fieldMap, SelectionSet selectionSet, @Nullable GraphQLType parentType, Set<String> visitedFragments) {
-        for (Selection selection : selectionSet.getSelections()) {
-            if (selection instanceof Field) {
-                overlappingFields_collectFieldsForField(fieldMap, parentType, (Field) selection);
-            } else if (selection instanceof InlineFragment) {
-                overlappingFields_collectFieldsForInlineFragment(fieldMap, visitedFragments, parentType, (InlineFragment) selection);
-            } else if (selection instanceof FragmentSpread) {
-                overlappingFields_collectFieldsForFragmentSpread(fieldMap, visitedFragments, (FragmentSpread) selection);
+        Deque<SelectionSetTraversalFrame<GraphQLType>> frames = fieldCollectionFrames;
+        if (frames == null) {
+            frames = new ArrayDeque<>();
+            fieldCollectionFrames = frames;
+        }
+        frames.push(new SelectionSetTraversalFrame<>(selectionSet, parentType));
+        while (!frames.isEmpty()) {
+            SelectionSetTraversalFrame<GraphQLType> frame = frames.getFirst();
+            Selection selection = frame.nextSelection();
+            if (selection == null) {
+                frames.pop();
+                continue;
             }
+            collectValidationSelection(fieldMap, visitedFragments, frames, frame.getContext(), selection);
         }
     }
 
-    private void overlappingFields_collectFieldsForFragmentSpread(Map<String, Set<FieldAndType>> fieldMap, Set<String> visitedFragments, FragmentSpread fragmentSpread) {
-        FragmentDefinition fragment = validationContext.getFragment(fragmentSpread.getName());
-        if (fragment == null) {
-            return;
+    private void collectValidationSelection(Map<String, Set<FieldAndType>> fieldMap, Set<String> visitedFragments,
+                                           Deque<SelectionSetTraversalFrame<GraphQLType>> frames, @Nullable GraphQLType parentType, Selection selection) {
+        if (selection instanceof Field) {
+            overlappingFields_collectFieldsForField(fieldMap, parentType, (Field) selection);
+        } else if (selection instanceof InlineFragment) {
+            InlineFragment fragment = (InlineFragment) selection;
+            GraphQLType type = fragment.getTypeCondition() == null ? parentType
+                    : TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
+            frames.push(new SelectionSetTraversalFrame<>(fragment.getSelectionSet(), type));
+        } else if (selection instanceof FragmentSpread) {
+            collectValidationFragment(frames, visitedFragments, (FragmentSpread) selection);
         }
-        if (visitedFragments.contains(fragment.getName())) {
-            return;
-        }
-        visitedFragments.add(fragment.getName());
-        GraphQLType graphQLType = TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
-        overlappingFields_collectFields(fieldMap, fragment.getSelectionSet(), graphQLType, visitedFragments);
     }
 
-    private void overlappingFields_collectFieldsForInlineFragment(Map<String, Set<FieldAndType>> fieldMap, Set<String> visitedFragments, @Nullable GraphQLType parentType, InlineFragment inlineFragment) {
-        GraphQLType graphQLType;
-        if (inlineFragment.getTypeCondition() == null) {
-            graphQLType = parentType;
-        } else {
-            graphQLType = TypeFromAST.getTypeFromAST(validationContext.getSchema(), inlineFragment.getTypeCondition());
+    private void collectValidationFragment(Deque<SelectionSetTraversalFrame<GraphQLType>> frames, Set<String> visitedFragments, FragmentSpread spread) {
+        FragmentDefinition fragment = validationContext.getFragment(spread.getName());
+        if (fragment == null || !visitedFragments.add(fragment.getName())) {
+            return;
         }
-        overlappingFields_collectFields(fieldMap, inlineFragment.getSelectionSet(), graphQLType, visitedFragments);
+        GraphQLType type = TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
+        frames.push(new SelectionSetTraversalFrame<>(fragment.getSelectionSet(), type));
     }
 
     private void overlappingFields_collectFieldsForField(Map<String, Set<FieldAndType>> fieldMap, @Nullable GraphQLType parentType, Field field) {
         String responseName = field.getResultKey();
         GraphQLOutputType fieldType = null;
         GraphQLUnmodifiedType unwrappedParent = parentType != null ? unwrapAll(parentType) : null;
-        if (unwrappedParent instanceof GraphQLFieldsContainer) {
-            GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) unwrappedParent;
-            GraphQLFieldDefinition fieldDefinition = validationContext.getSchema().getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, field.getName());
+        if (unwrappedParent instanceof GraphQLCompositeType) {
+            GraphQLFieldDefinition fieldDefinition = getFieldDefinition((GraphQLCompositeType) unwrappedParent, field.getName());
             fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
         }
         fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(new FieldAndType(field, fieldType, unwrappedParent));
@@ -1495,60 +1431,167 @@ public class OperationValidator implements DocumentVisitor {
 
     private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
         List<Conflict> result = new ArrayList<>();
-        sameResponseShapeByName(fieldMap, emptyList(), result);
-        sameForCommonParentsByName(fieldMap, emptyList(), result);
+        // Both walks restore this path after each field; conflicts capture its string value.
+        List<String> path = new ArrayList<>();
+        boolean checkMerging = isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
+        if (checkMerging && mergedFieldCounts == null) {
+            sameResponseShapeByName(fieldMap, path, result);
+        }
+        if (checkMerging || mergedFieldCounts != null) {
+            sameForCommonParentsByName(fieldMap, path, result);
+        }
+        // Bound the common-parent walk before the other recursive merge checks.
+        if (checkMerging && mergedFieldCounts != null) {
+            responseShapeAfterCounting(fieldMap, path, result);
+        }
         return result;
     }
 
-    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+    private void responseShapeAfterCounting(Map<String, Set<FieldAndType>> fieldMap, List<String> path, List<Conflict> conflicts) {
+        if (!introspectionQueryDetected && !conflicts.isEmpty()) {
+            List<Conflict> commonParentConflicts = new ArrayList<>(conflicts);
+            conflicts.clear();
+            sameResponseShapeByName(fieldMap, path, conflicts);
+            conflicts.addAll(commonParentConflicts);
+            return;
+        }
+        sameResponseShapeByName(fieldMap, path, conflicts);
+    }
+
+    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, List<String> currentPath, List<Conflict> conflictsResult) {
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
-            if (sameResponseShapeChecked.contains(entry.getValue())) {
+            FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(entry.getValue(), fields -> new FieldValidationState<>());
+            if (!state.markResponseShapeChecked()) {
                 continue;
             }
-            ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
-            sameResponseShapeChecked.add(entry.getValue());
-            Conflict conflict = requireSameOutputTypeShape(newPath, entry.getValue());
-            if (conflict != null) {
-                conflictsResult.add(conflict);
-                continue;
-            }
-            Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(entry.getValue());
-            sameResponseShapeByName(subSelections, newPath, conflictsResult);
+            currentPath.add(entry.getKey());
+            sameResponseShape(entry.getValue(), state, currentPath, conflictsResult);
+            currentPath.remove(currentPath.size() - 1);
         }
     }
 
-    private Map<String, Set<FieldAndType>> mergeSubSelections(Set<FieldAndType> sameNameFields) {
-        Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>();
+    private void sameResponseShape(Set<FieldAndType> fields, FieldValidationState<FieldAndType> state,
+                                  List<String> path, List<Conflict> conflicts) {
+        Conflict conflict = requireSameOutputTypeShape(path, fields);
+        if (conflict != null) {
+            conflicts.add(conflict);
+            return;
+        }
+        Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fields, state);
+        sameResponseShapeByName(subSelections, path, conflicts);
+    }
+
+    private Map<String, Set<FieldAndType>> mergeSubSelections(Set<FieldAndType> sameNameFields, FieldValidationState<FieldAndType> state) {
+        Map<String, Set<FieldAndType>> subSelections = state.getMergedSubSelections();
+        if (subSelections == null) {
+            subSelections = collectSubSelections(sameNameFields);
+            state.setMergedSubSelections(subSelections);
+        }
+        return subSelections;
+    }
+
+    private Map<String, Set<FieldAndType>> collectSubSelections(Set<FieldAndType> sameNameFields) {
+        Map<String, Set<FieldAndType>> fieldMap = null;
         for (FieldAndType fieldAndType : sameNameFields) {
-            if (fieldAndType.field.getSelectionSet() != null) {
-                Set<String> visitedFragments = new LinkedHashSet<>();
-                overlappingFields_collectFields(fieldMap, fieldAndType.field.getSelectionSet(), fieldAndType.graphQLType, visitedFragments);
+            SelectionSet selectionSet = fieldAndType.field.getSelectionSet();
+            if (selectionSet == null) {
+                continue;
             }
+            if (fieldMap == null) {
+                fieldMap = new LinkedHashMap<>();
+            }
+            Set<String> visitedFragments = new LinkedHashSet<>();
+            overlappingFields_collectFields(fieldMap, selectionSet, fieldAndType.graphQLType, visitedFragments);
         }
-        return fieldMap;
+        return fieldMap == null ? Collections.emptyMap() : fieldMap;
     }
 
-    private void sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap, ImmutableList<String> currentPath, List<Conflict> conflictsResult) {
+    private @Nullable MergedFieldComplexityCounts sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap,
+                                                                      List<String> currentPath, List<Conflict> conflictsResult) {
+        if (fieldMap.isEmpty()) {
+            return null;
+        }
+        MergedFieldComplexityCounts counts = mergedFieldCounts == null ? null : new MergedFieldComplexityCounts(complexityLimits, introspectionQueryDetected);
         for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
             List<Set<FieldAndType>> groups = groupByCommonParents(entry.getValue());
-            ImmutableList<String> newPath = addToList(currentPath, entry.getKey());
+            currentPath.add(entry.getKey());
             for (Set<FieldAndType> group : groups) {
-                if (sameForCommonParentsChecked.contains(group)) {
-                    continue;
-                }
-                sameForCommonParentsChecked.add(group);
-                Conflict conflict = requireSameNameAndArguments(newPath, group);
-                if (conflict != null) {
-                    conflictsResult.add(conflict);
-                    continue;
-                }
-                Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group);
-                sameForCommonParentsByName(subSelections, newPath, conflictsResult);
+                sameForCommonParentGroup(group, currentPath, conflictsResult, counts);
             }
+            currentPath.remove(currentPath.size() - 1);
         }
+        return counts;
+    }
+
+    private void sameForCommonParentGroup(Set<FieldAndType> group, List<String> path, List<Conflict> conflictsResult,
+                                          @Nullable MergedFieldComplexityCounts selectionCounts) {
+        FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(group, fields -> new FieldValidationState<>());
+        if (selectionCounts != null && hasMergedSubSelections(state) && reuseMergedFieldCounts(state, path.size() - 1, selectionCounts)) {
+            return;
+        }
+        boolean newlyChecked = state.markSameForCommonParentsChecked();
+        if (!newlyChecked && selectionCounts == null) {
+            return;
+        }
+        boolean compatible = !newlyChecked || !isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
+                || checkCommonParentFields(group, path, conflictsResult);
+        if (!compatible && selectionCounts == null) {
+            return;
+        }
+        if (selectionCounts != null) {
+            selectionCounts.checkFieldDepth(path.size() - 1);
+        }
+        Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group, state);
+        if (selectionCounts != null && subSelections.isEmpty()) {
+            selectionCounts.addLeafField(introspectionCoordinate(group));
+            return;
+        }
+        MergedFieldComplexityCounts groupCounts = null;
+        if (selectionCounts != null) {
+            groupCounts = new MergedFieldComplexityCounts(complexityLimits, introspectionQueryDetected);
+            groupCounts.enterField(introspectionCoordinate(group));
+            // A null value marks an in-progress group, stopping invalid fragment cycles.
+            Assert.assertNotNull(mergedFieldCounts).put(state, null);
+        }
+        MergedFieldComplexityCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
+        if (groupCounts != null) {
+            groupCounts.addChildren(Assert.assertNotNull(children));
+            Assert.assertNotNull(mergedFieldCounts).put(state, groupCounts);
+            Assert.assertNotNull(selectionCounts).add(groupCounts);
+        }
+    }
+
+    private boolean hasMergedSubSelections(FieldValidationState<FieldAndType> state) {
+        Map<String, Set<FieldAndType>> subSelections = state.getMergedSubSelections();
+        return subSelections != null && !subSelections.isEmpty();
+    }
+
+    private boolean checkCommonParentFields(Set<FieldAndType> fields, List<String> path, List<Conflict> conflicts) {
+        Conflict conflict = requireSameNameAndArguments(path, fields);
+        if (conflict == null) {
+            return true;
+        }
+        conflicts.add(conflict);
+        return false;
+    }
+
+    private boolean reuseMergedFieldCounts(FieldValidationState<FieldAndType> state, int parentDepth, MergedFieldComplexityCounts selectionCounts) {
+        Map<FieldValidationState<FieldAndType>, @Nullable MergedFieldComplexityCounts> cache = Assert.assertNotNull(mergedFieldCounts);
+        if (!cache.containsKey(state)) {
+            return false;
+        }
+        MergedFieldComplexityCounts cached = cache.get(state);
+        if (cached != null) {
+            cached.checkDepth(parentDepth);
+            selectionCounts.add(cached);
+        }
+        return true;
     }
 
     private List<Set<FieldAndType>> groupByCommonParents(Set<FieldAndType> fields) {
+        if (fields.size() <= 1) {
+            return Collections.singletonList(fields);
+        }
         // Single-pass: partition into abstract types and concrete groups simultaneously
         List<FieldAndType> abstractTypes = null;
         Map<GraphQLType, Set<FieldAndType>> concreteGroups = null;
@@ -1589,7 +1632,7 @@ public class OperationValidator implements DocumentVisitor {
         return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType;
     }
 
-    private @Nullable Conflict requireSameNameAndArguments(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
+    private @Nullable Conflict requireSameNameAndArguments(List<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -1616,7 +1659,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private String pathToString(ImmutableList<String> path) {
+    private String pathToString(List<String> path) {
         return String.join("/", path);
     }
 
@@ -1645,7 +1688,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private @Nullable Conflict requireSameOutputTypeShape(ImmutableList<String> path, Set<FieldAndType> fieldAndTypes) {
+    private @Nullable Conflict requireSameOutputTypeShape(List<String> path, Set<FieldAndType> fieldAndTypes) {
         if (fieldAndTypes.size() <= 1) {
             return null;
         }
@@ -1695,7 +1738,7 @@ public class OperationValidator implements DocumentVisitor {
         return null;
     }
 
-    private Conflict mkNotSameTypeError(ImmutableList<String> path, List<Field> fields, @Nullable GraphQLType typeA, @Nullable GraphQLType typeB) {
+    private Conflict mkNotSameTypeError(List<String> path, List<Field> fields, @Nullable GraphQLType typeA, @Nullable GraphQLType typeB) {
         String name1 = typeA != null ? simplePrint(typeA) : "null";
         String name2 = typeB != null ? simplePrint(typeB) : "null";
         String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentReturnTypes", pathToString(path), name1, name2);
@@ -2196,7 +2239,7 @@ public class OperationValidator implements DocumentVisitor {
     }
 
     private String formatOperation(OperationDefinition.Operation operation) {
-        return StringKit.capitalize(operation.name().toLowerCase());
+        return StringKit.capitalize(operation.name().toLowerCase(Locale.ROOT));
     }
 
     @Override

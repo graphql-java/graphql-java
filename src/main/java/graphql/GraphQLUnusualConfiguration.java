@@ -2,7 +2,6 @@ package graphql;
 
 import graphql.execution.ResponseMapFactory;
 import graphql.execution.incremental.IncrementalExecutionContextKeys;
-import graphql.introspection.GoodFaithIntrospection;
 import graphql.parser.ParserOptions;
 import graphql.schema.PropertyDataFetcherHelper;
 
@@ -35,14 +34,6 @@ public class GraphQLUnusualConfiguration {
      */
     public PropertyDataFetcherConfig propertyDataFetching() {
         return new PropertyDataFetcherConfig(this);
-    }
-
-    /**
-     * @return an element that allows you to control JVM wide configuration
-     * of {@link graphql.introspection.GoodFaithIntrospection}
-     */
-    public GoodFaithIntrospectionConfig goodFaithIntrospection() {
-        return new GoodFaithIntrospectionConfig(this);
     }
 
     private static class BaseConfig {
@@ -208,31 +199,6 @@ public class GraphQLUnusualConfiguration {
         }
     }
 
-    public static class GoodFaithIntrospectionConfig extends BaseConfig {
-        private GoodFaithIntrospectionConfig(GraphQLUnusualConfiguration configuration) {
-            super(configuration);
-        }
-
-        /**
-         * @return true if good faith introspection is enabled
-         */
-        public boolean isEnabledJvmWide() {
-            return GoodFaithIntrospection.isEnabledJvmWide();
-        }
-
-        /**
-         * This allows you to disable good faith introspection, which is on by default.
-         *
-         * @param enabled the desired state
-         *
-         * @return the previous state
-         */
-        public GoodFaithIntrospectionConfig enabledJvmWide(boolean enabled) {
-            GoodFaithIntrospection.enabledJvmWide(enabled);
-            return this;
-        }
-    }
-
     /*
      * ===============================================
      * Per GraphqlContext code down here
@@ -275,6 +241,14 @@ public class GraphQLUnusualConfiguration {
          */
         public ResponseMapFactoryConfig responseMapFactory() {
             return new ResponseMapFactoryConfig(this);
+        }
+
+        /**
+         * @return an element that allows you to control cancellation behavior
+         */
+        @ExperimentalApi
+        public CancellationConfig cancellation() {
+            return new CancellationConfig(this);
         }
 
         private void put(String named, Object value) {
@@ -407,6 +381,55 @@ public class GraphQLUnusualConfiguration {
         @ExperimentalApi
         public ResponseMapFactoryConfig setFactory(ResponseMapFactory factory) {
             contextConfig.put(ResponseMapFactory.class.getCanonicalName(), factory);
+            return this;
+        }
+    }
+
+    public static class CancellationConfig extends BaseContextConfig {
+
+        /**
+         * The context key used to enable capturing partial results when an execution is cancelled.
+         */
+        @ExperimentalApi
+        public static final String CAPTURE_PARTIAL_RESULTS_ON_CANCEL = "graphql.capturePartialResultsOnCancel";
+
+        /**
+         * The context key used to store the cancellation {@link java.util.concurrent.CompletableFuture}
+         * that completes when {@link ExecutionInput#cancel()} is called.
+         * This is only set when {@link #CAPTURE_PARTIAL_RESULTS_ON_CANCEL} is enabled.
+         */
+        @Internal
+        public static final String CANCELLATION_FUTURE_KEY = CAPTURE_PARTIAL_RESULTS_ON_CANCEL + ".cancelFuture";
+
+        private CancellationConfig(GraphQLContextConfiguration contextConfig) {
+            super(contextConfig);
+        }
+
+        /**
+         * Returns true if partial results should be captured when the execution is cancelled via
+         * {@link ExecutionInput#cancel()}.
+         *
+         * @return true if partial results capture on cancel is enabled
+         */
+        @ExperimentalApi
+        public boolean isCapturePartialResultsOnCancelEnabled() {
+            return contextConfig.getBoolean(CAPTURE_PARTIAL_RESULTS_ON_CANCEL);
+        }
+
+        /**
+         * When enabled, if {@link ExecutionInput#cancel()} is called during execution, the engine will
+         * return the partial results of any fields that have already completed, along with an error
+         * indicating the execution was cancelled.
+         * <p>
+         * By default this is false and cancellation returns only the cancellation error with null data.
+         *
+         * @param enable true to enable capturing partial results on cancel
+         *
+         * @return this config object for chaining
+         */
+        @ExperimentalApi
+        public CancellationConfig capturePartialResultsOnCancel(boolean enable) {
+            contextConfig.put(CAPTURE_PARTIAL_RESULTS_ON_CANCEL, enable);
             return this;
         }
     }

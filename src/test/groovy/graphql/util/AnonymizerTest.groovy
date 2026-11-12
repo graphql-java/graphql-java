@@ -561,6 +561,57 @@ type Object3 {
 """
     }
 
+    def "float values are replaced"() {
+        given:
+        def schema = TestUtil.schema("""
+        type Query {
+            foo(lat: Float = 51.5074, input: MyInput): String
+        }
+        input MyInput {
+            amount: Float = 1234.56
+            amounts: [Float!]
+        }
+        """)
+        def query = 'query($v: Float = 99.95){foo(lat: -0.1278, input: {amount: $v, amounts: [3.14, 2.71]})}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """\
+        schema {
+          query: Object1
+        }
+        
+        type Object1 {
+          field1(argument1: Float = 1.0, argument2: InputObject1): String
+        }
+        
+        input InputObject1 {
+          inputField1: Float = 2.0
+          inputField2: [Float!]
+        }
+        """.stripIndent()
+        newQuery == 'query ($var1:Float=4.0){field1(argument1:1.0,argument2:{inputField1:$var1,inputField2:[2.0,3.0]})}'
+    }
+
+    def "specifiedBy urls are removed"() {
+        def schema = TestUtil.schema("""
+            scalar Secret @specifiedBy(url: "https://internal.example.com/secret-scalar")
+            type Query {
+                foo: Secret
+            }
+        """)
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectiveDefinitions(false)).print(result)
+
+        then:
+        !newSchema.contains("internal.example.com")
+    }
+
     def "descriptions are removed"() {
         def schema = TestUtil.schema("""
             "DOC"
