@@ -76,7 +76,7 @@ public class ChainedInstrumentation implements Instrumentation {
         return (ChainedInstrumentationState) assertNotNull(state);
     }
 
-    private <T> @Nullable InstrumentationContext<T> chainedCtx(@Nullable InstrumentationState state, BiFunction<Instrumentation, @Nullable InstrumentationState, InstrumentationContext<T>> mapper) {
+    private <T> @Nullable InstrumentationContext<T> chainedCtx(@Nullable InstrumentationState state, BiFunction<Instrumentation, @Nullable InstrumentationState, @Nullable InstrumentationContext<T>> mapper) {
         // if we have zero or 1 instrumentations (and 1 is the most common), then we can avoid an object allocation
         // of the ChainedInstrumentationContext since it won't be needed
         if (instrumentations.isEmpty()) {

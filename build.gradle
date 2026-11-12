@@ -28,11 +28,11 @@ plugins {
     id "groovy"
     id "me.champeau.jmh" version "0.7.3"
     id "io.github.reyerizo.gradle.jcstress" version "0.9.0"
-    id "net.ltgt.errorprone" version '5.1.1'
+    id "net.ltgt.errorprone" version '5.2.0'
     id 'jacoco'
     //
     // Kotlin just for tests - not production code
-    id 'org.jetbrains.kotlin.jvm' version '2.4.20'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.21'
 }
 
 java {
@@ -234,7 +234,7 @@ shadow {
 dependencies {
     api 'com.graphql-java:java-dataloader:6.0.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
-    api "org.jspecify:jspecify:1.0.0"
+    api "org.jspecify:jspecify:1.0.1"
 
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
@@ -273,8 +273,8 @@ dependencies {
     // comment this in if you want to run JMH benchmarks from idea
 //    jmhAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 
-    errorprone 'com.uber.nullaway:nullaway:0.13.8'
-    errorprone 'com.google.errorprone:error_prone_core:2.50.0'
+    errorprone 'com.uber.nullaway:nullaway:0.14.3'
+    errorprone 'com.google.errorprone:error_prone_core:2.52.0'
 
     // just tests - no Kotlin otherwise
     testImplementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'

@@ -41,7 +41,6 @@ class JSpecifyConsumerContractsTest extends Specification {
         result.output.contains('getNewAccumulate')
     }
 
-    // NullAway 0.13 does not model all JDK collection and callback generic uses.
     // Check the published type-use annotations as well as consumer compilation.
     def "mapper accepts and returns nullable values"() {
         when:
