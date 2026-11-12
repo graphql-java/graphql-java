@@ -147,7 +147,6 @@ class ValuesResolverConversion {
         }
         if (inputValueWithState.isExternal()) {
             return externalValueToInternalValueImpl(
-                    "externalValue",
                     inputInterceptor,
                     fieldVisibility,
                     inputType,
@@ -408,7 +407,6 @@ class ValuesResolverConversion {
                         coercedValues.put(variableName, null);
                     } else {
                         Object coercedValue = externalValueToInternalValueImpl(
-                                variableName,
                                 inputInterceptor,
                                 fieldVisibility,
                                 variableInputType,
@@ -441,33 +439,11 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
-        return externalValueToInternalValueImpl("externalValue",
-                inputInterceptor,
-                fieldVisibility,
-                graphQLType,
-                originalValue,
-                graphqlContext,
-                locale);
-    }
-
-    /**
-     * Performs validation too
-     */
-    static Object externalValueToInternalValueImpl(
-            String variableName,
-            InputInterceptor inputInterceptor,
-            GraphqlFieldVisibility fieldVisibility,
-            GraphQLInputType graphQLType,
-            Object originalValue,
-            GraphQLContext graphqlContext,
-            Locale locale
-    ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
-        return externalValueToInternalValueImpl(variableName, inputInterceptor, fieldVisibility, graphQLType,
+        return externalValueToInternalValueImpl(inputInterceptor, fieldVisibility, graphQLType,
                 originalValue, graphqlContext, locale, 0, maxInputDepth(graphqlContext));
     }
 
     private static Object externalValueToInternalValueImpl(
-            String variableName,
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
             GraphQLInputType graphQLType,
@@ -479,7 +455,6 @@ class ValuesResolverConversion {
     ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         if (isNonNull(graphQLType)) {
             Object returnValue = externalValueToInternalValueImpl(
-                    variableName,
                     inputInterceptor,
                     fieldVisibility,
                     unwrapOneAs(graphQLType),
@@ -544,7 +519,7 @@ class ValuesResolverConversion {
                         depth + 1,
                         maxDepth);
 
-                ValuesResolverOneOfValidation.validateOneOfInputTypes(inputObjectType, coercedMap, null, variableName, locale);
+                ValuesResolverOneOfValidation.validateOneOfInputTypes(inputObjectType, coercedMap, null, locale);
                 return coercedMap;
             } else {
                 throw CoercingParseValueException.newCoercingParseValueException()
@@ -602,7 +577,6 @@ class ValuesResolverConversion {
                     coercedValues.put(fieldName, null);
                 } else {
                     value = externalValueToInternalValueImpl(
-                            "externalValue",
                             inputInterceptor,
                             fieldVisibility,
                             fieldType,
@@ -667,7 +641,6 @@ class ValuesResolverConversion {
         List<Object> list = FpKit.arrayListSizedTo(listOrSingletonList);
         for (Object val : listOrSingletonList) {
             list.add(externalValueToInternalValueImpl(
-                    "externalValue",
                     inputInterceptor,
                     fieldVisibility,
                     wrappedType,
@@ -956,7 +929,6 @@ class ValuesResolverConversion {
         if (defaultValue.isExternal()) {
             // The schema already validated the default's depth; request overrides only bound supplied values.
             return externalValueToInternalValueImpl(
-                    "externalValue",
                     inputInterceptor,
                     fieldVisibility,
                     type,

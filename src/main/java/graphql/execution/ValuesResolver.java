@@ -376,7 +376,7 @@ public class ValuesResolver {
                     coercedValues.put(argumentName, value);
                 }
 
-                ValuesResolverOneOfValidation.validateOneOfInputTypes(argumentType, value, argumentValue, argumentName, locale);
+                ValuesResolverOneOfValidation.validateOneOfInputTypes(argumentType, value, argumentValue, locale);
 
             }
         }
