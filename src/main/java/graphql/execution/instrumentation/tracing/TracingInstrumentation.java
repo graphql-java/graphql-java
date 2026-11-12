@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import static graphql.Assert.assertNotNull;
 
 import static graphql.execution.instrumentation.InstrumentationState.ofState;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
@@ -81,7 +82,7 @@ public class TracingInstrumentation extends SimplePerformantInstrumentation {
     public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState rawState) {
         Map<Object, Object> currentExt = executionResult.getExtensions();
 
-        TracingSupport tracingSupport = ofState(rawState);
+        TracingSupport tracingSupport = ofState(assertNotNull(rawState, "Instrumentation state must be created before callbacks"));
         Map<Object, Object> withTracingExt = new LinkedHashMap<>(currentExt == null ? ImmutableKit.emptyMap() : currentExt);
         withTracingExt.put("tracing", tracingSupport.snapshotTracingData());
 
@@ -90,21 +91,21 @@ public class TracingInstrumentation extends SimplePerformantInstrumentation {
 
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState rawState) {
-        TracingSupport tracingSupport = ofState(rawState);
+        TracingSupport tracingSupport = ofState(assertNotNull(rawState, "Instrumentation state must be created before callbacks"));
         TracingSupport.TracingContext ctx = tracingSupport.beginField(parameters.getEnvironment(), parameters.isTrivialDataFetcher());
         return whenCompleted((result, t) -> ctx.onEnd());
     }
 
     @Override
     public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, @Nullable InstrumentationState rawState) {
-        TracingSupport tracingSupport = ofState(rawState);
+        TracingSupport tracingSupport = ofState(assertNotNull(rawState, "Instrumentation state must be created before callbacks"));
         TracingSupport.TracingContext ctx = tracingSupport.beginParse();
         return whenCompleted((result, t) -> ctx.onEnd());
     }
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, @Nullable InstrumentationState rawState) {
-        TracingSupport tracingSupport = ofState(rawState);
+        TracingSupport tracingSupport = ofState(assertNotNull(rawState, "Instrumentation state must be created before callbacks"));
         TracingSupport.TracingContext ctx = tracingSupport.beginValidation();
         return whenCompleted((result, t) -> ctx.onEnd());
     }

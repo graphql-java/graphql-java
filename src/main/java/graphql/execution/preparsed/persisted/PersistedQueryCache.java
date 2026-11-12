@@ -5,10 +5,12 @@ import graphql.PublicSpi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 
 import java.util.concurrent.CompletableFuture;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This interface is used to abstract an actual cache that can cache parsed persistent queries.
  */
+@NullMarked
 @PublicSpi
 public interface PersistedQueryCache {
     /**

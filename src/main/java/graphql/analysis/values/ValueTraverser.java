@@ -19,12 +19,14 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLTypeUtil;
+import java.util.ArrayList;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import static java.util.Collections.unmodifiableList;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -272,36 +274,36 @@ public class ValueTraverser {
             assertTrue(coercedValue instanceof List, "A list type MUST have an List value");
         }
         @SuppressWarnings("unchecked")
-        List<Object> list = (List<Object>) coercedValue;
-        List<Object> newList = visitor.visitListValue(list, listInputType, containingElements);
+        List<@Nullable Object> list = (List<@Nullable Object>) coercedValue;
+        List<@Nullable Object> newList = visitor.visitListValue(list, listInputType, containingElements);
         if (newList == ABSENCE_SENTINEL) {
             return ABSENCE_SENTINEL;
         }
         if (newList != null) {
             GraphQLInputType inputType = GraphQLTypeUtil.unwrapOneAs(listInputType);
-            ImmutableList.Builder<Object> copiedList = null;
+            List<@Nullable Object> copiedList = null;
             int i = 0;
             for (Object subValue : newList) {
                 Object newValue = visitPreOrderImpl(subValue, inputType, containingElements, visitor);
                 if (copiedList != null) {
                     if (newValue != ABSENCE_SENTINEL) {
-                        copiedList.add(assertNotNull(newValue, "list element must not be null"));
+                        copiedList.add(newValue);
                     }
                 } else if (hasChanged(newValue, subValue)) {
                     // go into copy mode because something has changed
                     // copy previous values up to this point
-                    copiedList = ImmutableList.builder();
+                    copiedList = new ArrayList<>(newList.size());
                     for (int j = 0; j < i; j++) {
                         copiedList.add(newList.get(j));
                     }
                     if (newValue != ABSENCE_SENTINEL) {
-                        copiedList.add(assertNotNull(newValue, "list element must not be null"));
+                        copiedList.add(newValue);
                     }
                 }
                 i++;
             }
             if (copiedList != null) {
-                return copiedList.build();
+                return unmodifiableList(copiedList);
             } else {
                 return newList;
             }

@@ -6,10 +6,12 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
 import java.util.concurrent.CompletableFuture;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This is called when an exception is thrown during {@link graphql.schema.DataFetcher#get(DataFetchingEnvironment)} execution
  */
+@NullMarked
 @PublicSpi
 public interface DataFetcherExceptionHandler {
 

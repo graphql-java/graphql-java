@@ -4,6 +4,7 @@ import graphql.GraphQLError;
 import graphql.PublicSpi;
 
 import java.util.List;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This pluggable interface allows you to validate the fields and their argument inputs before query execution.
@@ -18,6 +19,7 @@ import java.util.List;
  * @see FieldValidationEnvironment
  * @see SimpleFieldValidation
  */
+@NullMarked
 @PublicSpi
 public interface FieldValidation {
 

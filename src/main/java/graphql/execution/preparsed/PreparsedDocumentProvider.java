@@ -6,10 +6,12 @@ import graphql.PublicSpi;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Interface that allows clients to hook in Document caching and/or the whitelisting of queries.
  */
+@NullMarked
 @PublicSpi
 public interface PreparsedDocumentProvider {
     /**

@@ -1,10 +1,10 @@
 package graphql.extensions;
 
 import graphql.PublicSpi;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This interface is a callback asking code to merge two maps with an eye to creating
@@ -16,6 +16,7 @@ import java.util.Map;
  * <p>
  * This interface will be called repeatedly for each change that has been added to the {@link ExtensionsBuilder} and it is expected to merge the two maps as it sees fit
  */
+@NullMarked
 @PublicSpi
 public interface ExtensionsMerger {
 
@@ -41,6 +42,5 @@ public interface ExtensionsMerger {
      *
      * @return a non null merged map
      */
-    @NonNull
-    Map<Object, @Nullable Object> merge(@NonNull Map<Object, @Nullable Object> leftMap, @NonNull Map<Object, @Nullable Object> rightMap);
+    Map<Object, @Nullable Object> merge(Map<Object, @Nullable Object> leftMap, Map<Object, @Nullable Object> rightMap);
 }
