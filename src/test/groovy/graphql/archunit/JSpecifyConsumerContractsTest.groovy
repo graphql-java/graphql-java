@@ -41,6 +41,15 @@ class JSpecifyConsumerContractsTest extends Specification {
         result.output.contains('getNewAccumulate')
     }
 
+    def "NullAway rejects dereferencing nullable SPI results"() {
+        when:
+        def result = compileConsumer('UnsafeSpiUsage')
+
+        then:
+        result.exitCode != 0
+        result.output.count('error: [NullAway]') == 6
+    }
+
     // Check the published type-use annotations as well as consumer compilation.
     def "mapper accepts and returns nullable values"() {
         when:

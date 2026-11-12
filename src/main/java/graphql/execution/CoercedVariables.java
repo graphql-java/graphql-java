@@ -1,12 +1,12 @@
 package graphql.execution;
 
 import graphql.PublicApi;
-import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
+import static java.util.Collections.emptyMap;
 
 /**
  * Holds coerced variables, that is their values are now in a canonical form.
@@ -14,14 +14,14 @@ import java.util.Map;
 @PublicApi
 @NullMarked
 public class CoercedVariables {
-    private static final CoercedVariables EMPTY = CoercedVariables.of(ImmutableKit.emptyMap());
-    private final ImmutableMapWithNullValues<String, Object> coercedVariables;
+    private static final CoercedVariables EMPTY = CoercedVariables.of(emptyMap());
+    private final ImmutableMapWithNullValues<String, @Nullable Object> coercedVariables;
 
-    public CoercedVariables(Map<String, Object> coercedVariables) {
+    public CoercedVariables(Map<String, @Nullable Object> coercedVariables) {
         this.coercedVariables = ImmutableMapWithNullValues.copyOf(coercedVariables);
     }
 
-    public Map<String, Object> toMap() {
+    public Map<String, @Nullable Object> toMap() {
         return coercedVariables;
     }
 
@@ -37,7 +37,7 @@ public class CoercedVariables {
         return EMPTY;
     }
 
-    public static CoercedVariables of(Map<String, Object> coercedVariables) {
+    public static CoercedVariables of(Map<String, @Nullable Object> coercedVariables) {
         return new CoercedVariables(coercedVariables);
     }
 

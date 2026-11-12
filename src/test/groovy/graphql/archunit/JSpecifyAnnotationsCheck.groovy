@@ -30,23 +30,16 @@ class JSpecifyAnnotationsCheck extends Specification {
 
     // Existing SPI classes awaiting migration are tracked separately from completed API work.
     private static final Set<String> JSPECIFY_SPI_EXEMPTION_LIST = [
-            "graphql.TrivialDataFetcher",
             "graphql.execution.AbstractAsyncExecutionStrategy",
-            "graphql.execution.ExecutionIdProvider",
             "graphql.execution.ExecutionStrategy",
-            "graphql.execution.ValueUnboxer",
             "graphql.execution.instrumentation.ExecuteObjectInstrumentationContext",
             "graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext",
             "graphql.execution.instrumentation.FieldFetchingInstrumentationContext",
             "graphql.execution.instrumentation.Instrumentation",
             "graphql.parser.ParsingListener",
-            "graphql.schema.Coercing",
-            "graphql.schema.DataFetcher",
-            "graphql.schema.DataFetcherFactory",
-            "graphql.schema.TypeResolver",
+
             "graphql.schema.diff.SchemaDiff",
-            "graphql.schema.idl.EnumValuesProvider",
-            "graphql.schema.idl.WiringFactory",
+
             "graphql.schema.visitor.GraphQLSchemaVisitor"
     ] as Set
 

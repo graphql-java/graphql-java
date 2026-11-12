@@ -15,7 +15,7 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 @NullMarked
-public class AsyncDataFetcher<T extends @Nullable Object> implements DataFetcher<CompletableFuture<T>> {
+public class AsyncDataFetcher<T extends @Nullable Object> implements DataFetcher<CompletableFuture<@Nullable T>> {
 
     /**
      * A factory method for creating asynchronous data fetchers so that when used with
@@ -75,7 +75,7 @@ public class AsyncDataFetcher<T extends @Nullable Object> implements DataFetcher
     }
 
     @Override
-    public CompletableFuture<T> get(DataFetchingEnvironment environment) {
+    public CompletableFuture<@Nullable T> get(DataFetchingEnvironment environment) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return wrappedDataFetcher.get(environment);

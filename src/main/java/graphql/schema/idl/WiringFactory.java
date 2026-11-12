@@ -5,6 +5,8 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.TypeResolver;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertShouldNeverHappen;
 
@@ -13,6 +15,7 @@ import static graphql.Assert.assertShouldNeverHappen;
  * based on the IDL definitions.  For example you could look at the directives say to build a more dynamic
  * set of type resolvers and data fetchers.
  */
+@NullMarked
 @PublicSpi
 public interface WiringFactory {
 
@@ -101,7 +104,7 @@ public interface WiringFactory {
      *
      * @return a {@link graphql.schema.DataFetcherFactory}
      */
-    default <T> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
+    default <T extends @Nullable Object> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
         return assertShouldNeverHappen();
     }
 
@@ -161,7 +164,7 @@ public interface WiringFactory {
      *
      * @return a {@link DataFetcher}
      */
-    default DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
+    default @Nullable DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
         return null;
     }
 }

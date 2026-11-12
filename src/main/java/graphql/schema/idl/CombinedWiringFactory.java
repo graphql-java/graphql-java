@@ -79,7 +79,7 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public <T> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
+    public <T extends @Nullable Object> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
         for (WiringFactory factory : factories) {
             if (factory.providesDataFetcherFactory(environment)) {
                 return factory.getDataFetcherFactory(environment);

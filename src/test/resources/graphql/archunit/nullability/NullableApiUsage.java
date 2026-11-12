@@ -1,6 +1,10 @@
 package nullability;
 
 import graphql.extensions.ExtensionsBuilder;
+import graphql.execution.CoercedVariables;
+import graphql.execution.ExecutionIdProvider;
+import graphql.execution.ValueUnboxer;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.incremental.StreamPayload;
 import graphql.language.Node;
 import graphql.language.NodeTraverser;
@@ -17,6 +21,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 @NullMarked
@@ -28,6 +33,19 @@ public class NullableApiUsage {
         DataFetcherFactory<@Nullable String> factory = DataFetcherFactories.useDataFetcher(fetcher);
         BiFunction<DataFetchingEnvironment, @Nullable Object, @Nullable Object> mapper = (environment, value) -> null;
         DataFetcherFactories.wrapDataFetcher(fetcher, mapper);
+    }
+
+    public static CompletableFuture<@Nullable String> nullableAsyncResult(DataFetchingEnvironment environment) {
+        DataFetcher<String> fetcher = ignored -> null;
+        return AsyncDataFetcher.async(fetcher).get(environment);
+    }
+
+    public static void nullableSpiInputs(Map<String, @Nullable Object> variables) {
+        CoercedVariables.of(variables);
+        ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER.provide("{ field }", null, null);
+        ValueUnboxer.DEFAULT.unbox(null);
+        InstrumentationState state = InstrumentationState.ofState(new InstrumentationState() {});
+        state.toString();
     }
 
     public static @Nullable String nullableArgument(DelegatingDataFetchingEnvironment environment) {
