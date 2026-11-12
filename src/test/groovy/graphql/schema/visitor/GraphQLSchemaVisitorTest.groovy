@@ -27,6 +27,25 @@ import static graphql.schema.FieldCoordinates.coordinates
 
 class GraphQLSchemaVisitorTest extends Specification {
 
+    def "a field visited as a traversal root has no container"() {
+        given:
+        def root = GraphQLFieldDefinition.newFieldDefinition().name("root").type(graphql.Scalars.GraphQLString).build()
+        def containers = []
+        def visitor = new GraphQLSchemaVisitor() {
+            @Override
+            GraphQLSchemaTraversalControl visitFieldDefinition(GraphQLFieldDefinition field, GraphQLSchemaVisitor.FieldDefinitionVisitorEnvironment environment) {
+                containers.add(environment.container)
+                return environment.ok()
+            }
+        }
+
+        when:
+        new SchemaTraverser().depthFirst(visitor.toTypeVisitor(), root)
+
+        then:
+        containers == [null]
+    }
+
 
     def toNames(GraphQLSchemaElement start, List<GraphQLSchemaElement> elements) {
         def l = elements.collect({

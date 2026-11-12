@@ -4,10 +4,12 @@ import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.execution.FieldValueInfo;
-import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+@NullMarked
 @PublicSpi
 public interface ExecutionStrategyInstrumentationContext extends InstrumentationContext<ExecutionResult> {
 
@@ -26,9 +28,8 @@ public interface ExecutionStrategyInstrumentationContext extends Instrumentation
      *
      * @return a non null {@link InstrumentationContext} that maybe a no-op
      */
-    @NonNull
     @Internal
-    static ExecutionStrategyInstrumentationContext nonNullCtx(ExecutionStrategyInstrumentationContext nullableContext) {
+    static ExecutionStrategyInstrumentationContext nonNullCtx(@Nullable ExecutionStrategyInstrumentationContext nullableContext) {
         return nullableContext == null ? NOOP : nullableContext;
     }
 
@@ -39,7 +40,7 @@ public interface ExecutionStrategyInstrumentationContext extends Instrumentation
         }
 
         @Override
-        public void onCompleted(ExecutionResult result, Throwable t) {
+        public void onCompleted(@Nullable ExecutionResult result, @Nullable Throwable t) {
         }
     };
 

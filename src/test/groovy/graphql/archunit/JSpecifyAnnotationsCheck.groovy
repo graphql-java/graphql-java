@@ -32,15 +32,9 @@ class JSpecifyAnnotationsCheck extends Specification {
     private static final Set<String> JSPECIFY_SPI_EXEMPTION_LIST = [
             "graphql.execution.AbstractAsyncExecutionStrategy",
             "graphql.execution.ExecutionStrategy",
-            "graphql.execution.instrumentation.ExecuteObjectInstrumentationContext",
-            "graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext",
-            "graphql.execution.instrumentation.FieldFetchingInstrumentationContext",
-            "graphql.execution.instrumentation.Instrumentation",
-            "graphql.parser.ParsingListener",
 
             "graphql.schema.diff.SchemaDiff",
 
-            "graphql.schema.visitor.GraphQLSchemaVisitor"
     ] as Set
 
     def "ensure all public API, SPI, and experimental API classes have @NullMarked annotation"() {

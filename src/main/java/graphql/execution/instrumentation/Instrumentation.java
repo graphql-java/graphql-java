@@ -18,11 +18,11 @@ import graphql.language.Document;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.jspecify.annotations.NullMarked;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
 
@@ -39,6 +39,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  * one for the step is `dispatched` and one for when the step has `completed`.  This is done because many of the "steps" are asynchronous
  * operations such as fetching data and resolving it into objects.
  */
+@NullMarked
 @PublicSpi
 public interface Instrumentation {
     /**
@@ -284,7 +285,6 @@ public interface Instrumentation {
      *
      * @return a non-null instrumented ExecutionInput, the default is to return to the same object
      */
-    @NonNull
     default ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return executionInput;
     }
@@ -298,7 +298,6 @@ public interface Instrumentation {
      *
      * @return a non-null instrumented DocumentAndVariables, the default is to return to the same objects
      */
-    @NonNull
     default DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return documentAndVariables;
     }
@@ -313,7 +312,6 @@ public interface Instrumentation {
      *
      * @return a non-null instrumented GraphQLSchema, the default is to return to the same object
      */
-    @NonNull
     default GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return schema;
     }
@@ -328,7 +326,6 @@ public interface Instrumentation {
      *
      * @return a non-null instrumented ExecutionContext, the default is to return to the same object
      */
-    @NonNull
     default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return executionContext;
     }
@@ -345,7 +342,6 @@ public interface Instrumentation {
      *
      * @return a non-null instrumented DataFetcher, the default is to return to the same object
      */
-    @NonNull
     default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, @Nullable InstrumentationState state) {
         return dataFetcher;
     }
@@ -359,7 +355,6 @@ public interface Instrumentation {
      *
      * @return a new execution result completable future
      */
-    @NonNull
     default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, @Nullable InstrumentationState state) {
         return CompletableFuture.completedFuture(executionResult);
     }

@@ -5,6 +5,9 @@ import graphql.execution.CoercedVariables;
 import graphql.execution.ExecutionIdProvider;
 import graphql.execution.ValueUnboxer;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
+import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
+import graphql.execution.instrumentation.FieldFetchingInstrumentationContext;
 import graphql.incremental.StreamPayload;
 import graphql.language.Node;
 import graphql.language.NodeTraverser;
@@ -46,6 +49,14 @@ public class NullableApiUsage {
         ValueUnboxer.DEFAULT.unbox(null);
         InstrumentationState state = InstrumentationState.ofState(new InstrumentationState() {});
         state.toString();
+    }
+
+    public static void nullableInstrumentationCallbacks(Map<String, @Nullable Object> result) {
+        ExecuteObjectInstrumentationContext.nonNullCtx(null).onCompleted(result, null);
+        ExecutionStrategyInstrumentationContext.nonNullCtx(null).onCompleted(null, null);
+        FieldFetchingInstrumentationContext context = FieldFetchingInstrumentationContext.nonNullCtx(null);
+        context.onFetchedValue(null);
+        context.onCompleted(null, null);
     }
 
     public static @Nullable String nullableArgument(DelegatingDataFetchingEnvironment environment) {

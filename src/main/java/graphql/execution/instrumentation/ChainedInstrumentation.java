@@ -378,7 +378,7 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onCompleted(@Nullable Map<String, Object> result, @Nullable Throwable t) {
+        public void onCompleted(@Nullable Map<String, @Nullable Object> result, @Nullable Throwable t) {
             contexts.forEach(context -> context.onCompleted(result, t));
         }
 
@@ -407,7 +407,7 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onFetchedValue(Object fetchedValue) {
+        public void onFetchedValue(@Nullable Object fetchedValue) {
             contexts.forEach(context -> context.onFetchedValue(fetchedValue));
         }
 
