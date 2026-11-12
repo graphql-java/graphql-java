@@ -14,6 +14,25 @@ import spock.lang.Specification
 
 class NormalizedDocumentFactoryTest extends Specification {
 
+    def "anonymous operations and root fields retain absent metadata"() {
+        given:
+        def schema = TestUtil.schema('type Query { field: String }')
+        def document = graphql.parser.Parser.parse('{ field }')
+
+        when:
+        def normalized = NormalizedDocumentFactory.createNormalizedDocument(schema, document)
+        def operation = normalized.singleNormalizedOperation
+        def field = operation.rootFields.first()
+
+        then:
+        operation.operationName == null
+        normalized.normalizedOperations.first().assumedSkipIncludeVariables == null
+        field.alias == null
+        field.parent == null
+        field.getNormalizedArgument('missing') == null
+        NormalizedOperationToAstCompiler.compileToDocument(schema, operation).variables == null
+    }
+
     def "test"() {
         String schema = """
 type Query{ 

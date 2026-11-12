@@ -14,6 +14,7 @@ import graphql.util.querygenerator.QueryGeneratorFieldSelection.FieldSelectionRe
 import org.jspecify.annotations.Nullable;
 
 import java.util.stream.Stream;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Generates a GraphQL query string based on the provided operation field path, operation name, arguments, and type classifier.
@@ -27,6 +28,7 @@ import java.util.stream.Stream;
  * <p>
  *
  */
+@NullMarked
 @ExperimentalApi
 public class QueryGenerator {
     private final GraphQLSchema schema;
@@ -98,6 +100,9 @@ public class QueryGenerator {
         }
 
         GraphQLFieldsContainer fieldContainer = schema.getObjectType(operation);
+        if (fieldContainer == null) {
+            throw new IllegalArgumentException("Operation type " + operation + " not found in schema");
+        }
 
         for (int i = 1; i < fieldParts.length - 1; i++) {
             String fieldName = fieldParts[i];

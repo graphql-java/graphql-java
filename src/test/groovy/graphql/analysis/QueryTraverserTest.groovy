@@ -1155,6 +1155,24 @@ class QueryTraverserTest extends Specification {
     }
 
 
+    def "reducers preserve nullable accumulators in #method"() {
+        given:
+        def schema = TestUtil.schema('type Query { first: String second: String }')
+        def traversal = createQueryTraversal(createQuery('{ first second }'), schema)
+        def seen = []
+        QueryReducer reducer = { environment, value ->
+            seen.add(value)
+            return value == null ? 'seen' : null
+        }
+
+        expect:
+        traversal."$method"(reducer, null) == null
+        seen == [null, 'seen']
+
+        where:
+        method << ['reducePreOrder', 'reducePostOrder']
+    }
+
     def "reduce preOrder"() {
         given:
         def schema = TestUtil.schema("""

@@ -27,7 +27,7 @@ class JSpecifyConsumerContractsTest extends Specification {
         assert result.exitCode == 0: result.output
 
         where:
-        fixture << ['NullableApiUsage', 'NullableExecutionStrategyUsage']
+        fixture << ['NullableApiUsage', 'NullableExecutionStrategyUsage', 'NullableNormalizedUsage']
     }
 
     def "NullAway rejects dereferencing absent arguments and traversal state"() {

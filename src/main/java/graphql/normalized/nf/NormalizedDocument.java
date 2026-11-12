@@ -6,7 +6,9 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 @ExperimentalApi
 public class NormalizedDocument {
 
@@ -27,7 +29,7 @@ public class NormalizedDocument {
 
     public static class NormalizedOperationWithAssumedSkipIncludeVariables {
 
-        Map<String, Boolean> assumedSkipIncludeVariables;
+        @Nullable Map<String, Boolean> assumedSkipIncludeVariables;
         NormalizedOperation normalizedOperation;
 
         public NormalizedOperationWithAssumedSkipIncludeVariables(@Nullable Map<String, Boolean> assumedSkipIncludeVariables, NormalizedOperation normalizedOperation) {
@@ -35,7 +37,7 @@ public class NormalizedDocument {
             this.normalizedOperation = normalizedOperation;
         }
 
-        public Map<String, Boolean> getAssumedSkipIncludeVariables() {
+        public @Nullable Map<String, Boolean> getAssumedSkipIncludeVariables() {
             return assumedSkipIncludeVariables;
         }
 

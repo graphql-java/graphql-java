@@ -12,25 +12,14 @@ import spock.lang.Specification
 class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
-            "graphql.analysis.QueryTraverser",
-            "graphql.normalized.incremental.NormalizedDeferredExecution",
-            "graphql.normalized.nf.NormalizedDocument",
-            "graphql.normalized.nf.NormalizedDocumentFactory",
-            "graphql.normalized.nf.NormalizedField",
-            "graphql.normalized.nf.NormalizedOperation",
-            "graphql.normalized.nf.NormalizedOperationToAstCompiler",
             "graphql.schema.diffing.SchemaGraph",
             "graphql.schema.validation.OneOfInputObjectRules",
             "graphql.util.CyclicSchemaAnalyzer",
-            "graphql.util.querygenerator.QueryGenerator",
-            "graphql.util.querygenerator.QueryGeneratorOptions",
-            "graphql.util.querygenerator.QueryGeneratorOptions\$QueryGeneratorOptionsBuilder",
-            "graphql.util.querygenerator.QueryGeneratorResult"
+
     ] as Set
 
     // Existing SPI classes awaiting migration are tracked separately from completed API work.
     private static final Set<String> JSPECIFY_SPI_EXEMPTION_LIST = [
-
 
             "graphql.schema.diff.SchemaDiff",
 

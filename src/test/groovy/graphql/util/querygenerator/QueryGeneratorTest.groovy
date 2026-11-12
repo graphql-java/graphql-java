@@ -10,6 +10,18 @@ import spock.lang.Specification
 
 
 class QueryGeneratorTest extends Specification {
+    def "missing operation type is rejected explicitly"() {
+        given:
+        def generator = new QueryGenerator(TestUtil.schema('type Query { field: String }'))
+
+        when:
+        generator.generateQuery('Mutation.field', null, null, null)
+
+        then:
+        def error = thrown(IllegalArgumentException)
+        error.message == 'Operation type Mutation not found in schema'
+    }
+
     def "generate query for simple type"() {
         given:
         def schema = """

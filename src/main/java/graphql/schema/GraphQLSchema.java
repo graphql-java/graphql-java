@@ -497,7 +497,7 @@ public class GraphQLSchema {
      *
      * @return list of types implementing provided interface
      */
-    public @Nullable List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
+    public List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
         return interfaceNameToObjectTypes.getOrDefault(type.getName(), emptyList());
     }
 

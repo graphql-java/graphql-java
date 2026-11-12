@@ -5,6 +5,7 @@ import graphql.schema.GraphQLObjectType;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Set;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents details about the defer execution that can be associated with a {@link graphql.normalized.ExecutableNormalizedField}.
@@ -102,9 +103,10 @@ import java.util.Set;
  * and deliver both fields at the same time.
  *
  */
+@NullMarked
 @ExperimentalApi
 public class NormalizedDeferredExecution {
-    private final String label;
+    private final @Nullable String label;
     private final Set<GraphQLObjectType> possibleTypes;
 
     public NormalizedDeferredExecution(@Nullable String label, Set<GraphQLObjectType> possibleTypes) {
