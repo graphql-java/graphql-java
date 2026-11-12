@@ -11,20 +11,6 @@ import spock.lang.Specification
  */
 class JSpecifyAnnotationsCheck extends Specification {
 
-    private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
-            "graphql.schema.diffing.SchemaGraph",
-            "graphql.schema.validation.OneOfInputObjectRules",
-            "graphql.util.CyclicSchemaAnalyzer",
-
-    ] as Set
-
-    // Existing SPI classes awaiting migration are tracked separately from completed API work.
-    private static final Set<String> JSPECIFY_SPI_EXEMPTION_LIST = [
-
-            "graphql.schema.diff.SchemaDiff",
-
-    ] as Set
-
     def "ensure all public API, SPI, and experimental API classes have @NullMarked annotation"() {
         given:
         def classes = new ClassFileImporter()
@@ -39,7 +25,6 @@ class JSpecifyAnnotationsCheck extends Specification {
                 .stream()
                 .filter { !isJSpecifyAnnotated(it) }
                 .map { it.name }
-                .filter { it -> !JSPECIFY_EXEMPTION_LIST.contains(it) && !JSPECIFY_SPI_EXEMPTION_LIST.contains(it) }
                 .collect()
 
         then:
@@ -48,28 +33,6 @@ class JSpecifyAnnotationsCheck extends Specification {
 ${classesMissingAnnotation.sort().join("\n")}
 
 Add @NullMarked or @NullUnmarked to these public API classes. See documentation at https://jspecify.dev/docs/user-guide/#nullmarked""")
-        }
-    }
-
-    def "exempted classes should not be annotated with @NullMarked or @NullUnmarked"() {
-        given:
-        def classes = new ClassFileImporter()
-                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
-                .importPackages("graphql")
-
-        when:
-        def annotatedButExempted = classes.stream()
-                .filter { (JSPECIFY_EXEMPTION_LIST + JSPECIFY_SPI_EXEMPTION_LIST).contains(it.name) }
-                .filter { isJSpecifyAnnotated(it) }
-                .map { it.name }
-                .collect()
-
-        then:
-        if (!annotatedButExempted.isEmpty()) {
-            throw new AssertionError("""The following classes are in the JSpecify exemption list but are annotated with @NullMarked or @NullUnmarked:
-${annotatedButExempted.sort().join("\n")}
-
-Please remove them from the exemption list in ${JSpecifyAnnotationsCheck.class.simpleName}.groovy.""")
         }
     }
 

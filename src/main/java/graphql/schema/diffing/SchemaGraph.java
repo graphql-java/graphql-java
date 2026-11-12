@@ -16,9 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
+import org.jspecify.annotations.NullMarked;
 
 import static graphql.Assert.assertTrue;
 
+@NullMarked
 @ExperimentalApi
 public class SchemaGraph {
 
@@ -165,7 +167,7 @@ public class SchemaGraph {
         return result;
     }
 
-    public Edge getSingleAdjacentEdge(Vertex from, Predicate<Edge> predicate) {
+    public @Nullable Edge getSingleAdjacentEdge(Vertex from, Predicate<Edge> predicate) {
         for (Edge edge : edgesByDirection.row(from).values()) {
             if (predicate.test(edge)) {
                 return edge;
@@ -204,11 +206,11 @@ public class SchemaGraph {
         directivesByName.put(name, vertex);
     }
 
-    public Vertex getType(String name) {
+    public @Nullable Vertex getType(String name) {
         return typesByName.get(name);
     }
 
-    public Vertex getDirective(String name) {
+    public @Nullable Vertex getDirective(String name) {
         return directivesByName.get(name);
     }
 

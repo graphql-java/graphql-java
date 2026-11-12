@@ -13,6 +13,8 @@ import graphql.util.TraverserContext;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
+import org.jspecify.annotations.NullMarked;
+import static graphql.Assert.assertNotNull;
 
 import static java.lang.String.format;
 
@@ -21,6 +23,7 @@ import static java.lang.String.format;
  * The type of the input field must be nullable.
  * The input field must not have a default value.
  */
+@NullMarked
 @ExperimentalApi
 public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
 
@@ -29,7 +32,7 @@ public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
         if (!inputObjectType.isOneOf()) {
             return TraversalControl.CONTINUE;
         }
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        SchemaValidationErrorCollector errorCollector = assertNotNull(context.getVarFromParents(SchemaValidationErrorCollector.class), "Schema validation requires an error collector");
         if (!canBeProvidedAFiniteValue(inputObjectType, new LinkedHashSet<>())) {
             String message = format("OneOf Input Object %s must be inhabited but all fields recursively reference only other OneOf Input Objects forming an unresolvable cycle.", inputObjectType.getName());
             errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNotInhabited, message));
@@ -65,11 +68,11 @@ public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField inputObjectField, TraverserContext<GraphQLSchemaElement> context) {
-        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) context.getParentNode();
+        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) assertNotNull(context.getParentNode(), "Input field validation requires its containing input object");
         if (!inputObjectType.isOneOf()) {
             return TraversalControl.CONTINUE;
         }
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+        SchemaValidationErrorCollector errorCollector = assertNotNull(context.getVarFromParents(SchemaValidationErrorCollector.class), "Schema validation requires an error collector");
         // error messages take from the reference implementation
         if (inputObjectField.hasSetDefaultValue()) {
             String message = format("OneOf input field %s.%s cannot have a default value.", inputObjectType.getName(), inputObjectField.getName());

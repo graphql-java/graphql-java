@@ -1,6 +1,7 @@
 package graphql.schema.diff;
 
 import graphql.Assert;
+import graphql.Contract;
 import graphql.PublicSpi;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.Argument;
@@ -34,6 +35,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.language.TypeKind.getTypeKind;
 import static graphql.schema.idl.TypeInfo.getAstDesc;
@@ -46,6 +49,7 @@ import static graphql.util.StringKit.capitalize;
  * {@link graphql.schema.diff.reporting.DifferenceReporter}
  */
 @SuppressWarnings("ConstantConditions")
+@NullMarked
 @PublicSpi
 public class SchemaDiff {
 
@@ -861,7 +865,7 @@ public class SchemaDiff {
         }
     }
 
-    DiffCategory checkTypeWithNonNullAndListOnInputOrArg(Type oldType, Type newType) {
+    @Nullable DiffCategory checkTypeWithNonNullAndListOnInputOrArg(Type oldType, Type newType) {
         TypeInfo oldTypeInfo = typeInfo(oldType);
         TypeInfo newTypeInfo = typeInfo(newType);
 
@@ -905,7 +909,7 @@ public class SchemaDiff {
         }
     }
 
-    DiffCategory checkTypeWithNonNullAndListOnObjectOrInterface(Type oldType, Type newType) {
+    @Nullable DiffCategory checkTypeWithNonNullAndListOnObjectOrInterface(Type oldType, Type newType) {
         TypeInfo oldTypeInfo = typeInfo(oldType);
         TypeInfo newTypeInfo = typeInfo(newType);
 
@@ -950,7 +954,8 @@ public class SchemaDiff {
     }
 
 
-    static String getTypeName(Type type) {
+    @Contract("!null -> !null")
+    static @Nullable String getTypeName(@Nullable Type type) {
         if (type == null) {
             return null;
         }

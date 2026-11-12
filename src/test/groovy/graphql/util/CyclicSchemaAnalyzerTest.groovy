@@ -6,6 +6,21 @@ import spock.lang.Specification
 
 class CyclicSchemaAnalyzerTest extends Specification {
 
+    def "cycle workspaces handle disjoint components and acyclic schemas"() {
+        given:
+        def cyclic = TestUtil.schema('''
+            type Query { a: A b: B }
+            type A { self: A }
+            type B { self: B }
+        ''')
+        def acyclic = TestUtil.schema('type Query { value: String }')
+
+        expect:
+        CyclicSchemaAnalyzer.findCycles(cyclic).collect { it.cycle as Set }.toSet() ==
+                [['A', 'A.self'] as Set, ['B', 'B.self'] as Set].toSet()
+        CyclicSchemaAnalyzer.findCycles(acyclic).empty
+    }
+
     def "simple cycle"() {
         given:
         def sdl = '''
