@@ -137,6 +137,42 @@ class DataFetchingEnvironmentImplTest extends Specification {
 
     }
 
+    def "loader calls are tracked for the default and explicitly configured dispatch strategies"() {
+        given:
+        def context = GraphQLContext.newContext().build()
+        if (exhausted != null) {
+            context.put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, exhausted)
+        }
+        if (chaining != null) {
+            context.put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, chaining)
+        }
+        def environment = newDataFetchingEnvironment(executionContext).graphQLContext(context).build()
+        def registeredLoader = dataLoaderRegistry.getDataLoader("dataLoader")
+
+        when:
+        def loader = environment.getDataLoader("dataLoader")
+
+        then:
+        (loader instanceof DataLoaderWithContext) == wrapped
+        if (wrapped) {
+            assert loader.delegate.is(registeredLoader)
+        } else {
+            assert loader.is(registeredLoader)
+        }
+        environment.getDataLoader("missing") == null
+
+        where:
+        exhausted | chaining | wrapped
+        null      | null     | true
+        null      | false    | true
+        null      | true     | true
+        false     | null     | false
+        false     | false    | false
+        false     | true     | true
+        true      | null     | true
+        true      | false    | true
+    }
+
     def "get or default support"() {
         when:
         def dfe = newDataFetchingEnvironment(executionContext)

@@ -14,6 +14,8 @@ import java.util.concurrent.ExecutionException
 import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
 import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.setEnableDataLoaderChaining
 import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.setEnableDataLoaderExhaustedDispatching
 import static java.util.concurrent.CompletableFuture.supplyAsync
@@ -71,19 +73,19 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ dogName catName } "
-        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
-        chainedDataLoaderOrExhaustedDispatcher ? setEnableDataLoaderChaining(ei.graphQLContext, true) : setEnableDataLoaderExhaustedDispatching(ei.graphQLContext, true)
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).graphQLContext(dispatchConfiguration).build()
 
         when:
         def efCF = graphQL.executeAsync(ei)
         Awaitility.await().until { efCF.isDone() }
         def er = efCF.get()
         then:
+        er.errors.empty
         er.data == [dogName: "Luna", catName: "Tiger"]
         batchLoadCalls == 2
 
         where:
-        chainedDataLoaderOrExhaustedDispatcher << [true, false]
+        dispatchConfiguration << [[:], [(ENABLE_DATA_LOADER_CHAINING): true], [(ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING): true]]
     }
 
     @Unroll
@@ -418,7 +420,7 @@ class ChainedDataLoaderTest extends Specification {
 
     }
 
-    def "handling of chained DataLoaders is disabled by default"() {
+    def "handling of chained DataLoaders can be disabled with per-level dispatching"() {
         given:
         def sdl = '''
 
@@ -467,7 +469,7 @@ class ChainedDataLoaderTest extends Specification {
 
         def query = "{ dogName catName } "
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
-
+        setEnableDataLoaderExhaustedDispatching(ei.graphQLContext, false)
 
         when:
         def er = graphQL.executeAsync(ei)

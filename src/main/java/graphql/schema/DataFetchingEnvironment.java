@@ -228,6 +228,11 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
 
     /**
      * This allows you to retrieve a named dataloader from the underlying {@link org.dataloader.DataLoaderRegistry}
+     * <p>
+     * Since version 27, the default exhausted dispatching strategy requires loaders to be obtained through
+     * this method so that load calls, including chained loads, can be tracked for automatic dispatching.
+     * Loading directly through the registry or a separately held loader bypasses this tracking and can
+     * leave the execution waiting for loads that are never dispatched.
      *
      * @param dataLoaderName the name of the data loader to fetch
      * @param <K>            the key type
