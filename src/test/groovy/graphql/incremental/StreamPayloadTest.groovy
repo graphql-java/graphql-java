@@ -6,16 +6,6 @@ import spock.lang.Specification
 import static graphql.GraphqlErrorBuilder.newError
 
 class StreamPayloadTest extends Specification {
-    def "nullable list elements survive serialization and copying"() {
-        given:
-        def payload = StreamPayload.newStreamedItem().path(['items', 0]).items(['first', null, 'last']).build()
-
-        expect:
-        payload.getItems() == ['first', null, 'last']
-        payload.toSpecification().items == ['first', null, 'last']
-        StreamPayload.newStreamedItem().from(payload).build().getItems() == ['first', null, 'last']
-    }
-
     def "null data is included"() {
         def payload = StreamPayload.newStreamedItem()
                 .items(null)

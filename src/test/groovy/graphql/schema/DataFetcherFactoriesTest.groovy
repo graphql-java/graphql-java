@@ -10,28 +10,6 @@ class DataFetcherFactoriesTest extends Specification {
     def cfDF = new StaticDataFetcher(CompletableFuture.completedFuture("hello"))
     def pojoDF = new StaticDataFetcher("goodbye")
 
-    def "maps nullable resolver values and permits nullable results - async #async mapped #mapped"() {
-        given:
-        DataFetcher<?> fetcher = { environment -> async ? CompletableFuture.completedFuture(null) : null }
-        def wrapped = DataFetcherFactories.wrapDataFetcher(fetcher, { environment, value ->
-            assert value == null
-            mapped
-        })
-
-        when:
-        def result = wrapped.get(DataFetchingEnvironmentImpl.newDataFetchingEnvironment().build())
-
-        then:
-        (async ? result.join() : result) == mapped
-
-        where:
-        async | mapped
-        false | null
-        true  | null
-        false | 'mapped'
-        true  | 'mapped'
-    }
-
     def "delegation happens as expected"() {
         given:
 

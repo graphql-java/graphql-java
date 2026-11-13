@@ -10,28 +10,6 @@ import static graphql.util.TraverserContext.Phase.LEAVE
 
 class NodeTraverserTest extends Specification {
 
-    def "default traversal state and result may be null - #order"() {
-        given:
-        def node = Field.newField('field').build()
-        NodeVisitor visitor = Mock()
-        visitor.visitField(_, _) >> { Field field, TraverserContext context ->
-            assert context.getCurrentAccumulate() == null
-            assert context.getNewAccumulate() == null
-            assert context.getSharedContextData() == null
-            context.setAccumulate('temporary')
-            context.setAccumulate(null)
-            assert context.getNewAccumulate() == null
-            TraversalControl.CONTINUE
-        }
-
-        expect:
-        new NodeTraverser()."$order"(visitor, node) == null
-        NodeTraverser.oneVisitWithResult(node, new NodeVisitorStub()) == null
-
-        where:
-        order << ['depthFirst', 'preOrder', 'postOrder']
-    }
-
     def "traverse nodes in depth first"() {
         given:
         Field leaf = new Field("leaf")

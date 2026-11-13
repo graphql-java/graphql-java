@@ -16,6 +16,8 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.stream.Stream;
 
+import static graphql.Assert.assertNotNull;
+
 /**
  * Generates a GraphQL query string based on the provided operation field path, operation name, arguments, and type classifier.
  * <p>
@@ -99,10 +101,7 @@ public class QueryGenerator {
             throw new IllegalArgumentException("Operation must be 'Query', 'Mutation' or 'Subscription'");
         }
 
-        GraphQLFieldsContainer fieldContainer = schema.getObjectType(operation);
-        if (fieldContainer == null) {
-            throw new IllegalArgumentException("Operation type " + operation + " not found in schema");
-        }
+        GraphQLFieldsContainer fieldContainer = assertNotNull(schema.getObjectType(operation), "Operation type %s must exist in schema", operation);
 
         for (int i = 1; i < fieldParts.length - 1; i++) {
             String fieldName = fieldParts[i];

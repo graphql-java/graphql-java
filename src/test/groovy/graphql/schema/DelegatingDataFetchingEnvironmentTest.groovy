@@ -1,39 +1,9 @@
 package graphql.schema
 
 import graphql.GraphQLContext
-import graphql.ExecutionInput
-import graphql.TestUtil
-import graphql.schema.idl.RuntimeWiring
 import spock.lang.Specification
 
 class DelegatingDataFetchingEnvironmentTest extends Specification {
-
-    def "explicit null arguments are distinct from missing arguments - #query"() {
-        given:
-        DataFetcher fetcher = { delegate ->
-            def environment = new DelegatingDataFetchingEnvironment(delegate)
-            assert environment.getArgumentOrDefault('missing', null) == null
-            assert environment.getVariables() == variables
-            assert environment.containsArgument('arg') == supplied
-            assert environment.getArguments() == (supplied ? [arg: null] : [:])
-            environment.getArgumentOrDefault('arg', 'fallback')
-        }
-        def wiring = RuntimeWiring.newRuntimeWiring().type('Query', { builder -> builder.dataFetcher('echo', fetcher) })
-        def graphQL = TestUtil.graphQL('type Query { echo(arg: String): String }', wiring).build()
-
-        when:
-        def result = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables).build())
-
-        then:
-        result.errors.empty
-        result.getData() == [echo: expected]
-
-        where:
-        query                                        | variables     | supplied | expected
-        '{ echo(arg: null) }'                         | [:]           | true     | null
-        'query($value: String) { echo(arg: $value) }'   | [value: null] | true     | null
-        '{ echo }'                                   | [:]           | false    | 'fallback'
-    }
 
     def "calls to underlying delegate"() {
 

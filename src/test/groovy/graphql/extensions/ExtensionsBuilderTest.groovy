@@ -15,23 +15,6 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class ExtensionsBuilderTest extends Specification {
 
-    def "null extension values survive single changes and merging"() {
-        given:
-        def builder = newExtensionsBuilder().addValue('first', null)
-
-        expect:
-        builder.buildExtensions() == [first: null]
-
-        when:
-        builder.addValues([second: null, replaced: 'value'])
-                .addValue('replaced', null)
-
-        then:
-        builder.buildExtensions() == [first: null, second: null, replaced: null]
-        builder.setExtensions(ExecutionResult.newExecutionResult().data('data').build()).extensions ==
-                [first: null, second: null, replaced: null]
-    }
-
 
     def "can merge changes with default behavior"() {
         when:

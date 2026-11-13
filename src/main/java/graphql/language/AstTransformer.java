@@ -49,15 +49,13 @@ public class AstTransformer {
      *                 can be retrieved within the visitor by calling context.getVarFromParents().
      * @return the transformed tree, or null if the root node was deleted.
      */
-    public @Nullable Node transform(Node root, NodeVisitor nodeVisitor, @Nullable Map<Class<?>, Object> rootVars) {
+    public @Nullable Node transform(Node root, NodeVisitor nodeVisitor, Map<Class<?>, Object> rootVars) {
         assertNotNull(root);
         assertNotNull(nodeVisitor);
 
         TraverserVisitor<Node> traverserVisitor = getNodeTraverserVisitor(nodeVisitor);
         TreeTransformer<Node> treeTransformer = new TreeTransformer<>(AST_NODE_ADAPTER);
-        return rootVars == null
-                ? treeTransformer.transform(root, traverserVisitor)
-                : treeTransformer.transform(root, traverserVisitor, rootVars);
+        return treeTransformer.transform(root, traverserVisitor, rootVars);
     }
 
     public Node transformParallel(Node root, NodeVisitor nodeVisitor) {

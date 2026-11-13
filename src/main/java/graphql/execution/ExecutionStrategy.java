@@ -1170,16 +1170,14 @@ public abstract class ExecutionStrategy {
      */
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
         ExecutionStepInfo executionStepInfo = e.getExecutionStepInfo();
-        ExecutionStepInfo parent = executionStepInfo.getParent();
-        if (parent != null && parent.isNonNullType()) {
+        if (executionStepInfo.hasParent() && assertNotNull(executionStepInfo.getParent(), "Parent must exist when hasParent is true").isNonNullType()) {
             throw new NonNullableFieldWasNullException(e);
         }
     }
 
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e, CompletableFuture<?> completableFuture) throws NonNullableFieldWasNullException {
         ExecutionStepInfo executionStepInfo = e.getExecutionStepInfo();
-        ExecutionStepInfo parent = executionStepInfo.getParent();
-        if (parent != null && parent.isNonNullType()) {
+        if (executionStepInfo.hasParent() && assertNotNull(executionStepInfo.getParent(), "Parent must exist when hasParent is true").isNonNullType()) {
             completableFuture.completeExceptionally(new NonNullableFieldWasNullException(e));
         }
     }
