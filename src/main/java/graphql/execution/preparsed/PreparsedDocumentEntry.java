@@ -58,6 +58,7 @@ public class PreparsedDocumentEntry implements Serializable {
         return document;
     }
 
+    @Nullable
     public List<? extends GraphQLError> getErrors() {
         return errors;
     }

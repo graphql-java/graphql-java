@@ -4,6 +4,7 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.util.TreeTransformerUtil;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * GraphQLTypeVisitor can be used to visit all the elements of a schema
@@ -12,6 +13,7 @@ import graphql.util.TreeTransformerUtil;
  * @see GraphQLTypeVisitorStub
  */
 @PublicApi
+@NullMarked
 public interface GraphQLTypeVisitor {
     /**
      * This method will be called when a directive is applied to a schema element.

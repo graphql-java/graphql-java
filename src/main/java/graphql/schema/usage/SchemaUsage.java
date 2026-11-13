@@ -3,6 +3,7 @@ package graphql.schema.usage;
 import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 import graphql.introspection.Introspection;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLInterfaceType;
@@ -36,6 +37,7 @@ import static java.util.Collections.emptySet;
  * is to find the types and directives in a schema that could in theory be removed because they are not useful.
  */
 @PublicApi
+@NullMarked
 public class SchemaUsage {
     private final Map<String, Integer> fieldReferenceCounts;
     private final Map<String, Integer> inputFieldReferenceCounts;

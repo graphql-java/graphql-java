@@ -12,7 +12,7 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -27,6 +27,7 @@ import java.util.Map;
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
+@NullMarked
 public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironment {
 
     protected final DataFetchingEnvironment delegateEnvironment;
@@ -41,12 +42,12 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public <T> T getSource() {
+    public <T> @Nullable T getSource() {
         return delegateEnvironment.getSource();
     }
 
     @Override
-    public Map<String, Object> getArguments() {
+    public Map<String, @Nullable Object> getArguments() {
         return delegateEnvironment.getArguments();
     }
 
@@ -56,23 +57,23 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public <T> T getArgument(String name) {
+    public <T> @Nullable T getArgument(String name) {
         return delegateEnvironment.getArgument(name);
     }
 
     @Override
-    public <T> T getArgumentOrDefault(String name, T defaultValue) {
+    public <T> @Nullable T getArgumentOrDefault(String name, @Nullable T defaultValue) {
         return delegateEnvironment.getArgumentOrDefault(name, defaultValue);
     }
 
     @Deprecated(since = "2022-04-17")
     @Override
-    public <T> T getContext() {
+    public <T> @Nullable T getContext() {
         return delegateEnvironment.getContext();
     }
 
     @Override
-    public @NonNull GraphQLContext getGraphQlContext() {
+    public GraphQLContext getGraphQlContext() {
         return delegateEnvironment.getGraphQlContext();
     }
 
@@ -82,7 +83,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public <T> T getRoot() {
+    public <T> @Nullable T getRoot() {
         return delegateEnvironment.getRoot();
     }
 
@@ -173,7 +174,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public Map<String, Object> getVariables() {
+    public Map<String, @Nullable Object> getVariables() {
         return delegateEnvironment.getVariables();
     }
 

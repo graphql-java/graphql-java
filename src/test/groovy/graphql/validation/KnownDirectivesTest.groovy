@@ -5,7 +5,6 @@ import graphql.TestUtil
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
@@ -24,8 +23,8 @@ class KnownDirectivesTest extends Specification {
         ValidationContext validationContext = new ValidationContext(StarWarsSchema.starWarsSchema, document, i18n)
         OperationValidator operationValidator = new OperationValidator(validationContext, errorCollector,
                 { r -> r == OperationValidationRule.KNOWN_DIRECTIVES })
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, operationValidator)
+
+        operationValidator.validate()
     }
 
 

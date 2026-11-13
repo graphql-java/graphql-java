@@ -198,7 +198,13 @@ class AssertTest extends Specification {
         runnable({ assertTrue(true, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
     }
 
-    def "assertFalse should throw"() {
+    def "assertFalse without a message accepts false and rejects true"() {
+        when:
+        assertFalse(false)
+
+        then:
+        noExceptionThrown()
+
         when:
         assertFalse(true)
 

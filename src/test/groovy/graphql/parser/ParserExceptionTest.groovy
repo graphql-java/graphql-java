@@ -3,7 +3,13 @@ package graphql.parser
 import graphql.GraphQL
 import graphql.InvalidSyntaxError
 import graphql.StarWarsSchema
+import graphql.TestUtil
+import graphql.language.SourceLocation
+import graphql.parser.exceptions.ParseCancelledTooManyNumericLiteralCharactersException
+import graphql.schema.DataFetcher
 import spock.lang.Specification
+
+import static graphql.ExecutionInput.newExecutionInput
 
 class ParserExceptionTest extends Specification {
     def badQueryPart1 = '''
@@ -111,6 +117,71 @@ fragment X on SomeType {
         !er.errors.isEmpty()
         er.errors[0] instanceof InvalidSyntaxError
 
+    }
+
+    def "numeric limit errors preserve source mapping and locale #locale"() {
+        given:
+        def source = MultiSourceReader.newMultiSourceReader()
+                .string("type Query { f: String }\n", "query.graphqls")
+                .string("input Filter {\n  amount: Int = ${'9' * 101}\n}\n", "filter.graphqls")
+                .build()
+        def environment = ParserEnvironment.newParserEnvironment()
+                .document(source)
+                .parserOptions(ParserOptions.getDefaultSdlParserOptions())
+                .locale(locale)
+                .build()
+
+        when:
+        Parser.parse(environment)
+
+        then:
+        def exception = thrown(ParseCancelledTooManyNumericLiteralCharactersException)
+        exception.location == new SourceLocation(2, 17, 'filter.graphqls')
+        exception.message.contains(message)
+        exception.offendingToken == null
+
+        where:
+        locale         | message
+        Locale.ENGLISH | 'more than 100 characters'
+        Locale.GERMAN  | 'mehr als 100 Zeichen'
+    }
+
+    def "standalone value parsing translates numeric limit errors"() {
+        when:
+        Parser.parseValue('9' * 101)
+
+        then:
+        def exception = thrown(ParseCancelledTooManyNumericLiteralCharactersException)
+        exception.location == new SourceLocation(1, 1)
+    }
+
+    def "execution reports a numeric limit error without fetching data - #description"() {
+        given:
+        def fetcher = Mock(DataFetcher)
+        def graphQL = TestUtil.graphQL('type Query { f(arg: Float): String }', [Query: [f: fetcher]]).build()
+        def options = ParserOptions.getDefaultOperationParserOptions().transform {
+            it.maxNumericLiteralCharacters(5)
+        }
+        def input = newExecutionInput().query("{\n  f(arg: $numericInput)\n}")
+                .graphQLContext([(ParserOptions): options])
+                .locale(Locale.ENGLISH)
+                .build()
+
+        when:
+        def result = graphQL.execute(input)
+
+        then:
+        !result.dataPresent
+        result.errors.size() == 1
+        result.errors[0] instanceof InvalidSyntaxError
+        result.errors[0].message.contains('more than 5 characters')
+        result.errors[0].locations == [new SourceLocation(2, 10)]
+        0 * fetcher.get(_)
+
+        where:
+        description          | numericInput
+        'integer'            | '123456'
+        'malformed exponent' | '1e' + '9' * 10_000 + 'x'
     }
 
 }

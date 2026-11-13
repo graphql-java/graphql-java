@@ -6,6 +6,21 @@ import GraphqlSDL, GraphqlOperation, GraphqlCommon;
 }
 
 @lexer::members {
+    private int maxNumericLiteralCharacters = Integer.MAX_VALUE;
+
+    public void setMaxNumericLiteralCharacters(int maxNumericLiteralCharacters) {
+        this.maxNumericLiteralCharacters = maxNumericLiteralCharacters;
+    }
+
+    private boolean numericLiteralLengthWithinLimit() {
+        int start = _tokenStartCharIndex;
+        int end = _input.index();
+        if (end - start > maxNumericLiteralCharacters) {
+            throw new NumericLiteralTooLongException(_tokenStartLine, _tokenStartCharPositionInLine, maxNumericLiteralCharacters);
+        }
+        return true;
+    }
+
     public boolean isDigit(int c) {
         return c >= '0' && c <= '9';
     }

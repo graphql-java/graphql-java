@@ -8,12 +8,15 @@ import graphql.util.Traverser;
 import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * Lets you traverse a {@link Node} tree.
@@ -42,9 +45,9 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
      *
-     * @return the accumulation result of this traversal
+     * @return the accumulation result of this traversal, or null if none has been set
      */
-    public Object depthFirst(NodeVisitor nodeVisitor, Node root) {
+    public @Nullable Object depthFirst(NodeVisitor nodeVisitor, Node root) {
         return depthFirst(nodeVisitor, Collections.singleton(root));
     }
 
@@ -54,19 +57,19 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
      *
-     * @return the accumulation result of this traversal
+     * @return the accumulation result of this traversal, or null if none has been set
      */
-    public Object depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+    public @Nullable Object depthFirst(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
             @Override
             public TraversalControl leave(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
         };
         return doTraverse(roots, nodeTraverserVisitor);
@@ -78,9 +81,9 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
      *
-     * @return the accumulation result of this traversal
+     * @return the accumulation result of this traversal, or null if none has been set
      */
-    public Object preOrder(NodeVisitor nodeVisitor, Node root) {
+    public @Nullable Object preOrder(NodeVisitor nodeVisitor, Node root) {
         return preOrder(nodeVisitor, Collections.singleton(root));
     }
 
@@ -90,14 +93,14 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
      *
-     * @return the accumulation result of this traversal
+     * @return the accumulation result of this traversal, or null if none has been set
      */
-    public Object preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+    public @Nullable Object preOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
             @Override
@@ -115,9 +118,9 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param root        the root node
      *
-     * @return the accumulation result of this traversal
+     * @return the accumulation result of this traversal, or null if none has been set
      */
-    public Object postOrder(NodeVisitor nodeVisitor, Node root) {
+    public @Nullable Object postOrder(NodeVisitor nodeVisitor, Node root) {
         return postOrder(nodeVisitor, Collections.singleton(root));
     }
 
@@ -127,9 +130,9 @@ public class NodeTraverser {
      * @param nodeVisitor the visitor of the nodes
      * @param roots       the root nodes
      *
-     * @return the accumulation result of this traversal
+     * @return the accumulation result of this traversal, or null if none has been set
      */
-    public Object postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
+    public @Nullable Object postOrder(NodeVisitor nodeVisitor, Collection<? extends Node> roots) {
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
             @Override
@@ -139,21 +142,21 @@ public class NodeTraverser {
 
             @Override
             public TraversalControl leave(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
         };
         return doTraverse(roots, nodeTraverserVisitor);
     }
 
-    private Object doTraverse(Collection<? extends Node> roots, TraverserVisitor traverserVisitor) {
+    private @Nullable Object doTraverse(Collection<? extends Node> roots, TraverserVisitor traverserVisitor) {
         Traverser<Node> nodeTraverser = Traverser.depthFirst(this.getChildren);
         nodeTraverser.rootVars(rootVars);
         return nodeTraverser.traverse(roots, traverserVisitor).getAccumulatedResult();
     }
 
     @SuppressWarnings("TypeParameterUnusedInFormals")
-    public static <T> T oneVisitWithResult(Node node, NodeVisitor nodeVisitor) {
+    public static <T> @Nullable T oneVisitWithResult(Node node, NodeVisitor nodeVisitor) {
         DefaultTraverserContext<Node> context = DefaultTraverserContext.simple(node);
         node.accept(context, nodeVisitor);
         return (T) context.getNewAccumulate();

@@ -4,10 +4,12 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 import graphql.introspection.Introspection;
 import graphql.schema.idl.ScalarInfo;
 import graphql.util.Breadcrumb;
-import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
 import graphql.util.NodeZipper;
 import graphql.util.TraversalControl;
@@ -80,6 +82,7 @@ import static graphql.util.TraversalControl.CONTINUE;
  * </pre>
  */
 @PublicApi
+@NullMarked
 public class SchemaTransformer {
 
     /**
@@ -156,7 +159,7 @@ public class SchemaTransformer {
      *
      * @see GraphQLTypeVisitor#deleteNode(TraverserContext)
      */
-    public static GraphQLSchema transformSchemaWithDeletes(GraphQLSchema schema, GraphQLTypeVisitor visitor, Consumer<GraphQLSchema.Builder> postTransformation) {
+    public static GraphQLSchema transformSchemaWithDeletes(GraphQLSchema schema, GraphQLTypeVisitor visitor, @Nullable Consumer<GraphQLSchema.Builder> postTransformation) {
         SchemaTransformer schemaTransformer = new SchemaTransformer();
         return (GraphQLSchema) schemaTransformer.transformImpl(schema, null, visitor, postTransformation, true);
     }
@@ -189,10 +192,10 @@ public class SchemaTransformer {
         return (T) transformImpl(null, schemaElement, visitor, null, false);
     }
 
-    private Object transformImpl(final GraphQLSchema schema,
-                                 GraphQLSchemaElement schemaElement,
+    private Object transformImpl(final @Nullable GraphQLSchema schema,
+                                 @Nullable GraphQLSchemaElement schemaElement,
                                  GraphQLTypeVisitor visitor,
-                                 Consumer<GraphQLSchema.Builder> postTransformation,
+                                 @Nullable Consumer<GraphQLSchema.Builder> postTransformation,
                                  boolean ensureAllTypesAreVisited) {
         DummyRoot dummyRoot;
         GraphQLCodeRegistry.Builder codeRegistry = null;
@@ -220,10 +223,10 @@ public class SchemaTransformer {
         }
 
         if (schema != null) {
-
+            GraphQLCodeRegistry.Builder registry = assertNotNull(codeRegistry, "codeRegistry must not be null when schema is set");
             GraphQLSchema graphQLSchema = schema;
-            if (schemaChanged || codeRegistry.hasChanged()) {
-                graphQLSchema = dummyRoot.rebuildSchema(codeRegistry, allChangedNamedTypes);
+            if (schemaChanged || registry.hasChanged()) {
+                graphQLSchema = dummyRoot.rebuildSchema(registry, allChangedNamedTypes);
                 if (postTransformation != null) {
                     graphQLSchema = graphQLSchema.transform(postTransformation);
                 }
@@ -234,7 +237,7 @@ public class SchemaTransformer {
         }
     }
 
-    private void replaceTypeReferences(DummyRoot dummyRoot, GraphQLSchema schema, GraphQLCodeRegistry.Builder codeRegistry, Map<String, GraphQLNamedType> changedTypes) {
+    private void replaceTypeReferences(DummyRoot dummyRoot, @Nullable GraphQLSchema schema, GraphQLCodeRegistry.@Nullable Builder codeRegistry, Map<String, GraphQLNamedType> changedTypes) {
         GraphQLTypeVisitor typeRefVisitor = new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLTypeReference(GraphQLTypeReference typeRef, TraverserContext<GraphQLSchemaElement> context) {
@@ -253,8 +256,8 @@ public class SchemaTransformer {
                                          Map<String, GraphQLNamedType> typesWhereNameIsChanged,
                                          Set<String> allChangedNamedTypes,
                                          Map<String, GraphQLTypeReference> typeReferences,
-                                         GraphQLTypeVisitor visitor, GraphQLCodeRegistry.Builder codeRegistry,
-                                         GraphQLSchema schema) {
+                                         GraphQLTypeVisitor visitor, GraphQLCodeRegistry.@Nullable Builder codeRegistry,
+                                         @Nullable GraphQLSchema schema) {
         List<NodeZipper<GraphQLSchemaElement>> zippers = new LinkedList<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByNodeAfterTraversing = new LinkedHashMap<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByOriginalNode = new LinkedHashMap<>();
@@ -267,7 +270,7 @@ public class SchemaTransformer {
         TraverserVisitor<GraphQLSchemaElement> nodeTraverserVisitor = new TraverserVisitor<>() {
             @Override
             public TraversalControl enter(TraverserContext<GraphQLSchemaElement> context) {
-                GraphQLSchemaElement currentSchemaElement = context.thisNode();
+                GraphQLSchemaElement currentSchemaElement = assertNotNull(context.thisNode(), "thisNode should not be null");
                 if (currentSchemaElement == dummyRoot) {
                     return TraversalControl.CONTINUE;
                 }
@@ -277,7 +280,6 @@ public class SchemaTransformer {
                 }
                 NodeZipper<GraphQLSchemaElement> nodeZipper = new NodeZipper<>(currentSchemaElement, context.getBreadcrumbs(), SCHEMA_ELEMENT_ADAPTER);
                 context.setVar(NodeZipper.class, nodeZipper);
-                context.setVar(NodeAdapter.class, SCHEMA_ELEMENT_ADAPTER);
 
                 int zippersBefore = zippers.size();
                 TraversalControl result = currentSchemaElement.accept(context, visitor);
@@ -287,7 +289,7 @@ public class SchemaTransformer {
                     nodeZipper = zippers.get(zippers.size() - 1);
                     if (context.originalThisNode() instanceof GraphQLNamedType && context.isChanged()) {
                         GraphQLNamedType originalNamedType = (GraphQLNamedType) context.originalThisNode();
-                        GraphQLNamedType changedNamedType = (GraphQLNamedType) context.thisNode();
+                        GraphQLNamedType changedNamedType = (GraphQLNamedType) assertNotNull(context.thisNode(), "thisNode should not be null");
                         if (!originalNamedType.getName().equals(changedNamedType.getName())) {
                             typesWhereNameIsChanged.put(originalNamedType.getName(), changedNamedType);
                         }
@@ -322,8 +324,8 @@ public class SchemaTransformer {
 
             @Override
             public TraversalControl backRef(TraverserContext<GraphQLSchemaElement> context) {
-                NodeZipper<GraphQLSchemaElement> zipper = zipperByOriginalNode.get(context.thisNode());
-                breadcrumbsByZipper.get(zipper).add(context.getBreadcrumbs());
+                NodeZipper<GraphQLSchemaElement> zipper = assertNotNull(zipperByOriginalNode.get(context.thisNode()), "zipper must exist for backRef node");
+                assertNotNull(breadcrumbsByZipper.get(zipper), "breadcrumbs must exist for zipper").add(context.getBreadcrumbs());
                 if (zipper.getModificationType() == DELETE) {
                     return CONTINUE;
                 }
@@ -351,6 +353,7 @@ public class SchemaTransformer {
         return zipUpToDummyRoot(zippers, stronglyConnectedTopologicallySorted, breadcrumbsByZipper, zipperByNodeAfterTraversing, allChangedNamedTypes);
     }
 
+    @NullUnmarked
     private static class RelevantZippersAndBreadcrumbs {
         final Multimap<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByParent = LinkedHashMultimap.create();
         final Set<NodeZipper<GraphQLSchemaElement>> relevantZippers;
@@ -441,7 +444,7 @@ public class SchemaTransformer {
                 }
                 // we need to change all elements inside the current SCC
                 for (GraphQLSchemaElement element : unchangedSccElements) {
-                    NodeZipper<GraphQLSchemaElement> currentZipper = nodeToZipper.get(element);
+                    NodeZipper<GraphQLSchemaElement> currentZipper = assertNotNull(nodeToZipper.get(element), "zipper must exist for element");
                     NodeZipper<GraphQLSchemaElement> newZipper = currentZipper.withNewNode(element.copy());
                     nodeToZipper.put(element, newZipper);
                     relevantZippers.updateZipper(currentZipper, newZipper);
@@ -586,6 +589,7 @@ public class SchemaTransformer {
         return new NodeZipper<>(newNode, newBreadcrumbs, SCHEMA_ELEMENT_ADAPTER);
     }
 
+    @NullUnmarked
     private static class ZipperWithOneParent {
         public NodeZipper<GraphQLSchemaElement> zipper;
         public Breadcrumb<GraphQLSchemaElement> parent;
@@ -597,6 +601,7 @@ public class SchemaTransformer {
     }
 
     // artificial schema element which serves as root element for the transformation
+    @NullUnmarked
     private static class DummyRoot implements GraphQLSchemaElement {
 
         static final String QUERY = "query";

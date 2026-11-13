@@ -51,7 +51,7 @@ public class EngineRunningState {
 
 
 
-    public <U, T> CompletableFuture<U> handle(CompletableFuture<T> src, BiFunction<? super T, Throwable, ? extends U> fn) {
+    public <U extends @Nullable Object, T extends @Nullable Object> CompletableFuture<U> handle(CompletableFuture<T> src, BiFunction<? super @Nullable T, @Nullable Throwable, ? extends U> fn) {
         if (engineRunningObserver == null) {
             return src.handle(fn);
         }
@@ -69,7 +69,7 @@ public class EngineRunningState {
         return result;
     }
 
-    public <T> CompletableFuture<T> whenComplete(CompletableFuture<T> src, BiConsumer<? super T, ? super Throwable> fn) {
+    public <T extends @Nullable Object> CompletableFuture<T> whenComplete(CompletableFuture<T> src, BiConsumer<? super @Nullable T, ? super @Nullable Throwable> fn) {
         if (engineRunningObserver == null) {
             return src.whenComplete(fn);
         }
@@ -86,7 +86,7 @@ public class EngineRunningState {
         return result;
     }
 
-    public <U, T> CompletableFuture<U> compose(CompletableFuture<T> src, Function<? super T, ? extends CompletionStage<U>> fn) {
+    public <U extends @Nullable Object, T extends @Nullable Object> CompletableFuture<U> compose(CompletableFuture<T> src, Function<? super T, ? extends CompletionStage<U>> fn) {
         if (engineRunningObserver == null) {
             return src.thenCompose(fn);
         }
@@ -113,7 +113,7 @@ public class EngineRunningState {
     }
 
 
-    private <T> CompletableFuture<T> observeCompletableFutureStart(CompletableFuture<T> future) {
+    private <T extends @Nullable Object> CompletableFuture<T> observeCompletableFutureStart(CompletableFuture<T> future) {
         if (engineRunningObserver == null) {
             return future;
         }

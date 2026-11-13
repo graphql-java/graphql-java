@@ -6,7 +6,6 @@ import graphql.GraphQL
 import graphql.GraphQLContext
 import graphql.execution.ResponseMapFactory
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
-import graphql.introspection.GoodFaithIntrospection
 import graphql.parser.ParserOptions
 import graphql.schema.PropertyDataFetcherHelper
 import spock.lang.Specification
@@ -16,13 +15,11 @@ import static graphql.parser.ParserOptions.newParserOptions
 class GraphQLUnusualConfigurationTest extends Specification {
 
     def startingParserOptions = ParserOptions.getDefaultParserOptions()
-    def startingState = GoodFaithIntrospection.isEnabledJvmWide()
 
     void cleanup() {
         // JVM wide so other tests can be affected
         ParserOptions.setDefaultParserOptions(startingParserOptions)
         PropertyDataFetcherHelper.setUseNegativeCache(true)
-        GoodFaithIntrospection.enabledJvmWide(startingState)
     }
 
     def "can set parser configurations"() {
@@ -33,6 +30,23 @@ class GraphQLUnusualConfigurationTest extends Specification {
 
         then:
         defaultParserOptions.getMaxRuleDepth() == 99
+    }
+
+    def "can chain JVM-wide configuration sections through the same parent"() {
+        given:
+        def configuration = GraphQL.unusualConfiguration()
+        def parserOptions = newParserOptions().maxRuleDepth(99).build()
+
+        when:
+        def propertyConfig = configuration.parsing().setDefaultParserOptions(parserOptions)
+                .then().propertyDataFetching()
+        def previous = propertyConfig.setUseNegativeCache(false)
+
+        then:
+        previous
+        propertyConfig.then().is(configuration)
+        propertyConfig.then().parsing().getDefaultParserOptions().is(parserOptions)
+        !propertyConfig.setUseNegativeCache(true)
     }
 
     def "can set property data fetcher config"() {
@@ -50,30 +64,6 @@ class GraphQLUnusualConfigurationTest extends Specification {
         prevValue = GraphQL.unusualConfiguration().propertyDataFetching().setUseNegativeCache(true)
         then:
         !prevValue
-    }
-
-    def "can set good faith settings"() {
-        when:
-        GraphQL.unusualConfiguration().goodFaithIntrospection().enabledJvmWide(false)
-
-        then:
-        !GraphQL.unusualConfiguration().goodFaithIntrospection().isEnabledJvmWide()
-
-        when:
-        GraphQL.unusualConfiguration().goodFaithIntrospection().enabledJvmWide(true)
-
-        then:
-        GraphQL.unusualConfiguration().goodFaithIntrospection().isEnabledJvmWide()
-
-        // showing chaining
-        when:
-        GraphQL.unusualConfiguration().goodFaithIntrospection()
-                .enabledJvmWide(true)
-                .then().goodFaithIntrospection()
-                .enabledJvmWide(false)
-
-        then:
-        !GraphQL.unusualConfiguration().goodFaithIntrospection().isEnabledJvmWide()
     }
 
     def "can set defer configuration on graphql context objects"() {

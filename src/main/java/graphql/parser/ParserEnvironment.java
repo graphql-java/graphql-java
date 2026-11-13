@@ -2,6 +2,9 @@ package graphql.parser;
 
 import graphql.PublicApi;
 import graphql.i18n.I18n;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -13,6 +16,7 @@ import static graphql.Assert.assertNotNull;
  * This is the arguments that can be passed to a {@link Parser}
  */
 @PublicApi
+@NullMarked
 public interface ParserEnvironment {
 
     /**
@@ -23,7 +27,7 @@ public interface ParserEnvironment {
     /**
      * @return the parsing options
      */
-    ParserOptions getParserOptions();
+    @Nullable ParserOptions getParserOptions();
 
     /**
      * @return the locale to produce parsing error messages in
@@ -42,6 +46,7 @@ public interface ParserEnvironment {
         return new Builder();
     }
 
+    @NullUnmarked
     class Builder {
         Reader reader;
         ParserOptions parserOptions = ParserOptions.getDefaultParserOptions();

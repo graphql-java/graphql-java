@@ -127,7 +127,7 @@ class DefaultTraverserContextTest extends Specification {
     def "context variables retain a supplied map"() {
         given:
         def vars = [:]
-        def context = new DefaultTraverserContext<>("node", null, [] as Set, vars, null, null, false, false)
+        def context = new DefaultTraverserContext<>("node", null, [] as Set, vars, null, null, false)
 
         when:
         vars[String] = "external value"
@@ -154,6 +154,6 @@ class DefaultTraverserContextTest extends Specification {
     }
 
     private static <T> DefaultTraverserContext<T> child(T node, TraverserContext<T> parent, NodeLocation location) {
-        new DefaultTraverserContext<T>(node, parent, [] as Set, [:], null, location, false, false)
+        new DefaultTraverserContext<T>(node, parent, [] as Set, [:], null, location, false)
     }
 }

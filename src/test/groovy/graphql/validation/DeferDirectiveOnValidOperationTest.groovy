@@ -4,7 +4,6 @@ import graphql.ExperimentalApi
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
 import graphql.validation.SpecValidationSchema
@@ -21,9 +20,9 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(SpecValidationSchema.specValidationSchema, document, i18n)
         validationContext.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
-                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_ON_VALID_OPERATION }))
+
+        new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_ON_VALID_OPERATION }).validate()
     }
 
     def "Allow simple defer on query with fragment definition"() {

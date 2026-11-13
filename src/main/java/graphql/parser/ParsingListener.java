@@ -1,10 +1,13 @@
 package graphql.parser;
 
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This listener interface is invoked for each token parsed by the graphql parser code.
  */
+@NullMarked
 @PublicSpi
 public interface ParsingListener {
 
@@ -22,7 +25,7 @@ public interface ParsingListener {
         /**
          * @return the text of the parsed token
          */
-        String getText();
+        @Nullable String getText();
 
         /**
          * @return the line the token occurred on

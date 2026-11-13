@@ -140,6 +140,6 @@ public abstract class TraverserState<T> {
                                                       @Nullable Map<Class<?>, Object> vars,
                                                       NodeLocation nodeLocation,
                                                       boolean isRootContext) {
-        return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodeLocation, isRootContext, false);
+        return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodeLocation, isRootContext);
     }
 }

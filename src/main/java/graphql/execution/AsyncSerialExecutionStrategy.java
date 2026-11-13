@@ -53,7 +53,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             return CompletableFuture.completedFuture(isNotSensible.get());
         }
 
-        CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
+        CompletableFuture<List<@Nullable Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
             MergedField currentField = assertNotNull(fields.getSubField(fieldName), "currentField must not be null");
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters.transform(currentField, fieldPath);
@@ -80,7 +80,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             //noinspection unchecked
             return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
                 dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi), newParameters);
-                CompletableFuture<Object> fieldValueFuture = fvi.getFieldValueFuture();
+                CompletableFuture<@Nullable Object> fieldValueFuture = fvi.getFieldValueFuture();
                 return fieldValueFuture;
             });
         } else {
