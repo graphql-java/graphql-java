@@ -2,8 +2,10 @@ package graphql.relay;
 
 import graphql.PublicApi;
 import graphql.TrivialDataFetcher;
-import graphql.schema.DataFetcher;
+import graphql.collect.ImmutableKit;
 import graphql.schema.DataFetchingEnvironment;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -17,7 +19,8 @@ import static java.util.Base64.getDecoder;
 import static java.util.Base64.getEncoder;
 
 @PublicApi
-public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, TrivialDataFetcher<Connection<T>> {
+@NullMarked
+public class SimpleListConnection<T> implements TrivialDataFetcher<Connection<T>> {
 
     static final String DUMMY_CURSOR_PREFIX = "simple-cursor";
     private final String prefix;
@@ -25,7 +28,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
 
     public SimpleListConnection(List<T> data, String prefix) {
         this.data = assertNotNull(data, " data cannot be null");
-        assertTrue(prefix != null && !prefix.isEmpty(), "prefix cannot be null or empty");
+        assertTrue(!prefix.isEmpty(), "prefix cannot be empty");
         this.prefix = prefix;
     }
 
@@ -34,7 +37,10 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
     }
 
     private List<Edge<T>> buildEdges() {
-        List<Edge<T>> edges = new ArrayList<>();
+        if (data.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Edge<T>> edges = new ArrayList<>(data.size());
         int ix = 0;
         for (T object : data) {
             edges.add(new DefaultEdge<>(object, new DefaultConnectionCursor(createCursor(ix++))));
@@ -47,7 +53,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
 
         List<Edge<T>> edges = buildEdges();
 
-        if (edges.size() == 0) {
+        if (edges.isEmpty()) {
             return emptyConnection();
         }
 
@@ -55,14 +61,16 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
         ConnectionCursor lastPresliceCursor = edges.get(edges.size() - 1).getCursor();
 
         int afterOffset = getOffsetFromCursor(environment.getArgument("after"), -1);
-        int begin = Math.max(afterOffset, -1) + 1;
+        int begin = Math.min(afterOffset, edges.size() - 1) + 1;
         int beforeOffset = getOffsetFromCursor(environment.getArgument("before"), edges.size());
         int end = Math.min(beforeOffset, edges.size());
 
-        if (begin > end) begin = end;
+        if (begin > end) {
+            begin = end;
+        }
 
         edges = edges.subList(begin, end);
-        if (edges.size() == 0) {
+        if (edges.isEmpty()) {
             return emptyConnection();
         }
 
@@ -104,7 +112,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
 
     private Connection<T> emptyConnection() {
         PageInfo pageInfo = new DefaultPageInfo(null, null, false, false);
-        return new DefaultConnection<>(Collections.emptyList(), pageInfo);
+        return new DefaultConnection<>(ImmutableKit.emptyList(), pageInfo);
     }
 
     /**
@@ -114,7 +122,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
      *
      * @return a connection cursor
      */
-    public ConnectionCursor cursorForObjectInConnection(T object) {
+    public @Nullable ConnectionCursor cursorForObjectInConnection(T object) {
         int index = data.indexOf(object);
         if (index == -1) {
             return null;
@@ -123,7 +131,7 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
         return new DefaultConnectionCursor(cursor);
     }
 
-    private int getOffsetFromCursor(String cursor, int defaultValue) {
+    private int getOffsetFromCursor(@Nullable String cursor, int defaultValue) {
         if (cursor == null) {
             return defaultValue;
         }
@@ -134,14 +142,19 @@ public class SimpleListConnection<T> implements DataFetcher<Connection<T>>, Triv
             throw new InvalidCursorException(format("The cursor is not in base64 format : '%s'", cursor), e);
         }
         String string = new String(decode, StandardCharsets.UTF_8);
-        if (prefix.length() > string.length()) {
+        if (!string.startsWith(prefix)) {
             throw new InvalidCursorException(format("The cursor prefix is missing from the cursor : '%s'", cursor));
         }
+        int offset;
         try {
-            return Integer.parseInt(string.substring(prefix.length()));
+            offset = Integer.parseInt(string.substring(prefix.length()));
         } catch (NumberFormatException nfe) {
             throw new InvalidCursorException(format("The cursor was not created by this class  : '%s'", cursor), nfe);
         }
+        if (offset < 0) {
+            throw new InvalidCursorException(format("The cursor offset must not be negative : '%s'", cursor));
+        }
+        return offset;
     }
 
     private String createCursor(int offset) {

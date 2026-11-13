@@ -1,12 +1,14 @@
 package graphql;
 
 
+import graphql.schema.DataFetcher;
+import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.StaticDataFetcher;
 
 import static graphql.Scalars.GraphQLString;
@@ -23,7 +25,6 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.GraphqlTypeComparatorRegistry.*;
 
 public class StarWarsSchema {
-
 
     public static GraphQLEnumType episodeEnum = newEnum()
             .name("Episode")
@@ -54,7 +55,6 @@ public class StarWarsSchema {
                     .name("appearsIn")
                     .description("Which movies they appear in.")
                     .type(list(episodeEnum)))
-            .typeResolver(StarWarsData.getCharacterTypeResolver())
             .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
@@ -73,8 +73,7 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("friends")
                     .description("The friends of the human, or an empty list if they have none.")
-                    .type(list(characterInterface))
-                    .dataFetcher(StarWarsData.getFriendsDataFetcher()))
+                    .type(list(characterInterface)))
             .field(newFieldDefinition()
                     .name("appearsIn")
                     .description("Which movies they appear in.")
@@ -101,8 +100,7 @@ public class StarWarsSchema {
             .field(newFieldDefinition()
                     .name("friends")
                     .description("The friends of the droid, or an empty list if they have none.")
-                    .type(list(characterInterface))
-                    .dataFetcher(StarWarsData.getFriendsDataFetcher()))
+                    .type(list(characterInterface)))
             .field(newFieldDefinition()
                     .name("appearsIn")
                     .description("Which movies they appear in.")
@@ -132,24 +130,21 @@ public class StarWarsSchema {
                     .argument(newArgument()
                             .name("episode")
                             .description("If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode.")
-                            .type(episodeEnum))
-                    .dataFetcher(new StaticDataFetcher(StarWarsData.getArtoo())))
+                            .type(episodeEnum)))
             .field(newFieldDefinition()
                     .name("human")
                     .type(humanType)
                     .argument(newArgument()
                             .name("id")
                             .description("id of the human")
-                            .type(nonNull(GraphQLString)))
-                    .dataFetcher(StarWarsData.getHumanDataFetcher()))
+                            .type(nonNull(GraphQLString))))
             .field(newFieldDefinition()
                     .name("droid")
                     .type(droidType)
                     .argument(newArgument()
                             .name("id")
                             .description("id of the droid")
-                            .type(nonNull(GraphQLString)))
-                    .dataFetcher(StarWarsData.getDroidDataFetcher()))
+                            .type(nonNull(GraphQLString))))
             .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
@@ -160,12 +155,35 @@ public class StarWarsSchema {
                     .type(characterInterface)
                     .argument(newArgument()
                             .name("input")
-                            .type(inputHumanType))
-                    .dataFetcher(new StaticDataFetcher(StarWarsData.getArtoo())))
+                            .type(inputHumanType)))
             .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
+    public static FieldCoordinates humanFriendsCoordinates = FieldCoordinates.coordinates("Human", "friends");
+    public static DataFetcher<?> humanFriendsDataFetcher = StarWarsData.getFriendsDataFetcher();
+    public static FieldCoordinates droidFriendsCoordinates = FieldCoordinates.coordinates("Droid", "friends");
+    public static DataFetcher<?> droidFriendsDataFetcher = StarWarsData.getFriendsDataFetcher();
+    public static FieldCoordinates heroCoordinates = FieldCoordinates.coordinates("QueryType", "hero");
+    public static DataFetcher<?> heroDataFetcher = new StaticDataFetcher(StarWarsData.getArtoo());
+    public static FieldCoordinates humanCoordinates = FieldCoordinates.coordinates("QueryType", "human");
+    public static DataFetcher<?> humanDataFetcher = StarWarsData.getHumanDataFetcher();
+    public static FieldCoordinates droidCoordinates = FieldCoordinates.coordinates("QueryType", "droid");
+    public static DataFetcher<?> droidDataFetcher = StarWarsData.getDroidDataFetcher();
+    public static FieldCoordinates createHumanCoordinates = FieldCoordinates.coordinates("MutationType", "createHuman");
+    public static DataFetcher<?> createHumanDataFetcher = new StaticDataFetcher(StarWarsData.getArtoo());
+
+    public static GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+            .dataFetcher(humanFriendsCoordinates, humanFriendsDataFetcher)
+            .dataFetcher(droidFriendsCoordinates, droidFriendsDataFetcher)
+            .dataFetcher(heroCoordinates, heroDataFetcher)
+            .dataFetcher(humanCoordinates, humanDataFetcher)
+            .dataFetcher(droidCoordinates, droidDataFetcher)
+            .dataFetcher(createHumanCoordinates, createHumanDataFetcher)
+            .typeResolver("Character", StarWarsData.getCharacterTypeResolver())
+            .build();
+
     public static GraphQLSchema starWarsSchema = GraphQLSchema.newSchema()
+            .codeRegistry(codeRegistry)
             .query(queryType)
             .mutation(mutationType)
             .build();

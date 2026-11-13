@@ -10,8 +10,6 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -98,21 +96,13 @@ public class EchoingWiringFactory implements WiringFactory {
             return 1.0;
         } else if (scalarType.equals(Scalars.GraphQLID)) {
             return "id_" + fieldName;
-        } else if (scalarType.equals(Scalars.GraphQLBigDecimal)) {
-            return new BigDecimal(1.0);
-        } else if (scalarType.equals(Scalars.GraphQLBigInteger)) {
-            return new BigInteger("1");
-        } else if (scalarType.equals(Scalars.GraphQLByte)) {
-            return Byte.valueOf("1");
-        } else if (scalarType.equals(Scalars.GraphQLShort)) {
-            return Short.valueOf("1");
         } else {
             return null;
         }
     }
 
     public static GraphQLScalarType fakeScalar(String name) {
-        return new GraphQLScalarType(name, name, new Coercing() {
+        return GraphQLScalarType.newScalar().name(name).coercing(new Coercing() {
             @Override
             public Object serialize(Object dataFetcherResult) {
                 return dataFetcherResult;
@@ -127,7 +117,8 @@ public class EchoingWiringFactory implements WiringFactory {
             public Object parseLiteral(Object input) {
                 return input;
             }
-        });
+        })
+        .build();
     }
 }
 

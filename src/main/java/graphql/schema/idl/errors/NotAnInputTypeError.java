@@ -1,10 +1,12 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class NotAnInputTypeError extends BaseError {
 
     public NotAnInputTypeError(Type rawType, TypeDefinition typeDefinition) {

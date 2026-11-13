@@ -1,6 +1,5 @@
 package graphql.schema
 
-import graphql.AssertException
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -10,18 +9,6 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 
 class GraphQLObjectTypeTest extends Specification {
-
-    def "duplicate field definition fails"() {
-        when:
-        // preserve old constructor behavior test
-        new GraphQLObjectType("TestObjectType", "description",
-                [
-                        newFieldDefinition().name("NAME").type(GraphQLString).build(),
-                        newFieldDefinition().name("NAME").type(GraphQLString).build()
-                ], [])
-        then:
-        thrown(AssertException)
-    }
 
     def "duplicate field definition overwrites existing value"() {
         when:
@@ -65,5 +52,10 @@ class GraphQLObjectTypeTest extends Specification {
         objectType2.getFieldDefinition("AddedInt").getType() == GraphQLInt
         objectType2.getFieldDefinition("Int").getType() == GraphQLInt
         objectType2.getFieldDefinition("Str").getType() == GraphQLBoolean
+
+        // getFields shortcuts work
+        objectType.getField("Int").getType() == GraphQLInt
+        objectType.getField("Str").getType() == GraphQLString
+        objectType.getFields().size() == 2
     }
 }

@@ -1,0 +1,2249 @@
+package graphql.validation;
+
+import com.google.common.collect.Sets;
+import graphql.Assert;
+import graphql.Directives;
+import graphql.ExperimentalApi;
+import graphql.Internal;
+import graphql.execution.CoercedVariables;
+import graphql.execution.FieldCollector;
+import graphql.execution.FieldCollectorParameters;
+import graphql.execution.MergedField;
+import graphql.execution.MergedSelectionSet;
+import graphql.execution.TypeFromAST;
+import graphql.execution.ValuesResolver;
+import graphql.i18n.I18nMsg;
+import graphql.introspection.Introspection;
+import graphql.introspection.Introspection.DirectiveLocation;
+import graphql.language.Argument;
+import graphql.language.ArrayValue;
+import graphql.language.AstComparator;
+import graphql.language.BooleanValue;
+import graphql.language.Definition;
+import graphql.language.Directive;
+import graphql.language.DirectiveDefinition;
+import graphql.language.Document;
+import graphql.language.Field;
+import graphql.language.FragmentDefinition;
+import graphql.language.FragmentSpread;
+import graphql.language.InlineFragment;
+import graphql.language.Node;
+import graphql.language.NodeUtil;
+import graphql.language.NullValue;
+import graphql.language.ObjectField;
+import graphql.language.ObjectValue;
+import graphql.language.OperationDefinition;
+import graphql.language.SchemaDefinition;
+import graphql.language.Selection;
+import graphql.language.SelectionSet;
+import graphql.language.SourceLocation;
+import graphql.language.StringValue;
+import graphql.language.TypeDefinition;
+import graphql.language.TypeName;
+import graphql.language.Value;
+import graphql.language.VariableDefinition;
+import graphql.language.VariableReference;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCompositeType;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNullableType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphQLUnmodifiedType;
+import graphql.schema.InputValueWithState;
+import graphql.util.SelectionSetTraversalFrame;
+import graphql.util.StringKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Predicate;
+
+import static graphql.schema.GraphQLTypeUtil.isEnum;
+import static graphql.schema.GraphQLTypeUtil.isInput;
+import static graphql.schema.GraphQLTypeUtil.isLeaf;
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.isNotWrapped;
+import static graphql.schema.GraphQLTypeUtil.isNullable;
+import static graphql.schema.GraphQLTypeUtil.isScalar;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+
+import static graphql.validation.ValidationError.newValidationError;
+import static graphql.validation.ValidationErrorType.BadValueForDefaultArg;
+import static graphql.validation.ValidationErrorType.DuplicateArgumentNames;
+import static graphql.validation.ValidationErrorType.DuplicateDirectiveName;
+import static graphql.validation.ValidationErrorType.DuplicateFragmentName;
+import static graphql.validation.ValidationErrorType.DuplicateIncrementalLabel;
+import static graphql.validation.ValidationErrorType.DuplicateOperationName;
+import static graphql.validation.ValidationErrorType.DuplicateVariableName;
+import static graphql.validation.ValidationErrorType.FieldUndefined;
+import static graphql.validation.ValidationErrorType.FieldsConflict;
+import static graphql.validation.ValidationErrorType.FragmentCycle;
+import static graphql.validation.ValidationErrorType.FragmentTypeConditionInvalid;
+import static graphql.validation.ValidationErrorType.InlineFragmentTypeConditionInvalid;
+import static graphql.validation.ValidationErrorType.InvalidFragmentType;
+import static graphql.validation.ValidationErrorType.LoneAnonymousOperationViolation;
+import static graphql.validation.ValidationErrorType.MisplacedDirective;
+import static graphql.validation.ValidationErrorType.MissingDirectiveArgument;
+import static graphql.validation.ValidationErrorType.MissingFieldArgument;
+import static graphql.validation.ValidationErrorType.NonExecutableDefinition;
+import static graphql.validation.ValidationErrorType.NonInputTypeOnVariable;
+import static graphql.validation.ValidationErrorType.NullValueForNonNullArgument;
+import static graphql.validation.ValidationErrorType.SubselectionNotAllowed;
+import static graphql.validation.ValidationErrorType.SubselectionRequired;
+import static graphql.validation.ValidationErrorType.SubscriptionIntrospectionRootField;
+import static graphql.validation.ValidationErrorType.SubscriptionMultipleRootFields;
+import static graphql.validation.ValidationErrorType.UndefinedFragment;
+import static graphql.validation.ValidationErrorType.UndefinedVariable;
+import static graphql.validation.ValidationErrorType.UnknownArgument;
+import static graphql.validation.ValidationErrorType.UnknownDirective;
+import static graphql.validation.ValidationErrorType.UnknownOperation;
+import static graphql.validation.ValidationErrorType.UnknownType;
+import static graphql.validation.ValidationErrorType.UnusedFragment;
+import static graphql.validation.ValidationErrorType.UnusedVariable;
+import static graphql.validation.ValidationErrorType.VariableNotAllowed;
+import static graphql.validation.ValidationErrorType.VariableTypeMismatch;
+import static graphql.validation.ValidationErrorType.WrongType;
+import static java.lang.System.arraycopy;
+import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
+import static graphql.validation.ValidationErrorType.UniqueObjectFieldName;
+
+/**
+ * Validates the document and its operations with one iterative traversal.
+ * Document-level rules visit each AST node once. Operation-scoped rules also follow
+ * fragment spreads, visiting each referenced fragment once per operation. Repeated
+ * spreads contribute cached complexity without repeating the operation-scoped checks.
+ * Fragment visits finish before the spreading node's children, preserving validation
+ * order and ancestor paths without nesting Java calls for fragment references.
+ */
+@Internal
+@NullMarked
+@SuppressWarnings("rawtypes")
+public class OperationValidator {
+    private static final OperationValidationRule[] VALIDATION_RULES = OperationValidationRule.values();
+
+    // --- Infrastructure ---
+    private final ValidationContext validationContext;
+    private final ValidationErrorCollector errorCollector;
+    private final ValidationUtil validationUtil;
+    private final Predicate<OperationValidationRule> rulePredicate;
+
+    // --- Traversal context ---
+    private final List<@Nullable GraphQLCompositeType> parentTypeStack = new ArrayList<>();
+    private final List<@Nullable GraphQLFieldDefinition> fieldDefinitionStack = new ArrayList<>();
+    private final List<@Nullable GraphQLInputType> inputTypeStack = new ArrayList<>();
+    private final List<@Nullable InputValueWithState> defaultValueStack = new ArrayList<>();
+    private final List<String> queryPath = new ArrayList<>();
+    private @Nullable GraphQLDirective directiveDefinition;
+
+    /**
+     * The operation currently being processed, including during fragment retraversal.
+     */
+    private @Nullable OperationDefinition currentOperation;
+    /**
+     * Number of active fragment expansions; 0 means primary document traversal.
+     */
+    private int fragmentRetraversalDepth = 0;
+    /**
+     * Tracks which fragments have been traversed via spreads to avoid infinite loops.
+     */
+    private final Set<String> visitedFragmentSpreads = new HashSet<>();
+
+    // --- State: NoFragmentCycles ---
+    private final Map<String, Set<String>> fragmentSpreadsMap = new LinkedHashMap<>();
+    private final Set<String> fragmentsWithCycleErrors = new HashSet<>();
+
+    // --- State: NoUnusedFragments ---
+    private final List<FragmentDefinition> allDeclaredFragments = new ArrayList<>();
+    private List<String> unusedFragTracking_usedFragments = new ArrayList<>();
+    private final Map<String, List<String>> spreadsInDefinition = new LinkedHashMap<>();
+    private final List<List<String>> fragmentsUsedDirectlyInOperation = new ArrayList<>();
+
+    // --- State: NoUndefinedVariables ---
+    private final Set<String> definedVariableNames = new LinkedHashSet<>();
+
+    // --- State: NoUnusedVariables ---
+    private final List<VariableDefinition> unusedVars_variableDefinitions = new ArrayList<>();
+    private final Set<String> unusedVars_usedVariables = new LinkedHashSet<>();
+
+    // --- State: VariableTypesMatch ---
+    private final VariablesTypesMatcher variablesTypesMatcher = new VariablesTypesMatcher();
+    private @Nullable Map<String, VariableDefinition> variableDefinitionMap;
+
+    // --- State: OverlappingFieldsCanBeMerged ---
+    private final Set<Set<Field>> conflictsReported = new LinkedHashSet<>();
+    private @Nullable Deque<SelectionSetTraversalFrame<GraphQLType>> fieldCollectionFrames;
+
+    // --- State: LoneAnonymousOperation ---
+    private boolean hasAnonymousOp = false;
+    private int loneAnon_count = 0;
+
+    // --- State: UniqueOperationNames ---
+    private final Set<String> operationNames = new LinkedHashSet<>();
+
+    // --- State: UniqueFragmentNames ---
+    private final Set<String> fragmentNames = new LinkedHashSet<>();
+
+    // --- State: DeferDirectiveLabel ---
+    private final Set<String> checkedDeferLabels = new LinkedHashSet<>();
+
+    // --- State: SubscriptionUniqueRootField ---
+    private final FieldCollector fieldCollector = new FieldCollector();
+
+    private final QueryComplexityLimits complexityLimits;
+    private final boolean generalMergedLimitsEnabled;
+
+    private final int maxFieldOccurrences;
+    private long fieldOccurrences;
+    // Completed fragment totals are shared across operations; each spread adds its total again.
+    private @Nullable Map<String, Long> fragmentFieldOccurrences;
+    // Changes when a traversal encounters a cycle or missing fragment, whose total is incomplete.
+    private int incompleteFragmentOccurrences;
+
+    // --- State: Merged selections and complexity limits ---
+    // Caches merge-check progress and merged child selections for the whole document.
+    // All FieldAndType entries in a key set have the same response name
+    // (the alias if present, otherwise the field name).
+    // FieldAndType is identified only by the AST node.
+    // Child selections depend on the document and schema, not the current operation.
+    // They are grouped by response name and shared between merge-validation traversals.
+    // Leaf-only sets share an empty map.
+    // Example: `fields { a: name } fields { b: name }` uses the two `fields` AST nodes as the key
+    // and caches their combined children under response names `a` and `b`, both selecting `name`.
+    private final Map<Set<FieldAndType>, FieldValidationState<FieldAndType>> fieldValidationStates = new HashMap<>();
+
+    // Caches merged field count, relative field depth and restricted coordinates for each common-parent validation set.
+    // These are sets of fields checked together for matching field names and arguments.
+    // Example: `fields { name } fields { description }` on __Type caches a count of 3 merged fields,
+    // a relative depth of 2, and one occurrence of the restricted coordinate __Type.fields.
+    // Its 4 expanded field occurrences are counted separately by fieldOccurrences.
+    // Cached summaries contribute again at each response position where the set occurs.
+    // Keys are the shared validation states for those sets, avoiding repeated hashing of their AST nodes.
+    // A present key with a null value marks counting in progress, preventing recursion through fragment cycles.
+    // This cache is scoped to one operation and is null when neither general nor Good Faith limits are active.
+    private @Nullable Map<FieldValidationState<FieldAndType>, @Nullable MergedFieldComplexityCounts> mergedFieldCounts;
+    private boolean introspectionQueryDetected = false;
+
+    // --- Track whether we're in a context where fragment spread rules should run ---
+    // Fragment expansions run operation-scoped rules; the primary AST walk also runs document-level rules.
+    // A current operation means fragment traversal and operation-scoped rules are active
+
+    private final boolean allRulesEnabled;
+
+    public OperationValidator(ValidationContext validationContext, ValidationErrorCollector errorCollector, Predicate<OperationValidationRule> rulePredicate) {
+        this.validationContext = validationContext;
+        this.errorCollector = errorCollector;
+        this.validationUtil = new ValidationUtil();
+        this.rulePredicate = rulePredicate;
+        this.allRulesEnabled = detectAllRulesEnabled(rulePredicate);
+        this.complexityLimits = validationContext.getQueryComplexityLimits();
+        this.generalMergedLimitsEnabled = complexityLimits.getMaxMergedFieldCount() != Integer.MAX_VALUE
+                || complexityLimits.getMaxDepth() != Integer.MAX_VALUE;
+        this.maxFieldOccurrences = complexityLimits.getMaxFieldOccurrences();
+    }
+
+    public void validate() {
+        if (isRuleEnabled(OperationValidationRule.NO_FRAGMENT_CYCLES)) {
+            prepareFragmentSpreadsMap();
+            findFragmentCycles();
+        }
+        List<Node> ancestors = new ArrayList<>();
+        Deque<OperationValidationFrame> frames = new ArrayDeque<>();
+        frames.push(new OperationValidationFrame(validationContext.getDocument()));
+        while (!frames.isEmpty()) {
+            visitFrame(frames, ancestors);
+        }
+    }
+
+    private void visitFrame(Deque<OperationValidationFrame> frames, List<Node> ancestors) {
+        OperationValidationFrame frame = frames.getFirst();
+        Node node = frame.getNode();
+        if (frame.enter()) {
+            enter(node, ancestors);
+            if (scheduleFragment(node, frames)) {
+                return;
+            }
+        }
+        if (frame.startChildren()) {
+            ancestors.add(node);
+        }
+        Node child = frame.nextChild();
+        if (child != null) {
+            visitChild(child, frames, ancestors);
+            return;
+        }
+        ancestors.remove(ancestors.size() - 1);
+        leave(node);
+        frames.pop();
+        if (frame.isFragmentExpansion()) {
+            finishFragment(frame);
+        }
+    }
+
+    private void visitChild(Node node, Deque<OperationValidationFrame> frames, List<Node> ancestors) {
+        if (node instanceof FragmentSpread && currentOperation != null
+                && !visitedFragmentSpreads.contains(((FragmentSpread) node).getName())) {
+            frames.push(new OperationValidationFrame(node));
+            return;
+        }
+        enter(node, ancestors);
+        if (node instanceof FragmentSpread && currentOperation != null) {
+            addRepeatedFragmentOccurrences(((FragmentSpread) node).getName());
+        }
+        List<Node> children = node.getChildren();
+        if (children.isEmpty()) {
+            leave(node);
+            return;
+        }
+        frames.push(new OperationValidationFrame(node, children));
+    }
+
+    private boolean scheduleFragment(Node node, Deque<OperationValidationFrame> frames) {
+        if (!(node instanceof FragmentSpread) || currentOperation == null) {
+            return false;
+        }
+        String fragmentName = ((FragmentSpread) node).getName();
+        visitedFragmentSpreads.add(fragmentName);
+        FragmentDefinition fragment = validationContext.getFragment(fragmentName);
+        if (fragment == null) {
+            incompleteFragmentOccurrences++;
+            return false;
+        }
+        frames.push(new OperationValidationFrame(fragment, fieldOccurrences, incompleteFragmentOccurrences));
+        fragmentRetraversalDepth++;
+        return true;
+    }
+
+    private void finishFragment(OperationValidationFrame frame) {
+        fragmentRetraversalDepth--;
+        if (maxFieldOccurrences != Integer.MAX_VALUE && frame.getIncompleteOccurrencesBefore() == incompleteFragmentOccurrences) {
+            String fragmentName = ((FragmentDefinition) frame.getNode()).getName();
+            cacheFragmentOccurrences(fragmentName, fieldOccurrences - frame.getFieldOccurrencesBefore());
+        }
+    }
+
+    private static boolean detectAllRulesEnabled(Predicate<OperationValidationRule> predicate) {
+        for (OperationValidationRule rule : VALIDATION_RULES) {
+            if (!predicate.test(rule)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isRuleEnabled(OperationValidationRule rule) {
+        return allRulesEnabled || rulePredicate.test(rule);
+    }
+
+    private void enterTraversal(Node node, List<Node> ancestors) {
+        if (node instanceof SelectionSet) {
+            parentTypeStack.add(resolveSelectionSetParent(ancestors));
+        } else if (node instanceof Field) {
+            enterField((Field) node);
+        } else if (node instanceof Directive) {
+            directiveDefinition = validationContext.getSchema().getDirective(((Directive) node).getName());
+        } else if (node instanceof FragmentDefinition) {
+            enterName(((FragmentDefinition) node).getName());
+        } else if (node instanceof VariableDefinition) {
+            enterVariableDefinition((VariableDefinition) node);
+        } else if (node instanceof Argument) {
+            enterArgument((Argument) node);
+        } else if (node instanceof ArrayValue) {
+            enterArrayValue();
+        } else if (node instanceof ObjectField) {
+            enterObjectField((ObjectField) node);
+        }
+    }
+
+    private void enterField(Field field) {
+        GraphQLCompositeType parentType = getParentType();
+        GraphQLFieldDefinition fieldDefinition = parentType == null
+                ? null
+                : getFieldDefinition(parentType, field.getName());
+        fieldDefinitionStack.add(fieldDefinition);
+        enterName(field.getName());
+    }
+
+    private void enterVariableDefinition(VariableDefinition variableDefinition) {
+        GraphQLType type = TypeFromAST.getTypeFromAST(
+                validationContext.getSchema(),
+                variableDefinition.getType());
+        inputTypeStack.add(type instanceof GraphQLInputType ? (GraphQLInputType) type : null);
+        defaultValueStack.add(null);
+    }
+
+    private void enterArgument(Argument argument) {
+        GraphQLArgument argumentDefinition = getArgumentDefinition(argument.getName());
+        inputTypeStack.add(argumentDefinition == null ? null : argumentDefinition.getType());
+        defaultValueStack.add(
+                argumentDefinition == null ? null : argumentDefinition.getArgumentDefaultValue());
+    }
+
+    private void enterArrayValue() {
+        GraphQLNullableType nullableType = getNullableType(getInputType());
+        GraphQLInputType inputType = null;
+        if (nullableType != null && isList(nullableType)) {
+            inputType = (GraphQLInputType) unwrapOne(nullableType);
+        }
+        inputTypeStack.add(inputType);
+        defaultValueStack.add(null);
+    }
+
+    private void enterObjectField(ObjectField objectField) {
+        GraphQLInputType currentInputType = getInputType();
+        GraphQLUnmodifiedType unwrappedType =
+                currentInputType == null ? null : unwrapAll(currentInputType);
+        GraphQLInputObjectField inputField = null;
+        if (unwrappedType instanceof GraphQLInputObjectType) {
+            inputField = validationContext.getSchema()
+                    .getCodeRegistry()
+                    .getFieldVisibility()
+                    .getFieldDefinition(
+                            (GraphQLInputObjectType) unwrappedType,
+                            objectField.getName());
+        }
+        inputTypeStack.add(inputField == null ? null : inputField.getType());
+        defaultValueStack.add(
+                inputField == null ? null : inputField.getInputFieldDefaultValue());
+    }
+
+    private void leaveTraversal(Node node) {
+        if (node instanceof SelectionSet) {
+            pop(parentTypeStack);
+        } else if (node instanceof Field) {
+            leaveName(((Field) node).getName());
+            pop(fieldDefinitionStack);
+        } else if (node instanceof Directive) {
+            directiveDefinition = null;
+        } else if (node instanceof FragmentDefinition) {
+            leaveName(((FragmentDefinition) node).getName());
+        } else if (node instanceof VariableDefinition
+                || node instanceof Argument
+                || node instanceof ArrayValue
+                || node instanceof ObjectField) {
+            pop(inputTypeStack);
+            pop(defaultValueStack);
+        }
+    }
+
+    private @Nullable GraphQLCompositeType resolveSelectionSetParent(List<Node> ancestors) {
+        Assert.assertNotEmpty(ancestors, "A selection set must have an owner");
+        Node owner = ancestors.get(ancestors.size() - 1);
+        GraphQLType type = getSelectionSetOwnerType(owner);
+        GraphQLUnmodifiedType unwrappedType = type == null ? null : unwrapAll(type);
+        return unwrappedType instanceof GraphQLCompositeType
+                ? (GraphQLCompositeType) unwrappedType
+                : null;
+    }
+
+    private @Nullable GraphQLType getSelectionSetOwnerType(Node owner) {
+        if (owner instanceof OperationDefinition) {
+            return getOperationType((OperationDefinition) owner);
+        }
+        if (owner instanceof Field) {
+            GraphQLFieldDefinition fieldDefinition = getFieldDefinition();
+            return fieldDefinition == null ? null : fieldDefinition.getType();
+        }
+        if (owner instanceof InlineFragment) {
+            TypeName typeCondition = ((InlineFragment) owner).getTypeCondition();
+            return typeCondition == null
+                    ? getParentType()
+                    : validationContext.getSchema().getType(typeCondition.getName());
+        }
+        FragmentDefinition fragmentDefinition = (FragmentDefinition) owner;
+        TypeName typeCondition = fragmentDefinition.getTypeCondition();
+        return validationContext.getSchema().getType(typeCondition.getName());
+    }
+
+    private @Nullable GraphQLObjectType getOperationType(
+            OperationDefinition operationDefinition) {
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.QUERY) {
+            return validationContext.getSchema().getQueryType();
+        }
+        if (operationDefinition.getOperation() == OperationDefinition.Operation.MUTATION) {
+            return validationContext.getSchema().getMutationType();
+        }
+        Assert.assertTrue(
+                OperationDefinition.Operation.SUBSCRIPTION.equals(
+                        operationDefinition.getOperation()));
+        return validationContext.getSchema().getSubscriptionType();
+    }
+
+    private @Nullable GraphQLFieldDefinition getFieldDefinition(
+            GraphQLCompositeType parentType,
+            String fieldName) {
+        if (validationContext.getSchema().getQueryType().equals(parentType)) {
+            if (fieldName.equals(
+                    validationContext.getSchema()
+                            .getIntrospectionSchemaFieldDefinition()
+                            .getName())) {
+                return validationContext.getSchema().getIntrospectionSchemaFieldDefinition();
+            }
+            if (fieldName.equals(
+                    validationContext.getSchema()
+                            .getIntrospectionTypeFieldDefinition()
+                            .getName())) {
+                return validationContext.getSchema().getIntrospectionTypeFieldDefinition();
+            }
+        }
+        if (fieldName.equals(
+                validationContext.getSchema()
+                        .getIntrospectionTypenameFieldDefinition()
+                        .getName())) {
+            return validationContext.getSchema().getIntrospectionTypenameFieldDefinition();
+        }
+        if (parentType instanceof GraphQLFieldsContainer) {
+            return validationContext.getSchema()
+                    .getCodeRegistry()
+                    .getFieldVisibility()
+                    .getFieldDefinition((GraphQLFieldsContainer) parentType, fieldName);
+        }
+        return null;
+    }
+
+    private @Nullable GraphQLArgument getArgumentDefinition(String name) {
+        if (directiveDefinition != null) {
+            return directiveDefinition.getArgument(name);
+        }
+        GraphQLFieldDefinition fieldDefinition = getFieldDefinition();
+        return fieldDefinition == null ? null : fieldDefinition.getArgument(name);
+    }
+
+    private @Nullable GraphQLNullableType getNullableType(@Nullable GraphQLType type) {
+        if (type == null) {
+            return null;
+        }
+        return (GraphQLNullableType) (isNonNull(type) ? unwrapOne(type) : type);
+    }
+
+    private @Nullable GraphQLCompositeType getParentType() {
+        return lastElement(parentTypeStack);
+    }
+
+    private @Nullable GraphQLFieldDefinition getFieldDefinition() {
+        return lastElement(fieldDefinitionStack);
+    }
+
+    private @Nullable GraphQLInputType getInputType() {
+        return lastElement(inputTypeStack);
+    }
+
+    private @Nullable InputValueWithState getDefaultValue() {
+        return lastElement(defaultValueStack);
+    }
+
+    private @Nullable GraphQLDirective getDirectiveDefinition() {
+        return directiveDefinition;
+    }
+
+    private void enterName(String name) {
+        queryPath.add(name);
+    }
+
+    private void leaveName(String name) {
+        queryPath.remove(queryPath.size() - 1);
+    }
+
+    private <T> @Nullable T lastElement(List<@Nullable T> list) {
+        if (list.isEmpty()) {
+            return null;
+        }
+        return list.get(list.size() - 1);
+    }
+
+    private <T> @Nullable T pop(List<@Nullable T> list) {
+        return list.remove(list.size() - 1);
+    }
+
+    /**
+     * Returns true when document-level rules should run.
+     *
+     * <p>Document-level rules validate each AST node exactly once during the primary
+     * document traversal. They do NOT re-run when fragments are traversed through
+     * spreads, which prevents duplicate validation errors.
+     *
+     * <p>Examples: {@code FieldsOnCorrectType}, {@code UniqueFragmentNames},
+     * {@code ScalarLeaves}, {@code KnownDirectives}.
+     *
+     * @return true if {@code fragmentRetraversalDepth == 0} (primary traversal)
+     */
+    private boolean shouldRunDocumentLevelRules() {
+        return fragmentRetraversalDepth == 0;
+    }
+
+    /**
+     * Returns true when operation-scoped rules should run.
+     *
+     * <p>Operation-scoped rules must follow fragment spreads to see the complete
+     * picture of an operation. They track state across all code paths, including
+     * fragments referenced by the operation.
+     *
+     * <p>Examples: {@code NoUndefinedVariables}, {@code NoUnusedVariables},
+     * {@code VariableTypesMatch}, {@code DeferDirectiveOnRootLevel}.
+     *
+     * @return true if currently processing within an operation scope
+     */
+    private boolean shouldRunOperationScopedRules() {
+        return currentOperation != null;
+    }
+
+    private void enter(Node node, List<Node> ancestors) {
+        enterTraversal(node, ancestors);
+
+        if (node instanceof Document) {
+            checkDocument((Document) node);
+        } else if (node instanceof Argument) {
+            checkArgument((Argument) node);
+        } else if (node instanceof TypeName) {
+            checkTypeName((TypeName) node);
+        } else if (node instanceof VariableDefinition) {
+            checkVariableDefinition((VariableDefinition) node);
+        } else if (node instanceof Field) {
+            checkField((Field) node);
+        } else if (node instanceof InlineFragment) {
+            checkInlineFragment((InlineFragment) node);
+        } else if (node instanceof Directive) {
+            checkDirective((Directive) node, ancestors);
+        } else if (node instanceof FragmentSpread) {
+            checkFragmentSpread((FragmentSpread) node);
+        } else if (node instanceof FragmentDefinition) {
+            checkFragmentDefinition((FragmentDefinition) node);
+        } else if (node instanceof OperationDefinition) {
+            checkOperationDefinition((OperationDefinition) node);
+        } else if (node instanceof VariableReference) {
+            checkVariable((VariableReference) node, ancestors);
+        } else if (node instanceof SelectionSet) {
+            checkSelectionSet();
+        } else if (node instanceof ObjectValue) {
+            checkObjectValue((ObjectValue) node);
+        }
+    }
+
+    private void leave(Node node) {
+        leaveTraversal(node);
+
+        if (node instanceof Document) {
+            documentFinished();
+        } else if (node instanceof OperationDefinition) {
+            leaveOperationDefinition();
+        } else if (node instanceof SelectionSet) {
+            leaveSelectionSet();
+        } else if (node instanceof FragmentDefinition) {
+            leaveFragmentDefinition();
+        }
+    }
+
+    private void addError(ValidationErrorType validationErrorType, Collection<? extends Node<?>> locations, String description) {
+        List<SourceLocation> locationList = new ArrayList<>();
+        for (Node<?> node : locations) {
+            SourceLocation sourceLocation = node.getSourceLocation();
+            if (sourceLocation != null) {
+                locationList.add(sourceLocation);
+            }
+        }
+        addError(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocations(locationList)
+                .description(description));
+    }
+
+    private void addError(ValidationErrorType validationErrorType, @Nullable SourceLocation location, String description) {
+        addError(newValidationError()
+                .validationErrorType(validationErrorType)
+                .sourceLocation(location)
+                .description(description));
+    }
+
+    private void addError(ValidationError.Builder validationError) {
+        errorCollector.addError(validationError.queryPath(getQueryPath()).build());
+    }
+
+    private @Nullable List<String> getQueryPath() {
+        if (queryPath.isEmpty()) {
+            return null;
+        }
+        return new ArrayList<>(queryPath);
+    }
+
+    private String i18n(ValidationErrorType validationErrorType, I18nMsg i18nMsg) {
+        return i18n(validationErrorType, i18nMsg.getMsgKey(), i18nMsg.getMsgArguments());
+    }
+
+    private String i18n(ValidationErrorType validationErrorType, String msgKey, Object... msgArgs) {
+        Object[] params = new Object[msgArgs.length + 1];
+        params[0] = mkTypeAndPath(validationErrorType);
+        arraycopy(msgArgs, 0, params, 1, msgArgs.length);
+        return validationContext.i18n(msgKey, params);
+    }
+
+    private String mkTypeAndPath(ValidationErrorType validationErrorType) {
+        List<String> queryPath = getQueryPath();
+        StringBuilder sb = new StringBuilder();
+        sb.append(validationErrorType);
+        if (queryPath != null) {
+            sb.append("@[").append(String.join("/", queryPath)).append("]");
+        }
+        return sb.toString();
+    }
+
+    private boolean isExperimentalApiKeyEnabled(String key) {
+        Object value = validationContext.getGraphQLContext().get(key);
+        return value instanceof Boolean && (Boolean) value;
+    }
+
+    private void checkDocument(Document document) {
+        if (isRuleEnabled(OperationValidationRule.EXECUTABLE_DEFINITIONS)) {
+            validateExecutableDefinitions(document);
+        }
+    }
+
+    private void checkArgument(Argument argument) {
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.ARGUMENTS_OF_CORRECT_TYPE)) {
+                validateArgumentsOfCorrectType(argument);
+            }
+            if (isRuleEnabled(OperationValidationRule.KNOWN_ARGUMENT_NAMES)) {
+                validateKnownArgumentNames(argument);
+            }
+        }
+    }
+
+    private void checkTypeName(TypeName typeName) {
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.KNOWN_TYPE_NAMES)) {
+                validateKnownTypeNames(typeName);
+            }
+        }
+    }
+
+    private void checkVariableDefinition(VariableDefinition variableDefinition) {
+        if (isRuleEnabled(OperationValidationRule.VARIABLE_DEFAULT_VALUES_OF_CORRECT_TYPE)) {
+            validateVariableDefaultValuesOfCorrectType(variableDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.VARIABLES_ARE_INPUT_TYPES)) {
+            validateVariablesAreInputTypes(variableDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
+            definedVariableNames.add(variableDefinition.getName());
+        }
+        if (isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
+            unusedVars_variableDefinitions.add(variableDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.VARIABLE_TYPES_MATCH)) {
+            if (variableDefinitionMap != null) {
+                variableDefinitionMap.put(variableDefinition.getName(), variableDefinition);
+            }
+        }
+    }
+
+    private void checkField(Field field) {
+        if (maxFieldOccurrences != Integer.MAX_VALUE && currentOperation != null) {
+            addFieldOccurrences(1);
+        }
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.FIELDS_ON_CORRECT_TYPE)) {
+                validateFieldsOnCorrectType(field);
+            }
+            if (isRuleEnabled(OperationValidationRule.SCALAR_LEAVES)) {
+                validateScalarLeaves(field);
+            }
+            if (isRuleEnabled(OperationValidationRule.PROVIDED_NON_NULL_ARGUMENTS)) {
+                validateProvidedNonNullArguments_field(field);
+            }
+            if (isRuleEnabled(OperationValidationRule.UNIQUE_ARGUMENT_NAMES)) {
+                validateUniqueArgumentNames_field(field);
+            }
+            if (isRuleEnabled(OperationValidationRule.UNIQUE_DIRECTIVE_NAMES_PER_LOCATION)) {
+                validateUniqueDirectiveNamesPerLocation(field, field.getDirectives());
+            }
+        }
+    }
+
+    private void checkInlineFragment(InlineFragment inlineFragment) {
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.FRAGMENTS_ON_COMPOSITE_TYPE)) {
+                validateFragmentsOnCompositeType_inline(inlineFragment);
+            }
+            if (isRuleEnabled(OperationValidationRule.POSSIBLE_FRAGMENT_SPREADS)) {
+                validatePossibleFragmentSpreads_inline(inlineFragment);
+            }
+            if (isRuleEnabled(OperationValidationRule.UNIQUE_DIRECTIVE_NAMES_PER_LOCATION)) {
+                validateUniqueDirectiveNamesPerLocation(inlineFragment, inlineFragment.getDirectives());
+            }
+        }
+    }
+
+    private void checkDirective(Directive directive, List<Node> ancestors) {
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.KNOWN_DIRECTIVES)) {
+                validateKnownDirectives(directive, ancestors);
+            }
+            if (isRuleEnabled(OperationValidationRule.PROVIDED_NON_NULL_ARGUMENTS)) {
+                validateProvidedNonNullArguments_directive(directive);
+            }
+            if (isRuleEnabled(OperationValidationRule.UNIQUE_ARGUMENT_NAMES)) {
+                validateUniqueArgumentNames_directive(directive);
+            }
+            if (isRuleEnabled(OperationValidationRule.DEFER_DIRECTIVE_LABEL)) {
+                validateDeferDirectiveLabel(directive);
+            }
+        }
+        if (shouldRunOperationScopedRules()) {
+            if (isRuleEnabled(OperationValidationRule.DEFER_DIRECTIVE_ON_ROOT_LEVEL)) {
+                validateDeferDirectiveOnRootLevel(directive);
+            }
+            if (isRuleEnabled(OperationValidationRule.DEFER_DIRECTIVE_ON_VALID_OPERATION)) {
+                validateDeferDirectiveOnValidOperation(directive);
+            }
+        }
+    }
+
+    private void checkFragmentSpread(FragmentSpread node) {
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.KNOWN_FRAGMENT_NAMES)) {
+                validateKnownFragmentNames(node);
+            }
+            if (isRuleEnabled(OperationValidationRule.POSSIBLE_FRAGMENT_SPREADS)) {
+                validatePossibleFragmentSpreads_spread(node);
+            }
+            if (isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
+                unusedFragTracking_usedFragments.add(node.getName());
+            }
+            if (isRuleEnabled(OperationValidationRule.UNIQUE_DIRECTIVE_NAMES_PER_LOCATION)) {
+                validateUniqueDirectiveNamesPerLocation(node, node.getDirectives());
+            }
+        }
+    }
+
+    private void addFieldOccurrences(long occurrences) {
+        fieldOccurrences += occurrences;
+        if (fieldOccurrences > maxFieldOccurrences) {
+            throw new QueryComplexityLimitsExceeded(ValidationErrorType.MaxQueryFieldOccurrencesExceeded,
+                    maxFieldOccurrences, fieldOccurrences);
+        }
+    }
+
+    private void addRepeatedFragmentOccurrences(String fragmentName) {
+        if (maxFieldOccurrences == Integer.MAX_VALUE) {
+            return;
+        }
+        Long occurrences = fragmentFieldOccurrences == null ? null : fragmentFieldOccurrences.get(fragmentName);
+        if (occurrences == null) {
+            incompleteFragmentOccurrences++;
+            return;
+        }
+        addFieldOccurrences(occurrences);
+    }
+
+    private void cacheFragmentOccurrences(String fragmentName, long occurrences) {
+        if (fragmentFieldOccurrences == null) {
+            fragmentFieldOccurrences = new HashMap<>();
+        }
+        fragmentFieldOccurrences.putIfAbsent(fragmentName, occurrences);
+    }
+
+    private void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.FRAGMENTS_ON_COMPOSITE_TYPE)) {
+                validateFragmentsOnCompositeType_definition(fragmentDefinition);
+            }
+            if (isRuleEnabled(OperationValidationRule.NO_FRAGMENT_CYCLES)) {
+                validateNoFragmentCycles(fragmentDefinition);
+            }
+            if (isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
+                allDeclaredFragments.add(fragmentDefinition);
+                unusedFragTracking_usedFragments = new ArrayList<>();
+                spreadsInDefinition.put(fragmentDefinition.getName(), unusedFragTracking_usedFragments);
+            }
+            if (isRuleEnabled(OperationValidationRule.UNIQUE_FRAGMENT_NAMES)) {
+                validateUniqueFragmentNames(fragmentDefinition);
+            }
+            if (isRuleEnabled(OperationValidationRule.UNIQUE_DIRECTIVE_NAMES_PER_LOCATION)) {
+                validateUniqueDirectiveNamesPerLocation(fragmentDefinition, fragmentDefinition.getDirectives());
+            }
+        }
+    }
+
+    private void checkOperationDefinition(OperationDefinition operationDefinition) {
+        currentOperation = operationDefinition;
+        fieldOccurrences = 0;
+
+        if (generalMergedLimitsEnabled || isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
+                || complexityLimits.isIntrospectionLimitsEnabled()) {
+            validateOverlappingFieldsCanBeMerged(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.LONE_ANONYMOUS_OPERATION)) {
+            validateLoneAnonymousOperation(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.UNIQUE_OPERATION_NAMES)) {
+            validateUniqueOperationNames(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.UNIQUE_VARIABLE_NAMES)) {
+            validateUniqueVariableNames(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.SUBSCRIPTION_UNIQUE_ROOT_FIELD)) {
+            validateSubscriptionUniqueRootField(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.UNIQUE_DIRECTIVE_NAMES_PER_LOCATION)) {
+            validateUniqueDirectiveNamesPerLocation(operationDefinition, operationDefinition.getDirectives());
+        }
+        if (isRuleEnabled(OperationValidationRule.KNOWN_OPERATION_TYPES)) {
+            validateKnownOperationTypes(operationDefinition);
+        }
+        if (isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
+            unusedFragTracking_usedFragments = new ArrayList<>();
+            fragmentsUsedDirectlyInOperation.add(unusedFragTracking_usedFragments);
+        }
+        if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
+            definedVariableNames.clear();
+        }
+        if (isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
+            unusedVars_usedVariables.clear();
+            unusedVars_variableDefinitions.clear();
+        }
+        if (isRuleEnabled(OperationValidationRule.VARIABLE_TYPES_MATCH)) {
+            variableDefinitionMap = new LinkedHashMap<>();
+        }
+    }
+
+    private void checkVariable(VariableReference variableReference, List<Node> ancestors) {
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.VARIABLES_NOT_ALLOWED_IN_DIRECTIVES_ON_VARIABLE_DEFINITIONS)) {
+                validateVariableNotAllowedInConstantDirective(variableReference, ancestors);
+            }
+        }
+        if (shouldRunOperationScopedRules()) {
+            if (isRuleEnabled(OperationValidationRule.NO_UNDEFINED_VARIABLES)) {
+                validateNoUndefinedVariables(variableReference);
+            }
+            if (isRuleEnabled(OperationValidationRule.VARIABLE_TYPES_MATCH)) {
+                validateVariableTypesMatch(variableReference);
+            }
+            if (isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
+                unusedVars_usedVariables.add(variableReference.getName());
+            }
+        }
+    }
+
+    private void checkSelectionSet() {
+        // No rules currently check selection set on enter
+    }
+
+    private void checkObjectValue(ObjectValue objectValue) {
+        if (shouldRunDocumentLevelRules()) {
+            if (isRuleEnabled(OperationValidationRule.UNIQUE_OBJECT_FIELD_NAME)) {
+                validateUniqueObjectFieldName(objectValue);
+            }
+        }
+    }
+
+    private void leaveOperationDefinition() {
+        // fragments should be revisited for each operation
+        visitedFragmentSpreads.clear();
+        currentOperation = null;
+
+        if (isRuleEnabled(OperationValidationRule.NO_UNUSED_VARIABLES)) {
+            for (VariableDefinition variableDefinition : unusedVars_variableDefinitions) {
+                if (!unusedVars_usedVariables.contains(variableDefinition.getName())) {
+                    String message = i18n(UnusedVariable, "NoUnusedVariables.unusedVariable", variableDefinition.getName());
+                    addError(UnusedVariable, variableDefinition.getSourceLocation(), message);
+                }
+            }
+        }
+
+        introspectionQueryDetected = false;
+        mergedFieldCounts = null;
+    }
+
+    private void leaveSelectionSet() {
+        // No rules currently use leaveSelectionSet
+    }
+
+    private void leaveFragmentDefinition() {
+        // No special handling needed - the fragment spread depth tracking
+        // is handled when its traversal frame finishes
+    }
+
+    private void documentFinished() {
+        if (isRuleEnabled(OperationValidationRule.NO_UNUSED_FRAGMENTS)) {
+            validateNoUnusedFragments();
+        }
+        if (isRuleEnabled(OperationValidationRule.LONE_ANONYMOUS_OPERATION)) {
+            hasAnonymousOp = false;
+        }
+    }
+
+    // --- ExecutableDefinitions ---
+    private void validateExecutableDefinitions(Document document) {
+        document.getDefinitions().forEach(definition -> {
+            if (!(definition instanceof OperationDefinition)
+                    && !(definition instanceof FragmentDefinition)) {
+                String message = nonExecutableDefinitionMessage(definition);
+                addError(NonExecutableDefinition, definition.getSourceLocation(), message);
+            }
+        });
+    }
+
+    private String nonExecutableDefinitionMessage(Definition definition) {
+        if (definition instanceof TypeDefinition) {
+            return i18n(NonExecutableDefinition, "ExecutableDefinitions.notExecutableType", ((TypeDefinition) definition).getName());
+        } else if (definition instanceof SchemaDefinition) {
+            return i18n(NonExecutableDefinition, "ExecutableDefinitions.notExecutableSchema");
+        } else if (definition instanceof DirectiveDefinition) {
+            return i18n(NonExecutableDefinition, "ExecutableDefinitions.notExecutableDirective", ((DirectiveDefinition) definition).getName());
+        }
+        return i18n(NonExecutableDefinition, "ExecutableDefinitions.notExecutableDefinition");
+    }
+
+    // --- ArgumentsOfCorrectType ---
+    private void validateArgumentsOfCorrectType(Argument argument) {
+        GraphQLArgument fieldArgument = getArgumentDefinition(argument.getName());
+        if (fieldArgument == null) {
+            return;
+        }
+        ArgumentValidationUtil argValidationUtil = new ArgumentValidationUtil(argument);
+        if (!argValidationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(),
+                validationContext.getSchema(), validationContext.getGraphQLContext(), validationContext.getI18n().getLocale())) {
+            String message = i18n(WrongType, argValidationUtil.getMsgAndArgs());
+            addError(newValidationError()
+                    .validationErrorType(WrongType)
+                    .sourceLocation(argument.getSourceLocation())
+                    .description(message)
+                    .extensions(argValidationUtil.getErrorExtensions()));
+        }
+    }
+
+    // --- FieldsOnCorrectType ---
+    private void validateFieldsOnCorrectType(Field field) {
+        GraphQLCompositeType parentType = getParentType();
+        if (parentType == null) {
+            return;
+        }
+        GraphQLFieldDefinition fieldDef = getFieldDefinition();
+        if (fieldDef == null) {
+            String message = i18n(FieldUndefined, "FieldsOnCorrectType.unknownField", field.getName(), parentType.getName());
+            addError(FieldUndefined, field.getSourceLocation(), message);
+        }
+    }
+
+    // --- FragmentsOnCompositeType ---
+    private void validateFragmentsOnCompositeType_inline(InlineFragment inlineFragment) {
+        if (inlineFragment.getTypeCondition() == null) {
+            return;
+        }
+        GraphQLType type = validationContext.getSchema().getType(inlineFragment.getTypeCondition().getName());
+        if (type == null) {
+            return;
+        }
+        if (!(type instanceof GraphQLCompositeType)) {
+            String message = i18n(InlineFragmentTypeConditionInvalid, "FragmentsOnCompositeType.invalidInlineTypeCondition");
+            addError(InlineFragmentTypeConditionInvalid, inlineFragment.getSourceLocation(), message);
+        }
+    }
+
+    private void validateFragmentsOnCompositeType_definition(FragmentDefinition fragmentDefinition) {
+        GraphQLType type = validationContext.getSchema().getType(fragmentDefinition.getTypeCondition().getName());
+        if (type == null) {
+            return;
+        }
+        if (!(type instanceof GraphQLCompositeType)) {
+            String message = i18n(FragmentTypeConditionInvalid, "FragmentsOnCompositeType.invalidFragmentTypeCondition");
+            addError(FragmentTypeConditionInvalid, fragmentDefinition.getSourceLocation(), message);
+        }
+    }
+
+    // --- KnownArgumentNames ---
+    private void validateKnownArgumentNames(Argument argument) {
+        GraphQLDirective directiveDef = getDirectiveDefinition();
+        if (directiveDef != null) {
+            GraphQLArgument directiveArgument = directiveDef.getArgument(argument.getName());
+            if (directiveArgument == null) {
+                String message = i18n(UnknownDirective, "KnownArgumentNames.unknownDirectiveArg", argument.getName());
+                addError(UnknownDirective, argument.getSourceLocation(), message);
+            }
+            return;
+        }
+        GraphQLFieldDefinition fieldDef = getFieldDefinition();
+        if (fieldDef == null) {
+            return;
+        }
+        GraphQLArgument fieldArgument = fieldDef.getArgument(argument.getName());
+        if (fieldArgument == null) {
+            String message = i18n(UnknownArgument, "KnownArgumentNames.unknownFieldArg", argument.getName());
+            addError(UnknownArgument, argument.getSourceLocation(), message);
+        }
+    }
+
+    // --- KnownDirectives ---
+    private void validateKnownDirectives(Directive directive, List<Node> ancestors) {
+        GraphQLDirective graphQLDirective = validationContext.getSchema().getDirective(directive.getName());
+        if (graphQLDirective == null) {
+            String message = i18n(UnknownDirective, "KnownDirectives.unknownDirective", directive.getName());
+            addError(UnknownDirective, directive.getSourceLocation(), message);
+            return;
+        }
+        Node ancestor = ancestors.get(ancestors.size() - 1);
+        if (hasInvalidLocation(graphQLDirective, ancestor)) {
+            String message = i18n(MisplacedDirective, "KnownDirectives.directiveNotAllowed", directive.getName());
+            addError(MisplacedDirective, directive.getSourceLocation(), message);
+        }
+    }
+
+    private boolean hasInvalidLocation(GraphQLDirective directive, Node ancestor) {
+        EnumSet<DirectiveLocation> validLocations = directive.validLocations();
+        if (ancestor instanceof OperationDefinition) {
+            OperationDefinition.Operation operation = ((OperationDefinition) ancestor).getOperation();
+            if (OperationDefinition.Operation.QUERY.equals(operation)) {
+                return !validLocations.contains(DirectiveLocation.QUERY);
+            } else if (OperationDefinition.Operation.MUTATION.equals(operation)) {
+                return !validLocations.contains(DirectiveLocation.MUTATION);
+            } else if (OperationDefinition.Operation.SUBSCRIPTION.equals(operation)) {
+                return !validLocations.contains(DirectiveLocation.SUBSCRIPTION);
+            }
+        } else if (ancestor instanceof Field) {
+            return !(validLocations.contains(DirectiveLocation.FIELD));
+        } else if (ancestor instanceof FragmentSpread) {
+            return !(validLocations.contains(DirectiveLocation.FRAGMENT_SPREAD));
+        } else if (ancestor instanceof FragmentDefinition) {
+            return !(validLocations.contains(DirectiveLocation.FRAGMENT_DEFINITION));
+        } else if (ancestor instanceof InlineFragment) {
+            return !(validLocations.contains(DirectiveLocation.INLINE_FRAGMENT));
+        } else if (ancestor instanceof VariableDefinition) {
+            return !(validLocations.contains(DirectiveLocation.VARIABLE_DEFINITION));
+        }
+        return true;
+    }
+
+    // --- KnownFragmentNames ---
+    private void validateKnownFragmentNames(FragmentSpread fragmentSpread) {
+        FragmentDefinition fragmentDefinition = validationContext.getFragment(fragmentSpread.getName());
+        if (fragmentDefinition == null) {
+            String message = i18n(UndefinedFragment, "KnownFragmentNames.undefinedFragment", fragmentSpread.getName());
+            addError(UndefinedFragment, fragmentSpread.getSourceLocation(), message);
+        }
+    }
+
+    // --- KnownTypeNames ---
+    private void validateKnownTypeNames(TypeName typeName) {
+        if (validationContext.getSchema().getType(typeName.getName()) == null) {
+            String message = i18n(UnknownType, "KnownTypeNames.unknownType", typeName.getName());
+            addError(UnknownType, typeName.getSourceLocation(), message);
+        }
+    }
+
+    // --- NoFragmentCycles ---
+    private void prepareFragmentSpreadsMap() {
+        List<Definition> definitions = validationContext.getDocument().getDefinitions();
+        for (Definition definition : definitions) {
+            if (definition instanceof FragmentDefinition) {
+                FragmentDefinition fragmentDefinition = (FragmentDefinition) definition;
+                fragmentSpreadsMap.put(fragmentDefinition.getName(), gatherSpreads(fragmentDefinition));
+            }
+        }
+    }
+
+    private Set<String> gatherSpreads(FragmentDefinition fragmentDefinition) {
+        Set<String> spreads = new LinkedHashSet<>();
+        Deque<Node> pending = new ArrayDeque<>();
+        pending.push(fragmentDefinition);
+        while (!pending.isEmpty()) {
+            Node node = pending.pop();
+            if (node instanceof FragmentSpread) {
+                spreads.add(((FragmentSpread) node).getName());
+            }
+            pushChildren(pending, node);
+        }
+        return spreads;
+    }
+
+    private void pushChildren(Deque<Node> pending, Node node) {
+        List<Node> children = node.getChildren();
+        for (int index = children.size() - 1; index >= 0; index--) {
+            Node child = children.get(index);
+            if (child != null) {
+                pending.push(child);
+            }
+        }
+    }
+
+    private void validateNoFragmentCycles(FragmentDefinition fragmentDefinition) {
+        if (!fragmentsWithCycleErrors.contains(fragmentDefinition.getName())) {
+            return;
+        }
+        String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
+        addError(FragmentCycle, Collections.singletonList(fragmentDefinition), message);
+    }
+
+    private void findFragmentCycles() {
+        Set<String> visitedFragments = new HashSet<>();
+        for (Map.Entry<String, Set<String>> entry : fragmentSpreadsMap.entrySet()) {
+            if (!visitedFragments.add(entry.getKey())) {
+                continue;
+            }
+            findFragmentCycles(entry.getKey(), entry.getValue(), visitedFragments);
+        }
+    }
+
+    private void findFragmentCycles(String firstFragment, Set<String> firstSpreads, Set<String> visitedFragments) {
+        Set<String> visitingFragments = new HashSet<>();
+        Deque<String> fragmentStack = new ArrayDeque<>();
+        Deque<Iterator<String>> spreadIteratorStack = new ArrayDeque<>();
+        visitingFragments.add(firstFragment);
+        fragmentStack.push(firstFragment);
+        spreadIteratorStack.push(firstSpreads.iterator());
+
+        while (!fragmentStack.isEmpty()) {
+            Iterator<String> spreadIterator = spreadIteratorStack.getFirst();
+            if (!spreadIterator.hasNext()) {
+                visitingFragments.remove(fragmentStack.pop());
+                spreadIteratorStack.pop();
+                continue;
+            }
+
+            String childFragment = spreadIterator.next();
+            Set<String> childSpreads = fragmentSpreadsMap.get(childFragment);
+            if (childSpreads == null) {
+                continue;
+            }
+            if (visitingFragments.contains(childFragment)) {
+                fragmentsWithCycleErrors.add(childFragment);
+                fragmentsWithCycleErrors.add(fragmentStack.getFirst());
+                continue;
+            }
+            if (!visitedFragments.add(childFragment)) {
+                continue;
+            }
+
+            visitingFragments.add(childFragment);
+            fragmentStack.push(childFragment);
+            spreadIteratorStack.push(childSpreads.iterator());
+        }
+    }
+
+    // --- NoUndefinedVariables ---
+    private void validateNoUndefinedVariables(VariableReference variableReference) {
+        if (!definedVariableNames.contains(variableReference.getName())) {
+            String message = i18n(UndefinedVariable, "NoUndefinedVariables.undefinedVariable", variableReference.getName());
+            addError(UndefinedVariable, variableReference.getSourceLocation(), message);
+        }
+    }
+
+    // --- VariablesNotAllowedInDirectivesOnVariableDefinitions ---
+    /**
+     * Per the GraphQL spec, directives applied to variable definitions accept only constant values.
+     * Variable references like {@code $v} are not allowed in directive arguments on variable definitions.
+     *
+     * <p>For example, {@code query ($v:Int @dir(arg:$v)) { ... }} is invalid because {@code $v}
+     * is used in a directive argument on a variable definition.
+     */
+    private void validateVariableNotAllowedInConstantDirective(VariableReference variableReference, List<Node> ancestors) {
+        // Walk the ancestor list to check if this variable reference is inside a directive
+        // that is applied to a variable definition.
+        // The ancestor path would be: ... > VariableDefinition > Directive > Argument > [ObjectValue > ObjectField >]* VariableReference
+        for (int i = ancestors.size() - 1; i > 0; i--) {
+            Node ancestor = ancestors.get(i);
+            if (ancestor instanceof Directive) {
+                if (ancestors.get(i - 1) instanceof VariableDefinition) {
+                    String message = i18n(VariableNotAllowed, "VariableNotAllowedInConstantDirective.variableNotAllowed", variableReference.getName());
+                    addError(VariableNotAllowed, variableReference.getSourceLocation(), message);
+                }
+                return;
+            }
+        }
+    }
+
+    // --- NoUnusedFragments ---
+    private void validateNoUnusedFragments() {
+        Set<String> allUsedFragments = new HashSet<>();
+        for (List<String> fragmentsInOneOperation : fragmentsUsedDirectlyInOperation) {
+            for (String fragment : fragmentsInOneOperation) {
+                collectUsedFragmentsInDefinition(allUsedFragments, fragment);
+            }
+        }
+        for (FragmentDefinition fragmentDefinition : allDeclaredFragments) {
+            if (!allUsedFragments.contains(fragmentDefinition.getName())) {
+                String message = i18n(UnusedFragment, "NoUnusedFragments.unusedFragments", fragmentDefinition.getName());
+                addError(UnusedFragment, fragmentDefinition.getSourceLocation(), message);
+            }
+        }
+    }
+
+    private void collectUsedFragmentsInDefinition(Set<String> result, String fragmentName) {
+        Deque<String> pending = new ArrayDeque<>();
+        pending.push(fragmentName);
+        while (!pending.isEmpty()) {
+            String name = pending.pop();
+            if (!result.add(name)) {
+                continue;
+            }
+            pending.addAll(spreadsInDefinition.getOrDefault(name, Collections.emptyList()));
+        }
+    }
+
+    // --- Good Faith Introspection ---
+    private boolean containsIntrospection(Map<String, Set<FieldAndType>> fields, @Nullable GraphQLType rootType) {
+        if (rootType != validationContext.getSchema().getQueryType()) {
+            return false;
+        }
+        for (Set<FieldAndType> group : fields.values()) {
+            if (containsIntrospectionField(group)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsIntrospectionField(Set<FieldAndType> fields) {
+        for (FieldAndType field : fields) {
+            String name = field.field.getName();
+            if (Introspection.SchemaMetaFieldDef.getName().equals(name) || Introspection.TypeMetaFieldDef.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private @Nullable String introspectionCoordinate(Set<FieldAndType> fields) {
+        return introspectionQueryDetected ? introspectionCoordinate(fields.iterator().next()) : null;
+    }
+
+    private @Nullable String introspectionCoordinate(FieldAndType field) {
+        String name = field.field.getName();
+        if (field.parentType == validationContext.getSchema().getQueryType()
+                && (Introspection.SchemaMetaFieldDef.getName().equals(name) || Introspection.TypeMetaFieldDef.getName().equals(name))) {
+            return validationContext.getSchema().getQueryType().getName() + "." + name;
+        }
+        if (field.parentType instanceof GraphQLObjectType && Introspection.__Type.getName().equals(((GraphQLObjectType) field.parentType).getName())
+                && ("fields".equals(name) || "inputFields".equals(name)
+                || "interfaces".equals(name) || "possibleTypes".equals(name))) {
+            return Introspection.__Type.getName() + "." + name;
+        }
+        return null;
+    }
+
+    // --- OverlappingFieldsCanBeMerged ---
+    private void validateOverlappingFieldsCanBeMerged(OperationDefinition operationDefinition) {
+        overlappingFieldsImpl(
+                operationDefinition.getSelectionSet(),
+                getOperationType(operationDefinition));
+    }
+
+    private void overlappingFieldsImpl(SelectionSet selectionSet, @Nullable GraphQLOutputType graphQLOutputType) {
+        Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>(selectionSet.getSelections().size());
+        Set<String> visitedFragments = new LinkedHashSet<>();
+        overlappingFields_collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragments);
+        if (complexityLimits.isIntrospectionLimitsEnabled() && containsIntrospection(fieldMap, graphQLOutputType)) {
+            introspectionQueryDetected = true;
+        }
+        if (generalMergedLimitsEnabled || introspectionQueryDetected) {
+            mergedFieldCounts = new IdentityHashMap<>(fieldMap.size());
+        }
+        List<Conflict> conflicts = findConflicts(fieldMap);
+        for (Conflict conflict : conflicts) {
+            if (conflictsReported.contains(conflict.fields)) {
+                continue;
+            }
+            conflictsReported.add(conflict.fields);
+            addError(FieldsConflict, conflict.fields, conflict.reason);
+        }
+    }
+
+    private void overlappingFields_collectFields(Map<String, Set<FieldAndType>> fieldMap, SelectionSet selectionSet, @Nullable GraphQLType parentType, Set<String> visitedFragments) {
+        Deque<SelectionSetTraversalFrame<GraphQLType>> frames = fieldCollectionFrames;
+        if (frames == null) {
+            frames = new ArrayDeque<>();
+            fieldCollectionFrames = frames;
+        }
+        frames.push(new SelectionSetTraversalFrame<>(selectionSet, parentType));
+        while (!frames.isEmpty()) {
+            SelectionSetTraversalFrame<GraphQLType> frame = frames.getFirst();
+            Selection selection = frame.nextSelection();
+            if (selection == null) {
+                frames.pop();
+                continue;
+            }
+            collectValidationSelection(fieldMap, visitedFragments, frames, frame.getContext(), selection);
+        }
+    }
+
+    private void collectValidationSelection(Map<String, Set<FieldAndType>> fieldMap, Set<String> visitedFragments,
+                                           Deque<SelectionSetTraversalFrame<GraphQLType>> frames, @Nullable GraphQLType parentType, Selection selection) {
+        if (selection instanceof Field) {
+            overlappingFields_collectFieldsForField(fieldMap, parentType, (Field) selection);
+        } else if (selection instanceof InlineFragment) {
+            InlineFragment fragment = (InlineFragment) selection;
+            GraphQLType type = fragment.getTypeCondition() == null ? parentType
+                    : TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
+            frames.push(new SelectionSetTraversalFrame<>(fragment.getSelectionSet(), type));
+        } else if (selection instanceof FragmentSpread) {
+            collectValidationFragment(frames, visitedFragments, (FragmentSpread) selection);
+        }
+    }
+
+    private void collectValidationFragment(Deque<SelectionSetTraversalFrame<GraphQLType>> frames, Set<String> visitedFragments, FragmentSpread spread) {
+        FragmentDefinition fragment = validationContext.getFragment(spread.getName());
+        if (fragment == null || !visitedFragments.add(fragment.getName())) {
+            return;
+        }
+        GraphQLType type = TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
+        frames.push(new SelectionSetTraversalFrame<>(fragment.getSelectionSet(), type));
+    }
+
+    private void overlappingFields_collectFieldsForField(Map<String, Set<FieldAndType>> fieldMap, @Nullable GraphQLType parentType, Field field) {
+        String responseName = field.getResultKey();
+        GraphQLOutputType fieldType = null;
+        GraphQLUnmodifiedType unwrappedParent = parentType != null ? unwrapAll(parentType) : null;
+        if (unwrappedParent instanceof GraphQLCompositeType) {
+            GraphQLFieldDefinition fieldDefinition = getFieldDefinition((GraphQLCompositeType) unwrappedParent, field.getName());
+            fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
+        }
+        fieldMap.computeIfAbsent(responseName, k -> new LinkedHashSet<>()).add(new FieldAndType(field, fieldType, unwrappedParent));
+    }
+
+    private List<Conflict> findConflicts(Map<String, Set<FieldAndType>> fieldMap) {
+        List<Conflict> result = new ArrayList<>();
+        // Both walks restore this path after each field; conflicts capture its string value.
+        List<String> path = new ArrayList<>();
+        boolean checkMerging = isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED);
+        if (checkMerging && mergedFieldCounts == null) {
+            sameResponseShapeByName(fieldMap, path, result);
+        }
+        if (checkMerging || mergedFieldCounts != null) {
+            sameForCommonParentsByName(fieldMap, path, result);
+        }
+        // Bound the common-parent walk before the other recursive merge checks.
+        if (checkMerging && mergedFieldCounts != null) {
+            responseShapeAfterCounting(fieldMap, path, result);
+        }
+        return result;
+    }
+
+    private void responseShapeAfterCounting(Map<String, Set<FieldAndType>> fieldMap, List<String> path, List<Conflict> conflicts) {
+        if (!introspectionQueryDetected && !conflicts.isEmpty()) {
+            List<Conflict> commonParentConflicts = new ArrayList<>(conflicts);
+            conflicts.clear();
+            sameResponseShapeByName(fieldMap, path, conflicts);
+            conflicts.addAll(commonParentConflicts);
+            return;
+        }
+        sameResponseShapeByName(fieldMap, path, conflicts);
+    }
+
+    private void sameResponseShapeByName(Map<String, Set<FieldAndType>> fieldMap, List<String> currentPath, List<Conflict> conflictsResult) {
+        for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
+            FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(entry.getValue(), fields -> new FieldValidationState<>());
+            if (!state.markResponseShapeChecked()) {
+                continue;
+            }
+            currentPath.add(entry.getKey());
+            sameResponseShape(entry.getValue(), state, currentPath, conflictsResult);
+            currentPath.remove(currentPath.size() - 1);
+        }
+    }
+
+    private void sameResponseShape(Set<FieldAndType> fields, FieldValidationState<FieldAndType> state,
+                                  List<String> path, List<Conflict> conflicts) {
+        Conflict conflict = requireSameOutputTypeShape(path, fields);
+        if (conflict != null) {
+            conflicts.add(conflict);
+            return;
+        }
+        Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(fields, state);
+        sameResponseShapeByName(subSelections, path, conflicts);
+    }
+
+    private Map<String, Set<FieldAndType>> mergeSubSelections(Set<FieldAndType> sameNameFields, FieldValidationState<FieldAndType> state) {
+        Map<String, Set<FieldAndType>> subSelections = state.getMergedSubSelections();
+        if (subSelections == null) {
+            subSelections = collectSubSelections(sameNameFields);
+            state.setMergedSubSelections(subSelections);
+        }
+        return subSelections;
+    }
+
+    private Map<String, Set<FieldAndType>> collectSubSelections(Set<FieldAndType> sameNameFields) {
+        Map<String, Set<FieldAndType>> fieldMap = null;
+        for (FieldAndType fieldAndType : sameNameFields) {
+            SelectionSet selectionSet = fieldAndType.field.getSelectionSet();
+            if (selectionSet == null) {
+                continue;
+            }
+            if (fieldMap == null) {
+                fieldMap = new LinkedHashMap<>();
+            }
+            Set<String> visitedFragments = new LinkedHashSet<>();
+            overlappingFields_collectFields(fieldMap, selectionSet, fieldAndType.graphQLType, visitedFragments);
+        }
+        return fieldMap == null ? Collections.emptyMap() : fieldMap;
+    }
+
+    private @Nullable MergedFieldComplexityCounts sameForCommonParentsByName(Map<String, Set<FieldAndType>> fieldMap,
+                                                                      List<String> currentPath, List<Conflict> conflictsResult) {
+        if (fieldMap.isEmpty()) {
+            return null;
+        }
+        MergedFieldComplexityCounts counts = mergedFieldCounts == null ? null : new MergedFieldComplexityCounts(complexityLimits, introspectionQueryDetected);
+        for (Map.Entry<String, Set<FieldAndType>> entry : fieldMap.entrySet()) {
+            List<Set<FieldAndType>> groups = groupByCommonParents(entry.getValue());
+            currentPath.add(entry.getKey());
+            for (Set<FieldAndType> group : groups) {
+                sameForCommonParentGroup(group, currentPath, conflictsResult, counts);
+            }
+            currentPath.remove(currentPath.size() - 1);
+        }
+        return counts;
+    }
+
+    private void sameForCommonParentGroup(Set<FieldAndType> group, List<String> path, List<Conflict> conflictsResult,
+                                          @Nullable MergedFieldComplexityCounts selectionCounts) {
+        FieldValidationState<FieldAndType> state = fieldValidationStates.computeIfAbsent(group, fields -> new FieldValidationState<>());
+        if (selectionCounts != null && hasMergedSubSelections(state) && reuseMergedFieldCounts(state, path.size() - 1, selectionCounts)) {
+            return;
+        }
+        boolean newlyChecked = state.markSameForCommonParentsChecked();
+        if (!newlyChecked && selectionCounts == null) {
+            return;
+        }
+        boolean compatible = !newlyChecked || !isRuleEnabled(OperationValidationRule.OVERLAPPING_FIELDS_CAN_BE_MERGED)
+                || checkCommonParentFields(group, path, conflictsResult);
+        if (!compatible && selectionCounts == null) {
+            return;
+        }
+        if (selectionCounts != null) {
+            selectionCounts.checkFieldDepth(path.size() - 1);
+        }
+        Map<String, Set<FieldAndType>> subSelections = mergeSubSelections(group, state);
+        if (selectionCounts != null && subSelections.isEmpty()) {
+            selectionCounts.addLeafField(introspectionCoordinate(group));
+            return;
+        }
+        MergedFieldComplexityCounts groupCounts = null;
+        if (selectionCounts != null) {
+            groupCounts = new MergedFieldComplexityCounts(complexityLimits, introspectionQueryDetected);
+            groupCounts.enterField(introspectionCoordinate(group));
+            // A null value marks an in-progress group, stopping invalid fragment cycles.
+            Assert.assertNotNull(mergedFieldCounts).put(state, null);
+        }
+        MergedFieldComplexityCounts children = sameForCommonParentsByName(subSelections, path, conflictsResult);
+        if (groupCounts != null) {
+            groupCounts.addChildren(Assert.assertNotNull(children));
+            Assert.assertNotNull(mergedFieldCounts).put(state, groupCounts);
+            Assert.assertNotNull(selectionCounts).add(groupCounts);
+        }
+    }
+
+    private boolean hasMergedSubSelections(FieldValidationState<FieldAndType> state) {
+        Map<String, Set<FieldAndType>> subSelections = state.getMergedSubSelections();
+        return subSelections != null && !subSelections.isEmpty();
+    }
+
+    private boolean checkCommonParentFields(Set<FieldAndType> fields, List<String> path, List<Conflict> conflicts) {
+        Conflict conflict = requireSameNameAndArguments(path, fields);
+        if (conflict == null) {
+            return true;
+        }
+        conflicts.add(conflict);
+        return false;
+    }
+
+    private boolean reuseMergedFieldCounts(FieldValidationState<FieldAndType> state, int parentDepth, MergedFieldComplexityCounts selectionCounts) {
+        Map<FieldValidationState<FieldAndType>, @Nullable MergedFieldComplexityCounts> cache = Assert.assertNotNull(mergedFieldCounts);
+        if (!cache.containsKey(state)) {
+            return false;
+        }
+        MergedFieldComplexityCounts cached = cache.get(state);
+        if (cached != null) {
+            cached.checkDepth(parentDepth);
+            selectionCounts.add(cached);
+        }
+        return true;
+    }
+
+    private List<Set<FieldAndType>> groupByCommonParents(Set<FieldAndType> fields) {
+        if (fields.size() <= 1) {
+            return Collections.singletonList(fields);
+        }
+        // Single-pass: partition into abstract types and concrete groups simultaneously
+        List<FieldAndType> abstractTypes = null;
+        Map<GraphQLType, Set<FieldAndType>> concreteGroups = null;
+
+        for (FieldAndType fieldAndType : fields) {
+            if (isInterfaceOrUnion(fieldAndType.parentType)) {
+                if (abstractTypes == null) {
+                    abstractTypes = new ArrayList<>();
+                }
+                abstractTypes.add(fieldAndType);
+            } else if (fieldAndType.parentType instanceof GraphQLObjectType) {
+                if (concreteGroups == null) {
+                    concreteGroups = new LinkedHashMap<>();
+                }
+                concreteGroups.computeIfAbsent(fieldAndType.parentType, k -> new LinkedHashSet<>()).add(fieldAndType);
+            }
+        }
+
+        if (concreteGroups == null || concreteGroups.isEmpty()) {
+            // No concrete types — return all abstract types as a single group
+            if (abstractTypes == null) {
+                return Collections.singletonList(fields);
+            }
+            return Collections.singletonList(new LinkedHashSet<>(abstractTypes));
+        }
+
+        List<Set<FieldAndType>> result = new ArrayList<>(concreteGroups.size());
+        for (Set<FieldAndType> concreteGroup : concreteGroups.values()) {
+            if (abstractTypes != null) {
+                concreteGroup.addAll(abstractTypes);
+            }
+            result.add(concreteGroup);
+        }
+        return result;
+    }
+
+    private boolean isInterfaceOrUnion(@Nullable GraphQLType type) {
+        return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType;
+    }
+
+    private @Nullable Conflict requireSameNameAndArguments(List<String> path, Set<FieldAndType> fieldAndTypes) {
+        if (fieldAndTypes.size() <= 1) {
+            return null;
+        }
+        String name = null;
+        List<Argument> arguments = null;
+        List<Field> fields = new ArrayList<>();
+        for (FieldAndType fieldAndType : fieldAndTypes) {
+            Field field = fieldAndType.field;
+            fields.add(field);
+            if (name == null) {
+                name = field.getName();
+                arguments = field.getArguments();
+                continue;
+            }
+            if (!field.getName().equals(name)) {
+                String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentFields", pathToString(path), name, field.getName());
+                return new Conflict(reason, fields);
+            }
+            if (!sameArguments(field.getArguments(), arguments)) {
+                String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentArgs", pathToString(path));
+                return new Conflict(reason, fields);
+            }
+        }
+        return null;
+    }
+
+    private String pathToString(List<String> path) {
+        return String.join("/", path);
+    }
+
+    private boolean sameArguments(List<Argument> arguments1, @Nullable List<Argument> arguments2) {
+        if (arguments2 == null || arguments1.size() != arguments2.size()) {
+            return false;
+        }
+        for (Argument argument : arguments1) {
+            Argument matchedArgument = findArgumentByName(argument.getName(), arguments2);
+            if (matchedArgument == null) {
+                return false;
+            }
+            if (!AstComparator.sameValue(argument.getValue(), matchedArgument.getValue())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private @Nullable Argument findArgumentByName(String name, List<Argument> arguments) {
+        for (Argument argument : arguments) {
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
+        }
+        return null;
+    }
+
+    private @Nullable Conflict requireSameOutputTypeShape(List<String> path, Set<FieldAndType> fieldAndTypes) {
+        if (fieldAndTypes.size() <= 1) {
+            return null;
+        }
+        List<Field> fields = new ArrayList<>();
+        GraphQLType typeAOriginal = null;
+        for (FieldAndType fieldAndType : fieldAndTypes) {
+            fields.add(fieldAndType.field);
+            if (typeAOriginal == null) {
+                typeAOriginal = fieldAndType.graphQLType;
+                continue;
+            }
+            GraphQLType typeA = typeAOriginal;
+            GraphQLType typeB = fieldAndType.graphQLType;
+            if (typeA == null || typeB == null) {
+                continue;
+            }
+            while (true) {
+                if (isNonNull(typeA) || isNonNull(typeB)) {
+                    if (isNullable(typeA) || isNullable(typeB)) {
+                        String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentNullability", pathToString(path));
+                        return new Conflict(reason, fields);
+                    }
+                }
+                if (isList(typeA) || isList(typeB)) {
+                    if (!isList(typeA) || !isList(typeB)) {
+                        String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentLists", pathToString(path));
+                        return new Conflict(reason, fields);
+                    }
+                }
+                if (isNotWrapped(typeA) && isNotWrapped(typeB)) {
+                    break;
+                }
+                typeA = unwrapOne(typeA);
+                typeB = unwrapOne(typeB);
+            }
+            if (isScalar(typeA) || isScalar(typeB)) {
+                if (notSameType(typeA, typeB)) {
+                    return mkNotSameTypeError(path, fields, typeA, typeB);
+                }
+            }
+            if (isEnum(typeA) || isEnum(typeB)) {
+                if (notSameType(typeA, typeB)) {
+                    return mkNotSameTypeError(path, fields, typeA, typeB);
+                }
+            }
+        }
+        return null;
+    }
+
+    private Conflict mkNotSameTypeError(List<String> path, List<Field> fields, @Nullable GraphQLType typeA, @Nullable GraphQLType typeB) {
+        String name1 = typeA != null ? simplePrint(typeA) : "null";
+        String name2 = typeB != null ? simplePrint(typeB) : "null";
+        String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentReturnTypes", pathToString(path), name1, name2);
+        return new Conflict(reason, fields);
+    }
+
+    private boolean notSameType(@Nullable GraphQLType type1, @Nullable GraphQLType type2) {
+        if (type1 == null || type2 == null) {
+            return false;
+        }
+        return !type1.equals(type2);
+    }
+
+    private static class FieldAndType {
+        final Field field;
+        final @Nullable GraphQLType graphQLType;
+        final @Nullable GraphQLType parentType;
+
+        public FieldAndType(Field field, @Nullable GraphQLType graphQLType, @Nullable GraphQLType parentType) {
+            this.field = field;
+            this.graphQLType = graphQLType;
+            this.parentType = parentType;
+        }
+
+        @Override
+        public String toString() {
+            return "FieldAndType{" +
+                    "field=" + field +
+                    ", graphQLType=" + graphQLType +
+                    ", parentType=" + parentType +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            FieldAndType that = (FieldAndType) o;
+            return Objects.equals(field, that.field);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(field);
+        }
+    }
+
+    private static class Conflict {
+        final String reason;
+        final Set<Field> fields = new LinkedHashSet<>();
+
+        public Conflict(String reason, List<Field> fields) {
+            this.reason = reason;
+            this.fields.addAll(fields);
+        }
+    }
+
+    // --- PossibleFragmentSpreads ---
+    private void validatePossibleFragmentSpreads_inline(InlineFragment inlineFragment) {
+        GraphQLOutputType fragType = getInlineFragmentType(inlineFragment);
+        GraphQLCompositeType parentType = getParentType();
+        if (fragType == null || parentType == null) {
+            return;
+        }
+
+        if (isValidTargetCompositeType(fragType) && isValidTargetCompositeType(parentType) && typesDoNotOverlap(fragType, parentType)) {
+            String message = i18n(InvalidFragmentType, "PossibleFragmentSpreads.inlineIncompatibleTypes", parentType.getName(), simplePrint(fragType));
+            addError(InvalidFragmentType, inlineFragment.getSourceLocation(), message);
+        }
+    }
+
+    private void validatePossibleFragmentSpreads_spread(FragmentSpread fragmentSpread) {
+        FragmentDefinition fragment = validationContext.getFragment(fragmentSpread.getName());
+        if (fragment == null) {
+            return;
+        }
+        GraphQLType typeCondition = TypeFromAST.getTypeFromAST(validationContext.getSchema(), fragment.getTypeCondition());
+        GraphQLCompositeType parentType = getParentType();
+        if (typeCondition == null || parentType == null) {
+            return;
+        }
+
+        if (isValidTargetCompositeType(typeCondition) && isValidTargetCompositeType(parentType) && typesDoNotOverlap(typeCondition, parentType)) {
+            String message = i18n(InvalidFragmentType, "PossibleFragmentSpreads.fragmentIncompatibleTypes", fragmentSpread.getName(), parentType.getName(), simplePrint(typeCondition));
+            addError(InvalidFragmentType, fragmentSpread.getSourceLocation(), message);
+        }
+    }
+
+    private boolean typesDoNotOverlap(GraphQLType type, GraphQLCompositeType parent) {
+        if (type == parent) {
+            return false;
+        }
+        List<? extends GraphQLType> possibleParentTypes = getPossibleType(parent);
+        List<? extends GraphQLType> possibleConditionTypes = getPossibleType(type);
+        return Collections.disjoint(possibleParentTypes, possibleConditionTypes);
+    }
+
+    private List<? extends GraphQLType> getPossibleType(GraphQLType type) {
+        if (type instanceof GraphQLObjectType) {
+            return Collections.singletonList(type);
+        } else if (type instanceof GraphQLInterfaceType) {
+            List<GraphQLObjectType> implementations = validationContext.getSchema().getImplementations((GraphQLInterfaceType) type);
+            return implementations != null ? implementations : Collections.emptyList();
+        } else if (type instanceof GraphQLUnionType) {
+            return ((GraphQLUnionType) type).getTypes();
+        } else {
+            Assert.assertShouldNeverHappen();
+        }
+        return Collections.emptyList();
+    }
+
+    private boolean isValidTargetCompositeType(GraphQLType type) {
+        return type instanceof GraphQLCompositeType;
+    }
+
+    private @Nullable GraphQLOutputType getInlineFragmentType(
+            InlineFragment inlineFragment) {
+        TypeName typeCondition = inlineFragment.getTypeCondition();
+        if (typeCondition == null) {
+            return getParentType();
+        }
+        GraphQLType type = validationContext.getSchema().getType(typeCondition.getName());
+        return type instanceof GraphQLOutputType ? (GraphQLOutputType) type : null;
+    }
+
+    // --- ProvidedNonNullArguments ---
+    private void validateProvidedNonNullArguments_field(Field field) {
+        GraphQLFieldDefinition fieldDef = getFieldDefinition();
+        if (fieldDef == null) {
+            return;
+        }
+        List<Argument> providedArguments = field.getArguments();
+
+        for (GraphQLArgument graphQLArgument : fieldDef.getArguments()) {
+            Argument argument = findArgumentByName(providedArguments, graphQLArgument.getName());
+            boolean nonNullType = isNonNull(graphQLArgument.getType());
+            boolean noDefaultValue = graphQLArgument.getArgumentDefaultValue().isNotSet();
+            if (argument == null && nonNullType && noDefaultValue) {
+                String message = i18n(MissingFieldArgument, "ProvidedNonNullArguments.missingFieldArg", graphQLArgument.getName());
+                addError(MissingFieldArgument, field.getSourceLocation(), message);
+            }
+            if (argument != null) {
+                Value value = argument.getValue();
+                if (value instanceof NullValue && nonNullType && noDefaultValue) {
+                    String message = i18n(NullValueForNonNullArgument, "ProvidedNonNullArguments.nullValue", graphQLArgument.getName());
+                    addError(NullValueForNonNullArgument, field.getSourceLocation(), message);
+                }
+            }
+        }
+    }
+
+    private void validateProvidedNonNullArguments_directive(Directive directive) {
+        GraphQLDirective graphQLDirective = getDirectiveDefinition();
+        if (graphQLDirective == null) {
+            return;
+        }
+        List<Argument> providedArguments = directive.getArguments();
+
+        for (GraphQLArgument graphQLArgument : graphQLDirective.getArguments()) {
+            Argument argument = findArgumentByName(providedArguments, graphQLArgument.getName());
+            boolean nonNullType = isNonNull(graphQLArgument.getType());
+            boolean noDefaultValue = graphQLArgument.getArgumentDefaultValue().isNotSet();
+            if (argument == null && nonNullType && noDefaultValue) {
+                String message = i18n(MissingDirectiveArgument, "ProvidedNonNullArguments.missingDirectiveArg", graphQLArgument.getName());
+                addError(MissingDirectiveArgument, directive.getSourceLocation(), message);
+            }
+        }
+    }
+
+    private static @Nullable Argument findArgumentByName(List<Argument> arguments, String name) {
+        for (Argument argument : arguments) {
+            if (argument.getName().equals(name)) {
+                return argument;
+            }
+        }
+        return null;
+    }
+
+    // --- ScalarLeaves ---
+    private void validateScalarLeaves(Field field) {
+        GraphQLFieldDefinition fieldDefinition = getFieldDefinition();
+        if (fieldDefinition == null) {
+            return;
+        }
+        GraphQLOutputType type = fieldDefinition.getType();
+        if (isLeaf(type)) {
+            if (field.getSelectionSet() != null) {
+                String message = i18n(SubselectionNotAllowed, "ScalarLeaves.subselectionOnLeaf", simplePrint(type), field.getName());
+                addError(SubselectionNotAllowed, field.getSourceLocation(), message);
+            }
+        } else {
+            if (field.getSelectionSet() == null) {
+                String message = i18n(SubselectionRequired, "ScalarLeaves.subselectionRequired", simplePrint(type), field.getName());
+                addError(SubselectionRequired, field.getSourceLocation(), message);
+            }
+        }
+    }
+
+    // --- VariableDefaultValuesOfCorrectType ---
+    private void validateVariableDefaultValuesOfCorrectType(VariableDefinition variableDefinition) {
+        GraphQLInputType inputType = getInputType();
+        if (inputType == null) {
+            return;
+        }
+        if (variableDefinition.getDefaultValue() != null
+                && !validationUtil.isValidLiteralValue(variableDefinition.getDefaultValue(), inputType,
+                validationContext.getSchema(), validationContext.getGraphQLContext(), validationContext.getI18n().getLocale())) {
+            String message = i18n(BadValueForDefaultArg, "VariableDefaultValuesOfCorrectType.badDefault", variableDefinition.getDefaultValue(), simplePrint(inputType));
+            addError(BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
+        }
+    }
+
+    // --- VariablesAreInputTypes ---
+    private void validateVariablesAreInputTypes(VariableDefinition variableDefinition) {
+        TypeName unmodifiedAstType = validationUtil.getUnmodifiedType(variableDefinition.getType());
+        GraphQLType type = validationContext.getSchema().getType(unmodifiedAstType.getName());
+        if (type == null) {
+            return;
+        }
+        if (!isInput(type)) {
+            String message = i18n(NonInputTypeOnVariable, "VariablesAreInputTypes.wrongType", variableDefinition.getName(), unmodifiedAstType.getName());
+            addError(NonInputTypeOnVariable, variableDefinition.getSourceLocation(), message);
+        }
+    }
+
+    // --- VariableTypesMatch ---
+    private void validateVariableTypesMatch(VariableReference variableReference) {
+        if (variableDefinitionMap == null) {
+            return;
+        }
+        VariableDefinition variableDefinition = variableDefinitionMap.get(variableReference.getName());
+        if (variableDefinition == null) {
+            return;
+        }
+        GraphQLType variableType = TypeFromAST.getTypeFromAST(validationContext.getSchema(), variableDefinition.getType());
+        if (variableType == null) {
+            return;
+        }
+        GraphQLInputType locationType = getInputType();
+        if (locationType == null) {
+            return;
+        }
+        InputValueWithState locationDefault = getDefaultValue();
+        Value<?> locationDefaultValue = null;
+        if (locationDefault != null && locationDefault.isLiteral()) {
+            locationDefaultValue = (Value<?>) locationDefault.getValue();
+        } else if (locationDefault != null && locationDefault.isSet()) {
+            locationDefaultValue = ValuesResolver.valueToLiteral(locationDefault, locationType,
+                    validationContext.getGraphQLContext(), validationContext.getI18n().getLocale());
+        }
+        boolean variableDefMatches = variablesTypesMatcher.doesVariableTypesMatch(variableType, variableDefinition.getDefaultValue(), locationType, locationDefaultValue);
+        if (!variableDefMatches) {
+            GraphQLType effectiveType = variablesTypesMatcher.effectiveType(variableType, variableDefinition.getDefaultValue());
+            String message = i18n(VariableTypeMismatch, "VariableTypesMatchRule.unexpectedType",
+                    variableDefinition.getName(),
+                    GraphQLTypeUtil.simplePrint(effectiveType),
+                    GraphQLTypeUtil.simplePrint(locationType));
+            addError(VariableTypeMismatch, variableReference.getSourceLocation(), message);
+        }
+    }
+
+    // --- LoneAnonymousOperation ---
+    private void validateLoneAnonymousOperation(OperationDefinition operationDefinition) {
+        String name = operationDefinition.getName();
+        if (name == null) {
+            hasAnonymousOp = true;
+            if (loneAnon_count > 0) {
+                String message = i18n(LoneAnonymousOperationViolation, "LoneAnonymousOperation.withOthers");
+                addError(LoneAnonymousOperationViolation, operationDefinition.getSourceLocation(), message);
+            }
+        } else {
+            if (hasAnonymousOp) {
+                String message = i18n(LoneAnonymousOperationViolation, "LoneAnonymousOperation.namedOperation", name);
+                addError(LoneAnonymousOperationViolation, operationDefinition.getSourceLocation(), message);
+            }
+        }
+        loneAnon_count++;
+    }
+
+    // --- UniqueOperationNames ---
+    private void validateUniqueOperationNames(OperationDefinition operationDefinition) {
+        String name = operationDefinition.getName();
+        if (name == null) {
+            return;
+        }
+        if (operationNames.contains(name)) {
+            String message = i18n(DuplicateOperationName, "UniqueOperationNames.oneOperation", name);
+            addError(DuplicateOperationName, operationDefinition.getSourceLocation(), message);
+        } else {
+            operationNames.add(name);
+        }
+    }
+
+    // --- UniqueFragmentNames ---
+    private void validateUniqueFragmentNames(FragmentDefinition fragmentDefinition) {
+        String name = fragmentDefinition.getName();
+        if (name == null) {
+            return;
+        }
+        if (fragmentNames.contains(name)) {
+            String message = i18n(DuplicateFragmentName, "UniqueFragmentNames.oneFragment", name);
+            addError(DuplicateFragmentName, fragmentDefinition.getSourceLocation(), message);
+        } else {
+            fragmentNames.add(name);
+        }
+    }
+
+    // --- UniqueDirectiveNamesPerLocation ---
+    private void validateUniqueDirectiveNamesPerLocation(Node<?> directivesContainer, List<Directive> directives) {
+        Set<String> directiveNames = new LinkedHashSet<>();
+        for (Directive directive : directives) {
+            String name = directive.getName();
+            GraphQLDirective graphQLDirective = validationContext.getSchema().getDirective(name);
+            boolean nonRepeatable = graphQLDirective != null && graphQLDirective.isNonRepeatable();
+            if (directiveNames.contains(name) && nonRepeatable) {
+                String message = i18n(DuplicateDirectiveName, "UniqueDirectiveNamesPerLocation.uniqueDirectives", name, directivesContainer.getClass().getSimpleName());
+                addError(DuplicateDirectiveName, directive.getSourceLocation(), message);
+            } else {
+                directiveNames.add(name);
+            }
+        }
+    }
+
+    // --- UniqueArgumentNames ---
+    private void validateUniqueArgumentNames_field(Field field) {
+        validateUniqueArgumentNames(field.getArguments(), field.getSourceLocation());
+    }
+
+    private void validateUniqueArgumentNames_directive(Directive directive) {
+        validateUniqueArgumentNames(directive.getArguments(), directive.getSourceLocation());
+    }
+
+    private void validateUniqueArgumentNames(List<Argument> argumentList, @Nullable SourceLocation sourceLocation) {
+        if (argumentList.size() <= 1) {
+            return;
+        }
+        Set<String> arguments = Sets.newHashSetWithExpectedSize(argumentList.size());
+        for (Argument argument : argumentList) {
+            if (arguments.contains(argument.getName())) {
+                String message = i18n(DuplicateArgumentNames, "UniqueArgumentNames.uniqueArgument", argument.getName());
+                addError(DuplicateArgumentNames, sourceLocation, message);
+            } else {
+                arguments.add(argument.getName());
+            }
+        }
+    }
+
+    // --- UniqueVariableNames ---
+    private void validateUniqueVariableNames(OperationDefinition operationDefinition) {
+        List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
+        if (variableDefinitions == null || variableDefinitions.size() <= 1) {
+            return;
+        }
+        Set<String> variableNameList = Sets.newLinkedHashSetWithExpectedSize(variableDefinitions.size());
+        for (VariableDefinition variableDefinition : variableDefinitions) {
+            if (variableNameList.contains(variableDefinition.getName())) {
+                String message = i18n(DuplicateVariableName, "UniqueVariableNames.oneVariable", variableDefinition.getName());
+                addError(DuplicateVariableName, variableDefinition.getSourceLocation(), message);
+            } else {
+                variableNameList.add(variableDefinition.getName());
+            }
+        }
+    }
+
+    // --- SubscriptionUniqueRootField ---
+    private void validateSubscriptionUniqueRootField(OperationDefinition operationDef) {
+        if (operationDef.getOperation() == SUBSCRIPTION) {
+            GraphQLObjectType subscriptionType = validationContext.getSchema().getSubscriptionType();
+            FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
+                    .schema(validationContext.getSchema())
+                    .fragments(NodeUtil.getFragmentsByName(validationContext.getDocument()))
+                    .variables(CoercedVariables.emptyVariables().toMap())
+                    .objectType(subscriptionType)
+                    .graphQLContext(validationContext.getGraphQLContext())
+                    .build();
+            MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDef.getSelectionSet());
+            if (fields.size() > 1) {
+                String message = i18n(SubscriptionMultipleRootFields, "SubscriptionUniqueRootField.multipleRootFields", Objects.toString(operationDef.getName(), ""));
+                addError(SubscriptionMultipleRootFields, operationDef.getSourceLocation(), message);
+            } else {
+                MergedField mergedField = fields.getSubFieldsList().get(0);
+                if (isIntrospectionField(mergedField)) {
+                    String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootField", Objects.toString(operationDef.getName(), ""), mergedField.getName());
+                    addError(SubscriptionIntrospectionRootField, mergedField.getSingleField().getSourceLocation(), message);
+                }
+            }
+        }
+    }
+
+    private boolean isIntrospectionField(MergedField field) {
+        return field.getName().startsWith("__");
+    }
+
+    // --- UniqueObjectFieldName ---
+    private void validateUniqueObjectFieldName(ObjectValue objectValue) {
+        Set<String> fieldNames = Sets.newHashSetWithExpectedSize(objectValue.getObjectFields().size());
+        for (ObjectField field : objectValue.getObjectFields()) {
+            String fieldName = field.getName();
+            if (fieldNames.contains(fieldName)) {
+                String message = i18n(UniqueObjectFieldName, "UniqueObjectFieldName.duplicateFieldName", fieldName);
+                addError(UniqueObjectFieldName, objectValue.getSourceLocation(), message);
+            } else {
+                fieldNames.add(fieldName);
+            }
+        }
+    }
+
+    // --- DeferDirectiveOnRootLevel ---
+    private void validateDeferDirectiveOnRootLevel(Directive directive) {
+        if (!isExperimentalApiKeyEnabled(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT)) {
+            return;
+        }
+        if (!Directives.DeferDirective.getName().equals(directive.getName())) {
+            return;
+        }
+        GraphQLObjectType mutationType = validationContext.getSchema().getMutationType();
+        GraphQLObjectType subscriptionType = validationContext.getSchema().getSubscriptionType();
+        GraphQLCompositeType parentType = getParentType();
+        if (mutationType != null && parentType != null && parentType.getName().equals(mutationType.getName())) {
+            String message = i18n(MisplacedDirective, "DeferDirective.notAllowedOperationRootLevelMutation", parentType.getName());
+            addError(MisplacedDirective, directive.getSourceLocation(), message);
+        } else if (subscriptionType != null && parentType != null && parentType.getName().equals(subscriptionType.getName())) {
+            String message = i18n(MisplacedDirective, "DeferDirective.notAllowedOperationRootLevelSubscription", parentType.getName());
+            addError(MisplacedDirective, directive.getSourceLocation(), message);
+        }
+    }
+
+    // --- DeferDirectiveOnValidOperation ---
+    private void validateDeferDirectiveOnValidOperation(Directive directive) {
+        if (!isExperimentalApiKeyEnabled(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT)) {
+            return;
+        }
+        if (!Directives.DeferDirective.getName().equals(directive.getName())) {
+            return;
+        }
+        OperationDefinition operationDefinition = Assert.assertNotNull(currentOperation);
+        if (SUBSCRIPTION.equals(operationDefinition.getOperation()) &&
+                !ifArgumentMightBeFalse(directive)) {
+            String message = i18n(MisplacedDirective, "IncrementalDirective.notAllowedSubscriptionOperation", directive.getName());
+            addError(MisplacedDirective, directive.getSourceLocation(), message);
+        }
+    }
+
+    private boolean ifArgumentMightBeFalse(Directive directive) {
+        Argument ifArgument = directive.getArgumentsByName().get("if");
+        if (ifArgument == null) {
+            return false;
+        }
+        if (ifArgument.getValue() instanceof BooleanValue) {
+            return !((BooleanValue) ifArgument.getValue()).isValue();
+        }
+        return ifArgument.getValue() instanceof VariableReference;
+    }
+
+    // --- DeferDirectiveLabel ---
+    private void validateDeferDirectiveLabel(Directive directive) {
+        if (!isExperimentalApiKeyEnabled(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT) ||
+                !Directives.DeferDirective.getName().equals(directive.getName()) ||
+                directive.getArguments().size() == 0) {
+            return;
+        }
+        Argument labelArgument = directive.getArgument("label");
+        if (labelArgument == null || labelArgument.getValue() instanceof NullValue) {
+            return;
+        }
+        Value labelArgumentValue = labelArgument.getValue();
+        if (!(labelArgumentValue instanceof StringValue)) {
+            String message = i18n(WrongType, "DeferDirective.labelMustBeStaticString");
+            addError(WrongType, directive.getSourceLocation(), message);
+        } else {
+            String labelValue = ((StringValue) labelArgumentValue).getValue();
+            if (labelValue != null && checkedDeferLabels.contains(labelValue)) {
+                String message = i18n(DuplicateIncrementalLabel, "IncrementalDirective.uniqueArgument", labelArgument.getName(), directive.getName());
+                addError(DuplicateIncrementalLabel, directive.getSourceLocation(), message);
+            } else if (labelValue != null) {
+                checkedDeferLabels.add(labelValue);
+            }
+        }
+    }
+
+    // --- KnownOperationTypes ---
+    private void validateKnownOperationTypes(OperationDefinition operationDefinition) {
+        OperationDefinition.Operation documentOperation = operationDefinition.getOperation();
+        if (documentOperation == OperationDefinition.Operation.MUTATION
+                && validationContext.getSchema().getMutationType() == null) {
+            String message = i18n(UnknownOperation, "KnownOperationTypes.noOperation", formatOperation(documentOperation));
+            addError(UnknownOperation, operationDefinition.getSourceLocation(), message);
+        } else if (documentOperation == OperationDefinition.Operation.SUBSCRIPTION
+                && validationContext.getSchema().getSubscriptionType() == null) {
+            String message = i18n(UnknownOperation, "KnownOperationTypes.noOperation", formatOperation(documentOperation));
+            addError(UnknownOperation, operationDefinition.getSourceLocation(), message);
+        }
+        // Note: No check for QUERY - a GraphQL schema always has a query type
+    }
+
+    private String formatOperation(OperationDefinition.Operation operation) {
+        return StringKit.capitalize(operation.name().toLowerCase(Locale.ROOT));
+    }
+
+    @Override
+    public String toString() {
+        return "OperationValidator{" + validationContext + "}";
+    }
+}

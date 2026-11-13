@@ -1,5 +1,8 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
+
+@Internal
 public class QueryOperationMissingError extends BaseError {
 
     public QueryOperationMissingError() {

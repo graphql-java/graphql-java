@@ -7,18 +7,21 @@ import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 
 /**
  * This Exception indicates that the current execution should be aborted.
  */
 @PublicApi
+@NullMarked
 public class AbortExecutionException extends GraphQLException implements GraphQLError {
 
     private final List<GraphQLError> underlyingErrors;
@@ -47,7 +50,7 @@ public class AbortExecutionException extends GraphQLException implements GraphQL
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return null;
     }
 
@@ -67,13 +70,13 @@ public class AbortExecutionException extends GraphQLException implements GraphQL
      * This is useful for turning this abort signal into an execution result which
      * is an error state with the underlying errors in it.
      *
-     * @return an excution result with the errors from this exception
+     * @return an execution result with the errors from this exception
      */
     public ExecutionResult toExecutionResult() {
-        ExecutionResult executionResult = new ExecutionResultImpl(this);
         if (!this.getUnderlyingErrors().isEmpty()) {
-            executionResult = new ExecutionResultImpl(this.getUnderlyingErrors());
+            return new ExecutionResultImpl(this.getUnderlyingErrors());
         }
-        return executionResult;
+
+        return new ExecutionResultImpl(this);
     }
 }

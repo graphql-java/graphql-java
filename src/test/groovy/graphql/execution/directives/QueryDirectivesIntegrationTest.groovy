@@ -2,8 +2,14 @@ package graphql.execution.directives
 
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.RawVariables
+import graphql.language.IntValue
+import graphql.normalized.ExecutableNormalizedOperationFactory
+import graphql.normalized.NormalizedInputValue
 import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLDirective
+import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 /**
@@ -74,11 +80,11 @@ class QueryDirectivesIntegrationTest extends Specification {
         graphql.execute({ input -> input.query(query).root(root) })
     }
 
-    def joinArgs(List<GraphQLDirective> timeoutDirectives) {
+    static def joinArgs(List<QueryAppliedDirective> timeoutDirectives) {
         timeoutDirectives.collect({
             def s = it.getName() + "("
             it.arguments.forEach({
-                s += it.getName() + ":" + it.getValue()
+                s += it.getName() + ":" + it.getArgumentValue().value
             })
             s += ")"
             s
@@ -89,13 +95,13 @@ class QueryDirectivesIntegrationTest extends Specification {
         capturedDirectives = [:]
     }
 
-    def "can collector directives as expected"() {
+    def "can collect directives as expected"() {
         when:
         def er = execute(pathologicalQuery)
         then:
         er.errors.isEmpty()
 
-        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["review"].getImmediateDirectivesByName()
+        def immediateMap = capturedDirectives["review"].getImmediateAppliedDirectivesByName()
         def entries = immediateMap.entrySet().collectEntries({
             [(it.getKey()): joinArgs(it.getValue())]
         })
@@ -103,8 +109,38 @@ class QueryDirectivesIntegrationTest extends Specification {
                     timeout: "timeout(afterMillis:5),timeout(afterMillis:28),timeout(afterMillis:10)"
         ]
 
-        def immediate = capturedDirectives["review"].getImmediateDirective("cached")
+        def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
         joinArgs(immediate) == "cached(forMillis:5),cached(forMillis:10)"
+    }
+
+    def "can collect merged field directives as expected"() {
+        when:
+        def query = """
+        query Books  {
+            books(searchString: "monkey") {
+                review @timeout(afterMillis: 10) @cached(forMillis : 10)
+                review @timeout(afterMillis: 100) @cached(forMillis : 100)
+            }
+        }
+
+        """
+        def er = execute(query)
+        then:
+        er.errors.isEmpty()
+
+        def immediateMap = capturedDirectives["review"].getImmediateAppliedDirectivesByName()
+        def entries = immediateMap.entrySet().collectEntries({
+            [(it.getKey()): joinArgs(it.getValue())]
+        })
+        entries == [cached : "cached(forMillis:10),cached(forMillis:100)",
+                    timeout: "timeout(afterMillis:10),timeout(afterMillis:100)"
+        ]
+
+        def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
+        joinArgs(immediate) == "cached(forMillis:10),cached(forMillis:100)"
+
+        def immediate2 = capturedDirectives["review"].getImmediateAppliedDirective("timeout")
+        joinArgs(immediate2) == "timeout(afterMillis:10),timeout(afterMillis:100)"
     }
 
     def "wont create directives for peer fields accidentally"() {
@@ -123,7 +159,7 @@ class QueryDirectivesIntegrationTest extends Specification {
         then:
         er.errors.isEmpty()
 
-        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["title"].getImmediateDirectivesByName()
+        def immediateMap = capturedDirectives["title"].getImmediateAppliedDirectivesByName()
         def entries = immediateMap.entrySet().collectEntries({
             [(it.getKey()): joinArgs(it.getValue())]
         })
@@ -131,8 +167,138 @@ class QueryDirectivesIntegrationTest extends Specification {
                     timeout: "timeout(afterMillis:99)"
         ]
 
-        def immediate = capturedDirectives["review"].getImmediateDirective("cached")
+        def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
         joinArgs(immediate) == "cached(forMillis:10)"
     }
 
+    def "can capture directive argument values inside ENO path"() {
+        def query = TestUtil.parseQuery(pathologicalQuery)
+        when:
+        def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                schema, query, "Books", RawVariables.emptyVariables())
+
+
+        then:
+        def booksENF = eno.getTopLevelFields()[0]
+        booksENF != null
+        def bookQueryDirectives = eno.getQueryDirectives(booksENF)
+        bookQueryDirectives.immediateAppliedDirectivesByName.isEmpty()
+
+        def reviewField = eno.getCoordinatesToNormalizedFields().get(FieldCoordinates.coordinates("Book", "review"))
+        def reviewQueryDirectives = eno.getQueryDirectives(reviewField[0])
+        def reviewImmediateDirectivesMap = reviewQueryDirectives.immediateAppliedDirectivesByName
+        def argInputValues = simplifiedInputValuesWithState(reviewImmediateDirectivesMap)
+        argInputValues == [
+                timeout: [
+                        [timeout: [[afterMillis: 5]]], [timeout: [[afterMillis: 28]]], [timeout: [[afterMillis: 10]]]
+                ],
+                cached : [
+                        [cached: [[forMillis: 5]]], [cached: [[forMillis: 10]]]
+                ]
+        ]
+
+        // normalised values are AST values
+        def normalizedValues = simplifiedNormalizedValues(reviewQueryDirectives.getNormalizedInputValueByImmediateAppliedDirectives())
+        normalizedValues == [
+                timeout: [
+                        [afterMillis: 5], [afterMillis: 28], [afterMillis: 10]],
+                cached : [
+                        [forMillis: 5], [forMillis: 10]]
+        ]
+
+    }
+
+    def "fragments used multiple times and directives on it"() {
+        String schema = """
+        type Query {
+            foo: String
+        }
+        """
+        QueryDirectives queryDirectives
+        def fooDF = { env ->
+            queryDirectives = env.getQueryDirectives()
+            return "Foo"
+        } as DataFetcher
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema, [Query: [foo: fooDF]])
+
+        String query = "{...F1 ...F1 } fragment F1 on Query { foo @include(if: true) } "
+
+        def graphql = GraphQL.newGraphQL(graphQLSchema).build()
+        when:
+        def er = graphql.execute(query)
+        then:
+        er.data == [foo: "Foo"]
+        def byName = queryDirectives.getImmediateDirectivesByName();
+        byName.size() == 1
+        byName["include"].size() == 1
+        byName["include"][0] instanceof GraphQLDirective
+
+
+    }
+
+    def "fragments used multiple times and directives on it deeper"() {
+        String schema = """
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            hello: String
+        }
+        """
+        QueryDirectives queryDirectives
+        def fooDF = { env ->
+            return "Foo"
+        } as DataFetcher
+
+        def helloDF = { env ->
+            queryDirectives = env.getQueryDirectives()
+            return "world"
+        } as DataFetcher
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema, [Query: [foo: fooDF], Foo: [hello: helloDF]])
+
+        String query = "{foo{...F1  ...F1 } } fragment F1 on Foo { hello @include(if: true) hello @include(if:true) } "
+
+        def graphql = GraphQL.newGraphQL(graphQLSchema).build()
+        when:
+        def er = graphql.execute(query)
+        then:
+        er.data == [foo: [hello: "world"]]
+        def byName = queryDirectives.getImmediateDirectivesByName();
+        byName.size() == 1
+        byName["include"].size() == 2
+        byName["include"][0] instanceof GraphQLDirective
+        byName["include"][1] instanceof GraphQLDirective
+        byName["include"][0] != byName["include"][1]
+    }
+
+
+    def simplifiedInputValuesWithState(Map<String, List<QueryAppliedDirective>> mapOfDirectives) {
+        def simpleMap = [:]
+        mapOfDirectives.forEach { k, listOfDirectives ->
+
+            def dirVals = listOfDirectives.collect { qd ->
+                def argVals = qd.getArguments().collect { arg ->
+                    def argValue = arg.getArgumentValue()
+                    return [(arg.name): argValue?.value]
+                }
+                return [(qd.name): argVals]
+            }
+            simpleMap[k] = dirVals
+        }
+        return simpleMap
+    }
+
+    def simplifiedNormalizedValues(Map<QueryAppliedDirective, Map<String, NormalizedInputValue>> mapOfDirectives) {
+        Map<String, List<Map<String, Integer>>> simpleMap = new LinkedHashMap<>()
+        mapOfDirectives.forEach { qd, argMap ->
+            def argVals = argMap.collect { entry ->
+                def argValueAst = entry.value?.value as IntValue // just assume INtValue for these tests
+                return [(entry.key): argValueAst?.value?.toInteger()]
+            }
+            simpleMap.computeIfAbsent(qd.name, { _ -> [] }).addAll(argVals)
+        }
+        return simpleMap
+    }
 }

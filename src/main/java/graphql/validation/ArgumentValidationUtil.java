@@ -1,6 +1,8 @@
 package graphql.validation;
 
 import graphql.GraphQLError;
+import graphql.Internal;
+import graphql.i18n.I18nMsg;
 import graphql.language.Argument;
 import graphql.language.ObjectField;
 import graphql.language.Value;
@@ -14,11 +16,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+@Internal
 public class ArgumentValidationUtil extends ValidationUtil {
 
     private final List<String> argumentNames = new ArrayList<>();
     private Value<?> argumentValue;
-    private String errorMessage;
+    private String errMsgKey;
     private final List<Object> arguments = new ArrayList<>();
     private Map<String, Object> errorExtensions;
 
@@ -31,13 +34,17 @@ public class ArgumentValidationUtil extends ValidationUtil {
 
     @Override
     protected void handleNullError(Value<?> value, GraphQLType type) {
-        errorMessage = "must not be null";
+        errMsgKey = "ArgumentValidationUtil.handleNullError";
         argumentValue = value;
     }
 
     @Override
     protected void handleScalarError(Value<?> value, GraphQLScalarType type, GraphQLError invalid) {
-        errorMessage = "is not a valid '%s' - %s";
+        if (invalid.getMessage() == null) {
+            errMsgKey = "ArgumentValidationUtil.handleScalarError";
+        } else {
+            errMsgKey = "ArgumentValidationUtil.handleScalarErrorCustomMessage";
+        }
         arguments.add(type.getName());
         arguments.add(invalid.getMessage());
         argumentValue = value;
@@ -46,7 +53,11 @@ public class ArgumentValidationUtil extends ValidationUtil {
 
     @Override
     protected void handleEnumError(Value<?> value, GraphQLEnumType type, GraphQLError invalid) {
-        errorMessage = "is not a valid '%s' - %s";
+        if (invalid.getMessage() == null) {
+            errMsgKey = "ArgumentValidationUtil.handleEnumError";
+        } else {
+            errMsgKey = "ArgumentValidationUtil.handleEnumErrorCustomMessage";
+        }
         arguments.add(type.getName());
         arguments.add(invalid.getMessage());
         argumentValue = value;
@@ -54,18 +65,18 @@ public class ArgumentValidationUtil extends ValidationUtil {
 
     @Override
     protected void handleNotObjectError(Value<?> value, GraphQLInputObjectType type) {
-        errorMessage = "must be an object type";
+        errMsgKey = "ArgumentValidationUtil.handleNotObjectError";
     }
 
     @Override
     protected void handleMissingFieldsError(Value<?> value, GraphQLInputObjectType type, Set<String> missingFields) {
-        errorMessage = "is missing required fields '%s'";
+        errMsgKey = "ArgumentValidationUtil.handleMissingFieldsError";
         arguments.add(missingFields);
     }
 
     @Override
     protected void handleExtraFieldError(Value<?> value, GraphQLInputObjectType type, ObjectField objectField) {
-        errorMessage = "contains a field not in '%s': '%s'";
+        errMsgKey = "ArgumentValidationUtil.handleExtraFieldError";
         arguments.add(type.getName());
         arguments.add(objectField.getName());
     }
@@ -80,7 +91,13 @@ public class ArgumentValidationUtil extends ValidationUtil {
         argumentNames.add(0, String.format("[%s]", index));
     }
 
-    public String getMessage() {
+    @Override
+    protected void handleExtraOneOfFieldsError(GraphQLInputObjectType type, Value<?> value) {
+        errMsgKey = "ArgumentValidationUtil.extraOneOfFieldsError";
+        arguments.add(type.getName());
+    }
+
+    public I18nMsg getMsgAndArgs() {
         StringBuilder argument = new StringBuilder(argumentName);
         for (String name : argumentNames) {
             if (name.startsWith("[")) {
@@ -92,9 +109,7 @@ public class ArgumentValidationUtil extends ValidationUtil {
         arguments.add(0, argument.toString());
         arguments.add(1, argumentValue);
 
-        String message = "argument '%s' with value '%s'" + " " + errorMessage;
-
-        return String.format(message, arguments.toArray());
+        return new I18nMsg(errMsgKey, arguments);
     }
 
     public Map<String, Object> getErrorExtensions() {

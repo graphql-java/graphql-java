@@ -37,7 +37,6 @@ class ExecutionStepInfoTest extends Specification {
 
     def interfaceType = GraphQLInterfaceType.newInterface().name("Interface")
             .field(field1Def)
-            .typeResolver({ env -> null })
             .build()
 
     def fieldType = GraphQLObjectType.newObject()
@@ -49,7 +48,6 @@ class ExecutionStepInfoTest extends Specification {
             .name("RootType")
             .field(newFieldDefinition().name("rootField1").type(fieldType))
             .build()
-
 
     def "basic hierarchy"() {
         given:
@@ -76,7 +74,7 @@ class ExecutionStepInfoTest extends Specification {
         nonNullFieldTypeInfo.parent.type == rootType
         nonNullFieldTypeInfo.isNonNullType()
 
-        listTypeInfo.getUnwrappedNonNullType() == list(fieldType)
+        list(fieldType).isEqualTo(listTypeInfo.getUnwrappedNonNullType())
         listTypeInfo.hasParent()
         listTypeInfo.parent.type == rootType
         listTypeInfo.isListType()
@@ -192,7 +190,7 @@ class ExecutionStepInfoTest extends Specification {
         executionTypeInfos[0].path.toString() == "/hero"
         (executionTypeInfos[0].type as GraphQLObjectType).name == "User"
         executionTypeInfos[0].field.getName() == "hero"
-        executionTypeInfos[0].parent.path == ExecutionPath.rootPath()
+        executionTypeInfos[0].parent.path == ResultPath.rootPath()
         (executionTypeInfos[0].parent.type as GraphQLObjectType).name == "Query"
         executionTypeInfos[0].arguments == [id: "1234"]
         executionTypeInfos[0].getArgument("id") == "1234"
@@ -229,7 +227,7 @@ class ExecutionStepInfoTest extends Specification {
         def transformed = executionStepInfo.transform({ builder -> builder })
 
         then:
-        transformed.getFieldContainer() == executionStepInfo.getFieldContainer()
+        transformed.getObjectType() == executionStepInfo.getObjectType()
     }
 
     def "step info for list of lists of abstract type"() {

@@ -1,0 +1,17 @@
+type Query {
+    owners: [Owner]
+}
+
+type Owner {
+    id: ID!
+    name: String
+    pets: [Pet]
+}
+
+type Pet {
+    id: ID!
+    name: String
+    owner: Owner
+    friends: [Pet]
+}
+

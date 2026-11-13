@@ -3,6 +3,7 @@ package graphql.language;
 import graphql.PublicApi;
 import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,7 @@ import java.util.Map;
  * Adapts an Ast node to the general node from the util package
  */
 @PublicApi
+@NullMarked
 public class AstNodeAdapter implements NodeAdapter<Node> {
 
     public static final AstNodeAdapter AST_NODE_ADAPTER = new AstNodeAdapter();

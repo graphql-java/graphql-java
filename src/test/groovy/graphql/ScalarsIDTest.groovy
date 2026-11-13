@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.CoercedVariables
 import graphql.language.BooleanValue
 import graphql.language.IntValue
 import graphql.language.StringValue
@@ -14,19 +15,29 @@ class ScalarsIDTest extends Specification {
     @Unroll
     def "ID parse literal #literal.value as #result"() {
         expect:
-        Scalars.GraphQLID.getCoercing().parseLiteral(literal) == result
+        Scalars.GraphQLID.getCoercing().parseLiteral(literal, CoercedVariables.emptyVariables(), GraphQLContext.default, Locale.default) == result
 
         where:
         literal                         | result
         new StringValue("1234ab")       | "1234ab"
         new IntValue(123 as BigInteger) | "123"
+    }
 
+    @Unroll
+    def "ID parse literal #literal.value as #result with deprecated method"() {
+        expect:
+        Scalars.GraphQLID.getCoercing().parseLiteral(literal) == result // Retain deprecated method for test coverage
+
+        where:
+        literal                         | result
+        new StringValue("1234ab")       | "1234ab"
+        new IntValue(123 as BigInteger) | "123"
     }
 
     @Unroll
     def "ID returns null for invalid #literal"() {
         when:
-        Scalars.GraphQLID.getCoercing().parseLiteral(literal)
+        Scalars.GraphQLID.getCoercing().parseLiteral(literal, CoercedVariables.emptyVariables(), GraphQLContext.default, Locale.default)
         then:
         thrown(CoercingParseLiteralException)
 
@@ -36,10 +47,10 @@ class ScalarsIDTest extends Specification {
     }
 
     @Unroll
-    def "ID serialize #value into #result (#result.class)"() {
+    def "ID serialize #value into #result (#result.class) with deprecated methods"() {
         expect:
-        Scalars.GraphQLID.getCoercing().serialize(value) == result
-        Scalars.GraphQLID.getCoercing().parseValue(value) == result
+        Scalars.GraphQLID.getCoercing().serialize(value) == result // Retain deprecated method for test coverage
+        Scalars.GraphQLID.getCoercing().parseValue(value) == result // Retain deprecated method for test coverage
 
         where:
         value                                                   | result

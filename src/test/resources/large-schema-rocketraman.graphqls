@@ -1,0 +1,564 @@
+# from https://gist.github.com/rocketraman/065a4a523a094e4e2c0438f4f304c5db
+schema {
+    query: Object49
+    mutation: Object8
+}
+
+interface Interface1 {
+    field3: Enum1!
+}
+
+interface Interface2 {
+    field10: String
+    field11: String
+    field12: String!
+    field13: String!
+    field8: String
+    field9: String
+}
+
+interface Interface3 {
+    field14: Scalar2!
+}
+
+interface Interface4 {
+    field16: [Interface3!]!
+}
+
+interface Interface5 {
+    field31: String!
+    field32: String!
+}
+
+union Union1 = Object14 | Object15
+
+union Union10 = Object15 | Object47 | Object48
+
+union Union2 = Object16 | Object17
+
+union Union3 = Object15 | Object19 | Object20
+
+union Union4 = Object21 | Object22 | Object23 | Object24 | Object25
+
+union Union5 = Object15 | Object22 | Object23 | Object26 | Object27
+
+union Union6 = Object15 | Object22 | Object23 | Object28
+
+union Union7 = Object15 | Object22 | Object23 | Object29
+
+union Union8 = Object44
+
+union Union9 = Object15 | Object45 | Object46
+
+type Object1 {
+    field1: Int!
+    field2: [Scalar1!]!
+}
+
+type Object10 {
+    field20: Scalar3!
+    field21: Boolean!
+}
+
+type Object11 {
+    field24: Object12!
+    field26(argument5: InputObject2!): Interface1!
+}
+
+type Object12 {
+    field25: Scalar1!
+}
+
+type Object13 {
+    field28: Scalar1
+    field29(argument7: InputObject3!): Union1!
+    field34(argument8: InputObject5!): Union2!
+}
+
+type Object14 {
+    field30: Scalar1!
+}
+
+type Object15 implements Interface5 {
+    field31: String!
+    field32: String!
+    field33: Enum3
+}
+
+type Object16 {
+    field35: Scalar1!
+    field36: Scalar1!
+}
+
+type Object17 implements Interface5 {
+    field31: String!
+    field32: String!
+}
+
+type Object18 {
+    field38(argument11: InputObject7!): Union3!
+    field40(argument12: InputObject6!, argument13: InputObject8!): Union4!
+    field44: Union5!
+    field46: Union6!
+    field48(argument14: InputObject9!): Union7!
+}
+
+type Object19 {
+    field39: Scalar1!
+}
+
+type Object2 implements Interface1 {
+    field3: Enum1!
+    field4: Object1!
+    field5: Object3!
+}
+
+type Object20 implements Interface5 {
+    field31: String!
+    field32: String!
+}
+
+type Object21 implements Interface5 {
+    field31: String!
+    field32: String!
+}
+
+type Object22 implements Interface5 {
+    field31: String!
+    field32: String!
+}
+
+type Object23 implements Interface5 {
+    field31: String!
+    field32: String!
+    field41: Enum5!
+    field42: Enum5!
+}
+
+type Object24 implements Interface5 {
+    field31: String!
+    field32: String!
+}
+
+type Object25 {
+    field43: Scalar1!
+}
+
+type Object26 {
+    field45: Scalar1!
+}
+
+type Object27 implements Interface5 {
+    field31: String!
+    field32: String!
+}
+
+type Object28 {
+    field47: Scalar1!
+}
+
+type Object29 {
+    field49: Scalar1!
+}
+
+type Object3 {
+    field6: Int!
+    field7: [Scalar1!]!
+}
+
+type Object30 {
+    field51(argument16: InputObject10!): Object31!
+    field57(argument17: InputObject11!): Object33!
+    field63(argument18: InputObject12!): Object35!
+    field66(argument19: InputObject13!): Object36!
+}
+
+type Object31 {
+    field52: [Object32!]!
+    field56: Interface4
+}
+
+type Object32 {
+    field53: Scalar1!
+    field54: Scalar1
+    field55: Boolean!
+}
+
+type Object33 {
+    field58: [Object32!]!
+    field59: [Object34!]!
+}
+
+type Object34 {
+    field60: Scalar1!
+    field61: Scalar1
+    field62: Scalar1!
+}
+
+type Object35 {
+    field64: Interface4
+    field65: [Object34!]!
+}
+
+type Object36 {
+    field67: Boolean!
+    field68: Object37!
+}
+
+type Object37 {
+    field69(argument20: InputObject14!): Object38!
+    field82(argument21: InputObject15!): Object41!
+}
+
+type Object38 {
+    field70: Float!
+    field71: Object39!
+    field74: [Object40!]!
+    field81: Int!
+}
+
+type Object39 {
+    field72: Scalar3!
+    field73: Scalar2!
+}
+
+type Object4 implements Interface1 {
+    field3: Enum1!
+}
+
+type Object40 {
+    field75: Float
+    field76: Scalar2!
+    field77: Scalar3
+    field78: Enum7!
+    field79: Scalar3!
+    field80: Int!
+}
+
+type Object41 implements Interface4 {
+    field16: [Object42!]!
+    field83: Enum8!
+    field84: Enum9!
+}
+
+type Object42 implements Interface3 {
+    field14: Scalar2!
+    field85: Scalar3!
+}
+
+type Object43 {
+    field87(argument23: InputObject16!): Union8!
+    field89: Union9!
+    field94: Union10!
+}
+
+type Object44 {
+    field88: String!
+}
+
+type Object45 {
+    field90: String!
+    field91: Scalar1!
+}
+
+type Object46 implements Interface5 {
+    field31: String!
+    field32: String!
+    field92: String
+    field93: String!
+}
+
+type Object47 implements Interface5 {
+    field31: String!
+    field32: String!
+    field95: String
+}
+
+type Object48 {
+    field96: String!
+    field97: String!
+    field98: Scalar1!
+}
+
+type Object49 {
+    field104(argument24: Scalar1!): Object52!
+    field116(argument26: Scalar1!): Object37!
+    field117: Object56!
+    field129(argument32: Scalar1!): Object58!
+    field99: Object50!
+}
+
+type Object5 implements Interface2 {
+    field10: String
+    field11: String
+    field12: String!
+    field13: String!
+    field8: String
+    field9: String
+}
+
+type Object50 {
+    field100: [Object51!]!
+}
+
+type Object51 {
+    field101: Boolean!
+    field102: Enum4!
+    field103: [Enum3!]!
+}
+
+type Object52 {
+    field105(argument25: InputObject17!): Object53!
+    field107: Object53!
+    field108: Object54!
+}
+
+type Object53 {
+    field106: Object41!
+}
+
+type Object54 {
+    field109: Object55!
+}
+
+type Object55 {
+    field110: Float!
+    field111: Scalar3!
+    field112: Float!
+    field113: Scalar3!
+    field114: Float!
+    field115: Scalar3!
+}
+
+type Object56 {
+    field118(argument27: Scalar4, argument28: String): [Object57!]!
+    field128(argument29: Scalar4, argument30: Int, argument31: String!): [Object57!]!
+}
+
+type Object57 {
+    field119: Int!
+    field120: String!
+    field121: String!
+    field122: String!
+    field123: Int!
+    field124: String!
+    field125: Boolean!
+    field126: Int!
+    field127: String!
+}
+
+type Object58 {
+    field130: Object59
+}
+
+type Object59 implements Interface2 {
+    field10: String
+    field11: String
+    field12: String!
+    field13: String!
+    field131: Boolean!
+    field132: Boolean!
+    field133: [Interface2!]!
+    field8: String
+    field9: String
+}
+
+type Object6 implements Interface3 {
+    field14: Scalar2!
+    field15: Float!
+}
+
+type Object7 implements Interface4 {
+    field16: [Object6!]!
+    field17: String!
+}
+
+type Object8 {
+    field18(argument1: Scalar1!): Object9!
+    field23(argument4: Scalar1!): Object11!
+    field27(argument6: Scalar1): Object13!
+    field37(argument10: Scalar1, argument9: Scalar1): Object18!
+    field50(argument15: Scalar1!): Object30!
+    field86(argument22: Scalar1): Object43!
+}
+
+type Object9 {
+    field19(argument2: InputObject1!): Object10!
+    field22(argument3: InputObject1!): Object10!
+}
+
+enum Enum1 {
+    EnumValue1
+    EnumValue2
+}
+
+enum Enum2 {
+    EnumValue3
+    EnumValue4
+    EnumValue5
+}
+
+enum Enum3 {
+    EnumValue10
+    EnumValue11
+    EnumValue12
+    EnumValue13
+    EnumValue14
+    EnumValue15
+    EnumValue16
+    EnumValue17
+    EnumValue18
+    EnumValue19
+    EnumValue20
+    EnumValue6
+    EnumValue7
+    EnumValue8
+    EnumValue9
+}
+
+enum Enum4 {
+    EnumValue21
+    EnumValue22
+    EnumValue23
+    EnumValue24
+    EnumValue25
+    EnumValue26
+    EnumValue27
+    EnumValue28
+}
+
+enum Enum5 {
+    EnumValue29
+    EnumValue30
+    EnumValue31
+    EnumValue32
+}
+
+enum Enum6 {
+    EnumValue33
+    EnumValue34
+    EnumValue35
+}
+
+enum Enum7 {
+    EnumValue36
+    EnumValue37
+    EnumValue38
+}
+
+enum Enum8 {
+    EnumValue39
+    EnumValue40
+    EnumValue41
+}
+
+enum Enum9 {
+    EnumValue42
+    EnumValue43
+    EnumValue44
+}
+
+scalar Scalar1
+
+scalar Scalar2
+
+scalar Scalar3
+
+scalar Scalar4
+
+input InputObject1 {
+    inputField1: Scalar3!
+    inputField2: Scalar2!
+}
+
+input InputObject10 {
+    inputField34: Scalar1!
+}
+
+input InputObject11 {
+    inputField35: Scalar1!
+}
+
+input InputObject12 {
+    inputField36: Scalar1!
+    inputField37: Boolean!
+    inputField38: Boolean!
+}
+
+input InputObject13 {
+    inputField39: Scalar1!
+    inputField40: Boolean!
+}
+
+input InputObject14 {
+    inputField41: Enum6!
+}
+
+input InputObject15 {
+    inputField42: Enum6!
+    inputField43: Enum8!
+    inputField44: [Scalar1!]!
+}
+
+input InputObject16 {
+    inputField45: String!
+}
+
+input InputObject17 {
+    inputField46: Scalar1!
+}
+
+input InputObject2 {
+    inputField3: Boolean!
+}
+
+input InputObject3 {
+    inputField12: Boolean!
+    inputField13: String!
+    inputField14: Enum2!
+    inputField15: String!
+    inputField16: Scalar1
+    inputField4: InputObject4!
+}
+
+input InputObject4 {
+    inputField10: String
+    inputField11: String
+    inputField5: String
+    inputField6: String
+    inputField7: String
+    inputField8: String
+    inputField9: String
+}
+
+input InputObject5 {
+    inputField17: InputObject4!
+    inputField18: Boolean!
+    inputField19: String!
+    inputField20: Enum2!
+    inputField21: String!
+    inputField22: InputObject6!
+}
+
+input InputObject6 {
+    inputField23: String
+    inputField24: String
+    inputField25: String
+    inputField26: String
+    inputField27: String
+}
+
+input InputObject7 {
+    inputField28: String
+    inputField29: String!
+    inputField30: String!
+    inputField31: Enum4!
+}
+
+input InputObject8 {
+    inputField32: String!
+}
+
+input InputObject9 {
+    inputField33: Enum4!
+}

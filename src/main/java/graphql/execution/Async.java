@@ -2,10 +2,16 @@ package graphql.execution;
 
 import graphql.Assert;
 import graphql.Internal;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
@@ -14,97 +20,506 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertTrue;
+import static java.util.stream.Collectors.toList;
+
 @Internal
 @SuppressWarnings("FutureReturnValueIgnored")
 public class Async {
 
-    @FunctionalInterface
-    public interface CFFactory<T, U> {
-        CompletableFuture<U> apply(T input, int index, List<U> previousResults);
+    /**
+     * A builder of materialized objects or {@link CompletableFuture}s than can present a promise to the list of them
+     * <p>
+     * This builder has a strict contract on size whereby if the expectedSize is five, then there MUST be five elements presented to it.
+     *
+     * @param <T> for two
+     */
+    public interface CombinedBuilder<T> {
+
+        /**
+         * Controls how {@link #await(CompletableFuture, OnCancel)} treats tracked futures that are still
+         * pending when cancellation is signalled before they have all completed.
+         */
+        enum OnCancel {
+            /**
+             * Harvest immediately when cancellation is signalled; any still-pending future becomes {@code null}.
+             * Safe for futures that may block indefinitely on cancellation (for example raw data fetcher futures).
+             */
+            DROP_PENDING,
+            /**
+             * Wait for still-pending futures to settle before harvesting, so their own partial data is
+             * captured. Only safe for cancellation-aware futures that are guaranteed to complete promptly after
+             * cancellation (for example nested object or list results that capture their own partial data).
+             */
+            WAIT_FOR_PENDING
+        }
+
+        /**
+         * This adds a {@link CompletableFuture} into the collection of results
+         *
+         * @param completableFuture the CF to add
+         */
+        void add(CompletableFuture<T> completableFuture);
+
+        /**
+         * This adds a new value which can be either a materialized value or a {@link CompletableFuture}
+         *
+         * @param object the object to add
+         */
+        void addObject(Object object);
+
+        /**
+         * This will return a {@code CompletableFuture<List<T>>} even if the inputs are all materialized values
+         *
+         * @return a CompletableFuture to a List of values
+         */
+        CompletableFuture<List<T>> await();
+
+        /**
+         * Like {@link #await()} but also waits on the given cancellation future. This waits on two things at
+         * once - all the tracked futures completing, and the cancellation future completing - and proceeds as
+         * soon as either happens. If cancellation is signalled before all the tracked futures have completed,
+         * the already-completed futures have their values harvested and returned as partial results rather than
+         * completing exceptionally.
+         *
+         * <p>The {@code onCancel} policy controls what happens to the tracked futures that are still pending
+         * when cancellation is signalled first:
+         * <ul>
+         *     <li>{@link OnCancel#DROP_PENDING} - harvest immediately, pending futures become {@code null}.
+         *     Use this when the tracked futures may block indefinitely on cancellation (for example raw data
+         *     fetcher futures).</li>
+         *     <li>{@link OnCancel#WAIT_FOR_PENDING} - wait for the still-pending futures to settle before
+         *     harvesting, so their own partial data is captured. Use this only when the tracked futures are
+         *     themselves cancellation-aware and therefore guaranteed to complete promptly after cancellation
+         *     (for example nested object or list results that capture their own partial data on cancel);
+         *     otherwise the returned future may never complete.</li>
+         * </ul>
+         *
+         * <p>If {@code cancellationFuture} is {@code null}, this behaves identically to {@link #await()}.
+         *
+         * @param cancellationFuture a future that, when completed, signals cancellation; may be {@code null}
+         * @param onCancel           how to treat still-pending tracked futures if cancellation is signalled first
+         *
+         * @return a CompletableFuture to a List of values (possibly partial on cancellation)
+         */
+        CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture, OnCancel onCancel);
+
+        /**
+         * This will return a {@code CompletableFuture<List<T>>} if ANY of the input values are async
+         * otherwise it just return a materialised {@code List<T>}
+         *
+         * @return either a CompletableFuture or a materialized list
+         */
+        /* CompletableFuture<List<T>> | List<T> */ Object awaitPolymorphic();
     }
 
-    public static <U> CompletableFuture<List<U>> each(List<CompletableFuture<U>> futures) {
-        CompletableFuture<List<U>> overallResult = new CompletableFuture<>();
+    /**
+     * Combines zero or more CFs into one. It is a wrapper around <code>CompletableFuture.allOf</code>.
+     *
+     * @param expectedSize how many we expect
+     * @param <T>          for two
+     *
+     * @return a combined builder of CFs
+     */
+    public static <T> CombinedBuilder<T> ofExpectedSize(int expectedSize) {
+        if (expectedSize == 0) {
+            return new Empty<>();
+        } else if (expectedSize == 1) {
+            return new Single<>();
+        } else {
+            return new Many<>(expectedSize);
+        }
+    }
 
-        CompletableFuture
-                .allOf(futures.toArray(new CompletableFuture[0]))
-                .whenComplete((noUsed, exception) -> {
+    private static class Empty<T> implements CombinedBuilder<T> {
+
+        private int ix;
+
+        @Override
+        public void add(CompletableFuture<T> completableFuture) {
+            this.ix++;
+        }
+
+        @Override
+        public void addObject(Object object) {
+            this.ix++;
+        }
+
+        @Override
+        public CompletableFuture<List<T>> await() {
+            assertTrue(ix == 0, "expected size was 0 got %d", ix);
+            return typedEmpty();
+        }
+
+        @Override
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture, OnCancel onCancel) {
+            return await();
+        }
+
+        @Override
+        public Object awaitPolymorphic() {
+            Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
+            return Collections.emptyList();
+        }
+
+        // implementation details: infer the type of Completable<List<T>> from a singleton empty
+        private static final CompletableFuture<List<?>> EMPTY = CompletableFuture.completedFuture(Collections.emptyList());
+
+        @SuppressWarnings("unchecked")
+        private static <T> CompletableFuture<T> typedEmpty() {
+            return (CompletableFuture<T>) EMPTY;
+        }
+    }
+
+    private static class Single<T> implements CombinedBuilder<T> {
+
+        // avoiding array allocation as there is only 1 CF
+        private Object value;
+        private int ix;
+
+        @Override
+        public void add(CompletableFuture<T> completableFuture) {
+            this.value = completableFuture;
+            this.ix++;
+        }
+
+        @Override
+        public void addObject(Object object) {
+            this.value = object;
+            this.ix++;
+        }
+
+        @Override
+        public CompletableFuture<List<T>> await() {
+            commonSizeAssert();
+            if (value instanceof CompletableFuture) {
+                @SuppressWarnings("unchecked")
+                CompletableFuture<T> cf = (CompletableFuture<T>) value;
+                return cf.thenApply(Collections::singletonList);
+            }
+            return materialisedValue();
+        }
+
+        @Override
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture, OnCancel onCancel) {
+            commonSizeAssert();
+            if (cancellationFuture == null) {
+                return await();
+            }
+
+            if (value instanceof CompletableFuture) {
+                CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+                //noinspection unchecked
+                CompletableFuture<T> valueCF = (CompletableFuture<T>) value;
+                CompletableFuture.anyOf(valueCF, cancellationFuture).whenComplete((ignored, exception) -> {
                     if (exception != null) {
                         overallResult.completeExceptionally(exception);
                         return;
                     }
-                    List<U> results = new ArrayList<>();
-                    for (CompletableFuture<U> future : futures) {
-                        results.add(future.join());
+                    if (onCancel == OnCancel.WAIT_FOR_PENDING && !valueCF.isDone()) {
+                        // the tracked future is cancellation-aware and will complete promptly - wait for
+                        // its partial data rather than harvesting a null for it (see interface javadoc)
+                        valueCF.whenComplete((v, ex) -> overallResult.complete(Collections.singletonList(doneOrNull(valueCF))));
+                        return;
                     }
-                    overallResult.complete(results);
+                    overallResult.complete(Collections.singletonList(doneOrNull(valueCF)));
                 });
-        return overallResult;
+                return overallResult;
+            }
+            return materialisedValue();
+        }
+
+        private @NonNull CompletableFuture<List<T>> materialisedValue() {
+            //noinspection unchecked
+            return CompletableFuture.completedFuture(Collections.singletonList((T) value));
+        }
+
+        @Override
+        public Object awaitPolymorphic() {
+            commonSizeAssert();
+            if (value instanceof CompletableFuture) {
+                @SuppressWarnings("unchecked")
+                CompletableFuture<T> cf = (CompletableFuture<T>) value;
+                return cf.thenApply(Collections::singletonList);
+            }
+            //noinspection unchecked
+            return Collections.singletonList((T) value);
+        }
+
+        private void commonSizeAssert() {
+            Assert.assertTrue(ix == 1, () -> "expected size was " + 1 + " got " + ix);
+        }
     }
 
-    public static <T, U> CompletableFuture<List<U>> each(Iterable<T> list, BiFunction<T, Integer, CompletableFuture<U>> cfFactory) {
-        List<CompletableFuture<U>> futures = new ArrayList<>();
-        int index = 0;
+    private static class Many<T> implements CombinedBuilder<T> {
+
+        private final Object[] array;
+        private int ix;
+        private int cfCount;
+
+        private Many(int size) {
+            this.array = new Object[size];
+            this.ix = 0;
+            cfCount = 0;
+        }
+
+        @Override
+        public void add(CompletableFuture<T> completableFuture) {
+            array[ix++] = completableFuture;
+            cfCount++;
+        }
+
+        @Override
+        public void addObject(Object object) {
+            array[ix++] = object;
+            if (object instanceof CompletableFuture) {
+                cfCount++;
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public CompletableFuture<List<T>> await() {
+            commonSizeAssert();
+
+            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+            if (cfCount == 0) {
+                overallResult.complete(materialisedList(array));
+            } else {
+                CompletableFuture<T>[] cfsArr = copyOnlyCFsToArray();
+                CompletableFuture.allOf(cfsArr)
+                        .whenComplete((ignored, exception) -> {
+                            if (exception != null) {
+                                overallResult.completeExceptionally(exception);
+                                return;
+                            }
+                            List<T> results = new ArrayList<>(array.length);
+                            if (cfsArr.length == array.length) {
+                                // they are all CFs
+                                for (CompletableFuture<T> cf : cfsArr) {
+                                    results.add(cf.join());
+                                }
+                            } else {
+                                // it's a mixed bag of CFs and materialized objects
+                                for (Object object : array) {
+                                    if (object instanceof CompletableFuture) {
+                                        CompletableFuture<T> cf = (CompletableFuture<T>) object;
+                                        // join is safe since they are all completed earlier via CompletableFuture.allOf()
+                                        results.add(cf.join());
+                                    } else {
+                                        results.add((T) object);
+                                    }
+                                }
+                            }
+                            overallResult.complete(results);
+                        });
+            }
+            return overallResult;
+        }
+
+        @Override
+        public CompletableFuture<List<T>> await(@Nullable CompletableFuture<Void> cancellationFuture, OnCancel onCancel) {
+            commonSizeAssert();
+            if (cfCount == 0) {
+                return CompletableFuture.completedFuture(materialisedList(array));
+            }
+            if (cancellationFuture == null) {
+                return await();
+            }
+
+            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+            CompletableFuture<Void> allOf = CompletableFuture.allOf(copyOnlyCFsToArray());
+
+            // Wait for either "all field futures complete" (allOf) or cancellation, whichever happens
+            // first. The cancellation future always completes normally (see ExecutionInput#cancel), so
+            // anyOf can only complete exceptionally when a field future fails - which we propagate.
+            CompletableFuture.anyOf(allOf, cancellationFuture).whenComplete((ignored, exception) -> {
+                if (exception != null) {
+                    overallResult.completeExceptionally(exception);
+                    return;
+                }
+                if (onCancel == OnCancel.WAIT_FOR_PENDING && !allOf.isDone()) {
+                    // Cancellation happened before all the field futures completed, but the caller knows
+                    // every tracked future is itself cancellation-aware and will complete promptly (e.g.
+                    // nested object/list results that harvest their own partial data on cancel). Wait for
+                    // them to settle so we capture that partial data instead of harvesting null for
+                    // entries that are just about to complete.
+                    allOf.whenComplete((ig, ex) -> overallResult.complete(harvestResults(array)));
+                    return;
+                }
+                // Either every field future is done (allOf completed first) or cancellation happened
+                // first. In both cases we harvest whatever has completed; field futures that are not yet
+                // done become null. join() is safe here: if allOf is not done then no field future has
+                // failed (a failure would have completed allOf exceptionally and taken the branch above).
+                overallResult.complete(harvestResults(array));
+            });
+
+            return overallResult;
+        }
+
+        @SuppressWarnings("unchecked")
+        private List<T> harvestResults(Object[] array) {
+            List<T> results = new ArrayList<>(array.length);
+            for (Object object : array) {
+                if (object instanceof CompletableFuture) {
+                    CompletableFuture<T> cf = (CompletableFuture<T>) object;
+                    results.add(doneOrNull(cf));
+                } else {
+                    results.add((T) object);
+                }
+            }
+            return results;
+        }
+
+        @SuppressWarnings("unchecked")
+        @NonNull
+        private CompletableFuture<T>[] copyOnlyCFsToArray() {
+            if (cfCount == array.length) {
+                // if it's all CFs - make a type safe copy via C code
+                return Arrays.copyOf(array, array.length, CompletableFuture[].class);
+            } else {
+                int i = 0;
+                CompletableFuture<T>[] dest = new CompletableFuture[cfCount];
+                for (Object o : array) {
+                    if (o instanceof CompletableFuture) {
+                        dest[i] = (CompletableFuture<T>) o;
+                        i++;
+                    }
+                }
+                return dest;
+            }
+        }
+
+        @Override
+        public Object awaitPolymorphic() {
+            if (cfCount == 0) {
+                commonSizeAssert();
+                return materialisedList(array);
+            } else {
+                return await();
+            }
+        }
+
+        @NonNull
+        @SuppressWarnings("unchecked")
+        private List<T> materialisedList(Object[] array) {
+            return (List<T>) Arrays.asList(array);
+        }
+
+        private void commonSizeAssert() {
+            Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
+        }
+
+    }
+
+    private static <T> @Nullable T doneOrNull(CompletableFuture<T> valueCF) {
+        return valueCF.isDone() ? valueCF.join() : null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, Function<T, Object> cfOrMaterialisedValueFactory) {
+        Object l = eachPolymorphic(list, cfOrMaterialisedValueFactory);
+        if (l instanceof CompletableFuture) {
+            return (CompletableFuture<List<U>>) l;
+        } else {
+            return CompletableFuture.completedFuture((List<U>) l);
+        }
+    }
+
+    /**
+     * This will run the value factory for each of the values in the provided list.
+     * <p>
+     * If any of the values provided is a {@link CompletableFuture} it will return a {@link CompletableFuture} result object
+     * that joins on all values otherwise if none of the values are a {@link CompletableFuture} then it will return a materialized list.
+     *
+     * @param list                         the list to work over
+     * @param cfOrMaterialisedValueFactory the value factory to call for each iterm in the list
+     * @param <T>                          for two
+     *
+     * @return a {@link CompletableFuture} to the list of resolved values or the list of values in a materialized fashion
+     */
+    public static <T> /* CompletableFuture<List<U>> | List<U> */ Object eachPolymorphic(Collection<T> list, Function<T, Object> cfOrMaterialisedValueFactory) {
+        CombinedBuilder<Object> futures = ofExpectedSize(list.size());
         for (T t : list) {
-            CompletableFuture<U> cf;
             try {
-                cf = cfFactory.apply(t, index++);
-                Assert.assertNotNull(cf, "cfFactory must return a non null value");
+                Object value = cfOrMaterialisedValueFactory.apply(t);
+                futures.addObject(value);
             } catch (Exception e) {
-                cf = new CompletableFuture<>();
+                CompletableFuture<Object> cf = new CompletableFuture<>();
                 // Async.each makes sure that it is not a CompletionException inside a CompletionException
                 cf.completeExceptionally(new CompletionException(e));
+                futures.add(cf);
             }
-            futures.add(cf);
         }
-        return each(futures);
-
+        return futures.awaitPolymorphic();
     }
 
-    public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, CFFactory<T, U> cfFactory) {
+    public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, BiFunction<T, List<U>, Object> cfOrMaterialisedValueFactory) {
         CompletableFuture<List<U>> result = new CompletableFuture<>();
-        eachSequentiallyImpl(list.iterator(), cfFactory, 0, new ArrayList<>(), result);
+        eachSequentiallyPolymorphicImpl(list.iterator(), cfOrMaterialisedValueFactory, new ArrayList<>(), result);
         return result;
     }
 
-    private static <T, U> void eachSequentiallyImpl(Iterator<T> iterator, CFFactory<T, U> cfFactory, int index, List<U> tmpResult, CompletableFuture<List<U>> overallResult) {
+    @SuppressWarnings("unchecked")
+    private static <T, U> void eachSequentiallyPolymorphicImpl(Iterator<T> iterator, BiFunction<T, List<U>, Object> cfOrMaterialisedValueFactory, List<U> tmpResult, CompletableFuture<List<U>> overallResult) {
         if (!iterator.hasNext()) {
             overallResult.complete(tmpResult);
             return;
         }
-        CompletableFuture<U> cf;
+        Object value;
         try {
-            cf = cfFactory.apply(iterator.next(), index, tmpResult);
-            Assert.assertNotNull(cf, "cfFactory must return a non null value");
+            value = cfOrMaterialisedValueFactory.apply(iterator.next(), tmpResult);
         } catch (Exception e) {
-            cf = new CompletableFuture<>();
-            cf.completeExceptionally(new CompletionException(e));
+            overallResult.completeExceptionally(new CompletionException(e));
+            return;
         }
-        cf.whenComplete((cfResult, exception) -> {
-            if (exception != null) {
-                overallResult.completeExceptionally(exception);
-                return;
-            }
-            tmpResult.add(cfResult);
-            eachSequentiallyImpl(iterator, cfFactory, index + 1, tmpResult, overallResult);
-        });
+        if (value instanceof CompletableFuture) {
+            CompletableFuture<U> cf = (CompletableFuture<U>) value;
+            cf.whenComplete((cfResult, exception) -> {
+                if (exception != null) {
+                    overallResult.completeExceptionally(exception);
+                    return;
+                }
+                tmpResult.add(cfResult);
+                eachSequentiallyPolymorphicImpl(iterator, cfOrMaterialisedValueFactory, tmpResult, overallResult);
+            });
+        } else {
+            tmpResult.add((U) value);
+            eachSequentiallyPolymorphicImpl(iterator, cfOrMaterialisedValueFactory, tmpResult, overallResult);
+        }
     }
 
 
     /**
-     * Turns an object T into a CompletableFuture if its not already
+     * Turns an object T into a CompletableFuture if it's not already
      *
      * @param t   - the object to check
      * @param <T> for two
      *
      * @return a CompletableFuture
      */
-    public static <T> CompletableFuture<T> toCompletableFuture(T t) {
+    @SuppressWarnings("unchecked")
+    public static <T> CompletableFuture<T> toCompletableFuture(Object t) {
         if (t instanceof CompletionStage) {
-            //noinspection unchecked
             return ((CompletionStage<T>) t).toCompletableFuture();
         } else {
-            return CompletableFuture.completedFuture(t);
+            return CompletableFuture.completedFuture((T) t);
+        }
+    }
+
+    /**
+     * Turns a CompletionStage into a CompletableFuture if it's not already, otherwise leaves it alone
+     * as a materialized object.
+     *
+     * @param object - the object to check
+     *
+     * @return a CompletableFuture from a CompletionStage or the materialized object itself
+     */
+    public static Object toCompletableFutureOrMaterializedObject(Object object) {
+        if (object instanceof CompletionStage) {
+            return ((CompletionStage<?>) object).toCompletableFuture();
+        } else {
+            return object;
         }
     }
 
@@ -124,65 +539,35 @@ public class Async {
         return result;
     }
 
-    public static <T> void copyResults(CompletableFuture<T> source, CompletableFuture<T> target) {
-        source.whenComplete((o, throwable) -> {
-            if (throwable != null) {
-                target.completeExceptionally(throwable);
-                return;
-            }
-            target.complete(o);
-        });
+    /**
+     * If the passed in CompletableFuture is null, then it creates a CompletableFuture that resolves to null
+     *
+     * @param completableFuture the CF to use
+     * @param <T>               for two
+     *
+     * @return the completableFuture if it's not null or one that always resoles to null
+     */
+    public static <T> @NonNull CompletableFuture<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
+        return completableFuture != null ? completableFuture : CompletableFuture.completedFuture(null);
     }
 
-
-    public static <U, T> CompletableFuture<U> reduce(List<CompletableFuture<T>> values, U initialValue, BiFunction<U, T, U> aggregator) {
-        CompletableFuture<U> result = new CompletableFuture<>();
-        reduceImpl(values, 0, initialValue, aggregator, result);
-        return result;
+    public static <T> CompletableFuture<List<T>> allOf(List<CompletableFuture<T>> cfs) {
+        return CompletableFuture.allOf(cfs.toArray(CompletableFuture[]::new))
+                .thenApply(v -> cfs.stream()
+                        .map(CompletableFuture::join)
+                        .collect(toList())
+                );
     }
 
-    public static <U, T> CompletableFuture<U> reduce(CompletableFuture<List<T>> values, U initialValue, BiFunction<U, T, U> aggregator) {
-        return values.thenApply(list -> {
-            U result = initialValue;
-            for (T value : list) {
-                result = aggregator.apply(result, value);
-            }
-            return result;
-        });
-    }
-
-    public static <U, T> CompletableFuture<List<U>> flatMap(List<T> inputs, Function<T, CompletableFuture<U>> mapper) {
-        List<CompletableFuture<U>> collect = inputs
-                .stream()
-                .map(mapper)
-                .collect(Collectors.toList());
-        return Async.each(collect);
-    }
-
-    private static <U, T> void reduceImpl(List<CompletableFuture<T>> values, int curIndex, U curValue, BiFunction<U, T, U> aggregator, CompletableFuture<U> result) {
-        if (curIndex == values.size()) {
-            result.complete(curValue);
-            return;
-        }
-        values.get(curIndex).
-                thenApply(oneValue -> aggregator.apply(curValue, oneValue))
-                .thenAccept(newValue -> reduceImpl(values, curIndex + 1, newValue, aggregator, result));
-    }
-
-    public static <U, T> CompletableFuture<List<U>> map(CompletableFuture<List<T>> values, Function<T, U> mapper) {
-        return values.thenApply(list -> list.stream().map(mapper).collect(Collectors.toList()));
-    }
-
-    public static <U, T> List<CompletableFuture<U>> map(List<CompletableFuture<T>> values, Function<T, U> mapper) {
-        return values
-                .stream()
-                .map(cf -> cf.thenApply(mapper::apply)).collect(Collectors.toList());
-    }
-
-    public static <U, T> List<CompletableFuture<U>> mapCompose(List<CompletableFuture<T>> values, Function<T, CompletableFuture<U>> mapper) {
-        return values
-                .stream()
-                .map(cf -> cf.thenCompose(mapper::apply)).collect(Collectors.toList());
+    public static <K, V> CompletableFuture<Map<K, V>> allOf(Map<K, CompletableFuture<V>> cfs) {
+        return CompletableFuture.allOf(cfs.values().toArray(CompletableFuture[]::new))
+                .thenApply(v -> cfs.entrySet().stream()
+                        .collect(
+                                Collectors.toMap(
+                                        Map.Entry::getKey,
+                                        task -> task.getValue().join())
+                        )
+                );
     }
 
 }

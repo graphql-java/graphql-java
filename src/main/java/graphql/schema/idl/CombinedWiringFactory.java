@@ -1,7 +1,11 @@
 package graphql.schema.idl;
 
+import graphql.PublicApi;
 import graphql.schema.DataFetcher;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.schema.DataFetcherFactory;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.TypeResolver;
 
 import java.util.ArrayList;
@@ -14,6 +18,8 @@ import static graphql.Assert.assertShouldNeverHappen;
  * This combines a number of {@link WiringFactory}s together to act as one.  It asks each one
  * whether it handles a type and delegates to the first one to answer yes.
  */
+@PublicApi
+@NullMarked
 public class CombinedWiringFactory implements WiringFactory {
     private final List<WiringFactory> factories;
 
@@ -73,7 +79,7 @@ public class CombinedWiringFactory implements WiringFactory {
     }
 
     @Override
-    public <T> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
+    public <T extends @Nullable Object> DataFetcherFactory<T> getDataFetcherFactory(FieldWiringEnvironment environment) {
         for (WiringFactory factory : factories) {
             if (factory.providesDataFetcherFactory(environment)) {
                 return factory.getDataFetcherFactory(environment);
@@ -101,4 +107,55 @@ public class CombinedWiringFactory implements WiringFactory {
         }
         return assertShouldNeverHappen();
     }
+
+    @Override
+    public boolean providesScalar(ScalarWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesScalar(environment)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesScalar(environment)) {
+                return factory.getScalar(environment);
+            }
+        }
+        return assertShouldNeverHappen();
+    }
+
+    @Override
+    public boolean providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesSchemaDirectiveWiring(environment)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public SchemaDirectiveWiring getSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.providesSchemaDirectiveWiring(environment)) {
+                return factory.getSchemaDirectiveWiring(environment);
+            }
+        }
+        return assertShouldNeverHappen();
+    }
+
+    @Override
+    public @Nullable DataFetcher getDefaultDataFetcher(FieldWiringEnvironment environment) {
+        for (WiringFactory factory : factories) {
+            if (factory.getDefaultDataFetcher(environment) != null) {
+                return factory.getDefaultDataFetcher(environment);
+            }
+        }
+        return null;
+    }
+
 }

@@ -1,13 +1,18 @@
 package graphql.validation;
 
 
-public enum ValidationErrorType {
+import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
+@PublicApi
+@NullMarked
+public enum ValidationErrorType implements ValidationErrorClassification {
+    MaxValidationErrorsReached,
     DefaultForNonNullArgument,
     WrongType,
     UnknownType,
-    SubSelectionRequired,
-    SubSelectionNotAllowed,
+    SubselectionRequired,
+    SubselectionNotAllowed,
     InvalidSyntax,
     BadValueForDefaultArg,
     FieldUndefined,
@@ -23,6 +28,7 @@ public enum ValidationErrorType {
     UnknownDirective,
     MisplacedDirective,
     UndefinedVariable,
+    VariableNotAllowed,
     UnusedVariable,
     FragmentCycle,
     FieldsConflict,
@@ -32,7 +38,15 @@ public enum ValidationErrorType {
     DuplicateOperationName,
     DuplicateFragmentName,
     DuplicateDirectiveName,
-    DeferDirectiveOnNonNullField,
-    DeferDirectiveNotOnQueryOperation,
-    DeferMustBeOnAllFields
+    DuplicateArgumentNames,
+    DuplicateIncrementalLabel,
+    DuplicateVariableName,
+    NullValueForNonNullArgument,
+    SubscriptionMultipleRootFields,
+    SubscriptionIntrospectionRootField,
+    UniqueObjectFieldName,
+    UnknownOperation,
+    MaxQueryDepthExceeded,
+    MaxQueryMergedFieldCountExceeded,
+    MaxQueryFieldOccurrencesExceeded
 }

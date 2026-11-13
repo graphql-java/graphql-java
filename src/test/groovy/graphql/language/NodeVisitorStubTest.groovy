@@ -24,8 +24,8 @@ class NodeVisitorStubTest extends Specification {
 
         where:
         node                                       | visitMethod
-        Field.newField().build()                   | 'visitField'
-        FragmentSpread.newFragmentSpread().build() | 'visitFragmentSpread'
+        Field.newField().name("f").build()                   | 'visitField'
+        FragmentSpread.newFragmentSpread().name("f").build() | 'visitFragmentSpread'
         InlineFragment.newInlineFragment().build() | 'visitInlineFragment'
 
     }
@@ -71,7 +71,7 @@ class NodeVisitorStubTest extends Specification {
         where:
         node                                                 | visitMethod
         OperationDefinition.newOperationDefinition().build() | 'visitOperationDefinition'
-        FragmentDefinition.newFragmentDefinition().build()   | 'visitFragmentDefinition'
+        FragmentDefinition.newFragmentDefinition().name("f").typeCondition(new TypeName("T")).selectionSet(SelectionSet.newSelectionSet().build()).build() | 'visitFragmentDefinition'
         new DirectiveDefinition("")                          | 'visitDirectiveDefinition'
         SchemaDefinition.newSchemaDefinition().build()       | 'visitSchemaDefinition'
     }
@@ -132,15 +132,15 @@ class NodeVisitorStubTest extends Specification {
 
         where:
         node                                                         | visitMethod
-        new Argument("", null)                                       | 'visitArgument'
+        new Argument("myArgument", NullValue.of())                   | 'visitArgument'
         new Directive("", emptyList())                               | 'visitDirective'
         new DirectiveLocation("")                                    | 'visitDirectiveLocation'
         Document.newDocument().build()                               | 'visitDocument'
         new EnumValueDefinition("")                                  | 'visitEnumValueDefinition'
-        FieldDefinition.newFieldDefinition().build()                 | 'visitFieldDefinition'
+        FieldDefinition.newFieldDefinition().name("f").type(new TypeName("T")).build() | 'visitFieldDefinition'
         InputValueDefinition.newInputValueDefinition().build()       | 'visitInputValueDefinition'
         InputValueDefinition.newInputValueDefinition().build()       | 'visitInputValueDefinition'
-        new ObjectField("", null)                                    | 'visitObjectField'
+        new ObjectField("a", IntValue.of(1))                         | 'visitObjectField'
         OperationTypeDefinition.newOperationTypeDefinition().build() | 'visitOperationTypeDefinition'
         OperationTypeDefinition.newOperationTypeDefinition().build() | 'visitOperationTypeDefinition'
         SelectionSet.newSelectionSet().build()                       | 'visitSelectionSet'
@@ -148,7 +148,7 @@ class NodeVisitorStubTest extends Specification {
         new StringValue("")                                          | 'visitValue'
         OperationDefinition.newOperationDefinition().build()         | 'visitDefinition'
         new UnionTypeDefinition("")                                  | 'visitTypeDefinition'
-        Field.newField().build()                                     | 'visitSelection'
+        Field.newField().name("f").build()                             | 'visitSelection'
         NonNullType.newNonNullType().build()                         | 'visitType'
 
     }

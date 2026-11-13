@@ -1,12 +1,13 @@
 package graphql.schema.idl;
 
+import graphql.Internal;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLScalarType;
-import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 import static graphql.Assert.assertShouldNeverHappen;
 
+@Internal
 public class NoopWiringFactory implements WiringFactory {
 
     @Override

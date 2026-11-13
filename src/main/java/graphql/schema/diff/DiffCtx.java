@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
-import java.util.Stack;
 
 /*
  * A helper class that represents diff state (eg visited types) as well as helpers

@@ -1,103 +1,86 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
-import graphql.Internal;
+import graphql.PublicApi;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
-@Internal
+/**
+ * Note: This MAY be returned by {@link InstrumentationFieldCompleteParameters#getFetchedObject()}
+ * and therefore part of the public despite never used in a method signature.
+ */
+@PublicApi
+@NullMarked
 public class FetchedValue {
-    private final Object fetchedValue;
-    private final Object rawFetchedValue;
-    private final Object localContext;
-    private final List<GraphQLError> errors;
+    private final @Nullable Object fetchedValue;
+    private final @Nullable Object localContext;
+    private final ImmutableList<GraphQLError> errors;
 
-    private FetchedValue(Object fetchedValue, Object rawFetchedValue, List<GraphQLError> errors, Object localContext) {
+    /**
+     * This allows you to get to the underlying fetched value depending on whether the source
+     * value is a {@link FetchedValue} or not
+     *
+     * @param sourceValue the source value in play
+     *
+     * @return the {@link FetchedValue#getFetchedValue()} if its wrapped otherwise the source value itself
+     */
+    public static @Nullable Object getFetchedValue(@Nullable Object sourceValue) {
+        if (sourceValue instanceof FetchedValue) {
+            return ((FetchedValue) sourceValue).fetchedValue;
+        } else {
+            return sourceValue;
+        }
+    }
+
+    /**
+     * This allows you to get to the local context depending on whether the source
+     * value is a {@link FetchedValue} or not
+     *
+     * @param sourceValue the source value in play
+     * @param defaultLocalContext the default local context to use
+     *
+     * @return the {@link FetchedValue#getFetchedValue()} if its wrapped otherwise the default local context
+     */
+    public static @Nullable Object getLocalContext(@Nullable Object sourceValue, @Nullable Object defaultLocalContext) {
+        if (sourceValue instanceof FetchedValue) {
+            return ((FetchedValue) sourceValue).localContext;
+        } else {
+            return defaultLocalContext;
+        }
+    }
+
+    public FetchedValue(@Nullable Object fetchedValue, List<GraphQLError> errors, @Nullable Object localContext) {
         this.fetchedValue = fetchedValue;
-        this.rawFetchedValue = rawFetchedValue;
-        this.errors = errors;
+        this.errors = ImmutableList.copyOf(errors);
         this.localContext = localContext;
     }
 
     /*
      * the unboxed value meaning not Optional, not DataFetcherResult etc
      */
-    public Object getFetchedValue() {
+    public @Nullable Object getFetchedValue() {
         return fetchedValue;
     }
 
-    public Object getRawFetchedValue() {
-        return rawFetchedValue;
-    }
-
     public List<GraphQLError> getErrors() {
-        return new ArrayList<>(errors);
+        return errors;
     }
 
-    public Object getLocalContext() {
+    public @Nullable Object getLocalContext() {
         return localContext;
-    }
-
-    public FetchedValue transform(Consumer<Builder> builderConsumer) {
-        Builder builder = newFetchedValue(this);
-        builderConsumer.accept(builder);
-        return builder.build();
     }
 
     @Override
     public String toString() {
         return "FetchedValue{" +
                 "fetchedValue=" + fetchedValue +
-                ", rawFetchedValue=" + rawFetchedValue +
                 ", localContext=" + localContext +
                 ", errors=" + errors +
                 '}';
     }
 
-    public static Builder newFetchedValue() {
-        return new Builder();
-    }
-
-    public static Builder newFetchedValue(FetchedValue otherValue) {
-        return new Builder()
-                .fetchedValue(otherValue.getFetchedValue())
-                .rawFetchedValue(otherValue.getRawFetchedValue())
-                .errors(otherValue.getErrors())
-                .localContext(otherValue.getLocalContext())
-                ;
-    }
-
-    public static class Builder {
-
-        private Object fetchedValue;
-        private Object rawFetchedValue;
-        private Object localContext;
-        private List<GraphQLError> errors = new ArrayList<>();
-
-        public Builder fetchedValue(Object fetchedValue) {
-            this.fetchedValue = fetchedValue;
-            return this;
-        }
-
-        public Builder rawFetchedValue(Object rawFetchedValue) {
-            this.rawFetchedValue = rawFetchedValue;
-            return this;
-        }
-
-        public Builder localContext(Object localContext) {
-            this.localContext = localContext;
-            return this;
-        }
-
-        public Builder errors(List<GraphQLError> errors) {
-            this.errors = errors;
-            return this;
-        }
-
-        public FetchedValue build() {
-            return new FetchedValue(fetchedValue, rawFetchedValue, errors, localContext);
-        }
-    }
 }

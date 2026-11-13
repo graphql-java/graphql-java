@@ -2,6 +2,8 @@ package graphql.schema.idl
 
 import graphql.ExecutionInput
 import graphql.GraphQL
+import graphql.GraphQLContext
+import graphql.execution.ValuesResolver
 import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
@@ -9,9 +11,10 @@ import graphql.schema.CoercingSerializeException
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
-import graphql.schema.GraphQLDirective
+import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLEnumValueDefinition
 import graphql.schema.GraphQLFieldDefinition
@@ -19,6 +22,7 @@ import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
+import graphql.schema.GraphQLNamedType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLUnionType
@@ -33,7 +37,7 @@ import static graphql.schema.DataFetcherFactories.wrapDataFetcher
 
 class SchemaGeneratorDirectiveHelperTest extends Specification {
 
-    def customScalarType = new GraphQLScalarType("ScalarType", "", new Coercing() {
+    def customScalarType = GraphQLScalarType.newScalar().name("ScalarType").coercing(new Coercing() {
         @Override
         Object serialize(Object input) throws CoercingSerializeException {
             return input
@@ -49,8 +53,9 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             return input
         }
     })
+            .build()
 
-    def assertCallHierarchy(elementHierarchy, astHierarchy, String name, List<String> l) {
+    static def assertCallHierarchy(elementHierarchy, astHierarchy, String name, List<String> l) {
         assert elementHierarchy[name] == l, "unexpected elementHierarchy"
         assert astHierarchy[name] == l, "unexpected astHierarchy"
         true
@@ -100,15 +105,19 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             input InputType @inputDirective(target : "InputType") {
                 inputField1 : String @inputFieldDirective(target : "inputField1")
                 inputField2 : String @inputFieldDirective(target : "inputField2")
+                circularInputField : IndirectType @inputFieldDirective(target : "circularInputField")
             }
             
+            input IndirectType {
+                indirectInputField1 : InputType @inputFieldDirective(target : "indirectInputField1")
+            }
+                
             enum EnumType @enumDirective(target:"EnumType") {
                 enumVal1 @enumValueDirective(target : "enumVal1")
                 enumVal2 @enumValueDirective(target : "enumVal2")
             }
             
             scalar ScalarType @scalarDirective(target:"ScalarType")
-            
         '''
 
         //`this contains the name of the element that was asked to be directive wired
@@ -133,8 +142,10 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 fieldsContainers[name] = environment.getFieldsContainer()?.getName()
                 fieldDefinitions[name] = environment.getFieldDefinition()?.getName()
 
-                GraphQLDirective directive = environment.getDirective()
-                String target = directive.getArgument("target").getValue()
+                GraphQLAppliedDirective appliedDirective = environment.getAppliedDirective()
+                def arg = appliedDirective.getArgument("target")
+
+                String target = ValuesResolver.valueToInternalValue(arg.getArgumentValue(), arg.getType(), GraphQLContext.getDefault(), Locale.getDefault())
                 assert name == target, " The target $target is not equal to the object name $name"
                 return element
             }
@@ -232,6 +243,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         targetList.contains("InputType")
         targetList.contains("inputField1")
         targetList.contains("inputField2")
+        targetList.contains("circularInputField")
+        targetList.contains("indirectInputField1")
 
         targetList.contains("EnumType")
         targetList.contains("enumVal1")
@@ -312,11 +325,16 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> directiveEnv) {
                 GraphQLFieldDefinition field = directiveEnv.getElement()
+                def container = directiveEnv.fieldsContainer
+                if (!container instanceof GraphQLObjectType) {
+                    return field
+                }
                 //
                 // we use the non shortcut path to the data fetcher here so prove it still works
-                def fetcher = directiveEnv.getCodeRegistry().getDataFetcher(directiveEnv.fieldsContainer, field)
+
+                def fetcher = directiveEnv.getCodeRegistry().getDataFetcher(container as GraphQLObjectType, field)
                 def newFetcher = wrapDataFetcher(fetcher, { dfEnv, value ->
-                    def directiveName = directiveEnv.directive.name
+                    def directiveName = directiveEnv.appliedDirective.name
                     if (directiveName == "uppercase") {
                         return String.valueOf(value).toUpperCase()
                     } else if (directiveName == "lowercase") {
@@ -365,10 +383,10 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
         def input = ExecutionInput.newExecutionInput()
                 .root(
-                [
-                        lowerCaseValue: "lowercasevalue",
-                        upperCaseValue: "UPPERCASEVALUE",
-                ])
+                        [
+                                lowerCaseValue: "lowercasevalue",
+                                upperCaseValue: "UPPERCASEVALUE",
+                        ])
                 .query("""
                    query {
                     lowerCaseValue
@@ -471,10 +489,15 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
                 GraphQLFieldDefinition element = environment.getElement()
-                return wrapField(environment.fieldsContainer, element, environment.getBuildContext(), environment.getCodeRegistry())
+
+                def container = environment.fieldsContainer
+                if (! container instanceof GraphQLObjectType) {
+                    return element
+                }
+                return wrapField(container as GraphQLObjectType, element, environment.getBuildContext(), environment.getCodeRegistry())
             }
 
-            private GraphQLFieldDefinition wrapField(GraphQLFieldsContainer parentType, GraphQLFieldDefinition field, Map<String, Object> contextMap, GraphQLCodeRegistry.Builder codeRegistry) {
+            private GraphQLFieldDefinition wrapField(GraphQLObjectType parentType, GraphQLFieldDefinition field, Map<String, Object> contextMap, GraphQLCodeRegistry.Builder codeRegistry) {
                 def originalFetcher = codeRegistry.getDataFetcher(parentType, field)
 
                 String key = mkFieldKey(parentType.getName(), field.getName())
@@ -485,8 +508,8 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 }
                 contextMap.put(key, true)
 
-                DataFetcher wrapper = { dfEnv ->
-                    def flag = dfEnv.getContext()['protectSecrets']
+                DataFetcher wrapper = { DataFetchingEnvironment dfEnv ->
+                    def flag = dfEnv.getGraphQlContext().get('protectSecrets')
                     if (flag == null || flag == false) {
                         return originalFetcher.get(dfEnv)
                     }
@@ -527,7 +550,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
-                .context([protectSecrets: true])
+                .graphQLContext([protectSecrets: true])
                 .build()
 
         def er = graphQL.execute(executionInput)
@@ -543,7 +566,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         executionInput = ExecutionInput.newExecutionInput()
                 .root(root)
                 .query(query)
-                .context([protectSecrets: false])
+                .graphQLContext([protectSecrets: false])
                 .build()
 
         er = graphQL.execute(executionInput)
@@ -608,7 +631,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         def namedWiring = new SchemaDirectiveWiring() {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
-                GraphQLDirective directive = environment.getDirective()
+                GraphQLAppliedDirective directive = environment.getAppliedDirective()
                 DataFetcher existingFetcher = environment.getFieldDataFetcher()
 
                 DataFetcher newDF = new DataFetcher() {
@@ -672,7 +695,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
                 generalCount++
-                def directiveNames = env.getDirectives().values().collect { d -> d.getName() }.sort()
+                def directiveNames = env.getAppliedDirectives().values().collect { d -> d.getName() }.sort()
                 assert directiveNames == ["factoryDirective", "generalDirective", "namedDirective1", "namedDirective2"]
                 return env.getFieldDefinition()
             }
@@ -682,7 +705,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
                 factoryCount++
-                def directiveNames = env.getDirectives().values().collect { d -> d.getName() }.sort()
+                def directiveNames = env.getAppliedDirectives().values().collect { d -> d.getName() }.sort()
                 assert directiveNames == ["factoryDirective", "generalDirective", "namedDirective1", "namedDirective2"]
                 return env.getFieldDefinition()
             }
@@ -704,10 +727,10 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
                 namedCount++
-                def directiveNames = env.getDirectives().values().collect { d -> d.getName() }.sort()
+                def directiveNames = env.getAppliedDirectives().values().collect { d -> d.getName() }.sort()
                 assert directiveNames == ["factoryDirective", "generalDirective", "namedDirective1", "namedDirective2"]
 
-                assert env.getDirective("factoryDirective") != null
+                assert env.getAppliedDirective("factoryDirective") != null
                 assert env.containsDirective("factoryDirective")
                 return env.getFieldDefinition()
             }
@@ -764,10 +787,12 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 argCount++
                 def arg = env.getElement()
                 if (arg.getName() == "arg1") {
-                    assert env.getDirectives().keySet().sort() == ["argDirective1", "argDirective2"]
+                    assert env.getAppliedDirectives().keySet().sort() == ["argDirective1", "argDirective2"]
+                    assert env.getAppliedDirectives().keySet().sort() == ["argDirective1", "argDirective2"]
                 }
                 if (arg.getName() == "arg2") {
-                    assert env.getDirectives().keySet().sort() == ["argDirective3"]
+                    assert env.getAppliedDirectives().keySet().sort() == ["argDirective3"]
+                    assert env.getAppliedDirectives().keySet().sort() == ["argDirective3"]
                 }
                 def fieldDef = env.getFieldDefinition()
                 assert fieldDef != null
@@ -780,7 +805,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
                 fieldCount++
 
-                assert env.getDirectives().keySet().sort() == ["fieldDirective"]
+                assert env.getAppliedDirectives().keySet().sort() == ["fieldDirective"]
 
                 def fieldDef = env.getFieldDefinition()
                 assert fieldDef.getDirectives().collect({ d -> d.getName() }) == ["fieldDirective"]
@@ -793,6 +818,15 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                         .sort()
 
                 assert argDirectiveNames == ["argDirective1", "argDirective2", "argDirective3"]
+
+                def argAppliedDirectiveNames = fieldDef.getArguments()
+                        .stream()
+                        .map({ a -> a.getAppliedDirectives() })
+                        .flatMap({ dl -> dl.stream() })
+                        .collect { d -> d.getName() }
+                        .sort()
+
+                assert argAppliedDirectiveNames == ["argDirective1", "argDirective2", "argDirective3"]
 
                 return env.getElement()
             }
@@ -883,4 +917,80 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
         er.data["field2"] == "data+field2"
     }
 
+    def "can change elements and rebuild the schema"() {
+
+        def sdl = '''
+            type Query {
+                field(arg : Int) : String 
+            }
+            
+        '''
+
+        SchemaDirectiveWiring generalWiring = new SchemaDirectiveWiring() {
+
+            @Override
+            GraphQLArgument onArgument(SchemaDirectiveWiringEnvironment<GraphQLArgument> env) {
+                def argument = env.getElement()
+                return argument.transform({ builder -> builder.name(reverse(argument.getName())) })
+            }
+
+            @Override
+            GraphQLObjectType onObject(SchemaDirectiveWiringEnvironment<GraphQLObjectType> env) {
+                def obj = env.getElement()
+                return obj.transform({ builder -> builder.name(reverse(obj.getName())) })
+            }
+
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                def field = env.getElement()
+                return field.transform({ builder -> builder.name(reverse(field.getName())) })
+            }
+        }
+
+        def wiringFactory = new WiringFactory() {
+            @Override
+            boolean providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+                true
+            }
+
+            @Override
+            SchemaDirectiveWiring getSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment environment) {
+                return generalWiring
+            }
+        }
+
+        when: "Its via a hard coded wiring"
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .directiveWiring(generalWiring)
+                .build()
+        def graphqlSchema = schema(sdl, runtimeWiring)
+
+        then:
+        assert directiveWiringAsserts(graphqlSchema)
+
+        when: "It via a wiring factory"
+        runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(wiringFactory)
+                .build()
+        graphqlSchema = schema(sdl, runtimeWiring)
+
+        then:
+        assert directiveWiringAsserts(graphqlSchema)
+    }
+
+    static def directiveWiringAsserts(schema) {
+        def queryType = schema.getObjectType("yreuQ")
+        assert queryType != null
+
+        def fld = queryType.getFieldDefinition("dleif")
+        assert fld != null
+
+        def arg = fld.getArgument("gra")
+        assert arg != null
+        true
+    }
+
+    static def reverse(String s) {
+        new StringBuilder(s).reverse().toString()
+    }
 }

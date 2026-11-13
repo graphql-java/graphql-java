@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Named schema elements that contain input type information.
@@ -11,7 +12,8 @@ import graphql.PublicApi;
  * @see graphql.schema.GraphQLArgument
  */
 @PublicApi
-public interface GraphQLInputValueDefinition extends GraphQLDirectiveContainer {
+@NullMarked
+public interface GraphQLInputValueDefinition extends GraphQLDirectiveContainer, GraphQLInputSchemaElement {
 
     <T extends GraphQLInputType> T getType();
 }

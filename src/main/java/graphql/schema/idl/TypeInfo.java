@@ -8,8 +8,10 @@ import graphql.language.Type;
 import graphql.language.TypeName;
 import graphql.schema.GraphQLType;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.Objects;
-import java.util.Stack;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLList.list;
@@ -27,7 +29,7 @@ public class TypeInfo {
 
     private final Type rawType;
     private final TypeName typeName;
-    private final Stack<Class<?>> decoration = new Stack<>();
+    private final Deque<Class<?>> decoration = new ArrayDeque<>();
 
     private TypeInfo(Type type) {
         this.rawType = assertNotNull(type, "type must not be null");
@@ -79,8 +81,7 @@ public class TypeInfo {
 
         Type out = TypeName.newTypeName(newName).build();
 
-        Stack<Class<?>> wrappingStack = new Stack<>();
-        wrappingStack.addAll(this.decoration);
+        Deque<Class<?>> wrappingStack = new ArrayDeque<>(this.decoration);
         while (!wrappingStack.isEmpty()) {
             Class<?> clazz = wrappingStack.pop();
             if (clazz.equals(NonNullType.class)) {
@@ -106,8 +107,7 @@ public class TypeInfo {
     public <T extends GraphQLType> T decorate(GraphQLType objectType) {
 
         GraphQLType out = objectType;
-        Stack<Class<?>> wrappingStack = new Stack<>();
-        wrappingStack.addAll(this.decoration);
+        Deque<Class<?>> wrappingStack = new ArrayDeque<>(this.decoration);
         while (!wrappingStack.isEmpty()) {
             Class<?> clazz = wrappingStack.pop();
             if (clazz.equals(NonNullType.class)) {
@@ -140,21 +140,68 @@ public class TypeInfo {
         return unwrapOne().getRawType();
     }
 
+    /**
+     * Gets the {@link TypeName} type name of a [Type], unwrapping any lists or non-null decorations
+     *
+     * @param type the Type
+     *
+     * @return the inner {@link TypeName} for this type
+     */
+    public static TypeName getTypeName(Type<?> type) {
+        while (!(type instanceof TypeName)) {
+            if (type instanceof NonNullType) {
+                type = ((NonNullType) type).getType();
+            }
+            if (type instanceof ListType) {
+                type = ((ListType) type).getType();
+            }
+        }
+        return (TypeName) type;
+    }
+
+    /**
+     * Gets the string type name of a [Type], unwrapping any lists or non-null decorations
+     *
+     * @param type the Type
+     *
+     * @return the inner string name for this type
+     */
+    public static String typeName(Type<?> type) {
+        return getTypeName(type).getName();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TypeInfo typeInfo = (TypeInfo) o;
-        return isNonNull() == typeInfo.isNonNull() &&
-                isList() == typeInfo.isList() &&
-                Objects.equals(typeName.getName(), typeInfo.typeName.getName());
+        return Objects.equals(typeName.getName(), typeInfo.typeName.getName()) &&
+                sameDecoration(decoration, typeInfo.decoration);
+    }
+
+    private static boolean sameDecoration(Deque<Class<?>> a, Deque<Class<?>> b) {
+        if (a.size() != b.size()) {
+            return false;
+        }
+        Iterator<Class<?>> itA = a.iterator();
+        Iterator<Class<?>> itB = b.iterator();
+        while (itA.hasNext()) {
+            if (itA.next() != itB.next()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(typeName.getName(), isNonNull(), isList());
+        int result = 1;
+        result = 31 * result + Objects.hashCode(typeName.getName());
+        for (Class<?> wrapper : decoration) {
+            result = 31 * result + wrapper.hashCode();
+        }
+        return result;
     }
-
 
     @Override
     public String toString() {

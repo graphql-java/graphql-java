@@ -1,10 +1,14 @@
 package graphql.schema.idl
 
-
 import graphql.TestUtil
 import graphql.introspection.Introspection
-import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLDirective
+import graphql.language.Node
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetcherFactory
+import graphql.schema.DataFetcherFactoryEnvironment
+import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLAppliedDirective
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
@@ -12,6 +16,7 @@ import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNamedType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
@@ -20,10 +25,13 @@ import graphql.schema.GraphQLType
 import graphql.schema.GraphQLTypeUtil
 import graphql.schema.GraphQLUnionType
 import graphql.schema.GraphqlTypeComparatorRegistry
-import graphql.schema.PropertyDataFetcher
+import graphql.schema.idl.errors.DirectiveIllegalReferenceError
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
+import graphql.schema.idl.errors.SchemaProblem
+import graphql.schema.visibility.BlockedFields
 import graphql.schema.visibility.GraphqlFieldVisibility
+import spock.lang.Issue
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -32,15 +40,19 @@ import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.language.AstPrinter.printAst
+import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
+import static graphql.schema.idl.SchemaGenerator.Options.defaultOptions
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class SchemaGeneratorTest extends Specification {
 
-    def newRuntimeWiring() {
+    static def newRuntimeWiring() {
         return RuntimeWiring.newRuntimeWiring()
                 .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
     }
 
-    GraphQLSchema schema(String sdl) {
+    static GraphQLSchema schema(String sdl) {
         def runtimeWiringAsIs = newRuntimeWiring()
                 .comparatorRegistry(GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY)
                 .wiringFactory(TestUtil.mockWiringFactory)
@@ -48,21 +60,13 @@ class SchemaGeneratorTest extends Specification {
         return schema(sdl, runtimeWiringAsIs)
     }
 
-    GraphQLSchema schema(String sdl, RuntimeWiring runtimeWiring) {
-        return TestUtil.schema(sdl, runtimeWiring)
+    static GraphQLSchema schema(String sdl, RuntimeWiring runtimeWiring) {
+        SchemaGenerator.Options options = defaultOptions().captureAstDefinitions(true)
+        return TestUtil.schema(options, sdl, runtimeWiring)
     }
 
 
-    GraphQLType unwrap1Layer(GraphQLType type) {
-        if (type instanceof GraphQLNonNull) {
-            type = (type as GraphQLNonNull).wrappedType
-        } else if (type instanceof GraphQLList) {
-            type = (type as GraphQLList).wrappedType
-        }
-        type
-    }
-
-    GraphQLType unwrap(GraphQLType type) {
+    static GraphQLType unwrap(GraphQLType type) {
         while (true) {
             if (type instanceof GraphQLNonNull) {
                 type = (type as GraphQLNonNull).wrappedType
@@ -75,7 +79,7 @@ class SchemaGeneratorTest extends Specification {
         type
     }
 
-    void commonSchemaAsserts(GraphQLSchema schema) {
+    static void commonSchemaAsserts(GraphQLSchema schema) {
         assert schema.getQueryType().name == "Query"
         assert schema.getMutationType().name == "Mutation"
 
@@ -529,11 +533,9 @@ class SchemaGeneratorTest extends Specification {
                extraField1 : String
             }
             extend type BaseType implements Interface2 {
-               extraField1 : String
                extraField2 : Int
             }
             extend type BaseType implements Interface3 {
-               extraField1 : String
                extraField3 : ID
             }
             extend type BaseType {
@@ -541,13 +543,6 @@ class SchemaGeneratorTest extends Specification {
             }
             extend type BaseType {
                extraField5 : Boolean!
-            }
-            #
-            # if we repeat a definition, that's ok as long as its the same types as before
-            # they will be de-duped since the effect is the same
-            #
-            extend type BaseType implements Interface1 {
-               extraField1 : String
             }
             
             schema {
@@ -609,7 +604,6 @@ class SchemaGeneratorTest extends Specification {
                 name: String!
             }
             extend type Human implements Character {
-                name: String!
                 friends: [Character]
             }
             extend type Human {
@@ -894,6 +888,33 @@ class SchemaGeneratorTest extends Specification {
         enumType.getValue("C").value == ExampleEnum.C
     }
 
+    def " MapEnum values provider"() {
+        given:
+        def spec = '''
+            enum Enum{
+                A
+                B
+                C
+            }
+            
+            type Query{
+                field: Enum
+            }
+        '''
+
+        when:
+        def mapEnumProvider = new MapEnumValuesProvider([A: 11, B: 12, C: 13])
+        def enumTypeWiring = newTypeWiring("Enum").enumValues(mapEnumProvider).build()
+        def wiring = RuntimeWiring.newRuntimeWiring().type(enumTypeWiring).build()
+        def schema = TestUtil.schema(spec, wiring)
+        GraphQLEnumType graphQLEnumType = schema.getType("Enum") as GraphQLEnumType
+
+        then:
+        graphQLEnumType.getValue("A").value == 11
+        graphQLEnumType.getValue("B").value == 12
+        graphQLEnumType.getValue("C").value == 13
+    }
+
     def "enum with no values provider: value is the name"() {
         given:
         def spec = """
@@ -954,6 +975,57 @@ class SchemaGeneratorTest extends Specification {
         !queryType.getFieldDefinition("baz").isDeprecated()
     }
 
+    def "specifiedBy directive is supported"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        "My scalar has a specifiedBy url"
+        scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def schema = schema(spec)
+        GraphQLScalarType scalar = schema.getType("MyScalar") as GraphQLScalarType
+
+        then:
+        scalar.getSpecifiedByUrl() == "myUrl.example"
+        scalar.getDescription() == "My scalar has a specifiedBy url"
+    }
+
+    def "specifiedBy requires an url "() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar @specifiedBy
+        """
+        when:
+        def registry = new SchemaParser().parse(spec)
+        new SchemaGenerator().makeExecutableSchema(defaultOptions(), registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        def schemaProblem = thrown(SchemaProblem)
+        schemaProblem.message.contains("failed to provide a value for the non null argument 'url' on directive 'specifiedBy'")
+    }
+
+    def "specifiedBy can be added via extension"() {
+        given:
+        def spec = """
+        type Query {
+            foo: MyScalar
+        }
+        scalar MyScalar
+        extend scalar MyScalar @specifiedBy(url: "myUrl.example")
+        """
+        when:
+        def schema = schema(spec)
+        GraphQLScalarType scalar = schema.getType("MyScalar") as GraphQLScalarType
+
+        then:
+        scalar.getSpecifiedByUrl() == "myUrl.example"
+    }
 
     def "schema is optional if there is a type called Query"() {
 
@@ -1059,6 +1131,103 @@ class SchemaGeneratorTest extends Specification {
         schema.getType("UnReferencedD") instanceof GraphQLUnionType
     }
 
+    def "nested additional types should be part of the additional types, not the schema types"() {
+        def spec = """      
+            type Query {
+              fieldA : ReferencedA
+            }
+            
+            type ReferencedA {
+              field : String
+            }
+
+            type UnReferencedA {
+              field : UnReferencedNestedE
+            }
+            
+            input UnReferencedB {
+              field : UnReferencedNestedF
+            }
+            
+            type UnReferencedNestedE {
+                field: String
+                field2: UnReferencedScalarB
+            }
+            
+            input UnReferencedNestedF {
+                field: String
+            }
+            
+            interface UnReferencedC {
+                field : UnReferencedNestedE
+            }
+            
+            union UnReferencedD = ReferencedA  
+            
+            scalar UnReferencedScalarA 
+            
+            scalar UnReferencedScalarB
+        """
+
+        def schema = schema(spec)
+
+        expect: "all types to be registered"
+        schema.getType("ReferencedA") instanceof GraphQLObjectType
+        schema.getType("UnReferencedA") instanceof GraphQLObjectType
+        schema.getType("UnReferencedB") instanceof GraphQLInputObjectType
+        schema.getType("UnReferencedC") instanceof GraphQLInterfaceType
+        schema.getType("UnReferencedD") instanceof GraphQLUnionType
+        schema.getType("UnReferencedNestedE") instanceof GraphQLObjectType
+        schema.getType("UnReferencedNestedF") instanceof GraphQLInputObjectType
+
+
+        and: "unreferenced types should all be additional types"
+
+        def namedTypes = schema.getAdditionalTypes() as Set<GraphQLNamedType>
+        namedTypes.name.toSet() == ["UnReferencedA",
+                                    "UnReferencedB",
+                                    "UnReferencedC",
+                                    "UnReferencedD",
+                                    "UnReferencedNestedE",
+                                    "UnReferencedNestedF",
+                                    "UnReferencedScalarA",
+                                    "UnReferencedScalarB"].toSet()
+    }
+
+
+    def "nested additional types recursive"() {
+        def spec = """      
+            type Query {
+              fieldA : ReferencedA
+            }
+            
+            type ReferencedA {
+              field : String
+            }
+
+            type UnReferencedA {
+              field : UnReferencedNestedB
+            }
+
+            type UnReferencedNestedB {
+                field: UnReferencedNestedB
+            }
+        """
+
+        def schema = schema(spec)
+
+        expect: "all types to be registered"
+        schema.getType("ReferencedA") instanceof GraphQLObjectType
+        schema.getType("UnReferencedA") instanceof GraphQLObjectType
+        schema.getType("UnReferencedNestedB") instanceof GraphQLObjectType
+
+        and: "unreferenced types should all be additional types"
+
+        def namedTypes = schema.getAdditionalTypes() as Set<GraphQLNamedType>
+        namedTypes.name.toSet() == ["UnReferencedA", "UnReferencedNestedB"].toSet()
+    }
+
+
     def "scalar default value is parsed"() {
         def spec = """
             type Query {
@@ -1069,13 +1238,12 @@ class SchemaGeneratorTest extends Specification {
         def schema = schema(spec)
         schema.getType("Query") instanceof GraphQLObjectType
         GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
-        Object arg1 = query.getFieldDefinition("field").getArgument("arg1").defaultValue
-        Object arg2 = query.getFieldDefinition("field").getArgument("arg2").defaultValue
+        Object arg1 = printAst(query.getFieldDefinition("field").getArgument("arg1").argumentDefaultValue.value as Node)
+        Object arg2 = printAst(query.getFieldDefinition("field").getArgument("arg2").argumentDefaultValue.value as Node)
 
         expect:
-        arg1 instanceof Integer
-        arg2 instanceof List
-        (arg2 as List).get(0) instanceof Integer
+        arg1 == "10"
+        arg2 == "[20]"
     }
 
     def "null default arguments are ok"() {
@@ -1088,7 +1256,7 @@ class SchemaGeneratorTest extends Specification {
         def schema = schema(spec)
         schema.getType("Query") instanceof GraphQLObjectType
         GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
-        Object argNoDefault = query.getFieldDefinition("field").getArgument("argNoDefault").defaultValue
+        Object argNoDefault = query.getFieldDefinition("field").getArgument("argNoDefault").argumentDefaultValue.value
 
         expect:
         argNoDefault == null
@@ -1111,8 +1279,6 @@ class SchemaGeneratorTest extends Specification {
                 field2 : String @fieldDirective2
             }
 
-            extend type Query @directive2
-            
             extend type Query @directive3
             
             extend type Query @directiveWithArgs(strArg : "String", intArg : 1, boolArg : true, floatArg : 1.1, nullArg : null)
@@ -1126,8 +1292,11 @@ class SchemaGeneratorTest extends Specification {
         expect:
         type.getDirectives().size() == 4
         type.getDirectives()[0].name == "directive1"
+        type.getDirectives()[0].getDefinition() != null
         type.getDirectives()[1].name == "directive2"
+        type.getDirectives()[1].getDefinition() != null
         type.getDirectives()[2].name == "directive3"
+        type.getDirectives()[2].getDefinition() != null
 
         // test that fields can have directives as well
 
@@ -1141,23 +1310,22 @@ class SchemaGeneratorTest extends Specification {
         def fieldDirective2 = field2.getDirectives()[0]
         fieldDirective2.getName() == "fieldDirective2"
 
-
-        def directive = type.getDirectives()[3] as GraphQLDirective
+        def directive = type.getAppliedDirectives()[3] as GraphQLAppliedDirective
         directive.name == "directiveWithArgs"
         directive.arguments.size() == 5
 
         directive.arguments[argIndex].name == argName
         directive.arguments[argIndex].type == argType
-        directive.arguments[argIndex].value == argValue
+        printAst(directive.arguments[argIndex].argumentValue.value as Node) == argValue
 
         // arguments are sorted
         where:
         argIndex | argName    | argType        | argValue
-        0        | "boolArg"  | GraphQLBoolean | true
-        1        | "floatArg" | GraphQLFloat   | 1.1
-        2        | "intArg"   | GraphQLInt     | 1
-        3        | "nullArg"  | GraphQLString  | null
-        4        | "strArg"   | GraphQLString  | "String"
+        0        | "boolArg"  | GraphQLBoolean | "true"
+        1        | "floatArg" | GraphQLFloat   | "1.1"
+        2        | "intArg"   | GraphQLInt     | "1"
+        3        | "nullArg"  | GraphQLString  | "null"
+        4        | "strArg"   | GraphQLString  | "\"String\""
 
     }
 
@@ -1197,7 +1365,7 @@ class SchemaGeneratorTest extends Specification {
 
         expect:
 
-        container.getDirective(directiveName) != null
+        container.getAppliedDirective(directiveName) != null
 
         if (container instanceof GraphQLEnumType) {
             def evd = ((GraphQLEnumType) container).getValue("X").getDirective("EnumValueDirective")
@@ -1230,11 +1398,10 @@ class SchemaGeneratorTest extends Specification {
         def schema = schema(spec)
         schema.getType("Query") instanceof GraphQLObjectType
         GraphQLObjectType query = schema.getType("Query") as GraphQLObjectType
-        Object arg = query.getFieldDefinition("field").getArgument("arg").defaultValue as Map
+        String arg = printAst(query.getFieldDefinition("field").getArgument("arg").argumentDefaultValue.value as Node)
 
         expect:
-        arg["str"] instanceof String
-        arg["num"] instanceof Integer
+        arg == '{str : "string", num : 100}'
     }
 
     def "field visibility is used"() {
@@ -1262,6 +1429,32 @@ class SchemaGeneratorTest extends Specification {
 
         schema.getCodeRegistry().getFieldVisibility() == fieldVisibility
 
+    }
+
+    def "field visibility on a seeded code registry is kept"() {
+        def sdl = """
+            type Query {
+              user : User
+            }
+            type User {
+              id : ID
+              ssn : String
+            }
+        """
+
+        def blockedFields = BlockedFields.newBlock().addPattern("User.ssn").build()
+        def codeRegistry = newCodeRegistry().fieldVisibility(blockedFields).build()
+        def runtimeWiring = newRuntimeWiring().codeRegistry(codeRegistry).build()
+
+        def graphQL = TestUtil.graphQL(sdl, runtimeWiring).build()
+
+        when:
+        def er = graphQL.execute('{ user { ssn } }')
+
+        then:
+        graphQL.getGraphQLSchema().getCodeRegistry().getFieldVisibility() == blockedFields
+        er.errors.size() == 1
+        er.errors[0].message.contains("Field 'ssn' in type 'User' is undefined")
     }
 
     def "empty types are allowed and expanded"() {
@@ -1366,6 +1559,64 @@ class SchemaGeneratorTest extends Specification {
         unionType.directivesByName.containsKey("directive")
     }
 
+    @Issue("https://github.com/graphql-java/graphql-java/issues/4200")
+    def "empty union base definition gets member types from extension"() {
+        def spec = """
+            type Cat {
+                meow: String
+            }
+
+            type Dog {
+                bark: String
+            }
+
+            union Pet
+
+            extend union Pet = Cat | Dog
+
+            type Query {
+                pet: Pet
+            }
+        """
+
+        when:
+        def schema = schema(spec)
+        GraphQLUnionType unionType = schema.getType("Pet") as GraphQLUnionType
+
+        then:
+        unionType.types*.name == ["Cat", "Dog"]
+    }
+
+    @Issue("https://github.com/graphql-java/graphql-java/issues/4200")
+    def "empty union base definition gets member types from multiple extensions"() {
+        def spec = """
+            type Cat {
+                meow: String
+            }
+
+            type Dog {
+                bark: String
+            }
+
+            union Pet
+
+            extend union Pet = | Cat
+
+            extend union Pet = Dog
+
+            type Query {
+                pet: Pet
+            }
+        """
+
+        when:
+        def schema = schema(spec)
+        GraphQLUnionType unionType = schema.getType("Pet") as GraphQLUnionType
+
+        then:
+        unionType.types*.name == ["Cat", "Dog"]
+    }
+
     def "enum extension types are combined"() {
         def spec = """
             type Query {
@@ -1466,13 +1717,14 @@ class SchemaGeneratorTest extends Specification {
         argInt.getDirective("thirdDirective") != null
 
         def intDirective = argInt.getDirective("intDirective")
-        intDirective.name == "intDirective"
-        intDirective.arguments.size() == 1
-        def directiveArg = intDirective.getArgument("inception")
+        def intAppliedDirective = argInt.getAppliedDirective("intDirective")
+        intAppliedDirective.name == "intDirective"
+        intAppliedDirective.arguments.size() == 1
+        def directiveArg = intAppliedDirective.getArgument("inception")
         directiveArg.name == "inception"
         directiveArg.type == GraphQLBoolean
-        directiveArg.value == true
-        directiveArg.defaultValue == null
+        printAst(directiveArg.argumentValue.value as Node) == "true"
+        intDirective.getArgument("inception").argumentDefaultValue.value == null
     }
 
     def "directives definitions can be made"() {
@@ -1489,7 +1741,7 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
@@ -1510,7 +1762,7 @@ class SchemaGeneratorTest extends Specification {
                 Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION,
         )
         directive.getArgument("knownArg").type == GraphQLString
-        directive.getArgument("knownArg").defaultValue == "defaultValue"
+        printAst(directive.getArgument("knownArg").argumentDefaultValue.value as Node) == '"defaultValue"'
     }
 
     def "directive definitions don't have to provide default values"() {
@@ -1526,21 +1778,23 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
         then:
         def directiveTest1 = schema.getDirective("test1")
-        directiveTest1.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
-        directiveTest1.getArgument("include").value == null
+        GraphQLNonNull.nonNull(GraphQLBoolean).isEqualTo(directiveTest1.getArgument("include").type)
+        directiveTest1.getArgument("include").argumentDefaultValue.value == null
+        def appliedDirective1 = schema.getObjectType("Query").getFieldDefinition("f1").getAppliedDirective("test1")
+        printAst(appliedDirective1.getArgument("include").argumentValue.value as Node) == "false"
 
         def directiveTest2 = schema.getDirective("test2")
-        directiveTest2.getArgument("include").type == GraphQLNonNull.nonNull(GraphQLBoolean)
-        directiveTest2.getArgument("include").value == true
-        directiveTest2.getArgument("include").defaultValue == true
-
+        GraphQLNonNull.nonNull(GraphQLBoolean).isEqualTo(directiveTest2.getArgument("include").type)
+        printAst(directiveTest2.getArgument("include").argumentDefaultValue.value as Node) == "true"
+        def appliedDirective2 = schema.getObjectType("Query").getFieldDefinition("f2").getAppliedDirective("test2")
+        printAst(appliedDirective2.getArgument("include").argumentValue.value as Node) == "true"
     }
 
     def "missing directive arguments are transferred as are default values"() {
@@ -1558,23 +1812,24 @@ class SchemaGeneratorTest extends Specification {
         """
 
         when:
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
         def registry = new SchemaParser().parse(spec)
         def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
 
         then:
         def directive = schema.getObjectType("Query").getFieldDefinition("f").getDirective("testDirective")
         directive.getArgument("knownArg1").type == GraphQLString
-        directive.getArgument("knownArg1").value == "overrideVal1"
-        directive.getArgument("knownArg1").defaultValue == "defaultValue1"
+        printAst(directive.getArgument("knownArg1").argumentDefaultValue.value as Node) == '"defaultValue1"'
+        def appliedDirective = schema.getObjectType("Query").getFieldDefinition("f").getAppliedDirective("testDirective")
+        printAst(appliedDirective.getArgument("knownArg1").argumentValue.value as Node) == '"overrideVal1"'
 
         directive.getArgument("knownArg2").type == GraphQLInt
-        directive.getArgument("knownArg2").value == 666
-        directive.getArgument("knownArg2").defaultValue == 666
+        printAst(directive.getArgument("knownArg2").argumentDefaultValue.value as Node) == "666"
+        printAst(appliedDirective.getArgument("knownArg2").argumentValue.value as Node) == "666"
 
         directive.getArgument("knownArg3").type == GraphQLString
-        directive.getArgument("knownArg3").value == null
-        directive.getArgument("knownArg3").defaultValue == null
+        directive.getArgument("knownArg3").argumentDefaultValue.value == null
+        appliedDirective.getArgument("knownArg3").argumentValue.value == null
     }
 
     def "deprecated directive is implicit"() {
@@ -1586,7 +1841,7 @@ class SchemaGeneratorTest extends Specification {
             }
         """
 
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         when:
         def registry = new SchemaParser().parse(spec)
@@ -1597,11 +1852,14 @@ class SchemaGeneratorTest extends Specification {
         f1.getDeprecationReason() == "No longer supported" // spec default text
 
         def directive = f1.getDirective("deprecated")
-        directive.name == "deprecated"
-        directive.getArgument("reason").type == GraphQLString
-        directive.getArgument("reason").value == "No longer supported"
-        directive.getArgument("reason").defaultValue == "No longer supported"
+        printAst(directive.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
         directive.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+
+        def appliedDirective = f1.getAppliedDirective("deprecated")
+        appliedDirective.name == "deprecated"
+        appliedDirective.getArgument("reason").type instanceof GraphQLNonNull
+        (appliedDirective.getArgument("reason").type as GraphQLNonNull).wrappedType == GraphQLString
+        printAst(appliedDirective.getArgument("reason").argumentValue.value as Node) == '"No longer supported"'
 
         when:
         def f2 = schema.getObjectType("Query").getFieldDefinition("f2")
@@ -1609,47 +1867,15 @@ class SchemaGeneratorTest extends Specification {
         then:
         f2.getDeprecationReason() == "Just because"
 
+        def appliedDirective2 = f2.getAppliedDirective("deprecated")
+        appliedDirective2.name == "deprecated"
+        appliedDirective2.getArgument("reason").type instanceof GraphQLNonNull
+        (appliedDirective2.getArgument("reason").type as GraphQLNonNull).wrappedType == GraphQLString
+        printAst(appliedDirective2.getArgument("reason").argumentValue.value as Node) == '"Just because"'
         def directive2 = f2.getDirective("deprecated")
-        directive2.name == "deprecated"
-        directive2.getArgument("reason").type == GraphQLString
-        directive2.getArgument("reason").value == "Just because"
-        directive2.getArgument("reason").defaultValue == "No longer supported"
+        printAst(directive2.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
         directive2.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
-
     }
-
-    def "@fetch directive is respected"() {
-        def spec = """             
-
-            directive @fetch(from : String!) on FIELD_DEFINITION
-
-            type Query {
-                name : String,
-                homePlanet: String @fetch(from : "planetOfBirth")
-            }
-        """
-
-        def wiring = RuntimeWiring.newRuntimeWiring().build()
-        def schema = schema(spec, wiring)
-
-        GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
-
-        expect:
-        def fetcher = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("homePlanet"))
-        fetcher instanceof PropertyDataFetcher
-
-        PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
-        propertyDataFetcher.getPropertyName() == "planetOfBirth"
-        //
-        // no directive - plain name
-        //
-        def fetcher2 = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("name"))
-        fetcher2 instanceof PropertyDataFetcher
-
-        PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
-        propertyDataFetcher2.getPropertyName() == "name"
-    }
-
 
     def "does not break for circular references to interfaces"() {
         def spec = """
@@ -1680,33 +1906,7 @@ class SchemaGeneratorTest extends Specification {
         assert schema != null
     }
 
-    def "transformers get called once the schema is built"() {
-        def spec = """
-          type Query {
-              hello: String
-          }
-      """
-
-        def types = new SchemaParser().parse(spec)
-
-        def extraDirective = (GraphQLDirective.newDirective()).name("extra")
-                .argument(GraphQLArgument.newArgument().name("value").type(GraphQLString)).build()
-        def transformer = new SchemaGeneratorPostProcessing() {
-            @Override
-            GraphQLSchema process(GraphQLSchema originalSchema) {
-                originalSchema.transform({ builder -> builder.additionalDirective(extraDirective) })
-            }
-        }
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .transformer(transformer)
-                .build()
-        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
-        expect:
-        assert schema != null
-        schema.getDirective("extra") != null
-    }
-
-    def "1509- enum object string default values are handled"() {
+    def "enum object default values are handled"() {
         def spec = '''
             enum EnumValue {
                 ONE, TWO, THREE
@@ -1718,7 +1918,6 @@ class SchemaGeneratorTest extends Specification {
             
             type Query {
                 fieldWithEnum(arg : InputType = { value : ONE } ) : String
-                fieldWithString(arg : InputType = { value : "ONE" } ) : String
             }
         '''
         def types = new SchemaParser().parse(spec)
@@ -1728,11 +1927,7 @@ class SchemaGeneratorTest extends Specification {
         def queryType = schema.getObjectType("Query")
         def fieldWithEnum = queryType.getFieldDefinition("fieldWithEnum")
         def arg = fieldWithEnum.getArgument("arg")
-        arg.defaultValue == [value: "ONE"]
-
-        def fieldWithString = queryType.getFieldDefinition("fieldWithString")
-        def arg2 = fieldWithString.getArgument("arg")
-        arg2.defaultValue == [value: "ONE"]
+        printAst(arg.argumentDefaultValue.value as Node) == '{value : ONE}'
     }
 
     def "extensions are captured into runtime objects"() {
@@ -1839,7 +2034,7 @@ class SchemaGeneratorTest extends Specification {
                 .wiringFactory(wiringFactory)
                 .build()
 
-        def options = SchemaGenerator.Options.defaultOptions()
+        def options = defaultOptions()
 
         def types = new SchemaParser().parse(sdl)
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
@@ -1897,16 +2092,16 @@ class SchemaGeneratorTest extends Specification {
         schema.getMutationType().name == 'Mutation'
 
         when:
-        def directives = schema.getSchemaDirectives()
+        def directives = schema.getSchemaDirectives() // Retain for test coverage
 
         then:
         directives.size() == 3
-        schema.getSchemaDirective("sd1") != null
-        schema.getSchemaDirective("sd2") != null
-        schema.getSchemaDirective("sd3") != null
+        schema.getSchemaDirective("sd1") != null // Retain for test coverage
+        schema.getSchemaDirective("sd2") != null // Retain for test coverage
+        schema.getSchemaDirective("sd3") != null // Retain for test coverage
 
         when:
-        def directivesMap = schema.getSchemaDirectiveByName()
+        def directivesMap = schema.getSchemaDirectiveByName() // Retain for test coverage
         then:
         directives.size() == 3
         directivesMap["sd1"] != null
@@ -1917,23 +2112,28 @@ class SchemaGeneratorTest extends Specification {
         directives = schema.getDirectives()
 
         then:
-        directives.size() == 6 // built in ones :  include / skip and deprecated
+        directives.size() == 10 // built in ones :  include / skip and deprecated
         def directiveNames = directives.collect { it.name }
         directiveNames.contains("include")
         directiveNames.contains("skip")
+        directiveNames.contains("defer")
         directiveNames.contains("deprecated")
+        directiveNames.contains("specifiedBy")
+        directiveNames.contains("oneOf")
         directiveNames.contains("sd1")
         directiveNames.contains("sd2")
         directiveNames.contains("sd3")
 
         when:
-        directivesMap = schema.getDirectiveByName()
+        directivesMap = schema.getDirectivesByName()
 
         then:
-        directivesMap.size() == 6 // built in ones
+        directivesMap.size() == 10 // built in ones
         directivesMap.containsKey("include")
         directivesMap.containsKey("skip")
+        directivesMap.containsKey("defer")
         directivesMap.containsKey("deprecated")
+        directivesMap.containsKey("oneOf")
         directivesMap.containsKey("sd1")
         directivesMap.containsKey("sd2")
         directivesMap.containsKey("sd3")
@@ -1996,7 +2196,7 @@ class SchemaGeneratorTest extends Specification {
         then:
         directive != null
         GraphQLTypeUtil.simplePrint(directive.getArgument("enumArguments").getType()) == "[SomeEnum!]"
-        directive.getArgument("enumArguments").getDefaultValue() == []
+        printAst(directive.getArgument("enumArguments").getArgumentDefaultValue().value as Node) == "[]"
     }
 
     def "scalar used as output is not in additional types"() {
@@ -2042,5 +2242,479 @@ class SchemaGeneratorTest extends Specification {
         then:
         schema.getType("UnusedScalar") != null
         schema.getAdditionalTypes().find { it.name == "UnusedScalar" } != null
+    }
+
+    def "interface can be implemented with additional optional arguments"() {
+        given:
+        def spec = """
+            interface Vehicle {
+              name: String!
+            }
+
+            type Car implements Vehicle {
+              name(charLimit: Int = 10): String!
+            }
+            type Query {
+                car: Car
+            }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        (schema.getType("Car") as GraphQLObjectType).getFieldDefinition("name").getArgument("charLimit") != null
+        (schema.getType("Car") as GraphQLObjectType).getInterfaces().size() == 1
+
+        (schema.getType("Vehicle") as GraphQLInterfaceType).getFieldDefinition("name").getArguments().size() == 0
+
+    }
+
+    def "extended enums work as expected for arg values"() {
+
+        given:
+        def spec = """
+        enum AuthRoles {
+            USER
+        }
+
+        extend enum AuthRoles {
+            AUTHENTICATED
+        }
+
+        directive @auth(if: AuthRoles) on FIELD_DEFINITION
+
+        type Query {
+            danger: String @auth(if: AUTHENTICATED)
+        }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        def enumType = schema.getType("AuthRoles") as GraphQLEnumType
+        def listOfEnumValues = enumType.getValues().collect({ it.getValue() })
+        listOfEnumValues.sort() == ["AUTHENTICATED", "USER"]
+    }
+
+    def "extended input objects work as expected for arg values"() {
+
+        given:
+        def spec = """
+        input ArgInput {
+            fieldA : String
+        }
+
+        extend input ArgInput {
+            fieldB : String
+        }
+
+        directive @auth(if: ArgInput) on FIELD_DEFINITION
+
+        type Query {
+            danger: String @auth(if: { fieldB : "B"} )
+        }
+        """
+        when:
+        def schema = schema(spec)
+        then:
+        def inputType = schema.getType("ArgInput") as GraphQLInputObjectType
+        def listOfEnumValues = inputType.getFieldDefinitions().collect({ it.getName() })
+        listOfEnumValues.sort() == ["fieldA", "fieldB"]
+    }
+
+    def "shows that issue 2238 and 2290 - recursive input types on directives - has been fixed"() {
+        def sdl1 = '''
+        directive @test(arg: Recursive) on OBJECT
+
+        input Recursive {
+          deeper: Recursive
+          name: String
+        }
+        type Test @test(arg: { deeper: {name: "test"}}){
+          field: String
+        }
+        type Query {
+            test : Test
+        }
+        '''
+        when:
+        GraphQLSchema schema = TestUtil.schema(sdl1)
+        then:
+        schema != null
+
+        def sdl2 = '''
+        input MyInput {
+          a: String
+          b: MyInput
+        }
+        directive @myDirective(x: MyInput) on FIELD_DEFINITION
+        type Query {
+          f: String @myDirective(x: {b: {a:"yada"}})
+        }
+        '''
+
+        when:
+        schema = TestUtil.schema(sdl2)
+        then:
+        schema != null
+    }
+
+    def "#4201 indirect cyclical directive definitions are rejected without stack overflow - #name"() {
+        given:
+        def registry = new SchemaParser().parse(sdl)
+
+        when:
+        UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
+
+        then:
+        def e = thrown(SchemaProblem)
+        e.errors.size() == 1
+        e.errors.get(0) instanceof DirectiveIllegalReferenceError
+        e.errors.get(0).getMessage().contains(cycleMessage)
+
+        where:
+        name << ["two directives", "three directives"]
+        sdl << [
+                '''
+                    directive @foo(x: Int @bar(y: 1)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+                    directive @bar(y: Int @foo(x: 2)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+                    type Query {
+                        field: String @foo(x: 10) @bar(y: 20)
+                    }
+                ''',
+                '''
+                    directive @dirA(x: Int @dirB(y: 1)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+                    directive @dirB(y: Int @dirC(z: 2)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+                    directive @dirC(z: Int @dirA(x: 3)) on FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+                    type Query {
+                        field: String @dirA(x: 10) @dirB(y: 20) @dirC(z: 30)
+                    }
+                '''
+        ]
+        cycleMessage << [
+                "'foo' must not reference itself via directive cycle 'foo -> bar -> foo'",
+                "'dirA' must not reference itself via directive cycle 'dirA -> dirB -> dirC -> dirA'"
+        ]
+    }
+
+    def "code registry default data fetcher is respected"() {
+        def sdl = '''
+            type Query {
+                field :  String
+            }
+        '''
+
+        DataFetcher df = { DataFetchingEnvironment env ->
+            env.getFieldDefinition().getName().reverse()
+        }
+
+        DataFetcherFactory dff = new DataFetcherFactory() {
+            @Override
+            DataFetcher get(DataFetcherFactoryEnvironment environment) {
+                return df
+            }
+
+            @Override
+            DataFetcher get(GraphQLFieldDefinition fieldDefinition) {
+                return df
+            }
+        }
+
+        GraphQLCodeRegistry codeRegistry = newCodeRegistry()
+                .defaultDataFetcher(dff).build()
+
+        def runtimeWiring = newRuntimeWiring().codeRegistry(codeRegistry).build()
+
+        def graphQL = TestUtil.graphQL(sdl, runtimeWiring).build()
+        when:
+        def er = graphQL.execute('{ field }')
+        then:
+        er.errors.isEmpty()
+        er.data["field"] == "dleif"
+
+    }
+
+    def "custom scalars can be used in schema generation as directive args"() {
+        def sdl = '''
+            directive @test(arg: MyType) on OBJECT
+            scalar MyType
+            type Test @test(arg: { some: "data" }){
+                field: String
+            }
+            type Query {
+                field: Test
+            }
+        '''
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring().scalar(TestUtil.mockScalar("MyType")).build()
+        when:
+        def schema = TestUtil.schema(sdl, runtimeWiring)
+        then:
+        schema.getType("MyType") instanceof GraphQLScalarType
+    }
+
+    def "1498 - order of arguments should not matter"() {
+        def sdl = '''
+            input TimelineDimensionPredicate {
+                s : String
+            }
+            
+            input TimelineDimension {
+                d : String
+            }
+            
+            type TimelineEntriesGroup {
+                e : String
+            }
+            
+            interface Timeline {
+               id: ID!
+                entryGroups(groupBy: [TimelineDimension!]!, filter: TimelineDimensionPredicate): [TimelineEntriesGroup!]!
+            }
+
+            type ActualSalesTimeline implements Timeline {
+                id: ID!
+                entryGroups(groupBy: [TimelineDimension!]!, filter: TimelineDimensionPredicate): [TimelineEntriesGroup!]!
+            }
+            
+            type Query {
+                salesTimeLine : Timeline
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        assert1498Shape(schema)
+
+        when: "The arg order has been rearranged"
+        sdl = '''
+            input TimelineDimensionPredicate {
+                s : String
+            }
+            
+            input TimelineDimension {
+                d : String
+            }
+            
+            type TimelineEntriesGroup {
+                e : String
+            }
+            
+            interface Timeline {
+               id: ID!
+                entryGroups(filter: TimelineDimensionPredicate, groupBy: [TimelineDimension!]!): [TimelineEntriesGroup!]!
+            }
+
+            type ActualSalesTimeline implements Timeline {
+                id: ID!
+                entryGroups(groupBy: [TimelineDimension!]!, filter: TimelineDimensionPredicate): [TimelineEntriesGroup!]!
+            }
+            
+            type Query {
+                salesTimeLine : Timeline
+            }
+        '''
+
+        schema = TestUtil.schema(sdl)
+        then:
+        assert1498Shape(schema)
+
+    }
+
+    static boolean assert1498Shape(GraphQLSchema schema) {
+        def actualSalesTL = schema.getObjectType("ActualSalesTimeline")
+        def entryGroupsField = actualSalesTL.getField("entryGroups")
+        def groupByArg = entryGroupsField.getArgument("groupBy")
+        def filterArg = entryGroupsField.getArgument("filter")
+
+        GraphQLInputObjectType groupArgType = GraphQLTypeUtil.unwrapAllAs(groupByArg.getType())
+        assert groupArgType.name == "TimelineDimension"
+
+        GraphQLInputObjectType filterArgType = GraphQLTypeUtil.unwrapAllAs(filterArg.getType())
+        assert filterArgType.name == "TimelineDimensionPredicate"
+        true
+    }
+
+
+    def "comments as descriptions disabled"() {
+        def sdl = '''
+        type Query {
+            # Comment
+            test : String
+            "Description"
+            test2: String
+        }
+        '''
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        def options = defaultOptions().useCommentsAsDescriptions(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        schema.getQueryType().getFieldDefinition("test").getDescription() == null
+        schema.getQueryType().getFieldDefinition("test2").getDescription() == "Description"
+    }
+
+    def "ast definition capture can be disabled"() {
+        def sdl = '''
+        type Query {
+            test : String
+        }
+        
+        extend type Query {
+            test2 : Int
+        }
+        '''
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        def options = defaultOptions().captureAstDefinitions(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        schema.getQueryType().getDefinition() == null
+        schema.getQueryType().getExtensionDefinitions() == []
+        schema.getQueryType().getFieldDefinition("test").getDefinition() == null
+
+        when:
+        registry = new SchemaParser().parse(sdl)
+        options = defaultOptions() // default is to capture them
+        schema = new SchemaGenerator().makeExecutableSchema(options, registry, TestUtil.mockRuntimeWiring)
+
+        then:
+        options.isCaptureAstDefinitions()
+        schema.getQueryType().getDefinition() != null
+        schema.getQueryType().getExtensionDefinitions().size() == 1
+        schema.getQueryType().getFieldDefinition("test").getDefinition() != null
+    }
+
+
+    def "scalar AST capture is #captureAstDefinitions with prepopulated wiring #prepopulated"() {
+        given:
+        def registry = new SchemaParser().parse('''
+            scalar Custom
+            extend scalar Custom @specifiedBy(url: "https://example.com/custom")
+            type Query { custom: Custom }
+        ''')
+        def definition = registry.scalars().get('Custom')
+        def extensions = registry.scalarTypeExtensions().get('Custom')
+        def scalar = TestUtil.mockScalar('Custom').transform {
+            it.definition(prepopulated ? definition : null)
+                    .extensionDefinitions(prepopulated ? extensions : [])
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring().scalar(scalar).build()
+        def options = defaultOptions().captureAstDefinitions(captureAstDefinitions)
+
+        when:
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, wiring)
+        def result = schema.getType('Custom') as GraphQLScalarType
+
+        then:
+        result.specifiedByUrl == 'https://example.com/custom'
+        result.definition.is(captureAstDefinitions ? definition : null)
+        result.extensionDefinitions.size() == (captureAstDefinitions ? 1 : 0)
+        !captureAstDefinitions || result.extensionDefinitions[0].is(extensions[0])
+        scalar.extensionDefinitions.size() == (prepopulated ? 1 : 0)
+
+        where:
+        captureAstDefinitions | prepopulated
+        true                  | false
+        false                 | false
+        true                  | true
+        false                 | true
+    }
+
+    def "classCastException when interface extension is before base and has recursion"() {
+        given:
+        def spec = '''
+        # order is important, moving extension below type Foo will fix the issue
+        extend type Foo implements HasFoo {
+          foo: Foo
+        }
+        
+        type Query {
+          test: ID
+        }
+        
+        interface HasFoo {
+          foo: Foo
+        }
+        
+        type Foo {
+          id: ID
+        }
+        '''
+
+        when:
+        TestUtil.schema(spec)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def "skip and include should be added to the schema only if not already defined"() {
+        def sdl = '''
+            "Directs the executor to skip this field or fragment when the `if`'argument is true."
+            directive @skip(
+                "Skipped when true."
+                if: Boolean!
+              ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+              
+            "Directs the executor to include this field or fragment only when the `if` argument is true"
+            directive @include(
+                "Included when true."
+                if: Boolean!
+              ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+              
+            type Query {
+                hello: String
+            }
+        '''
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        schema.getDirectives().findAll { it.name == "skip" }.size() == 1
+        schema.getDirectives().findAll { it.name == "include" }.size() == 1
+
+        and:
+        def newSchema = GraphQLSchema.newSchema(schema).build()
+        then:
+        newSchema.getDirectives().findAll { it.name == "skip" }.size() == 1
+        newSchema.getDirectives().findAll { it.name == "include" }.size() == 1
+    }
+
+    def "oneOf directive is available implicitly"() {
+        def sdl = '''
+            type Query {
+                f(arg : OneOfInputType) : String
+            }
+
+            input OneOfInputType @oneOf {
+                a : String
+                b : String
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        schema.getDirectives().findAll { it.name == "oneOf" }.size() == 1
+
+        GraphQLInputObjectType inputObjectType = schema.getTypeAs("OneOfInputType")
+        inputObjectType.isOneOf()
+        inputObjectType.hasAppliedDirective("oneOf")
+    }
+
+    def "should throw IllegalArgumentException when withValidation is false"() {
+        given:
+        def sdl = '''
+            type Query { hello: String }
+        '''
+        def options = SchemaGenerator.Options.defaultOptions().withValidation(false)
+
+        when:
+        new SchemaGenerator().makeExecutableSchema(options, new SchemaParser().parse(sdl), RuntimeWiring.MOCKED_WIRING)
+
+        then:
+        thrown(IllegalArgumentException)
     }
 }

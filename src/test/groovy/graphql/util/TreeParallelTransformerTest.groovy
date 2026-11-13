@@ -31,7 +31,7 @@ class TreeParallelTransformerTest extends Specification {
         def newDocument = parallelTransformer.transform(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo2}"
+        printAstCompact(newDocument) == "{foo2}"
 
     }
 
@@ -56,7 +56,7 @@ class TreeParallelTransformerTest extends Specification {
         def newDocument = parallelTransformer.transform(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo2}"
+        printAstCompact(newDocument) == "{foo2}"
 
     }
 }

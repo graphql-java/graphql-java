@@ -1,6 +1,8 @@
 package graphql.execution.instrumentation;
 
-import java.util.concurrent.CompletableFuture;
+import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * When a {@link Instrumentation}.'beginXXX()' method is called then it must return a non null InstrumentationContext
@@ -10,14 +12,14 @@ import java.util.concurrent.CompletableFuture;
  * This pattern of construction of an object then call back is intended to allow "timers" to be created that can instrument what has
  * just happened or "loggers" to be called to record what has happened.
  */
+@PublicSpi
+@NullMarked
 public interface InstrumentationContext<T> {
 
     /**
      * This is invoked when the instrumentation step is initially dispatched
-     *
-     * @param result the result of the step as a completable future
      */
-    void onDispatched(CompletableFuture<T> result);
+    void onDispatched();
 
     /**
      * This is invoked when the instrumentation step is fully completed
@@ -25,6 +27,6 @@ public interface InstrumentationContext<T> {
      * @param result the result of the step (which may be null)
      * @param t      this exception will be non null if an exception was thrown during the step
      */
-    void onCompleted(T result, Throwable t);
+    void onCompleted(@Nullable T result, @Nullable Throwable t);
 
 }

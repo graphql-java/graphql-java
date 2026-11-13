@@ -1,17 +1,19 @@
 package graphql.execution.instrumentation.fieldvalidation
 
+import graphql.EngineRunningState
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.GraphQLError
+import graphql.Profiler
 import graphql.TestUtil
 import graphql.execution.AbortExecutionException
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.Execution
 import graphql.execution.ExecutionId
-import graphql.execution.ExecutionPath
+import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.ChainedInstrumentation
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -79,7 +81,7 @@ class FieldValidationTest extends Specification {
 
                 def fieldArgumentsMap = validationEnvironment.getFieldsByPath()
 
-                FieldAndArguments field1Args = fieldArgumentsMap.get(ExecutionPath.parse("/field1"))[0]
+                FieldAndArguments field1Args = fieldArgumentsMap.get(ResultPath.parse("/field1"))[0]
 
                 argValues = field1Args.getArgumentValuesByName()
 
@@ -89,27 +91,27 @@ class FieldValidationTest extends Specification {
                 assert !argValues.containsKey('intArg')
 
 
-                argValues = fieldArgumentsMap.get(ExecutionPath.parse("/field2"))[0]
+                argValues = fieldArgumentsMap.get(ResultPath.parse("/field2"))[0]
                         .getArgumentValuesByName()
 
                 assert argValues['stringArg'] == "stringValue"
 
-                argValues = fieldArgumentsMap.get(ExecutionPath.parse("/field3"))[0]
+                argValues = fieldArgumentsMap.get(ResultPath.parse("/field3"))[0]
                         .getArgumentValuesByName()
 
                 assert argValues['intArg'] == 666
 
-                assert !fieldArgumentsMap.containsKey(ExecutionPath.parse("/noArgField"))
+                assert !fieldArgumentsMap.containsKey(ResultPath.parse("/noArgField"))
 
                 argValues = fieldArgumentsMap.get(
-                        ExecutionPath.parse("/field1/informationLink/informationString"))[0]
+                        ResultPath.parse("/field1/informationLink/informationString"))[0]
                         .getArgumentValuesByName()
 
                 assert argValues['fmt1'] == "inlineFmt1" // inlined from query
                 assert argValues['fmt2'] == "defaultFmt2" // defaulted from schema
 
                 def linkLink = fieldArgumentsMap.get(
-                        ExecutionPath.parse("/field1/informationLink/informationLink/informationString"))[0]
+                        ResultPath.parse("/field1/informationLink/informationLink/informationString"))[0]
                 argValues = linkLink
                         .getArgumentValuesByName()
 
@@ -153,12 +155,12 @@ class FieldValidationTest extends Specification {
         ]
 
         SimpleFieldValidation validation = new SimpleFieldValidation()
-                .addRule(ExecutionPath.parse("/field1"),
-                { fieldAndArguments, env -> err("Not happy Jan!", env, fieldAndArguments) })
-                .addRule(ExecutionPath.parse("/field1/informationLink/informationLink/informationString"),
-                { fieldAndArguments, env -> err("Also not happy Jan!", env, fieldAndArguments) })
-                .addRule(ExecutionPath.parse("/does/not/exist"),
-                { fieldAndArguments, env -> err("Wont happen", env, fieldAndArguments) })
+                .addRule(ResultPath.parse("/field1"),
+                        { fieldAndArguments, env -> err("Not happy Jan!", env, fieldAndArguments) })
+                .addRule(ResultPath.parse("/field1/informationLink/informationLink/informationString"),
+                        { fieldAndArguments, env -> err("Also not happy Jan!", env, fieldAndArguments) })
+                .addRule(ResultPath.parse("/does/not/exist"),
+                        { fieldAndArguments, env -> err("Wont happen", env, fieldAndArguments) })
 
 
         when:
@@ -202,16 +204,16 @@ class FieldValidationTest extends Specification {
         '''
 
         SimpleFieldValidation validation = new SimpleFieldValidation()
-                .addRule(ExecutionPath.parse("/field1/informationString"),
-                { fieldAndArguments, env ->
-                    def value = fieldAndArguments.getArgumentValue("fmt1")
-                    if (value != "ok") {
-                        return err("Nope : " + value, env, fieldAndArguments)
-                    } else {
-                        return Optional.empty()
-                    }
-                }
-        )
+                .addRule(ResultPath.parse("/field1/informationString"),
+                        { fieldAndArguments, env ->
+                            def value = fieldAndArguments.getArgumentValue("fmt1")
+                            if (value != "ok") {
+                                return err("Nope : " + value, env, fieldAndArguments)
+                            } else {
+                                return Optional.empty()
+                            }
+                        }
+                )
 
 
         when:
@@ -248,16 +250,16 @@ class FieldValidationTest extends Specification {
         '''
 
         SimpleFieldValidation validation = new SimpleFieldValidation()
-                .addRule(ExecutionPath.parse("/field1/informationString"),
-                { fieldAndArguments, env ->
-                    String value = fieldAndArguments.getArgumentValue("fmt1")
-                    if (value.contains("alias")) {
-                        return err("Nope : " + value, env, fieldAndArguments)
-                    } else {
-                        return Optional.empty()
-                    }
-                }
-        )
+                .addRule(ResultPath.parse("/field1/informationString"),
+                        { fieldAndArguments, env ->
+                            String value = fieldAndArguments.getArgumentValue("fmt1")
+                            if (value.contains("alias")) {
+                                return err("Nope : " + value, env, fieldAndArguments)
+                            } else {
+                                return Optional.empty()
+                            }
+                        }
+                )
 
 
         when:
@@ -305,10 +307,32 @@ class FieldValidationTest extends Specification {
         def document = TestUtil.parseQuery(query)
         def strategy = new AsyncExecutionStrategy()
         def instrumentation = new FieldValidationInstrumentation(validation)
-        def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT)
+        def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT, false)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, SimpleInstrumentation.INSTANCE.createState())
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, null, new EngineRunningState(executionInput, Profiler.NO_OP), Profiler.NO_OP)
+    }
+
+    def "test graphql from end to end with chained instrumentation"() {
+        def fieldValidation = new FieldValidation() {
+            @Override
+            List<GraphQLError> validateFields(final FieldValidationEnvironment validationEnvironment) {
+                return new ArrayList<GraphQLError>();
+            }
+        }
+        def instrumentations = [new FieldValidationInstrumentation
+                                        (fieldValidation)]
+        def chainedInstrumentation = new ChainedInstrumentation(instrumentations);
+        def graphql = GraphQL
+                .newGraphQL(schema)
+                .instrumentation(chainedInstrumentation)
+                .build();
+
+        when:
+        def result = graphql.execute("{ field2 }")
+
+        then:
+        result.getErrors().size() == 0
     }
 
 }

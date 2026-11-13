@@ -1,10 +1,15 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -13,14 +18,15 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static graphql.language.NodeUtil.directivesByName;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
+@NullMarked
 public class InlineFragment extends AbstractNode<InlineFragment> implements Selection<InlineFragment>, SelectionSetContainer<InlineFragment>, DirectivesContainer<InlineFragment> {
-    private final TypeName typeCondition;
-    private final List<Directive> directives;
+    private final @Nullable TypeName typeCondition;
+    private final NodeUtil.DirectivesHolder directives;
     private final SelectionSet selectionSet;
 
     public static final String CHILD_TYPE_CONDITION = "typeCondition";
@@ -28,16 +34,16 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     public static final String CHILD_SELECTION_SET = "selectionSet";
 
     @Internal
-    protected InlineFragment(TypeName typeCondition,
+    protected InlineFragment(@Nullable TypeName typeCondition,
                              List<Directive> directives,
                              SelectionSet selectionSet,
-                             SourceLocation sourceLocation,
+                             @Nullable SourceLocation sourceLocation,
                              List<Comment> comments,
                              IgnoredChars ignoredChars,
                              Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.typeCondition = typeCondition;
-        this.directives = directives;
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
         this.selectionSet = selectionSet;
     }
 
@@ -46,8 +52,8 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
      *
      * @param typeCondition the type condition of the inline fragment
      */
-    public InlineFragment(TypeName typeCondition) {
-        this(typeCondition, new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+    public InlineFragment(@Nullable TypeName typeCondition) {
+        this(typeCondition, emptyList(), SelectionSet.newSelectionSet().build(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     /**
@@ -56,24 +62,32 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
      * @param typeCondition the type condition of the inline fragment
      * @param selectionSet  of the inline fragment
      */
-    public InlineFragment(TypeName typeCondition, SelectionSet selectionSet) {
-        this(typeCondition, new ArrayList<>(), selectionSet, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+    public InlineFragment(@Nullable TypeName typeCondition, SelectionSet selectionSet) {
+        this(typeCondition, emptyList(), selectionSet, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
-    public TypeName getTypeCondition() {
+    public @Nullable TypeName getTypeCondition() {
         return typeCondition;
     }
 
+    @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives.getDirectives();
     }
 
-    public Map<String, Directive> getDirectivesByName() {
-        return directivesByName(directives);
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
     }
 
-    public Directive getDirective(String directiveName) {
-        return getDirectivesByName().get(directiveName);
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     @Override
@@ -87,7 +101,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         if (typeCondition != null) {
             result.add(typeCondition);
         }
-        result.addAll(directives);
+        result.addAll(directives.getDirectives());
         result.add(selectionSet);
         return result;
     }
@@ -96,7 +110,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
                 .child(CHILD_TYPE_CONDITION, typeCondition)
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .child(CHILD_SELECTION_SET, selectionSet)
                 .build();
     }
@@ -111,23 +125,19 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        return true;
+        return o != null && getClass() == o.getClass();
     }
 
     @Override
     public InlineFragment deepCopy() {
         return new InlineFragment(
                 deepCopy(typeCondition),
-                deepCopy(directives),
-                deepCopy(selectionSet),
+                assertNotNull(deepCopy(directives.getDirectives()), "directives cannot be null"),
+                assertNotNull(deepCopy(selectionSet), "selectionSet cannot be null"),
                 getSourceLocation(),
                 getComments(),
                 getIgnoredChars(),
@@ -158,11 +168,12 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    @NullUnmarked
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private TypeName typeCondition;
-        private List<Directive> directives = new ArrayList<>();
+        private ImmutableList<Directive> directives = emptyList();
         private SelectionSet selectionSet;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -173,9 +184,9 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
 
         private Builder(InlineFragment existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.typeCondition = existing.getTypeCondition();
-            this.directives = existing.getDirectives();
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
             this.selectionSet = existing.getSelectionSet();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -188,7 +199,7 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -197,10 +208,17 @@ public class InlineFragment extends AbstractNode<InlineFragment> implements Sele
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
+
+        public Builder directive(Directive directive) {
+            this.directives = ImmutableKit.addToList(directives, directive);
+            return this;
+        }
+
 
         public Builder selectionSet(SelectionSet selectionSet) {
             this.selectionSet = selectionSet;

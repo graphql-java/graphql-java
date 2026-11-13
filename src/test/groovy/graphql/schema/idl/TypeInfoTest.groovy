@@ -114,6 +114,11 @@ class TypeInfoTest extends Specification {
 
         assertNotEqualsAndHashCode(new NonNullType(new ListType(new TypeName("A"))), new ListType(new TypeName("A")))
         assertNotEqualsAndHashCode(new NonNullType(new ListType(new TypeName("A"))), new NonNullType(new ListType(new TypeName("B"))))
+
+        assertEqualsAndHashCode(new ListType(new NonNullType(new TypeName("A"))), new ListType(new NonNullType(new TypeName("A"))))
+        assertNotEqualsAndHashCode(new ListType(new TypeName("A")), new ListType(new NonNullType(new TypeName("A"))))
+        assertNotEqualsAndHashCode(new ListType(new ListType(new TypeName("A"))), new ListType(new TypeName("A")))
+        assertNotEqualsAndHashCode(new NonNullType(new ListType(new TypeName("A"))), new NonNullType(new ListType(new NonNullType(new TypeName("A")))))
     }
 
 
@@ -135,5 +140,23 @@ class TypeInfoTest extends Specification {
         "[named!]"    | "[newName!]"
         "[named!]!"   | "[newName!]!"
         "[[named!]!]" | "[[newName!]!]"
+    }
+
+    @Unroll
+    def "test getTypeName gets to the inner type"() {
+
+        expect:
+        Type actualType = TestUtil.parseType(actual)
+        def typeName = TypeInfo.getTypeName(actualType)
+        typeName.getName() == expected
+
+        where:
+        actual        | expected
+        "named"       | "named"
+        "named!"      | "named"
+        "[named]"     | "named"
+        "[named!]"    | "named"
+        "[named!]!"   | "named"
+        "[[named!]!]" | "named"
     }
 }

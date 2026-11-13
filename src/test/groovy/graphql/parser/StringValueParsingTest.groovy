@@ -1,5 +1,8 @@
 package graphql.parser
 
+import graphql.i18n.I18n
+import graphql.language.SourceLocation
+import graphql.language.StringValue
 import spock.lang.Specification
 
 import static java.util.Arrays.asList
@@ -7,12 +10,15 @@ import static java.util.stream.Collectors.joining
 
 class StringValueParsingTest extends Specification {
 
+    def i18n = I18n.i18n(I18n.BundleType.Parsing, Locale.ENGLISH)
+    def sourceLocation = SourceLocation.EMPTY
+
     def "parsing quoted string should work"() {
         given:
         def input = '''"simple quoted"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == "simple quoted"
@@ -23,7 +29,7 @@ class StringValueParsingTest extends Specification {
         def input = '''"{\"name\": \"graphql\", \"year\": 2015}"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''{\"name\": \"graphql\", \"year\": 2015}'''
@@ -34,35 +40,33 @@ class StringValueParsingTest extends Specification {
         def input = '''"""'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''"'''
     }
 
-    def "parsing emoji should work"() {
-        // needs surrogate pairs for this emoji
+    def "parsing beer stein as surrogate pair should work"() {
         given:
         def input = '''"\\ud83c\\udf7a"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''🍺''' // contains the beer icon 	U+1F37A  : http://www.charbase.com/1f37a-unicode-beer-mug
     }
 
-    def "parsing simple unicode should work"() {
+    def "parsing simple unicode should work - Basic Multilingual Plane (BMP)"() {
         given:
-        def input = '''"\\u56fe"'''
+        def input = '''"\\u5564\\u9152"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
-        parsed == '''图'''
+        parsed == '''啤酒'''
     }
-
 
     def "parsing triple quoted string should work"() {
         given:
@@ -222,5 +226,27 @@ L 3'''
 L 2
 L 3'''
         parsed == expected
+    }
+
+    def "removes large runs of leading and trailing blank lines"() {
+        given:
+        def input = "\n".repeat(20_000) + "    value" + "\n  ".repeat(20_000)
+
+        when:
+        String parsed = StringValueParsing.removeIndentation(input)
+
+        then:
+        parsed == "value"
+    }
+
+    def "full parser handles block strings with many leading and trailing blank lines"() {
+        given:
+        def input = '"""' + "\n".repeat(20_000) + "    value" + "\n  ".repeat(20_000) + '"""'
+
+        when:
+        StringValue parsed = Parser.parseValue(input)
+
+        then:
+        parsed.getValue() == "value"
     }
 }

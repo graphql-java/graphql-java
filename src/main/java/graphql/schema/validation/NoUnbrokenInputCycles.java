@@ -1,13 +1,17 @@
 package graphql.schema.validation;
 
+import graphql.Internal;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLNonNull;
+import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeVisitorStub;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -22,22 +26,20 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * Schema validation rule ensuring no input type forms an unbroken non-nullable recursion,
  * as such a type would be impossible to satisfy
  */
-public class NoUnbrokenInputCycles implements SchemaValidationRule {
+@Internal
+public class NoUnbrokenInputCycles extends GraphQLTypeVisitorStub {
 
     @Override
-    public void check(GraphQLType type, SchemaValidationErrorCollector validationErrorCollector) {
-    }
-
-    @Override
-    public void check(GraphQLFieldDefinition fieldDef, SchemaValidationErrorCollector validationErrorCollector) {
+    public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDef, TraverserContext<GraphQLSchemaElement> context) {
+        SchemaValidationErrorCollector validationErrorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
         for (GraphQLArgument argument : fieldDef.getArguments()) {
             GraphQLInputType argumentType = argument.getType();
             if (argumentType instanceof GraphQLInputObjectType) {
                 List<String> path = new ArrayList<>();
-//                path.add(argumentType.getName());
                 check((GraphQLInputObjectType) argumentType, new LinkedHashSet<>(), path, validationErrorCollector);
             }
         }
+        return TraversalControl.CONTINUE;
     }
 
     private void check(GraphQLInputObjectType type, Set<GraphQLType> seen, List<String> path, SchemaValidationErrorCollector validationErrorCollector) {
@@ -60,17 +62,11 @@ public class NoUnbrokenInputCycles implements SchemaValidationRule {
     }
 
     private GraphQLType unwrapNonNull(GraphQLNonNull type) {
-        if (isList(type.getWrappedType())) {
-            //we only care about [type!]! i.e. non-null lists of non-nulls
-            GraphQLList listType = (GraphQLList) type.getWrappedType();
-            if (isNonNull(listType.getWrappedType())) {
-                return unwrapAll(listType.getWrappedType());
-            } else {
-                return type.getWrappedType();
-            }
-        } else {
-            return unwrapAll(type.getWrappedType());
+        GraphQLType wrappedType = type.getWrappedType();
+        if (isList(wrappedType)) {
+            return wrappedType;
         }
+        return unwrapAll(wrappedType);
     }
 
     private String getErrorMessage(List<String> path) {

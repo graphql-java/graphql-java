@@ -1,7 +1,7 @@
 package graphql.validation
 /**
  * validation examples used in the spec in given section
- * http://facebook.github.io/graphql/#sec-Validation
+ * https://spec.graphql.org/October2021/#sec-Validation
  * @author dwinsor
  *
  */
@@ -66,95 +66,6 @@ mutation dogOperation {
     id
   }
 }
-"""
-        when:
-        def validationErrors = validate(query)
-
-        then:
-        !validationErrors.empty
-    }
-
-
-    def '5.1.2.1 Lone Anonymous Operation Valid'() {
-        def query = """
-{
-  dog {
-    name
-  }
-}
-"""
-        when:
-        def validationErrors = validate(query)
-
-        then:
-        validationErrors.empty
-    }
-
-
-    def '5.1.2.1 Lone Anonymous Operation Not Valid'() {
-        def query = """
-{
-  dog {
-    name
-  }
-}
-
-query getName {
-  dog {
-    owner {
-      name
-    }
-  }
-}
-"""
-        when:
-        def validationErrors = validate(query)
-
-        then:
-        !validationErrors.empty
-    }
-
-    def '5.1.2.1 Lone Anonymous Operation Not Valid (reverse order) '() {
-        def query = """
-
-query getName {
-  dog {
-    owner {
-      name
-    }
-  }
-}
-
-{
-  dog {
-    name
-  }
-}
-
-"""
-        when:
-        def validationErrors = validate(query)
-
-        then:
-        !validationErrors.empty
-    }
-
-    def '5.1.2.1 Lone Anonymous Operation Not Valid (not really alone)'() {
-        def query = """
-{
-  dog {
-    owner {
-      name
-    }
-  }
-}
-  
-{
-  dog {
-    name
-  }
-}
-
 """
         when:
         def validationErrors = validate(query)

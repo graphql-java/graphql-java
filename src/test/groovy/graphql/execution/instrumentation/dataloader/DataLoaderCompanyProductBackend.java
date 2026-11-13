@@ -1,10 +1,11 @@
 package graphql.execution.instrumentation.dataloader;
 
 
+import com.google.common.collect.ImmutableList;
+import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -26,12 +27,13 @@ public class DataLoaderCompanyProductBackend {
             mkCompany(projectCount);
         }
 
-        projectsLoader = new DataLoader<>(keys -> getProjectsForCompanies(keys).thenApply(projects -> keys
+        BatchLoader<UUID, List<Project>> uuidListBatchLoader = keys -> getProjectsForCompanies(keys).thenApply(projects -> keys
                 .stream()
                 .map(companyId -> projects.stream()
                         .filter(project -> project.getCompanyId().equals(companyId))
                         .collect(Collectors.toList()))
-                .collect(Collectors.toList())));
+                .collect(Collectors.toList()));
+        projectsLoader = DataLoaderFactory.newDataLoader(uuidListBatchLoader);
 
     }
 
@@ -54,13 +56,13 @@ public class DataLoaderCompanyProductBackend {
     }
 
     private List<Company> companiesList() {
-        return Collections.unmodifiableList(new ArrayList<>(companies.values()));
+        return ImmutableList.copyOf(companies.values());
     }
 
     public CompletableFuture<List<Project>> getProjectsForCompanies(List<UUID> companyIds) {
         return CompletableFuture.supplyAsync(() -> projects.values().stream()
                 .filter(project -> companyIds.contains(project.getCompanyId()))
-                .collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList)));
+                .collect(Collectors.collectingAndThen(Collectors.toList(), ImmutableList::copyOf)));
     }
 
     public CompletableFuture<Company> addCompany() {

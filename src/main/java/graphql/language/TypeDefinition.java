@@ -2,13 +2,17 @@ package graphql.language;
 
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
- * All type definitions in a SDL.
+ * An interface for type definitions in a Schema Definition Language (SDL).
  *
  * @param <T> the actual Node type
  */
 @PublicApi
-public interface TypeDefinition<T extends TypeDefinition> extends SDLDefinition<T>, DirectivesContainer<T>, NamedNode<T> {
+@NullMarked
+public interface TypeDefinition<T extends TypeDefinition> extends SDLNamedDefinition<T>, DirectivesContainer<T>, NamedNode<T> {
 
+    @Override
+    String getName();
 }

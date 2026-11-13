@@ -2,6 +2,8 @@ package graphql.schema.visibility;
 
 import graphql.PublicApi;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInputFieldsContainer;
 import graphql.schema.GraphQLInputObjectField;
@@ -14,6 +16,7 @@ import java.util.List;
  * interface and reduce specific field visibility.
  */
 @PublicApi
+@NullMarked
 public interface GraphqlFieldVisibility {
 
     /**
@@ -31,9 +34,9 @@ public interface GraphqlFieldVisibility {
      * @param fieldsContainer the type in play
      * @param fieldName       the name of the desired field
      *
-     * @return a {@link graphql.schema.GraphQLFieldDefinition} or null if its not visible
+     * @return a {@link graphql.schema.GraphQLFieldDefinition} or null if it's not visible
      */
-    GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName);
+    @Nullable GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName);
 
 
     /**
@@ -53,9 +56,9 @@ public interface GraphqlFieldVisibility {
      * @param fieldsContainer the type in play
      * @param fieldName       the name of the desired field
      *
-     * @return a {@link graphql.schema.GraphQLInputObjectField} or null if its not visible
+     * @return a {@link graphql.schema.GraphQLInputObjectField} or null if it's not visible
      */
-    default GraphQLInputObjectField getFieldDefinition(GraphQLInputFieldsContainer fieldsContainer, String fieldName) {
+    default @Nullable GraphQLInputObjectField getFieldDefinition(GraphQLInputFieldsContainer fieldsContainer, String fieldName) {
         return fieldsContainer.getFieldDefinition(fieldName);
     }
 

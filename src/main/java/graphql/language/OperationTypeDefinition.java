@@ -1,22 +1,29 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
+@NullMarked
 public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinition> implements NamedNode<OperationTypeDefinition> {
 
     private final String name;
@@ -25,7 +32,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     public static final String CHILD_TYPE_NAME = "typeName";
 
     @Internal
-    protected OperationTypeDefinition(String name, TypeName typeName, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected OperationTypeDefinition(String name, TypeName typeName, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
         this.typeName = typeName;
@@ -34,11 +41,11 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     /**
      * alternative to using a Builder for convenience
      *
-     * @param name of the operation
+     * @param name     of the operation
      * @param typeName the type in play
      */
     public OperationTypeDefinition(String name, TypeName typeName) {
-        this(name, typeName, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, typeName, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public TypeName getTypeName() {
@@ -72,7 +79,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -82,12 +89,12 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
         OperationTypeDefinition that = (OperationTypeDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override
     public OperationTypeDefinition deepCopy() {
-        return new OperationTypeDefinition(name, deepCopy(typeName), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new OperationTypeDefinition(name, assertNotNull(deepCopy(typeName), "typeName deepCopy should not return null"), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -113,9 +120,10 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private TypeName typeName;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -127,7 +135,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
 
         private Builder(OperationTypeDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.typeName = existing.getTypeName();
             this.ignoredChars = existing.getIgnoredChars();
@@ -141,7 +149,7 @@ public class OperationTypeDefinition extends AbstractNode<OperationTypeDefinitio
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

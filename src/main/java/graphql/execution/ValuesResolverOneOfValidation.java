@@ -1,0 +1,115 @@
+package graphql.execution;
+
+import graphql.Assert;
+import graphql.Internal;
+import graphql.i18n.I18n;
+import graphql.language.ArrayValue;
+import graphql.language.ObjectField;
+import graphql.language.ObjectValue;
+import graphql.language.Value;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import static graphql.schema.GraphQLTypeUtil.isList;
+
+@Internal
+final class ValuesResolverOneOfValidation {
+
+    @SuppressWarnings("unchecked")
+    static void validateOneOfInputTypes(GraphQLType type, Object inputValue, Value<?> argumentValue, Locale locale) {
+        GraphQLType unwrappedNonNullType = GraphQLTypeUtil.unwrapNonNull(type);
+
+        if (isList(unwrappedNonNullType)
+                && !ValuesResolverConversion.isNullValue(inputValue)
+                && inputValue instanceof List) {
+            GraphQLType elementType = ((GraphQLList) unwrappedNonNullType).getWrappedType();
+            List<Object> inputList = (List<Object>) inputValue;
+
+            if (argumentValue instanceof ArrayValue) {
+                List<Value> argumentList = ((ArrayValue) argumentValue).getValues();
+                for (int i = 0; i < argumentList.size(); i++) {
+                    validateOneOfInputTypes(elementType, inputList.get(i), argumentList.get(i), locale);
+                }
+            } else {
+                // a single literal coerced into a list, or a list resolved from a variable reference
+                for (Object inputElement : inputList) {
+                    validateOneOfInputTypes(elementType, inputElement, argumentValue, locale);
+                }
+            }
+        }
+
+        if (unwrappedNonNullType instanceof GraphQLInputObjectType && !ValuesResolverConversion.isNullValue(inputValue)) {
+            GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) unwrappedNonNullType;
+            Assert.assertTrue(inputValue instanceof Map, "The coerced value for input type '%s' is unexpectedly not a map", inputObjectType.getName());
+            Map<String, Object> objectMap = (Map<String, Object>) inputValue;
+
+            if (inputObjectType.isOneOf()) {
+                validateOneOfInputTypesInternal(inputObjectType, argumentValue, objectMap, locale);
+            }
+
+            for (GraphQLInputObjectField fieldDefinition : inputObjectType.getFields()) {
+                GraphQLInputType childFieldType = fieldDefinition.getType();
+                String childFieldName = fieldDefinition.getName();
+                Object childFieldInputValue = objectMap.get(childFieldName);
+
+                if (argumentValue instanceof ObjectValue) {
+                    List<Value> values = ((ObjectValue) argumentValue).getObjectFields().stream()
+                            .filter(of -> of.getName().equals(childFieldName))
+                            .map(ObjectField::getValue)
+                            .collect(Collectors.toList());
+
+                    if (values.size() > 1) {
+                        Assert.assertShouldNeverHappen("Input value for type '%s' has %s occurrences of field '%s'; expected at most one", inputObjectType.getName(), values.size(), childFieldName);
+                    } else if (!values.isEmpty()) {
+                        validateOneOfInputTypes(childFieldType, childFieldInputValue, values.get(0), locale);
+                    }
+                } else {
+                    validateOneOfInputTypes(childFieldType, childFieldInputValue, argumentValue, locale);
+                }
+            }
+        }
+    }
+
+    private static void validateOneOfInputTypesInternal(GraphQLInputObjectType oneOfInputType, Value<?> argumentValue, Map<String, Object> objectMap, Locale locale) {
+        final String fieldName;
+        if (argumentValue instanceof ObjectValue) {
+            List<ObjectField> objectFields = ((ObjectValue) argumentValue).getObjectFields();
+            if (objectFields.size() != 1) {
+                throwNotOneFieldError(oneOfInputType, locale);
+            }
+
+            fieldName = objectFields.iterator().next().getName();
+        } else {
+            if (objectMap.size() != 1) {
+                throwNotOneFieldError(oneOfInputType, locale);
+            }
+
+            fieldName = objectMap.keySet().iterator().next();
+        }
+
+        if (objectMap.get(fieldName) == null) {
+            throwValueIsNullError(oneOfInputType, locale, fieldName);
+        }
+    }
+
+    private static void throwValueIsNullError(GraphQLInputObjectType oneOfInputType, Locale locale, String fieldName) {
+        String msg = I18n.i18n(I18n.BundleType.Execution, locale)
+                .msg("Execution.handleOneOfValueIsNullError", oneOfInputType.getName() + "." + fieldName);
+        throw new OneOfNullValueException(msg);
+    }
+
+    private static void throwNotOneFieldError(GraphQLInputObjectType oneOfInputType, Locale locale) {
+        String msg = I18n.i18n(I18n.BundleType.Execution, locale)
+                .msg("Execution.handleOneOfNotOneFieldError", oneOfInputType.getName());
+        throw new OneOfTooManyKeysException(msg);
+    }
+}

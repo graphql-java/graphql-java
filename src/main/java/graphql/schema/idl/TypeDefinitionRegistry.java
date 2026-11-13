@@ -3,11 +3,16 @@ package graphql.schema.idl;
 import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.language.DirectiveDefinition;
+import graphql.language.DirectiveExtensionDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
+import graphql.language.ImplementingTypeDefinition;
 import graphql.language.InputObjectTypeExtensionDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
+import graphql.language.ListType;
+import graphql.language.NonNullType;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ObjectTypeExtensionDefinition;
 import graphql.language.OperationTypeDefinition;
@@ -22,12 +27,14 @@ import graphql.language.TypeName;
 import graphql.language.UnionTypeDefinition;
 import graphql.language.UnionTypeExtensionDefinition;
 import graphql.schema.idl.errors.DirectiveRedefinitionError;
-import graphql.schema.idl.errors.OperationRedefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -35,38 +42,105 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.idl.SchemaExtensionsChecker.defineOperationDefs;
 import static graphql.schema.idl.SchemaExtensionsChecker.gatherOperationDefs;
+import static graphql.schema.idl.TypeInfo.typeName;
 import static java.util.Optional.ofNullable;
 
 /**
  * A {@link TypeDefinitionRegistry} contains the set of type definitions that come from compiling
  * a graphql schema definition file via {@link SchemaParser#parse(String)}
  */
+@SuppressWarnings("rawtypes")
 @PublicApi
-public class TypeDefinitionRegistry {
+@NullMarked
+public class TypeDefinitionRegistry implements Serializable {
 
-    private final Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions = new LinkedHashMap<>();
-    private final Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions = new LinkedHashMap<>();
+    protected final Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions;
+    protected final Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions;
+    protected final Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions;
+    protected final Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions;
+    protected final Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions;
+    protected final Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions;
+    protected final Map<String, List<DirectiveExtensionDefinition>> directiveExtensions;
 
-    private final Map<String, TypeDefinition> types = new LinkedHashMap<>();
-    private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
-    private final Map<String, DirectiveDefinition> directiveDefinitions = new LinkedHashMap<>();
-    private SchemaDefinition schema;
-    private final List<SchemaExtensionDefinition> schemaExtensionDefinitions = new ArrayList<>();
+    protected final Map<String, TypeDefinition> types;
+    protected final Map<String, ScalarTypeDefinition> scalarTypes;
+    protected final Map<String, DirectiveDefinition> directiveDefinitions;
+    protected @Nullable SchemaDefinition schema;
+    protected final List<SchemaExtensionDefinition> schemaExtensionDefinitions;
+    protected final SchemaParseOrder schemaParseOrder;
+
+    public TypeDefinitionRegistry() {
+        objectTypeExtensions = new LinkedHashMap<>();
+        interfaceTypeExtensions = new LinkedHashMap<>();
+        unionTypeExtensions = new LinkedHashMap<>();
+        enumTypeExtensions = new LinkedHashMap<>();
+        scalarTypeExtensions = new LinkedHashMap<>();
+        inputObjectTypeExtensions = new LinkedHashMap<>();
+        directiveExtensions = new LinkedHashMap<>();
+        types = new LinkedHashMap<>();
+        scalarTypes = new LinkedHashMap<>();
+        directiveDefinitions = new LinkedHashMap<>();
+        schemaExtensionDefinitions = new ArrayList<>();
+        schemaParseOrder = new SchemaParseOrder();
+    }
+
+    protected TypeDefinitionRegistry(Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions,
+                                     Map<String, List<InterfaceTypeExtensionDefinition>> interfaceTypeExtensions,
+                                     Map<String, List<UnionTypeExtensionDefinition>> unionTypeExtensions,
+                                     Map<String, List<EnumTypeExtensionDefinition>> enumTypeExtensions,
+                                     Map<String, List<ScalarTypeExtensionDefinition>> scalarTypeExtensions,
+                                     Map<String, List<InputObjectTypeExtensionDefinition>> inputObjectTypeExtensions,
+                                     Map<String, List<DirectiveExtensionDefinition>> directiveExtensions,
+                                     Map<String, TypeDefinition> types,
+                                     Map<String, ScalarTypeDefinition> scalarTypes,
+                                     Map<String, DirectiveDefinition> directiveDefinitions,
+                                     List<SchemaExtensionDefinition> schemaExtensionDefinitions,
+                                     @Nullable SchemaDefinition schema,
+                                     SchemaParseOrder schemaParseOrder) {
+        this.objectTypeExtensions = objectTypeExtensions;
+        this.interfaceTypeExtensions = interfaceTypeExtensions;
+        this.unionTypeExtensions = unionTypeExtensions;
+        this.enumTypeExtensions = enumTypeExtensions;
+        this.scalarTypeExtensions = scalarTypeExtensions;
+        this.inputObjectTypeExtensions = inputObjectTypeExtensions;
+        this.directiveExtensions = directiveExtensions;
+        this.types = types;
+        this.scalarTypes = scalarTypes;
+        this.directiveDefinitions = directiveDefinitions;
+        this.schemaExtensionDefinitions = schemaExtensionDefinitions;
+        this.schema = schema;
+        this.schemaParseOrder = schemaParseOrder;
+    }
+
+    /**
+     * @return an immutable view of this {@link TypeDefinitionRegistry} that is more performant
+     * when in read only mode.
+     */
+    public ImmutableTypeDefinitionRegistry readOnly() {
+        if (this instanceof ImmutableTypeDefinitionRegistry) {
+            return (ImmutableTypeDefinitionRegistry) this;
+        }
+        return new ImmutableTypeDefinitionRegistry(this);
+    }
+
+    /**
+     * @return the order in which {@link SDLDefinition}s were parsed
+     */
+    public SchemaParseOrder getParseOrder() {
+        return schemaParseOrder;
+    }
 
     /**
      * This will merge these type registries together and return this one
      *
      * @param typeRegistry the registry to be merged into this one
+     *
      * @return this registry
+     *
      * @throws SchemaProblem if there are problems merging the types such as redefinitions
      */
     public TypeDefinitionRegistry merge(TypeDefinitionRegistry typeRegistry) throws SchemaProblem {
@@ -96,8 +170,10 @@ public class TypeDefinitionRegistry {
         if (this.schema == null) {
             // ensure schema is not overwritten by merge
             this.schema = typeRegistry.schema;
+            schemaParseOrder.addDefinition(typeRegistry.schema);
         }
         this.schemaExtensionDefinitions.addAll(typeRegistry.schemaExtensionDefinitions);
+        typeRegistry.schemaExtensionDefinitions.forEach(schemaParseOrder::addDefinition);
 
         // ok commit to the merge
         this.types.putAll(tempTypes);
@@ -135,6 +211,12 @@ public class TypeDefinitionRegistry {
                     .computeIfAbsent(key, k -> new ArrayList<>());
             currentList.addAll(value);
         });
+        typeRegistry.directiveExtensions.forEach((key, value) -> {
+            List<DirectiveExtensionDefinition> currentList = this.directiveExtensions
+                    .computeIfAbsent(key, k -> new ArrayList<>());
+            currentList.addAll(value);
+            value.forEach(schemaParseOrder::addDefinition);
+        });
 
         return this;
     }
@@ -166,6 +248,7 @@ public class TypeDefinitionRegistry {
      * Adds a a collections of definitions to the registry
      *
      * @param definitions the definitions to add
+     *
      * @return an optional error for the first problem, typically type redefinition
      */
     public Optional<GraphQLError> addAll(Collection<SDLDefinition> definitions) {
@@ -182,6 +265,7 @@ public class TypeDefinitionRegistry {
      * Adds a definition to the registry
      *
      * @param definition the definition to add
+     *
      * @return an optional error
      */
     public Optional<GraphQLError> add(SDLDefinition definition) {
@@ -204,8 +288,12 @@ public class TypeDefinitionRegistry {
         } else if (definition instanceof InputObjectTypeExtensionDefinition) {
             InputObjectTypeExtensionDefinition newEntry = (InputObjectTypeExtensionDefinition) definition;
             return defineExt(inputObjectTypeExtensions, newEntry, InputObjectTypeExtensionDefinition::getName);
+        } else if (definition instanceof DirectiveExtensionDefinition) {
+            DirectiveExtensionDefinition newEntry = (DirectiveExtensionDefinition) definition;
+            return defineDirectiveExt(newEntry);
         } else if (definition instanceof SchemaExtensionDefinition) {
             schemaExtensionDefinitions.add((SchemaExtensionDefinition) definition);
+            schemaParseOrder.addDefinition(definition);
             Optional<GraphQLError> error = checkAddOperationDefs();
             if (error.isPresent()) {
                 return error;
@@ -225,6 +313,7 @@ public class TypeDefinitionRegistry {
                 return Optional.of(new SchemaRedefinitionError(this.schema, newSchema));
             } else {
                 schema = newSchema;
+                schemaParseOrder.addDefinition(newSchema);
             }
             Optional<GraphQLError> error = checkAddOperationDefs();
             if (error.isPresent()) {
@@ -236,8 +325,14 @@ public class TypeDefinitionRegistry {
         return Optional.empty();
     }
 
+    /**
+     * Removes a {@code SDLDefinition} from the definition list.
+     *
+     * @param definition the definition to remove
+     */
     public void remove(SDLDefinition definition) {
         assertNotNull(definition, "definition to remove can't be null");
+        schemaParseOrder.removeDefinition(definition);
         if (definition instanceof ObjectTypeExtensionDefinition) {
             removeFromList(objectTypeExtensions, (TypeDefinition) definition);
         } else if (definition instanceof InterfaceTypeExtensionDefinition) {
@@ -250,6 +345,8 @@ public class TypeDefinitionRegistry {
             removeFromList(scalarTypeExtensions, (TypeDefinition) definition);
         } else if (definition instanceof InputObjectTypeExtensionDefinition) {
             removeFromList(inputObjectTypeExtensions, (TypeDefinition) definition);
+        } else if (definition instanceof DirectiveExtensionDefinition) {
+            removeDirectiveExtension((DirectiveExtensionDefinition) definition);
         } else if (definition instanceof ScalarTypeDefinition) {
             scalarTypes.remove(((ScalarTypeDefinition) definition).getName());
         } else if (definition instanceof TypeDefinition) {
@@ -266,11 +363,72 @@ public class TypeDefinitionRegistry {
     }
 
     private void removeFromList(Map source, TypeDefinition value) {
+        //noinspection unchecked
         List<TypeDefinition> list = (List<TypeDefinition>) source.get(value.getName());
         if (list == null) {
             return;
         }
         list.remove(value);
+        if (list.isEmpty()) {
+            source.remove(value.getName());
+        }
+    }
+
+    /**
+     * Removes a {@code SDLDefinition} from a map.
+     *
+     * @param key        the key to remove
+     * @param definition the definition to remove
+     */
+    public void remove(String key, SDLDefinition definition) {
+        assertNotNull(definition, "definition to remove can't be null");
+        assertNotNull(key, "key to remove can't be null");
+        schemaParseOrder.removeDefinition(definition);
+        if (definition instanceof ObjectTypeExtensionDefinition) {
+            removeFromMap(objectTypeExtensions, key);
+        } else if (definition instanceof InterfaceTypeExtensionDefinition) {
+            removeFromMap(interfaceTypeExtensions, key);
+        } else if (definition instanceof UnionTypeExtensionDefinition) {
+            removeFromMap(unionTypeExtensions, key);
+        } else if (definition instanceof EnumTypeExtensionDefinition) {
+            removeFromMap(enumTypeExtensions, key);
+        } else if (definition instanceof ScalarTypeExtensionDefinition) {
+            removeFromMap(scalarTypeExtensions, key);
+        } else if (definition instanceof InputObjectTypeExtensionDefinition) {
+            removeFromMap(inputObjectTypeExtensions, key);
+        } else if (definition instanceof DirectiveExtensionDefinition) {
+            removeFromMap(directiveExtensions, key);
+        } else if (definition instanceof ScalarTypeDefinition) {
+            removeFromMap(scalarTypes, key);
+        } else if (definition instanceof TypeDefinition) {
+            removeFromMap(types, key);
+        } else if (definition instanceof DirectiveDefinition) {
+            removeFromMap(directiveDefinitions, key);
+        } else if (definition instanceof SchemaExtensionDefinition) {
+            schemaExtensionDefinitions.remove(definition);
+        } else if (definition instanceof SchemaDefinition) {
+            schema = null;
+        } else {
+            Assert.assertShouldNeverHappen();
+        }
+    }
+
+    private void removeFromMap(Map source, String key) {
+        if (source == null) {
+            return;
+        }
+        source.remove(key);
+    }
+
+    private void removeDirectiveExtension(DirectiveExtensionDefinition extension) {
+        List<DirectiveExtensionDefinition> extensions = directiveExtensions.get(extension.getName());
+        if (extensions == null) {
+            return;
+        }
+        extensions.remove(extension);
+        if (extensions.isEmpty()) {
+            directiveExtensions.remove(extension.getName());
+        }
     }
 
 
@@ -282,6 +440,7 @@ public class TypeDefinitionRegistry {
             return Optional.of(handleReDefinition(olderEntry, newEntry));
         } else {
             target.put(name, newEntry);
+            schemaParseOrder.addDefinition(newEntry);
         }
         return Optional.empty();
     }
@@ -294,13 +453,22 @@ public class TypeDefinitionRegistry {
             return Optional.of(handleReDefinition(olderEntry, newEntry));
         } else {
             target.put(name, newEntry);
+            schemaParseOrder.addDefinition(newEntry);
         }
         return Optional.empty();
     }
 
-    private <T> Optional<GraphQLError> defineExt(Map<String, List<T>> typeExtensions, T newEntry, Function<T, String> namerFunc) {
+    private <T extends TypeDefinition> Optional<GraphQLError> defineExt(Map<String, List<T>> typeExtensions, T newEntry, Function<T, String> namerFunc) {
         List<T> currentList = typeExtensions.computeIfAbsent(namerFunc.apply(newEntry), k -> new ArrayList<>());
         currentList.add(newEntry);
+        schemaParseOrder.addDefinition(newEntry);
+        return Optional.empty();
+    }
+
+    private Optional<GraphQLError> defineDirectiveExt(DirectiveExtensionDefinition newEntry) {
+        List<DirectiveExtensionDefinition> currentList = directiveExtensions.computeIfAbsent(newEntry.getName(), key -> new ArrayList<>());
+        currentList.add(newEntry);
+        schemaParseOrder.addDefinition(newEntry);
         return Optional.empty();
     }
 
@@ -338,6 +506,10 @@ public class TypeDefinitionRegistry {
         return new LinkedHashMap<>(inputObjectTypeExtensions);
     }
 
+    public Map<String, List<DirectiveExtensionDefinition>> directiveExtensions() {
+        return new LinkedHashMap<>(directiveExtensions);
+    }
+
     public Optional<SchemaDefinition> schemaDefinition() {
         return ofNullable(schema);
     }
@@ -362,56 +534,177 @@ public class TypeDefinitionRegistry {
         return new LinkedHashMap<>(directiveDefinitions);
     }
 
+    /**
+     * Returns true if the registry has a type of the specified {@link TypeName}
+     *
+     * @param typeName the type name to check
+     *
+     * @return true if the registry has a type by that type name
+     */
     public boolean hasType(TypeName typeName) {
         String name = typeName.getName();
+        return hasType(name);
+    }
+
+    /**
+     * Returns true if the registry has a type of the specified name
+     *
+     * @param name the name to check
+     *
+     * @return true if the registry has a type by that name
+     */
+    public boolean hasType(String name) {
         return types.containsKey(name) || ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS_DEFINITIONS.containsKey(name) || scalarTypes.containsKey(name) || objectTypeExtensions.containsKey(name);
     }
 
+    /**
+     * Returns an optional {@link TypeDefinition} of the specified type or {@link Optional#empty()}
+     *
+     * @param type the type to check
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     *
+     * @deprecated use the {@link #getTypeOrNull(Type)} variants instead since they avoid the allocation of an
+     * optional object
+     */
+    @Deprecated(since = "2025-07-7")
     public Optional<TypeDefinition> getType(Type type) {
-        String typeName = TypeInfo.typeInfo(type).getName();
-        return getType(typeName);
+        return Optional.ofNullable(getTypeOrNull(type));
     }
 
+    /**
+     * Returns an optional {@link TypeDefinition} of the specified type with the specified class or {@link Optional#empty()}
+     *
+     * @param type   the type to check
+     * @param ofType the class of {@link TypeDefinition}
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     *
+     * @deprecated use the {@link #getTypeOrNull(Type)} variants instead since they avoid the allocation of an
+     * optional object
+     */
+    @Deprecated(since = "2025-07-7")
     public <T extends TypeDefinition> Optional<T> getType(Type type, Class<T> ofType) {
-        String typeName = TypeInfo.typeInfo(type).getName();
-        return getType(typeName, ofType);
+        return Optional.ofNullable(getTypeOrNull(typeName(type), ofType));
     }
 
+    /**
+     * Returns an optional {@link TypeDefinition} of the specified type name or {@link Optional#empty()}
+     *
+     * @param typeName the type to check
+     *
+     * @return an optional {@link TypeDefinition} or empty if it's not found
+     *
+     * @deprecated use the {@link #getTypeOrNull(Type)} variants instead since they avoid the allocation of an
+     * optional object
+     */
+    @Deprecated(since = "2025-07-7")
     public Optional<TypeDefinition> getType(String typeName) {
+        return Optional.ofNullable(getTypeOrNull(typeName));
+    }
+
+    /**
+     * Returns an optional {@link TypeDefinition} of the specified type name with the specified class or {@link Optional#empty()}
+     *
+     * @param typeName the type to check
+     * @param ofType   the class of {@link TypeDefinition}
+     *
+     * @deprecated use the {@link #getTypeOrNull(Type)} variants instead since they avoid the allocation of an
+     * optional object
+     */
+    @Deprecated(since = "2025-07-7")
+    public <T extends TypeDefinition> Optional<T> getType(String typeName, Class<T> ofType) {
+        return Optional.ofNullable(getTypeOrNull(typeName, ofType));
+    }
+
+    /**
+     * Returns a {@link TypeDefinition} of the specified type or null
+     *
+     * @param type the type to check
+     *
+     * @return a {@link TypeDefinition} or null if it's not found
+     */
+    @Nullable
+    public TypeDefinition getTypeOrNull(Type type) {
+        return getTypeOrNull(typeName(type));
+    }
+
+    /**
+     * Returns a {@link TypeDefinition} of the specified type with the specified class or null
+     *
+     * @param type   the type to check
+     * @param ofType the class of {@link TypeDefinition}
+     *
+     * @return a {@link TypeDefinition} or null if it's not found
+     */
+    @Nullable
+    public <T extends TypeDefinition> T getTypeOrNull(Type type, Class<T> ofType) {
+        return getTypeOrNull(typeName(type), ofType);
+    }
+
+    /**
+     * Returns a {@link TypeDefinition} of the specified name or null
+     *
+     * @param typeName the type name to check
+     *
+     * @return a {@link TypeDefinition} or null if it's not found
+     */
+    @Nullable
+    public TypeDefinition getTypeOrNull(String typeName) {
         TypeDefinition<?> typeDefinition = types.get(typeName);
         if (typeDefinition != null) {
-            return Optional.of(typeDefinition);
+            return typeDefinition;
         }
         typeDefinition = scalars().get(typeName);
-        if (typeDefinition != null) {
-            return Optional.of(typeDefinition);
-        }
-        return Optional.empty();
+        return typeDefinition;
     }
 
-    public <T extends TypeDefinition> Optional<T> getType(String typeName, Class<T> ofType) {
-        Optional<TypeDefinition> type = getType(typeName);
-        if (type.isPresent()) {
-            TypeDefinition typeDefinition = type.get();
-            if (typeDefinition.getClass().equals(ofType)) {
+    /**
+     * Returns a {@link TypeDefinition} of the specified name and class or null
+     *
+     * @param typeName the type name to check
+     * @param ofType   the class of {@link TypeDefinition}
+     *
+     * @return a {@link TypeDefinition} or null if it's not found
+     */
+    @Nullable
+    public <T extends TypeDefinition> T getTypeOrNull(String typeName, Class<T> ofType) {
+        TypeDefinition type = getTypeOrNull(typeName);
+        if (type != null) {
+            if (type.getClass().equals(ofType)) {
                 //noinspection unchecked
-                return Optional.of((T) typeDefinition);
+                return (T) type;
             }
         }
-        return Optional.empty();
+        return null;
     }
 
     /**
      * Returns true if the specified type exists in the registry and is an abstract (Interface or Union) type
      *
      * @param type the type to check
+     *
      * @return true if its abstract
      */
     public boolean isInterfaceOrUnion(Type type) {
-        Optional<TypeDefinition> typeDefinition = getType(type);
-        if (typeDefinition.isPresent()) {
-            TypeDefinition definition = typeDefinition.get();
-            return definition instanceof UnionTypeDefinition || definition instanceof InterfaceTypeDefinition;
+        TypeDefinition typeDefinition = getTypeOrNull(type);
+        if (typeDefinition != null) {
+            return typeDefinition instanceof UnionTypeDefinition || typeDefinition instanceof InterfaceTypeDefinition;
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the specified type exists in the registry and is an object type or interface
+     *
+     * @param type the type to check
+     *
+     * @return true if its an object type or interface
+     */
+    public boolean isObjectTypeOrInterface(Type type) {
+        TypeDefinition typeDefinition = getTypeOrNull(type);
+        if (typeDefinition != null) {
+            return typeDefinition instanceof ObjectTypeDefinition || typeDefinition instanceof InterfaceTypeDefinition;
         }
         return false;
     }
@@ -420,10 +713,11 @@ public class TypeDefinitionRegistry {
      * Returns true if the specified type exists in the registry and is an object type
      *
      * @param type the type to check
+     *
      * @return true if its an object type
      */
     public boolean isObjectType(Type type) {
-        return getType(type, ObjectTypeDefinition.class).isPresent();
+        return getTypeOrNull(type, ObjectTypeDefinition.class) != null;
     }
 
     /**
@@ -431,13 +725,14 @@ public class TypeDefinitionRegistry {
      *
      * @param targetClass the class to search for
      * @param <T>         must extend TypeDefinition
+     *
      * @return a list of types of the target class
      */
     public <T extends TypeDefinition> List<T> getTypes(Class<T> targetClass) {
-        return types.values().stream()
-                .filter(targetClass::isInstance)
-                .map(targetClass::cast)
-                .collect(Collectors.toList());
+        return ImmutableKit.filterAndMap(types.values(),
+                targetClass::isInstance,
+                targetClass::cast
+        );
     }
 
     /**
@@ -445,6 +740,7 @@ public class TypeDefinitionRegistry {
      *
      * @param targetClass the class to search for
      * @param <T>         must extend TypeDefinition
+     *
      * @return a map of types
      */
     public <T extends TypeDefinition> Map<String, T> getTypesMap(Class<T> targetClass) {
@@ -453,62 +749,109 @@ public class TypeDefinitionRegistry {
     }
 
     /**
-     * Returns the list of object types that implement the given interface type
+     * Returns the list of object and interface types that implement the given interface type
      *
      * @param targetInterface the target to search for
+     *
      * @return the list of object types that implement the given interface type
+     *
+     * @see TypeDefinitionRegistry#getImplementationsOf(InterfaceTypeDefinition)
      */
-    public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
-        List<ObjectTypeDefinition> objectTypeDefinitions = getTypes(ObjectTypeDefinition.class);
-        return objectTypeDefinitions.stream().filter(objectTypeDefinition -> {
-            List<Type> implementsList = objectTypeDefinition.getImplements();
-            for (Type iFace : implementsList) {
-                Optional<InterfaceTypeDefinition> interfaceTypeDef = getType(iFace, InterfaceTypeDefinition.class);
-                if (interfaceTypeDef.isPresent()) {
-                    boolean equals = interfaceTypeDef.get().getName().equals(targetInterface.getName());
-                    if (equals) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }).collect(Collectors.toList());
+    public List<ImplementingTypeDefinition> getAllImplementationsOf(InterfaceTypeDefinition targetInterface) {
+        return ImmutableKit.filter(
+                getTypes(ImplementingTypeDefinition.class),
+                implementingTypeDefinition -> implementsInterface(implementingTypeDefinition, targetInterface));
     }
 
     /**
-     * Returns true of the abstract type is in implemented by the object type
+     * Returns the list of object interface types that implement the given interface type
      *
-     * @param abstractType       the abstract type to check (interface or union)
-     * @param possibleObjectType the object type to check
-     * @return true if the object type implements the abstract type
+     * @param targetInterface the target to search for
+     *
+     * @return the list of object types that implement the given interface type
+     *
+     * @see TypeDefinitionRegistry#getAllImplementationsOf(InterfaceTypeDefinition)
      */
-    @SuppressWarnings("ConstantConditions")
-    public boolean isPossibleType(Type abstractType, Type possibleObjectType) {
+    public List<ObjectTypeDefinition> getImplementationsOf(InterfaceTypeDefinition targetInterface) {
+        return ImmutableKit.filterAndMap(
+                getAllImplementationsOf(targetInterface),
+                typeDefinition -> typeDefinition instanceof ObjectTypeDefinition,
+                typeDefinition -> (ObjectTypeDefinition) typeDefinition
+        );
+    }
+
+    /**
+     * Returns true of the abstract type is in implemented by the object type or interface
+     *
+     * @param abstractType the abstract type to check (interface or union)
+     * @param possibleType the object type or interface to check
+     *
+     * @return true if the object type or interface implements the abstract type
+     */
+    public boolean isPossibleType(Type abstractType, Type possibleType) {
         if (!isInterfaceOrUnion(abstractType)) {
             return false;
         }
-        if (!isObjectType(possibleObjectType)) {
+        if (!isObjectTypeOrInterface(possibleType)) {
             return false;
         }
-        ObjectTypeDefinition targetObjectTypeDef = getType(possibleObjectType, ObjectTypeDefinition.class).get();
-        TypeDefinition abstractTypeDef = getType(abstractType).get();
+        TypeDefinition possibleTypeDef = assertNotNull(getTypeOrNull(possibleType));
+        TypeDefinition abstractTypeDef = assertNotNull(getTypeOrNull(abstractType));
+        return isPossibleTypeDef(abstractTypeDef, possibleTypeDef);
+    }
+
+    private boolean isPossibleTypeDef(TypeDefinition<?> abstractTypeDef, TypeDefinition<?> possibleTypeDef) {
         if (abstractTypeDef instanceof UnionTypeDefinition) {
-            List<Type> memberTypes = ((UnionTypeDefinition) abstractTypeDef).getMemberTypes();
-            for (Type memberType : memberTypes) {
-                Optional<ObjectTypeDefinition> checkType = getType(memberType, ObjectTypeDefinition.class);
-                if (checkType.isPresent()) {
-                    if (checkType.get().getName().equals(targetObjectTypeDef.getName())) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        } else {
-            InterfaceTypeDefinition iFace = (InterfaceTypeDefinition) abstractTypeDef;
-            List<ObjectTypeDefinition> objectTypeDefinitions = getImplementationsOf(iFace);
-            return objectTypeDefinitions.stream()
-                    .anyMatch(od -> od.getName().equals(targetObjectTypeDef.getName()));
+            return isUnionMember((UnionTypeDefinition) abstractTypeDef, possibleTypeDef);
         }
+        return implementsInterface(
+                (ImplementingTypeDefinition<?>) possibleTypeDef,
+                (InterfaceTypeDefinition) abstractTypeDef);
+    }
+
+    private boolean implementsInterface(
+            ImplementingTypeDefinition<?> implementingType,
+            InterfaceTypeDefinition targetInterface) {
+        String targetName = targetInterface.getName();
+        if (containsTypeNamed(implementingType.getImplements(), targetName)) {
+            return true;
+        }
+        for (ImplementingTypeDefinition<?> extension : getImplementingTypeExtensions(implementingType)) {
+            if (containsTypeNamed(extension.getImplements(), targetName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean containsTypeNamed(List<Type> types, String name) {
+        for (Type type : types) {
+            if (TypeInfo.getTypeName(type).getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private List<? extends ImplementingTypeDefinition<?>> getImplementingTypeExtensions(
+            ImplementingTypeDefinition<?> implementingType) {
+        if (implementingType instanceof InterfaceTypeDefinition) {
+            return interfaceTypeExtensions.getOrDefault(implementingType.getName(), List.of());
+        }
+        return objectTypeExtensions.getOrDefault(implementingType.getName(), List.of());
+    }
+
+    private boolean isUnionMember(UnionTypeDefinition unionType, TypeDefinition<?> possibleType) {
+        String possibleName = possibleType.getName();
+        if (containsTypeNamed(unionType.getMemberTypes(), possibleName)) {
+            return true;
+        }
+        for (UnionTypeExtensionDefinition extension : unionTypeExtensions.getOrDefault(unionType.getName(), List.of())) {
+            if (containsTypeNamed(extension.getMemberTypes(), possibleName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -516,52 +859,50 @@ public class TypeDefinitionRegistry {
      *
      * @param maybeSubType the type to check
      * @param superType    the equality checked type
+     *
      * @return true if maybeSubType is covariant or equal to superType
      */
-    @SuppressWarnings("SimplifiableIfStatement")
     public boolean isSubTypeOf(Type maybeSubType, Type superType) {
-        TypeInfo maybeSubTypeInfo = TypeInfo.typeInfo(maybeSubType);
-        TypeInfo superTypeInfo = TypeInfo.typeInfo(superType);
-        // Equivalent type is a valid subtype
-        if (maybeSubTypeInfo.equals(superTypeInfo)) {
-            return true;
-        }
-
-
         // If superType is non-null, maybeSubType must also be non-null.
-        if (superTypeInfo.isNonNull()) {
-            if (maybeSubTypeInfo.isNonNull()) {
-                return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
+        if (superType instanceof NonNullType) {
+            if (maybeSubType instanceof NonNullType) {
+                return isSubTypeOf(((NonNullType) maybeSubType).getType(), ((NonNullType) superType).getType());
             }
             return false;
         }
-        if (maybeSubTypeInfo.isNonNull()) {
+        if (maybeSubType instanceof NonNullType) {
             // If superType is nullable, maybeSubType may be non-null or nullable.
-            return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superType);
+            return isSubTypeOf(((NonNullType) maybeSubType).getType(), superType);
         }
 
         // If superType type is a list, maybeSubType type must also be a list.
-        if (superTypeInfo.isList()) {
-            if (maybeSubTypeInfo.isList()) {
-                return isSubTypeOf(maybeSubTypeInfo.unwrapOneType(), superTypeInfo.unwrapOneType());
+        if (superType instanceof ListType) {
+            if (maybeSubType instanceof ListType) {
+                return isSubTypeOf(((ListType) maybeSubType).getType(), ((ListType) superType).getType());
             }
             return false;
         }
-        if (maybeSubTypeInfo.isList()) {
+        if (maybeSubType instanceof ListType) {
             // If superType is not a list, maybeSubType must also be not a list.
             return false;
         }
 
-        // If superType type is an abstract type, maybeSubType type may be a currently
-        // possible object type.
-        if (isInterfaceOrUnion(superType) &&
-                isObjectType(maybeSubType) &&
-                isPossibleType(superType, maybeSubType)) {
+        // Equivalent type is a valid subtype
+        if (typeName(maybeSubType).equals(typeName(superType))) {
             return true;
         }
 
-        // Otherwise, the child type is not a valid subtype of the parent type.
-        return false;
+        // If superType type is an abstract type, maybeSubType type may be a currently
+        // possible object type.
+        TypeDefinition<?> superTypeDef = getTypeOrNull(superType);
+        if (!(superTypeDef instanceof UnionTypeDefinition || superTypeDef instanceof InterfaceTypeDefinition)) {
+            return false;
+        }
+        TypeDefinition<?> maybeSubTypeDef = getTypeOrNull(maybeSubType);
+        if (!(maybeSubTypeDef instanceof ObjectTypeDefinition || maybeSubTypeDef instanceof InterfaceTypeDefinition)) {
+            return false;
+        }
+        return isPossibleTypeDef(superTypeDef, maybeSubTypeDef);
     }
 
 }

@@ -1,14 +1,18 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
 @Internal
 public class GraphqlTypeComparators {
+
+    private static final Comparator<? super GraphQLSchemaElement> BY_NAME_ASCENDING =
+            Comparator.comparing(graphQLSchemaElement ->
+                    ((GraphQLNamedSchemaElement) graphQLSchemaElement).getName());
 
     /**
      * This sorts the list of {@link graphql.schema.GraphQLType} objects (by name) and allocates a new sorted
@@ -21,9 +25,7 @@ public class GraphqlTypeComparators {
      * @return a new allocated list of sorted things
      */
     public static <T extends GraphQLSchemaElement> List<T> sortTypes(Comparator<? super GraphQLSchemaElement> comparator, Collection<T> types) {
-        List<T> sorted = new ArrayList<>(types);
-        sorted.sort(comparator);
-        return sorted;
+        return ImmutableList.sortedCopyOf(comparator, types);
     }
 
     /**
@@ -41,7 +43,7 @@ public class GraphqlTypeComparators {
      * @return a comparator that compares {@link graphql.schema.GraphQLType} objects by ascending name
      */
     public static Comparator<? super GraphQLSchemaElement> byNameAsc() {
-        return Comparator.comparing(graphQLSchemaElement -> ((GraphQLNamedSchemaElement) graphQLSchemaElement).getName());
+        return BY_NAME_ASCENDING;
     }
 
 }

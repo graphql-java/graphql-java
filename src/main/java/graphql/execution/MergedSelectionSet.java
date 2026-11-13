@@ -1,22 +1,27 @@
 package graphql.execution;
 
-import graphql.Assert;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 
 @PublicApi
+@NullMarked
 public class MergedSelectionSet {
 
     private final Map<String, MergedField> subFields;
+    private final List<String> keys;
 
-    private MergedSelectionSet(Map<String, MergedField> subFields) {
-        this.subFields = Assert.assertNotNull(subFields);
+    protected MergedSelectionSet(Map<String, MergedField> subFields) {
+        this.subFields = subFields == null ? ImmutableMap.of() : subFields;
+        this.keys =  ImmutableList.copyOf(this.subFields.keySet());
     }
 
     public Map<String, MergedField> getSubFields() {
@@ -24,7 +29,7 @@ public class MergedSelectionSet {
     }
 
     public List<MergedField> getSubFieldsList() {
-        return new ArrayList<>(subFields.values());
+        return ImmutableList.copyOf(subFields.values());
     }
 
     public int size() {
@@ -35,12 +40,12 @@ public class MergedSelectionSet {
         return subFields.keySet();
     }
 
-    public MergedField getSubField(String key) {
+    public @Nullable MergedField getSubField(String key) {
         return subFields.get(key);
     }
 
     public List<String> getKeys() {
-        return new ArrayList<>(keySet());
+        return keys;
     }
 
     public boolean isEmpty() {
@@ -51,11 +56,12 @@ public class MergedSelectionSet {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
-        private Map<String, MergedField> subFields = new LinkedHashMap<>();
+
+        private Map<String, MergedField> subFields;
 
         private Builder() {
-
         }
 
         public Builder subFields(Map<String, MergedField> subFields) {

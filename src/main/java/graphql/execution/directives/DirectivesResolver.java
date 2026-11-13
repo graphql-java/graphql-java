@@ -1,6 +1,13 @@
 package graphql.execution.directives;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.ImmutableBiMap;
+import com.google.common.collect.ImmutableList;
+import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
+import graphql.execution.CoercedVariables;
 import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
 import graphql.schema.GraphQLArgument;
@@ -8,8 +15,8 @@ import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -18,26 +25,30 @@ import java.util.Map;
 @Internal
 public class DirectivesResolver {
 
-    private final ValuesResolver valuesResolver = new ValuesResolver();
-
     public DirectivesResolver() {
     }
 
-    public Map<String, GraphQLDirective> resolveDirectives(List<Directive> directives, GraphQLSchema schema, Map<String, Object> variables) {
+    public BiMap<GraphQLDirective, Directive> resolveDirectives(List<Directive> directives, GraphQLSchema schema, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
-        Map<String, GraphQLDirective> directiveMap = new LinkedHashMap<>();
+        BiMap<GraphQLDirective, Directive> directiveMap = HashBiMap.create();
         directives.forEach(directive -> {
             GraphQLDirective protoType = schema.getDirective(directive.getName());
             if (protoType != null) {
-                GraphQLDirective newDirective = protoType.transform(builder -> buildArguments(builder, codeRegistry, protoType, directive, variables));
-                directiveMap.put(newDirective.getName(), newDirective);
+                GraphQLDirective graphQLDirective = protoType.transform(builder -> buildArguments(builder, codeRegistry, protoType, directive, variables, graphQLContext, locale));
+                directiveMap.put(graphQLDirective, directive);
             }
         });
-        return directiveMap;
+        return ImmutableBiMap.copyOf(directiveMap);
     }
 
-    private void buildArguments(GraphQLDirective.Builder directiveBuilder, GraphQLCodeRegistry codeRegistry, GraphQLDirective protoType, Directive fieldDirective, Map<String, Object> variables) {
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), variables);
+    private void buildArguments(GraphQLDirective.Builder directiveBuilder,
+                                GraphQLCodeRegistry codeRegistry,
+                                GraphQLDirective protoType,
+                                Directive fieldDirective,
+                                CoercedVariables variables,
+                                GraphQLContext graphQLContext,
+                                Locale locale) {
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), variables, graphQLContext, locale);
         directiveBuilder.clearArguments();
         protoType.getArguments().forEach(protoArg -> {
             if (argumentValues.containsKey(protoArg.getName())) {
@@ -45,11 +56,41 @@ public class DirectivesResolver {
                 GraphQLArgument newArgument = protoArg.transform(argBuilder -> argBuilder.value(argValue));
                 directiveBuilder.argument(newArgument);
             } else {
-                // this means they can ask for the argument default value because the arugment on the directive
+                // this means they can ask for the argument default value because the argument on the directive
                 // object is present - but null
                 GraphQLArgument newArgument = protoArg.transform(argBuilder -> argBuilder.value(null));
                 directiveBuilder.argument(newArgument);
             }
         });
     }
+
+    public ImmutableList<QueryAppliedDirective> toAppliedDirectives(List<Directive> directives, GraphQLSchema schema, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
+        BiMap<GraphQLDirective, Directive> directivesMap = resolveDirectives(directives, schema, variables, graphQLContext, locale);
+        return ImmutableKit.map(directivesMap.keySet(), this::toAppliedDirective);
+    }
+
+    /**
+     * This helps us remodel the applied GraphQLDirective back to the better modelled and named {@link QueryAppliedDirective}
+     *
+     * @param directive the directive to remodel
+     *
+     * @return a QueryAppliedDirective
+     */
+    public QueryAppliedDirective toAppliedDirective(GraphQLDirective directive) {
+        QueryAppliedDirective.Builder builder = QueryAppliedDirective.newDirective();
+        builder.name(directive.getName());
+        for (GraphQLArgument argument : directive.getArguments()) {
+            builder.argument(toAppliedArgument(argument));
+        }
+        return builder.build();
+    }
+
+    public QueryAppliedDirectiveArgument toAppliedArgument(GraphQLArgument argument) {
+        return QueryAppliedDirectiveArgument.newArgument()
+                .name(argument.getName())
+                .type(argument.getType())
+                .inputValueWithState(argument.getArgumentValue())
+                .build();
+    }
+
 }

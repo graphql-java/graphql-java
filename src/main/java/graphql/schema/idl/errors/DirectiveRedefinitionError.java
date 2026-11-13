@@ -1,9 +1,11 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.DirectiveDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class DirectiveRedefinitionError extends BaseError {
 
     public DirectiveRedefinitionError(DirectiveDefinition newEntry, DirectiveDefinition oldEntry) {

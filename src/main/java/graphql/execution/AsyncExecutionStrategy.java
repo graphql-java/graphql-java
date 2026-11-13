@@ -1,31 +1,27 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
-import graphql.execution.defer.DeferSupport;
-import graphql.execution.defer.DeferredCall;
-import graphql.execution.defer.DeferredErrorSupport;
-import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
+import graphql.PublicApi;
+import graphql.execution.incremental.DeferredExecutionSupport;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLObjectType;
+import graphql.introspection.Introspection;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
-import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
+import static graphql.execution.Async.CombinedBuilder.OnCancel.DROP_PENDING;
+import static graphql.execution.Async.CombinedBuilder.OnCancel.WAIT_FOR_PENDING;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
  */
+@PublicApi
+@NullMarked
 public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     /**
@@ -47,50 +43,53 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-
+        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
-        ExecutionStrategyInstrumentationContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
+        ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters, executionContext.getInstrumentationState()));
 
         MergedSelectionSet fields = parameters.getFields();
-        List<String> fieldNames = new ArrayList<>(fields.keySet());
-        List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>();
-        List<String> resolvedFields = new ArrayList<>();
-        for (String fieldName : fieldNames) {
-            MergedField currentField = fields.getSubField(fieldName);
+        List<String> fieldNames = fields.getKeys();
 
-            ExecutionPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
-
-            resolvedFields.add(fieldName);
-            CompletableFuture<FieldValueInfo> future;
-
-            if (isDeferred(executionContext, newParameters, currentField)) {
-                executionStrategyCtx.onDeferredField(currentField);
-                future = resolveFieldWithInfoToNull(executionContext, newParameters);
-            } else {
-                future = resolveFieldWithInfo(executionContext, newParameters);
-            }
-            futures.add(future);
+        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
+        if (isNotSensible.isPresent()) {
+            return CompletableFuture.completedFuture(isNotSensible.get());
         }
-        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-        executionStrategyCtx.onDispatched(overallResult);
 
-        Async.each(futures).whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, resolvedFields, overallResult);
-            if (throwable != null) {
-                handleResultsConsumer.accept(null, throwable.getCause());
+        DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
+
+        dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters, deferredExecutionSupport.getNonDeferredFieldNames(fieldNames).size());
+        Async.CombinedBuilder<FieldValueInfo> futures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
+        dataLoaderDispatcherStrategy.finishedFetching(executionContext, parameters);
+
+
+        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        executionStrategyCtx.onDispatched();
+
+        CompletableFuture<Void> cancelCF = getCancellationFuture(executionContext);
+        futures.await(cancelCF, DROP_PENDING).whenComplete((completeValueInfos, throwable) -> {
+            List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+
+            throwable = executionContext.possibleCancellation(throwable);
+
+            if (throwable != null && !(completeValueInfos != null && capturePartialResults(executionContext))) {
+                // a genuine field failure, or a cancellation we cannot surface partial results for:
+                // there is nothing usable to return, so just report the error
+                handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult).accept(null, throwable);
                 return;
             }
-            List<CompletableFuture<ExecutionResult>> executionResultFuture = completeValueInfos.stream().map(FieldValueInfo::getFieldValue).collect(Collectors.toList());
-            executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
-            Async.each(executionResultFuture).whenComplete(handleResultsConsumer);
+
+            // normal completion, or capturePartialResults(..) on cancel: completeValueInfos holds the
+            // FieldValueInfos that completed (with null entries for any cancelled before completing)
+            completeFieldValues(executionContext, parameters, executionStrategyCtx, dataLoaderDispatcherStrategy,
+                    completeValueInfos, fieldsExecutedOnInitialResult, cancelCF, overallResult);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesException(ex, parameters);
+            executionStrategyCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;
         });
@@ -99,56 +98,32 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         return overallResult;
     }
 
-    private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedField currentField) {
-        DeferSupport deferSupport = executionContext.getDeferSupport();
-        if (deferSupport.checkForDeferDirective(currentField, executionContext.getVariables())) {
-            DeferredErrorSupport errorSupport = new DeferredErrorSupport();
-
-            // with a deferred field we are really resetting where we execute from, that is from this current field onwards
-            Map<String, MergedField> fields = new LinkedHashMap<>();
-            fields.put(currentField.getName(), currentField);
-
-            ExecutionStrategyParameters callParameters = parameters.transform(builder ->
-                    {
-                        MergedSelectionSet mergedSelectionSet = newMergedSelectionSet().subFields(fields).build();
-                        builder.deferredErrorSupport(errorSupport)
-                                .field(currentField)
-                                .fields(mergedSelectionSet)
-                                .parent(null) // this is a break in the parent -> child chain - its a new start effectively
-                                .listSize(0)
-                                .currentListIndex(0);
-                    }
-            );
-
-            DeferredCall call = new DeferredCall(parameters.getPath(), deferredExecutionResult(executionContext, callParameters), errorSupport);
-            deferSupport.enqueue(call);
-            return true;
-        }
-        return false;
-    }
-
+    /**
+     * Turns the completed {@link FieldValueInfo}s into field values and completes the {@code overallResult}.
+     * <p>
+     * When {@link #capturePartialResults(ExecutionContext)} is enabled {@code completeValueInfos} may
+     * contain {@code null} entries for fields that were cancelled before they completed; those become
+     * {@code null} field values and are excluded from the instrumentation callbacks.
+     */
     @SuppressWarnings("FutureReturnValueIgnored")
-    private Supplier<CompletableFuture<ExecutionResult>> deferredExecutionResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        return () -> {
-            GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
-            GraphQLObjectType fieldContainer = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
-
-            Instrumentation instrumentation = executionContext.getInstrumentation();
-            DeferredFieldInstrumentationContext fieldCtx = instrumentation.beginDeferredField(
-                    new InstrumentationDeferredFieldParameters(executionContext, parameters, fieldDef, createExecutionStepInfo(executionContext, parameters, fieldDef, fieldContainer))
-            );
-            CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
-            fieldCtx.onDispatched(result);
-            CompletableFuture<FieldValueInfo> fieldValueInfoFuture = resolveFieldWithInfo(executionContext, parameters);
-
-            fieldValueInfoFuture.whenComplete((fieldValueInfo, throwable) -> {
-                fieldCtx.onFieldValueInfo(fieldValueInfo);
-
-                CompletableFuture<ExecutionResult> execResultFuture = fieldValueInfo.getFieldValue();
-                execResultFuture = execResultFuture.whenComplete(fieldCtx::onCompleted);
-                Async.copyResults(execResultFuture, result);
-            });
-            return result;
-        };
+    private void completeFieldValues(ExecutionContext executionContext,
+                                     ExecutionStrategyParameters parameters,
+                                     ExecutionStrategyInstrumentationContext executionStrategyCtx,
+                                     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy,
+                                     List<FieldValueInfo> completeValueInfos,
+                                     List<String> fieldNames,
+                                     @Nullable CompletableFuture<Void> cancelCF,
+                                     CompletableFuture<ExecutionResult> overallResult) {
+        Async.CombinedBuilder<@Nullable Object> fieldValuesFutures = fieldValuesCombinedBuilder(completeValueInfos);
+        // null entries only occur when capturePartialResults(..) is enabled; the instrumentation callbacks
+        // should not see them, so filter them out (nonNullFieldValueInfos returns the list as-is if none)
+        List<FieldValueInfo> valueInfosForInstrumentation = nonNullFieldValueInfos(completeValueInfos);
+        dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(valueInfosForInstrumentation, parameters);
+        executionStrategyCtx.onFieldValuesInfo(valueInfosForInstrumentation);
+        // value-phase futures are cancellation-aware (nested object/list results self-complete with
+        // their own partial data on cancel), so wait for them to settle rather than harvesting nulls
+        fieldValuesFutures.await(cancelCF, WAIT_FOR_PENDING)
+                .whenComplete(handleResults(executionContext, fieldNames, overallResult));
     }
+
 }

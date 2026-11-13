@@ -1,0 +1,85 @@
+package graphql.schema.visitor;
+
+import graphql.PublicApi;
+import static graphql.Assert.assertNotNull;
+import graphql.schema.GraphQLSchemaElement;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
+import graphql.util.TreeTransformerUtil;
+
+/**
+ * This indicates what traversal control to apply during the visitation
+ * and can be created via calls to methods like {@link GraphQLSchemaVisitorEnvironment#ok()}
+ * or {@link GraphQLSchemaVisitorEnvironment#changeNode(GraphQLSchemaElement)} say
+ */
+@PublicApi
+@NullMarked
+public class GraphQLSchemaTraversalControl {
+    private final @Nullable GraphQLSchemaElement element;
+    private final Control control;
+
+    enum Control {
+        CONTINUE(TraversalControl.CONTINUE),
+        QUIT(TraversalControl.QUIT),
+        CHANGE(TraversalControl.CONTINUE),
+        DELETE(TraversalControl.CONTINUE),
+        INSERT_BEFORE(TraversalControl.CONTINUE),
+        INSERT_AFTER(TraversalControl.CONTINUE);
+
+        private final TraversalControl traversalControl;
+
+        Control(TraversalControl traversalControl) {
+            this.traversalControl = traversalControl;
+        }
+
+        public TraversalControl toTraversalControl() {
+            return traversalControl;
+        }
+    }
+
+    static final GraphQLSchemaTraversalControl CONTINUE = new GraphQLSchemaTraversalControl(Control.CONTINUE, null);
+    static final GraphQLSchemaTraversalControl QUIT = new GraphQLSchemaTraversalControl(Control.QUIT, null);
+    static final GraphQLSchemaTraversalControl DELETE = new GraphQLSchemaTraversalControl(Control.DELETE, null);
+
+    GraphQLSchemaTraversalControl(Control control, @Nullable GraphQLSchemaElement element) {
+        this.element = element;
+        this.control = control;
+    }
+
+    @Nullable GraphQLSchemaElement getElement() {
+        return element;
+    }
+
+    Control getControl() {
+        return control;
+    }
+
+    boolean isAbortive() {
+        return control == Control.QUIT;
+    }
+
+    boolean isMutative() {
+        return control == Control.DELETE || control == Control.CHANGE || control == Control.INSERT_AFTER || control == Control.INSERT_BEFORE;
+    }
+
+    TraversalControl toTraversalControl(TraverserContext<GraphQLSchemaElement> context) {
+        if (control == Control.CONTINUE || control == Control.QUIT) {
+            return control.toTraversalControl();
+        }
+        if (control == Control.DELETE) {
+            TreeTransformerUtil.deleteNode(context);
+        }
+        if (control == Control.CHANGE) {
+            TreeTransformerUtil.changeNode(context, assertNotNull(element, "element should not be null for CHANGE"));
+        }
+        if (control == Control.INSERT_AFTER) {
+            TreeTransformerUtil.insertAfter(context, assertNotNull(element, "element should not be null for INSERT_AFTER"));
+        }
+        if (control == Control.INSERT_BEFORE) {
+            TreeTransformerUtil.insertAfter(context, assertNotNull(element, "element should not be null for INSERT_BEFORE"));
+        }
+        return TraversalControl.CONTINUE;
+    }
+}

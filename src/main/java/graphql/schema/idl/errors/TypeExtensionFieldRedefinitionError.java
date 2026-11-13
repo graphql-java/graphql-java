@@ -1,5 +1,6 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.AbstractNode;
 import graphql.language.FieldDefinition;
 import graphql.language.InputValueDefinition;
@@ -7,6 +8,7 @@ import graphql.language.TypeDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class TypeExtensionFieldRedefinitionError extends BaseError {
 
     public TypeExtensionFieldRedefinitionError(TypeDefinition typeDefinition, FieldDefinition fieldDefinition) {

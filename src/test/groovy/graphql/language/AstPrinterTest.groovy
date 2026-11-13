@@ -3,6 +3,8 @@ package graphql.language
 import graphql.parser.Parser
 import spock.lang.Specification
 
+import java.nio.CharBuffer
+
 class AstPrinterTest extends Specification {
 
     Document parse(String input) {
@@ -18,6 +20,16 @@ class AstPrinterTest extends Specification {
     String printAst(Node node) {
         AstPrinter.printAst(node)
     }
+
+    boolean isParseableAst(ast) {
+        try {
+            def document = parse(ast)
+            return document != null
+        } catch (Exception ignored) {
+            return false
+        }
+    }
+
 
     def starWarsSchema = """
 # objects can have comments
@@ -199,7 +211,7 @@ scalar DateTime
         String output = printAst(document)
 
         expect:
-        output == """query {
+        output == """{
   empireHero: hero(episode: EMPIRE) {
     name
   }
@@ -235,7 +247,7 @@ fragment comparisonFields on Character {
         String output = printAst(document)
 
         expect:
-        output == """query {
+        output == """{
   leftComparison: hero(episode: EMPIRE) {
     ...comparisonFields
   }
@@ -280,7 +292,7 @@ query HeroNameAndFriends($episode: Episode) {
         def query = '''
 query Hero($episode: Episode, $withFriends: Boolean!) {
   hero ( episode: $episode) {
-    name
+    name @repeatable @repeatable
     friends @include (if : $withFriends) {
       name
     }
@@ -291,9 +303,10 @@ query Hero($episode: Episode, $withFriends: Boolean!) {
         String output = printAst(document)
 
         expect:
+        isParseableAst(output)
         output == '''query Hero($episode: Episode, $withFriends: Boolean!) {
   hero(episode: $episode) {
-    name
+    name @repeatable @repeatable
     friends @include(if: $withFriends) {
       name
     }
@@ -332,7 +345,39 @@ query HeroForEpisode($ep: Episode!) {
   }
 }
 '''
+        isParseableAst(output)
     }
+
+    def "ast printing of inline fragments in compactMode"() {
+        def query = '''
+query HeroForEpisode($ep: Episode!) {
+  hero(episode: $ep) {
+    name
+       ... on Droid {
+        primaryFunction
+        id
+     }
+         ... on Human {
+        height
+        id
+    }
+    age {
+      inMonths
+      inYears
+    }
+  }
+}'''
+        when:
+        def document = parse(query)
+        String output = AstPrinter.printAstCompact(document)
+
+        then:
+
+        isParseableAst(output)
+
+        output == 'query HeroForEpisode($ep:Episode!){hero(episode:$ep){name ...on Droid{primaryFunction id}...on Human{height id}age{inMonths inYears}}}'
+    }
+
 
 //-------------------------------------------------
     def "ast printing of default variables"() {
@@ -359,6 +404,45 @@ query HeroNameAndFriends($episode: Episode = "JEDI") {
   }
 }
 '''
+    }
+
+    def "ast printing of executable descriptions"() {
+        def query = '''
+"Fetches a hero"
+query getHero(
+  "The hero id"
+  $id: ID!
+) {
+  hero(id: $id) {
+    ...heroFields
+  }
+}
+
+"Reusable hero fields"
+fragment heroFields on Hero {
+  name
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''"Fetches a hero"
+query getHero(
+  "The hero id"
+  $id: ID!
+) {
+  hero(id: $id) {
+    ...heroFields
+  }
+}
+
+"Reusable hero fields"
+fragment heroFields on Hero {
+  name
+}
+'''
+        isParseableAst(output)
     }
 
 //-------------------------------------------------
@@ -396,6 +480,26 @@ query NullEpisodeQuery {
         expect:
         output == '''query NullEpisodeQuery {
   human(id: "") {
+    name
+  }
+}
+'''
+    }
+
+    def "ast printing of blank string"() {
+        def query = '''
+query NullEpisodeQuery {
+  human(id: "     ") {
+    name
+  }
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''query NullEpisodeQuery {
+  human(id: "     ") {
     name
   }
 }
@@ -452,8 +556,66 @@ type Query {
 
     }
 
+    def "print field descriptions"() {
+        def query = '''type Query {
+  "description"
+  field(
+  "description"
+  a: String): String
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+        expect:
+        output == '''type Query {
+  "description"
+  field(
+  "description"
+  a: String): String
+}
+'''
+    }
+
+    def "print empty description"() {
+        def query = '''
+""
+scalar Demo
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''""
+scalar Demo
+'''
+    }
+
+    def "escapes triple quotes in multi line descriptions"() {
+        def query = '''
+"""
+x \\""" scalar Injected \\"""
+"""
+scalar Demo
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''"""
+x \\""" scalar Injected \\"""
+"""
+scalar Demo
+'''
+        isParseableAst(output)
+        parse(output).definitions.collect { it.name } == ["Demo"]
+    }
+
     def "print type extensions"() {
         def query = '''
+    extend schema {
+        query: Query
+    }
+    
     extend type Object @directive {
         objectField : String
     }    
@@ -479,7 +641,11 @@ type Query {
         String output = printAst(document)
 
         expect:
-        output == '''extend type Object @directive {
+        output == '''extend schema {
+  query: Query
+}
+
+extend type Object @directive {
   objectField: String
 }
 
@@ -507,10 +673,10 @@ extend input Input @directive {
         def query = '''
     { 
         #comments go away
-        aliasOfFoo : foo(arg1 : "val1", args2 : "val2") @isCached { #   and this comment as well
+        aliasOfFoo : foo(arg1 : "val1", args2 : "val2") @isCached @orIsItNotCached     { #   and this comment as well
             hello
         } 
-        world @neverCache @okThenCache
+        world @neverCache @youSaidCache @okThenCache 
     }
     
     fragment FX on SomeType {
@@ -521,7 +687,17 @@ extend input Input @directive {
         String output = AstPrinter.printAstCompact(document)
 
         expect:
-        output == '''query {aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached {hello} world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+        isParseableAst(output)
+        output == '''{aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached@orIsItNotCached{hello}world @neverCache@youSaidCache@okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+    }
+
+    def "can tighten fields with no query prefix"() {
+        when:
+        def doc = parse("{root { fooA{ midB{ leafB}} fooB{ midB{ leafB         }}}}")
+        def output = AstPrinter.printAstCompact(doc)
+        then:
+        isParseableAst(output)
+        output == "{root{fooA{midB{leafB}}fooB{midB{leafB}}}}"
     }
 
     def "print ast with inline fragment without type condition"() {
@@ -539,8 +715,8 @@ extend input Input @directive {
         String outputFull = AstPrinter.printAst(document)
 
         expect:
-        outputCompact == '''query {foo {... {hello}}}'''
-        outputFull == '''query {
+        outputCompact == '''{foo{...{hello}}}'''
+        outputFull == '''{
   foo {
     ... {
       hello
@@ -548,47 +724,165 @@ extend input Input @directive {
   }
 }
 '''
+        isParseableAst(outputCompact)
+        isParseableAst(outputFull)
     }
 
     def 'StringValue is converted to valid Strings'() {
 
-        AstPrinter astPrinter = new AstPrinter(true)
-
         when:
-        def result = astPrinter.value(new StringValue(strValue))
+        def result = AstPrinter.printAstCompact(new StringValue(strValue))
 
         then:
         result == expected
 
         where:
-        strValue                                  | expected
-        'VALUE'                                   | '"VALUE"'
-        'VA\n\t\f\n\b\\LUE'                       | '"VA\\n\\t\\f\\n\\b\\\\LUE"'
-        'VA\\L"UE'                                | '"VA\\\\L\\"UE"'
+        strValue            | expected
+        'VALUE'             | '"VALUE"'
+        'VA\n\t\f\n\b\\LUE' | '"VA\\n\\t\\f\\n\\b\\\\LUE"'
+        'VA\\L"UE'          | '"VA\\\\L\\"UE"'
     }
 
-    def "1105 - encoding of json strings"() {
+    def 'Interfaces implementing interfaces'() {
+        given:
+        def interfaceType = InterfaceTypeDefinition
+                .newInterfaceTypeDefinition()
+                .name("Resource")
+                .implementz(new TypeName("Node"))
+                .implementz(new TypeName("Extra"))
+                .build()
+
 
         when:
-        def json = AstPrinter.escapeString(strValue)
+        def result = AstPrinter.printAstCompact(interfaceType)
 
         then:
-        json == expected
+        result == "interface Resource implements Node & Extra"
 
-        where:
-        strValue                                  | expected
-        ''                                        | ''
-        'json'                                    | 'json'
-        'quotation-"'                             | 'quotation-\\"'
-        'reverse-solidus-\\'                      | 'reverse-solidus-\\\\'
-        'backspace-\b'                            | 'backspace-\\b'
-        'formfeed-\f'                             | 'formfeed-\\f'
-        'newline-\n'                              | 'newline-\\n'
-        'carriage-return-\r'                      | 'carriage-return-\\r'
-        'horizontal-tab-\t'                       | 'horizontal-tab-\\t'
-
-        // this is some AST from issue 1105
-        '''"{"operator":"eq", "operands": []}"''' | '''\\"{\\"operator\\":\\"eq\\", \\"operands\\": []}\\"'''
     }
 
+    def 'Interfaces implementing interfaces in extension'() {
+        given:
+        def interfaceType = InterfaceTypeExtensionDefinition
+                .newInterfaceTypeExtensionDefinition()
+                .name("Resource")
+                .implementz(new TypeName("Node"))
+                .implementz(new TypeName("Extra"))
+                .build()
+
+        when:
+        def result = AstPrinter.printAstCompact(interfaceType)
+
+        then:
+        result == "extend interface Resource implements Node & Extra"
+
+    }
+
+    def "directive definitions can be printed"() {
+
+        given:
+        def directiveDef1 = DirectiveDefinition.newDirectiveDefinition()
+                .name("d1")
+                .repeatable(true)
+                .directiveLocation(DirectiveLocation.newDirectiveLocation().name("FIELD").build())
+                .directiveLocation(DirectiveLocation.newDirectiveLocation().name("OBJECT").build())
+                .build()
+
+        def directiveDef2 = DirectiveDefinition.newDirectiveDefinition()
+                .name("d2")
+                .repeatable(false)
+                .directiveLocation(DirectiveLocation.newDirectiveLocation().name("FIELD").build())
+                .directiveLocation(DirectiveLocation.newDirectiveLocation().name("ENUM").build())
+                .build()
+
+        when:
+        def result = AstPrinter.printAstCompact(directiveDef1)
+
+        then:
+        result == "directive @d1 repeatable on FIELD | OBJECT"
+
+        when:
+        result = AstPrinter.printAstCompact(directiveDef2)
+
+        then:
+        result == "directive @d2 on FIELD | ENUM"
+
+    }
+
+    def "empty type does not include braces"() {
+        def sdl = "type Query"
+        def document = parse(sdl)
+
+        when:
+        String output = printAst(document)
+        then:
+        output == "type Query\n"
+    }
+
+    def "empty selection set does not include braces"() {
+        // technically below is not valid graphql and will never be parsed as is
+        def field_with_empty_selection_set = Field.newField("foo")
+                .selectionSet(SelectionSet.newSelectionSet().build())
+                .build()
+
+        when:
+        String output = printAst(field_with_empty_selection_set)
+        then:
+        output == "foo"
+    }
+
+    def "printAstTo writes to a StringBuilder instance"() {
+        def document = parse(starWarsSchema)
+        def output = new StringBuilder()
+        AstPrinter.printAstTo(document.getDefinitions().get(0), output)
+
+        expect:
+        output.toString() == """schema {
+  query: QueryType
+  mutation: Mutation
+}"""
+    }
+
+    def "printAstTo writes to a Writer instance"() {
+        def document = parse(starWarsSchema)
+        def output = new StringWriter()
+        AstPrinter.printAstTo(document.getDefinitions().get(0), output)
+
+        expect:
+        output.toString() == """schema {
+  query: QueryType
+  mutation: Mutation
+}"""
+    }
+
+    def "printAstTo writes to an Appendable instance"() {
+        def document = parse(starWarsSchema)
+        def output = CharBuffer.allocate(100)
+        AstPrinter.printAstTo(document.getDefinitions().get(0), output)
+        output.flip()
+
+        expect:
+        output.toString() == """schema {
+  query: QueryType
+  mutation: Mutation
+}"""
+    }
+
+    def "operation keyword is printed independently of the default locale"() {
+        // see https://github.com/graphql-java/graphql-java/issues/3385
+        given:
+        Locale oldLocale = Locale.getDefault()
+        Locale.setDefault(new Locale("tr", "TR"))
+
+        when:
+        String output = printAst("mutation M { f } subscription S { f }")
+
+        then:
+        output.contains("mutation M")
+        output.contains("subscription S")
+        isParseableAst(output)
+
+        cleanup:
+        Locale.setDefault(oldLocale)
+    }
 }

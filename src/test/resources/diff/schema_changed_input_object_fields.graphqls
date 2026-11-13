@@ -4,7 +4,8 @@ schema {
 }
 
 type Query {
-    being(id : ID, type : String = "wizard") : Being
+    #being(id : ID, type : String = "wizard") : Being
+    being(id : ID, type : String, newArg : String!) : Being
     beings(type : String) : [Being]
 
     wizards : [Istari]
@@ -12,6 +13,7 @@ type Query {
     deities : [Deity]
 
     allCharacters : [Character!] @deprecated(reason: "no longer supported")
+    allCharactersByTemperament : [[Character]]
 
     customScalar : CustomScalar
 }
@@ -22,9 +24,14 @@ type Mutation {
 }
 
 input Questor {
+    #beingID : ID!
     beingID : ID
+
+    #queryTarget : String
     queryTarget : Int
-    nestedInput : NestedInput
+
+    #nestedInput : NestedInput
+    nestedInput : NestedInput!
     newMandatoryField : String!
 }
 

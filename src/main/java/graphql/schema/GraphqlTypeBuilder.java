@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 
 import java.util.Comparator;
@@ -8,26 +9,27 @@ import java.util.Map;
 
 import static graphql.util.FpKit.valuesToList;
 
+@SuppressWarnings("unchecked")
 @Internal
-public abstract class GraphqlTypeBuilder {
+public abstract class GraphqlTypeBuilder<B extends GraphqlTypeBuilder<B>> {
 
     protected String name;
     protected String description;
     protected GraphqlTypeComparatorRegistry comparatorRegistry = GraphqlTypeComparatorRegistry.AS_IS_REGISTRY;
 
-    GraphqlTypeBuilder name(String name) {
+    public B name(String name) {
         this.name = name;
-        return this;
+        return (B) this;
     }
 
-    GraphqlTypeBuilder description(String description) {
+    public B description(String description) {
         this.description = description;
-        return this;
+        return (B) this;
     }
 
-    GraphqlTypeBuilder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
+    public B comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
         this.comparatorRegistry = comparatorRegistry;
-        return this;
+        return (B) this;
     }
 
 
@@ -37,7 +39,7 @@ public abstract class GraphqlTypeBuilder {
 
     <T extends GraphQLSchemaElement> List<T> sort(List<T> types, Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
         Comparator<? super GraphQLSchemaElement> comparator = getComparatorImpl(comparatorRegistry, parentType, elementType);
-        return GraphqlTypeComparators.sortTypes(comparator, types);
+        return ImmutableList.copyOf(GraphqlTypeComparators.sortTypes(comparator, types));
     }
 
     Comparator<? super GraphQLSchemaElement> getComparator(Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLNamedSchemaElement> elementType) {

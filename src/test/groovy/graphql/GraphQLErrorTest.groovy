@@ -1,10 +1,10 @@
 package graphql
 
-import graphql.execution.ExecutionPath
 import graphql.execution.ExecutionStepInfo
 import graphql.execution.MissingRootTypeException
 import graphql.execution.NonNullableFieldWasNullError
 import graphql.execution.NonNullableFieldWasNullException
+import graphql.execution.ResultPath
 import graphql.introspection.Introspection
 import graphql.language.SourceLocation
 import graphql.schema.CoercingSerializeException
@@ -25,10 +25,14 @@ class GraphQLErrorTest extends Specification {
         where:
 
         gError                                                                                         | expectedMap
-        new ValidationError(ValidationErrorType.UnknownType, mkLocations(), "Test ValidationError")    |
+        ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.UnknownType)
+                .sourceLocations(mkLocations())
+                .description("Test ValidationError")
+                .build()                                                                               |
                 [
-                        locations: [[line: 666, column: 999], [line: 333, column: 0]],
-                        message  : "Validation error of type UnknownType: Test ValidationError",
+                        locations: [[line: 666, column: 999], [line: 333, column: 1]],
+                        message  : "Test ValidationError",
                         extensions:[classification:"ValidationError"],
                 ]
 
@@ -40,16 +44,16 @@ class GraphQLErrorTest extends Specification {
 
         new InvalidSyntaxError(mkLocations(), "Not good syntax m'kay")                                 |
                 [
-                        locations: [[line: 666, column: 999], [line: 333, column: 0]],
+                        locations: [[line: 666, column: 999], [line: 333, column: 1]],
                         message  : "Not good syntax m'kay",
                         extensions:[classification:"InvalidSyntax"],
                 ]
 
         new NonNullableFieldWasNullError(new NonNullableFieldWasNullException(mkTypeInfo(), mkPath())) |
                 [
-                        message: 'Cannot return null for non-nullable type: \'__Schema\' (/heroes[0]/abilities/speed[4])',
+                        message: '''The field at path '/heroes[0]/abilities/speed[4]' was declared as a non null type, but the code involved in retrieving data has wrongly returned a null value.  The graphql specification requires that the parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on. The non-nullable type is '__Schema\'''',
                         path   : ["heroes", 0, "abilities", "speed", 4],
-                        extensions:[classification:"DataFetchingException"],
+                        extensions:[classification:"NullValueInNonNullableField"],
                 ]
 
         new SerializationError(mkPath(), new CoercingSerializeException("Bad coercing"))               |
@@ -68,6 +72,48 @@ class GraphQLErrorTest extends Specification {
 
     }
 
+    def "toSpecification filters out error locations with line and column not starting at 1, as required in spec"() {
+        // See specification wording: https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format
+
+        given:
+        def error = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.UnknownType)
+                .sourceLocations([mkLocation(-1, -1), mkLocation(333, 1)])
+                .description("Test ValidationError")
+                .build()
+
+        def expectedMap = [
+                locations: [
+                        [line: 333, column: 1]
+                ],
+                message: "Test ValidationError",
+                extensions: [classification:"ValidationError"]
+        ]
+
+        expect:
+        error.toSpecification() == expectedMap
+    }
+
+    def "toSpecification filters out null error locations"() {
+        given:
+        def error = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.UnknownType)
+                .sourceLocations([null, mkLocation(333, 1)])
+                .description("Test ValidationError")
+                .build()
+
+        def expectedMap = [
+                locations: [
+                        [line: 333, column: 1]
+                ],
+                message: "Test ValidationError",
+                extensions: [classification:"ValidationError"]
+        ]
+
+        expect:
+        error.toSpecification() == expectedMap
+    }
+
     class CustomException extends RuntimeException implements GraphQLError {
         private LinkedHashMap<String, String> map
 
@@ -83,7 +129,7 @@ class GraphQLErrorTest extends Specification {
 
         @Override
         ErrorType getErrorType() {
-            return null
+            return ErrorType.DataFetchingException
         }
     }
 
@@ -106,15 +152,15 @@ class GraphQLErrorTest extends Specification {
     }
 
     List<SourceLocation> mkLocations() {
-        return [mkLocation(666, 999), mkLocation(333, 0)]
+        return [mkLocation(666, 999), mkLocation(333, 1)]
     }
 
     SourceLocation mkLocation(int line, int column) {
         return new SourceLocation(line, column)
     }
 
-    ExecutionPath mkPath() {
-        return ExecutionPath.rootPath()
+    ResultPath mkPath() {
+        return ResultPath.rootPath()
                 .segment("heroes")
                 .segment(0)
                 .segment("abilities")

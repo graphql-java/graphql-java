@@ -1,22 +1,83 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableMap;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
 
 /**
  * Associates a {@code Comparator} with a {@code GraphqlTypeComparatorEnvironment} to control the scope in which the {@code Comparator} can be applied.
  */
 @PublicApi
+@NullMarked
 public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparatorRegistry {
 
-    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = Comparator.comparing(graphQLSchemaElement -> ((GraphQLNamedSchemaElement) graphQLSchemaElement).getName());
+    // This sensible order was taken from the original SchemaPrinter code.  It ordered the types in this manner
+    private static final ImmutableMap<Class<? extends GraphQLSchemaElement>, Integer> SENSIBLE_ORDER =
+            ImmutableMap.<Class<? extends GraphQLSchemaElement>, Integer>builder()
+                    .put(GraphQLDirective.class, 1)
+                    .put(GraphQLInterfaceType.class, 2)
+                    .put(GraphQLUnionType.class, 3)
+                    .put(GraphQLObjectType.class, 4)
+                    .put(GraphQLEnumType.class, 5)
+                    .put(GraphQLScalarType.class, 6)
+                    .put(GraphQLInputObjectType.class, 7)
+                    .build();
+
+    /**
+     * This orders the schema into a sensible grouped order
+     *
+     * @return a comparator that allows for sensible grouped order
+     */
+    public static Comparator<GraphQLSchemaElement> sensibleGroupedOrder() {
+        return (o1, o2) -> {
+            o1 = unwrapElement(o1);
+            o2 = unwrapElement(o2);
+            int i1 = SENSIBLE_ORDER.getOrDefault(o1.getClass(), 0);
+            int i2 = SENSIBLE_ORDER.getOrDefault(o2.getClass(), 0);
+            int rc = i1 - i2;
+            if (rc == 0) {
+                rc = compareByName(o1, o2);
+            }
+            return rc;
+        };
+    }
+
+    private static GraphQLSchemaElement unwrapElement(GraphQLSchemaElement element) {
+        if (element instanceof GraphQLType) {
+            GraphQLType castElement = (GraphQLType) element;
+            // We need to unwrap as GraphQLType to support GraphQLTypeReferences which is not an GraphQLUnmodifiedType
+            // as returned by unwrapAll.
+            castElement = unwrapAllAs(castElement);
+            element = castElement;
+        }
+        return element;
+    }
+
+    private static int compareByName(GraphQLSchemaElement o1, GraphQLSchemaElement o2) {
+        return Comparator.comparing(element -> {
+            if (element instanceof GraphQLType) {
+                element = unwrapElement((GraphQLType) element);
+            }
+            if (element instanceof GraphQLNamedSchemaElement) {
+                return ((GraphQLNamedSchemaElement) element).getName();
+            } else {
+                return Objects.toString(element);
+            }
+        }).compare(o1, o2);
+    }
+
+    public static final Comparator<GraphQLSchemaElement> DEFAULT_COMPARATOR = sensibleGroupedOrder();
 
     private Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 
@@ -56,9 +117,10 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
 
-        private Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
+        private final Map<GraphqlTypeComparatorEnvironment, Comparator<?>> registry = new HashMap<>();
 
         /**
          * Registers a {@code Comparator} with an environment to control its permitted scope of operation.

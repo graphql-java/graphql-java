@@ -1,22 +1,27 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
+@NullMarked
 public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     private final Type type;
@@ -24,7 +29,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
     public static final String CHILD_TYPE = "type";
 
     @Internal
-    protected ListType(Type type, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected ListType(Type type, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.type = type;
     }
@@ -35,7 +40,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
      * @param type the wrapped type
      */
     public ListType(Type type) {
-        this(type, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(type, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public Type getType() {
@@ -44,9 +49,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.add(type);
-        return result;
+        return ImmutableList.of(type);
     }
 
     @Override
@@ -64,7 +67,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -77,7 +80,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
     @Override
     public ListType deepCopy() {
-        return new ListType(deepCopy(type), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new ListType(assertNotNull(deepCopy(type), "type cannot be null"), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -106,10 +109,11 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private Type type;
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -118,7 +122,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
 
         private Builder(ListType existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.type = existing.getType();
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
@@ -136,7 +140,7 @@ public class ListType extends AbstractNode<ListType> implements Type<ListType> {
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

@@ -12,13 +12,13 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.stream.Collectors
-import java.util.stream.IntStream
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 
@@ -105,9 +105,9 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Product source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
-            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
-            return personDL.load(source.getSuppliedById())
+//            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
+//            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
+            return environment.getDataLoader("person").load(source.getSuppliedById())
         }
     }
 
@@ -115,10 +115,10 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Product source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
-            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
+//            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
+//            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
 
-            return personDL.loadMany(source.getMadeByIds())
+            return environment.getDataLoader("person").loadMany(source.getMadeByIds())
         }
     }
 
@@ -126,9 +126,9 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Person source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
-            DataLoader<Integer, Company> companyDL = dlRegistry.getDataLoader("company")
-            return companyDL.load(source.getCompanyId())
+//            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
+//            DataLoader<Integer, Company> companyDL = dlRegistry.getDataLoader("company")
+            return environment.getDataLoader("company").load(source.getCompanyId())
         }
     }
 
@@ -169,8 +169,8 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
 
     private DataLoaderRegistry buildRegistry() {
-        DataLoader<Integer, Person> personDataLoader = new DataLoader<>(personBatchLoader)
-        DataLoader<Integer, Company> companyDataLoader = new DataLoader<>(companyBatchLoader)
+        DataLoader<Integer, Person> personDataLoader = DataLoaderFactory.newDataLoader(personBatchLoader)
+        DataLoader<Integer, Company> companyDataLoader = DataLoaderFactory.newDataLoader(companyBatchLoader)
 
         DataLoaderRegistry registry = new DataLoaderRegistry()
         registry.register("person", personDataLoader)
@@ -184,14 +184,14 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         when:
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
-                .context(registry)
+                .graphQLContext(["registry": registry])
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .dataLoaderRegistry(registry)
                 .build()
 
@@ -208,6 +208,9 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         companyBatchLoadKeyCount == 26
 
         companyBatchLoadInvocationCount == 1
+
+        where:
+        enableDataLoaderChaining << [true, false]
 
     }
 }

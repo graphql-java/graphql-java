@@ -10,6 +10,7 @@ import graphql.schema.idl.MapEnumValuesProvider
 import graphql.schema.idl.RuntimeWiring
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 
 import java.util.concurrent.CompletableFuture
@@ -42,6 +43,7 @@ class StarWarsDataLoaderWiring {
     BatchLoader<String, Object> characterBatchLoader = new BatchLoader<String, Object>() {
         @Override
         CompletionStage<List<Object>> load(List<String> keys) {
+            println "loading characters via batch loader for keys: $keys"
             batchFunctionLoadCount++
 
             //
@@ -52,7 +54,9 @@ class StarWarsDataLoaderWiring {
             //
             // async supply of values
             CompletableFuture.supplyAsync({
-                return getCharacterDataViaBatchHTTPApi(keys)
+                def result = getCharacterDataViaBatchHTTPApi(keys)
+                println "result " + result + " for keys: $keys"
+                return result
             })
         }
 
@@ -60,7 +64,7 @@ class StarWarsDataLoaderWiring {
 
     def newDataLoaderRegistry() {
         // a data loader for characters that points to the character batch loader
-        def characterDataLoader = new DataLoader<String, Object>(characterBatchLoader)
+        def characterDataLoader = DataLoaderFactory.newDataLoader(characterBatchLoader)
         new DataLoaderRegistry().register("character", characterDataLoader)
     }
 
@@ -97,7 +101,16 @@ class StarWarsDataLoaderWiring {
         Object get(DataFetchingEnvironment environment) {
             List<String> friendIds = environment.source.friends
             naiveLoadCount += friendIds.size()
-            return environment.getDataLoader("character").loadMany(friendIds)
+
+            def many = environment.getDataLoader("character").loadMany(friendIds)
+            many.whenComplete { result, error ->
+                if (error != null) {
+                    println "Error loading friends: $error"
+                } else {
+                    println "Loaded friends: $result"
+                }
+            }
+            return many
         }
     }
 

@@ -19,7 +19,11 @@ class ValidateCustomDirectives extends Specification {
 
     GraphQLSchema customDirectiveSchema = GraphQLSchema.newSchema()
             .query(SpecValidationSchema.queryRoot)
-            .build(SpecValidationSchema.specValidationDictionary, [customDirective].toSet())
+            .codeRegistry(SpecValidationSchema.codeRegistry)
+            .additionalDirective(SpecValidationSchema.dogDirective)
+            .additionalDirective(customDirective)
+            .additionalTypes(SpecValidationSchema.specValidationDictionary)
+            .build()
 
     def 'Schema with custom directive validates query with same directive'() {
         def query = """
@@ -50,11 +54,11 @@ query {
         then:
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.UnknownDirective
-        validationErrors.get(0).getDescription() == 'Unknown directive argument dummy'
+        validationErrors.get(0).getDescription() == "Validation error (UnknownDirective@[dog/name]) : Unknown directive argument 'dummy'"
     }
 
     List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(customDirectiveSchema, document)
+        return new Validator().validateDocument(customDirectiveSchema, document, Locale.ENGLISH)
     }
 }

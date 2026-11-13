@@ -8,6 +8,7 @@ import java.util.List;
 
 import static java.util.Collections.singletonList;
 
+@Internal
 public class InvalidSyntaxError implements GraphQLError {
 
     private final String message;

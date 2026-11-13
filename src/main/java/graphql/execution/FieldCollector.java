@@ -2,6 +2,9 @@ package graphql.execution;
 
 
 import graphql.Internal;
+import graphql.execution.conditional.ConditionalNodes;
+import graphql.execution.incremental.DeferredExecution;
+import graphql.execution.incremental.IncrementalUtils;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -12,18 +15,22 @@ import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import graphql.util.SelectionSetTraversalFrame;
 
-import java.util.ArrayList;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static graphql.execution.MergedSelectionSet.newMergedSelectionSet;
 import static graphql.execution.TypeFromAST.getTypeFromAST;
 
 /**
  * A field collector can iterate over field selection sets and build out the sub fields that have been selected,
- * expanding named and inline fragments as it goes.s
+ * expanding named and inline fragments as it goes.
  */
 @Internal
 public class FieldCollector {
@@ -31,14 +38,17 @@ public class FieldCollector {
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedField mergedField) {
+        return collectFields(parameters, mergedField, false);
+    }
+
+    public MergedSelectionSet collectFields(FieldCollectorParameters parameters, MergedField mergedField, boolean incrementalSupport) {
         Map<String, MergedField> subFields = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
-        for (Field field : mergedField.getFields()) {
-            if (field.getSelectionSet() == null) {
-                continue;
+        Set<String> visitedFragments = new LinkedHashSet<>();
+        mergedField.forEach(field -> {
+            if (field.getSelectionSet() != null) {
+                this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields, null, incrementalSupport);
             }
-            this.collectFields(parameters, field.getSelectionSet(), visitedFragments, subFields);
-        }
+        });
         return newMergedSelectionSet().subFields(subFields).build();
     }
 
@@ -51,74 +61,108 @@ public class FieldCollector {
      * @return a map of the sub field selections
      */
     public MergedSelectionSet collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet) {
+        return collectFields(parameters, selectionSet, false);
+    }
+
+    public MergedSelectionSet collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, boolean incrementalSupport) {
         Map<String, MergedField> subFields = new LinkedHashMap<>();
-        List<String> visitedFragments = new ArrayList<>();
-        this.collectFields(parameters, selectionSet, visitedFragments, subFields);
+        Set<String> visitedFragments = new LinkedHashSet<>();
+        this.collectFields(parameters, selectionSet, visitedFragments, subFields, null, incrementalSupport);
         return newMergedSelectionSet().subFields(subFields).build();
     }
 
 
-    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, List<String> visitedFragments, Map<String, MergedField> fields) {
-
-        for (Selection selection : selectionSet.getSelections()) {
-            if (selection instanceof Field) {
-                collectField(parameters, fields, (Field) selection);
-            } else if (selection instanceof InlineFragment) {
-                collectInlineFragment(parameters, visitedFragments, fields, (InlineFragment) selection);
-            } else if (selection instanceof FragmentSpread) {
-                collectFragmentSpread(parameters, visitedFragments, fields, (FragmentSpread) selection);
+    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, Set<String> visitedFragments, Map<String, MergedField> fields, DeferredExecution deferredExecution, boolean incrementalSupport) {
+        Deque<SelectionSetTraversalFrame<DeferredExecution>> frames = new ArrayDeque<>();
+        frames.push(new SelectionSetTraversalFrame<>(selectionSet, deferredExecution));
+        while (!frames.isEmpty()) {
+            SelectionSetTraversalFrame<DeferredExecution> frame = frames.getFirst();
+            Selection selection = frame.nextSelection();
+            if (selection == null) {
+                frames.pop();
+                continue;
             }
+            collectSelection(parameters, visitedFragments, fields, frames, frame.getContext(), selection, incrementalSupport);
         }
     }
 
-    private void collectFragmentSpread(FieldCollectorParameters parameters, List<String> visitedFragments, Map<String, MergedField> fields, FragmentSpread fragmentSpread) {
+    private void collectSelection(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields,
+                                  Deque<SelectionSetTraversalFrame<DeferredExecution>> frames, DeferredExecution deferredExecution,
+                                  Selection selection, boolean incrementalSupport) {
+        if (selection instanceof Field) {
+            collectField(parameters, fields, (Field) selection, deferredExecution);
+        } else if (selection instanceof InlineFragment) {
+            collectInlineFragment(parameters, frames, (InlineFragment) selection, incrementalSupport);
+        } else if (selection instanceof FragmentSpread) {
+            collectFragmentSpread(parameters, visitedFragments, frames, (FragmentSpread) selection, incrementalSupport);
+        }
+    }
+
+    private void collectFragmentSpread(FieldCollectorParameters parameters, Set<String> visitedFragments, Deque<SelectionSetTraversalFrame<DeferredExecution>> frames, FragmentSpread fragmentSpread, boolean incrementalSupport) {
         if (visitedFragments.contains(fragmentSpread.getName())) {
             return;
         }
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentSpread.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(fragmentSpread,
+                parameters.getVariables(),
+                parameters.getGraphQLSchema(),
+                parameters.getGraphQLContext())) {
             return;
         }
         visitedFragments.add(fragmentSpread.getName());
         FragmentDefinition fragmentDefinition = parameters.getFragmentsByName().get(fragmentSpread.getName());
 
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentDefinition.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(fragmentDefinition,
+                parameters.getVariables(),
+                parameters.getGraphQLSchema(),
+                parameters.getGraphQLContext())) {
             return;
         }
         if (!doesFragmentConditionMatch(parameters, fragmentDefinition)) {
             return;
         }
-        collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields);
+
+        DeferredExecution deferredExecution = incrementalSupport ? IncrementalUtils.createDeferredExecution(
+                parameters.getVariables(),
+                fragmentSpread.getDirectives(),
+                DeferredExecution::new
+        ) : null;
+
+        frames.push(new SelectionSetTraversalFrame<>(fragmentDefinition.getSelectionSet(), deferredExecution));
     }
 
-    private void collectInlineFragment(FieldCollectorParameters parameters, List<String> visitedFragments, Map<String, MergedField> fields, InlineFragment inlineFragment) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives()) ||
+    private void collectInlineFragment(FieldCollectorParameters parameters, Deque<SelectionSetTraversalFrame<DeferredExecution>> frames, InlineFragment inlineFragment, boolean incrementalSupport) {
+        if (!conditionalNodes.shouldInclude(inlineFragment,
+                parameters.getVariables(),
+                parameters.getGraphQLSchema(),
+                parameters.getGraphQLContext()) ||
                 !doesFragmentConditionMatch(parameters, inlineFragment)) {
             return;
         }
-        collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, fields);
+
+        DeferredExecution deferredExecution = incrementalSupport ? IncrementalUtils.createDeferredExecution(
+                parameters.getVariables(),
+                inlineFragment.getDirectives(),
+                DeferredExecution::new
+        ) : null;
+
+        frames.push(new SelectionSetTraversalFrame<>(inlineFragment.getSelectionSet(), deferredExecution));
     }
 
-    private void collectField(FieldCollectorParameters parameters, Map<String, MergedField> fields, Field field) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
+    private void collectField(FieldCollectorParameters parameters, Map<String, MergedField> fields, Field field, DeferredExecution deferredExecution) {
+        if (!conditionalNodes.shouldInclude(field,
+                parameters.getVariables(),
+                parameters.getGraphQLSchema(),
+                parameters.getGraphQLContext())) {
             return;
         }
-        String name = getFieldEntryKey(field);
+        String name = field.getResultKey();
         if (fields.containsKey(name)) {
-            MergedField curFields = fields.get(name);
-            fields.put(name, curFields.transform(builder -> builder.addField(field)));
+            MergedField currentMergedField = fields.get(name);
+            fields.put(name, currentMergedField.newMergedFieldWith(field,deferredExecution));
         } else {
-            fields.put(name, MergedField.newMergedField(field).build());
+            fields.put(name, MergedField.newSingletonMergedField(field, deferredExecution));
         }
     }
-
-    private String getFieldEntryKey(Field field) {
-        if (field.getAlias() != null) {
-            return field.getAlias();
-        } else {
-            return field.getName();
-        }
-    }
-
 
     private boolean doesFragmentConditionMatch(FieldCollectorParameters parameters, InlineFragment inlineFragment) {
         if (inlineFragment.getTypeCondition() == null) {

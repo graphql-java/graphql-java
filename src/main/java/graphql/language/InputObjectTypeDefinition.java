@@ -1,26 +1,33 @@
 package graphql.language;
 
-
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
+import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
+@NullMarked
 public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObjectTypeDefinition> implements TypeDefinition<InputObjectTypeDefinition>, DirectivesContainer<InputObjectTypeDefinition>, NamedNode<InputObjectTypeDefinition> {
 
     private final String name;
-    private final List<Directive> directives;
-    private final List<InputValueDefinition> inputValueDefinitions;
+    private final NodeUtil.DirectivesHolder directives;
+    private final ImmutableList<InputValueDefinition> inputValueDefinitions;
 
     public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_INPUT_VALUES_DEFINITIONS = "inputValueDefinitions";
@@ -29,24 +36,39 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
     protected InputObjectTypeDefinition(String name,
                                         List<Directive> directives,
                                         List<InputValueDefinition> inputValueDefinitions,
-                                        Description description,
-                                        SourceLocation sourceLocation,
+                                        @Nullable Description description,
+                                        @Nullable SourceLocation sourceLocation,
                                         List<Comment> comments,
                                         IgnoredChars ignoredChars,
                                         Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData, description);
         this.name = name;
-        this.directives = directives;
-        this.inputValueDefinitions = inputValueDefinitions;
+        this.directives = NodeUtil.DirectivesHolder.of(directives);
+        this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
     }
 
     @Override
     public List<Directive> getDirectives() {
-        return new ArrayList<>(directives);
+        return directives.getDirectives();
+    }
+
+    @Override
+    public Map<String, List<Directive>> getDirectivesByName() {
+        return directives.getDirectivesByName();
+    }
+
+    @Override
+    public List<Directive> getDirectives(String directiveName) {
+        return directives.getDirectives(directiveName);
+    }
+
+    @Override
+    public boolean hasDirective(String directiveName) {
+        return directives.hasDirective(directiveName);
     }
 
     public List<InputValueDefinition> getInputValueDefinitions() {
-        return new ArrayList<>(inputValueDefinitions);
+        return inputValueDefinitions;
     }
 
     @Override
@@ -56,16 +78,13 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.addAll(directives);
-        result.addAll(inputValueDefinitions);
-        return result;
+        return FpKit.concat(directives.getDirectives(), inputValueDefinitions);
     }
 
     @Override
     public NodeChildrenContainer getNamedChildren() {
         return newNodeChildrenContainer()
-                .children(CHILD_DIRECTIVES, directives)
+                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_INPUT_VALUES_DEFINITIONS, inputValueDefinitions)
                 .build();
     }
@@ -79,7 +98,7 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -89,14 +108,14 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
 
         InputObjectTypeDefinition that = (InputObjectTypeDefinition) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override
     public InputObjectTypeDefinition deepCopy() {
         return new InputObjectTypeDefinition(name,
-                deepCopy(directives),
-                deepCopy(inputValueDefinitions),
+                assertNotNull(deepCopy(directives.getDirectives()), "directives cannot be null"),
+                assertNotNull(deepCopy(inputValueDefinitions), "inputValueDefinitions cannot be null"),
                 description,
                 getSourceLocation(),
                 getComments(),
@@ -129,13 +148,14 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    @NullUnmarked
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Description description;
-        private List<Directive> directives = new ArrayList<>();
-        private List<InputValueDefinition> inputValueDefinitions = new ArrayList<>();
+        private ImmutableList<Directive> directives = emptyList();
+        private ImmutableList<InputValueDefinition> inputValueDefinitions = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -144,11 +164,11 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
 
         private Builder(InputObjectTypeDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.directives = existing.getDirectives();
-            this.inputValueDefinitions = existing.getInputValueDefinitions();
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
+            this.inputValueDefinitions = ImmutableList.copyOf(existing.getInputValueDefinitions());
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
@@ -159,7 +179,7 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -173,23 +193,24 @@ public class InputObjectTypeDefinition extends AbstractDescribedNode<InputObject
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
 
         public Builder directive(Directive directive) {
-            this.directives.add(directive);
+            this.directives = ImmutableKit.addToList(directives, directive);
             return this;
         }
 
         public Builder inputValueDefinitions(List<InputValueDefinition> inputValueDefinitions) {
-            this.inputValueDefinitions = inputValueDefinitions;
+            this.inputValueDefinitions = ImmutableList.copyOf(inputValueDefinitions);
             return this;
         }
 
         public Builder inputValueDefinition(InputValueDefinition inputValueDefinition) {
-            this.inputValueDefinitions.add(inputValueDefinition);
+            this.inputValueDefinitions = ImmutableKit.addToList(inputValueDefinitions, inputValueDefinition);
             return this;
         }
 

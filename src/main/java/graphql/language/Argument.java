@@ -1,34 +1,39 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
+@NullMarked
 public class Argument extends AbstractNode<Argument> implements NamedNode<Argument> {
 
+    public static final String CHILD_VALUE = "value";
     private final String name;
     private final Value value;
 
-    public static final String CHILD_VALUE = "value";
-
     @Internal
-    protected Argument(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected Argument(String name, Value value, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.name = name;
-        this.value = value;
+        this.name = assertNotNull(name, "Argument name cannot be null");
+        this.value = assertNotNull(value, "Argument value cannot be null");
     }
 
     /**
@@ -38,7 +43,15 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
      * @param value of the argument
      */
     public Argument(String name, Value value) {
-        this(name, value, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, value, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
+    }
+
+    public static Builder newArgument() {
+        return new Builder();
+    }
+
+    public static Builder newArgument(String name, Value value) {
+        return new Builder().name(name).value(value);
     }
 
     @Override
@@ -52,9 +65,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
     @Override
     public List<Node> getChildren() {
-        List<Node> result = new ArrayList<>();
-        result.add(value);
-        return result;
+        return ImmutableList.of(value);
     }
 
     @Override
@@ -72,7 +83,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -82,13 +93,13 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
         Argument that = (Argument) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
 
     }
 
     @Override
     public Argument deepCopy() {
-        return new Argument(name, deepCopy(value), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new Argument(assertNotNull(name, "Argument name cannot be null"), assertNotNull(deepCopy(value), "Argument value cannot be null"), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -104,23 +115,16 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         return visitor.visitArgument(this, context);
     }
 
-    public static Builder newArgument() {
-        return new Builder();
-    }
-
-    public static Builder newArgument(String name, Value value) {
-        return new Builder().name(name).value(value);
-    }
-
     public Argument transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Value value;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
@@ -131,7 +135,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
 
         private Builder(Argument existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.value = existing.getValue();
             this.ignoredChars = existing.getIgnoredChars();
@@ -154,7 +158,7 @@ public class Argument extends AbstractNode<Argument> implements NamedNode<Argume
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

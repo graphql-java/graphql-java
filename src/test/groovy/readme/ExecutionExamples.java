@@ -12,12 +12,15 @@ import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.execution.ExecutionStrategy;
-import graphql.execution.ExecutorServiceExecutionStrategy;
+import graphql.execution.values.InputInterceptor;
+import graphql.execution.values.legacycoercing.LegacyCoercingInputInterceptor;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.visibility.BlockedFields;
 import graphql.schema.visibility.GraphqlFieldVisibility;
@@ -28,10 +31,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static graphql.StarWarsSchema.queryType;
 
@@ -140,34 +139,21 @@ public class ExecutionExamples {
         //::/FigureG
     }
 
-    private void exampleExecutorServiceExecutionStrategy() {
-        //::FigureH
-        ExecutorService executorService = new ThreadPoolExecutor(
-                2, /* core pool size 2 thread */
-                2, /* max pool size 2 thread */
-                30, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(),
-                new ThreadPoolExecutor.CallerRunsPolicy());
-
-        GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
-                .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(executorService))
-                .mutationExecutionStrategy(new AsyncSerialExecutionStrategy())
-                .build();
-        //::/FigureH
-    }
-
     private void exceptionHandler() {
         //::FigureI
         DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
 
             @Override
-            public DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            public CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 //
                 // do your custom handling here.  The parameters have all you need
                 GraphQLError buildCustomError = buildCustomError(handlerParameters);
 
-                return DataFetcherExceptionHandlerResult.newResult()
-                        .error(buildCustomError).build();
+                DataFetcherExceptionHandlerResult exceptionResult = DataFetcherExceptionHandlerResult
+                        .newResult()
+                        .error(buildCustomError)
+                        .build();
+                return CompletableFuture.completedFuture(exceptionResult);
             }
         };
         ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
@@ -185,21 +171,26 @@ public class ExecutionExamples {
                 .addPattern("Droid.appearsIn")
                 .addPattern(".*\\.hero") // it uses regular expressions
                 .build();
-
-        GraphQLSchema schema = GraphQLSchema.newSchema()
-                .query(StarWarsSchema.queryType)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .fieldVisibility(blockedFields)
                 .build();
 
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .codeRegistry(codeRegistry)
+                .build();
         //::/FigureJ
     }
 
     private void noIntrospection() {
         //::FigureK
 
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .fieldVisibility(NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY)
+                .build();
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
-                .fieldVisibility(NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY)
+                .codeRegistry(codeRegistry)
                 .build();
         //::/FigureK
     }
@@ -299,6 +290,28 @@ public class ExecutionExamples {
 
     private GraphQL buildSchema() {
         return GraphQL.newGraphQL(schema)
+                .build();
+    }
+
+    private void emitAMetric(Object inputValue, GraphQLInputType graphQLInputType) {
+        return;
+    }
+
+    private void inputInterceptorObservesExample() {
+        InputInterceptor legacyInputInterceptor = LegacyCoercingInputInterceptor.observesValues((inputValue, graphQLInputType) -> {
+            emitAMetric(inputValue, graphQLInputType);
+        });
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("query { exampleField }")
+                .graphQLContext(Map.of(InputInterceptor.class, legacyInputInterceptor))
+                .build();
+    }
+
+    private void inputInterceptorMigratesExample() {
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("query { exampleField }")
+                .graphQLContext(Map.of(InputInterceptor.class, LegacyCoercingInputInterceptor.migratesValues()))
                 .build();
     }
 

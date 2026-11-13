@@ -1,11 +1,13 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Used to calculate the complexity of a field. Used by {@link MaxQueryComplexityInstrumentation}.
  */
 @PublicApi
+@NullMarked
 @FunctionalInterface
 public interface FieldComplexityCalculator {
 

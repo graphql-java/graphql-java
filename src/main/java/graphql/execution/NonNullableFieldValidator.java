@@ -1,29 +1,28 @@
 package graphql.execution;
 
 
+import graphql.GraphQLError;
 import graphql.Internal;
 
 /**
- * This will check that a value is non null when the type definition says it must be and it will throw {@link NonNullableFieldWasNullException}
+ * This will check that a value is non-null when the type definition says it must be and, it will throw {@link NonNullableFieldWasNullException}
  * if this is not the case.
  *
- * See: http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
+ * See: https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability
  */
 @Internal
 public class NonNullableFieldValidator {
 
     private final ExecutionContext executionContext;
-    private final ExecutionStepInfo executionStepInfo;
 
-    public NonNullableFieldValidator(ExecutionContext executionContext, ExecutionStepInfo executionStepInfo) {
+    public NonNullableFieldValidator(ExecutionContext executionContext) {
         this.executionContext = executionContext;
-        this.executionStepInfo = executionStepInfo;
     }
 
     /**
-     * Called to check that a value is non null if the type requires it to be non null
+     * Called to check that a value is non-null if the type requires it to be non null
      *
-     * @param path   the path to this place
+     * @param parameters the execution strategy parameters
      * @param result the result to check
      * @param <T>    the type of the result
      *
@@ -31,10 +30,11 @@ public class NonNullableFieldValidator {
      *
      * @throws NonNullableFieldWasNullException if the value is null but the type requires it to be non null
      */
-    public <T> T validate(ExecutionPath path, T result) throws NonNullableFieldWasNullException {
+    public <T> T validate(ExecutionStrategyParameters parameters, T result) throws NonNullableFieldWasNullException {
         if (result == null) {
+            ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
             if (executionStepInfo.isNonNullType()) {
-                // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
+                // see https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability
                 //
                 //    > If the field returns null because of an error which has already been added to the "errors" list in the response,
                 //    > the "errors" list must not be further affected. That is, only one error should be added to the errors list per field.
@@ -46,9 +46,18 @@ public class NonNullableFieldValidator {
                 //
                 // We will do this until the spec makes this more explicit.
                 //
+                final ResultPath path = parameters.getPath();
+
                 NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(executionStepInfo, path);
-                executionContext.addError(new NonNullableFieldWasNullError(nonNullException), path);
-                throw nonNullException;
+                final GraphQLError error = new NonNullableFieldWasNullError(nonNullException);
+                if(parameters.getAlternativeCallContext() != null) {
+                    parameters.getAlternativeCallContext().addError(error);
+                } else {
+                    executionContext.addError(error, path);
+                }
+                if (executionContext.propagateErrorsOnNonNullContractFailure()) {
+                    throw nonNullException;
+                }
             }
         }
         return result;

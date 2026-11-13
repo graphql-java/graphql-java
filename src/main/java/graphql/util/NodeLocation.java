@@ -1,21 +1,24 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 
 /**
  * General position of a Node inside a parent.
- *
+ * <p>
  * Can be an index or a name with an index.
  */
 @PublicApi
+@NullMarked
 public class NodeLocation {
 
-    private final String name;
+    private final @Nullable String name;
     private final int index;
 
-    public NodeLocation(String name, int index) {
+    public NodeLocation(@Nullable String name, int index) {
         this.name = name;
         this.index = index;
     }
@@ -23,7 +26,7 @@ public class NodeLocation {
     /**
      * @return the name or null if there is no name
      */
-    public String getName() {
+    public @Nullable String getName() {
         return name;
     }
 
@@ -33,14 +36,14 @@ public class NodeLocation {
 
     @Override
     public String toString() {
-        return "NodeLocation{" +
-                "name='" + name + '\'' +
-                ", index=" + index +
-                '}';
+        return "{" +
+            "name='" + name + '\'' +
+            ", index=" + index +
+            '}';
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }
@@ -49,11 +52,14 @@ public class NodeLocation {
         }
         NodeLocation that = (NodeLocation) o;
         return index == that.index &&
-                Objects.equals(name, that.name);
+            Objects.equals(name, that.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, index);
+        int result = 1;
+        result = 31 * result + Objects.hashCode(name);
+        result = 31 * result + Integer.hashCode(index);
+        return result;
     }
 }

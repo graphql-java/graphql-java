@@ -1,46 +1,35 @@
 package graphql.execution.instrumentation.parameters;
 
+import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.ExecutionStrategyParameters;
-import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.GraphQLFieldDefinition;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
+import java.util.function.Supplier;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * Parameters sent to {@link graphql.execution.instrumentation.Instrumentation} methods
  */
+@NullMarked
+@PublicApi
 public class InstrumentationFieldCompleteParameters {
     private final ExecutionContext executionContext;
-    private final GraphQLFieldDefinition fieldDef;
-    private final ExecutionStepInfo typeInfo;
-    private final Object fetchedValue;
-    private final InstrumentationState instrumentationState;
+    private final Supplier<ExecutionStepInfo> executionStepInfo;
+    private final @Nullable Object fetchedValue;
     private final ExecutionStrategyParameters executionStrategyParameters;
 
-    public InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, GraphQLFieldDefinition fieldDef, ExecutionStepInfo typeInfo, Object fetchedValue) {
-        this(executionContext, executionStrategyParameters, fieldDef, typeInfo, fetchedValue, executionContext.getInstrumentationState());
-    }
-
-    InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, GraphQLFieldDefinition fieldDef, ExecutionStepInfo typeInfo, Object fetchedValue, InstrumentationState instrumentationState) {
+    public InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, Supplier<ExecutionStepInfo> executionStepInfo, @Nullable Object fetchedValue) {
         this.executionContext = executionContext;
         this.executionStrategyParameters = executionStrategyParameters;
-        this.fieldDef = fieldDef;
-        this.typeInfo = typeInfo;
+        this.executionStepInfo = executionStepInfo;
         this.fetchedValue = fetchedValue;
-        this.instrumentationState = instrumentationState;
     }
 
-    /**
-     * Returns a cloned parameters object with the new state
-     *
-     * @param instrumentationState the new state for this parameters object
-     *
-     * @return a new parameters object with the new state
-     */
-    public InstrumentationFieldCompleteParameters withNewState(InstrumentationState instrumentationState) {
-        return new InstrumentationFieldCompleteParameters(
-                this.executionContext, executionStrategyParameters, this.fieldDef, this.typeInfo, this.fetchedValue, instrumentationState);
-    }
 
 
     public ExecutionContext getExecutionContext() {
@@ -52,20 +41,27 @@ public class InstrumentationFieldCompleteParameters {
     }
 
     public GraphQLFieldDefinition getField() {
-        return fieldDef;
+        return assertNotNull(getExecutionStepInfo().getFieldDefinition(), "fieldDefinition must not be null");
     }
 
+    @Deprecated(since = "2020-09-08")
     public ExecutionStepInfo getTypeInfo() {
-        return typeInfo;
+        return getExecutionStepInfo();
     }
 
-    public Object getFetchedValue() {
+    public ExecutionStepInfo getExecutionStepInfo() {
+        return executionStepInfo.get();
+    }
+
+    /**
+     * This returns the object that was fetched, ready to be completed as a value.  This can sometimes be a {@link graphql.execution.FetchedValue} object
+     * but most often it's a simple POJO.
+     *
+     * @return the object was fetched, ready to be completed as a value.
+     */
+    @Nullable
+    public Object getFetchedObject() {
         return fetchedValue;
     }
 
-    @SuppressWarnings("TypeParameterUnusedInFormals")
-    public <T extends InstrumentationState> T getInstrumentationState() {
-        //noinspection unchecked
-        return (T) instrumentationState;
-    }
 }

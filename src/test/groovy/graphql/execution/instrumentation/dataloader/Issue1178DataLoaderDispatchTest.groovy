@@ -6,21 +6,27 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.StaticDataFetcher
 import graphql.schema.idl.RuntimeWiring
+import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
-import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import spock.lang.RepeatUntilFailure
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executors
 
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class Issue1178DataLoaderDispatchTest extends Specification {
 
-    public static final int NUM_OF_REPS = 100
 
+    @Unroll
+    @RepeatUntilFailure(maxAttempts = 100, ignoreRest = false)
     def "shouldn't dispatch twice in multithreaded env"() {
         setup:
         def sdl = """
@@ -40,7 +46,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
         def executor = Executors.newFixedThreadPool(5)
 
-        def dataLoader = new DataLoader<Object, Object>(new BatchLoader<Object, Object>() {
+        def dataLoader = DataLoaderFactory.newDataLoader(new BatchLoader<Object, Object>() {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.supplyAsync({
@@ -48,7 +54,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                 }, executor)
             }
         })
-        def dataLoader2 = new DataLoader<Object, Object>(new BatchLoader<Object, Object>() {
+        def dataLoader2 = DataLoaderFactory.newDataLoader(new BatchLoader<Object, Object>() {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.supplyAsync({
@@ -61,28 +67,27 @@ class Issue1178DataLoaderDispatchTest extends Specification {
         dataLoaderRegistry.register("todo.related", dataLoader)
         dataLoaderRegistry.register("todo.related2", dataLoader2)
 
-        def relatedDf = new MyDataFetcher(dataLoader)
-        def relatedDf2 = new MyDataFetcher(dataLoader2)
+        def relatedDf = new MyDataFetcher("todo.related")
+        def relatedDf2 = new MyDataFetcher("todo.related2")
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
-                .dataFetcher("getTodos", new StaticDataFetcher([[id: '1'], [id: '2'], [id: '3'], [id: '4'], [id: '5']])))
+                        .dataFetcher("getTodos", new StaticDataFetcher([[id: '1'], [id: '2'], [id: '3'], [id: '4'], [id: '5']])))
                 .type(newTypeWiring("Todo")
-                .dataFetcher("related", relatedDf)
-                .dataFetcher("related2", relatedDf2))
+                        .dataFetcher("related", relatedDf)
+                        .dataFetcher("related2", relatedDf2))
                 .build()
 
 
         when:
         def graphql = TestUtil.graphQL(sdl, wiring)
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         then: "execution shouldn't error"
-        for (int i = 0; i < NUM_OF_REPS; i++) {
-            def result = graphql.execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(dataLoaderRegistry)
-                    .query("""
+        def ei = ExecutionInput.newExecutionInput()
+                .graphQLContext(contextKey == null ? Collections.emptyMap() : [(contextKey): true])
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .query("""
                 query { 
                     getTodos { __typename id 
                         related { id __typename 
@@ -114,23 +119,27 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                             } 
                         }
                     } 
-                }""").build())
-            assert result.errors.empty
-        }
+                }""").build()
+        def resultCF = graphql.executeAsync(ei)
+        Awaitility.await().until { resultCF.isDone() }
+        assert resultCF.get().errors.empty
+        where:
+        contextKey << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, null]
+
     }
 
     static class MyDataFetcher implements DataFetcher<CompletableFuture<Object>> {
 
-        private final DataLoader dataLoader
+        private final String name
 
-        MyDataFetcher(DataLoader dataLoader) {
-            this.dataLoader = dataLoader
+        MyDataFetcher(String name) {
+            this.name = name
         }
 
         @Override
         CompletableFuture<Object> get(DataFetchingEnvironment environment) {
             def todo = environment.source as Map
-            return dataLoader.load(todo['id'])
+            return environment.getDataLoader(name).load(todo['id'])
         }
     }
 }

@@ -1,8 +1,10 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 @PublicApi
+@NullMarked
 public class QueryVisitorStub implements QueryVisitor {
 
 

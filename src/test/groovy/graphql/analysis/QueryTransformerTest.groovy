@@ -1,6 +1,7 @@
 package graphql.analysis
 
 import graphql.TestUtil
+import graphql.execution.CoercedVariables
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.NodeUtil
@@ -80,7 +81,7 @@ class QueryTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) ==
-                "query {root {fooA {midA-modified {leafA} midB {leafB}} fooB {midA-modified {leafA} midB {leafB}}}}"
+                "{root{fooA{midA-modified{leafA}midB{leafB}}fooB{midA-modified{leafA}midB{leafB}}}}"
     }
 
     def "transform query delete midA nodes"() {
@@ -102,7 +103,27 @@ class QueryTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) ==
-                "query {root {fooA {midB {leafB}} fooB {midB {leafB}}}}"
+                "{root{fooA{midB{leafB}}fooB{midB{leafB}}}}"
+    }
+
+    def "deleting the transformation root returns null"() {
+        given:
+        def schema = TestUtil.schema('type Query { field: String }')
+        def transformer = QueryTransformer.newQueryTransformer()
+                .schema(schema)
+                .root(newField('field').build())
+                .rootParentType(schema.queryType)
+                .fragmentsByName([:])
+                .variables([:])
+                .build()
+        QueryVisitor visitor = Stub() {
+            visitFieldWithControl(_) >> { QueryVisitorFieldEnvironment environment ->
+                deleteNode(environment.traverserContext)
+            }
+        }
+
+        expect:
+        transformer.transform(visitor) == null
     }
 
     def "transform query add midA sibling"() {
@@ -124,7 +145,7 @@ class QueryTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) ==
-                "query {root {fooA {midA {leafA} addedField}}}"
+                "{root{fooA{midA{leafA}addedField}}}"
     }
 
     def "transform query delete fragment spread and inline fragment"() {
@@ -170,7 +191,7 @@ class QueryTransformerTest extends Specification {
         then:
 
         printAstCompact(newDocument) ==
-                "query {root {fooA {midB {leafB}} fooB {midB {leafB}}}} fragment frag on Foo {midA {leafA}}"
+                "{root{fooA{midB{leafB}}fooB{midB{leafB}}}} fragment frag on Foo {midA{leafA}}"
     }
 
     def "transform query does not traverse named fragments when started from query"() {
@@ -253,7 +274,7 @@ class QueryTransformerTest extends Specification {
         def newFragment = queryTransformer.transform(visitor)
         then:
         printAstCompact(newFragment) ==
-                "fragment newFragName on newTypeName {fooA {midA {newChild1 newChild2}}}"
+                "fragment newFragName on newTypeName {fooA{midA{newChild1 newChild2}}}"
     }
 
     def "transform starting in a interface field"() {
@@ -445,7 +466,63 @@ class QueryTransformerTest extends Specification {
         when:
         def newNode = queryTransformer.transform(visitor)
         then:
-        printAstCompact(newNode) == "{__typename ... on A {aX} ... on B {b}}"
+        printAstCompact(newNode) == "{__typename ...on A{aX}...on B{b}}"
 
     }
+
+    def "can coerce field arguments or not"() {
+        def sdl = """
+            input Test{   x: String!} 
+            type Query{   testInput(input: Test!): String}
+            type Mutation{   testInput(input: Test!): String}
+            """
+
+        def schema = TestUtil.schema(sdl)
+
+        def query = createQuery('''
+        mutation a($test: Test!) {
+            testInput(input: $test)
+        }''')
+
+
+        def fieldArgMap = [:]
+        def queryVisitorStub = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
+                super.visitField(queryVisitorFieldEnvironment)
+                fieldArgMap = queryVisitorFieldEnvironment.getArguments()
+            }
+        }
+
+        when:
+        QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .coercedVariables(CoercedVariables.of([test: [x: "X"]]))
+                .build()
+                .visitPreOrder(queryVisitorStub)
+
+        then:
+
+        fieldArgMap == [input: [x:"X"]]
+
+        when:
+        fieldArgMap = null
+
+
+        def options = QueryTraversalOptions.defaultOptions()
+                .coerceFieldArguments(false)
+        QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .coercedVariables(CoercedVariables.of([test: [x: "X"]]))
+                .options(options)
+                .build()
+                .visitPreOrder(queryVisitorStub)
+
+
+        then:
+        fieldArgMap == [:] // empty map
+    }
+
 }

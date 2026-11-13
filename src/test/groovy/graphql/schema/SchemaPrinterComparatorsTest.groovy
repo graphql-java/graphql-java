@@ -4,6 +4,8 @@ import graphql.TestUtil
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
+import java.util.stream.Collectors
+
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.*
@@ -26,7 +28,7 @@ class SchemaPrinterComparatorsTest extends Specification {
     def "scalarPrinter default comparator"() {
         given:
         GraphQLScalarType scalarType = newScalar(mockScalar("TestScalar"))
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .build()
 
         when:
@@ -36,16 +38,15 @@ class SchemaPrinterComparatorsTest extends Specification {
         then:
         result == '''"TestScalar"
 scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
-
 '''
     }
 
     def "enumPrinter default comparator"() {
         given:
         GraphQLEnumType enumType = newEnum().name("TestEnum")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
-                .value(newEnumValueDefinition().name("a").value(0).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
-                .value(newEnumValueDefinition().name("bb").value(1).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
+                .value(newEnumValueDefinition().name("a").value(0).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                .value(newEnumValueDefinition().name("bb").value(1).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
 
         when:
@@ -57,14 +58,13 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   a @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   bb @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
-
 '''
     }
 
     def "unionPrinter default comparator"() {
         given:
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .possibleType(newObject().name("a").build())
                 .possibleType(newObject().name("bb").build())
                 .build()
@@ -75,7 +75,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 
         then:
         result == '''union TestUnion @a(a : 0, bb : 0) @bb(a : 0, bb : 0) = a | bb
-
 '''
     }
 
@@ -83,15 +82,15 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
         given:
         // @formatter:off
         GraphQLInterfaceType interfaceType = newInterface().name("TypeA")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
@@ -104,7 +103,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   a(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   bb(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
-
 '''
     }
 
@@ -113,15 +111,15 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
         // @formatter:off
         GraphQLObjectType objectType = newObject().name("TypeA")
                 .withInterfaces(newInterface().name("a").build(), newInterface().name("bb").build())
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
@@ -134,7 +132,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   a(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   bb(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
-
 '''
     }
 
@@ -142,13 +139,13 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
         given:
         // @formatter:off
         GraphQLInputObjectType inputObjectType = newInputObject().name("TypeA")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newInputObjectField().name("a")
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newInputObjectField().name("bb")
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
@@ -161,7 +158,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   a: String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   bb: String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
-
 '''
     }
 
@@ -193,13 +189,13 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
     def "scalarPrinter uses most specific registered comparators"() {
         given:
         GraphQLScalarType scalarType = newScalar(mockScalar("TestScalar"))
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .build()
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLScalarType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLScalarType.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().includeScalarTypes(true).setComparators(registry)
@@ -208,20 +204,19 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
         then:
         result == '''"TestScalar"
 scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
-
 '''
     }
 
     def "scalarPrinter uses least specific registered comparators"() {
         given:
         GraphQLScalarType scalarType = newScalar(mockScalar("TestScalar"))
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .build()
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().includeScalarTypes(true).setComparators(registry)
@@ -230,24 +225,23 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         then:
         result == '''"TestScalar"
 scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
-
 '''
     }
 
     def "enumPrinter uses most specific registered comparators"() {
         given:
         GraphQLEnumType enumType = newEnum().name("TestEnum")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
-                .value(newEnumValueDefinition().name("a").value(0).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
-                .value(newEnumValueDefinition().name("bb").value(1).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
+                .value(newEnumValueDefinition().name("a").value(0).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                .value(newEnumValueDefinition().name("bb").value(1).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLEnumType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLEnumType.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLEnumType.class).elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLEnumValueDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLEnumValueDefinition.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -258,23 +252,22 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
     def "enumPrinter uses least specific registered comparators"() {
         given:
         GraphQLEnumType enumType = newEnum().name("TestEnum")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
-                .value(newEnumValueDefinition().name("a").value(0).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
-                .value(newEnumValueDefinition().name("bb").value(1).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
+                .value(newEnumValueDefinition().name("a").value(0).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                .value(newEnumValueDefinition().name("bb").value(1).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, TestUtil.byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -285,23 +278,22 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
     def "unionPrinter uses most specific registered comparators"() {
         given:
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .possibleType(newObject().name("a").build())
                 .possibleType(newObject().name("bb").build())
                 .build()
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLUnionType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLUnionType.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLUnionType.class).elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -309,23 +301,22 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         then:
         result == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
-
 '''
     }
 
     def "unionPrinter uses least specific registered comparators"() {
         given:
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .possibleType(newObject().name("a").build())
                 .possibleType(newObject().name("bb").build())
                 .build()
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -333,7 +324,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         then:
         result == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
-
 '''
     }
 
@@ -341,25 +331,25 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         // @formatter:off
         GraphQLInterfaceType interfaceType = newInterface().name("TypeA")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLInterfaceType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLInterfaceType.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLInterfaceType.class).elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -370,7 +360,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -378,23 +367,24 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         // @formatter:off
         GraphQLInterfaceType interfaceType = newInterface().name("TypeA")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
 
         def options = defaultOptions().setComparators(registry)
@@ -405,7 +395,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -414,25 +403,25 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         // @formatter:off
         GraphQLObjectType objectType = newObject().name("TypeA")
                 .withInterfaces(newInterface().name("a") .build(), newInterface().name("bb").build())
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
-                    .type(GraphQLString).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .arguments(mockArguments("a", "bb"))
+                    .type(GraphQLString).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLObjectType.class).elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLAppliedDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).print(objectType)
@@ -442,7 +431,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -451,23 +439,24 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         // @formatter:off
         GraphQLObjectType objectType = newObject().name("TypeA")
                 .withInterfaces(newInterface().name("a") .build(), newInterface().name("bb").build())
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
-                    .type(GraphQLString).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .arguments(mockArguments("a", "bb"))
+                    .type(GraphQLString).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLFieldDefinition.class) }, GraphQLFieldDefinition.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).print(objectType)
@@ -477,7 +466,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -485,22 +473,22 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         // @formatter:off
         GraphQLInputObjectType inputObjectType = newInputObject().name("TypeA")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newInputObjectField().name("a")
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newInputObjectField().name("bb")
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLInputObjectType.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLInputObjectType.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.parentType(GraphQLInputObjectType.class).elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLInputObjectField.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLInputObjectField.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).print(inputObjectType)
@@ -510,7 +498,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -518,21 +505,21 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         // @formatter:off
         GraphQLInputObjectType inputObjectType = newInputObject().name("TypeA")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newInputObjectField().name("a")
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newInputObjectField().name("bb")
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, TestUtil.byGreatestLength)
-                .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
         def result = new SchemaPrinter(options).print(inputObjectType)
@@ -542,13 +529,12 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
     def "argsString uses most specific registered comparators"() {
         given:
-        def field = newFieldDefinition().name("field").type(GraphQLInt).argument(mockArguments("a", "bb")).build()
+        def field = newFieldDefinition().name("field").type(GraphQLInt).arguments(mockArguments("a", "bb")).build()
 
         when:
         def registry = newComparators()
@@ -563,7 +549,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
     def "argsString uses least specific registered comparators"() {
         given:
-        def field = newFieldDefinition().name("field").type(GraphQLInt).argument(mockArguments("a", "bb")).build()
+        def field = newFieldDefinition().name("field").type(GraphQLInt).arguments(mockArguments("a", "bb")).build()
 
         when:
         def registry = newComparators()
@@ -582,35 +568,35 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         def field = newFieldDefinition().name("field")
                 .type(GraphQLString)
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .build()
 
         when:
         def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).directivesString(GraphQLFieldDefinition.class, field.directives)
+        def result = new SchemaPrinter(options).directivesString(GraphQLFieldDefinition.class, field)
 
         then:
         result == ''' @bb(bb : 0, a : 0) @a(bb : 0, a : 0)'''
     }
 
-    def "directivesString uses least specific registered comparators"() {
+    def     "directivesString uses least specific registered comparators"() {
         given:
         def field = newFieldDefinition().name("field")
                 .type(GraphQLString)
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .build()
 
         when:
         def registry = newComparators()
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
-                .addComparator({ it.parentType(GraphQLDirective.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.parentType(GraphQLAppliedDirective.class).elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().setComparators(registry)
-        def result = new SchemaPrinter(options).directivesString(GraphQLFieldDefinition.class, field.directives)
+        def result = new SchemaPrinter(options).directivesString(GraphQLFieldDefinition.class, field)
 
         then:
         result == ''' @bb(bb : 0, a : 0) @a(bb : 0, a : 0)'''
@@ -621,53 +607,53 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         given:
         // @formatter:off
         GraphQLScalarType scalarType = newScalar(mockScalar("TestScalar"))
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .build()
 
         GraphQLUnionType unionType = newUnionType().name("TestUnion")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .possibleType(newObject().name("a").build())
                 .possibleType(newObject().name("bb").build())
                 .build()
 
         GraphQLEnumType enumType = newEnum().name("TestEnum")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
-                .value(newEnumValueDefinition().name("a").value(0).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
-                .value(newEnumValueDefinition().name("bb").value(0).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
+                .value(newEnumValueDefinition().name("a").value(0).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                .value(newEnumValueDefinition().name("bb").value(0).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
 
         GraphQLObjectType objectType = newObject().name("TestObjectType")
                 .withInterfaces(newInterface().name("a") .build(), newInterface().name("bb").build())
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
-                    .type(GraphQLString).withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .arguments(mockArguments("a", "bb"))
+                    .type(GraphQLString).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
 
         GraphQLInterfaceType interfaceType = newInterface().name("TestInterfaceType")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
 
         GraphQLInputObjectType inputObjectType = newInputObject().name("TestInputObjectType")
-                .withDirectives(mockDirectivesWithArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newInputObjectField().name("a")
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newInputObjectField().name("bb")
                     .type(GraphQLString)
-                    .withDirectives(mockDirectivesWithArguments("a", "bb")).build())
+                    .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
 
@@ -677,7 +663,8 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .addComparator({ it.elementType(GraphQLInputObjectField.class) }, GraphQLInputObjectField.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLEnumValueDefinition.class) }, GraphQLEnumValueDefinition.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLOutputType.class) }, GraphQLOutputType.class, TestUtil.byGreatestLength)
-                .addComparator({ it.elementType(GraphQLDirective.class) }, GraphQLDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirective.class) }, GraphQLAppliedDirective.class, TestUtil.byGreatestLength)
+                .addComparator({ it.elementType(GraphQLAppliedDirectiveArgument.class) }, GraphQLAppliedDirectiveArgument.class, TestUtil.byGreatestLength)
                 .addComparator({ it.elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
                 .build()
         def options = defaultOptions().includeScalarTypes(true).setComparators(registry)
@@ -694,39 +681,33 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         scalarResult == '''"TestScalar"
 scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
-
 '''
 
         enumResult == '''enum TestEnum @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
   bb @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
 
         unionResult == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
-
 '''
 
         interfaceTypeResult == '''interface TestInterfaceType @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
 
         objectTypeResult == '''type TestObjectType implements bb & a @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
 
         inputObjectTypeResult == '''input TestInputObjectType @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
   bb: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -740,7 +721,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         def result = registry.getComparator(newEnvironment().elementType(GraphQLFieldDefinition.class).build())
 
         then:
-        result == TestUtil.byGreatestLength
+        result == byGreatestLength
     }
 
     def "DefaultSchemaPrinterComparatorRegistry provides default comparator when environment is not found"() {
@@ -757,7 +738,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
     def "directive string when argument has no value"() {
         given:
         GraphQLScalarType scalarType = newScalar(mockScalar("TestScalar"))
-                .withDirectives(mockDirectivesWithNoValueArguments("a", "bb"))
+                .withAppliedDirectives(mockDirectivesWithNoValueArguments("a", "bb"))
                 .build()
 
         when:
@@ -766,8 +747,48 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         then:
         result == '''"TestScalar"
-scalar TestScalar @a() @bb()
-
+scalar TestScalar @a @bb
 '''
+    }
+
+    def " sort GraphQLSchemaElement by name or toString()"() {
+        given:
+        def coercing = new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                return null
+            }
+
+            @Override
+            Object parseValue(Object input) throws CoercingParseValueException {
+                return null
+            }
+
+            @Override
+            Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                return null
+            }
+        }
+
+        def a = newScalar()
+                .name("a")
+                .coercing(coercing)
+                .build()
+        def b = newScalar()
+                .name("b")
+                .coercing(coercing)
+                .build()
+
+        def nonNullA = GraphQLNonNull.nonNull(a)
+        def nonNullB = GraphQLNonNull.nonNull(b)
+        def list = [nonNullB, nonNullA]
+
+        when:
+        def sortedList = list.stream().sorted(
+                DEFAULT_COMPARATOR).collect(Collectors.toList()
+        )
+
+        then:
+        sortedList == [nonNullA, nonNullB]
     }
 }

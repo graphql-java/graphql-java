@@ -1,10 +1,12 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.EnumValueDefinition;
 import graphql.language.TypeDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class TypeExtensionEnumValueRedefinitionError extends BaseError {
 
     public TypeExtensionEnumValueRedefinitionError(TypeDefinition typeDefinition, EnumValueDefinition enumValueDefinition) {

@@ -1,9 +1,16 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import graphql.EngineRunningState;
+import graphql.ExecutionInput;
+import graphql.ExperimentalApi;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.PublicApi;
-import graphql.cachecontrol.CacheControl;
+import graphql.Profiler;
+import graphql.collect.ImmutableKit;
+import graphql.execution.directives.QueryAppliedDirective;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -11,36 +18,46 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 
-@PublicApi
+@Internal
 public class ExecutionContextBuilder {
 
-    private Instrumentation instrumentation;
-    private ExecutionId executionId;
-    private InstrumentationState instrumentationState;
-    private GraphQLSchema graphQLSchema;
-    private ExecutionStrategy queryStrategy;
-    private ExecutionStrategy mutationStrategy;
-    private ExecutionStrategy subscriptionStrategy;
-    private Object context;
-    private Object root;
-    private Document document;
-    private OperationDefinition operationDefinition;
-    private Map<String, Object> variables = new LinkedHashMap<>();
-    private Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
-    private DataLoaderRegistry dataLoaderRegistry;
-    private CacheControl cacheControl;
-    private Locale locale;
-    private List<GraphQLError> errors = new ArrayList<>();
-    private ValueUnboxer valueUnboxer;
+    Instrumentation instrumentation;
+    ExecutionId executionId;
+    InstrumentationState instrumentationState;
+    GraphQLSchema graphQLSchema;
+    ExecutionStrategy queryStrategy;
+    ExecutionStrategy mutationStrategy;
+    ExecutionStrategy subscriptionStrategy;
+    Object context;
+    GraphQLContext graphQLContext;
+    Object root;
+    Document document;
+    OperationDefinition operationDefinition;
+    CoercedVariables coercedVariables = CoercedVariables.emptyVariables();
+    Supplier<NormalizedVariables> normalizedVariables = NormalizedVariables::emptyVariables;
+    ImmutableMap<String, FragmentDefinition> fragmentsByName = ImmutableKit.emptyMap();
+    DataLoaderRegistry dataLoaderRegistry;
+    Locale locale;
+    ImmutableList<GraphQLError> errors = emptyList();
+    ValueUnboxer valueUnboxer;
+    Object localContext;
+    ExecutionInput executionInput;
+    DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
+    boolean propagateErrorsOnNonNullContractFailure = true;
+    EngineRunningState engineRunningState;
+    ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
+    Profiler profiler;
+    Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives = Collections::emptyMap;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -74,17 +91,23 @@ public class ExecutionContextBuilder {
         mutationStrategy = other.getMutationStrategy();
         subscriptionStrategy = other.getSubscriptionStrategy();
         context = other.getContext();
+        graphQLContext = other.getGraphQLContext();
+        localContext = other.getLocalContext();
         root = other.getRoot();
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
-        variables = new LinkedHashMap<>(other.getVariables());
-        fragmentsByName = new LinkedHashMap<>(other.getFragmentsByName());
+        coercedVariables = other.getCoercedVariables();
+        fragmentsByName = ImmutableMap.copyOf(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
-        cacheControl = other.getCacheControl();
         locale = other.getLocale();
-        errors = new ArrayList<>(other.getErrors());
+        errors = ImmutableList.copyOf(other.getErrors());
         valueUnboxer = other.getValueUnboxer();
-
+        executionInput = other.getExecutionInput();
+        dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
+        propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
+        engineRunningState = other.getEngineRunningState();
+        responseMapFactory = other.getResponseMapFactory();
+        profiler = other.getProfiler();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -122,8 +145,22 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContextBuilder context(Object context) {
+    /*
+     * @deprecated use {@link #graphQLContext(GraphQLContext)} instead
+     */
+    @Deprecated(since = "2021-07-05")
+    public ExecutionContextBuilder context(@Nullable Object context) {
         this.context = context;
+        return this;
+    }
+
+    public ExecutionContextBuilder graphQLContext(GraphQLContext context) {
+        this.graphQLContext = context;
+        return this;
+    }
+
+    public ExecutionContextBuilder localContext(Object localContext) {
+        this.localContext = localContext;
         return this;
     }
 
@@ -132,13 +169,31 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    /**
+     * @param variables map of already coerced variables
+     *
+     * @return this builder
+     *
+     * @deprecated use {@link #coercedVariables(CoercedVariables)} instead
+     */
+    @Deprecated(since = "2022-05-24")
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
-        this.variables = variables;
+        this.coercedVariables = CoercedVariables.of(variables);
+        return this;
+    }
+
+    public ExecutionContextBuilder coercedVariables(CoercedVariables coercedVariables) {
+        this.coercedVariables = coercedVariables;
+        return this;
+    }
+
+    public ExecutionContextBuilder normalizedVariableValues(Supplier<NormalizedVariables> normalizedVariables) {
+        this.normalizedVariables = normalizedVariables;
         return this;
     }
 
     public ExecutionContextBuilder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
-        this.fragmentsByName = fragmentsByName;
+        this.fragmentsByName = ImmutableMap.copyOf(fragmentsByName);
         return this;
     }
 
@@ -157,11 +212,6 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContextBuilder cacheControl(CacheControl cacheControl) {
-        this.cacheControl = cacheControl;
-        return this;
-    }
-
     public ExecutionContextBuilder locale(Locale locale) {
         this.locale = locale;
         return this;
@@ -172,29 +222,53 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    public ExecutionContextBuilder executionInput(ExecutionInput executionInput) {
+        this.executionInput = executionInput;
+        return this;
+    }
+
+    @Internal
+    public ExecutionContextBuilder dataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
+        this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
+        return this;
+    }
+
+    @Internal
+    public ExecutionContextBuilder responseMapFactory(ResponseMapFactory responseMapFactory) {
+        this.responseMapFactory = responseMapFactory;
+        return this;
+    }
+
+    public ExecutionContextBuilder resetErrors() {
+        this.errors = emptyList();
+        return this;
+    }
+
+    @ExperimentalApi
+    public ExecutionContextBuilder propagapropagateErrorsOnNonNullContractFailureeErrors(boolean propagateErrorsOnNonNullContractFailure) {
+        this.propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure;
+        return this;
+    }
+
+    public ExecutionContextBuilder engineRunningState(EngineRunningState engineRunningState) {
+        this.engineRunningState = engineRunningState;
+        return this;
+    }
+
+    public ExecutionContextBuilder profiler(Profiler profiler) {
+        this.profiler = profiler;
+        return this;
+    }
+
+    public ExecutionContextBuilder operationDirectives(Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives) {
+        this.allOperationsDirectives = allOperationsDirectives;
+        return this;
+    }
+
+
     public ExecutionContext build() {
         // preconditions
         assertNotNull(executionId, "You must provide a query identifier");
-
-        return new ExecutionContext(
-                instrumentation,
-                executionId,
-                graphQLSchema,
-                instrumentationState,
-                queryStrategy,
-                mutationStrategy,
-                subscriptionStrategy,
-                fragmentsByName,
-                document,
-                operationDefinition,
-                variables,
-                context,
-                root,
-                dataLoaderRegistry,
-                cacheControl,
-                locale,
-                errors,
-                valueUnboxer);
+        return new ExecutionContext(this);
     }
-
 }

@@ -65,7 +65,7 @@ class IssueNonNullDefaultAttribute extends Specification {
         then:
         result.errors.size() == 1
         result.errors[0].errorType == ErrorType.ValidationError
-        result.errors[0].message == "Validation error of type WrongType: argument 'characterNumber' with value 'NullValue{}' must not be null @ 'name'"
+        result.errors[0].message == "Validation error (WrongType@[name]) : argument 'characterNumber' with value 'NullValue{}' must not be null"
         result.errors[0].locations == [new SourceLocation(3, 26)]
         result.data == null
 

@@ -4,9 +4,6 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.StarWarsData;
-import graphql.execution.instrumentation.ChainedInstrumentation;
-import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLObjectType;
@@ -16,8 +13,12 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderFactory;
 import org.dataloader.DataLoaderRegistry;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
@@ -26,9 +27,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -40,16 +38,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.Directives.DeferDirective;
 import static graphql.ExecutionInput.newExecutionInput;
-import static graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationOptions.newOptions;
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
-import static java.util.Arrays.asList;
 
 /**
- * An very simple example of serving a qraphql schema over http.
+ * A very simple example of serving a graphql schema over http.
  * <p>
- * More info can be found here : http://graphql.org/learn/serving-over-http/
+ * More info can be found here : <a href="https://graphql.org/learn/serving-over-http/">https://graphql.org/learn/serving-over-http/</a>
  */
 @SuppressWarnings("unchecked")
 public class HttpMain extends AbstractHandler {
@@ -134,36 +129,24 @@ public class HttpMain extends AbstractHandler {
         Map<String, Object> context = new HashMap<>();
         context.put("YouAppSecurityClearanceLevel", "CodeRed");
         context.put("YouAppExecutingUser", "Dr Nefarious");
-        executionInput.context(context);
+        executionInput.graphQLContext(context);
 
         //
         // you need a schema in order to execute queries
         GraphQLSchema schema = buildStarWarsSchema();
 
-        DataLoaderDispatcherInstrumentation dlInstrumentation =
-                new DataLoaderDispatcherInstrumentation(newOptions().includeStatistics(true));
-
-        Instrumentation instrumentation = new ChainedInstrumentation(
-                asList(new TracingInstrumentation(), dlInstrumentation)
-        );
-
         // finally you build a runtime graphql object and execute the query
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
-                // instrumentation is pluggable
-                .instrumentation(instrumentation)
+                .instrumentation(new TracingInstrumentation())
                 .build();
-        ExecutionResult executionResult = graphQL.execute(executionInput.build());
+        ExecutionResult executionResult = graphQL.execute(executionInput);
 
         returnAsJson(httpResponse, executionResult);
     }
 
 
     private void returnAsJson(HttpServletResponse response, ExecutionResult executionResult) throws IOException {
-        Map<Object, Object> extensions = executionResult.getExtensions();
-        if (extensions != null && extensions.containsKey(GraphQL.DEFERRED_RESULTS)) {
-            DeferHttpSupport.sendDeferredResponse(response, executionResult, extensions);
-        }
         sendNormalResponse(response, executionResult);
     }
 
@@ -183,7 +166,7 @@ public class HttpMain extends AbstractHandler {
                 CompletableFuture.supplyAsync(() ->
                         loadCharactersViaHTTP(keys));
 
-        DataLoader<String, Object> friendsDataLoader = new DataLoader<>(friendsBatchLoader);
+        DataLoader<String, Object> friendsDataLoader = DataLoaderFactory.newDataLoader(friendsBatchLoader);
 
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
         //
@@ -260,7 +243,6 @@ public class HttpMain extends AbstractHandler {
 
             // finally combine the logical schema with the physical runtime
             starWarsSchema = new SchemaGenerator().makeExecutableSchema(typeRegistry, wiring);
-            starWarsSchema = starWarsSchema.transform(builder -> builder.additionalDirective(DeferDirective));
         }
         return starWarsSchema;
     }
@@ -281,7 +263,7 @@ public class HttpMain extends AbstractHandler {
     }
 
     // Lots of the data happens to be maps of objects and this allows us to get back into type safety land
-    // with less boiler plate and casts
+    // with less boilerplate and casts
     //
     @SuppressWarnings("TypeParameterUnusedInFormals")
     private <T> T asMapGet(Object mapObj, Object mapKey) {

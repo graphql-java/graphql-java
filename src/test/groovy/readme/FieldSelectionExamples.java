@@ -17,7 +17,7 @@ public class FieldSelectionExamples {
                 String userId = env.getArgument("userId");
 
                 DataFetchingFieldSelectionSet selectionSet = env.getSelectionSet();
-                if (selectionSet.contains("user/*")) {
+                if (selectionSet.contains("friends/*")) {
                     return getUserAndTheirFriends(userId);
                 } else {
                     return getUser(userId);
@@ -33,7 +33,7 @@ public class FieldSelectionExamples {
         List<SelectedField> nodeFields = selectionSet.getFields("edges/nodes/*");
         nodeFields.forEach(selectedField -> {
             System.out.println(selectedField.getName());
-            System.out.println(selectedField.getFieldDefinition().getType());
+            System.out.println(selectedField.getType());
 
             DataFetchingFieldSelectionSet innerSelectionSet = selectedField.getSelectionSet();
             // .. this forms a tree of selection and you can get very fancy with it

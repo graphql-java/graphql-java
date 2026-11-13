@@ -1,6 +1,8 @@
 package graphql.schema;
 
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A DataFetcherFactory allows a level of indirection in providing {@link graphql.schema.DataFetcher}s for graphql fields.
@@ -10,8 +12,9 @@ import graphql.PublicSpi;
  *
  * @param <T> the type of DataFetcher
  */
+@NullMarked
 @PublicSpi
-public interface DataFetcherFactory<T> {
+public interface DataFetcherFactory<T extends @Nullable Object> {
 
     /**
      * Returns a {@link graphql.schema.DataFetcher}
@@ -19,7 +22,23 @@ public interface DataFetcherFactory<T> {
      * @param environment the environment that needs the data fetcher
      *
      * @return a data fetcher
+     *
+     * @deprecated This method will go away at some point and {@link DataFetcherFactory#get(GraphQLFieldDefinition)} will be used
      */
+    @Deprecated(since = "2024-11-26")
     DataFetcher<T> get(DataFetcherFactoryEnvironment environment);
+
+    /**
+     * Returns a {@link graphql.schema.DataFetcher} given the field definition
+     * which is cheaper in object allocation terms.
+     *
+     * @param fieldDefinition the field that needs the data fetcher
+     *
+     * @return a data fetcher, or null to use the legacy environment-based method
+     */
+
+    default @Nullable DataFetcher<T> get(GraphQLFieldDefinition fieldDefinition) {
+        return null;
+    }
 
 }

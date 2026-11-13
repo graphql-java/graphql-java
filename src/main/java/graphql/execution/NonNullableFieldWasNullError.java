@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
+import graphql.Internal;
 import graphql.language.SourceLocation;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.List;
  *
  * @see graphql.execution.NonNullableFieldWasNullException for details
  */
+@Internal
 public class NonNullableFieldWasNullError implements GraphQLError {
 
     private final String message;
@@ -39,7 +41,7 @@ public class NonNullableFieldWasNullError implements GraphQLError {
 
     @Override
     public ErrorType getErrorType() {
-        return ErrorType.DataFetchingException;
+        return ErrorType.NullValueInNonNullableField;
     }
 
     @Override

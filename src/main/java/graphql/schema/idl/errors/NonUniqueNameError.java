@@ -1,5 +1,6 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.DirectiveDefinition;
 import graphql.language.EnumValueDefinition;
 import graphql.language.FieldDefinition;
@@ -10,6 +11,7 @@ import graphql.language.UnionTypeDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class NonUniqueNameError extends BaseError {
 
     public NonUniqueNameError(TypeDefinition typeDefinition, FieldDefinition fieldDefinition) {

@@ -3,38 +3,53 @@ package graphql
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.AsyncSerialExecutionStrategy
+import graphql.execution.DataFetcherExceptionHandler
+import graphql.execution.DataFetcherExceptionHandlerParameters
+import graphql.execution.DataFetcherExceptionHandlerResult
+import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
 import graphql.execution.ExecutionStrategyParameters
-import graphql.execution.MissingRootTypeException
-import graphql.execution.batched.BatchedExecutionStrategy
-import graphql.execution.instrumentation.ChainedInstrumentation
+import graphql.execution.ResultNodesInfo
+import graphql.execution.SubscriptionExecutionStrategy
+import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.Instrumentation
-import graphql.execution.instrumentation.SimpleInstrumentation
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
+import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.LightDataFetcher
 import graphql.schema.StaticDataFetcher
+import graphql.schema.idl.SchemaGenerator
+import graphql.schema.idl.errors.SchemaProblem
+import graphql.schema.validation.InvalidSchemaException
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
+import java.util.function.Supplier
 import java.util.function.UnaryOperator
 
 import static graphql.ExecutionInput.Builder
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.execution.ResultNodesInfo.MAX_RESULT_NODES
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
@@ -46,17 +61,23 @@ import static graphql.schema.GraphQLTypeReference.typeRef
 
 class GraphQLTest extends Specification {
 
-    GraphQLSchema simpleSchema() {
+    static GraphQLSchema simpleSchema() {
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
-                .staticValue("world")
-        GraphQLSchema schema = newSchema().query(
-                newObject()
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "hello")
+        DataFetcher<?> dataFetcher = { env -> "world" }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
         schema
     }
 
@@ -69,7 +90,6 @@ class GraphQLTest extends Specification {
 
         then:
         result == [hello: 'world']
-
     }
 
     def "query with sub-fields"() {
@@ -89,14 +109,20 @@ class GraphQLTest extends Specification {
         GraphQLFieldDefinition.Builder simpsonField = newFieldDefinition()
                 .name("simpson")
                 .type(heroType)
-                .staticValue([id: '123', name: 'homer'])
 
-        GraphQLSchema graphQLSchema = newSchema().query(
-                newObject()
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "simpson")
+        DataFetcher<?> dataFetcher = { env -> [id: '123', name: 'homer'] }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema graphQLSchema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(simpsonField)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def result = GraphQL.newGraphQL(graphQLSchema).build().execute('{ simpson { id, name } }').data
@@ -111,13 +137,20 @@ class GraphQLTest extends Specification {
                 .name("hello")
                 .type(GraphQLString)
                 .argument(newArgument().name("arg").type(GraphQLString))
-                .staticValue("world")
-        GraphQLSchema schema = newSchema().query(
-                newObject()
+
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "hello")
+        DataFetcher<?> dataFetcher = { env -> "hello" }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:11) }').errors
@@ -131,6 +164,12 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
                         .build()
         ).build()
 
@@ -148,6 +187,12 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("RootQueryType")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
                         .build()
         ).build()
 
@@ -158,6 +203,31 @@ class GraphQLTest extends Specification {
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
         errors[0].locations == [new SourceLocation(1, 8)]
+    }
+
+    def "query with invalid Unicode surrogate in argument - no trailing value"() {
+        given:
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
+                        .build()
+        ).build()
+
+        when:
+        // Invalid Unicode character - leading surrogate value without trailing surrogate value
+        def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:"\\ud83c") }').errors
+
+        then:
+        errors.size() == 1
+        errors[0].errorType == ErrorType.InvalidSyntax
+        errors[0].message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\ud83c' at line 1 column 13"
+        errors[0].locations == [new SourceLocation(1, 13)]
     }
 
     def "non null argument is missing"() {
@@ -190,14 +260,22 @@ class GraphQLTest extends Specification {
         set.add("One")
         set.add("Two")
 
-        def schema = newSchema()
-                .query(newObject()
-                        .name("QueryType")
-                        .field(newFieldDefinition()
-                                .name("set")
-                                .type(list(GraphQLString))
-                                .dataFetcher({ set })))
+        def queryType = "QueryType"
+        def fieldName = "set"
+        def fieldCoordinates = FieldCoordinates.coordinates(queryType, fieldName)
+        DataFetcher<?> dataFetcher = { set }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
                 .build()
+
+        def schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fieldName)
+                                .type(list(GraphQLString)))
+                ).build()
 
         when:
         def data = GraphQL.newGraphQL(schema).build().execute("query { set }").data
@@ -209,13 +287,29 @@ class GraphQLTest extends Specification {
     def "document with two operations executes specified operation"() {
         given:
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(newFieldDefinition().name("field1").type(GraphQLString).dataFetcher(new StaticDataFetcher("value1")))
-                        .field(newFieldDefinition().name("field2").type(GraphQLString).dataFetcher(new StaticDataFetcher("value2")))
-        )
+        def queryType = "RootQueryType"
+        def field1Name = "field1"
+        def field2Name = "field2"
+        def field1Coordinates = FieldCoordinates.coordinates(queryType, field1Name)
+        def field2Coordinates = FieldCoordinates.coordinates(queryType, field2Name)
+        DataFetcher<?> field1DataFetcher = new StaticDataFetcher("value1")
+        DataFetcher<?> field2DataFetcher = new StaticDataFetcher("value2")
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(field1Coordinates, field1DataFetcher)
+                .dataFetcher(field2Coordinates, field2DataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(field1Name)
+                                .type(GraphQLString))
+                        .field(newFieldDefinition()
+                                .name(field2Name)
+                                .type(GraphQLString))
+                ).build()
 
         def query = """
         query Query1 { field1 }
@@ -225,7 +319,7 @@ class GraphQLTest extends Specification {
         def expected = [field2: 'value2']
 
         when:
-        def executionInput = newExecutionInput().query(query).operationName('Query2').context(null).variables([:])
+        def executionInput = newExecutionInput().query(query).operationName('Query2').variables([:])
         def result = GraphQL.newGraphQL(schema).build().execute(executionInput)
 
         then:
@@ -233,7 +327,7 @@ class GraphQLTest extends Specification {
         result.errors.size() == 0
     }
 
-    def "document with two operations but no specified operation throws"() {
+    def "document with two operations but no specified operation does not throw"() {
         given:
 
         GraphQLSchema schema = newSchema().query(
@@ -249,27 +343,35 @@ class GraphQLTest extends Specification {
         """
 
         when:
-        GraphQL.newGraphQL(schema).build().execute(query)
+        def er = GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
-        thrown(GraphQLException)
+        noExceptionThrown()
+        !er.errors.isEmpty()
+        er.errors[0].message.contains("Must provide operation name if query contains multiple operations")
     }
 
-    def "null mutation type does not throw an npe re: #345 but returns and error"() {
+    def "null mutation type does not throw an npe but returns and error"() {
         given:
 
         GraphQLSchema schema = newSchema().query(
                 newObject()
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
                         .name("Query")
         )
                 .build()
 
         when:
-        def result = new GraphQL(schema).execute("mutation { doesNotExist }")
+        def result = GraphQL.newGraphQL(schema).build().execute("mutation { doesNotExist }")
 
         then:
         result.errors.size() == 1
-        result.errors[0].class == MissingRootTypeException
+        ((ValidationError) result.errors[0]).validationErrorType == ValidationErrorType.UnknownOperation
     }
 
     def "#875 a subscription query against a schema that doesn't support subscriptions should result in a GraphQL error"() {
@@ -278,253 +380,304 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = newSchema().query(
                 newObject()
                         .name("Query")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("arg")
+                                        .type(GraphQLNonNull.nonNull(GraphQLString))))
         )
                 .build()
 
         when:
-        def result = new GraphQL(schema).execute("subscription { doesNotExist }")
+        def result = GraphQL.newGraphQL(schema).build().execute("subscription { doesNotExist }")
 
         then:
         result.errors.size() == 1
-        result.errors[0].class == MissingRootTypeException
+        ((ValidationError) result.errors[0]).validationErrorType == ValidationErrorType.UnknownOperation
     }
 
     def "query with int literal too large"() {
         given:
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                        .dataFetcher({ return it.getArgument("bar") })
-                        ))
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        DataFetcher<?> dataFetcher = { env -> env.getArgument("bar") }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name("QueryType")
+                        .field(newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(GraphQLInt).build()))
+                ).build()
         def query = "{foo(bar: 12345678910)}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 1
-        result.errors[0].message == "Validation error of type WrongType: argument 'bar' with value 'IntValue{value=12345678910}' is not a valid 'Int' - Expected value to be in the Integer range but it was '12345678910' @ 'foo'"
+        result.errors[0].message == "Validation error (WrongType@[foo]) : argument 'bar' with value 'IntValue{value=12345678910}' is not a valid 'Int' - Expected value to be in the integer range, but it was a '12345678910'"
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with missing argument results in arguments map missing the key"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(LightDataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(GraphQLInt).build()))
+                ).build()
         def query = "{foo}"
+
         when:
         GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert !env.arguments.containsKey('bar')
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert !env.arguments.containsKey('bar')
         }
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with null argument results in arguments map with value null "() {
         given:
-        def dataFetcher = Mock(DataFetcher)
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(LightDataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(GraphQLInt).build()))
+                ).build()
         def query = "{foo(bar: null)}"
-        DataFetchingEnvironment dataFetchingEnvironment
+
         when:
         GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                dataFetchingEnvironment = env
-                assert env.arguments.containsKey('bar')
-                assert env.arguments['bar'] == null
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.containsKey('bar')
+            assert env.arguments['bar'] == null
         }
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with missing key in an input object result in a map with missing key"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("someKey").type(GraphQLString).build())
                 .field(newInputObjectField().name("otherKey").type(GraphQLString).build()).build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(LightDataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {someKey: \"value\"})}"
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert env.arguments['bar']['someKey'] == 'value'
-                assert !(env.arguments['bar'] as Map).containsKey('otherKey')
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert env.arguments['bar']['someKey'] == 'value'
+            assert !(env.arguments['bar'] as Map).containsKey('otherKey')
         }
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with null value in an input object result in a map with null as value"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("someKey").type(GraphQLString).build())
                 .field(newInputObjectField().name("otherKey").type(GraphQLString).build()).build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(LightDataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {someKey: \"value\", otherKey: null})}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert env.arguments['bar']['someKey'] == 'value'
-                assert (env.arguments['bar'] as Map).containsKey('otherKey')
-                assert env.arguments['bar']['otherKey'] == null
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert env.arguments['bar']['someKey'] == 'value'
+            assert (env.arguments['bar'] as Map).containsKey('otherKey')
+            assert env.arguments['bar']['otherKey'] == null
         }
     }
 
     def "query with missing List input field results in a map with a missing key"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("list").type(list(GraphQLString)).build())
                 .build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(LightDataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {})}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert !(env.arguments['bar'] as Map).containsKey('list')
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert !(env.arguments['bar'] as Map).containsKey('list')
         }
     }
 
     def "query with null List input field results in a map with null as key"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("list").type(list(GraphQLString)).build())
                 .build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(LightDataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {list: null})}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert (env.arguments['bar'] as Map).containsKey('list')
-                assert env.arguments['bar']['list'] == null
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert (env.arguments['bar'] as Map).containsKey('list')
+            assert env.arguments['bar']['list'] == null
         }
     }
 
     def "query with List containing null input field results in a map with a list containing null"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("list").type(list(GraphQLString)).build())
                 .build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(LightDataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {list: [null]})}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert (env.arguments['bar'] as Map).containsKey('list')
-                assert env.arguments['bar']['list'] == [null]
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert (env.arguments['bar'] as Map).containsKey('list')
+            assert env.arguments['bar']['list'] == [null]
         }
     }
 
@@ -562,7 +715,6 @@ class GraphQLTest extends Specification {
 
     }
 
-
     def "execution input passing builder"() {
         given:
         GraphQLSchema schema = simpleSchema()
@@ -580,7 +732,6 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = simpleSchema()
 
         when:
-
         def builderFunction = { it.query('{hello}') } as UnaryOperator<Builder>
         def result = GraphQL.newGraphQL(schema).build().execute(builderFunction).data
 
@@ -722,7 +873,6 @@ class GraphQLTest extends Specification {
                                     .name("id")
                                     .type(Scalars.GraphQLID)
                         } as UnaryOperator)
-                .typeResolver({ type -> foo })
                 .build()
 
         GraphQLObjectType query = newObject()
@@ -735,7 +885,12 @@ class GraphQLTest extends Specification {
                         } as UnaryOperator)
                 .build()
 
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(node, { type -> foo })
+                .build()
+
         GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
                 .query(query)
                 .build()
 
@@ -752,85 +907,12 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].message.contains("Sub selection required")
+        result.errors[0].message.contains("Subselection required")
 
         where:
         instrumentationName    | instrumentation
         'max query depth'      | new MaxQueryDepthInstrumentation(10)
         'max query complexity' | new MaxQueryComplexityInstrumentation(10)
-    }
-
-
-    def "batched execution with non batched DataFetcher returning CompletableFuture"() {
-        given:
-        GraphQLObjectType foo = newObject()
-                .name("Foo")
-                .withInterface(typeRef("Node"))
-                .field(
-                        { field ->
-                            field
-                                    .name("id")
-                                    .type(Scalars.GraphQLID)
-                        } as UnaryOperator)
-                .build()
-
-        GraphQLInterfaceType node = GraphQLInterfaceType.newInterface()
-                .name("Node")
-                .field(
-                        { field ->
-                            field
-                                    .name("id")
-                                    .type(Scalars.GraphQLID)
-                        } as UnaryOperator)
-                .typeResolver(
-                        {
-                            env ->
-                                if (env.getObject() instanceof CompletableFuture) {
-                                    throw new RuntimeException("This seems bad!")
-                                }
-
-                                return foo
-                        })
-                .build()
-
-        GraphQLObjectType query = newObject()
-                .name("RootQuery")
-                .field(
-                        { field ->
-                            field
-                                    .name("node")
-                                    .dataFetcher(
-                                            { env ->
-                                                CompletableFuture.supplyAsync({ ->
-                                                    Map<String, String> map = new HashMap<>()
-                                                    map.put("id", "abc")
-
-                                                    return map
-                                                })
-                                            })
-                                    .type(node)
-                        } as UnaryOperator)
-                .build()
-
-        GraphQLSchema schema = newSchema()
-                .query(query)
-                .additionalType(foo)
-                .build()
-
-        GraphQL graphQL = GraphQL.newGraphQL(schema)
-                .queryExecutionStrategy(new BatchedExecutionStrategy())
-                .mutationExecutionStrategy(new BatchedExecutionStrategy())
-                .build()
-
-        ExecutionInput executionInput = newExecutionInput()
-                .query("{node {id}}")
-                .build()
-        when:
-        def result = graphQL
-                .execute(executionInput)
-
-        then:
-        result.getData() == [node: [id: "abc"]]
     }
 
     class CaptureStrategy extends AsyncExecutionStrategy {
@@ -847,7 +929,7 @@ class GraphQLTest extends Specification {
 
     def "graphql copying works as expected"() {
 
-        def instrumentation = new SimpleInstrumentation()
+        def instrumentation = new SimplePerformantInstrumentation()
         def hello = ExecutionId.from("hello")
         def executionIdProvider = new ExecutionIdProvider() {
             @Override
@@ -871,13 +953,13 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == hello
-        queryStrategy.instrumentation instanceof ChainedInstrumentation
-        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
+        queryStrategy.instrumentation instanceof Instrumentation
+        queryStrategy.instrumentation == instrumentation
 
         when:
 
         // now make some changes
-        def newInstrumentation = new SimpleInstrumentation()
+        def newInstrumentation = new SimplePerformantInstrumentation()
         def goodbye = ExecutionId.from("goodbye")
         def newExecutionIdProvider = new ExecutionIdProvider() {
             @Override
@@ -894,33 +976,14 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == goodbye
-        queryStrategy.instrumentation instanceof ChainedInstrumentation
-        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(newInstrumentation)
-        !(queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
+        queryStrategy.instrumentation instanceof SimplePerformantInstrumentation
+        newGraphQL.instrumentation == newInstrumentation
     }
 
-    def "disabling data loader instrumentation leaves instrumentation as is"() {
+    def "provided instrumentation is unchanged"() {
         given:
         def queryStrategy = new CaptureStrategy()
-        def instrumentation = new SimpleInstrumentation()
-        def builder = GraphQL.newGraphQL(simpleSchema())
-                .queryExecutionStrategy(queryStrategy)
-                .instrumentation(instrumentation)
-
-        when:
-        def graphql = builder
-                .doNotAddDefaultInstrumentations()
-                .build()
-        graphql.execute('{ hello }')
-
-        then:
-        queryStrategy.instrumentation == instrumentation
-    }
-
-    def "a single DataLoader instrumentation leaves instrumentation as is"() {
-        given:
-        def queryStrategy = new CaptureStrategy()
-        def instrumentation = new DataLoaderDispatcherInstrumentation()
+        def instrumentation = new SimplePerformantInstrumentation()
         def builder = GraphQL.newGraphQL(simpleSchema())
                 .queryExecutionStrategy(queryStrategy)
                 .instrumentation(instrumentation)
@@ -932,37 +995,30 @@ class GraphQLTest extends Specification {
 
         then:
         queryStrategy.instrumentation == instrumentation
-    }
-
-    def "DataLoader instrumentation is the default instrumentation"() {
-        given:
-        def queryStrategy = new CaptureStrategy()
-        def builder = GraphQL.newGraphQL(simpleSchema())
-                .queryExecutionStrategy(queryStrategy)
-
-        when:
-        def graphql = builder
-                .build()
-        graphql.execute('{ hello }')
-
-        then:
-        queryStrategy.instrumentation instanceof DataLoaderDispatcherInstrumentation
     }
 
     def "query with triple quoted multi line strings"() {
         given:
+        def queryType = "Query"
+        def fieldName = "hello"
+        def fieldCoordinates = FieldCoordinates.coordinates(queryType, fieldName)
+        DataFetcher<?> dataFetcher = { env -> env.getArgument("arg") }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
-                .name("hello")
+                .name(fieldName)
                 .type(GraphQLString)
                 .argument(newArgument().name("arg").type(GraphQLString))
-                .dataFetcher({ env -> env.getArgument("arg") }
-                )
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("Query")
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def result = GraphQL.newGraphQL(schema).build().execute('''{ hello(arg:"""
@@ -976,6 +1032,28 @@ over
 many lines''']
     }
 
+    def "executionId is set before being passed to instrumentation"() {
+        InstrumentationCreateStateParameters seenParams
+
+        def instrumentation = new Instrumentation() {
+
+            @Override
+            CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters params) {
+                seenParams = params
+                null
+            }
+        }
+
+        when:
+        GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .build()
+                .execute("{ __typename }")
+
+        then:
+        seenParams.executionInput.executionId != null
+    }
+
     def "variables map can't be null via ExecutionInput"() {
         given:
 
@@ -985,8 +1063,6 @@ many lines''']
         then:
         def assEx = thrown(AssertException)
         assEx.message.contains("variables map can't be null")
-
-
     }
 
     def "query can't be null via ExecutionInput"() {
@@ -998,8 +1074,6 @@ many lines''']
         then:
         def assEx = thrown(AssertException)
         assEx.message.contains("query can't be null")
-
-
     }
 
     def "query must be set via ExecutionInput"() {
@@ -1015,4 +1089,520 @@ many lines''']
 
     }
 
+    def "default argument values are respected when variable is not provided"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String = "amigo"): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData()
+
+        then:
+        data == [sayHello: "amigo"]
+
+    }
+
+    def "default variable values are respected"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String = "amigo"){sayHello(name:$var)}').getData()
+
+        then:
+        data == [sayHello: "amigo"]
+
+    }
+
+    def "default variable values are respected for non null arguments"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String!): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String! = "amigo"){sayHello(name:$var)}').getData()
+
+        then:
+        data == [sayHello: "amigo"]
+
+    }
+
+    def "null as default variable value is used"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String): String
+        }"""
+        def df = { dfe ->
+            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null
+            return isNullValue ? "is null" : "error"
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String = null){sayHello(name:$var)}').getData()
+
+        then:
+        data == [sayHello: "is null"]
+
+    }
+
+    def "null as default argument value is used with no provided variable"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String = null): String
+        }"""
+        def df = { dfe ->
+            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null
+            return isNullValue ? "is null" : "error"
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData()
+
+        then:
+        data == [sayHello: "is null"]
+
+    }
+
+    def "not provided variable results in not provided argument"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String): String
+        }"""
+        def df = { dfe ->
+            return !dfe.containsArgument("name") ? "not provided" : "error"
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData()
+
+        then:
+        data == [sayHello: "not provided"]
+
+    }
+
+    def "null variable default value produces error for non null argument"() {
+        given:
+        def spec = """type Query {
+            sayHello(name: String!): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def errors = graphQL.execute('query($var:String=null){sayHello(name:$var)}').getErrors()
+
+        then:
+        errors.size() == 1
+
+    }
+
+    def "default value defined in the schema is used when none provided in the query"() {
+        // Spec (https://spec.graphql.org/June2018/#sec-All-Variable-Usages-are-Allowed): A notable exception to typical variable type compatibility is allowing a variable definition with a nullable type to be provided to a non‐null location as long as either that variable or that location provides a default value.
+        given:
+        def spec = """type Query {
+            sayHello(name: String! = "amigo"): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def result = graphQL.execute('query($var:String){sayHello(name:$var)}')
+
+        then:
+        result.errors.isEmpty()
+        result.getData() == [sayHello: "amigo"]
+
+    }
+
+    def "specified url can be defined and queried via introspection"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")')
+
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByURL}}').getData()
+
+        then:
+        result == [__type: [name: "MyScalar", specifiedByURL: "myUrl"]]
+    }
+
+    def "test DFR and CF"() {
+        def sdl = 'type Query { f : String } '
+
+        DataFetcher df = { env ->
+
+            def dfr = DataFetcherResult.newResult().data("hi").build()
+            return CompletableFuture.supplyAsync({ -> dfr })
+        }
+        def schema = TestUtil.schema(sdl, [Query: [f: df]])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        when:
+        def er = graphQL.execute("{f}")
+        then:
+        er.data["f"] == "hi"
+    }
+
+
+    def "can set default fetcher exception handler"() {
+
+
+        def sdl = 'type Query { f : String } '
+
+        DataFetcher df = { env ->
+            throw new RuntimeException("BANG!")
+        }
+        def capturedMsg = null
+        def exceptionHandler = new DataFetcherExceptionHandler() {
+            @Override
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters params) {
+                capturedMsg = params.exception.getMessage()
+                return CompletableFuture.completedFuture(DataFetcherExceptionHandlerResult.newResult().build())
+            }
+        }
+        def schema = TestUtil.schema(sdl, [Query: [f: df]])
+        def graphQL = GraphQL.newGraphQL(schema).defaultDataFetcherExceptionHandler(exceptionHandler).build()
+        when:
+        graphQL.execute("{f}")
+        then:
+        capturedMsg == "BANG!"
+    }
+
+    def "invalid argument literal"() {
+        def sdl = '''
+            type Query {
+                foo(arg: Input): String
+            }
+            input Input {
+                required: String!
+            }
+        '''
+
+        def schema = TestUtil.schema(sdl)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+        when:
+        def executionResult = graphQL.execute("{foo(arg:{})}")
+        then:
+        executionResult.errors.size() == 1
+        executionResult.errors[0].message.contains("is missing required fields")
+    }
+
+    def "invalid default value for argument via SDL"() {
+        given:
+        def sdl = '''
+            type Query {
+                foo(arg: Input = {}): String
+            }
+            input Input {
+                required: String!
+            }
+        '''
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "invalid default value for argument programmatically"() {
+        given:
+        def arg = newArgument().name("arg").type(GraphQLInt).defaultValueProgrammatic(new LinkedHashMap()).build()
+        def field = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(arg)
+                .build()
+        when:
+        newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(field)
+                        .build())
+                .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "invalid default value for input objects via SDL"() {
+        given:
+        def sdl = '''
+            type Query {
+                foo(arg: Input ={required: null}): String
+            }
+            input Input {
+                required: String!
+            }
+        '''
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "invalid default value for input object programmatically"() {
+        given:
+        def defaultValue = [required: null]
+        def inputObject = newInputObject().name("Input").field(
+                newInputObjectField().name("required").type(GraphQLNonNull.nonNull(GraphQLString)).build())
+                .build()
+        def arg = newArgument().name("arg")
+                .type(inputObject)
+                .defaultValueProgrammatic(defaultValue).build()
+        def field = newFieldDefinition()
+                .name("hello")
+                .type(GraphQLString)
+                .argument(arg)
+                .build()
+        when:
+        newSchema().query(
+                newObject()
+                        .name("Query")
+                        .field(field)
+                        .build())
+                .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid default value")
+    }
+
+    def "Applied schema directives arguments are validated for SDL"() {
+        given:
+        def sdl = '''
+        directive @cached(
+          key: String 
+        ) on FIELD_DEFINITION 
+
+        type Query {
+          hello: String @cached(key: {foo: "bar"}) 
+        }
+        '''
+        when:
+        SchemaGenerator.createdMockedSchema(sdl)
+        then:
+        def e = thrown(SchemaProblem)
+        e.message.contains("an illegal value for the argument ")
+    }
+
+    def "getters work as expected"() {
+        Instrumentation instrumentation = new SimplePerformantInstrumentation()
+        when:
+        def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).instrumentation(instrumentation).build()
+        then:
+        graphQL.getGraphQLSchema() == StarWarsSchema.starWarsSchema
+        graphQL.getIdProvider() == ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER
+        graphQL.getValueUnboxer() == ValueUnboxer.DEFAULT
+        graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
+        graphQL.getInstrumentation() instanceof Instrumentation
+        graphQL.getQueryStrategy() instanceof AsyncExecutionStrategy
+        graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
+        graphQL.getSubscriptionStrategy() instanceof SubscriptionExecutionStrategy
+    }
+
+    def "null locale on input is handled under the covers"() {
+
+        def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build()
+        def ei = newExecutionInput("query q { validationError } ").locale(null).build()
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+    }
+
+    def "max result nodes not breached"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+        }
+        '''
+        def df = { env -> "world" } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello h1: hello h2: hello h3: hello } "
+        def ei = newExecutionInput(query).build()
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 4);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        !rni.maxResultNodesExceeded
+        rni.resultNodesCount == 4
+        er.data == [hello: "world", h1: "world", h2: "world", h3: "world"]
+    }
+
+    def "max result nodes breached"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+        }
+        '''
+        def df = { env -> "world" } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello h1: hello h2: hello h3: hello } "
+        def ei = newExecutionInput(query).build()
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 3);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        rni.maxResultNodesExceeded
+        rni.resultNodesCount == 4
+        er.data == [hello: "world", h1: "world", h2: "world", h3: null]
+    }
+
+    def "max result nodes breached with list"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [String]
+        }
+        '''
+        def df = { env -> ["w1", "w2", "w3"] } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello}"
+        def ei = newExecutionInput(query).build()
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 3);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        rni.maxResultNodesExceeded
+        rni.resultNodesCount == 4
+        er.data == [hello: null]
+    }
+
+    def "max result nodes breached with list 2"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [Foo]
+        }
+        type Foo {
+            name: String
+        }
+        '''
+        def df = { env -> [[name: "w1"], [name: "w2"], [name: "w3"]] } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello {name}}"
+        def ei = newExecutionInput(query).build()
+        // we have 7 result nodes overall
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 6);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        rni.resultNodesCount == 7
+        rni.maxResultNodesExceeded
+        er.data == [hello: [[name: "w1"], [name: "w2"], [name: null]]]
+    }
+
+    def "max result nodes not breached with list"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [Foo]
+        }
+        type Foo {
+            name: String
+        }
+        '''
+        def df = { env -> [[name: "w1"], [name: "w2"], [name: "w3"]] } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello {name}}"
+        def ei = newExecutionInput(query).build()
+        // we have 7 result nodes overall
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 7);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        !rni.maxResultNodesExceeded
+        rni.resultNodesCount == 7
+        er.data == [hello: [[name: "w1"], [name: "w2"], [name: "w3"]]]
+    }
+
+    def "exceptions thrown are turned into graphql errors"() {
+        def sdl = """
+            type Query {
+                f(arg : Boolean) : String
+            }
+        """
+
+        def graphQL = TestUtil.graphQL(sdl).build()
+
+        when:
+        def ei = newExecutionInput("query badSyntax {").build()
+        def er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message.contains("Invalid syntax with offending token")
+
+
+        when:
+
+        ei = newExecutionInput('query badInput($varX : Boolean) { f(arg : $varX) }')
+                .variables([varX: "bad"]).build()
+        er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message.contains("Variable 'varX' has an invalid value")
+
+        when:
+
+        ei = newExecutionInput("query ok1 { f } query ok2 { f  } ")
+                .operationName("X").build()
+        er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message.contains("Unknown operation named 'X'")
+    }
 }

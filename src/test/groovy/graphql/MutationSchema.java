@@ -1,6 +1,9 @@
 package graphql;
 
 
+import graphql.schema.DataFetcher;
+import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
@@ -31,8 +34,8 @@ public class MutationSchema {
     }
 
     public static class SubscriptionRoot {
-        List<String> result = new ArrayList<String>();
-        List<Integer> subscribers = new ArrayList<Integer>();
+        List<String> result = new ArrayList<>();
+        List<Integer> subscribers = new ArrayList<>();
         NumberHolder numberHolder;
 
         public SubscriptionRoot(int initalNumber) {
@@ -89,23 +92,13 @@ public class MutationSchema {
                     .type(numberHolderType)
                     .argument(newArgument()
                             .name("newNumber")
-                            .type(GraphQLInt))
-                    .dataFetcher(environment -> {
-                        Integer newNumber = environment.getArgument("newNumber");
-                        SubscriptionRoot root = environment.getSource();
-                        return root.changeNumber(newNumber);
-                    }))
+                            .type(GraphQLInt)))
             .field(newFieldDefinition()
                     .name("failToChangeTheNumber")
                     .type(numberHolderType)
                     .argument(newArgument()
                             .name("newNumber")
-                            .type(GraphQLInt))
-                    .dataFetcher(environment -> {
-                        Integer newNumber = environment.getArgument("newNumber");
-                        SubscriptionRoot root = environment.getSource();
-                        return root.failToChangeTheNumber(newNumber);
-                    }))
+                            .type(GraphQLInt)))
             .build();
 
     public static GraphQLObjectType subscriptionType = GraphQLObjectType.newObject()
@@ -115,16 +108,37 @@ public class MutationSchema {
                     .type(numberHolderType)
                     .argument(newArgument()
                             .name("clientId")
-                            .type(GraphQLInt))
-                    .dataFetcher(environment -> {
-                        Integer clientId = environment.getArgument("clientId");
-                        SubscriptionRoot subscriptionRoot = environment.getSource();
-                        subscriptionRoot.subscribeToNumberChanges(clientId);
-                        return subscriptionRoot.getNumberHolder();
-                    }))
+                            .type(GraphQLInt)))
+            .build();
+
+    static FieldCoordinates changeMutationCoordinates = FieldCoordinates.coordinates("mutationType", "changeTheNumber");
+    static DataFetcher<?> changeMutationDataFetcher = environment -> {
+        Integer newNumber = environment.getArgument("newNumber");
+        SubscriptionRoot root = environment.getSource();
+        return root.changeNumber(newNumber);
+    };
+    static FieldCoordinates failToChangeMutationCoordinates = FieldCoordinates.coordinates("mutationType", "failToChangeTheNumber");
+    static DataFetcher<?> failToChangeMutationDataFetcher = environment -> {
+        Integer newNumber = environment.getArgument("newNumber");
+        SubscriptionRoot root = environment.getSource();
+        return root.failToChangeTheNumber(newNumber);
+    };
+    static FieldCoordinates changeNumberSubscribeCoordinates = FieldCoordinates.coordinates("subscriptionType", "changeNumberSubscribe");
+    static DataFetcher<?> changeNumberSubscribeDataFetcher = environment -> {
+        Integer clientId = environment.getArgument("clientId");
+        SubscriptionRoot subscriptionRoot = environment.getSource();
+        subscriptionRoot.subscribeToNumberChanges(clientId);
+        return subscriptionRoot.getNumberHolder();
+    };
+
+    static GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+            .dataFetcher(changeMutationCoordinates, changeMutationDataFetcher)
+            .dataFetcher(failToChangeMutationCoordinates, failToChangeMutationDataFetcher)
+            .dataFetcher(changeNumberSubscribeCoordinates, changeNumberSubscribeDataFetcher)
             .build();
 
     public static GraphQLSchema schema = newSchema()
+            .codeRegistry(codeRegistry)
             .query(queryType)
             .mutation(mutationType)
             .subscription(subscriptionType)

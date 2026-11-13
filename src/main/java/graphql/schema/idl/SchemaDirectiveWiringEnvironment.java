@@ -2,8 +2,11 @@ package graphql.schema.idl;
 
 import graphql.PublicApi;
 import graphql.language.NamedNode;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.language.NodeParentTree;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
@@ -20,6 +23,7 @@ import java.util.Map;
  * @param <T> the type of the object in play
  */
 @PublicApi
+@NullMarked
 public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveContainer> {
 
     /**
@@ -38,12 +42,32 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @return the directive that was registered under specific directive name or null if it was not
      * registered this way
+     *
+     * @deprecated use {@link #getAppliedDirective()}
      */
-    GraphQLDirective getDirective();
+    @Deprecated(since = "2022-06-21")
+    @Nullable GraphQLDirective getDirective();
+
+    /**
+     * This returns the applied directive that the {@link graphql.schema.idl.SchemaDirectiveWiring} was registered
+     * against during calls to {@link graphql.schema.idl.RuntimeWiring.Builder#directive(String, SchemaDirectiveWiring)}
+     * <p>
+     * If this method of registration is not used (say because
+     * {@link graphql.schema.idl.WiringFactory#providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment)} or
+     * {@link graphql.schema.idl.RuntimeWiring.Builder#directiveWiring(SchemaDirectiveWiring)} was used)
+     * then this will return null.
+     *
+     * @return the applied directive that was registered under specific directive name or null if it was not
+     * registered this way
+     */
+    @Nullable GraphQLAppliedDirective getAppliedDirective();
 
     /**
      * @return all of the directives that are on the runtime element
+     *
+     * @deprecated use {@link #getAppliedDirectives()} instead
      */
+    @Deprecated(since = "2022-06-21")
     Map<String, GraphQLDirective> getDirectives();
 
     /**
@@ -52,8 +76,25 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      * @param directiveName the name of the directive
      *
      * @return a named directive or null
+     *
+     * @deprecated use {@link #getAppliedDirective(String)}  instead
      */
-    GraphQLDirective getDirective(String directiveName);
+    @Deprecated(since = "2022-06-21")
+    @Nullable GraphQLDirective getDirective(String directiveName);
+
+    /**
+     * @return all of the directives that are on the runtime element
+     */
+    Map<String, GraphQLAppliedDirective> getAppliedDirectives();
+
+    /**
+     * Returns a named applied directive or null
+     *
+     * @param directiveName the name of the directive
+     *
+     * @return a named directive or null
+     */
+    @Nullable GraphQLAppliedDirective getAppliedDirective(String directiveName);
 
     /**
      * Returns true if the named directive is present
@@ -71,7 +112,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @return hierarchical graphql language node information
      */
-    NodeParentTree<NamedNode> getNodeParentTree();
+    NodeParentTree<NamedNode<?>> getNodeParentTree();
 
     /**
      * The type hierarchy depends on the element in question.  For example {@link graphql.schema.GraphQLObjectType} elements
@@ -88,7 +129,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
     TypeDefinitionRegistry getRegistry();
 
     /**
-     * @return a mpa that can be used by implementors to hold context during the SDL build process
+     * @return a map that can be used by implementors to hold context during the SDL build process
      */
     Map<String, Object> getBuildContext();
 
@@ -114,7 +155,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @throws graphql.AssertException if there is not field in context at the time of the directive wiring callback
      */
-    DataFetcher getFieldDataFetcher();
+    DataFetcher<?> getFieldDataFetcher();
 
     /**
      * This is a shortcut method to set a new data fetcher in the underlying {@link graphql.schema.GraphQLCodeRegistry}
@@ -129,6 +170,6 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @throws graphql.AssertException if there is not field in context at the time of the directive wiring callback
      */
-    GraphQLFieldDefinition setFieldDataFetcher(DataFetcher newDataFetcher);
+    GraphQLFieldDefinition setFieldDataFetcher(DataFetcher<?> newDataFetcher);
 
 }

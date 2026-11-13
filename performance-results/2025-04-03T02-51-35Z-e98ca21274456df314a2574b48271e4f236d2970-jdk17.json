@@ -1,0 +1,1310 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ComplexQueryPerformance.benchMarkSimpleQueriesThroughput",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 2,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 2,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "howManyItems" : "5"
+        },
+        "primaryMetric" : {
+            "score" : 3.412009068804363,
+            "scoreError" : 0.027147540536237486,
+            "scoreConfidence" : [
+                3.3848615282681256,
+                3.4391566093406003
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3.406407858797982,
+                "50.0" : 3.412581318388711,
+                "90.0" : 3.416465779642049,
+                "95.0" : 3.416465779642049,
+                "99.0" : 3.416465779642049,
+                "99.9" : 3.416465779642049,
+                "99.99" : 3.416465779642049,
+                "99.999" : 3.416465779642049,
+                "99.9999" : 3.416465779642049,
+                "100.0" : 3.416465779642049
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    3.411854248718382,
+                    3.416465779642049
+                ],
+                [
+                    3.406407858797982,
+                    3.41330838805904
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ComplexQueryPerformance.benchMarkSimpleQueriesThroughput",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 2,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 2,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "howManyItems" : "10"
+        },
+        "primaryMetric" : {
+            "score" : 1.7247825532086658,
+            "scoreError" : 0.008412192988375613,
+            "scoreConfidence" : [
+                1.7163703602202902,
+                1.7331947461970414
+            ],
+            "scorePercentiles" : {
+                "0.0" : 1.7232151056048182,
+                "50.0" : 1.7247590010147462,
+                "90.0" : 1.7263971052003526,
+                "95.0" : 1.7263971052003526,
+                "99.0" : 1.7263971052003526,
+                "99.9" : 1.7263971052003526,
+                "99.99" : 1.7263971052003526,
+                "99.999" : 1.7263971052003526,
+                "99.9999" : 1.7263971052003526,
+                "100.0" : 1.7263971052003526
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    1.7232151056048182,
+                    1.7263971052003526
+                ],
+                [
+                    1.7246609185990969,
+                    1.7248570834303953
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ComplexQueryPerformance.benchMarkSimpleQueriesThroughput",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 2,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 2,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "howManyItems" : "20"
+        },
+        "primaryMetric" : {
+            "score" : 0.8665645873428459,
+            "scoreError" : 0.007980730163315616,
+            "scoreConfidence" : [
+                0.8585838571795303,
+                0.8745453175061615
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.8652048329749016,
+                "50.0" : 0.8665310283763555,
+                "90.0" : 0.8679914596437709,
+                "95.0" : 0.8679914596437709,
+                "99.0" : 0.8679914596437709,
+                "99.9" : 0.8679914596437709,
+                "99.99" : 0.8679914596437709,
+                "99.999" : 0.8679914596437709,
+                "99.9999" : 0.8679914596437709,
+                "100.0" : 0.8679914596437709
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    0.8671178524031105,
+                    0.8679914596437709
+                ],
+                [
+                    0.8652048329749016,
+                    0.8659442043496006
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.DFSelectionSetPerformance.benchMarkThroughput",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 16.190306505865994,
+            "scoreError" : 0.19886222794442865,
+            "scoreConfidence" : [
+                15.991444277921566,
+                16.389168733810422
+            ],
+            "scorePercentiles" : {
+                "0.0" : 16.00356710808966,
+                "50.0" : 16.19719540512624,
+                "90.0" : 16.338223872579796,
+                "95.0" : 16.338223872579796,
+                "99.0" : 16.338223872579796,
+                "99.9" : 16.338223872579796,
+                "99.99" : 16.338223872579796,
+                "99.999" : 16.338223872579796,
+                "99.9999" : 16.338223872579796,
+                "100.0" : 16.338223872579796
+            },
+            "scoreUnit" : "ops/ms",
+            "rawData" : [
+                [
+                    16.263091004643808,
+                    16.332625869940873,
+                    16.338223872579796
+                ],
+                [
+                    16.20694779720255,
+                    16.19719540512624,
+                    16.18695691399324
+                ],
+                [
+                    16.163126086734835,
+                    16.00356710808966,
+                    16.02102449448297
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.DFSelectionSetPerformance.benchMarkThroughput_getImmediateFields",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 2652.1374561733314,
+            "scoreError" : 149.48652867483324,
+            "scoreConfidence" : [
+                2502.6509274984983,
+                2801.6239848481646
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2572.313124395027,
+                "50.0" : 2615.4625094289067,
+                "90.0" : 2776.2508648496128,
+                "95.0" : 2776.2508648496128,
+                "99.0" : 2776.2508648496128,
+                "99.9" : 2776.2508648496128,
+                "99.99" : 2776.2508648496128,
+                "99.999" : 2776.2508648496128,
+                "99.9999" : 2776.2508648496128,
+                "100.0" : 2776.2508648496128
+            },
+            "scoreUnit" : "ops/ms",
+            "rawData" : [
+                [
+                    2572.327591862452,
+                    2573.670192282608,
+                    2572.313124395027
+                ],
+                [
+                    2763.3332028422533,
+                    2776.2508648496128,
+                    2764.5264619939276
+                ],
+                [
+                    2617.16311033585,
+                    2614.190047569343,
+                    2615.4625094289067
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ENF1Performance.benchMarkThroughput",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 69244.53393821999,
+            "scoreError" : 2238.7153835897343,
+            "scoreConfidence" : [
+                67005.81855463026,
+                71483.24932180972
+            ],
+            "scorePercentiles" : {
+                "0.0" : 68283.01701912875,
+                "50.0" : 68404.88908740183,
+                "90.0" : 71025.63666207869,
+                "95.0" : 71025.63666207869,
+                "99.0" : 71025.63666207869,
+                "99.9" : 71025.63666207869,
+                "99.99" : 71025.63666207869,
+                "99.999" : 71025.63666207869,
+                "99.9999" : 71025.63666207869,
+                "100.0" : 71025.63666207869
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    68283.01701912875,
+                    68299.08646909134,
+                    68346.94205609483
+                ],
+                [
+                    68410.80512801414,
+                    68396.52696193331,
+                    68404.88908740183
+                ],
+                [
+                    71020.59502416776,
+                    71025.63666207869,
+                    71013.30703606934
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ENFExtraLargePerformance.benchMarkThroughput",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 352.0495439106279,
+            "scoreError" : 5.688087554984918,
+            "scoreConfidence" : [
+                346.361456355643,
+                357.7376314656128
+            ],
+            "scorePercentiles" : {
+                "0.0" : 347.5038937323927,
+                "50.0" : 352.6586337417818,
+                "90.0" : 355.9543623081089,
+                "95.0" : 355.9543623081089,
+                "99.0" : 355.9543623081089,
+                "99.9" : 355.9543623081089,
+                "99.99" : 355.9543623081089,
+                "99.999" : 355.9543623081089,
+                "99.9999" : 355.9543623081089,
+                "100.0" : 355.9543623081089
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    355.36606065776704,
+                    355.9543623081089,
+                    355.44739687765446
+                ],
+                [
+                    353.3104547724866,
+                    352.6586337417818,
+                    352.0106775017903
+                ],
+                [
+                    348.08547373181875,
+                    348.1089418718505,
+                    347.5038937323927
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.OverlappingFieldValidationPerformance.overlappingFieldValidationThroughput",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "100"
+        },
+        "primaryMetric" : {
+            "score" : 107.97197788613875,
+            "scoreError" : 2.7303080728968436,
+            "scoreConfidence" : [
+                105.2416698132419,
+                110.70228595903559
+            ],
+            "scorePercentiles" : {
+                "0.0" : 105.82762260516864,
+                "50.0" : 108.34243905974502,
+                "90.0" : 109.89787443224124,
+                "95.0" : 109.89787443224124,
+                "99.0" : 109.89787443224124,
+                "99.9" : 109.89787443224124,
+                "99.99" : 109.89787443224124,
+                "99.999" : 109.89787443224124,
+                "99.9999" : 109.89787443224124,
+                "100.0" : 109.89787443224124
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    109.24278780414237,
+                    109.77494855538254,
+                    109.89787443224124
+                ],
+                [
+                    108.25668688929966,
+                    108.34243905974502,
+                    108.35487959785104
+                ],
+                [
+                    105.99650175505398,
+                    105.82762260516864,
+                    106.05406027636413
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.DFSelectionSetPerformance.benchMarkAvgTime",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 0.06264234939734833,
+            "scoreError" : 0.001940503038725499,
+            "scoreConfidence" : [
+                0.06070184635862284,
+                0.06458285243607384
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.061487347325639305,
+                "50.0" : 0.06224014973548267,
+                "90.0" : 0.0643154368235226,
+                "95.0" : 0.0643154368235226,
+                "99.0" : 0.0643154368235226,
+                "99.9" : 0.0643154368235226,
+                "99.99" : 0.0643154368235226,
+                "99.999" : 0.0643154368235226,
+                "99.9999" : 0.0643154368235226,
+                "100.0" : 0.0643154368235226
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    0.06234369102198837,
+                    0.062147674374957274,
+                    0.06224014973548267
+                ],
+                [
+                    0.06389407033371457,
+                    0.0643154368235226,
+                    0.06415574181545232
+                ],
+                [
+                    0.06163425568567026,
+                    0.0615627774597077,
+                    0.061487347325639305
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.DFSelectionSetPerformance.benchMarkAvgTime_getImmediateFields",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 3.693017818862823E-4,
+            "scoreError" : 1.4251241076151806E-5,
+            "scoreConfidence" : [
+                3.550505408101305E-4,
+                3.8355302296243406E-4
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3.581285258168051E-4,
+                "50.0" : 3.7241348116836534E-4,
+                "90.0" : 3.774987506762271E-4,
+                "95.0" : 3.774987506762271E-4,
+                "99.0" : 3.774987506762271E-4,
+                "99.9" : 3.774987506762271E-4,
+                "99.99" : 3.774987506762271E-4,
+                "99.999" : 3.774987506762271E-4,
+                "99.9999" : 3.774987506762271E-4,
+                "100.0" : 3.774987506762271E-4
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    3.7728784066109127E-4,
+                    3.7661322860138834E-4,
+                    3.774987506762271E-4
+                ],
+                [
+                    3.581285258168051E-4,
+                    3.5816292636233426E-4,
+                    3.5870577075242295E-4
+                ],
+                [
+                    3.7241348116836534E-4,
+                    3.7278464199828296E-4,
+                    3.721208709396231E-4
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ENF1Performance.benchMarkAvgTime",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 0.014251813348747193,
+            "scoreError" : 2.4133152936300968E-4,
+            "scoreConfidence" : [
+                0.014010481819384184,
+                0.014493144878110202
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.014109882265792994,
+                "50.0" : 0.014200063186653244,
+                "90.0" : 0.01444335340454787,
+                "95.0" : 0.01444335340454787,
+                "99.0" : 0.01444335340454787,
+                "99.9" : 0.01444335340454787,
+                "99.99" : 0.01444335340454787,
+                "99.999" : 0.01444335340454787,
+                "99.9999" : 0.01444335340454787,
+                "100.0" : 0.01444335340454787
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    0.014433382154187222,
+                    0.014433030841594948,
+                    0.01444335340454787
+                ],
+                [
+                    0.014115376225199589,
+                    0.014109882265792994,
+                    0.014123692329094866
+                ],
+                [
+                    0.014207825716136768,
+                    0.014199714015517262,
+                    0.014200063186653244
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ENF2Performance.benchMarkAvgTime",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 0.9922482637732131,
+            "scoreError" : 0.04060752324069984,
+            "scoreConfidence" : [
+                0.9516407405325132,
+                1.032855787013913
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.9736791512024146,
+                "50.0" : 0.9777998899100508,
+                "90.0" : 1.0262624400205234,
+                "95.0" : 1.0262624400205234,
+                "99.0" : 1.0262624400205234,
+                "99.9" : 1.0262624400205234,
+                "99.99" : 1.0262624400205234,
+                "99.999" : 1.0262624400205234,
+                "99.9999" : 1.0262624400205234,
+                "100.0" : 1.0262624400205234
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    1.0262624400205234,
+                    1.0246107202868853,
+                    1.0222336996831238
+                ],
+                [
+                    0.976044982920164,
+                    0.9750917759360375,
+                    0.9736791512024146
+                ],
+                [
+                    0.9752420151160522,
+                    0.9777998899100508,
+                    0.9792696988836663
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ENFDeepIntrospectionPerformance.benchMarkAvgTime",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 2,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "5 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "howDeep" : "2"
+        },
+        "primaryMetric" : {
+            "score" : 0.013020478890194788,
+            "scoreError" : 7.333534194251844E-4,
+            "scoreConfidence" : [
+                0.012287125470769603,
+                0.013753832309619973
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.012776612812060816,
+                "50.0" : 0.013020479729130969,
+                "90.0" : 0.013262022369869371,
+                "95.0" : 0.013262022369869371,
+                "99.0" : 0.013262022369869371,
+                "99.9" : 0.013262022369869371,
+                "99.99" : 0.013262022369869371,
+                "99.999" : 0.013262022369869371,
+                "99.9999" : 0.013262022369869371,
+                "100.0" : 0.013262022369869371
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    0.013262022369869371,
+                    0.013255514599294823,
+                    0.013260036602118372
+                ],
+                [
+                    0.012785444858967114,
+                    0.012776612812060816,
+                    0.012783242098858227
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ENFDeepIntrospectionPerformance.benchMarkAvgTime",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 2,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "5 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "howDeep" : "10"
+        },
+        "primaryMetric" : {
+            "score" : 3.6823549127759994,
+            "scoreError" : 0.12037344013443266,
+            "scoreConfidence" : [
+                3.5619814726415666,
+                3.802728352910432
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3.6239961630434783,
+                "50.0" : 3.674330386428005,
+                "90.0" : 3.7354224331590737,
+                "95.0" : 3.7354224331590737,
+                "99.0" : 3.7354224331590737,
+                "99.9" : 3.7354224331590737,
+                "99.99" : 3.7354224331590737,
+                "99.999" : 3.7354224331590737,
+                "99.9999" : 3.7354224331590737,
+                "100.0" : 3.7354224331590737
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    3.6239961630434783,
+                    3.6654824945054947,
+                    3.6578229041697146
+                ],
+                [
+                    3.6831782783505154,
+                    3.7354224331590737,
+                    3.72822720342772
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.ENFExtraLargePerformance.benchMarkAvgTime",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "primaryMetric" : {
+            "score" : 2.830217610770232,
+            "scoreError" : 0.02941764690765332,
+            "scoreConfidence" : [
+                2.8007999638625787,
+                2.859635257677885
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2.8059439887766553,
+                "50.0" : 2.8304837555178266,
+                "90.0" : 2.8638871964490265,
+                "95.0" : 2.8638871964490265,
+                "99.0" : 2.8638871964490265,
+                "99.9" : 2.8638871964490265,
+                "99.99" : 2.8638871964490265,
+                "99.999" : 2.8638871964490265,
+                "99.9999" : 2.8638871964490265,
+                "100.0" : 2.8638871964490265
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    2.8059439887766553,
+                    2.80763629365525,
+                    2.8274634690415605
+                ],
+                [
+                    2.8266450850763145,
+                    2.8334196541076486,
+                    2.8638871964490265
+                ],
+                [
+                    2.8327837142452563,
+                    2.8304837555178266,
+                    2.8436953400625535
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.OverlappingFieldValidationPerformance.benchmarkDeepAbstractConcrete",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "100"
+        },
+        "primaryMetric" : {
+            "score" : 0.1753886762344773,
+            "scoreError" : 0.0030167678177013334,
+            "scoreConfidence" : [
+                0.17237190841677597,
+                0.17840544405217862
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.1728514556469734,
+                "50.0" : 0.17628545656465944,
+                "90.0" : 0.17697612007574418,
+                "95.0" : 0.17697612007574418,
+                "99.0" : 0.17697612007574418,
+                "99.9" : 0.17697612007574418,
+                "99.99" : 0.17697612007574418,
+                "99.999" : 0.17697612007574418,
+                "99.9999" : 0.17697612007574418,
+                "100.0" : 0.17697612007574418
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    0.17323752276270657,
+                    0.17297506889453929,
+                    0.1728514556469734
+                ],
+                [
+                    0.17697612007574418,
+                    0.17628545656465944,
+                    0.1761608011520778
+                ],
+                [
+                    0.17683352849640147,
+                    0.17655357137056196,
+                    0.1766245611466318
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.OverlappingFieldValidationPerformance.benchmarkNoOverlapFrag",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "100"
+        },
+        "primaryMetric" : {
+            "score" : 0.3252011556337465,
+            "scoreError" : 0.011613804722758634,
+            "scoreConfidence" : [
+                0.3135873509109879,
+                0.33681496035650516
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.31793855517756653,
+                "50.0" : 0.32358584517068434,
+                "90.0" : 0.3339527306061112,
+                "95.0" : 0.3339527306061112,
+                "99.0" : 0.3339527306061112,
+                "99.9" : 0.3339527306061112,
+                "99.99" : 0.3339527306061112,
+                "99.999" : 0.3339527306061112,
+                "99.9999" : 0.3339527306061112,
+                "100.0" : 0.3339527306061112
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    0.32359638985244626,
+                    0.32337204507679873,
+                    0.32358584517068434
+                ],
+                [
+                    0.333943945167969,
+                    0.33376095434216674,
+                    0.3339527306061112
+                ],
+                [
+                    0.3185725668822274,
+                    0.31793855517756653,
+                    0.318087368427749
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.OverlappingFieldValidationPerformance.benchmarkNoOverlapNoFrag",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "100"
+        },
+        "primaryMetric" : {
+            "score" : 0.16379379419542822,
+            "scoreError" : 0.011142070500678086,
+            "scoreConfidence" : [
+                0.15265172369475014,
+                0.1749358646961063
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.15917055110064143,
+                "50.0" : 0.15955122844105493,
+                "90.0" : 0.1727546144039249,
+                "95.0" : 0.1727546144039249,
+                "99.0" : 0.1727546144039249,
+                "99.9" : 0.1727546144039249,
+                "99.99" : 0.1727546144039249,
+                "99.999" : 0.1727546144039249,
+                "99.9999" : 0.1727546144039249,
+                "100.0" : 0.1727546144039249
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    0.15958058684134938,
+                    0.15917055110064143,
+                    0.15917860239717305
+                ],
+                [
+                    0.1727546144039249,
+                    0.17259759036227756,
+                    0.17254379072415757
+                ],
+                [
+                    0.15955122844105493,
+                    0.15929815637892858,
+                    0.15946902710934635
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.OverlappingFieldValidationPerformance.benchmarkOverlapFrag",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "100"
+        },
+        "primaryMetric" : {
+            "score" : 0.38991118899124244,
+            "scoreError" : 0.01124237080592444,
+            "scoreConfidence" : [
+                0.378668818185318,
+                0.4011535597971669
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.38210326390799326,
+                "50.0" : 0.39018023211080766,
+                "90.0" : 0.39966706621907844,
+                "95.0" : 0.39966706621907844,
+                "99.0" : 0.39966706621907844,
+                "99.9" : 0.39966706621907844,
+                "99.99" : 0.39966706621907844,
+                "99.999" : 0.39966706621907844,
+                "99.9999" : 0.39966706621907844,
+                "100.0" : 0.39966706621907844
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    0.39966706621907844,
+                    0.39717512927439536,
+                    0.39558205047468353
+                ],
+                [
+                    0.38210326390799326,
+                    0.38233665801345773,
+                    0.38222272790857664
+                ],
+                [
+                    0.3904339530316636,
+                    0.39018023211080766,
+                    0.3894996199805258
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.OverlappingFieldValidationPerformance.benchmarkOverlapNoFrag",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "100"
+        },
+        "primaryMetric" : {
+            "score" : 0.15684870185149255,
+            "scoreError" : 0.0037258751961398227,
+            "scoreConfidence" : [
+                0.15312282665535273,
+                0.16057457704763237
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.15480540073375748,
+                "50.0" : 0.1556524699052096,
+                "90.0" : 0.15974400097442532,
+                "95.0" : 0.15974400097442532,
+                "99.0" : 0.15974400097442532,
+                "99.9" : 0.15974400097442532,
+                "99.99" : 0.15974400097442532,
+                "99.999" : 0.15974400097442532,
+                "99.9999" : 0.15974400097442532,
+                "100.0" : 0.15974400097442532
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    0.1597275829925888,
+                    0.15974400097442532,
+                    0.159548770716998
+                ],
+                [
+                    0.15493251851392806,
+                    0.15480540073375748,
+                    0.1548956253620607
+                ],
+                [
+                    0.15698526397915294,
+                    0.1556524699052096,
+                    0.15534668348531216
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.OverlappingFieldValidationPerformance.benchmarkRepeatedFields",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "100"
+        },
+        "primaryMetric" : {
+            "score" : 0.04782230709382967,
+            "scoreError" : 0.0017082561348700006,
+            "scoreConfidence" : [
+                0.046114050958959665,
+                0.04953056322869967
+            ],
+            "scorePercentiles" : {
+                "0.0" : 0.04707639163183068,
+                "50.0" : 0.04721573866013211,
+                "90.0" : 0.04920717646943044,
+                "95.0" : 0.04920717646943044,
+                "99.0" : 0.04920717646943044,
+                "99.9" : 0.04920717646943044,
+                "99.99" : 0.04920717646943044,
+                "99.999" : 0.04920717646943044,
+                "99.9999" : 0.04920717646943044,
+                "100.0" : 0.04920717646943044
+            },
+            "scoreUnit" : "ms/op",
+            "rawData" : [
+                [
+                    0.04721573866013211,
+                    0.04707639163183068,
+                    0.047087921274932665
+                ],
+                [
+                    0.04726264621172378,
+                    0.047139337894786464,
+                    0.047093677427406215
+                ],
+                [
+                    0.0491894079390064,
+                    0.0491284663352182,
+                    0.04920717646943044
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "performance.OverlappingFieldValidationPerformance.overlappingFieldValidationAvgTime",
+        "mode" : "avgt",
+        "threads" : 1,
+        "forks" : 3,
+        "jvm" : "/home/ec2-user/.sdkman/candidates/java/17.0.10-amzn/bin/java",
+        "jvmArgs" : [
+        ],
+        "jdkVersion" : "17.0.10",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "17.0.10+7-LTS",
+        "warmupIterations" : 2,
+        "warmupTime" : "5 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "10 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "size" : "100"
+        },
+        "primaryMetric" : {
+            "score" : 9281569.0026659,
+            "scoreError" : 115612.17714641236,
+            "scoreConfidence" : [
+                9165956.825519487,
+                9397181.179812312
+            ],
+            "scorePercentiles" : {
+                "0.0" : 9196106.576286765,
+                "50.0" : 9263902.401851851,
+                "90.0" : 9365629.605805244,
+                "95.0" : 9365629.605805244,
+                "99.0" : 9365629.605805244,
+                "99.9" : 9365629.605805244,
+                "99.99" : 9365629.605805244,
+                "99.999" : 9365629.605805244,
+                "99.9999" : 9365629.605805244,
+                "100.0" : 9365629.605805244
+            },
+            "scoreUnit" : "ns/op",
+            "rawData" : [
+                [
+                    9310784.226046512,
+                    9263902.401851851,
+                    9258585.227567067
+                ],
+                [
+                    9361236.768942937,
+                    9365629.605805244,
+                    9355414.256314313
+                ],
+                [
+                    9218562.90046083,
+                    9203899.060717572,
+                    9196106.576286765
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

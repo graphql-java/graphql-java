@@ -1,6 +1,10 @@
 package graphql.analysis;
 
+import graphql.GraphQLContext;
 import graphql.PublicApi;
+import graphql.execution.CoercedVariables;
+import graphql.execution.RawVariables;
+import graphql.execution.ValuesResolver;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -8,14 +12,20 @@ import graphql.language.Node;
 import graphql.language.NodeTraverser;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
+import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.util.MutableRef;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -34,43 +44,65 @@ import static java.util.Collections.singletonList;
  * It also doesn't consider field merging, which means for example {@code { user{firstName} user{firstName}} } will result in four
  * visitField calls.
  */
+@NullMarked
 @PublicApi
-public class    QueryTraverser {
+public class QueryTraverser {
 
     private final Collection<? extends Node> roots;
     private final GraphQLSchema schema;
     private final Map<String, FragmentDefinition> fragmentsByName;
-    private final Map<String, Object> variables;
+    private CoercedVariables coercedVariables;
 
     private final GraphQLCompositeType rootParentType;
+    private final QueryTraversalOptions options;
 
     private QueryTraverser(GraphQLSchema schema,
                            Document document,
-                           String operation,
-                           Map<String, Object> variables) {
-        assertNotNull(document, "document  can't be null");
+                           @Nullable String operation,
+                           CoercedVariables coercedVariables,
+                           QueryTraversalOptions options
+                           ) {
+        this.schema = schema;
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
-        this.schema = assertNotNull(schema, "schema can't be null");
-        this.variables = assertNotNull(variables, "variables can't be null");
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
+        this.coercedVariables = coercedVariables;
+        this.options = options;
+    }
+
+    private QueryTraverser(GraphQLSchema schema,
+                           Document document,
+                           @Nullable String operation,
+                           RawVariables rawVariables,
+                           QueryTraversalOptions options
+    ) {
+        this.schema = schema;
+        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
+        List<VariableDefinition> variableDefinitions = getOperationResult.operationDefinition.getVariableDefinitions();
+        this.fragmentsByName = getOperationResult.fragmentsByName;
+        this.roots = singletonList(getOperationResult.operationDefinition);
+        this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
+        this.coercedVariables = ValuesResolver.coerceVariableValues(schema, variableDefinitions, rawVariables, GraphQLContext.getDefault(), Locale.getDefault());
+        this.options = options;
     }
 
     private QueryTraverser(GraphQLSchema schema,
                            Node root,
                            GraphQLCompositeType rootParentType,
                            Map<String, FragmentDefinition> fragmentsByName,
-                           Map<String, Object> variables) {
-        this.schema = assertNotNull(schema, "schema can't be null");
-        this.variables = assertNotNull(variables, "variables can't be null");
-        assertNotNull(root, "root can't be null");
+                           CoercedVariables coercedVariables,
+                           QueryTraversalOptions options
+    ) {
+        this.schema = schema;
         this.roots = Collections.singleton(root);
-        this.rootParentType = assertNotNull(rootParentType, "rootParentType can't be null");
-        this.fragmentsByName = assertNotNull(fragmentsByName, "fragmentsByName can't be null");
+        this.rootParentType = rootParentType;
+        this.fragmentsByName = fragmentsByName;
+        this.coercedVariables = coercedVariables;
+        this.options = options;
     }
 
-    public Object visitDepthFirst(QueryVisitor queryVisitor) {
+    public @Nullable Object visitDepthFirst(QueryVisitor queryVisitor) {
         return visitImpl(queryVisitor, null);
     }
 
@@ -102,17 +134,16 @@ public class    QueryTraverser {
      *
      * @return the calculated overall value
      */
-    @SuppressWarnings("unchecked")
-    public <T> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
-        // compiler hack to make acc final and mutable :-)
-        final Object[] acc = {initialValue};
+    public <T extends @Nullable Object> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
+        MutableRef<T> acc = new MutableRef<>();
+        acc.value = initialValue;
         visitPostOrder(new QueryVisitorStub() {
             @Override
             public void visitField(QueryVisitorFieldEnvironment env) {
-                acc[0] = queryReducer.reduceField(env, (T) acc[0]);
+                acc.value = queryReducer.reduceField(env, acc.value);
             }
         });
-        return (T) acc[0];
+        return acc.value;
     }
 
     /**
@@ -122,19 +153,18 @@ public class    QueryTraverser {
      * @param initialValue the initial value to pass to the reducer
      * @param <T>          the type of reduced value
      *
-     * @return the calucalated overall value
+     * @return the calculated overall value
      */
-    @SuppressWarnings("unchecked")
-    public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
-        // compiler hack to make acc final and mutable :-)
-        final Object[] acc = {initialValue};
+    public <T extends @Nullable Object> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
+        MutableRef<T> acc = new MutableRef<>();
+        acc.value = initialValue;
         visitPreOrder(new QueryVisitorStub() {
             @Override
             public void visitField(QueryVisitorFieldEnvironment env) {
-                acc[0] = queryReducer.reduceField(env, (T) acc[0]);
+                acc.value = queryReducer.reduceField(env, acc.value);
             }
         });
-        return (T) acc[0];
+        return acc.value;
     }
 
     private GraphQLObjectType getRootTypeFromOperation(OperationDefinition operationDefinition) {
@@ -155,12 +185,12 @@ public class    QueryTraverser {
             return node.getChildren();
         }
         FragmentSpread fragmentSpread = (FragmentSpread) node;
-        return singletonList(fragmentsByName.get(fragmentSpread.getName()));
+        return singletonList(assertNotNull(fragmentsByName.get(fragmentSpread.getName()), "Fragment %s must exist", fragmentSpread.getName()));
     }
 
-    private Object visitImpl(QueryVisitor visitFieldCallback, Boolean preOrder) {
+    private @Nullable Object visitImpl(QueryVisitor visitFieldCallback, @Nullable Boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
-        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
+        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null, GraphQLContext.getDefault()));
 
         QueryVisitor preOrderCallback;
         QueryVisitor postOrderCallback;
@@ -174,7 +204,12 @@ public class    QueryTraverser {
         }
 
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
-        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback, postOrderCallback, variables, schema, fragmentsByName);
+        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback,
+                postOrderCallback,
+                coercedVariables.toMap(),
+                schema,
+                fragmentsByName,
+                options);
         return nodeTraverser.depthFirst(nodeVisitorWithTypeTracking, roots);
     }
 
@@ -183,15 +218,18 @@ public class    QueryTraverser {
     }
 
     @PublicApi
+    @NullUnmarked
     public static class Builder {
         private GraphQLSchema schema;
         private Document document;
         private String operation;
-        private Map<String, Object> variables;
+        private CoercedVariables coercedVariables = CoercedVariables.emptyVariables();
+        private RawVariables rawVariables;
 
         private Node root;
         private GraphQLCompositeType rootParentType;
         private Map<String, FragmentDefinition> fragmentsByName;
+        private QueryTraversalOptions options = QueryTraversalOptions.defaultOptions();
 
 
         /**
@@ -202,7 +240,7 @@ public class    QueryTraverser {
          * @return this builder
          */
         public Builder schema(GraphQLSchema schema) {
-            this.schema = schema;
+            this.schema = assertNotNull(schema, "schema can't be null");
             return this;
         }
 
@@ -228,19 +266,33 @@ public class    QueryTraverser {
          * @return this builder
          */
         public Builder document(Document document) {
-            this.document = document;
+            this.document = assertNotNull(document, "document can't be null");
             return this;
         }
 
         /**
-         * Variables used in the query.
+         * Raw variables used in the query.
          *
          * @param variables the variables to use
          *
          * @return this builder
          */
         public Builder variables(Map<String, Object> variables) {
-            this.variables = variables;
+            assertNotNull(variables, "variables can't be null");
+            this.rawVariables = RawVariables.of(variables);
+            return this;
+        }
+
+        /**
+         * Variables (already coerced) used in the query.
+         *
+         * @param coercedVariables the variables to use
+         *
+         * @return this builder
+         */
+        public Builder coercedVariables(CoercedVariables coercedVariables) {
+            assertNotNull(coercedVariables, "coercedVariables can't be null");
+            this.coercedVariables = coercedVariables;
             return this;
         }
 
@@ -253,7 +305,7 @@ public class    QueryTraverser {
          * @return this builder
          */
         public Builder root(Node root) {
-            this.root = root;
+            this.root = assertNotNull(root, "root can't be null");
             return this;
         }
 
@@ -265,7 +317,7 @@ public class    QueryTraverser {
          * @return this builder
          */
         public Builder rootParentType(GraphQLCompositeType rootParentType) {
-            this.rootParentType = rootParentType;
+            this.rootParentType = assertNotNull(rootParentType, "rootParentType can't be null");
             return this;
         }
 
@@ -277,7 +329,18 @@ public class    QueryTraverser {
          * @return this builder
          */
         public Builder fragmentsByName(Map<String, FragmentDefinition> fragmentsByName) {
-            this.fragmentsByName = fragmentsByName;
+            this.fragmentsByName = assertNotNull(fragmentsByName, "fragmentsByName can't be null");
+            return this;
+        }
+
+        /**
+         * Sets the options to use while traversing
+         *
+         * @param options the options to use
+         * @return this builder
+         */
+        public Builder options(QueryTraversalOptions options) {
+            this.options = assertNotNull(options, "options can't be null");
             return this;
         }
 
@@ -287,9 +350,36 @@ public class    QueryTraverser {
         public QueryTraverser build() {
             checkState();
             if (document != null) {
-                return new QueryTraverser(schema, document, operation, variables);
+                if (rawVariables != null) {
+                    return new QueryTraverser(schema,
+                            document,
+                            operation,
+                            rawVariables,
+                            options);
+                }
+                return new QueryTraverser(schema,
+                        document,
+                        operation,
+                        coercedVariables,
+                        options);
             } else {
-                return new QueryTraverser(schema, root, rootParentType, fragmentsByName, variables);
+                if (rawVariables != null) {
+                    // When traversing with an arbitrary root, there is no variable definition context available
+                    // Thus, the variables must have already been coerced
+                    // Retaining this builder for backwards compatibility
+                    return new QueryTraverser(schema,
+                            root,
+                            rootParentType,
+                            fragmentsByName,
+                            CoercedVariables.of(rawVariables.toMap()),
+                            options);
+                }
+                return new QueryTraverser(schema,
+                        root,
+                        rootParentType,
+                        fragmentsByName,
+                        coercedVariables,
+                        options);
             }
         }
 

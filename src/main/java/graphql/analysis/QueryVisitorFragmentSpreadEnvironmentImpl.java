@@ -55,7 +55,7 @@ public class QueryVisitorFragmentSpreadEnvironmentImpl implements QueryVisitorFr
 
     @Override
     public int hashCode() {
-        return Objects.hash(fragmentSpread);
+        return Objects.hashCode(fragmentSpread);
     }
 }
 

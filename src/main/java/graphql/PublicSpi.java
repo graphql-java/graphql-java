@@ -15,7 +15,7 @@ import static java.lang.annotation.ElementType.TYPE;
  *
  * The guarantee  is for callers of code with this annotation as well as derivations that inherit / implement this code.
  *
- * New methods will not be added (without using default methods say) that would nominally breaks SPI implementations
+ * New methods will not be added (without using default methods say) that would nominally break SPI implementations
  * within a major release.
  */
 @Retention(RetentionPolicy.RUNTIME)

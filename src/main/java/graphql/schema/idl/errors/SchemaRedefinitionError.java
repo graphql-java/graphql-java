@@ -1,9 +1,11 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.SchemaDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class SchemaRedefinitionError extends BaseError {
 
     public SchemaRedefinitionError(SchemaDefinition oldEntry, SchemaDefinition newEntry) {

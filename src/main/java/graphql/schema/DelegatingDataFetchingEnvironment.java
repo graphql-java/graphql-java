@@ -1,7 +1,7 @@
 package graphql.schema;
 
+import graphql.GraphQLContext;
 import graphql.PublicApi;
-import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
@@ -12,6 +12,8 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -25,6 +27,7 @@ import java.util.Map;
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
+@NullMarked
 public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironment {
 
     protected final DataFetchingEnvironment delegateEnvironment;
@@ -38,88 +41,115 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         this.delegateEnvironment = delegateEnvironment;
     }
 
-    public <T> T getSource() {
+    @Override
+    public <T> @Nullable T getSource() {
         return delegateEnvironment.getSource();
     }
 
-    public Map<String, Object> getArguments() {
+    @Override
+    public Map<String, @Nullable Object> getArguments() {
         return delegateEnvironment.getArguments();
     }
 
+    @Override
     public boolean containsArgument(String name) {
         return delegateEnvironment.containsArgument(name);
     }
 
-    public <T> T getArgument(String name) {
+    @Override
+    public <T> @Nullable T getArgument(String name) {
         return delegateEnvironment.getArgument(name);
     }
 
-    public <T> T getArgumentOrDefault(String name, T defaultValue) {
+    @Override
+    public <T> @Nullable T getArgumentOrDefault(String name, @Nullable T defaultValue) {
         return delegateEnvironment.getArgumentOrDefault(name, defaultValue);
     }
 
-    public <T> T getContext() {
+    @Deprecated(since = "2022-04-17")
+    @Override
+    public <T> @Nullable T getContext() {
         return delegateEnvironment.getContext();
     }
 
-    public <T> T getLocalContext() {
+    @Override
+    public GraphQLContext getGraphQlContext() {
+        return delegateEnvironment.getGraphQlContext();
+    }
+
+    @Override
+    public <T> @Nullable T getLocalContext() {
         return delegateEnvironment.getLocalContext();
     }
 
-    public <T> T getRoot() {
+    @Override
+    public <T> @Nullable T getRoot() {
         return delegateEnvironment.getRoot();
     }
 
+    @Override
     public GraphQLFieldDefinition getFieldDefinition() {
         return delegateEnvironment.getFieldDefinition();
     }
 
-    @Deprecated
+    @Deprecated(since = "2019-10-07")
+    @Override
     public List<Field> getFields() {
         return delegateEnvironment.getFields();
     }
 
+    @Override
     public MergedField getMergedField() {
         return delegateEnvironment.getMergedField();
     }
 
+    @Override
     public Field getField() {
         return delegateEnvironment.getField();
     }
 
+    @Override
     public GraphQLOutputType getFieldType() {
         return delegateEnvironment.getFieldType();
     }
 
+    @Override
     public ExecutionStepInfo getExecutionStepInfo() {
         return delegateEnvironment.getExecutionStepInfo();
     }
 
+    @Override
     public GraphQLType getParentType() {
         return delegateEnvironment.getParentType();
     }
 
+    @Override
     public GraphQLSchema getGraphQLSchema() {
         return delegateEnvironment.getGraphQLSchema();
     }
 
+    @Override
     public Map<String, FragmentDefinition> getFragmentsByName() {
         return delegateEnvironment.getFragmentsByName();
     }
 
+    @Override
     public ExecutionId getExecutionId() {
         return delegateEnvironment.getExecutionId();
     }
 
+    @Override
     public DataFetchingFieldSelectionSet getSelectionSet() {
         return delegateEnvironment.getSelectionSet();
     }
 
+    @Override
     public QueryDirectives getQueryDirectives() {
         return delegateEnvironment.getQueryDirectives();
     }
 
-    public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
+    @Override
+    public <K, V extends @Nullable Object> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return delegateEnvironment.getDataLoader(dataLoaderName);
     }
 
@@ -133,19 +163,23 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         return delegateEnvironment.getLocale();
     }
 
-    public CacheControl getCacheControl() {
-        return delegateEnvironment.getCacheControl();
-    }
-
+    @Override
     public OperationDefinition getOperationDefinition() {
         return delegateEnvironment.getOperationDefinition();
     }
 
+    @Override
     public Document getDocument() {
         return delegateEnvironment.getDocument();
     }
 
-    public Map<String, Object> getVariables() {
+    @Override
+    public Map<String, @Nullable Object> getVariables() {
         return delegateEnvironment.getVariables();
+    }
+
+    @Override
+    public Object toInternal() {
+        return delegateEnvironment.toInternal();
     }
 }

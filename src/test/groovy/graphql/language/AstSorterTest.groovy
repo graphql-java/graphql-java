@@ -97,7 +97,7 @@ class AstSorterTest extends Specification {
     
 '''
 
-        def expectedQuery = '''query {
+        def expectedQuery = '''{
   unamedQueryX
   unamedQueryY
   unamedQueryZ
@@ -340,7 +340,7 @@ input InputZ {
             }
         '''
 
-        def expectedQuery = '''query {
+        def expectedQuery = '''{
   field(arg: {x : {a : "vala", b : "valb", c : "valc"}, y : "valy", z : "valz"})
 }
 '''

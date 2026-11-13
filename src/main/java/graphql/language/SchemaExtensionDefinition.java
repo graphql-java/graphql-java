@@ -1,20 +1,31 @@
 package graphql.language;
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
-public class SchemaExtensionDefinition extends SchemaDefinition {
+@NullMarked
+public class SchemaExtensionDefinition extends SchemaDefinition implements SDLExtensionDefinition {
 
-    protected SchemaExtensionDefinition(List<Directive> directives, List<OperationTypeDefinition> operationTypeDefinitions, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
-        super(directives, operationTypeDefinitions, sourceLocation, comments, ignoredChars, additionalData);
+    protected SchemaExtensionDefinition(List<Directive> directives,
+                                        List<OperationTypeDefinition> operationTypeDefinitions,
+                                        @Nullable SourceLocation sourceLocation,
+                                        List<Comment> comments,
+                                        IgnoredChars ignoredChars,
+                                        Map<String, String> additionalData) {
+        super(directives, operationTypeDefinitions, sourceLocation, comments, ignoredChars, additionalData, null);
     }
 
     @Override
@@ -49,22 +60,24 @@ public class SchemaExtensionDefinition extends SchemaDefinition {
         return new Builder();
     }
 
-    public static final class Builder implements NodeBuilder {
+    @NullUnmarked
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
-        private List<Directive> directives = new ArrayList<>();
-        private List<OperationTypeDefinition> operationTypeDefinitions = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
+        private ImmutableList<Directive> directives = emptyList();
+        private ImmutableList<OperationTypeDefinition> operationTypeDefinitions = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
+
 
         protected Builder() {
         }
 
         protected Builder(SchemaDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
-            this.directives = existing.getDirectives();
-            this.operationTypeDefinitions = existing.getOperationTypeDefinitions();
+            this.comments = ImmutableList.copyOf(existing.getComments());
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
+            this.operationTypeDefinitions = ImmutableList.copyOf(existing.getOperationTypeDefinitions());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -76,27 +89,28 @@ public class SchemaExtensionDefinition extends SchemaDefinition {
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
 
         public Builder directive(Directive directive) {
-            this.directives.add(directive);
+            this.directives = ImmutableKit.addToList(directives, directive);
             return this;
         }
 
         public Builder operationTypeDefinitions(List<OperationTypeDefinition> operationTypeDefinitions) {
-            this.operationTypeDefinitions = operationTypeDefinitions;
+            this.operationTypeDefinitions = ImmutableList.copyOf(operationTypeDefinitions);
             return this;
         }
 
-        public Builder operationTypeDefinition(OperationTypeDefinition operationTypeDefinitions) {
-            this.operationTypeDefinitions.add(operationTypeDefinitions);
+        public Builder operationTypeDefinition(OperationTypeDefinition operationTypeDefinition) {
+            this.operationTypeDefinitions = ImmutableKit.addToList(operationTypeDefinitions, operationTypeDefinition);
             return this;
         }
 

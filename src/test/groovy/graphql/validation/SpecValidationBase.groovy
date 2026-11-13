@@ -5,14 +5,14 @@ import spock.lang.Specification
 
 /**
  * validation examples used in the spec
- * http://facebook.github.io/graphql/#sec-Validation
+ * https://spec.graphql.org/October2021/#sec-Validation
  * @author dwinsor
  *
  */
 class SpecValidationBase extends Specification {
 
-    List<ValidationError> validate(String query) {
+    static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document)
+        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
     }
 }

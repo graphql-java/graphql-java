@@ -1,11 +1,20 @@
 package graphql.language;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.Objects;
 
+/**
+ * Graphql syntax has a series of characters, such as spaces, new lines and commas that are not considered relevant
+ * to the syntax.  However they can be captured and associated with the AST elements they belong to.
+ *
+ * This costs more memory but for certain use cases (like editors) this maybe be useful
+ */
 @PublicApi
+@NullMarked
 public class IgnoredChar implements Serializable {
 
     public enum IgnoredCharKind {
@@ -45,7 +54,7 @@ public class IgnoredChar implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(@Nullable Object o) {
         if (this == o) {
             return true;
         }
@@ -60,6 +69,10 @@ public class IgnoredChar implements Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(value, kind, sourceLocation);
+        int result = 1;
+        result = 31 * result + Objects.hashCode(value);
+        result = 31 * result + Objects.hashCode(kind);
+        result = 31 * result + Objects.hashCode(sourceLocation);
+        return result;
     }
 }

@@ -1,22 +1,24 @@
 package graphql.execution;
 
+import graphql.Internal;
 import graphql.schema.GraphQLType;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
 /**
- * See (http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability), but if a non nullable field
+ * See (https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability), but if a non nullable field
  * actually resolves to a null value and the parent type is nullable then the parent must in fact become null
  * so we use exceptions to indicate this special case
  */
+@Internal
 public class NonNullableFieldWasNullException extends RuntimeException {
 
     private final ExecutionStepInfo executionStepInfo;
-    private final ExecutionPath path;
+    private final ResultPath path;
 
 
-    public NonNullableFieldWasNullException(ExecutionStepInfo executionStepInfo, ExecutionPath path) {
+    public NonNullableFieldWasNullException(ExecutionStepInfo executionStepInfo, ResultPath path) {
         super(
                 mkMessage(assertNotNull(executionStepInfo),
                         assertNotNull(path))
@@ -38,28 +40,36 @@ public class NonNullableFieldWasNullException extends RuntimeException {
     }
 
 
-    private static String mkMessage(ExecutionStepInfo executionStepInfo, ExecutionPath path) {
+    private static String mkMessage(ExecutionStepInfo executionStepInfo, ResultPath path) {
         GraphQLType unwrappedTyped = executionStepInfo.getUnwrappedNonNullType();
         if (executionStepInfo.hasParent()) {
             GraphQLType unwrappedParentType = executionStepInfo.getParent().getUnwrappedNonNullType();
-            return String.format("Cannot return null for non-nullable type: '%s' within parent '%s' (%s)", simplePrint(unwrappedTyped), simplePrint(unwrappedParentType), path);
+            return String.format(
+                    "The field at path '%s' was declared as a non null type, but the code involved in retrieving" +
+                            " data has wrongly returned a null value.  The graphql specification requires that the" +
+                            " parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on." +
+                            " The non-nullable type is '%s' within parent type '%s'",
+                    path, simplePrint(unwrappedTyped), simplePrint(unwrappedParentType));
+        } else {
+            return String.format(
+                    "The field at path '%s' was declared as a non null type, but the code involved in retrieving" +
+                            " data has wrongly returned a null value.  The graphql specification requires that the" +
+                            " parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on." +
+                            " The non-nullable type is '%s'",
+                    path, simplePrint(unwrappedTyped));
         }
-        return String.format("Cannot return null for non-nullable type: '%s' (%s)", simplePrint(unwrappedTyped), path);
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
         return executionStepInfo;
     }
 
-    public ExecutionPath getPath() {
+    public ResultPath getPath() {
         return path;
     }
 
     @Override
     public String toString() {
-        return "NonNullableFieldWasNullException{" +
-                " path=" + path +
-                " executionStepInfo=" + executionStepInfo +
-                '}';
+        return getMessage();
     }
 }

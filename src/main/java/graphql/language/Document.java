@@ -1,33 +1,40 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
+import graphql.Assert;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
+@NullMarked
 public class Document extends AbstractNode<Document> {
 
-    private final List<Definition> definitions;
+    private final ImmutableList<Definition> definitions;
 
     public static final String CHILD_DEFINITIONS = "definitions";
 
     @Internal
-    protected Document(List<Definition> definitions, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected Document(List<Definition> definitions, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.definitions = definitions;
+        this.definitions = ImmutableList.copyOf(definitions);
     }
 
     /**
@@ -36,11 +43,11 @@ public class Document extends AbstractNode<Document> {
      * @param definitions the definitions that make up this document
      */
     public Document(List<Definition> definitions) {
-        this(definitions, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(definitions, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     public List<Definition> getDefinitions() {
-        return new ArrayList<>(definitions);
+        return definitions;
     }
 
     /**
@@ -52,15 +59,48 @@ public class Document extends AbstractNode<Document> {
      * @return a list of definitions of that class or empty list
      */
     public <T extends Definition> List<T> getDefinitionsOfType(Class<T> definitionClass) {
+        return ImmutableKit.filterAndMap(definitions,
+                d -> definitionClass.isAssignableFrom(d.getClass()),
+                definitionClass::cast);
+    }
+
+    /**
+     * Returns the first of the specific type.  It uses {@link java.lang.Class#isAssignableFrom(Class)} for the test.
+     *
+     * This is useful when you have generated a document in code and KNOW there is only one definition in it
+     *
+     * @param definitionClass the definition class
+     * @param <T>             the type of definition
+     *
+     * @return an optional definition which will be empty of there are none
+     */
+    public <T extends Definition> Optional<T> getFirstDefinitionOfType(Class<T> definitionClass) {
         return definitions.stream()
                 .filter(d -> definitionClass.isAssignableFrom(d.getClass()))
                 .map(definitionClass::cast)
-                .collect(Collectors.toList());
+                .findFirst();
+    }
+
+    /**
+     * This will allow you to find a {@link OperationDefinition} with the specified name
+     * in the document
+     *
+     * @param name the name of the operation to find
+     *
+     * @return an optional {@link OperationDefinition}
+     */
+    public Optional<OperationDefinition> getOperationDefinition(String name) {
+        Assert.assertNotNull(name);
+        return definitions.stream()
+                .filter(d -> OperationDefinition.class.isAssignableFrom(d.getClass()))
+                .map(OperationDefinition.class::cast)
+                .filter(opDef -> name.equals(opDef.getName()))
+                .findFirst();
     }
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>(definitions);
+        return ImmutableList.copyOf(definitions);
     }
 
     @Override
@@ -78,7 +118,7 @@ public class Document extends AbstractNode<Document> {
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -91,7 +131,7 @@ public class Document extends AbstractNode<Document> {
 
     @Override
     public Document deepCopy() {
-        return new Document(deepCopy(definitions), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
+        return new Document(assertNotNull(deepCopy(definitions)), getSourceLocation(), getComments(), getIgnoredChars(), getAdditionalData());
     }
 
     @Override
@@ -116,10 +156,11 @@ public class Document extends AbstractNode<Document> {
         return builder.build();
     }
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
-        private List<Definition> definitions = new ArrayList<>();
+        private ImmutableList<Definition> definitions = emptyList();
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -128,19 +169,19 @@ public class Document extends AbstractNode<Document> {
 
         private Builder(Document existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
-            this.definitions = existing.getDefinitions();
+            this.comments = ImmutableList.copyOf(existing.getComments());
+            this.definitions = ImmutableList.copyOf(existing.getDefinitions());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
         public Builder definitions(List<Definition> definitions) {
-            this.definitions = definitions;
+            this.definitions = ImmutableList.copyOf(definitions);
             return this;
         }
 
         public Builder definition(Definition definition) {
-            this.definitions.add(definition);
+            this.definitions = ImmutableKit.addToList(definitions, definition);
             return this;
         }
 
@@ -150,7 +191,7 @@ public class Document extends AbstractNode<Document> {
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

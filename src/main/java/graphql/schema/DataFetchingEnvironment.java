@@ -1,17 +1,21 @@
 package graphql.schema;
 
+import graphql.GraphQLContext;
+import graphql.Internal;
 import graphql.PublicApi;
-import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
 import graphql.execution.directives.QueryDirectives;
+import graphql.introspection.IntrospectionDataFetchingEnvironment;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -24,7 +28,8 @@ import java.util.Map;
  */
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
-public interface DataFetchingEnvironment {
+@NullMarked
+public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnvironment {
 
     /**
      * This is the value of the current object to be queried.
@@ -33,19 +38,22 @@ public interface DataFetchingEnvironment {
      * For the root query, it is equal to {{@link DataFetchingEnvironment#getRoot}
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null for the root query, otherwise it is never null
      */
+    @Nullable
     <T> T getSource();
 
     /**
      * @return the arguments that have been passed in via the graphql query
      */
-    Map<String, Object> getArguments();
+    Map<String, @Nullable Object> getArguments();
 
     /**
      * Returns true of the named argument is present
      *
      * @param name the name of the argument
+     *
      * @return true of the named argument is present
      */
     boolean containsArgument(String name);
@@ -55,53 +63,75 @@ public interface DataFetchingEnvironment {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
-     * @return the named argument or null if its not present
+     *
+     * @return the named argument or null if it's not present
      */
+    @Nullable
     <T> T getArgument(String name);
 
     /**
-     * Returns the named argument or the default value
+     * Returns the named argument or the default value. An explicitly null argument remains null.
      *
      * @param name         the name of the argument
-     * @param defaultValue the default value if the argument is not present
+     * @param defaultValue the default value if the argument is not present, which may be null
      * @param <T>          you decide what type it is
-     * @return the named argument or the default if its not present
+     *
+     * @return the named argument or the default if it's not present
      */
-    <T> T getArgumentOrDefault(String name, T defaultValue);
+    <T> @Nullable T getArgumentOrDefault(String name, @Nullable T defaultValue);
 
     /**
-     * Returns a context argument that is set up when the {@link graphql.GraphQL#execute(graphql.ExecutionInput)} )} method
+     * Returns a legacy context argument that is set up when the {@link graphql.GraphQL#execute(graphql.ExecutionInput)} method
      * is invoked.
      * <p>
-     * This is a info object which is provided to all DataFetchers, but never used by graphql-java itself.
+     * This is an info object which is provided to all DataFetchers, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null
+     *
+     * @deprecated - use {@link #getGraphQlContext()} instead
      */
+    @Deprecated(since = "2021-07-05")
+    @Nullable
     <T> T getContext();
 
     /**
-     * This returns a context object that parent fields may have returned returned
+     * Returns a shared context argument that is set up when the {@link graphql.GraphQL#execute(graphql.ExecutionInput)} )} method
+     * is invoked.
+     * <p>
+     * This is an info object which is provided to all DataFetchers.
+     *
+     * @return can NOT be null
+     */
+    GraphQLContext getGraphQlContext();
+
+    /**
+     * This returns a context object that parent fields may have returned
      * via {@link graphql.execution.DataFetcherResult#getLocalContext()} which can be used to pass down extra information to
      * fields beyond the normal {@link #getSource()}
      * <p>
-     * This differs from {@link #getContext()} in that its field specific and passed from parent field to child field,
-     * whilst {@link #getContext()} is global for the whole query.
+     * This differs from {@link #getGraphQlContext()} in that it's field specific and passed from parent field to child field,
+     * whilst {@link #getGraphQlContext()} is global for the whole query.
      * <p>
-     * If the field is a top level field then 'localContext' equals null since its never be set until those
+     * If the field is a top level field then 'localContext' equals null since it's never be set until those
      * fields execute.
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null if no field context objects are passed back by previous parent fields
      */
+    @Nullable
     <T> T getLocalContext();
 
     /**
      * This is the source object for the root query.
      *
      * @param <T> you decide what type it is
+     *
      * @return can be null
      */
+    @Nullable
     <T> T getRoot();
 
     /**
@@ -112,13 +142,14 @@ public interface DataFetchingEnvironment {
 
     /**
      * @return the list of fields
+     *
      * @deprecated Use {@link #getMergedField()}.
      */
-    @Deprecated
+    @Deprecated(since = "2018-12-20")
     List<Field> getFields();
 
     /**
-     * It can happen that a query has overlapping fields which are
+     * It can happen that a query has overlapping fields which
      * are querying the same data. If this is the case they get merged
      * together and fetched only once, but this method returns all of the Fields
      * from the query.
@@ -190,6 +221,7 @@ public interface DataFetchingEnvironment {
      * This gives you access to the directives related to this field
      *
      * @return the {@link graphql.execution.directives.QueryDirectives} for the currently executing field
+     *
      * @see graphql.execution.directives.QueryDirectives for more information
      */
     QueryDirectives getQueryDirectives();
@@ -200,20 +232,19 @@ public interface DataFetchingEnvironment {
      * @param dataLoaderName the name of the data loader to fetch
      * @param <K>            the key type
      * @param <V>            the value type
+     *
      * @return the named data loader or null
+     *
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
-    <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
+    @Nullable
+    <K, V extends @Nullable Object> DataLoader<K, V> getDataLoader(String dataLoaderName);
+
 
     /**
      * @return the {@link org.dataloader.DataLoaderRegistry} in play
      */
     DataLoaderRegistry getDataLoaderRegistry();
-
-    /**
-     * @return the current {@link CacheControl} instance used to add cache hints to the response
-     */
-    CacheControl getCacheControl();
 
     /**
      * @return the current {@link java.util.Locale} instance used for this request
@@ -231,12 +262,29 @@ public interface DataFetchingEnvironment {
     Document getDocument();
 
     /**
-     * This returns the variables that have been passed into the query.  Note that this is the raw variables themselves and not the
+     * This returns the variables that have been passed into the query.  Note that this is the query variables themselves and not the
      * arguments to the field, which is accessed via {@link #getArguments()}
      * <p>
-     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments
+     * The field arguments are created by interpolating any referenced variables and AST literals and resolving them into the arguments.
+     * <p>
+     * Also note that the raw query variables are "coerced" into a map where the leaf scalar and enum types are called to create
+     * input coerced values.  So the values you get here are not exactly as passed via {@link graphql.ExecutionInput#getVariables()}
+     * but have been processed.
      *
-     * @return the variables that have been passed to the query that is being executed
+     * @return the coerced variables that have been passed to the query that is being executed
      */
-    Map<String, Object> getVariables();
+    Map<String, @Nullable Object> getVariables();
+
+
+    /**
+     * A method that should only be used by the GraphQL Java library itself.
+     * It is not intended for public use.
+     *
+     * @return an internal representation of the DataFetchingEnvironment
+     */
+    @Internal
+    default Object toInternal() {
+        throw new UnsupportedOperationException();
+    }
+
 }

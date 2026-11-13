@@ -3,10 +3,12 @@ package graphql.schema.idl;
 import graphql.PublicApi;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.ScalarTypeExtensionDefinition;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 
 @PublicApi
+@NullMarked
 public class ScalarWiringEnvironment extends WiringEnvironment {
 
     private final ScalarTypeDefinition scalarTypeDefinition;

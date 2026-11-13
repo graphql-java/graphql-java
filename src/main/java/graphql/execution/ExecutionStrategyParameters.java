@@ -1,10 +1,12 @@
 package graphql.execution;
 
-import graphql.Assert;
+import graphql.Internal;
 import graphql.PublicApi;
-import graphql.execution.defer.DeferredErrorSupport;
+import graphql.execution.incremental.AlternativeCallContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -13,52 +15,44 @@ import static graphql.Assert.assertNotNull;
  * The parameters that are passed to execution strategies
  */
 @PublicApi
+@NullMarked
 public class ExecutionStrategyParameters {
     private final ExecutionStepInfo executionStepInfo;
-    private final Object source;
-    private final Object localContext;
-    private final Map<String, Object> arguments;
+    private final @Nullable Object source;
+    private final @Nullable Object localContext;
     private final MergedSelectionSet fields;
     private final NonNullableFieldValidator nonNullableFieldValidator;
-    private final ExecutionPath path;
-    private final MergedField currentField;
-    private final int listSize;
-    private final int currentListIndex;
-    private final ExecutionStrategyParameters parent;
-    private final DeferredErrorSupport deferredErrorSupport;
+    private final ResultPath path;
+    private final @Nullable MergedField currentField;
+    private final @Nullable ExecutionStrategyParameters parent;
+    private final @Nullable AlternativeCallContext alternativeCallContext;
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
-                                        Object source,
-                                        Object localContext,
+                                        @Nullable Object source,
+                                        @Nullable Object localContext,
                                         MergedSelectionSet fields,
-                                        Map<String, Object> arguments,
                                         NonNullableFieldValidator nonNullableFieldValidator,
-                                        ExecutionPath path,
-                                        MergedField currentField,
-                                        int listSize,
-                                        int currentListIndex,
-                                        ExecutionStrategyParameters parent,
-                                        DeferredErrorSupport deferredErrorSupport) {
+                                        ResultPath path,
+                                        @Nullable MergedField currentField,
+                                        @Nullable ExecutionStrategyParameters parent,
+                                        @Nullable AlternativeCallContext alternativeCallContext) {
 
         this.executionStepInfo = assertNotNull(executionStepInfo, "executionStepInfo is null");
         this.localContext = localContext;
         this.fields = assertNotNull(fields, "fields is null");
         this.source = source;
-        this.arguments = arguments;
-        this.nonNullableFieldValidator = nonNullableFieldValidator;
+        this.nonNullableFieldValidator = assertNotNull(nonNullableFieldValidator, "requires a NonNullValidator");;
         this.path = path;
         this.currentField = currentField;
-        this.listSize = listSize;
-        this.currentListIndex = currentListIndex;
         this.parent = parent;
-        this.deferredErrorSupport = deferredErrorSupport;
+        this.alternativeCallContext = alternativeCallContext;
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
         return executionStepInfo;
     }
 
-    public Object getSource() {
+    public @Nullable Object getSource() {
         return source;
     }
 
@@ -66,36 +60,40 @@ public class ExecutionStrategyParameters {
         return fields;
     }
 
-    public Map<String, Object> getArguments() {
-        return arguments;
-    }
-
     public NonNullableFieldValidator getNonNullFieldValidator() {
         return nonNullableFieldValidator;
     }
 
-    public ExecutionPath getPath() {
+    public ResultPath getPath() {
         return path;
     }
 
-    public Object getLocalContext() {
+    public @Nullable Object getLocalContext() {
         return localContext;
     }
 
-    public int getListSize() {
-        return listSize;
-    }
-
-    public int getCurrentListIndex() {
-        return currentListIndex;
-    }
-
-    public ExecutionStrategyParameters getParent() {
+    public @Nullable ExecutionStrategyParameters getParent() {
         return parent;
     }
 
-    public DeferredErrorSupport deferredErrorSupport() {
-        return deferredErrorSupport;
+    /**
+     * Returns the alternative call context if this execution is scoped to an alternative execution path.
+     * This is used for deferred fragment execution and subscription event execution.
+     * @return the alternative call context or null if execution is not scoped to an alternative execution path
+     */
+    @Nullable
+    @Internal
+    public AlternativeCallContext getAlternativeCallContext() {
+        return alternativeCallContext;
+    }
+
+    /**
+     * Returns true if we're in the scope of a deferred call.
+     *
+     * @return true if we're in the scope of a deferred call
+     */
+    public boolean isInDeferredContext() {
+        return alternativeCallContext != null;
     }
 
     /**
@@ -103,8 +101,83 @@ public class ExecutionStrategyParameters {
      *
      * @return the current merged fields
      */
-    public MergedField getField() {
+    public @Nullable MergedField getField() {
         return currentField;
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(MergedField currentField,
+                                          ResultPath path) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                alternativeCallContext);
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
+                                          MergedSelectionSet fields,
+                                          @Nullable Object source) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                alternativeCallContext);
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
+                                          ResultPath path,
+                                          @Nullable Object localContext,
+                                          @Nullable Object source) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                alternativeCallContext);
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
+                                          @Nullable Object localContext,
+                                          @Nullable Object source) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                alternativeCallContext);
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(MergedField currentField,
+                                          ResultPath path,
+                                          ExecutionStrategyParameters parent) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                alternativeCallContext);
     }
 
     public ExecutionStrategyParameters transform(Consumer<Builder> builderConsumer) {
@@ -127,19 +200,17 @@ public class ExecutionStrategyParameters {
         return new Builder(oldParameters);
     }
 
+    @NullUnmarked
     public static class Builder {
         ExecutionStepInfo executionStepInfo;
         Object source;
         Object localContext;
         MergedSelectionSet fields;
-        Map<String, Object> arguments;
         NonNullableFieldValidator nonNullableFieldValidator;
-        ExecutionPath path = ExecutionPath.rootPath();
+        ResultPath path = ResultPath.rootPath();
         MergedField currentField;
-        int listSize;
-        int currentListIndex;
         ExecutionStrategyParameters parent;
-        DeferredErrorSupport deferredErrorSupport = new DeferredErrorSupport();
+        AlternativeCallContext alternativeCallContext;
 
         /**
          * @see ExecutionStrategyParameters#newParameters()
@@ -155,14 +226,11 @@ public class ExecutionStrategyParameters {
             this.source = oldParameters.source;
             this.localContext = oldParameters.localContext;
             this.fields = oldParameters.fields;
-            this.arguments = oldParameters.arguments;
             this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
             this.currentField = oldParameters.currentField;
-            this.deferredErrorSupport = oldParameters.deferredErrorSupport;
+            this.alternativeCallContext = oldParameters.alternativeCallContext;
             this.path = oldParameters.path;
             this.parent = oldParameters.parent;
-            this.listSize = oldParameters.listSize;
-            this.currentListIndex = oldParameters.currentListIndex;
         }
 
         public Builder executionStepInfo(ExecutionStepInfo executionStepInfo) {
@@ -195,28 +263,13 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = arguments;
-            return this;
-        }
-
         public Builder nonNullFieldValidator(NonNullableFieldValidator nonNullableFieldValidator) {
-            this.nonNullableFieldValidator = Assert.assertNotNull(nonNullableFieldValidator, "requires a NonNullValidator");
+            this.nonNullableFieldValidator = assertNotNull(nonNullableFieldValidator, "requires a NonNullValidator");
             return this;
         }
 
-        public Builder path(ExecutionPath path) {
+        public Builder path(ResultPath path) {
             this.path = path;
-            return this;
-        }
-
-        public Builder listSize(int listSize) {
-            this.listSize = listSize;
-            return this;
-        }
-
-        public Builder currentListIndex(int currentListIndex) {
-            this.currentListIndex = currentListIndex;
             return this;
         }
 
@@ -225,13 +278,13 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder deferredErrorSupport(DeferredErrorSupport deferredErrorSupport) {
-            this.deferredErrorSupport = deferredErrorSupport;
+        public Builder alternativeCallContext(AlternativeCallContext alternativeCallContext) {
+            this.alternativeCallContext = alternativeCallContext;
             return this;
         }
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, arguments, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent, deferredErrorSupport);
+            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, alternativeCallContext);
         }
     }
 }

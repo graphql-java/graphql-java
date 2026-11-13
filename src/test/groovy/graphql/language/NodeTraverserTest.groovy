@@ -140,7 +140,7 @@ class NodeTraverserTest extends Specification {
                 context.setAccumulate(node)
             }
         }
-        def field = Field.newField().build()
+        def field = Field.newField().name("dummy").build()
         when:
         def result = NodeTraverser.oneVisitWithResult(field, visitor);
         then:

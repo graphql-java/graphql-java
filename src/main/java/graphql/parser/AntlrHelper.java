@@ -3,6 +3,7 @@ package graphql.parser;
 import graphql.Internal;
 import graphql.language.SourceLocation;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.List;
 
@@ -28,6 +29,9 @@ public class AntlrHelper {
         return AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
     }
 
+    public static SourceLocation createSourceLocation(MultiSourceReader multiSourceReader, TerminalNode terminalNode) {
+        return AntlrHelper.createSourceLocation(multiSourceReader, terminalNode.getSymbol().getLine(), terminalNode.getSymbol().getCharPositionInLine());
+    }
 
     /* grabs 3 lines before and after the syntax error */
     public static String createPreview(MultiSourceReader multiSourceReader, int antrlLine) {

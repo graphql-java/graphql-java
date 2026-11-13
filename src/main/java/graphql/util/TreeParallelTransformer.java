@@ -1,10 +1,10 @@
 package graphql.util;
 
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -31,7 +31,7 @@ public class TreeParallelTransformer<T> {
     private final NodeAdapter<T> nodeAdapter;
 
 
-    private Object sharedContextData;
+    private final Object sharedContextData;
 
 
     private TreeParallelTransformer(Object sharedContextData,
@@ -104,7 +104,7 @@ public class TreeParallelTransformer<T> {
             assertNotNull(traversalControl, "result of enter must not be null");
             assertTrue(QUIT != traversalControl, "can't return QUIT for parallel traversing");
             if (traversalControl == ABORT) {
-                this.children = Collections.emptyList();
+                this.children = ImmutableKit.emptyList();
                 tryComplete();
                 return;
             }

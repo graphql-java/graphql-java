@@ -1,13 +1,12 @@
 package graphql.execution.instrumentation.dataloader;
 
-import graphql.execution.batched.Batched;
 import graphql.execution.instrumentation.dataloader.models.Department;
 import graphql.execution.instrumentation.dataloader.models.Product;
 import graphql.execution.instrumentation.dataloader.models.Shop;
 import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,6 +16,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
@@ -33,11 +35,22 @@ public class BatchCompareDataFetchers {
 
     AtomicBoolean useAsyncBatchLoading = new AtomicBoolean(false);
 
+    private volatile CountDownLatch rootFetcherRendezvous;
+    private volatile CountDownLatch completionOverlapLatch;
+    private final AtomicBoolean shopsOverlapSignaled = new AtomicBoolean(false);
+    private final AtomicBoolean exShopsOverlapSignaled = new AtomicBoolean(false);
+    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+
     public void useAsyncBatchLoading(boolean flag) {
         useAsyncBatchLoading.set(flag);
     }
 
-    // Shops
+    public void useSynchronizedFetching(int numberOfRootFetchers) {
+        rootFetcherRendezvous = new CountDownLatch(numberOfRootFetchers);
+        completionOverlapLatch = new CountDownLatch(numberOfRootFetchers);
+    }
+
+
     private static final Map<String, Shop> shops = new LinkedHashMap<>();
     private static final Map<String, Shop> expensiveShops = new LinkedHashMap<>();
 
@@ -53,10 +66,10 @@ public class BatchCompareDataFetchers {
 
 
     public DataFetcher<CompletableFuture<List<Shop>>> shopsDataFetcher =
-            environment -> supplyAsyncWithSleep(() -> new ArrayList<>(shops.values()));
+            environment -> supplyAsyncWithRendezvous(() -> new ArrayList<>(shops.values()));
 
     public DataFetcher<CompletableFuture<List<Shop>>> expensiveShopsDataFetcher = environment ->
-            supplyAsyncWithSleep(() -> new ArrayList<>(expensiveShops.values()));
+            supplyAsyncWithRendezvous(() -> new ArrayList<>(expensiveShops.values()));
 
     // Departments
     private static Map<String, Department> departments = new LinkedHashMap<>();
@@ -78,23 +91,12 @@ public class BatchCompareDataFetchers {
     }
 
     private static List<List<Department>> getDepartmentsForShops(List<Shop> shops) {
-        System.out.println("getDepartmentsForShops batch: " + shops);
         List<List<Department>> departmentsResult = shops.stream().map(BatchCompareDataFetchers::getDepartmentsForShop).collect(Collectors.toList());
-        System.out.println("result " + departmentsResult);
         return departmentsResult;
     }
 
-    public DataFetcher<List<List<Department>>> departmentsForShopsBatchedDataFetcher = new DataFetcher<List<List<Department>>>() {
-        @Override
-        @Batched
-        public List<List<Department>> get(DataFetchingEnvironment environment) {
-            List<Shop> shops = environment.getSource();
-            return getDepartmentsForShops(shops);
-        }
-    };
 
     private BatchLoader<String, List<Department>> departmentsForShopsBatchLoader = ids -> maybeAsyncWithSleep(() -> {
-        System.out.println("ids" + ids);
         departmentsForShopsBatchLoaderCounter.incrementAndGet();
         List<Shop> shopList = new ArrayList<>();
         for (String id : ids) {
@@ -109,11 +111,26 @@ public class BatchCompareDataFetchers {
         return completedFuture(getDepartmentsForShops(shopList));
     });
 
-    public DataLoader<String, List<Department>> departmentsForShopDataLoader = new DataLoader<>(departmentsForShopsBatchLoader);
+    public DataLoader<String, List<Department>> departmentsForShopDataLoader = DataLoaderFactory.newDataLoader(departmentsForShopsBatchLoader);
 
     public DataFetcher<CompletableFuture<List<Department>>> departmentsForShopDataLoaderDataFetcher = environment -> {
         Shop shop = environment.getSource();
-        return departmentsForShopDataLoader.load(shop.getId());
+        // When synchronized fetching is enabled, ensure both root fields (shops and expensiveShops)
+        // are inside their startComplete/stopComplete window before either proceeds.
+        // This guarantees objectRunningCount never drops to 0 prematurely.
+        CountDownLatch overlapLatch = completionOverlapLatch;
+        if (overlapLatch != null) {
+            AtomicBoolean flag = shop.getId().startsWith("ex") ? exShopsOverlapSignaled : shopsOverlapSignaled;
+            if (flag.compareAndSet(false, true)) {
+                overlapLatch.countDown();
+                try {
+                    overlapLatch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return (CompletableFuture) environment.getDataLoader("departments").load(shop.getId());
     };
 
     // Products
@@ -136,18 +153,8 @@ public class BatchCompareDataFetchers {
     }
 
     private static List<List<Product>> getProductsForDepartments(List<Department> departments) {
-        System.out.println("getProductsForDepartments batch: " + departments);
         return departments.stream().map(BatchCompareDataFetchers::getProductsForDepartment).collect(Collectors.toList());
     }
-
-    public DataFetcher<List<List<Product>>> productsForDepartmentsBatchedDataFetcher = new DataFetcher<List<List<Product>>>() {
-        @Override
-        @Batched
-        public List<List<Product>> get(DataFetchingEnvironment environment) {
-            List<Department> departments = environment.getSource();
-            return getProductsForDepartments(departments);
-        }
-    };
 
     private BatchLoader<String, List<Product>> productsForDepartmentsBatchLoader = ids -> maybeAsyncWithSleep(() -> {
         productsForDepartmentsBatchLoaderCounter.incrementAndGet();
@@ -155,11 +162,11 @@ public class BatchCompareDataFetchers {
         return completedFuture(getProductsForDepartments(d));
     });
 
-    public DataLoader<String, List<Product>> productsForDepartmentDataLoader = new DataLoader<>(productsForDepartmentsBatchLoader);
+    public DataLoader<String, List<Product>> productsForDepartmentDataLoader = DataLoaderFactory.newDataLoader(productsForDepartmentsBatchLoader);
 
     public DataFetcher<CompletableFuture<List<Product>>> productsForDepartmentDataLoaderDataFetcher = environment -> {
         Department department = environment.getSource();
-        return productsForDepartmentDataLoader.load(department.getId());
+        return (CompletableFuture) environment.getDataLoader("products").load(department.getId());
     };
 
     private <T> CompletableFuture<T> maybeAsyncWithSleep(Supplier<CompletableFuture<T>> supplier) {
@@ -169,6 +176,22 @@ public class BatchCompareDataFetchers {
         } else {
             return supplier.get();
         }
+    }
+
+    private <T> CompletableFuture<T> supplyAsyncWithRendezvous(Supplier<T> supplier) {
+        CountDownLatch latch = rootFetcherRendezvous;
+        if (latch != null) {
+            return CompletableFuture.supplyAsync(() -> {
+                try {
+                    latch.countDown();
+                    latch.await();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                return supplier.get();
+            }, executor);
+        }
+        return supplyAsyncWithSleep(supplier);
     }
 
     private static <T> CompletableFuture<T> supplyAsyncWithSleep(Supplier<T> supplier) {

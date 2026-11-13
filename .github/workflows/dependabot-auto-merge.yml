@@ -1,0 +1,25 @@
+# Auto-merge Dependabot PRs after CI passes.
+# Triggers on push to dependabot/* branches so it does NOT appear as a PR check.
+name: Dependabot auto-merge
+on:
+  push:
+    branches:
+      - 'dependabot/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  dependabot:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]' && github.repository == 'graphql-java/graphql-java'
+    steps:
+      - name: Enable auto-merge for Dependabot PRs
+        run: |
+          PR_URL=$(gh pr list --head "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json url --jq '.[0].url')
+          if [ -n "$PR_URL" ]; then
+            gh pr merge --auto --squash "$PR_URL"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

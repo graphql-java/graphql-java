@@ -6,8 +6,10 @@ import graphql.language.FragmentSpread;
 import graphql.language.Node;
 import graphql.schema.GraphQLSchema;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 @PublicApi
+@NullMarked
 public interface QueryVisitorFragmentSpreadEnvironment {
 
     /**

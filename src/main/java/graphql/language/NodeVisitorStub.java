@@ -3,11 +3,13 @@ package graphql.language;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Convenient implementation of {@link NodeVisitor} for easy subclassing methods handling different types of Nodes in one method.
  */
 @PublicApi
+@NullMarked
 public class NodeVisitorStub implements NodeVisitor {
     @Override
     public TraversalControl visitArgument(Argument node, TraverserContext<Node> context) {

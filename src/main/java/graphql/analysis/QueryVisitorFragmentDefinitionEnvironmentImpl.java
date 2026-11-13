@@ -51,7 +51,7 @@ public class QueryVisitorFragmentDefinitionEnvironmentImpl implements QueryVisit
 
     @Override
     public int hashCode() {
-        return Objects.hash(fragmentDefinition);
+        return Objects.hashCode(fragmentDefinition);
     }
 
     @Override

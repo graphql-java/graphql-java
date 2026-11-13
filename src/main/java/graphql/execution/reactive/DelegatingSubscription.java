@@ -1,5 +1,7 @@
 package graphql.execution.reactive;
 
+import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 import org.reactivestreams.Subscription;
 
 import static graphql.Assert.assertNotNull;
@@ -7,6 +9,8 @@ import static graphql.Assert.assertNotNull;
 /**
  * A simple subscription that delegates to another
  */
+@NullMarked
+@PublicApi
 public class DelegatingSubscription implements Subscription {
     private final Subscription upstreamSubscription;
 
@@ -22,5 +26,13 @@ public class DelegatingSubscription implements Subscription {
     @Override
     public void cancel() {
         upstreamSubscription.cancel();
+    }
+
+    /**
+     * Get instance of upstreamSubscription
+     * @return {@link Subscription}
+     */
+    public Subscription getUpstreamSubscription() {
+        return upstreamSubscription;
     }
 }

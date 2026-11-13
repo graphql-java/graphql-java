@@ -132,7 +132,7 @@ public class Traverser<T> {
                 currentContext.setPhase(TraverserContext.Phase.BACKREF);
                 TraversalControl traversalControl = visitor.backRef(currentContext);
                 currentAccValue = currentContext.getNewAccumulate();
-                assertNotNull(traversalControl, "result of backRef must not be null");
+                assertNotNull(traversalControl,"result of backRef must not be null");
                 assertTrue(CONTINUE_OR_QUIT.contains(traversalControl), "backRef can only return CONTINUE or QUIT");
                 if (traversalControl == QUIT) {
                     break traverseLoop;

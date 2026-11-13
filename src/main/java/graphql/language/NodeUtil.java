@@ -1,15 +1,20 @@
 package graphql.language;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.execution.UnknownOperationException;
 import graphql.util.FpKit;
 import graphql.util.NodeLocation;
 
+import java.io.Serializable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static graphql.util.FpKit.mergeFirst;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Helper class for working with {@link Node}s
@@ -17,24 +22,21 @@ import static graphql.util.FpKit.mergeFirst;
 @Internal
 public class NodeUtil {
 
-    public static boolean isEqualTo(String thisStr, String thatStr) {
-        if (null == thisStr) {
-            if (null != thatStr) {
-                return false;
+    public static <T extends NamedNode<T>> T findNodeByName(List<T> namedNodes, String name) {
+        for (T namedNode : namedNodes) {
+            if (Objects.equals(namedNode.getName(), name)) {
+                return namedNode;
             }
-        } else if (!thisStr.equals(thatStr)) {
-            return false;
         }
-        return true;
+        return null;
     }
 
-
-    public static Map<String, Directive> directivesByName(List<Directive> directives) {
-        return FpKit.getByName(directives, Directive::getName, mergeFirst());
+    public static Map<String, ImmutableList<Directive>> allDirectivesByName(List<Directive> directives) {
+        return FpKit.groupingBy(directives, Directive::getName);
     }
 
-    public static Map<String, Argument> argumentsByName(List<Argument> arguments) {
-        return FpKit.getByName(arguments, Argument::getName, mergeFirst());
+    public static <T extends NamedNode<T>> Map<String, T> nodeByName(List<T> nameNode) {
+        return FpKit.getByName(nameNode, NamedNode::getName, mergeFirst());
     }
 
 
@@ -100,5 +102,46 @@ public class NodeUtil {
         NodeChildrenContainer namedChildren = node.getNamedChildren();
         NodeChildrenContainer newChildren = namedChildren.transform(builder -> builder.removeChild(childLocationToRemove.getName(), childLocationToRemove.getIndex()));
         return node.withNewChildren(newChildren);
+    }
+
+
+    /**
+     * A simple directives holder that makes it easier for {@link DirectivesContainer} classes
+     * to have their methods AND be efficient via immutable structures
+     */
+    @Internal
+    static class DirectivesHolder implements Serializable {
+        private final ImmutableList<Directive> directives;
+        private final ImmutableMap<String, List<Directive>> directivesByName;
+
+        static DirectivesHolder of(List<Directive> directives) {
+            return new DirectivesHolder(directives);
+        }
+
+        DirectivesHolder(List<Directive> directives) {
+            this.directives = ImmutableList.copyOf(directives);
+            directivesByName = ImmutableMap.copyOf(allDirectivesByName(directives));
+        }
+
+        ImmutableList<Directive> getDirectives() {
+            return directives;
+        }
+
+        ImmutableMap<String, List<Directive>> getDirectivesByName() {
+            return directivesByName;
+        }
+
+        ImmutableList<Directive> getDirectives(String directiveName) {
+            return ImmutableList.copyOf(requireNonNull(directivesByName.getOrDefault(directiveName, ImmutableList.of())));
+        }
+
+        boolean hasDirective(String directiveName) {
+            return directivesByName.containsKey(directiveName);
+        }
+
+        @Override
+        public String toString() {
+            return directives.toString();
+        }
     }
 }

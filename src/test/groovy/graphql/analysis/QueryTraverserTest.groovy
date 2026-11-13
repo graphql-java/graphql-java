@@ -1,6 +1,8 @@
 package graphql.analysis
 
+import graphql.AssertException
 import graphql.TestUtil
+import graphql.execution.CoercedVariables
 import graphql.language.ArrayValue
 import graphql.language.Document
 import graphql.language.Field
@@ -428,7 +430,7 @@ class QueryTraverserTest extends Specification {
     }
 
 
-    def "test preOrder and postOrder order for fragment definitions"() {
+    def "test preOrder and postOrder order for fragment definitions and raw variables"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -460,6 +462,53 @@ class QueryTraverserTest extends Specification {
                 .rootParentType(schema.getQueryType())
                 .fragmentsByName(fragments)
                 .variables([:])
+                .build()
+
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitFragmentDefinition({ QueryVisitorFragmentDefinitionEnvironment env -> env.fragmentDefinition == fragments["F1"] })
+
+        when:
+        queryTraversal.visitPostOrder(visitor)
+
+        then:
+        1 * visitor.visitFragmentDefinition({ QueryVisitorFragmentDefinitionEnvironment env -> env.fragmentDefinition == fragments["F1"] })
+    }
+
+    def "test preOrder and postOrder order for fragment definitions and coerced variables"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+                {
+                    ...F1
+                }
+                
+                fragment F1 on Query {
+                    foo {
+                        subFoo
+                    }
+                }
+                """)
+
+        def fragments = NodeUtil.getFragmentsByName(query)
+
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .root(fragments["F1"])
+                .rootParentType(schema.getQueryType())
+                .fragmentsByName(fragments)
+                .coercedVariables(CoercedVariables.emptyVariables())
                 .build()
 
         when:
@@ -573,6 +622,62 @@ class QueryTraverserTest extends Specification {
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
             it.field.name == "foo" &&
                     it.arguments == ['arg1': 'hello', 'arg2': true]
+        })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+    }
+
+    @Unroll
+    def "traverse a query when a default variable is a list: (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo(arg1: [String]): String
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+            query myQuery(\$myVar: [String] = ["hello default"]) {foo(arg1: \$myVar)} 
+            """)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, ['myVar': 'hello'])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "foo" &&
+                    it.arguments == ['arg1': ['hello']]
+        })
+
+        where:
+        order       | visitFn
+        'postOrder' | 'visitPostOrder'
+        'preOrder'  | 'visitPreOrder'
+    }
+
+    @Unroll
+    def "traverse a query when a default variable is a list and query does not specify variables: (#order)"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo(arg1: [String]): String
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+            query myQuery(\$myVar: [String] = ["hello default"]) {foo(arg1: \$myVar)} 
+            """)
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema, [:])
+        when:
+        queryTraversal."$visitFn"(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "foo" &&
+                    it.arguments == ['arg1': ['hello default']]
         })
 
         where:
@@ -1050,6 +1155,24 @@ class QueryTraverserTest extends Specification {
     }
 
 
+    def "reducers preserve nullable accumulators in #method"() {
+        given:
+        def schema = TestUtil.schema('type Query { first: String second: String }')
+        def traversal = createQueryTraversal(createQuery('{ first second }'), schema)
+        def seen = []
+        QueryReducer reducer = { environment, value ->
+            seen.add(value)
+            return value == null ? 'seen' : null
+        }
+
+        expect:
+        traversal."$method"(reducer, null) == null
+        seen == [null, 'seen']
+
+        where:
+        method << ['reducePreOrder', 'reducePostOrder']
+    }
+
     def "reduce preOrder"() {
         given:
         def schema = TestUtil.schema("""
@@ -1220,10 +1343,10 @@ class QueryTraverserTest extends Specification {
         queryTraversal."$visitFn"(visitor)
 
         then:
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "foo" && it.fieldDefinition.type == list(nonNull(catOrDog)) && it.parentType.name == "Query" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "foo" && list(nonNull(catOrDog)).isEqualTo(it.fieldDefinition.type) && it.parentType.name == "Query" })
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "catName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Cat" && it.fieldsContainer.name == "Cat" })
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "dogName" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Dog" && it.fieldsContainer.name == "Dog" })
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && it.parentType == nonNull(list(nonNull(bar))) && it.fieldsContainer.name == "Bar" })
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && nonNull(list(nonNull(bar))).isEqualTo(it.parentType) && it.fieldsContainer.name == "Bar" })
 
         where:
         order       | visitFn
@@ -1322,7 +1445,9 @@ class QueryTraverserTest extends Specification {
     }
 
 
-    def "can select an arbitrary root node"() {
+    def "can select an arbitrary root node with coerced variables as plain map"() {
+        // When using an arbitrary root node, there is no variable definition context available.
+        // Thus the variables must have already been coerced, but may appear as a plain map rather than CoercedVariables
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -1362,9 +1487,48 @@ class QueryTraverserTest extends Specification {
 
     }
 
+    def "can select an arbitrary root node with coerced variables"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+            }
+            type Foo {
+                subFoo: SubFoo
+            }
+            type SubFoo {
+               id: String 
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+            {foo { subFoo {id}} }
+            """)
+        def subFooAsRoot = query.children[0].children[0].children[0].children[0].children[0]
+        assert subFooAsRoot instanceof Field
+        ((Field) subFooAsRoot).name == "subFoo"
+        def rootParentType = schema.getType("Foo")
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .root(subFooAsRoot)
+                .rootParentType(rootParentType)
+                .coercedVariables(CoercedVariables.emptyVariables())
+                .fragmentsByName(emptyMap())
+                .build()
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "SubFoo"
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && it.parentType.name == "SubFoo" })
+
+    }
 
     @Unroll
-    def "builder doesn't allow ambiguous arguments"() {
+    def "builder doesn't allow null arguments"() {
         when:
         QueryTraverser.newQueryTraverser()
                 .document(document)
@@ -1375,26 +1539,39 @@ class QueryTraverserTest extends Specification {
                 .build()
 
         then:
-        thrown(IllegalStateException)
+        thrown(AssertException)
 
         where:
         document             | operationName | root                     | rootParentType          | fragmentsByName
-        createQuery("{foo}") | null          | Field.newField().build() | null                    | null
-        createQuery("{foo}") | "foo"         | Field.newField().build() | null                    | null
-        createQuery("{foo}") | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | null
-        createQuery("{foo}") | "foo"         | Field.newField().build() | null                    | emptyMap()
-        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | null
-        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | Field.newField().build() | Mock(GraphQLObjectType) | emptyMap()
-        null                 | "foo"         | Field.newField().build() | null                    | emptyMap()
+        createQuery("{foo}") | null          | Field.newField().name("dummy").build() | null                    | null
+        createQuery("{foo}") | "foo"         | Field.newField().name("dummy").build() | null                    | null
+        createQuery("{foo}") | "foo"         | Field.newField().name("dummy").build() | Mock(GraphQLObjectType) | null
+        createQuery("{foo}") | "foo"         | Field.newField().name("dummy").build() | null                    | emptyMap()
+        null                 | "foo"         | Field.newField().name("dummy").build() | Mock(GraphQLObjectType) | null
+        null                 | "foo"         | Field.newField().name("dummy").build() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | Field.newField().name("dummy").build() | Mock(GraphQLObjectType) | emptyMap()
+        null                 | "foo"         | Field.newField().name("dummy").build() | null                    | emptyMap()
         null                 | "foo"         | null                     | Mock(GraphQLObjectType) | emptyMap()
         null                 | "foo"         | null                     | Mock(GraphQLObjectType) | null
         null                 | "foo"         | null                     | null                    | emptyMap()
-
-
     }
 
-    def "typename special field doens't have a fields container and throws exception"() {
+    @Unroll
+    def "builder doesn't allow ambiguous arguments"() {
+        when:
+        QueryTraverser.newQueryTraverser()
+                .document(createQuery("{foo}"))
+                .operationName("foo")
+                .root(Field.newField().name("dummy").build())
+                .rootParentType(Mock(GraphQLObjectType))
+                .fragmentsByName(emptyMap())
+                .build()
+
+        then:
+        thrown(IllegalStateException)
+    }
+
+    def "typename special field doesn't have a fields container and throws exception"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -1407,9 +1584,9 @@ class QueryTraverserTest extends Specification {
             """)
         QueryTraverser queryTraversal = createQueryTraversal(query, schema)
         QueryVisitorFieldEnvironment env
-        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
-            env = it
-        })
+        1 * visitor.visitField(_) >> { args ->
+            env = args[0]
+        }
         when:
         queryTraversal.visitPreOrder(visitor)
         env.typeNameIntrospectionField
@@ -1475,7 +1652,7 @@ class QueryTraverserTest extends Specification {
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
             it.field.name == "bar" && it.traverserContext.getParentNodes().size() == 5 &&
                     it.traverserContext.getParentContext().getParentContext().thisNode() instanceof FragmentDefinition &&
-                    ((FragmentDefinition) it.traverserContext.getParentContext().getParentContext().thisNode()).getDirective("myDirective") != null
+                    ((FragmentDefinition) it.traverserContext.getParentContext().getParentContext().thisNode()).hasDirective("myDirective")
         })
 
 
@@ -1529,7 +1706,7 @@ class QueryTraverserTest extends Specification {
 
     }
 
-    def "test accumulate  is returned"() {
+    def "test accumulate is returned"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -1709,5 +1886,98 @@ class QueryTraverserTest extends Specification {
         0 * visitor.visitArgument(_)
     }
 
+    def "conditional nodes via variables are defaulted correctly and visited correctly"() {
 
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery('''
+            query test($var : Boolean = true)  {
+                bar @include(if:$var)
+            }
+            ''')
+        QueryTraverser queryTraversal = createQueryTraversal(query, schema)
+
+        when: "we have an enabled variable conditional node"
+        queryTraversal.visitPreOrder(visitor)
+
+        then: "it should be visited"
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.fieldDefinition.name == "bar"
+        })
+
+        when: "we have an enabled variable conditional node"
+        query = createQuery('''
+            query test($var : Boolean = false)  {
+                bar @include(if:$var)
+            }
+            ''')
+        queryTraversal = createQueryTraversal(query, schema)
+        queryTraversal.visitPreOrder(visitor)
+        then: "it should not be visited"
+        0 * visitor.visitField(_)
+    }
+
+    def "can coerce field arguments or not"() {
+        def sdl = """
+            input Test{   x: String!} 
+            type Query{   testInput(input: Test!): String}
+            type Mutation{   testInput(input: Test!): String}
+            """
+
+        def schema = TestUtil.schema(sdl)
+
+        def query = createQuery('''
+        mutation a($test: Test!) {
+            testInput(input: $test)
+        }''')
+
+
+        def fieldArgMap = [:]
+        def queryVisitorStub = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
+                super.visitField(queryVisitorFieldEnvironment)
+                fieldArgMap = queryVisitorFieldEnvironment.getArguments()
+            }
+        }
+
+        when:
+        QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .coercedVariables(CoercedVariables.of([test: [x: "X"]]))
+                .build()
+                .visitPreOrder(queryVisitorStub)
+
+        then:
+
+        fieldArgMap == [input: [x:"X"]]
+
+        when:
+        fieldArgMap = null
+
+
+        def options = QueryTraversalOptions.defaultOptions()
+                .coerceFieldArguments(false)
+        QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .coercedVariables(CoercedVariables.of([test: [x: "X"]]))
+                .options(options)
+                .build()
+                .visitPreOrder(queryVisitorStub)
+
+
+        then:
+        fieldArgMap == [:] // empty map
+    }
 }

@@ -1,22 +1,26 @@
 package graphql.execution.reactive;
 
+import graphql.Internal;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+
+import static graphql.Assert.assertNotNullWithNPE;
 
 /**
  * A reactive Publisher that bridges over another Publisher of `D` and maps the results
  * to type `U` via a CompletionStage, handling errors in that stage
  *
- * @param <D> the down stream type
- * @param <U> the up stream type to be mapped to
+ * @param <D> the downstream type
+ * @param <U> the upstream type to be mapped to
  */
+@Internal
 public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
-    private final Publisher<U> upstreamPublisher;
-    private final Function<U, CompletionStage<D>> mapper;
+    protected final Publisher<U> upstreamPublisher;
+    protected final Function<U, CompletionStage<D>> mapper;
 
     /**
      * You need the following :
@@ -31,53 +35,23 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
     @Override
     public void subscribe(Subscriber<? super D> downstreamSubscriber) {
-        upstreamPublisher.subscribe(new Subscriber<U>() {
-            Subscription delegatingSubscription;
-
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                delegatingSubscription = new DelegatingSubscription(subscription);
-                downstreamSubscriber.onSubscribe(delegatingSubscription);
-            }
-
-            @Override
-            public void onNext(U u) {
-                CompletionStage<D> completionStage;
-                try {
-                    completionStage = mapper.apply(u);
-                    completionStage.whenComplete((d, throwable) -> {
-                        if (throwable != null) {
-                            handleThrowable(throwable);
-                        } else {
-                            downstreamSubscriber.onNext(d);
-                        }
-                    });
-                } catch (RuntimeException throwable) {
-                    handleThrowable(throwable);
-                }
-            }
-
-            private void handleThrowable(Throwable throwable) {
-                downstreamSubscriber.onError(throwable);
-                //
-                // reactive semantics say that IF an exception happens on a publisher
-                // then onError is called and no more messages flow.  But since the exception happened
-                // during the mapping, the upstream publisher does not no about this.
-                // so we cancel to bring the semantics back together, that is as soon as an exception
-                // has happened, no more messages flow
-                //
-                delegatingSubscription.cancel();
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                downstreamSubscriber.onError(t);
-            }
-
-            @Override
-            public void onComplete() {
-                downstreamSubscriber.onComplete();
-            }
-        });
+        assertNotNullWithNPE(downstreamSubscriber, "Subscriber passed to subscribe must not be null");
+        upstreamPublisher.subscribe(createSubscriber(downstreamSubscriber));
     }
+
+    @NonNull
+    protected Subscriber<? super U> createSubscriber(Subscriber<? super D> downstreamSubscriber) {
+        return new CompletionStageSubscriber<>(mapper, downstreamSubscriber);
+    }
+
+
+    /**
+     * Get instance of an upstreamPublisher
+     *
+     * @return upstream instance of {@link Publisher}
+     */
+    public Publisher<U> getUpstreamPublisher() {
+        return upstreamPublisher;
+    }
+
 }

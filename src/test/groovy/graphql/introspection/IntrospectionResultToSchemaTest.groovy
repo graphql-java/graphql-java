@@ -1,18 +1,33 @@
 package graphql.introspection
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import graphql.Assert
+import graphql.AssertException
 import graphql.ExecutionInput
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.language.AstPrinter
 import graphql.language.Document
 import graphql.language.EnumTypeDefinition
 import graphql.language.InputObjectTypeDefinition
+import graphql.language.IntValue
 import graphql.language.InterfaceTypeDefinition
+import graphql.language.ObjectField
 import graphql.language.ObjectTypeDefinition
+import graphql.language.ObjectValue
+import graphql.language.StringValue
 import graphql.language.UnionTypeDefinition
+import graphql.language.Value
+import graphql.schema.Coercing
+import graphql.schema.CoercingParseLiteralException
+import graphql.schema.CoercingParseValueException
+import graphql.schema.CoercingSerializeException
+import graphql.schema.GraphQLArgument
+import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
+import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaPrinter
 import groovy.json.JsonSlurper
 import spock.lang.Specification
@@ -91,13 +106,11 @@ class IntrospectionResultToSchemaTest extends Specification {
 
         then:
         result == """type QueryType implements Query {
-  hero(
-  \"\"\"
+  hero(\"\"\"
   comment about episode
   on two lines
   \"\"\"
-  episode: Episode
-  foo: String = \"bar\"): Character @deprecated(reason: "killed off character")
+  episode: Episode, foo: String = \"bar\"): Character @deprecated(reason: "killed off character")
 }"""
 
     }
@@ -199,9 +212,13 @@ class IntrospectionResultToSchemaTest extends Specification {
         then:
         result == """"A character in the Star Wars Trilogy"
 interface Character {
+  "The id of the character."
   id: String!
+  "The name of the character."
   name: String
+  "The friends of the character, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
 }"""
 
@@ -247,8 +264,11 @@ interface Character {
         then:
         result == """"One of the films in the Star Wars Trilogy"
 enum Episode {
+  "Released in 1977."
   NEWHOPE
+  "Released in 1980."
   EMPIRE
+  "Released in 1983."
   JEDI @deprecated(reason: "killed by clones")
 }"""
 
@@ -359,7 +379,7 @@ input CharacterInput {
             "subscriptionType": {"name":"SubscriptionType"},
             "types": [
             ]
-            }"""
+            }}"""
         def parsed = slurp(input)
 
         when:
@@ -391,47 +411,61 @@ input CharacterInput {
 }
 
 type QueryType {
-  hero(
-  "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
+  hero("If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
   episode: Episode): Character
-  human(
-  "id of the human"
+  human("id of the human"
   id: String!): Human
-  droid(
-  "id of the droid"
+  droid("id of the droid"
   id: String!): Droid
 }
 
 "A character in the Star Wars Trilogy"
 interface Character {
+  "The id of the character."
   id: String!
+  "The name of the character."
   name: String
+  "The friends of the character, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
 }
 
 "One of the films in the Star Wars Trilogy"
 enum Episode {
+  "Released in 1977."
   NEWHOPE
+  "Released in 1980."
   EMPIRE
+  "Released in 1983."
   JEDI
 }
 
 "A humanoid creature in the Star Wars universe."
 type Human implements Character {
+  "The id of the human."
   id: String!
+  "The name of the human."
   name: String
+  "The friends of the human, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
+  "The home planet of the human, or null if unknown."
   homePlanet: String
 }
 
 "A mechanical creature in the Star Wars universe."
 type Droid implements Character {
+  "The id of the droid."
   id: String!
+  "The name of the droid."
   name: String
+  "The friends of the droid, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
+  "The primary function of the droid."
   primaryFunction: String
 }
 """
@@ -479,14 +513,17 @@ type Episode {
 
 " Simpson seasons"
 enum Season {
+  " the beginning"
   Season1
   Season2
   Season3
   Season4
+  " Another one"
   Season5
   Season6
   Season7
   Season8
+  " Not really the last one :-)"
   Season9
 }
 
@@ -590,7 +627,7 @@ input CharacterInput {
 }
 
 type Query {
-  outputField(inputArg: InputType = {age : 666, name : "nameViaArg"}, inputBoolean: Boolean = true, inputInt: Int = 1, inputString: String = "viaArgString"): OutputType
+  outputField(inputArg: InputType = {name : "nameViaArg", age : 666}, inputBoolean: Boolean = true, inputInt: Int = 1, inputString: String = "viaArgString"): OutputType
 }
 
 input ComplexType {
@@ -601,7 +638,7 @@ input ComplexType {
 
 input InputType {
   age: Int = -1
-  complex: ComplexType = {boolean : true, int : 666, string : "string"}
+  complex: ComplexType = {string : "string", boolean : true, int : 666}
   name: String = "defaultName"
   rocks: Boolean = true
 }
@@ -663,4 +700,542 @@ input InputType {
         null                  | '{"name":"Subscription"}'
     }
 
+    def "create schema fail"() {
+        given:
+        def failResult = ExecutionResult.newExecutionResult().build()
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(failResult)
+
+        then:
+        document == null
+    }
+
+    def "create scalars"() {
+        def input = ''' {
+            "kind": "SCALAR",
+            "name": "ScalarType",
+            "description": "description of ScalarType",
+      }
+      '''
+        def parsed = slurp(input)
+
+        when:
+        def scalarTypeDefinition = introspectionResultToSchema.createScalar(parsed)
+        def result = printAst(scalarTypeDefinition)
+
+        then:
+        result == """"description of ScalarType"\nscalar ScalarType"""
+    }
+
+    def " create directives "() {
+        def input = '''
+                    {
+                       "name": "customizedDirective",
+                       "locations": [
+                            "FIELD",
+                            "FRAGMENT_SPREAD",
+                            "INLINE_FRAGMENT"
+                       ],
+                       "args": []
+                    }
+        '''
+        def parsed = slurp(input)
+
+        when:
+        def directiveDefinition = introspectionResultToSchema.createDirective(parsed)
+        def result = printAst(directiveDefinition)
+
+        then:
+        result == """directive @customizedDirective on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT"""
+    }
+
+    def "create directives with arguments and default value"() {
+        def input = '''{
+            "name": "customizedDirective",
+            "description": "customized directive",
+            "locations": [
+                "FIELD",
+                "FRAGMENT_SPREAD",
+                "INLINE_FRAGMENT"
+            ],
+            "args": [
+                  {
+                    "name": "directiveArg",
+                    "description": "directive arg",
+                    "type": {
+                      "kind": "SCALAR",
+                      "name": "String",
+                      "ofType": null
+                    },
+                    "isDeprecated": false,
+                    "deprecationReason": null,
+                    "defaultValue": "\\"default Value\\""
+                  }
+             ]
+        }
+      '''
+        def parsed = slurp(input)
+
+        when:
+        def directiveDefinition = introspectionResultToSchema.createDirective(parsed)
+        def result = printAst(directiveDefinition)
+
+        then:
+        result == """"customized directive"
+directive @customizedDirective("directive arg"
+directiveArg: String = "default Value") on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT"""
+    }
+
+    def "create schema with directives"() {
+        def input = """{
+          "__schema": {
+            "queryType": {
+              "name": "QueryType"
+            },
+            "types": [],
+            "directives": [
+                {
+                    "name": "customizedDirective",
+                    "description": "customized directive",
+                    "locations": [
+                        "FIELD",
+                        "FRAGMENT_SPREAD",
+                        "INLINE_FRAGMENT"
+                    ],
+                    "args": [
+                          {
+                            "name": "directiveArg",
+                            "description": "directive arg",
+                            "type": {
+                              "kind": "SCALAR",
+                              "name": "String",
+                              "ofType": null
+                            },
+                            "isDeprecated": false,
+                            "deprecationReason": null,
+                            "defaultValue": "\\"default Value\\""
+                          }
+                     ]
+                },
+                {
+                    "name": "repeatableDirective",
+                    "description": "repeatable directive",
+                    "locations": [
+                        "FIELD_DEFINITION"
+                    ],
+                    "args": [],
+                    "isRepeatable":true
+                }
+            ]
+         }}"""
+        def parsed = slurp(input)
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(parsed)
+        def result = printAst(document)
+
+        then:
+        result == """schema {
+  query: QueryType
+}
+
+"customized directive"
+directive @customizedDirective("directive arg"
+directiveArg: String = "default Value") on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"repeatable directive"
+directive @repeatableDirective repeatable on FIELD_DEFINITION
+"""
+    }
+
+    def "round trip of default values of complex custom Scalar via SDL"() {
+        given:
+        def employeeRefScalar = GraphQLScalarType.newScalar().name("EmployeeRef").coercing(new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                return null
+            }
+
+            @Override
+            Object parseValue(Object input) throws CoercingParseValueException {
+                return null
+            }
+
+            @Override
+            Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                return null
+            }
+
+            @Override
+            Value valueToLiteral(Object input) {
+                return null
+            }
+        }).build()
+
+        def sdl = '''
+            scalar EmployeeRef
+            type Query{
+                foo(arg: EmployeeRef = {externalRef: "123", department: 5}): String 
+            }
+        '''
+        def options = SchemaPrinter.Options.defaultOptions().includeDirectives(false)
+        def rw = RuntimeWiring.newRuntimeWiring().scalar(employeeRefScalar).build()
+        def schema = TestUtil.schema(sdl, rw)
+        def printedSchema = new SchemaPrinter(options).print(schema)
+
+        when:
+        StringWriter sw = new StringWriter()
+        def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
+
+        //
+        // round trip the introspection into JSON and then again to ensure
+        // we see any encoding aspects
+        //
+        ObjectMapper objectMapper = new ObjectMapper()
+        objectMapper.writer().writeValue(sw, introspectionResult.data)
+        def json = sw.toString()
+        def roundTripMap = objectMapper.readValue(json, Map.class)
+        Document schemaDefinitionDocument = introspectionResultToSchema.createSchemaDefinition(roundTripMap)
+
+        def astPrinterResult = printAst(schemaDefinitionDocument)
+
+        def actualSchema = TestUtil.schema(astPrinterResult, rw)
+        def actualPrintedSchema = new SchemaPrinter(options).print(actualSchema)
+
+        then:
+        printedSchema == actualPrintedSchema
+
+        actualPrintedSchema == '''type Query {
+  foo(arg: EmployeeRef = {externalRef : "123", department : 5}): String
+}
+
+scalar EmployeeRef
+'''
+    }
+
+    class ExternalEmployeeRef {
+        String externalRef;
+        String externalDepartment;
+    }
+
+    def "round trip of default values of complex custom Scalar via programmatic schema"() {
+        given:
+        def employeeRefScalar = GraphQLScalarType.newScalar().name("EmployeeRef").coercing(new Coercing() {
+            @Override
+            Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+                return null
+            }
+
+            @Override
+            Object parseValue(Object input) throws CoercingParseValueException {
+                return null
+            }
+
+            @Override
+            Object parseLiteral(Object input) throws CoercingParseLiteralException {
+                return null
+            }
+
+            @Override
+            Value valueToLiteral(Object input) {
+                if (input instanceof ExternalEmployeeRef) {
+                    def externalRef = StringValue.newStringValue(input.externalRef).build()
+                    def refField = ObjectField.newObjectField().name("ref").value(externalRef).build()
+                    def externalDepartment = IntValue.newIntValue(new BigInteger(input.externalDepartment)).build()
+                    def departmentField = ObjectField.newObjectField().name("department").value(externalDepartment).build()
+                    return ObjectValue.newObjectValue().objectField(refField).objectField(departmentField).build()
+                }
+                return Assert.assertShouldNeverHappen();
+            }
+        }).build()
+
+
+        def ref = new ExternalEmployeeRef(externalRef: "123", externalDepartment: "5")
+        def argument = GraphQLArgument.newArgument().name("arg").type(employeeRefScalar).defaultValueProgrammatic(ref).build()
+        def field = newFieldDefinition().name("foo").type(GraphQLString).argument(argument).build()
+        def queryType = GraphQLObjectType.newObject().name("Query").field(field).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+
+        def options = SchemaPrinter.Options.defaultOptions().includeDirectives(false)
+        def printedSchema = new SchemaPrinter(options).print(schema)
+
+        when:
+        StringWriter sw = new StringWriter()
+        def introspectionResult = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
+
+        //
+        // round trip the introspection into JSON and then again to ensure
+        // we see any encoding aspects
+        //
+        ObjectMapper objectMapper = new ObjectMapper()
+        objectMapper.writer().writeValue(sw, introspectionResult.data)
+        def json = sw.toString()
+        def roundTripMap = objectMapper.readValue(json, Map.class)
+        Document schemaDefinitionDocument = introspectionResultToSchema.createSchemaDefinition(roundTripMap)
+
+        def astPrinterResult = printAst(schemaDefinitionDocument)
+
+        def rw = RuntimeWiring.newRuntimeWiring().scalar(employeeRefScalar).build()
+        def actualSchema = TestUtil.schema(astPrinterResult, rw)
+        def actualPrintedSchema = new SchemaPrinter(options).print(actualSchema)
+
+        then:
+        printedSchema == actualPrintedSchema
+
+        actualPrintedSchema == '''type Query {
+  foo(arg: EmployeeRef = {ref : "123", department : 5}): String
+}
+
+scalar EmployeeRef
+'''
+    }
+
+    def "copes when isDeprecated is not defined"() {
+        def input = ''' {
+            "kind": "OBJECT",
+            "name": "QueryType",
+            "description": null,
+            "fields": [
+              {
+                "name": "hero",
+                "description": null,
+                "args": [
+                  {
+                    "name": "episode",
+                    "description": "comment about episode\non two lines",
+                    "type": {
+                      "kind": "ENUM",
+                      "name": "Episode",
+                      "ofType": null
+                    },
+                    "defaultValue": null
+                  },
+                  {
+                    "name": "foo",
+                    "description": null,
+                    "type": {
+                        "kind": "SCALAR",
+                        "name": "String",
+                        "ofType": null
+                    },
+                    "defaultValue": "\\"bar\\""
+                  }
+                ],
+                "type": {
+                  "kind": "INTERFACE",
+                  "name": "Character",
+                  "ofType": null
+                },
+                "isDeprecatedISNOTYDEFINED": false,
+                "deprecationReason": "killed off character"
+              }
+            ],
+            "inputFields": null,
+            "interfaces": [{
+                    "kind": "INTERFACE",
+                    "name": "Query",
+                    "ofType": null
+                }],
+            "enumValues": null,
+            "possibleTypes": null
+      }
+      '''
+        def parsed = slurp(input)
+
+        when:
+        ObjectTypeDefinition objectTypeDefinition = introspectionResultToSchema.createObject(parsed)
+        def result = printAst(objectTypeDefinition)
+
+        then:
+        result == """type QueryType implements Query {
+  hero(\"\"\"
+  comment about episode
+  on two lines
+  \"\"\"
+  episode: Episode, foo: String = \"bar\"): Character
+}"""
+
+    }
+
+    def "rejects names that are not valid graphql names in #site"() {
+        def injected = 'x: String }\n\nextend type Query { injected'
+        def stringType = [kind: "SCALAR", name: "String", ofType: null]
+        def field = [name: "hello", args: [], type: stringType, isDeprecated: false]
+        def other = [kind: "OBJECT", name: "Other", interfaces: [], fields: [field]]
+        def directive = [name: "dir", locations: ["FIELD_DEFINITION"], args: []]
+        def schema = [
+                queryType : [name: "Query"],
+                types     : [[kind: "OBJECT", name: "Query", interfaces: [], fields: [field]], other],
+                directives: [directive]
+        ]
+        mutate.call(field, other, directive, injected)
+
+        when:
+        introspectionResultToSchema.createSchemaDefinition([__schema: schema])
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("Name must be non-null, non-empty and match")
+
+        where:
+        site                 | mutate
+        "type name"          | { f, o, d, n -> o.name = n }
+        "field name"         | { f, o, d, n -> o.fields = [f + [name: n]] }
+        "argument name"      | { f, o, d, n -> o.fields = [f + [args: [[name: n, type: f.type, defaultValue: null]]]] }
+        "type reference"     | { f, o, d, n -> o.fields = [f + [type: [kind: "SCALAR", name: n, ofType: null]]] }
+        "directive name"     | { f, o, d, n -> d.name = n }
+        "directive location" | { f, o, d, n -> d.locations = [n] }
+    }
+
+    def "create input object keeps isOneOf as the @oneOf directive"() {
+        def input = """ {
+        "kind": "INPUT_OBJECT",
+        "name": "UserLookup",
+        "description": null,
+        "fields": null,
+        "isOneOf": $isOneOf,
+        "inputFields": [
+            {
+                "name": "byId",
+                "description": null,
+                "type": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+            },
+                "defaultValue": null
+            },
+            {
+                "name": "byEmail",
+                "description": null,
+                "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+            },
+                "defaultValue": null
+            }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+    }
+    """
+        def parsed = slurp(input)
+
+        when:
+        InputObjectTypeDefinition inputObjectTypeDefinition = introspectionResultToSchema.createInputObject(parsed)
+        def result = printAst(inputObjectTypeDefinition)
+
+        then:
+        result == expected
+
+        where:
+        isOneOf | expected
+        true    | "input UserLookup @oneOf {\n  byId: ID\n  byEmail: String\n}"
+        false   | "input UserLookup {\n  byId: ID\n  byEmail: String\n}"
+    }
+
+    def "create input value definitions keeps deprecation on arguments and input fields"() {
+        def objectInput = ''' {
+            "kind": "OBJECT",
+            "name": "QueryType",
+            "description": null,
+            "fields": [
+              {
+                "name": "hero",
+                "description": null,
+                "args": [
+                  {
+                    "name": "episode",
+                    "description": null,
+                    "type": {
+                      "kind": "ENUM",
+                      "name": "Episode",
+                      "ofType": null
+                    },
+                    "defaultValue": null,
+                    "isDeprecated": true,
+                    "deprecationReason": "use heroes"
+                  }
+                ],
+                "type": {
+                  "kind": "INTERFACE",
+                  "name": "Character",
+                  "ofType": null
+                },
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "inputFields": null,
+            "interfaces": [],
+            "enumValues": null,
+            "possibleTypes": null
+      }
+      '''
+        def inputObjectInput = ''' {
+            "kind": "INPUT_OBJECT",
+            "name": "CharacterInput",
+            "description": null,
+            "fields": null,
+            "inputFields": [
+              {
+                "name": "firstName",
+                "description": null,
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null,
+                "isDeprecated": true,
+                "deprecationReason": null
+              }
+            ],
+            "interfaces": null,
+            "enumValues": null,
+            "possibleTypes": null
+      }
+      '''
+
+        when:
+        def objectResult = printAst(introspectionResultToSchema.createObject(slurp(objectInput)))
+        def inputObjectResult = printAst(introspectionResultToSchema.createInputObject(slurp(inputObjectInput)))
+
+        then:
+        objectResult == """type QueryType {
+  hero(episode: Episode @deprecated(reason: "use heroes")): Character
+}"""
+        inputObjectResult == """input CharacterInput {
+  firstName: String @deprecated(reason: "No longer supported")
+}"""
+    }
+
+    def "oneOf input objects survive a round trip through introspection"() {
+        given:
+        def sdl = '''
+            input UserLookup @oneOf {
+                byId: ID
+                byEmail: String
+            }
+
+            type Query {
+                user(lookup: UserLookup!): String
+            }
+        '''
+        def graphQL = TestUtil.graphQL(sdl).build()
+        def introspectionResult = graphQL.execute(ExecutionInput.newExecutionInput().query(INTROSPECTION_QUERY).build())
+
+        when:
+        Document document = introspectionResultToSchema.createSchemaDefinition(introspectionResult.data as Map)
+        def rebuilt = TestUtil.graphQL(printAst(document)).build()
+        def result = rebuilt.execute('{ user(lookup: {byId: "1", byEmail: "a@b.c"}) }')
+
+        then:
+        (rebuilt.getGraphQLSchema().getType("UserLookup") as GraphQLInputObjectType).isOneOf()
+        result.errors.size() == 1
+        result.errors[0].message.contains("Exactly one key must be specified for OneOf type 'UserLookup'")
+    }
 }

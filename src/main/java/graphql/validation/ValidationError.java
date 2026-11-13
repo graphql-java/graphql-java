@@ -1,89 +1,54 @@
 package graphql.validation;
 
-
+import com.google.common.collect.ImmutableMap;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
+import graphql.PublicApi;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
+
+@PublicApi
+@NullMarked
 public class ValidationError implements GraphQLError {
 
-    private final String message;
     private final List<SourceLocation> locations = new ArrayList<>();
     private final String description;
-    private final ValidationErrorType validationErrorType;
-    private final List<String> queryPath;
-    private final Map<String, Object> extensions;
-
-    public ValidationError(ValidationErrorType validationErrorType) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType));
-    }
-
-    public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocation(sourceLocation)
-                .description(description));
-    }
-
-    public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocation(sourceLocation)
-                .description(description)
-                .queryPath(queryPath));
-    }
-
-    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocations(sourceLocations)
-                .description(description));
-    }
-
-    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocations(sourceLocations)
-                .description(description)
-                .queryPath(queryPath));
-    }
+    private final @Nullable ValidationErrorClassification validationErrorType;
+    private final List<String> queryPath = new ArrayList<>();
+    private final ImmutableMap<String, Object> extensions;
 
     private ValidationError(Builder builder) {
         this.validationErrorType = builder.validationErrorType;
+        this.description = assertNotNull(builder.description, "description is required");
         if (builder.sourceLocations != null) {
             this.locations.addAll(builder.sourceLocations);
         }
-        this.description = builder.description;
-        this.message = mkMessage(builder.validationErrorType, builder.description, builder.queryPath);
-        this.queryPath = builder.queryPath;
-        this.extensions = builder.extensions;
-    }
 
-    private String mkMessage(ValidationErrorType validationErrorType, String description, List<String> queryPath) {
-        return String.format("Validation error of type %s: %s%s", validationErrorType, description, toPath(queryPath));
-    }
-
-    private String toPath(List<String> queryPath) {
-        if (queryPath == null) {
-            return "";
+        if (builder.queryPath != null) {
+            this.queryPath.addAll(builder.queryPath);
         }
-        return String.format(" @ '%s'", String.join("/", queryPath));
+
+        this.extensions = (builder.extensions != null) ? ImmutableMap.copyOf(builder.extensions) : ImmutableMap.of();
     }
 
-    public ValidationErrorType getValidationErrorType() {
+    public @Nullable ValidationErrorClassification getValidationErrorType() {
         return validationErrorType;
     }
 
     @Override
     public String getMessage() {
-        return message;
+        return description;
     }
 
     public String getDescription() {
@@ -111,12 +76,23 @@ public class ValidationError implements GraphQLError {
 
     @Override
     public String toString() {
+        String extensionsString = "";
+
+        if (extensions.size() > 0) {
+            extensionsString = extensions
+                    .keySet()
+                    .stream()
+                    .map(key -> key + "=" + extensions.get(key))
+                    .collect(Collectors.joining(", "));
+        }
+
         return "ValidationError{" +
                 "validationErrorType=" + validationErrorType +
                 ", queryPath=" + queryPath +
-                ", message=" + message +
+                ", message=" + description +
                 ", locations=" + locations +
                 ", description='" + description + '\'' +
+                ", extensions=[" + extensionsString + ']' +
                 '}';
     }
 
@@ -131,20 +107,19 @@ public class ValidationError implements GraphQLError {
         return GraphqlErrorHelper.hashCode(this);
     }
 
-
     public static Builder newValidationError() {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
         private List<SourceLocation> sourceLocations;
         private Map<String, Object> extensions;
         private String description;
-        private ValidationErrorType validationErrorType;
+        private ValidationErrorClassification validationErrorType;
         private List<String> queryPath;
 
-
-        public Builder validationErrorType(ValidationErrorType validationErrorType) {
+        public Builder validationErrorType(ValidationErrorClassification validationErrorType) {
             this.validationErrorType = validationErrorType;
             return this;
         }

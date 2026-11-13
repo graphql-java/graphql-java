@@ -1,6 +1,5 @@
 package graphql.schema.idl
 
-
 import graphql.language.DirectiveDefinition
 import graphql.language.EnumTypeDefinition
 import graphql.language.EnumTypeExtensionDefinition
@@ -16,19 +15,25 @@ import graphql.language.ScalarTypeDefinition
 import graphql.language.ScalarTypeExtensionDefinition
 import graphql.language.SchemaDefinition
 import graphql.language.Type
+import graphql.language.TypeDefinition
 import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.UnionTypeExtensionDefinition
+import graphql.parser.MultiSourceReader
+import graphql.schema.GraphQLTypeUtil
 import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.idl.errors.SchemaRedefinitionError
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.util.stream.Collectors
+
 class TypeDefinitionRegistryTest extends Specification {
 
-    TypeDefinitionRegistry parse(String spec) {
+    static TypeDefinitionRegistry parse(String spec) {
         new SchemaParser().parse(spec)
     }
+
 
     def "test default scalars are locked in"() {
 
@@ -325,6 +330,18 @@ class TypeDefinitionRegistryTest extends Specification {
         !registry.isInterfaceOrUnion(type("Scalar"))
     }
 
+    def "test object type or interface detection"() {
+
+        when:
+        def registry = parse(commonSpec)
+
+        then:
+        registry.isObjectTypeOrInterface(type("Type"))
+        registry.isObjectTypeOrInterface(type("Interface"))
+        !registry.isObjectTypeOrInterface(type("Union"))
+        !registry.isObjectTypeOrInterface(type("Scalar"))
+    }
+
     def "test object type detection"() {
 
         when:
@@ -358,7 +375,7 @@ class TypeDefinitionRegistryTest extends Specification {
     }
 
 
-    def "test can get implements of interface"() {
+    def "test can get implements of interface #typeOfReg"() {
         def spec = '''
             interface Interface {
                 name : String
@@ -379,14 +396,30 @@ class TypeDefinitionRegistryTest extends Specification {
             type Type4 implements NotThatInterface {
                 name : String
             }
+
+            interface Type5 implements Interface {
+                name : String
+            }
+
+            interface Type6 implements NotThatInterface {
+                name : String
+            }
         '''
         when:
         def registry = parse(spec)
-        def interfaceDef = registry.getType("Interface", InterfaceTypeDefinition.class).get()
-        def objectTypeDefinitions = registry.getImplementationsOf(interfaceDef)
-        def names = objectTypeDefinitions.collect { it.getName() }
+        if (typeOfReg == "immutable") {
+            registry = registry.readOnly()
+        }
+        def interfaceDef = registry.getTypeOrNull("Interface", InterfaceTypeDefinition.class)
+        def implementingTypeDefinitions = registry.getAllImplementationsOf(interfaceDef)
+        def names = implementingTypeDefinitions.collect { it.getName() }
         then:
-        names == ["Type1", "Type2", "Type3"]
+        names == ["Type1", "Type2", "Type3", "Type5"]
+
+        where:
+        typeOfReg   | _
+        "mutable"   | _
+        "immutable" | _
     }
 
     def animalia = '''
@@ -397,38 +430,139 @@ class TypeDefinitionRegistryTest extends Specification {
 
             interface Mammal {
               id: String!
+              mother: Mammal!
+              offspring: [Mammal!]!
             }
 
             interface Reptile {
               id: String!
             }
 
-            type Dog implements Animal, Mammal {
+            interface Canine implements Animal & Mammal {
+              id: String!
+              mother: Canine!
+              offspring: [Canine!]!
+            }
+
+            type Dog implements Animal & Mammal & Canine {
+              id: String!
+              mother: Dog!
+              offspring: [Dog!]!
+            }
+
+            type Duck implements Animal {
               id: String!
             }
 
-            type Duck implements Animal, Mammal {
-              id: String!
-            }
-            
             union Platypus = Duck | Turtle
 
-            type Cat implements Animal, Mammal {
+            type Cat implements Animal & Mammal {
               id: String!
+              mother: Cat!
+              offspring: [Cat!]!
             }
 
-            type Turtle implements Animal, Reptile {
+            type Turtle implements Animal & Reptile {
               id: String!
             }
 
 
         '''
 
-    def "test possible type detection"() {
+    def extensionRelationships = '''
+            interface Pet {
+              id: ID
+            }
+
+            interface WorkingPet {
+              id: ID
+            }
+
+            extend interface WorkingPet implements Pet
+
+            type Dog {
+              id: ID
+            }
+
+            extend type Dog implements Pet
+
+            type Cat {
+              id: ID
+            }
+
+            union Pets = Cat
+
+            extend union Pets = Dog
+        '''
+
+    def "possible type detection includes interface implementations from extensions for #typeOfReg registry"() {
         when:
-        def registry = parse(animalia)
+        def registry = registry(extensionRelationships, typeOfReg)
 
         then:
+        registry.isPossibleType(type("Pet"), type("Dog"))
+        registry.isPossibleType(type("Pet"), type("WorkingPet"))
+        !registry.isPossibleType(type("Pet"), type("Cat"))
+
+        where:
+        typeOfReg << ["mutable", "immutable"]
+    }
+
+    def "possible type detection includes union members from extensions for #typeOfReg registry"() {
+        when:
+        def registry = registry(extensionRelationships, typeOfReg)
+
+        then:
+        registry.isPossibleType(type("Pets"), type("Cat"))
+        registry.isPossibleType(type("Pets"), type("Dog"))
+        !registry.isPossibleType(type("Pets"), type("WorkingPet"))
+
+        where:
+        typeOfReg << ["mutable", "immutable"]
+    }
+
+    def "subtype detection unwraps types implemented through extensions for #typeOfReg registry"() {
+        when:
+        def registry = registry(extensionRelationships, typeOfReg)
+
+        then:
+        registry.isSubTypeOf(nonNullType("Dog"), type("Pet"))
+        registry.isSubTypeOf(listType(type("Dog")), listType(type("Pet")))
+        registry.isSubTypeOf(
+                listType(nonNullType(listType(type("Dog")))),
+                listType(nonNullType(listType(type("Pet")))))
+        !registry.isSubTypeOf(type("Cat"), type("Pet"))
+
+        where:
+        typeOfReg << ["mutable", "immutable"]
+    }
+
+    def "implementation lookup includes relationships from extensions for #typeOfReg registry"() {
+        when:
+        def registry = registry(extensionRelationships, typeOfReg)
+        def pet = registry.getTypeOrNull("Pet", InterfaceTypeDefinition.class)
+
+        then:
+        registry.getAllImplementationsOf(pet)*.name == ["WorkingPet", "Dog"]
+        registry.getImplementationsOf(pet)*.name == ["Dog"]
+
+        where:
+        typeOfReg << ["mutable", "immutable"]
+    }
+
+    def "test possible type detection #typeOfReg"() {
+        given:
+        TypeDefinitionRegistry mutableReg = parse(animalia)
+        ImmutableTypeDefinitionRegistry immutableReg = mutableReg.readOnly()
+
+        when:
+        def registry = mutableReg
+        if (typeOfReg == "immutable") {
+            registry = immutableReg
+        }
+
+        then:
+        registry.isPossibleType(type("Mammal"), type("Canine"))
         registry.isPossibleType(type("Mammal"), type("Dog"))
         registry.isPossibleType(type("Mammal"), type("Cat"))
         !registry.isPossibleType(type("Mammal"), type("Turtle"))
@@ -437,6 +571,7 @@ class TypeDefinitionRegistryTest extends Specification {
         !registry.isPossibleType(type("Reptile"), type("Cat"))
         registry.isPossibleType(type("Reptile"), type("Turtle"))
 
+        registry.isPossibleType(type("Animal"), type("Canine"))
         registry.isPossibleType(type("Animal"), type("Dog"))
         registry.isPossibleType(type("Animal"), type("Cat"))
         registry.isPossibleType(type("Animal"), type("Turtle"))
@@ -446,16 +581,36 @@ class TypeDefinitionRegistryTest extends Specification {
         !registry.isPossibleType(type("Platypus"), type("Dog"))
         !registry.isPossibleType(type("Platypus"), type("Cat"))
 
+        where:
+        typeOfReg   | _
+        "mutable"   | _
+        "immutable" | _
+    }
+
+    private static TypeDefinitionRegistry registry(String spec, String typeOfRegistry) {
+        def registry = parse(spec)
+        if (typeOfRegistry == "immutable") {
+            return registry.readOnly()
+        }
+        return registry
     }
 
 
-    def "isSubTypeOf detection"() {
+    def "isSubTypeOf detection #typeOfReg"() {
         when:
         def registry = parse(animalia)
+        if (typeOfReg == "immutable") {
+            registry = registry.readOnly()
+        }
 
         then:
         registry.isSubTypeOf(type("Mammal"), type("Mammal"))
+        registry.isSubTypeOf(type("Canine"), type("Animal"))
+        registry.isSubTypeOf(type("Canine"), type("Mammal"))
+        registry.isSubTypeOf(type("Canine"), type("Canine"))
+        registry.isSubTypeOf(type("Dog"), type("Animal"))
         registry.isSubTypeOf(type("Dog"), type("Mammal"))
+        registry.isSubTypeOf(type("Dog"), type("Canine"))
 
         registry.isSubTypeOf(type("Turtle"), type("Animal"))
         !registry.isSubTypeOf(type("Turtle"), type("Mammal"))
@@ -465,11 +620,27 @@ class TypeDefinitionRegistryTest extends Specification {
 
         registry.isSubTypeOf(listType("Mammal"), listType("Mammal"))
         !registry.isSubTypeOf(listType("Mammal"), type("Mammal")) // but not if they aren't both lists
+        registry.isSubTypeOf(listType("Canine"), listType("Mammal"))
+        registry.isSubTypeOf(listType("Canine"), listType("Animal"))
 
         // unwraps all the way down
         registry.isSubTypeOf(listType(nonNullType(listType(type("Dog")))), listType(nonNullType(listType(type("Mammal")))))
+        registry.isSubTypeOf(listType(nonNullType(listType(type("Canine")))), listType(nonNullType(listType(type("Mammal")))))
         !registry.isSubTypeOf(listType(nonNullType(listType(type("Turtle")))), listType(nonNullType(listType(type("Mammal")))))
 
+        // inner wrappers must match, not just the outermost one
+        registry.isSubTypeOf(listType(nonNullType("Mammal")), listType(nonNullType("Mammal")))
+        registry.isSubTypeOf(listType(nonNullType("Mammal")), listType(type("Mammal")))
+        !registry.isSubTypeOf(listType(type("Mammal")), listType(nonNullType("Mammal")))
+        !registry.isSubTypeOf(listType(listType(type("Mammal"))), listType(type("Mammal")))
+        !registry.isSubTypeOf(listType(type("Mammal")), listType(listType(type("Mammal"))))
+        !registry.isSubTypeOf(nonNullType(listType(type("Mammal"))), nonNullType(listType(nonNullType("Mammal"))))
+
+
+        where:
+        typeOfReg   | _
+        "mutable"   | _
+        "immutable" | _
     }
 
     @Unroll
@@ -480,7 +651,7 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(definition)
         then:
-        !registry.getType(definition.getName()).isPresent()
+        registry.getTypeOrNull(definition.getName()) == null
 
         where:
         definition                                                               | _
@@ -492,7 +663,7 @@ class TypeDefinitionRegistryTest extends Specification {
         InputObjectTypeDefinition.newInputObjectDefinition().name("foo").build() | _
     }
 
-    def "remove directive definition"() {
+    def "remove single directive definition from list"() {
         given:
         DirectiveDefinition definition = DirectiveDefinition.newDirectiveDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -503,8 +674,47 @@ class TypeDefinitionRegistryTest extends Specification {
         !registry.getDirectiveDefinition(definition.getName()).isPresent()
     }
 
+    def "remove multiple directive definition from list"() {
+        given:
+        DirectiveDefinition definition1 = DirectiveDefinition.newDirectiveDefinition().name("foo").build()
+        DirectiveDefinition definition2 = DirectiveDefinition.newDirectiveDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(definition1)
+        registry.add(definition2)
+        when:
+        registry.remove(definition1)
+        then:
+        !registry.getDirectiveDefinition(definition1.getName()).isPresent()
+        registry.getDirectiveDefinition(definition2.getName()).isPresent()
+    }
 
-    def "remove object type extension"() {
+    def "remove single directive definition from map"() {
+        given:
+        DirectiveDefinition definition = DirectiveDefinition.newDirectiveDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(definition)
+        when:
+        registry.remove(definition.getName(), definition)
+        then:
+        !registry.getDirectiveDefinition(definition.getName()).isPresent()
+    }
+
+    def "remove multiple directive definition from map"() {
+        given:
+        DirectiveDefinition definition1 = DirectiveDefinition.newDirectiveDefinition().name("foo").build()
+        DirectiveDefinition definition2 = DirectiveDefinition.newDirectiveDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(definition1)
+        registry.add(definition2)
+        when:
+        registry.remove(definition1.getName(), definition1)
+        then:
+        !registry.getDirectiveDefinition(definition1.getName()).isPresent()
+        registry.getDirectiveDefinition(definition2.getName()).isPresent()
+    }
+
+
+    def "remove single object type extension from list"() {
         given:
         def extension = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -512,10 +722,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.objectTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.objectTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove interface type extension"() {
+    def "remove multiple object type extension from list"() {
+        given:
+        def extension1 = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()
+        def extension2 = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.objectTypeExtensions().containsKey(extension1.getName())
+        registry.objectTypeExtensions().containsKey(extension2.getName())
+        registry.objectTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single object type extension from map"() {
+        given:
+        def extension = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.objectTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple object type extension from map"() {
+        given:
+        def extension1 = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("foo").build()
+        def extension2 = ObjectTypeExtensionDefinition.newObjectTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.objectTypeExtensions().containsKey(extension1.getName())
+        registry.objectTypeExtensions().containsKey(extension2.getName())
+        registry.objectTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single interface type extension from list"() {
         given:
         def extension = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -523,10 +774,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.interfaceTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.interfaceTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove union type extension"() {
+    def "remove multiple interface type extension from list"() {
+        given:
+        def extension1 = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()
+        def extension2 = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.interfaceTypeExtensions().containsKey(extension1.getName())
+        registry.interfaceTypeExtensions().containsKey(extension2.getName())
+        registry.interfaceTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single interface type extension from map"() {
+        given:
+        def extension = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.interfaceTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple interface type extension from map"() {
+        given:
+        def extension1 = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("foo").build()
+        def extension2 = InterfaceTypeExtensionDefinition.newInterfaceTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.interfaceTypeExtensions().containsKey(extension1.getName())
+        registry.interfaceTypeExtensions().containsKey(extension2.getName())
+        registry.interfaceTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single union type extension from list"() {
         given:
         def extension = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -534,10 +826,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.unionTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.unionTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove enum type extension"() {
+    def "remove multiple union type extension from list"() {
+        given:
+        def extension1 = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()
+        def extension2 = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.unionTypeExtensions().containsKey(extension1.getName())
+        registry.unionTypeExtensions().containsKey(extension2.getName())
+        registry.unionTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single union type extension from map"() {
+        given:
+        def extension = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.unionTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple union type extension from map"() {
+        given:
+        def extension1 = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("foo").build()
+        def extension2 = UnionTypeExtensionDefinition.newUnionTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.unionTypeExtensions().containsKey(extension1.getName())
+        registry.unionTypeExtensions().containsKey(extension2.getName())
+        registry.unionTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single enum type extension from list"() {
         given:
         def extension = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -545,10 +878,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.enumTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.enumTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove scalar type extension"() {
+    def "remove multiple enum type extension from list"() {
+        given:
+        def extension1 = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()
+        def extension2 = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.enumTypeExtensions().containsKey(extension1.getName())
+        registry.enumTypeExtensions().containsKey(extension2.getName())
+        registry.enumTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single enum type extension from map"() {
+        given:
+        def extension = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.enumTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple enum type extension from map"() {
+        given:
+        def extension1 = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("foo").build()
+        def extension2 = EnumTypeExtensionDefinition.newEnumTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.enumTypeExtensions().containsKey(extension1.getName())
+        registry.enumTypeExtensions().containsKey(extension2.getName())
+        registry.enumTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single scalar type extension from list"() {
         given:
         def extension = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -556,10 +930,51 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.scalarTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.scalarTypeExtensions().containsKey(extension.getName())
     }
 
-    def "remove input object type extension"() {
+    def "remove multiple scalar type extension from list"() {
+        given:
+        def extension1 = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()
+        def extension2 = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.scalarTypeExtensions().containsKey(extension1.getName())
+        registry.scalarTypeExtensions().containsKey(extension2.getName())
+        registry.scalarTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single scalar type extension from map"() {
+        given:
+        def extension = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.scalarTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple scalar type extension from map"() {
+        given:
+        def extension1 = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("foo").build()
+        def extension2 = ScalarTypeExtensionDefinition.newScalarTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.scalarTypeExtensions().containsKey(extension1.getName())
+        registry.scalarTypeExtensions().containsKey(extension2.getName())
+        registry.scalarTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single input object type extension from list"() {
         given:
         def extension = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build()
         def registry = new TypeDefinitionRegistry()
@@ -567,7 +982,48 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.remove(extension)
         then:
-        !registry.inputObjectTypeExtensions().get(extension.getName()).contains(extension)
+        !registry.inputObjectTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple input object type extension from list"() {
+        given:
+        def extension1 = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build()
+        def extension2 = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1)
+        then:
+        !registry.inputObjectTypeExtensions().containsKey(extension1.getName())
+        registry.inputObjectTypeExtensions().containsKey(extension2.getName())
+        registry.inputObjectTypeExtensions().get(extension2.getName()).contains(extension2)
+    }
+
+    def "remove single input object type extension from map"() {
+        given:
+        def extension = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension)
+        when:
+        registry.remove(extension.getName(), extension)
+        then:
+        !registry.inputObjectTypeExtensions().containsKey(extension.getName())
+    }
+
+    def "remove multiple input object type extension from map"() {
+        given:
+        def extension1 = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("foo").build()
+        def extension2 = InputObjectTypeExtensionDefinition.newInputObjectTypeExtensionDefinition().name("bar").build()
+        def registry = new TypeDefinitionRegistry()
+        registry.add(extension1)
+        registry.add(extension2)
+        when:
+        registry.remove(extension1.getName(), extension1)
+        then:
+        !registry.inputObjectTypeExtensions().containsKey(extension1.getName())
+        registry.inputObjectTypeExtensions().containsKey(extension2.getName())
+        registry.inputObjectTypeExtensions().get(extension2.getName()).contains(extension2)
     }
 
     def "remove schema definition"() {
@@ -588,8 +1044,8 @@ class TypeDefinitionRegistryTest extends Specification {
         when:
         registry.addAll(Arrays.asList(obj1, obj2))
         then:
-        registry.getType("foo").isPresent()
-        registry.getType("bar").isPresent()
+        registry.getTypeOrNull("foo") != null
+        registry.getTypeOrNull("bar") != null
     }
 
     def "addAll will return an error on the first abd thing"() {
@@ -603,5 +1059,277 @@ class TypeDefinitionRegistryTest extends Specification {
         then:
         error.isPresent()
         error.get().getMessage().contains("tried to redefine existing 'bar' type")
+    }
+
+    def "can be serialized and hence cacheable"() {
+        def sdl = '''
+            "the schema"
+            schema {
+                query : Q
+            }
+            
+            "the query type"
+            type Q {
+                field( arg : String! = "default") : FieldType @deprecated(reason : "no good")
+            }
+            
+            interface FieldType {
+                f : UnionType
+            }
+            
+            type FieldTypeImpl implements FieldType {
+                f : UnionType
+            }
+            
+            union UnionType = Foo | Bar
+            
+            type Foo {
+                foo : String
+            }
+
+            type Bar {
+                bar : String
+            }
+        '''
+        def registryOut = new SchemaParser().parse(sdl)
+
+        when:
+
+        TypeDefinitionRegistry registryIn = serialise(registryOut)
+
+        then:
+        TypeDefinition typeIn = registryIn.getTypeOrNull(typeName)
+        TypeDefinition typeOut = registryOut.getTypeOrNull(typeName)
+        typeIn.isEqualTo(typeOut)
+
+        where:
+        typeName        | _
+        "Q"             | _
+        "FieldType"     | _
+        "FieldTypeImpl" | _
+        "UnionType"     | _
+        "Foo"           | _
+        "Bar"           | _
+    }
+
+    def "can maintain parsed order"() {
+        def sdl = '''
+            "the schema"
+            schema {
+                query : Q
+            }
+            
+            "the query type"
+            type Q {
+                field( arg : String! = "default") : FieldType @deprecated(reason : "no good")
+            }
+            
+            interface FieldType {
+                f : UnionType
+            }
+            
+            type FieldTypeImpl implements FieldType {
+                f : UnionType
+            }
+            
+            union UnionType = Foo | Bar
+            
+            type Foo {
+                foo : String
+            }
+
+            type Bar {
+                bar : String
+            }
+            
+            scalar FooScalar
+            
+            directive @FooDirective on FIELD_DEFINITION
+        '''
+
+        when:
+        def registry = new SchemaParser().parse(sdl)
+        def parseOrder = registry.getParseOrder()
+        def defListInOrder = parseOrder.getInOrder().get("")
+        def defListInNameOrder = parseOrder.getInNameOrder().get("")
+        def listOfNames = defListInNameOrder.collect({ d -> d.getName() })
+
+        then:
+
+        defListInOrder.size() == 9
+
+        defListInOrder[0] instanceof SchemaDefinition
+        defListInOrder[1] instanceof ObjectTypeDefinition
+        defListInOrder[2] instanceof InterfaceTypeDefinition
+
+        defListInOrder[8] instanceof DirectiveDefinition
+
+        listOfNames == ["Q", "FieldType", "FieldTypeImpl", "UnionType",
+                        "Foo", "Bar", "FooScalar", "FooDirective"]
+
+        when: "We merge in a new type registry, they are added to the end"
+        def extraSDL = '''
+            type Extra {
+                s : String
+            }
+
+            interface ExtraInterface {
+                s : String
+            }
+        '''
+
+        def extraRegistry = new SchemaParser().parse(extraSDL)
+        registry.merge(extraRegistry)
+
+        parseOrder = registry.getParseOrder()
+        defListInOrder = parseOrder.getInOrder().get("")
+        defListInNameOrder = parseOrder.getInNameOrder().get("")
+        listOfNames = defListInNameOrder.collect({ d -> d.getName() })
+
+        then:
+
+        defListInOrder.size() == 11
+
+        defListInOrder[0] instanceof SchemaDefinition
+        defListInOrder[1] instanceof ObjectTypeDefinition
+        defListInOrder[2] instanceof InterfaceTypeDefinition
+
+        defListInOrder[9] instanceof ObjectTypeDefinition
+        defListInOrder[10] instanceof InterfaceTypeDefinition
+
+        listOfNames == ["Q", "FieldType", "FieldTypeImpl", "UnionType",
+                        "Foo", "Bar", "FooScalar", "FooDirective", "Extra", "ExtraInterface"]
+    }
+
+    def "multi source reader works"() {
+
+        def sdl1 = '''
+            type Query {
+                f : IType
+            }
+            
+            scalar FooScalar
+        '''
+
+        def sdl2 = '''
+            interface IType {
+                q : FooScalar
+            }
+            
+            type QType {
+                q : FooScalar
+            }
+        '''
+
+        def sdl3 = '''
+            directive @FooDirective on FIELD_DEFINITION
+        '''
+
+        def multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(sdl1, "source1")
+                .string(sdl2, "source2")
+                .string(sdl3, null)
+                .build()
+
+        when:
+        def registry = new SchemaParser().parse(multiSourceReader)
+        def parseOrder = registry.getParseOrder()
+        def inNameOrderMap = parseOrder.getInNameOrder()
+
+        then:
+        inNameOrderMap.size() == 3
+        inNameOrderMap["source1"].collect({ it.getName() })
+                == ["Query", "FooScalar"]
+        inNameOrderMap["source2"].collect({ it.getName() })
+                == ["IType", "QType"]
+        inNameOrderMap[""].collect({ it.getName() })
+                == ["FooDirective"]
+
+    }
+
+    def "can created a runtime type comparator"() {
+        def sdl1 = '''
+            type Query {
+                f : QType @FooDirective
+            }
+
+            input BInput {
+                b : String
+            }
+            
+            input AInput {
+                a : String
+            }
+            
+            scalar FooScalar
+        '''
+
+        def sdl2 = '''
+            type QType {
+                c : String
+                b : ID
+                a : FooScalar
+            }
+
+            type XType {
+                x : String
+                z : ID
+                y : FooScalar
+            }
+
+        '''
+
+        def sdl3 = '''
+            type AType {
+                y : FooScalar
+                x : String
+                z : ID
+            }
+
+            directive @FooDirective on FIELD_DEFINITION
+        '''
+
+        def multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(sdl1, "source1")
+                .string(sdl2, "source2")
+                .string(sdl3, null)
+                .build()
+
+        when:
+        def registry = new SchemaParser().parse(multiSourceReader)
+        def parseOrder = registry.getParseOrder()
+        def schema = new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING)
+
+
+        def schemaElements = schema.getAllElementsAsList().stream()
+                .filter(GraphQLTypeUtil.isSystemElement().negate())
+                .collect(Collectors.toList())
+
+        schemaElements.sort(parseOrder.getElementComparator())
+
+        then:
+        schemaElements.collect({ it.name }) ==
+                ["Query",
+                 "BInput",
+                 "AInput",
+                 "FooScalar",
+                 "QType",
+                 "XType",
+                 "AType",
+                 "FooDirective",
+                ]
+
+    }
+
+    static TypeDefinitionRegistry serialise(TypeDefinitionRegistry registryOut) {
+        ByteArrayOutputStream baOS = new ByteArrayOutputStream()
+        ObjectOutputStream oos = new ObjectOutputStream(baOS)
+
+        oos.writeObject(registryOut)
+
+        ByteArrayInputStream baIS = new ByteArrayInputStream(baOS.toByteArray())
+        ObjectInputStream ois = new ObjectInputStream(baIS)
+
+        ois.readObject() as TypeDefinitionRegistry
     }
 }

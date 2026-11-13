@@ -1,17 +1,15 @@
 package graphql.execution.instrumentation
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
-import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
-import graphql.language.Document
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.validation.ValidationError
 import spock.lang.Specification
 
@@ -19,89 +17,102 @@ import java.util.concurrent.CompletableFuture
 
 class ChainedInstrumentationStateTest extends Specification {
 
-    class NamedInstrumentationState implements InstrumentationState {
-        String name
-    }
-
-    // each implementation gives out a state object with its name
-    // and then asserts it gets it back with that name
-    class NamedInstrumentation extends TestingInstrumentation {
-        String name
-
-        NamedInstrumentation(String name) {
-            instrumentationState = new NamedInstrumentationState(name: name)
-            this.name = name
-        }
-
-        @Override
-        InstrumentationState createState() {
-            return instrumentationState
-        }
-
-        def assertState(InstrumentationState instrumentationState) {
-            assert instrumentationState instanceof NamedInstrumentationState
-            assert (instrumentationState as NamedInstrumentationState).name == this.name
-        }
-
-        @Override
-        InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.beginExecution(parameters)
-        }
-
-        @Override
-        InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.beginParse(parameters)
-        }
-
-        @Override
-        InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.beginValidation(parameters)
-        }
-
-        @Override
-        ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.beginExecutionStrategy(parameters)
-        }
-
-        @Override
-        InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.beginExecuteOperation(parameters)
-        }
-
-        @Override
-        InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.beginField(parameters)
-        }
-
-        @Override
-        InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.beginFieldFetch(parameters)
-        }
-
-        @Override
-        DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.instrumentDataFetcher(dataFetcher, parameters)
-        }
-
-        @Override
-        CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.instrumentExecutionResult(executionResult, parameters)
-        }
-    }
 
     def "basic chaining and state management"() {
 
         def a = new NamedInstrumentation("A")
         def b = new NamedInstrumentation("B")
+        def c = new NamedInstrumentation("C")
+        def nullState = new SimplePerformantInstrumentation()
+
+        def chainedInstrumentation = new ChainedInstrumentation([
+                a,
+                b,
+                nullState,
+                c,
+        ])
+
+        def query = """
+        query HeroNameAndFriendsQuery {
+            hero {
+                id
+            }
+        }
+        """
+
+        def expected = [
+                "start:execution",
+
+                "start:parse",
+                "end:parse",
+
+                "start:validation",
+                "end:validation",
+
+                "start:execute-operation",
+
+                "start:execution-strategy",
+
+                "start:field-hero",
+                "start:fetch-hero",
+                "end:fetch-hero",
+                "start:complete-hero",
+
+                "start:execute-object",
+
+                "start:field-id",
+                "start:fetch-id",
+                "end:fetch-id",
+                "start:complete-id",
+                "end:complete-id",
+                "end:field-id",
+
+                "end:execute-object",
+
+                "end:complete-hero",
+                "end:field-hero",
+
+                "end:execution-strategy",
+
+                "end:execute-operation",
+
+                "end:execution",
+        ]
+
+
+        when:
+        def strategy = new AsyncExecutionStrategy()
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(strategy)
+                .instrumentation(chainedInstrumentation)
+                .build()
+
+        graphQL.execute(query)
+
+        then:
+
+        chainedInstrumentation.getInstrumentations().size() == 4
+
+        a.executionList == expected
+        b.executionList == expected
+        c.executionList == expected
+
+        assertCalls(a)
+        assertCalls(b)
+        assertCalls(c)
+
+    }
+
+    def "basic chaining and state management when null returned"() {
+
+        def a = new NamedInstrumentation("A")
+        def b = new NamedInstrumentation("B") {
+            @Override
+            InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState state) {
+                return null // just this method
+            }
+        }
         def c = new NamedInstrumentation("C")
         def chainedInstrumentation = new ChainedInstrumentation([
                 a,
@@ -135,7 +146,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",
@@ -144,7 +155,47 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:complete-id",
                 "end:field-id",
 
+                "end:execute-object",
+
+                "end:complete-hero",
+                "end:field-hero",
+
                 "end:execution-strategy",
+
+                "end:execute-operation",
+
+                "end:execution",
+        ]
+
+        def expectedWhenReturningNull = [
+                "start:execution",
+
+                "start:parse",
+                "end:parse",
+
+                // overridden above
+                //"start:validation",
+                //"end:validation",
+
+                "start:execute-operation",
+
+                "start:execution-strategy",
+
+                "start:field-hero",
+                "start:fetch-hero",
+                "end:fetch-hero",
+                "start:complete-hero",
+
+                "start:execute-object",
+
+                "start:field-id",
+                "start:fetch-id",
+                "end:fetch-id",
+                "start:complete-id",
+                "end:complete-id",
+                "end:field-id",
+
+                "end:execute-object",
 
                 "end:complete-hero",
                 "end:field-hero",
@@ -170,8 +221,79 @@ class ChainedInstrumentationStateTest extends Specification {
         then:
 
         a.executionList == expected
-        b.executionList == expected
+        b.executionList == expectedWhenReturningNull
         c.executionList == expected
+
+        assertCalls(a)
+        assertCalls(b)
+        assertCalls(c)
+    }
+
+    def "basic chaining and state management when exception raised in data fetching"() {
+
+        def a = new NamedInstrumentation("A")
+        def b = new NamedInstrumentation("B")
+        def c = new NamedInstrumentation("C")
+        def nullState = new SimplePerformantInstrumentation()
+
+        def chainedInstrumentation = new ChainedInstrumentation([
+                a,
+                b,
+                nullState,
+                c,
+        ])
+
+        def query = """
+        query HeroNameAndFriendsQuery {
+            hero {
+                id
+            }
+        }
+        """
+
+        def expected = "onExceptionHandled:fetch-id"
+
+
+        when:
+        def strategy = new AsyncExecutionStrategy()
+        def schema = StarWarsSchema.starWarsSchema
+        def graphQL = GraphQL
+                .newGraphQL(schema.transform { schemaBuilder ->
+                    // throw exception when fetching the hero id
+                    def exceptionDataFetcher = new DataFetcher() {
+                        @Override
+                        Object get(DataFetchingEnvironment environment) {
+                            throw new RuntimeException("Data fetcher exception")
+                        }
+                    }
+                    schemaBuilder.codeRegistry(schema.codeRegistry.transform {
+                        it.dataFetcher(
+                                schema.getObjectType("Human"),
+                                schema.getObjectType("Human").getFieldDefinition("id"),
+                                exceptionDataFetcher
+                        )
+                        it.dataFetcher(
+                                schema.getObjectType("Droid"),
+                                schema.getObjectType("Droid").getFieldDefinition("id"),
+                                exceptionDataFetcher
+                        )
+                        return it
+                    }
+                    )
+                })
+                .queryExecutionStrategy(strategy)
+                .instrumentation(chainedInstrumentation)
+                .build()
+
+        graphQL.execute(query)
+
+        then:
+
+        chainedInstrumentation.getInstrumentations().size() == 4
+
+        a.executionList.any { it == expected }
+        b.executionList.any { it == expected }
+        c.executionList.any { it == expected }
 
         assertCalls(a)
         assertCalls(b)
@@ -203,6 +325,101 @@ class ChainedInstrumentationStateTest extends Specification {
         then:
         noExceptionThrown()
 
+    }
+
+    def "single chain"() {
+        def a = new NamedInstrumentation("A")
+        def chainedInstrumentation = new ChainedInstrumentation([a])
+
+        def query = """
+        query HeroNameAndFriendsQuery {
+            hero {
+                id
+            }
+        }
+        """
+
+        when:
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(chainedInstrumentation)
+                .build()
+
+        graphQL.execute(query)
+
+        then:
+        noExceptionThrown()
+
+        assertCalls(a)
+
+    }
+
+
+    class StringInstrumentationState implements InstrumentationState {
+        StringInstrumentationState(String value) {
+            this.value = value
+        }
+
+        String value
+    }
+
+    def "can have an multiple async createState() calls in play"() {
+
+
+        given:
+
+        def query = '''query Q($var: String!) {
+                                  human(id: $var) {
+                                    id
+                                    name
+                                  }
+                                }
+                            '''
+
+
+        def instrumentation1 = new SimplePerformantInstrumentation() {
+            @Override
+            CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+                return CompletableFuture.supplyAsync {
+                    return new StringInstrumentationState("I1")
+                } as CompletableFuture<InstrumentationState>
+            }
+
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                return CompletableFuture.completedFuture(
+                        executionResult.transform { it.addExtension("i1", ((StringInstrumentationState) state).value) }
+                )
+            }
+        }
+        def instrumentation2 = new SimplePerformantInstrumentation() {
+            @Override
+            CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+                return CompletableFuture.supplyAsync {
+                    return new StringInstrumentationState("I2")
+                } as CompletableFuture<InstrumentationState>
+            }
+
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                return CompletableFuture.completedFuture(
+                        executionResult.transform { it.addExtension("i2", ((StringInstrumentationState) state).value) }
+                )
+            }
+
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(new ChainedInstrumentation([instrumentation1, instrumentation2]))
+                .build()
+
+        when:
+        def variables = [var: "1001"]
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
+
+        then:
+        er.extensions == [i1: "I1", i2: "I2"]
     }
 
     private void assertCalls(NamedInstrumentation instrumentation) {

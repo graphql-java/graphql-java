@@ -36,17 +36,14 @@ class DirectiveTest extends Specification {
                 new Directive("repeated", [new Argument("a1", new StringValue("v1"))]),
                 new Directive("repeated", [new Argument("a1", new StringValue("v2"))]),
         ]
-        def directivesMap = NodeUtil.directivesByName(directives)
 
-        expect:
+        when:
+        def directivesMap = NodeUtil.allDirectivesByName(directives)
 
-        //
-        // other parts of the system ensure that repeated directives are invalid, but if we manually create them
-        // we always return the first
-
+        then:
         directivesMap.size() == 3
-        directivesMap.get("d1") == d1
+        directivesMap.get("d1") == [d1]
         directivesMap.get("null") == null
-        directivesMap.get("repeated").getArgument("a1").getValue().isEqualTo(new StringValue("v1"))
+        directivesMap.get("repeated").collect({ d -> d.getName() }) == ["repeated", "repeated"]
     }
 }

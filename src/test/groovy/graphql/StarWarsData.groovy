@@ -94,7 +94,6 @@ class StarWarsData {
         }
     }
 
-
     static DataFetcher droidDataFetcher = new DataFetcher() {
         @Override
         Object get(DataFetchingEnvironment environment) {

@@ -1,20 +1,24 @@
 package graphql.relay;
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * A default implementation of {@link graphql.relay.Connection}
  */
 @PublicApi
+@NullMarked
 public class DefaultConnection<T> implements Connection<T> {
 
-    private final List<Edge<T>> edges;
+    private final ImmutableList<Edge<T>> edges;
     private final PageInfo pageInfo;
 
     /**
@@ -26,7 +30,7 @@ public class DefaultConnection<T> implements Connection<T> {
      * @throws IllegalArgumentException if edges or page info is null. use {@link Collections#emptyList()} for empty edges.
      */
     public DefaultConnection(List<Edge<T>> edges, PageInfo pageInfo) {
-        this.edges = unmodifiableList(assertNotNull(edges, "edges cannot be null"));
+        this.edges = ImmutableList.copyOf(assertNotNull(edges, "edges cannot be null"));
         this.pageInfo = assertNotNull(pageInfo, "page info cannot be null");
     }
 
@@ -38,6 +42,23 @@ public class DefaultConnection<T> implements Connection<T> {
     @Override
     public PageInfo getPageInfo() {
         return pageInfo;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DefaultConnection that = (DefaultConnection) o;
+        return Objects.equals(edges, that.edges) && Objects.equals(pageInfo, that.pageInfo);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(edges, pageInfo);
     }
 
     @Override

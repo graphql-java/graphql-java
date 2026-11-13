@@ -1,25 +1,13 @@
 package graphql.execution.instrumentation.dataloader
 
-import graphql.DeferredExecutionResult
 import graphql.ExecutionInput
 import graphql.GraphQL
-import graphql.execution.defer.CapturingSubscriber
-import graphql.execution.instrumentation.ChainedInstrumentation
-import graphql.execution.instrumentation.Instrumentation
-import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
-import org.reactivestreams.Publisher
-import spock.lang.Ignore
 import spock.lang.Specification
 
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedInitialDeferredData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedInitialExpensiveDeferredData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getDeferredQuery
+import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedExpensiveData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedExpensiveData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedExpensiveDeferredData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedListOfDeferredData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveDeferredQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getQuery
 
@@ -35,15 +23,18 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         DataLoaderPerformanceData dataLoaderPerformanceData = new DataLoaderPerformanceData(batchCompareDataFetchers)
 
         dataLoaderRegistry = dataLoaderPerformanceData.setupDataLoaderRegistry()
-        Instrumentation instrumentation = new ChainedInstrumentation(
-                Collections.singletonList(new DataLoaderDispatcherInstrumentation()))
-        graphQL = dataLoaderPerformanceData.setupGraphQL(instrumentation)
+        graphQL = dataLoaderPerformanceData.setupGraphQL()
     }
 
     def "chainedInstrumentation: 760 ensure data loader is performant for lists"() {
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(getQuery())
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .build()
+
         def result = graphQL.execute(executionInput)
 
         then:
@@ -52,14 +43,22 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         //  eg 1 for shops-->departments and one for departments --> products
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+
+        where:
+        incrementalSupport << [true, false]
     }
 
-    @Ignore("This test flakes on Travis for some reason.  Clearly this indicates some sort of problem to investigate.  However it also stop releases.")
     def "chainedInstrumentation: 970 ensure data loader is performant for multiple field with lists"() {
 
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).dataLoaderRegistry(dataLoaderRegistry).build()
+        batchCompareDataFetchers.useSynchronizedFetching(2)
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(getExpensiveQuery(false))
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .build()
 
         def result = graphQL.execute(executionInput)
 
@@ -69,6 +68,8 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
+        where:
+        incrementalSupport << [true, false]
     }
 
     def "chainedInstrumentation: ensure data loader is performant for lists using async batch loading"() {
@@ -77,7 +78,11 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         batchCompareDataFetchers.useAsyncBatchLoading(true)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .build()
         def result = graphQL.execute(executionInput)
 
         then:
@@ -87,6 +92,8 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
+        where:
+        incrementalSupport << [true, false]
     }
 
     def "chainedInstrumentation: 970 ensure data loader is performant for multiple field with lists using async batch loading"() {
@@ -94,68 +101,23 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         when:
 
         batchCompareDataFetchers.useAsyncBatchLoading(true)
+        batchCompareDataFetchers.useSynchronizedFetching(2)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(getExpensiveQuery(false))
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .build()
         def result = graphQL.execute(executionInput)
 
         then:
         result.data == expectedExpensiveData
 
-        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() <= 2
-        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+
+        where:
+        incrementalSupport << [true, false]
     }
 
-    def "chainedInstrumentation: data loader will work with deferred queries"() {
-
-        when:
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(deferredQuery).dataLoaderRegistry(dataLoaderRegistry).build()
-        def result = graphQL.execute(executionInput)
-
-        Map<Object, Object> extensions = result.getExtensions()
-        Publisher<DeferredExecutionResult> deferredResultStream = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
-
-        def subscriber = new CapturingSubscriber()
-        subscriber.subscribeTo(deferredResultStream)
-        Awaitility.await().untilTrue(subscriber.finished)
-
-
-        then:
-
-        result.data == expectedInitialDeferredData
-
-        subscriber.executionResultData == expectedListOfDeferredData
-
-        //
-        //  with deferred results, we don't achieve the same efficiency
-        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
-        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
-    }
-
-    def "chainedInstrumentation: data loader will work with deferred queries on multiple levels deep"() {
-
-        when:
-
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveDeferredQuery).dataLoaderRegistry(dataLoaderRegistry).build()
-        def result = graphQL.execute(executionInput)
-
-        Map<Object, Object> extensions = result.getExtensions()
-        Publisher<DeferredExecutionResult> deferredResultStream = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
-
-        def subscriber = new CapturingSubscriber()
-        subscriber.subscribeTo(deferredResultStream)
-        Awaitility.await().untilTrue(subscriber.finished)
-
-
-        then:
-
-        result.data == expectedInitialExpensiveDeferredData
-
-        subscriber.executionResultData == expectedExpensiveDeferredData
-
-        //
-        //  with deferred results, we don't achieve the same efficiency
-        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
-        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
-    }
 }

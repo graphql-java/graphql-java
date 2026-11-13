@@ -1,9 +1,11 @@
 package graphql;
 
-import graphql.execution.ExecutionPath;
 import graphql.execution.ExecutionStepInfo;
+import graphql.execution.ResultPath;
 import graphql.execution.UnresolvedTypeException;
 import graphql.language.SourceLocation;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -12,25 +14,26 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static java.lang.String.format;
 
 @PublicApi
+@NullMarked
 public class UnresolvedTypeError implements GraphQLError {
 
     private final String message;
     private final List<Object> path;
     private final UnresolvedTypeException exception;
 
-    public UnresolvedTypeError(ExecutionPath path, ExecutionStepInfo info,
+    public UnresolvedTypeError(ResultPath path, ExecutionStepInfo info,
                                UnresolvedTypeException exception) {
         this.path = assertNotNull(path).toList();
         this.exception = assertNotNull(exception);
         this.message = mkMessage(path, exception, assertNotNull(info));
     }
 
-    private String mkMessage(ExecutionPath path, UnresolvedTypeException exception, ExecutionStepInfo info) {
+    private String mkMessage(ResultPath path, UnresolvedTypeException exception, ExecutionStepInfo info) {
         return format("Can't resolve '%s'. Abstract type '%s' must resolve to an Object type at runtime for field '%s.%s'. %s",
                 path,
                 exception.getInterfaceOrUnionType().getName(),
-                simplePrint(info.getParent().getUnwrappedNonNullType()),
-                info.getFieldDefinition().getName(),
+                simplePrint(assertNotNull(info.getParent(), "executionStepInfo parent must not be null").getUnwrappedNonNullType()),
+                assertNotNull(info.getFieldDefinition(), "fieldDefinition must not be null").getName(),
                 exception.getMessage());
     }
 
@@ -45,7 +48,7 @@ public class UnresolvedTypeError implements GraphQLError {
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return null;
     }
 

@@ -1,11 +1,13 @@
 package graphql.schema;
 
+import graphql.Internal;
 import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
 
 import java.util.List;
 import java.util.Map;
 
+@Internal
 public class GraphQLSchemaElementAdapter implements NodeAdapter<GraphQLSchemaElement> {
 
     public static final GraphQLSchemaElementAdapter SCHEMA_ELEMENT_ADAPTER = new GraphQLSchemaElementAdapter();

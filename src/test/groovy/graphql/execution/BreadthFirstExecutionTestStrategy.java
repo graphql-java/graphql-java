@@ -22,11 +22,11 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         MergedSelectionSet fields = parameters.getFields();
 
-        Map<String, FetchedValue> fetchedValues = new LinkedHashMap<>();
+        Map<String, Object> fetchedValues = new LinkedHashMap<>();
 
         // first fetch every value
         for (String fieldName : fields.keySet()) {
-            FetchedValue fetchedValue = fetchField(executionContext, parameters, fields, fieldName);
+            Object fetchedValue = fetchField(executionContext, parameters, fields, fieldName);
             fetchedValues.put(fieldName, fetchedValue);
         }
 
@@ -34,9 +34,9 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         Map<String, Object> results = new LinkedHashMap<>();
         for (String fieldName : fetchedValues.keySet()) {
             MergedField currentField = fields.getSubField(fieldName);
-            FetchedValue fetchedValue = fetchedValues.get(fieldName);
+            Object fetchedValue = fetchedValues.get(fieldName);
 
-            ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
+            ResultPath fieldPath = parameters.getPath().segment(fieldName);
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
@@ -51,19 +51,19 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 
-    private FetchedValue fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {
+    private Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {
         MergedField currentField = fields.getSubField(fieldName);
 
-        ExecutionPath fieldPath = parameters.getPath().segment(fieldName);
+        ResultPath fieldPath = parameters.getPath().segment(fieldName);
         ExecutionStrategyParameters newParameters = parameters
                 .transform(builder -> builder.field(currentField).path(fieldPath));
 
-        return fetchField(executionContext, newParameters).join();
+        return Async.toCompletableFuture(fetchField(executionContext, newParameters)).join();
     }
 
-    private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, FetchedValue fetchedValue, ExecutionStrategyParameters newParameters) {
-        ExecutionResult resolvedResult = completeField(executionContext, newParameters, fetchedValue).getFieldValue().join();
-        results.put(fieldName, resolvedResult != null ? resolvedResult.getData() : null);
+    private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, Object fetchedValue, ExecutionStrategyParameters newParameters) {
+        Object resolvedResult = completeField(executionContext, newParameters, fetchedValue).getFieldValueFuture().join();
+        results.put(fieldName, resolvedResult);
     }
 
 }

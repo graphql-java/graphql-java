@@ -3,8 +3,6 @@ package readme;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationOptions;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLSchema;
@@ -12,10 +10,11 @@ import org.dataloader.BatchLoader;
 import org.dataloader.BatchLoaderContextProvider;
 import org.dataloader.BatchLoaderEnvironment;
 import org.dataloader.BatchLoaderWithContext;
-import org.dataloader.CacheMap;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderFactory;
 import org.dataloader.DataLoaderOptions;
 import org.dataloader.DataLoaderRegistry;
+import org.dataloader.ValueCache;
 
 import java.util.List;
 import java.util.Map;
@@ -24,11 +23,11 @@ import java.util.concurrent.CompletionStage;
 
 import static graphql.ExecutionInput.newExecutionInput;
 
-@SuppressWarnings({"unused", "Convert2Lambda", "ConstantConditions", "ClassCanBeStatic"})
+@SuppressWarnings({"unused", "Convert2Lambda", "ClassCanBeStatic"})
 public class DataLoaderBatchingExamples {
 
 
-    class StarWarsCharacter {
+    static class StarWarsCharacter {
         List<String> getFriendIds() {
             return null;
         }
@@ -59,7 +58,7 @@ public class DataLoaderBatchingExamples {
         // use this data loader in the data fetchers associated with characters and put them into
         // the graphql schema (not shown)
         //
-        DataFetcher heroDataFetcher = new DataFetcher() {
+        DataFetcher<?> heroDataFetcher = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 DataLoader<String, Object> dataLoader = environment.getDataLoader("character");
@@ -67,7 +66,7 @@ public class DataLoaderBatchingExamples {
             }
         };
 
-        DataFetcher friendsDataFetcher = new DataFetcher() {
+        DataFetcher<?> friendsDataFetcher = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 StarWarsCharacter starWarsCharacter = environment.getSource();
@@ -83,13 +82,6 @@ public class DataLoaderBatchingExamples {
         // as each level of the graphql query is executed and hence make batched objects
         // available to the query and the associated DataFetchers
         //
-        // In this case we use options to make it keep statistics on the batching efficiency
-        //
-        DataLoaderDispatcherInstrumentationOptions options = DataLoaderDispatcherInstrumentationOptions
-                .newOptions().includeStatistics(true);
-
-        DataLoaderDispatcherInstrumentation dispatcherInstrumentation
-                = new DataLoaderDispatcherInstrumentation(options);
 
         //
         // now build your graphql object and execute queries on it.
@@ -97,7 +89,6 @@ public class DataLoaderBatchingExamples {
         // schema fields
         //
         GraphQL graphQL = GraphQL.newGraphQL(buildSchema())
-                .instrumentation(dispatcherInstrumentation)
                 .build();
 
         //
@@ -105,7 +96,7 @@ public class DataLoaderBatchingExamples {
         //
         // Since data loaders are stateful, they are created per execution request.
         //
-        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(characterBatchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoaderFactory.newDataLoader(characterBatchLoader);
 
         //
         // DataLoaderRegistry is a place to register all data loaders in that needs to be dispatched together
@@ -124,24 +115,25 @@ public class DataLoaderBatchingExamples {
         ExecutionResult executionResult = graphQL.execute(executionInput);
     }
 
-    class Redis {
+    static class Redis {
 
         public boolean containsKey(String key) {
             return false;
         }
 
-        public Object getValue(String key) {
+        public CompletableFuture<Object> getValue(String key) {
             return null;
         }
 
-        public CacheMap<String, Object> setValue(String key, Object value) {
+        public CompletableFuture<Object> setValue(String key, Object value) {
             return null;
         }
 
-        public void clearKey(String key) {
+        public CompletableFuture<Void> clearKey(String key) {
+            return null;
         }
 
-        public CacheMap<String, Object> clearAll() {
+        public CompletableFuture<Void> clearAll() {
             return null;
         }
     }
@@ -157,39 +149,31 @@ public class DataLoaderBatchingExamples {
 
     private void changeCachingSolutionOfDataLoader() {
 
-        CacheMap<String, Object> crossRequestCacheMap = new CacheMap<String, Object>() {
+        ValueCache<String, Object> crossRequestValueCache = new ValueCache<String, Object>() {
             @Override
-            public boolean containsKey(String key) {
-                return redisIntegration.containsKey(key);
-            }
-
-            @Override
-            public Object get(String key) {
+            public CompletableFuture<Object> get(String key) {
                 return redisIntegration.getValue(key);
             }
 
             @Override
-            public CacheMap<String, Object> set(String key, Object value) {
-                redisIntegration.setValue(key, value);
-                return this;
+            public CompletableFuture<Object> set(String key, Object value) {
+                return redisIntegration.setValue(key, value);
             }
 
             @Override
-            public CacheMap<String, Object> delete(String key) {
-                redisIntegration.clearKey(key);
-                return this;
+            public CompletableFuture<Void> delete(String key) {
+                return redisIntegration.clearKey(key);
             }
 
             @Override
-            public CacheMap<String, Object> clear() {
-                redisIntegration.clearAll();
-                return this;
+            public CompletableFuture<Void> clear() {
+                return redisIntegration.clearAll();
             }
         };
 
-        DataLoaderOptions options = DataLoaderOptions.newOptions().setCacheMap(crossRequestCacheMap);
+        DataLoaderOptions options = DataLoaderOptions.newOptions().setValueCache(crossRequestValueCache).build();
 
-        DataLoader<String, Object> dataLoader = DataLoader.newDataLoader(batchLoader, options);
+        DataLoader<String, Object> dataLoader = DataLoaderFactory.newDataLoader(batchLoader, options);
     }
 
     private void doNotUseAsyncInYouDataFetcher() {
@@ -201,11 +185,11 @@ public class DataLoaderBatchingExamples {
             }
         };
 
-        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
 
         // .... later in your data fetcher
 
-        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+        DataFetcher<?> dataFetcherThatCallsTheDataLoader = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 //
@@ -229,11 +213,11 @@ public class DataLoaderBatchingExamples {
             }
         };
 
-        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoader);
+        DataLoader<String, Object> characterDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
 
         // .... later in your data fetcher
 
-        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+        DataFetcher<?> dataFetcherThatCallsTheDataLoader = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 //
@@ -276,12 +260,12 @@ public class DataLoaderBatchingExamples {
         //
         // this creates an overall context for the dataloader
         //
-        DataLoaderOptions loaderOptions = DataLoaderOptions.newOptions().setBatchLoaderContextProvider(contextProvider);
-        DataLoader<String, Object> characterDataLoader = DataLoader.newDataLoader(batchLoaderWithCtx, loaderOptions);
+        DataLoaderOptions loaderOptions = DataLoaderOptions.newOptions().setBatchLoaderContextProvider(contextProvider).build();
+        DataLoader<String, Object> characterDataLoader = DataLoaderFactory.newDataLoader(batchLoaderWithCtx, loaderOptions);
 
         // .... later in your data fetcher
 
-        DataFetcher dataFetcherThatCallsTheDataLoader = new DataFetcher() {
+        DataFetcher<?> dataFetcherThatCallsTheDataLoader = new DataFetcher<Object>() {
             @Override
             public Object get(DataFetchingEnvironment environment) {
                 String argId = environment.getArgument("id");

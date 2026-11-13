@@ -6,13 +6,18 @@ import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.InstrumentationContext
-import graphql.execution.instrumentation.SimpleInstrumentation
-import graphql.execution.instrumentation.TestingInstrumentation
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.LegacyTestingInstrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.language.Document
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
 import java.util.function.Function
+
+import static graphql.ExecutionInput.newExecutionInput
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp
 
 class PreparsedDocumentProviderTest extends Specification {
 
@@ -34,7 +39,7 @@ class PreparsedDocumentProviderTest extends Specification {
                 "end:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",
@@ -43,7 +48,7 @@ class PreparsedDocumentProviderTest extends Specification {
                 "end:complete-id",
                 "end:field-id",
 
-                "end:execution-strategy",
+                "end:execute-object",
 
                 "end:complete-hero",
                 "end:field-hero",
@@ -75,7 +80,7 @@ class PreparsedDocumentProviderTest extends Specification {
                 "end:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",
@@ -84,7 +89,7 @@ class PreparsedDocumentProviderTest extends Specification {
                 "end:complete-id",
                 "end:field-id",
 
-                "end:execution-strategy",
+                "end:execute-object",
 
                 "end:complete-hero",
                 "end:field-hero",
@@ -97,8 +102,8 @@ class PreparsedDocumentProviderTest extends Specification {
 
         when:
 
-        def instrumentation = new TestingInstrumentation()
-        def instrumentationPreparsed = new TestingInstrumentation()
+        def instrumentation = new LegacyTestingInstrumentation()
+        def instrumentationPreparsed = new LegacyTestingInstrumentation()
         def preparsedCache = new TestingPreparsedDocumentProvider()
 
         def strategy = new AsyncExecutionStrategy()
@@ -107,14 +112,14 @@ class PreparsedDocumentProviderTest extends Specification {
                 .instrumentation(instrumentation)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query(query).build()).data
+                .execute(newExecutionInput().query(query).build()).data
 
         def data2 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(strategy)
                 .instrumentation(instrumentationPreparsed)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query(query).build()).data
+                .execute(newExecutionInput().query(query).build()).data
 
 
         then:
@@ -142,12 +147,12 @@ class PreparsedDocumentProviderTest extends Specification {
         def result1 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query(query).build())
+                .execute(newExecutionInput().query(query).build())
 
         def result2 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query(query).build())
+                .execute(newExecutionInput().query(query).build())
 
         then: "Both the first and the second result should give the same validation error"
         result1.errors.size() == 1
@@ -158,13 +163,13 @@ class PreparsedDocumentProviderTest extends Specification {
         result1.errors[0].errorType == result2.errors[0].errorType
     }
 
-    class InputCapturingInstrumentation extends SimpleInstrumentation {
+    class InputCapturingInstrumentation extends SimplePerformantInstrumentation {
         ExecutionInput capturedInput
 
         @Override
-        InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
+        InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState state) {
             capturedInput = parameters.getExecutionInput()
-            return super.beginParse(parameters)
+            return noOp()
         }
     }
 
@@ -188,13 +193,13 @@ class PreparsedDocumentProviderTest extends Specification {
         def documentProvider = new PreparsedDocumentProvider() {
 
             @Override
-            PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> computeFunction) {
+            CompletableFuture<PreparsedDocumentEntry> getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
                 if (executionInput.getQuery() == "#A") {
                     executionInput = executionInput.transform({ it.query(queryA) })
                 } else {
                     executionInput = executionInput.transform({ it.query(queryB) })
                 }
-                return computeFunction.apply(executionInput)
+                return CompletableFuture.completedFuture(parseAndValidateFunction.apply(executionInput))
             }
         }
 
@@ -203,14 +208,14 @@ class PreparsedDocumentProviderTest extends Specification {
                 .preparsedDocumentProvider(documentProvider)
                 .instrumentation(instrumentationA)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query("#A").build())
+                .execute(newExecutionInput().query("#A").build())
 
         def instrumentationB = new InputCapturingInstrumentation()
         def resultB = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .preparsedDocumentProvider(documentProvider)
                 .instrumentation(instrumentationB)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query("#B").build())
+                .execute(newExecutionInput().query("#B").build())
 
         expect:
 

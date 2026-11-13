@@ -1,8 +1,14 @@
 package graphql.execution;
 
+import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
+
 /**
  * A provider of {@link ExecutionId}s
  */
+@NullMarked
+@PublicSpi
 public interface ExecutionIdProvider {
 
     ExecutionIdProvider DEFAULT_EXECUTION_ID_PROVIDER = (query, operationName, context) -> ExecutionId.generate();
@@ -17,5 +23,5 @@ public interface ExecutionIdProvider {
      *
      * @return a non null {@link ExecutionId}
      */
-    ExecutionId provide(String query, String operationName, Object context);
+    ExecutionId provide(String query, @Nullable String operationName, @Nullable Object context);
 }

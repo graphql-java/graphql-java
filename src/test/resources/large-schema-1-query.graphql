@@ -1,0 +1,1 @@
+query operation {...Fragment1 ...Fragment2 ...Fragment3} fragment Fragment3 on Object27 {field91 {field29 field30 field27 field1} field57 {field58 field59 field1}} fragment Fragment2 on Object27 {field91 {field29 field30 field27 field1} field57 {field58 field59 field1}} fragment Fragment1 on Object27 {field91 {field27 field1} field57 {field58 field59 field1}}

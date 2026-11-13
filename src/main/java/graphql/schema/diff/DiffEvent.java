@@ -2,6 +2,8 @@ package graphql.schema.diff;
 
 import graphql.PublicApi;
 import graphql.language.TypeKind;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +15,7 @@ import static java.util.stream.Collectors.toList;
  * This represents the events that the {@link SchemaDiff} outputs.
  */
 @PublicApi
+@NullMarked
 public class DiffEvent {
 
     private final DiffLevel level;
@@ -73,15 +76,6 @@ public class DiffEvent {
                 '}';
     }
 
-    /**
-     * @return  a Builder of Info level diff events
-     * @deprecated use {@link DiffEvent#apiInfo()} instead
-     */
-    @Deprecated
-    public static Builder newInfo() {
-        return new Builder().level(DiffLevel.INFO);
-    }
-
     public static Builder apiInfo() {
         return new Builder().level(DiffLevel.INFO);
     }
@@ -95,6 +89,7 @@ public class DiffEvent {
     }
 
 
+    @NullUnmarked
     public static class Builder {
 
         DiffCategory category;

@@ -3,12 +3,14 @@ package graphql.relay;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
+import graphql.Internal;
 import graphql.language.SourceLocation;
 
 import java.util.List;
 
 import static graphql.ErrorType.DataFetchingException;
 
+@Internal
 public class InvalidCursorException extends RuntimeException implements GraphQLError {
 
     InvalidCursorException(String message) {

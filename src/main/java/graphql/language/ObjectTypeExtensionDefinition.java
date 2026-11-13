@@ -1,28 +1,34 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.emptyMap;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 
 @PublicApi
-public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
+@NullMarked
+public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
     protected ObjectTypeExtensionDefinition(String name,
                                             List<Type> implementz,
                                             List<Directive> directives,
                                             List<FieldDefinition> fieldDefinitions,
-                                            Description description,
-                                            SourceLocation sourceLocation,
+                                            @Nullable Description description,
+                                            @Nullable SourceLocation sourceLocation,
                                             List<Comment> comments,
                                             IgnoredChars ignoredChars,
                                             Map<String, String> additionalData) {
@@ -36,15 +42,15 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
      * @param name of the object type extension
      */
     public ObjectTypeExtensionDefinition(String name) {
-        this(name, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), null, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, emptyList(), emptyList(), emptyList(), null, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
     @Override
     public ObjectTypeExtensionDefinition deepCopy() {
         return new ObjectTypeExtensionDefinition(getName(),
-                deepCopy(getImplements()),
-                deepCopy(getDirectives()),
-                deepCopy(getFieldDefinitions()),
+                assertNotNull(deepCopy(getImplements()), "implementz deepCopy should not return null"),
+                assertNotNull(deepCopy(getDirectives()), "directives deepCopy should not return null"),
+                assertNotNull(deepCopy(getFieldDefinitions()), "fieldDefinitions deepCopy should not return null"),
                 getDescription(),
                 getSourceLocation(),
                 getComments(),
@@ -52,6 +58,12 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
                 getAdditionalData());
     }
 
+    @Override
+    public ObjectTypeExtensionDefinition withNewChildren(NodeChildrenContainer newChildren) {
+        return transformExtension(builder -> builder.implementz(newChildren.getChildren(CHILD_IMPLEMENTZ))
+                .directives(newChildren.getChildren(CHILD_DIRECTIVES))
+                .fieldDefinitions(newChildren.getChildren(CHILD_FIELD_DEFINITIONS)));
+    }
 
     @Override
     public String toString() {
@@ -73,28 +85,29 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
         return builder.build();
     }
 
-    public static final class Builder implements NodeBuilder {
+    @NullUnmarked
+    public static final class Builder implements NodeDirectivesBuilder {
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private String name;
         private Description description;
-        private List<Type> implementz = new ArrayList<>();
-        private List<Directive> directives = new ArrayList<>();
-        private List<FieldDefinition> fieldDefinitions = new ArrayList<>();
+        private ImmutableList<Type> implementz = emptyList();
+        private ImmutableList<Directive> directives = emptyList();
+        private ImmutableList<FieldDefinition> fieldDefinitions = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
         private Builder() {
         }
 
-        private Builder(ObjectTypeExtensionDefinition existing) {
+        private Builder(ObjectTypeDefinition existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.directives = existing.getDirectives();
-            this.implementz = existing.getImplements();
-            this.fieldDefinitions = existing.getFieldDefinitions();
+            this.directives = ImmutableList.copyOf(existing.getDirectives());
+            this.implementz = ImmutableList.copyOf(existing.getImplements());
+            this.fieldDefinitions = ImmutableList.copyOf(existing.getFieldDefinitions());
             this.ignoredChars = existing.getIgnoredChars();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -105,7 +118,7 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 
@@ -120,32 +133,33 @@ public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
         }
 
         public Builder implementz(List<Type> implementz) {
-            this.implementz = implementz;
+            this.implementz = ImmutableList.copyOf(implementz);
             return this;
         }
 
-        public Builder implementz(Type implementz) {
-            this.implementz.add(implementz);
+        public Builder implementz(Type implement) {
+            this.implementz = ImmutableKit.addToList(implementz, implement);
             return this;
         }
 
+        @Override
         public Builder directives(List<Directive> directives) {
-            this.directives = directives;
+            this.directives = ImmutableList.copyOf(directives);
             return this;
         }
 
         public Builder directive(Directive directive) {
-            this.directives.add(directive);
+            this.directives = ImmutableKit.addToList(directives, directive);
             return this;
         }
 
         public Builder fieldDefinitions(List<FieldDefinition> fieldDefinitions) {
-            this.fieldDefinitions = fieldDefinitions;
+            this.fieldDefinitions = ImmutableList.copyOf(fieldDefinitions);
             return this;
         }
 
         public Builder fieldDefinition(FieldDefinition fieldDefinition) {
-            this.fieldDefinitions.add(fieldDefinition);
+            this.fieldDefinitions = ImmutableKit.addToList(fieldDefinitions, fieldDefinition);
             return this;
         }
 

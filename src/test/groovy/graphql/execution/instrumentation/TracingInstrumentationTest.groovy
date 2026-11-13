@@ -5,7 +5,6 @@ import graphql.StarWarsSchema
 import graphql.TestUtil
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
-import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.tracing.TracingInstrumentation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -99,7 +98,6 @@ class TracingInstrumentationTest extends Specification {
         testExecutionStrategy              | _
         new AsyncExecutionStrategy()       | _
         new AsyncSerialExecutionStrategy() | _
-        new BatchedExecutionStrategy()     | _
     }
 
     def "trivial data fetchers are ignored"() {
@@ -159,8 +157,6 @@ class TracingInstrumentationTest extends Specification {
         testExecutionStrategy              | _
         new AsyncExecutionStrategy()       | _
         new AsyncSerialExecutionStrategy() | _
-        new BatchedExecutionStrategy()     | _
-
     }
 
     def "default behavior is that trivial fields ARE recorded"() {
@@ -168,5 +164,37 @@ class TracingInstrumentationTest extends Specification {
         def options = newOptions()
         then:
         options.isIncludeTrivialDataFetchers()
+    }
+
+    def 'do not trace introspection information'() {
+        given:
+        def queryWithIntrospectionField = """
+        {
+            __typename
+        }
+        """
+
+        when:
+        def instrumentation = new TracingInstrumentation(newOptions().includeTrivialDataFetchers(false))
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(testExecutionStrategy)
+                .instrumentation(instrumentation)
+                .build()
+
+        def executionResult = graphQL.execute(queryWithIntrospectionField)
+        def extensions = executionResult.getExtensions()
+
+        then:
+        extensions != null
+        def tracing = extensions['tracing']
+        List resolvers = tracing['execution']['resolvers'] as List
+        resolvers.size() == 0
+
+        where:
+        testExecutionStrategy              | _
+        new AsyncExecutionStrategy()       | _
+        new AsyncSerialExecutionStrategy() | _
     }
 }

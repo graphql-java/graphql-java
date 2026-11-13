@@ -7,6 +7,8 @@ import graphql.PublicApi;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -16,6 +18,7 @@ import java.util.List;
  * - This unordered map should not contain any entries with names not defined by a field of this input object type, otherwise an error should be thrown.
  */
 @PublicApi
+@NullMarked
 public class InputMapDefinesTooManyFieldsException extends GraphQLException implements GraphQLError {
 
     public InputMapDefinesTooManyFieldsException(GraphQLType graphQLType, String fieldName) {
@@ -23,7 +26,7 @@ public class InputMapDefinesTooManyFieldsException extends GraphQLException impl
     }
 
     @Override
-    public List<SourceLocation> getLocations() {
+    public @Nullable List<SourceLocation> getLocations() {
         return null;
     }
 

@@ -4,20 +4,10 @@ import spock.lang.Specification
 
 class UnionTest extends Specification {
 
-
-    def "can introspect on union and intersection types"() {
+    def "can introspect on union types"() {
         def query = """
             {
                 Named: __type(name: "Named") {
-                  kind
-                  name
-                  fields { name }
-                  interfaces { name }
-                  possibleTypes { name }
-                  enumValues { name }
-                  inputFields { name }
-            }
-                Pet: __type(name: "Pet") {
                   kind
                   name
                   fields { name }
@@ -35,7 +25,7 @@ class UnionTest extends Specification {
                 fields       : [
                         [name: 'name']
                 ],
-                interfaces   : null,
+                interfaces   : [],
                 possibleTypes: [
                         [name: 'Cat'],
                         [name: 'Dog'],
@@ -43,8 +33,32 @@ class UnionTest extends Specification {
                 ],
                 enumValues   : null,
                 inputFields  : null
-        ],
-                              Pet  : [
+        ]]
+        when:
+        def executionResult = GraphQL.newGraphQL(GarfieldSchema.GarfieldSchema).build().execute(query)
+
+        then:
+        executionResult.data == expectedResult
+
+
+    }
+
+    def "can introspect on intersection types"() {
+        def query = """
+            {
+                Pet: __type(name: "Pet") {
+                  kind
+                  name
+                  fields { name }
+                  interfaces { name }
+                  possibleTypes { name }
+                  enumValues { name }
+                  inputFields { name }
+                }
+            }
+            """
+
+        def expectedResult = [Pet  : [
                                       kind         : 'UNION',
                                       name         : 'Pet',
                                       fields       : null,
@@ -96,7 +110,8 @@ class UnionTest extends Specification {
         ]
 
         when:
-        def executionResult = GraphQL.newGraphQL(GarfieldSchema.GarfieldSchema).build().execute(query, GarfieldSchema.john)
+        def ei = ExecutionInput.newExecutionInput(query).root(GarfieldSchema.john).build()
+        def executionResult = GraphQL.newGraphQL(GarfieldSchema.GarfieldSchema).build().execute(ei)
 
         then:
         executionResult.data == expectedResult
@@ -148,7 +163,8 @@ class UnionTest extends Specification {
                 ]
         ]
         when:
-        def executionResult = GraphQL.newGraphQL(GarfieldSchema.GarfieldSchema).build().execute(query, GarfieldSchema.john)
+        def ei = ExecutionInput.newExecutionInput(query).root(GarfieldSchema.john).build()
+        def executionResult = GraphQL.newGraphQL(GarfieldSchema.GarfieldSchema).build().execute(ei)
 
         then:
         executionResult.data == expectedResult

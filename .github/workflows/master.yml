@@ -1,0 +1,221 @@
+name: Master Build and Publish
+# For master push: Builds and publishes the development version to maven
+on:
+  push:
+    branches:
+      - master
+permissions:
+  contents: write
+jobs:
+  buildAndTest:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - gradle-argument: 'assemble && ./gradlew check -x test -x testng'
+            label: 'check'
+          - gradle-argument: 'testWithJava17 testngWithJava17'
+            label: 'java17'
+            test-results-dirs: 'testWithJava17 testngWithJava17'
+          - gradle-argument: 'testWithJava21 testngWithJava21'
+            label: 'java21'
+            test-results-dirs: 'testWithJava21 testngWithJava21'
+          - gradle-argument: 'test testng jacocoTestReport'
+            label: 'java25'
+            test-results-dirs: 'test testng'
+          - gradle-argument: 'jcstress'
+            label: 'jcstress'
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: gradle/actions/wrapper-validation@v6
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6.1.0
+        with:
+          java-version: '25'
+          distribution: 'corretto'
+      - name: build and test
+        run: |
+          if [ "${{ matrix.label }}" = "jcstress" ]; then
+            set -o pipefail
+            mkdir -p build
+            ./gradlew ${{matrix.gradle-argument}} --info --stacktrace 2>&1 | tee build/jcstress-output.txt
+          else
+            ./gradlew ${{matrix.gradle-argument}} --info --stacktrace
+          fi
+      - name: Upload Coverage XML Report
+        uses: actions/upload-artifact@v7
+        if: always() && matrix.label == 'java25'
+        with:
+          name: coverage-report
+          path: build/reports/jacoco/test/jacocoTestReport.xml
+          retention-days: 1
+      - name: Parse Test Results
+        if: always() && matrix.label != 'check' && matrix.label != 'jcstress'
+        run: |
+          total=0; failures=0; errors=0; skipped=0
+          for dir_name in ${{ matrix.test-results-dirs }}; do
+            dir="build/test-results/$dir_name"
+            for f in "$dir"/TEST-*.xml; do
+              [ -f "$f" ] || continue
+              t=$(grep -o 'tests="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              fl=$(grep -o 'failures="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              e=$(grep -o 'errors="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              s=$(grep -o 'skipped="[0-9]*"' "$f" | head -1 | grep -o '[0-9]*')
+              total=$((total + ${t:-0}))
+              failures=$((failures + ${fl:-0}))
+              errors=$((errors + ${e:-0}))
+              skipped=$((skipped + ${s:-0}))
+            done
+          done
+          passed=$((total - failures - errors - skipped))
+          mkdir -p /tmp/test-stats
+          echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failures,\"errors\":$errors,\"skipped\":$skipped}" \
+            > "/tmp/test-stats/${{ matrix.label }}.json"
+      - name: Parse jcstress Results
+        if: always() && matrix.label == 'jcstress'
+        run: |
+          total=0; passed=0; failed=0; errors=0; skipped=0
+          if [ -f build/jcstress-output.txt ]; then
+            line=$(grep 'Results:.*planned.*passed.*failed' build/jcstress-output.txt | tail -1)
+            if [ -n "$line" ]; then
+              total=$(echo "$line" | sed 's/.*Results: \([0-9]*\) planned.*/\1/')
+              passed=$(echo "$line" | sed 's/.*; \([0-9]*\) passed.*/\1/')
+              failed=$(echo "$line" | sed 's/.*passed, \([0-9]*\) failed.*/\1/')
+              soft=$(echo "$line" | sed 's/.*failed, \([0-9]*\) soft.*/\1/')
+              hard=$(echo "$line" | sed 's/.*soft errs, \([0-9]*\) hard.*/\1/')
+              errors=$((soft + hard))
+            fi
+          fi
+          mkdir -p /tmp/test-stats
+          echo "{\"total\":$total,\"passed\":$passed,\"failed\":$failed,\"errors\":$errors,\"skipped\":$skipped}" \
+            > "/tmp/test-stats/${{ matrix.label }}.json"
+      - name: Upload Test Stats
+        if: always() && matrix.label != 'check'
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-stats-${{ matrix.label }}
+          path: /tmp/test-stats/${{ matrix.label }}.json
+  update-baseline:
+    needs: buildAndTest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+        with:
+          token: ${{ secrets.ADMIN_PAT }}
+      - name: Download Test Stats
+        uses: actions/download-artifact@v8
+        with:
+          pattern: test-stats-*
+          merge-multiple: true
+          path: test-stats/
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v8
+        continue-on-error: true
+        with:
+          name: coverage-report
+          path: coverage/
+      - name: Update Baseline
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const { parseJacocoXml } = require('./.github/scripts/parse-jacoco.js');
+
+            const versions = ['java17', 'java21', 'java25', 'jcstress'];
+            const zeroTest = { total: 0, passed: 0, failed: 0, errors: 0, skipped: 0 };
+
+            // Read current baseline
+            const baselineFile = 'test-baseline.json';
+            let baseline = { tests: {}, coverage: {} };
+            if (fs.existsSync(baselineFile)) {
+              baseline = JSON.parse(fs.readFileSync(baselineFile, 'utf8'));
+            }
+
+            // Update test stats from artifacts
+            const previousTests = baseline.tests || {};
+            const tests = {};
+            for (const v of versions) {
+              const file = path.join('test-stats', `${v}.json`);
+              if (fs.existsSync(file)) {
+                tests[v] = JSON.parse(fs.readFileSync(file, 'utf8'));
+              } else {
+                tests[v] = previousTests[v] || zeroTest;
+              }
+            }
+
+            // Update coverage from JaCoCo XML
+            const jacocoFile = path.join('coverage', 'jacocoTestReport.xml');
+            const coverage = parseJacocoXml(jacocoFile) || { overall: {}, classes: {} };
+
+            const updated = { tests, coverage };
+            fs.writeFileSync(baselineFile, JSON.stringify(updated, null, 2) + '\n');
+      - name: Commit Updated Baseline
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add test-baseline.json
+          git diff --cached --quiet || {
+            git commit -m "Update test baseline [skip ci]"
+            git push
+          }
+  javadoc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: gradle/actions/wrapper-validation@v6
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6.1.0
+        with:
+          java-version: '25'
+          distribution: 'corretto'
+      - name: Verify Javadoc
+        run: ./gradlew javadoc --info --stacktrace
+  allBuildAndTestSuccessful:
+    if: always()
+    needs:
+      - buildAndTest
+      - update-baseline
+      - javadoc
+      - publishToMavenCentral
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify all jobs passed
+        run: |
+          if [ "${{ needs.buildAndTest.result }}" != "success" ]; then
+            echo "buildAndTest failed with result: ${{ needs.buildAndTest.result }}"
+            exit 1
+          fi
+          if [ "${{ needs.update-baseline.result }}" != "success" ]; then
+            echo "update-baseline failed with result: ${{ needs.update-baseline.result }}"
+            exit 1
+          fi
+          if [ "${{ needs.javadoc.result }}" != "success" ]; then
+            echo "javadoc failed with result: ${{ needs.javadoc.result }}"
+            exit 1
+          fi
+          if [ "${{ needs.publishToMavenCentral.result }}" != "success" ]; then
+            echo "publishToMavenCentral failed with result: ${{ needs.publishToMavenCentral.result }}"
+            exit 1
+          fi
+          echo "All build and test jobs passed successfully."
+  publishToMavenCentral:
+    needs: buildAndTest
+    runs-on: ubuntu-latest
+    env:
+      MAVEN_CENTRAL_USER: ${{ secrets.MAVEN_CENTRAL_USER }}
+      MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      MAVEN_CENTRAL_USER_NEW: ${{ secrets.MAVEN_CENTRAL_USER_NEW }}
+      MAVEN_CENTRAL_PASSWORD_NEW: ${{ secrets.MAVEN_CENTRAL_PASSWORD_NEW }}
+      MAVEN_CENTRAL_PGP_KEY: ${{ secrets.MAVEN_CENTRAL_PGP_KEY }}
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: gradle/actions/wrapper-validation@v6
+      - name: Set up JDK 25
+        uses: actions/setup-java@v6.1.0
+        with:
+          java-version: '25'
+          distribution: 'corretto'
+      - name: publishToMavenCentral
+        run: ./gradlew assemble && ./gradlew check -x test -x testng --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace

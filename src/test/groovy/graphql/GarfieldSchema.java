@@ -1,6 +1,7 @@
 package graphql;
 
 
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -111,22 +112,23 @@ public class GarfieldSchema {
             .field(newFieldDefinition()
                     .name("name")
                     .type(GraphQLString))
-            .typeResolver(new TypeResolver() {
-                @Override
-                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    if (env.getObject() instanceof Dog) {
-                        return DogType;
-                    }
-                    if (env.getObject() instanceof Person) {
-                        return PersonType;
-                    }
-                    if (env.getObject() instanceof Cat) {
-                        return CatType;
-                    }
-                    return null;
-                }
-            })
             .build();
+
+    public static TypeResolver namedTypeResolver = new TypeResolver() {
+        @Override
+        public GraphQLObjectType getType(TypeResolutionEnvironment env) {
+            if (env.getObject() instanceof Dog) {
+                return DogType;
+            }
+            if (env.getObject() instanceof Person) {
+                return PersonType;
+            }
+            if (env.getObject() instanceof Cat) {
+                return CatType;
+            }
+            return null;
+        }
+    };
 
     public static GraphQLObjectType DogType = newObject()
             .name("Dog")
@@ -154,16 +156,17 @@ public class GarfieldSchema {
             .name("Pet")
             .possibleType(CatType)
             .possibleType(DogType)
-            .typeResolver(env -> {
-                if (env.getObject() instanceof Cat) {
-                    return CatType;
-                }
-                if (env.getObject() instanceof Dog) {
-                    return DogType;
-                }
-                return null;
-            })
             .build();
+
+    public static TypeResolver petTypeResolver = env -> {
+        if (env.getObject() instanceof Cat) {
+            return CatType;
+        }
+        if (env.getObject() instanceof Dog) {
+            return DogType;
+        }
+        return null;
+    };
 
     public static GraphQLObjectType PersonType = newObject()
             .name("Person")
@@ -179,9 +182,14 @@ public class GarfieldSchema {
             .withInterface(NamedType)
             .build();
 
-    public static GraphQLSchema GarfieldSchema = GraphQLSchema.newSchema()
-            .query(PersonType)
+    public static GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+            .typeResolver("Named", namedTypeResolver)
+            .typeResolver("Pet", petTypeResolver)
             .build();
 
+    public static GraphQLSchema GarfieldSchema = GraphQLSchema.newSchema()
+            .query(PersonType)
+            .codeRegistry(codeRegistry)
+            .build();
 
 }

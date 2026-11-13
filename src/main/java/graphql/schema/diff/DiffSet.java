@@ -5,6 +5,9 @@ import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.PublicApi;
 import graphql.introspection.IntrospectionQuery;
+import org.jspecify.annotations.NullMarked;
+
+import static graphql.Assert.assertNotNull;
 import graphql.schema.GraphQLSchema;
 
 import java.util.Map;
@@ -15,6 +18,8 @@ import java.util.Map;
  * {@link graphql.introspection.IntrospectionQuery}.
  */
 @PublicApi
+@NullMarked
+@Deprecated(since = "2023-10-04")
 public class DiffSet {
 
     private final Map<String, Object> introspectionOld;
@@ -38,7 +43,6 @@ public class DiffSet {
     public Map<String, Object> getNew() {
         return introspectionNew;
     }
-
 
     /**
      * Creates a diff set out of the result of 2 introspection queries.
@@ -69,7 +73,7 @@ public class DiffSet {
     private static Map<String, Object> introspect(GraphQLSchema schema) {
         GraphQL gql = GraphQL.newGraphQL(schema).build();
         ExecutionResult result = gql.execute(IntrospectionQuery.INTROSPECTION_QUERY);
-        Assert.assertTrue(result.getErrors().size() == 0, "The schema has errors during Introspection");
-        return result.getData();
+        Assert.assertTrue(result.getErrors().isEmpty(), "The schema has errors during Introspection");
+        return assertNotNull(result.getData(), "Introspection result data should not be null");
     }
 }

@@ -1,12 +1,12 @@
 package readme;
 
-import graphql.GraphQL;
+import graphql.ErrorClassification;
+import graphql.GraphQLError;
+import graphql.GraphqlErrorBuilder;
+import graphql.InvalidSyntaxError;
 import graphql.Scalars;
 import graphql.StarWarsData;
-import graphql.StarWarsSchema;
 import graphql.TypeResolutionEnvironment;
-import graphql.execution.AsyncExecutionStrategy;
-import graphql.execution.ExecutorServiceExecutionStrategy;
 import graphql.language.Directive;
 import graphql.language.FieldDefinition;
 import graphql.language.TypeDefinition;
@@ -38,9 +38,6 @@ import graphql.schema.idl.WiringFactory;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static graphql.GarfieldSchema.Cat;
 import static graphql.GarfieldSchema.CatType;
@@ -87,6 +84,9 @@ public class ReadmeExamples {
                 .query(queryType) // must be provided
                 .mutation(mutationType) // is optional
                 .build();
+
+        GraphQLUnionType.Builder description = newUnionType().description("");
+        description.definition(null).build();
     }
 
     void listsAndNonNullLists() {
@@ -94,7 +94,7 @@ public class ReadmeExamples {
 
         GraphQLNonNull.nonNull(GraphQLString); // a non null String
 
-        // with static imports its even shorter
+        // with static imports it's even shorter
         newArgument()
                 .name("example")
                 .type(nonNull(list(GraphQLString)));
@@ -179,23 +179,6 @@ public class ReadmeExamples {
                         .name("friends")
                         .type(GraphQLList.list(GraphQLTypeReference.typeRef("Person"))))
                 .build();
-    }
-
-    void executionStrategies() {
-
-        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(
-                2, /* core pool size 2 thread */
-                2, /* max pool size 2 thread */
-                30, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(),
-                new ThreadPoolExecutor.CallerRunsPolicy());
-
-        GraphQL graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
-                .queryExecutionStrategy(new ExecutorServiceExecutionStrategy(threadPoolExecutor))
-                .mutationExecutionStrategy(new AsyncExecutionStrategy())
-                .subscriptionExecutionStrategy(new AsyncExecutionStrategy())
-                .build();
-
     }
 
     void dataFetching() {
@@ -322,7 +305,7 @@ public class ReadmeExamples {
                 // be maps.  You can convert them to POJOs inside the data fetcher if that
                 // suits your code better
                 //
-                // See http://facebook.github.io/graphql/October2016/#sec-Input-Objects
+                // See https://spec.graphql.org/October2021/#sec-Input-Objects
                 //
                 Map<String, Object> episodeInputMap = environment.getArgument("episode");
                 Map<String, Object> reviewInputMap = environment.getArgument("review");
@@ -470,6 +453,30 @@ public class ReadmeExamples {
                 }
             }
         };
+    }
+
+    static class SpecialError extends InvalidSyntaxError {
+
+        public SpecialError(SpecialErrorBuilder builder) {
+            super(builder.getLocations(), builder.getMessage());
+        }
+    }
+
+    static class SpecialErrorBuilder extends GraphqlErrorBuilder<SpecialErrorBuilder> {
+
+        @Override
+        public SpecialError build() {
+            return new SpecialError(this);
+        }
+    }
+
+    private void errorBuilderExample() {
+        GraphQLError err = GraphQLError.newError()
+                .message("direct")
+                .errorType(ErrorClassification.errorClassification("customClassification"))
+                .build();
+
+        SpecialError specialErr = new SpecialErrorBuilder().message("special").build();
     }
 
     private DataFetcher createDataFetcher(FieldDefinition definition, Directive directive) {

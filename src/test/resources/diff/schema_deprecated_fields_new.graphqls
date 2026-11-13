@@ -12,6 +12,7 @@ type Query {
     deities : [Deity] @deprecated
 
     allCharacters : [Character!] @deprecated(reason: "no longer supported")
+    allCharactersByTemperament : [[Character]] @deprecated(reason: "remove all Character references")
 
     customScalar : CustomScalar @deprecated(reason: "because")
 }

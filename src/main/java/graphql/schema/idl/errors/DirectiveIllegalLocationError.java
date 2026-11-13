@@ -1,10 +1,12 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.DirectiveDefinition;
 import graphql.language.Node;
 
 import static java.lang.String.format;
 
+@Internal
 public class DirectiveIllegalLocationError extends BaseError {
 
     public DirectiveIllegalLocationError(Node element, String elementName, String directiveName, String locationName) {

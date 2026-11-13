@@ -3,10 +3,15 @@ package graphql.execution.instrumentation.dataloader
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.StaticDataFetcher
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -64,11 +69,25 @@ class DataLoaderNodeTest extends Specification {
 
     }
 
+    class NodeDataFetcher implements DataFetcher {
+        String name
+
+        NodeDataFetcher(String name) {
+            this.name = name
+        }
+
+        @Override
+        Object get(DataFetchingEnvironment environment) throws Exception {
+            return environment.getDataLoader(name).load(environment.getSource())
+        }
+    }
+
     def "levels of loading"() {
 
         List<List<Node>> nodeLoads = []
 
-        DataLoader<Node, List<Node>> loader = new DataLoader<>({ keys ->
+
+        def batchLoadFunction = { keys ->
             nodeLoads.add(keys)
             List<List<Node>> childNodes = new ArrayList<>()
             for (Node key : keys) {
@@ -76,38 +95,52 @@ class DataLoaderNodeTest extends Specification {
             }
             System.out.println("BatchLoader called for " + keys + " -> got " + childNodes)
             return CompletableFuture.completedFuture(childNodes)
-        })
+        }
+        DataLoader<Node, List<Node>> loader = DataLoaderFactory.newDataLoader(batchLoadFunction)
 
-        GraphQLObjectType nodeType = GraphQLObjectType.newObject()
-                .name("Node")
+        def nodeTypeName = "Node"
+        def childNodesFieldName = "childNodes"
+        def queryTypeName = "Query"
+        def rootFieldName = "root"
+
+        DataFetcher<?> nodeDataFetcher = new NodeDataFetcher(childNodesFieldName)
+        DataLoaderRegistry registry = new DataLoaderRegistry().register(childNodesFieldName, loader)
+
+        GraphQLObjectType nodeType = GraphQLObjectType
+                .newObject()
+                .name(nodeTypeName)
                 .field(newFieldDefinition()
-                .name("id")
-                .type(GraphQLInt)
-                .build())
+                    .name("id")
+                    .type(GraphQLInt)
+                    .build())
                 .field(newFieldDefinition()
-                .name("childNodes")
-                .type(list(typeRef("Node")))
-                .dataFetcher({ environment -> loader.load(environment.getSource()) })
-                .build())
+                    .name(childNodesFieldName)
+                    .type(list(typeRef(nodeTypeName)))
+                    .build())
                 .build()
 
+        def childNodesCoordinates = FieldCoordinates.coordinates(nodeTypeName, childNodesFieldName)
+        def rootCoordinates = FieldCoordinates.coordinates(queryTypeName, rootFieldName)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(childNodesCoordinates, nodeDataFetcher)
+                .dataFetcher(rootCoordinates, new StaticDataFetcher(root))
+                .build()
         GraphQLSchema schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(GraphQLObjectType.newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                .name("root")
-                .type(nodeType)
-                .dataFetcher(new StaticDataFetcher(root))
-                .build())
-                .build())
+                        .name(queryTypeName)
+                        .field(newFieldDefinition()
+                            .name(rootFieldName)
+                            .type(nodeType)
+                            .build())
+                        .build())
                 .build()
-
-        DataLoaderRegistry registry = new DataLoaderRegistry().register("childNodes", loader)
 
         ExecutionResult result = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
-                .execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(registry).query(
+                .execute(ExecutionInput.newExecutionInput()
+                        .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                        .dataLoaderRegistry(registry).query(
                 '''
                         query Q { 
                             root { 
@@ -146,6 +179,10 @@ class DataLoaderNodeTest extends Specification {
         //
         // but currently is this
         nodeLoads.size() == 3 // WOOT!
+
+        where:
+        enableDataLoaderChaining << [true, false]
+
 
     }
 }

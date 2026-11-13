@@ -1,25 +1,30 @@
 package graphql.schema;
 
-import graphql.Assert;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * Defines the scope to control where the registered {@code Comparator} can be applied.
  * <p>
  * {@code elementType}s can be ordered within its {@code parentType} to restrict the {@code Comparator}s scope of operation.
- * Otherwise supplying only the {@code elementType} results in the {@code Comparator} being reused across all matching {@code GraphQLType}s regardless of parent.
+ * Otherwise, supplying only the {@code elementType} results in the {@code Comparator} being reused across all matching {@code GraphQLType}s regardless of parent.
  */
 @PublicApi
+@NullMarked
 public class GraphqlTypeComparatorEnvironment {
 
-    private Class<? extends GraphQLSchemaElement> parentType;
+    private @Nullable Class<? extends GraphQLSchemaElement> parentType;
 
-    private Class<? extends GraphQLSchemaElement> elementType;
+    private @Nullable Class<? extends GraphQLSchemaElement> elementType;
 
-    private GraphqlTypeComparatorEnvironment(Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
-        Assert.assertNotNull(elementType, "elementType can't be null");
+    private GraphqlTypeComparatorEnvironment(@Nullable Class<? extends GraphQLSchemaElement> parentType, @Nullable Class<? extends GraphQLSchemaElement> elementType) {
         this.parentType = parentType;
         this.elementType = elementType;
     }
@@ -27,14 +32,14 @@ public class GraphqlTypeComparatorEnvironment {
     /**
      * @return The parent type or {@code null} if not supplied.
      */
-    public Class<? extends GraphQLSchemaElement> getParentType() {
+    public @Nullable Class<? extends GraphQLSchemaElement> getParentType() {
         return parentType;
     }
 
     /**
-     * @return The valid element type.
+     * @return The valid element type or {@code null} if not supplied.
      */
-    public Class<? extends GraphQLSchemaElement> getElementType() {
+    public @Nullable Class<? extends GraphQLSchemaElement> getElementType() {
         return elementType;
     }
 
@@ -62,17 +67,14 @@ public class GraphqlTypeComparatorEnvironment {
         }
 
         GraphqlTypeComparatorEnvironment that = (GraphqlTypeComparatorEnvironment) o;
-
-        if (parentType != null ? !parentType.equals(that.parentType) : that.parentType != null) {
-            return false;
-        }
-        return elementType.equals(that.elementType);
+        return Objects.equals(parentType, that.parentType) && assertNotNull(elementType, "elementType must exist for equality").equals(that.elementType);
     }
 
     @Override
     public int hashCode() {
-        int result = parentType != null ? parentType.hashCode() : 0;
-        result = 31 * result + elementType.hashCode();
+        int result = 1;
+        result = 31 * result + Objects.hashCode(parentType);
+        result = 31 * result + Objects.hashCode(elementType);
         return result;
     }
 
@@ -84,6 +86,7 @@ public class GraphqlTypeComparatorEnvironment {
         return new Builder(existing);
     }
 
+    @NullUnmarked
     public static class Builder {
 
         private Class<? extends GraphQLSchemaElement> parentType;

@@ -5,9 +5,9 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.map;
 import static graphql.util.TraversalControl.CONTINUE;
 
 @Internal
@@ -21,18 +21,21 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
     @Override
     public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
 
-        node.replaceInterfaces(node.getInterfaces().stream()
-                .map(type -> (GraphQLNamedOutputType) typeMap.get(type.getName()))
-                .collect(Collectors.toList()));
+        node.replaceInterfaces(map(node.getInterfaces(), type -> (GraphQLNamedOutputType) typeMap.get(type.getName())));
         return super.visitGraphQLObjectType(node, context);
     }
 
     @Override
+    public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
+        node.replaceInterfaces(map(node.getInterfaces(), type -> (GraphQLNamedOutputType) typeMap.get(type.getName())));
+        return super.visitGraphQLInterfaceType(node, context);
+    }
+
+
+    @Override
     public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
 
-        node.replaceTypes(node.getTypes().stream()
-                .map(type -> (GraphQLNamedOutputType) typeMap.get(type.getName()))
-                .collect(Collectors.toList()));
+        node.replaceTypes(map(node.getTypes(), type -> (GraphQLNamedOutputType) typeMap.get(type.getName())));
         return super.visitGraphQLUnionType(node, context);
     }
 
@@ -57,8 +60,8 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
         return CONTINUE;
     }
 
-    private class TypeRefResolvingVisitor extends GraphQLTypeVisitorStub {
-        protected final GraphQLType resolvedType;
+    private static final class TypeRefResolvingVisitor extends GraphQLTypeVisitorStub {
+        private final GraphQLType resolvedType;
 
         TypeRefResolvingVisitor(GraphQLType resolvedType) {
             this.resolvedType = resolvedType;
@@ -74,6 +77,12 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
         public TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context) {
             node.replaceType((GraphQLInputType) resolvedType);
             return super.visitGraphQLArgument(node, context);
+        }
+
+        @Override
+        public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+            node.replaceType((GraphQLInputType) resolvedType);
+            return super.visitGraphQLAppliedDirectiveArgument(node, context);
         }
 
         @Override

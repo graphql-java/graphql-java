@@ -1,29 +1,35 @@
 package graphql.language;
 
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
+@NullMarked
 public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, NamedNode<TypeName> {
 
     private final String name;
 
     @Internal
-    protected TypeName(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected TypeName(String name, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
     }
@@ -34,7 +40,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
      * @param name of the type
      */
     public TypeName(String name) {
-        this(name, null, new ArrayList<>(), IgnoredChars.EMPTY, emptyMap());
+        this(name, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
 
@@ -44,7 +50,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
 
     @Override
     public List<Node> getChildren() {
-        return new ArrayList<>();
+        return emptyList();
     }
 
     @Override
@@ -59,7 +65,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -69,7 +75,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
 
         TypeName that = (TypeName) o;
 
-        return NodeUtil.isEqualTo(this.name, that.name);
+        return Objects.equals(this.name, that.name);
     }
 
     @Override
@@ -104,10 +110,11 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
     }
 
 
+    @NullUnmarked
     public static final class Builder implements NodeBuilder {
         private String name;
         private SourceLocation sourceLocation;
-        private List<Comment> comments = new ArrayList<>();
+        private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -116,7 +123,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
 
         private Builder(TypeName existing) {
             this.sourceLocation = existing.getSourceLocation();
-            this.comments = existing.getComments();
+            this.comments = ImmutableList.copyOf(existing.getComments());
             this.name = existing.getName();
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
@@ -133,7 +140,7 @@ public class TypeName extends AbstractNode<TypeName> implements Type<TypeName>, 
         }
 
         public Builder comments(List<Comment> comments) {
-            this.comments = comments;
+            this.comments = ImmutableList.copyOf(comments);
             return this;
         }
 

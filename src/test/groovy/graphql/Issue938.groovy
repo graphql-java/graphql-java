@@ -13,7 +13,7 @@ import spock.lang.Specification
 
 class Issue938 extends Specification {
 
-    public static GraphQLScalarType GraphQLTimestamp = new GraphQLScalarType("Timestamp", "Timestamp", new Coercing() {
+    public static GraphQLScalarType GraphQLTimestamp = GraphQLScalarType.newScalar().name("Timestamp").description("Timestamp").coercing(new Coercing() {
         @Override
         Object serialize(Object input) {
             return input
@@ -38,6 +38,7 @@ class Issue938 extends Specification {
             return calendar
         }
     })
+    .build()
 
     class UserImpl {
         int id

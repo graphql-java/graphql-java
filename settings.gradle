@@ -1,2 +1,21 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        maven {
+            url = 'https://plugins.gradle.org/m2'
+            metadataSources {
+                // Avoid redirection to defunct JCenter when Gradle module metadata is not published by a plugin (e.g. JMH plugin)
+                ignoreGradleMetadataRedirection()
+                mavenPom()
+                artifact()
+            }
+        }
+    }
+}
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
 rootProject.name = 'graphql-java'
 
+include 'performance-results-page'

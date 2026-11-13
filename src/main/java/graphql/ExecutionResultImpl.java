@@ -1,14 +1,16 @@
 package graphql;
 
 
+import com.google.common.collect.ImmutableList;
+import graphql.collect.ImmutableKit;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 
-import static java.util.stream.Collectors.toList;
+import static graphql.collect.ImmutableKit.map;
 
 @Internal
 public class ExecutionResultImpl implements ExecutionResult {
@@ -38,14 +40,18 @@ public class ExecutionResultImpl implements ExecutionResult {
         this(other.dataPresent, other.data, other.errors, other.extensions);
     }
 
+    public <T extends Builder<T>> ExecutionResultImpl(Builder<T> builder) {
+        this(builder.dataPresent, builder.data, builder.errors, builder.extensions);
+    }
+
     private ExecutionResultImpl(boolean dataPresent, Object data, List<? extends GraphQLError> errors, Map<Object, Object> extensions) {
         this.dataPresent = dataPresent;
         this.data = data;
 
-        if (errors != null && !errors.isEmpty()) {
-            this.errors = Collections.unmodifiableList(new ArrayList<>(errors));
+        if (errors != null) {
+            this.errors = ImmutableList.copyOf(errors);
         } else {
-            this.errors = Collections.emptyList();
+            this.errors = ImmutableKit.emptyList();
         }
 
         this.extensions = extensions;
@@ -88,7 +94,25 @@ public class ExecutionResultImpl implements ExecutionResult {
     }
 
     private Object errorsToSpec(List<GraphQLError> errors) {
-        return errors.stream().map(GraphQLError::toSpecification).collect(toList());
+        return map(errors, GraphQLError::toSpecification);
+    }
+
+    @SuppressWarnings("unchecked")
+    static ExecutionResult fromSpecification(Map<String, Object> specificationMap) {
+        ExecutionResult.Builder<?> builder = ExecutionResult.newExecutionResult();
+        Object data = specificationMap.get("data");
+        if (data != null) {
+            builder.data(data);
+        }
+        List<Map<String, Object>> errors = (List<Map<String, Object>>) specificationMap.get("errors");
+        if (errors != null) {
+            builder.errors(GraphqlErrorHelper.fromSpecification(errors));
+        }
+        Map<Object, Object> extensions = (Map<Object, Object>) specificationMap.get("extensions");
+        if (extensions != null) {
+            builder.extensions(extensions);
+        }
+        return builder.build();
     }
 
     @Override
@@ -101,63 +125,65 @@ public class ExecutionResultImpl implements ExecutionResult {
                 '}';
     }
 
-    public ExecutionResultImpl transform(Consumer<Builder> builderConsumer) {
-        Builder builder = newExecutionResult().from(this);
-        builderConsumer.accept(builder);
-        return builder.build();
+    public static <T extends Builder<T>> Builder<T> newExecutionResult() {
+        return new Builder<>();
     }
 
-    public static Builder newExecutionResult() {
-        return new Builder();
-    }
-
-    public static class Builder {
+    public static class Builder<T extends Builder<T>> implements ExecutionResult.Builder<T> {
         private boolean dataPresent;
         private Object data;
         private List<GraphQLError> errors = new ArrayList<>();
         private Map<Object, Object> extensions;
 
-        public Builder from(ExecutionResult executionResult) {
+        @Override
+        public T from(ExecutionResult executionResult) {
             dataPresent = executionResult.isDataPresent();
             data = executionResult.getData();
             errors = new ArrayList<>(executionResult.getErrors());
             extensions = executionResult.getExtensions();
-            return this;
+            return (T) this;
         }
 
-        public Builder data(Object data) {
+        @Override
+        public T data(Object data) {
             dataPresent = true;
             this.data = data;
-            return this;
+            return (T) this;
         }
 
-        public Builder errors(List<GraphQLError> errors) {
+        @Override
+        public T errors(List<GraphQLError> errors) {
             this.errors = errors;
-            return this;
+            return (T) this;
         }
 
-        public Builder addErrors(List<GraphQLError> errors) {
+        @Override
+        public T addErrors(List<GraphQLError> errors) {
             this.errors.addAll(errors);
-            return this;
+            return (T) this;
         }
 
-        public Builder addError(GraphQLError error) {
+        @Override
+        public T addError(GraphQLError error) {
             this.errors.add(error);
-            return this;
+            return (T) this;
         }
 
-        public Builder extensions(Map<Object, Object> extensions) {
+        @Override
+        public T extensions(Map<Object, Object> extensions) {
             this.extensions = extensions;
-            return this;
+            return (T) this;
         }
 
-        public Builder addExtension(String key, Object value) {
+        @Override
+        public T addExtension(String key, Object value) {
             this.extensions = (this.extensions == null ? new LinkedHashMap<>() : this.extensions);
             this.extensions.put(key, value);
-            return this;
+            return (T) this;
         }
 
-        public ExecutionResultImpl build() {
+        @Override
+        public ExecutionResult build() {
             return new ExecutionResultImpl(dataPresent, data, errors, extensions);
         }
     }

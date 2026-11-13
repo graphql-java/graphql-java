@@ -1,10 +1,12 @@
 package graphql.schema.idl.errors;
 
+import graphql.Internal;
 import graphql.language.Directive;
 import graphql.language.TypeDefinition;
 
 import static java.lang.String.format;
 
+@Internal
 public class TypeExtensionDirectiveRedefinitionError extends BaseError {
 
     public TypeExtensionDirectiveRedefinitionError(TypeDefinition typeExtensionDefinition, Directive directive) {

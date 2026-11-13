@@ -12,6 +12,7 @@ type Query {
     deities : [Deity]
 
     allCharacters : [Character!] @deprecated(reason: "no longer supported")
+    allCharactersByTemperament : [[Character]]
 
     customScalar : CustomScalar
 }
@@ -24,7 +25,7 @@ type Mutation {
 }
 
 input Questor {
-    beingID : ID
+    beingID : ID!
     queryTarget : String
     nestedInput : NestedInput
 }
