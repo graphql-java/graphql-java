@@ -1,6 +1,7 @@
 package graphql.util;
 
 import graphql.Internal;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -127,19 +128,18 @@ public abstract class TraverserState<T> {
 
 
     public DefaultTraverserContext<T> newRootContext(Map<Class<?>, Object> vars) {
-        return newContextImpl(null, null, vars, null, true);
+        return newContextImpl(null, null, assertNotNull(vars), null, true);
     }
 
     private DefaultTraverserContext<T> newContext(T o, TraverserContext<T> parent, NodeLocation position) {
-        return newContextImpl(o, parent, new LinkedHashMap<>(), position, false);
+        return newContextImpl(o, parent, null, position, false);
     }
 
     private DefaultTraverserContext<T> newContextImpl(T curNode,
                                                       TraverserContext<T> parent,
-                                                      Map<Class<?>, Object> vars,
+                                                      @Nullable Map<Class<?>, Object> vars,
                                                       NodeLocation nodeLocation,
                                                       boolean isRootContext) {
-        assertNotNull(vars);
         return new DefaultTraverserContext<>(curNode, parent, visited, vars, sharedContextData, nodeLocation, isRootContext);
     }
 }

@@ -66,6 +66,7 @@ class SchemaTypeDirectivesChecker {
 
     private final TypeDefinitionRegistry typeRegistry;
     private final RuntimeWiring runtimeWiring;
+    private final Map<DirectiveDefinition, Map<String, InputValueDefinition>> directiveArguments = new LinkedHashMap<>();
 
     public SchemaTypeDirectivesChecker(final TypeDefinitionRegistry typeRegistry,
                                        final RuntimeWiring runtimeWiring) {
@@ -173,7 +174,8 @@ class SchemaTypeDirectivesChecker {
     }
 
     private void checkDirectiveArguments(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, Node<?> element, String elementName, Directive directive, DirectiveDefinition directiveDefinition) {
-        Map<String, InputValueDefinition> allowedArgs = getByName(directiveDefinition.getInputValueDefinitions(), (InputValueDefinition::getName), mergeFirst());
+        Map<String, InputValueDefinition> allowedArgs = directiveArguments.computeIfAbsent(directiveDefinition,
+                definition -> getByName(definition.getInputValueDefinitions(), InputValueDefinition::getName, mergeFirst()));
         Map<String, Argument> providedArgs = getByName(directive.getArguments(), (Argument::getName), mergeFirst());
         directive.getArguments().forEach(argument -> {
             InputValueDefinition allowedArg = allowedArgs.get(argument.getName());

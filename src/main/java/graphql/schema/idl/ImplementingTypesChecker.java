@@ -140,6 +140,9 @@ class ImplementingTypesChecker {
             ImplementingTypeDefinition type,
             Map<InterfaceTypeDefinition, ImplementingTypeDefinition> implementedInterfaces
     ) {
+        if (implementedInterfaces.isEmpty()) {
+            return;
+        }
         Set<FieldDefinition> fieldDefinitions = getLogicallyDeclaredFields(type, typeRegistry);
 
         Map<String, FieldDefinition> typeFields = fieldDefinitions.stream()
@@ -185,7 +188,7 @@ class ImplementingTypesChecker {
             InputValueDefinition objectArg = objectArgs.get(interfaceEntries.getKey());
             if (objectArg == null) {
                 errors.add(new MissingInterfaceFieldArgumentsError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef));
-            } else if (!AstPrinter.printAstCompact(interfaceArg.getType()).equals(AstPrinter.printAstCompact(objectArg.getType()))) {
+            } else if (!sameType(interfaceArg.getType(), objectArg.getType())) {
                 String interfaceArgStr = AstPrinter.printAstCompact(interfaceArg.transform(builder -> builder.directives(emptyList())));
                 String objectArgStr = AstPrinter.printAstCompact(objectArg.transform(builder -> builder.directives(emptyList())));
                 errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
@@ -205,6 +208,18 @@ class ImplementingTypesChecker {
                 }
             }
         }
+    }
+
+    private boolean sameType(Type<?> first, Type<?> second) {
+        while (TypeUtil.isWrapped(first)) {
+            if (TypeUtil.isNonNull(first) != TypeUtil.isNonNull(second) || TypeUtil.isList(first) != TypeUtil.isList(second)) {
+                return false;
+            }
+            first = TypeUtil.unwrapOne(first);
+            second = TypeUtil.unwrapOne(second);
+        }
+        return first instanceof TypeName firstName && second instanceof TypeName secondName
+                && firstName.getName().equals(secondName.getName());
     }
 
     private Map<InterfaceTypeDefinition, List<ImplementingTypeDefinition>> getLogicallyImplementedInterfaces(

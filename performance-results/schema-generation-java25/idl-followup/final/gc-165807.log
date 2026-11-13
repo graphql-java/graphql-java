@@ -1,0 +1,37 @@
+[11.465s][info][gc] Using The Z Garbage Collector
+[14.110s][info][gc] GC(0) Major Collection (Warmup)
+[14.426s][info][gc] GC(0) Major Collection (Warmup) 2464M(10%)->844M(3%) 0.316s
+[17.250s][info][gc] GC(1) Major Collection (Warmup)
+[17.580s][info][gc] GC(1) Major Collection (Warmup) 4936M(20%)->842M(3%) 0.330s
+[21.138s][info][gc] GC(2) Major Collection (Warmup)
+[21.513s][info][gc] GC(2) Major Collection (Warmup) 7384M(30%)->726M(3%) 0.375s
+[30.775s][info][gc] GC(3) Minor Collection (Allocation Rate)
+[31.002s][info][gc] GC(3) Minor Collection (Allocation Rate) 17928M(73%)->648M(3%) 0.228s
+[40.100s][info][gc] GC(4) Major Collection (Allocation Rate)
+[41.282s][info][gc] GC(4) Major Collection (Allocation Rate) 17646M(72%)->2252M(9%) 1.182s
+[49.064s][info][gc] GC(5) Minor Collection (Allocation Rate)
+[49.865s][info][gc] GC(5) Minor Collection (Allocation Rate) 17034M(69%)->1854M(8%) 0.801s
+[59.139s][info][gc] GC(6) Minor Collection (Allocation Rate)
+[59.163s][info][gc] GC(6) Minor Collection (Allocation Rate) 18948M(77%)->214M(1%) 0.024s
+[68.778s][info][gc] GC(7) Minor Collection (Allocation Rate)
+[69.236s][info][gc] GC(7) Minor Collection (Allocation Rate) 18446M(75%)->1018M(4%) 0.458s
+[79.293s][info][gc] GC(8) Minor Collection (Allocation Rate)
+[79.823s][info][gc] GC(8) Minor Collection (Allocation Rate) 19958M(81%)->956M(4%) 0.530s
+[90.404s][info][gc] GC(9) Minor Collection (Allocation Rate)
+[90.540s][info][gc] GC(9) Minor Collection (Allocation Rate) 20756M(84%)->484M(2%) 0.137s
+[101.666s][info][gc] GC(10) Major Collection (Proactive)
+[102.892s][info][gc] GC(10) Major Collection (Proactive) 20566M(84%)->2346M(10%) 1.227s
+[110.838s][info][gc] GC(11) Minor Collection (Allocation Rate)
+[111.324s][info][gc] GC(11) Minor Collection (Allocation Rate) 16670M(68%)->1148M(5%) 0.487s
+[121.436s][info][gc] GC(12) Minor Collection (Allocation Rate)
+[121.451s][info][gc] GC(12) Minor Collection (Allocation Rate) 19054M(78%)->180M(1%) 0.015s
+[132.467s][info][gc] GC(13) Minor Collection (Allocation Rate)
+[132.766s][info][gc] GC(13) Minor Collection (Allocation Rate) 20074M(82%)->806M(3%) 0.298s
+[144.218s][info][gc] GC(14) Minor Collection (Allocation Rate)
+[144.853s][info][gc] GC(14) Minor Collection (Allocation Rate) 21394M(87%)->1000M(4%) 0.635s
+[155.415s][info][gc] GC(15) Minor Collection (Allocation Rate)
+[156.107s][info][gc] GC(15) Minor Collection (Allocation Rate) 20112M(82%)->1726M(7%) 0.692s
+[166.636s][info][gc] GC(16) Minor Collection (Allocation Rate)
+[166.796s][info][gc] GC(16) Minor Collection (Allocation Rate) 20466M(83%)->500M(2%) 0.160s
+[171.820s][info][gc] GC(17) Major Collection (Proactive)
+[172.554s][info][gc] GC(17) Major Collection (Proactive) 9570M(39%)->1460M(6%) 0.734s
