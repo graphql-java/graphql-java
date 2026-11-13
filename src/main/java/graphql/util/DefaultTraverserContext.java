@@ -31,7 +31,6 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private Object curAccValue;
     private final NodeLocation location;
     private final boolean isRootContext;
-    private boolean parallel;
     private Map<String, List<TraverserContext<T>>> children;
     private Phase phase;
     private final List<Breadcrumb<T>> breadcrumbs;
@@ -42,8 +41,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
                                    Map<Class<?>, Object> vars,
                                    Object sharedContextData,
                                    NodeLocation location,
-                                   boolean isRootContext,
-                                   boolean parallel) {
+                                   boolean isRootContext) {
         this.curNode = curNode;
         this.parent = parent;
         this.visited = visited;
@@ -51,7 +49,6 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         this.sharedContextData = sharedContextData;
         this.location = location;
         this.isRootContext = isRootContext;
-        this.parallel = parallel;
 
         if (parent == null || parent.isRootContext()) {
             this.breadcrumbs = ImmutableKit.emptyList();
@@ -65,11 +62,11 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     }
 
     public static <T> DefaultTraverserContext<T> dummy() {
-        return new DefaultTraverserContext<>(null, null, null, null, null, null, true, false);
+        return new DefaultTraverserContext<>(null, null, null, null, null, null, true);
     }
 
     public static <T> DefaultTraverserContext<T> simple(T node) {
-        return new DefaultTraverserContext<>(node, null, null, null, null, null, true, false);
+        return new DefaultTraverserContext<>(node, null, null, null, null, null, true);
     }
 
     @Override
@@ -244,10 +241,5 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     @Override
     public Phase getPhase() {
         return phase;
-    }
-
-    @Override
-    public boolean isParallel() {
-        return parallel;
     }
 }

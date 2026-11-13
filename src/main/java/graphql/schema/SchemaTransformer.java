@@ -10,7 +10,6 @@ import org.jspecify.annotations.Nullable;
 import graphql.introspection.Introspection;
 import graphql.schema.idl.ScalarInfo;
 import graphql.util.Breadcrumb;
-import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
 import graphql.util.NodeZipper;
 import graphql.util.TraversalControl;
@@ -281,7 +280,6 @@ public class SchemaTransformer {
                 }
                 NodeZipper<GraphQLSchemaElement> nodeZipper = new NodeZipper<>(currentSchemaElement, context.getBreadcrumbs(), SCHEMA_ELEMENT_ADAPTER);
                 context.setVar(NodeZipper.class, nodeZipper);
-                context.setVar(NodeAdapter.class, SCHEMA_ELEMENT_ADAPTER);
 
                 int zippersBefore = zippers.size();
                 TraversalControl result = currentSchemaElement.accept(context, visitor);
