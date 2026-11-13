@@ -1359,9 +1359,7 @@ type Query {
     }
 
     def assertErrorMessage(InvalidSchemaException exception, String... expectedErrors) {
-        def expectedMessage = "invalid schema:\n" + expectedErrors.join("\n")
-
-        return exception.message == expectedMessage
+        return exception.errors*.description as Set == expectedErrors as Set
     }
 
     def parseSchema(schema) {

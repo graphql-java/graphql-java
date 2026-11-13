@@ -1,100 +1,53 @@
 package graphql.schema.validation;
 
-import graphql.GraphQLContext;
 import graphql.Internal;
-import graphql.execution.NonNullableValueCoercedAsNullException;
-import graphql.execution.ValuesResolver;
-import graphql.language.Value;
-import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLDirectiveContainer;
 import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLSchemaElement;
-import graphql.schema.GraphQLTypeUtil;
-import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.InputValueWithState;
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
-import graphql.validation.ValidationUtil;
+import org.jspecify.annotations.NullMarked;
 
-import java.util.Locale;
-
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static java.lang.String.format;
 
+/**
+ * Schema validation rule ensuring the argument values of applied directives are valid for their types.
+ */
 @Internal
-public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
+@NullMarked
+public class AppliedDirectiveArgumentsAreValid implements SchemaValidationRule {
 
-    private ValidationUtil validationUtil = new ValidationUtil();
+    private final InputValueValidator inputValueValidator;
+    private final SchemaValidationErrorCollector errors;
 
-
-    @Override
-    public TraversalControl visitGraphQLDirective(GraphQLDirective directive, TraverserContext<GraphQLSchemaElement> context) {
-        // if there is no parent it means it is just a directive definition and not an applied directive
-        if (context.getParentNode() != null) {
-            for (GraphQLArgument graphQLArgument : directive.getArguments()) {
-                checkArgument(
-                        directive.getName(),
-                        graphQLArgument.getName(),
-                        graphQLArgument.getArgumentValue(),
-                        graphQLArgument.getType(),
-                        context
-                );
-            }
-        }
-        return TraversalControl.CONTINUE;
+    public AppliedDirectiveArgumentsAreValid(InputValueValidator inputValueValidator, SchemaValidationErrorCollector errors) {
+        this.inputValueValidator = inputValueValidator;
+        this.errors = errors;
     }
 
     @Override
-    public TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective directive, TraverserContext<GraphQLSchemaElement> context) {
-        // if there is no parent it means it is just a directive definition and not an applied directive
-        if (context.getParentNode() != null) {
-            for (GraphQLAppliedDirectiveArgument graphQLArgument : directive.getArguments()) {
-                checkArgument(
-                        directive.getName(),
-                        graphQLArgument.getName(),
-                        graphQLArgument.getArgumentValue(),
-                        graphQLArgument.getType(),
-                        context
-                );
+    public void checkDirectiveContainer(GraphQLDirectiveContainer container) {
+        for (GraphQLDirective directive : container.getDirectives()) {
+            for (GraphQLArgument argument : directive.getArguments()) {
+                checkArgument(directive.getName(), argument.getName(), argument.getArgumentValue(), argument.getType());
             }
         }
-        return TraversalControl.CONTINUE;
+        for (GraphQLAppliedDirective directive : container.getAppliedDirectives()) {
+            for (GraphQLAppliedDirectiveArgument argument : directive.getArguments()) {
+                checkArgument(directive.getName(), argument.getName(), argument.getArgumentValue(), argument.getType());
+            }
+        }
     }
 
-    private void checkArgument(
-            String directiveName,
-            String argumentName,
-            InputValueWithState argumentValue,
-            GraphQLInputType argumentType,
-            TraverserContext<GraphQLSchemaElement> context
-    ) {
-        GraphQLSchema schema = context.getVarFromParents(GraphQLSchema.class);
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
-        boolean invalid = false;
-        if (argumentValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argumentType, schema, GraphQLContext.getDefault(), Locale.getDefault())) {
-            invalid = true;
-        } else if (argumentValue.isExternal() &&
-                !isValidExternalValue(schema, argumentValue.getValue(), argumentType, GraphQLContext.getDefault(), Locale.getDefault())) {
-            invalid = true;
-        } else if (argumentValue.isNotSet() && GraphQLTypeUtil.isNonNull(argumentType))  {
-            invalid = true;
-        }
+    private void checkArgument(String directiveName, String argumentName, InputValueWithState argumentValue, GraphQLInputType argumentType) {
+        boolean invalid = !inputValueValidator.isValidValue(argumentValue, argumentType)
+                || (argumentValue.isNotSet() && isNonNull(argumentType));
         if (invalid) {
-            String message = format("Invalid argument '%s' for applied directive of name '%s'", argumentName, directiveName);
-            errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.InvalidAppliedDirectiveArgument, message));
-        }
-    }
-
-    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, GraphQLContext graphQLContext, Locale locale) {
-        try {
-            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext, locale);
-            return true;
-        } catch (CoercingParseValueException | NonNullableValueCoercedAsNullException e) {
-            return false;
+            errors.addError(new SchemaValidationError(SchemaValidationErrorType.InvalidAppliedDirectiveArgument,
+                    format("Invalid argument '%s' for applied directive of name '%s'", argumentName, directiveName)));
         }
     }
 }

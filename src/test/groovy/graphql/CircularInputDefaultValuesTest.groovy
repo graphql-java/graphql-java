@@ -6,7 +6,7 @@ import spock.lang.Specification
 /**
  * Tests for mutually recursive input types with default values.
  *
- * These schemas are now rejected at build time by NoDefaultValueCircularRefs,
+ * These schemas are now rejected at build time by schema validation,
  * which detects circular references in input object field default values.
  *
  * Previously, graphql-java accepted these schemas at build time but hit a
