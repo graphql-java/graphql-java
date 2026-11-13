@@ -1,0 +1,772 @@
+package graphql
+
+import graphql.execution.ExecutionId
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.DocumentAndVariables
+import graphql.execution.preparsed.PreparsedDocumentEntry
+import graphql.execution.preparsed.PreparsedDocumentProvider
+import graphql.extensions.ExtensionsBuilder
+import graphql.incremental.IncrementalExecutionResult
+import graphql.parser.Parser
+import graphql.parser.ParserOptions
+import graphql.parser.ParsingListener
+import graphql.schema.DataFetcher
+import org.dataloader.BatchLoader
+import org.dataloader.DataLoaderFactory
+import org.dataloader.DataLoaderRegistry
+import reactor.core.publisher.Flux
+import spock.lang.Specification
+import spock.lang.Timeout
+
+import java.time.Duration
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+
+import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING
+
+@Timeout(15)
+class VariableBatchExecutionTest extends Specification {
+    def schema = TestUtil.schema('type Query { value(id: Int = 7): Int! }',
+            [Query: [value: { env -> env.getArgument('id') } as DataFetcher]])
+
+    def "empty and singleton lists retain ordinary execution"() {
+        when:
+        def result = GraphQL.newGraphQL(schema).build().execute(ExecutionInput.newExecutionInput()
+                .query('query($id:Int) { value(id:$id) }').variables(variables).build())
+
+        then:
+        !(result instanceof VariableBatchExecutionResult)
+        result.toSpecification() == [data: [value: expected]]
+
+        where:
+        variables  | expected
+        []         | 7
+        [[:]]      | 7
+        [[id: 3]]  | 3
+    }
+
+    def "legacy variables become a singleton and transforms preserve every map"() {
+        given:
+        def maps = [[id: 1], [id: null]]
+        def input = ExecutionInput.newExecutionInput('{ value }').variables(maps).build()
+        maps[0].id = 99
+        maps.add([id: 3])
+
+        expect:
+        ExecutionInput.newExecutionInput('{ value }').variables([id: 1]).build().variablesList == [[id: 1]]
+        input.variablesList == [[id: 1], [id: null]]
+        input.transform { it.operationName('Op') }.variablesList == [[id: 1], [id: null]]
+
+        when:
+        input.variablesList[0].put('id', 4)
+
+        then:
+        thrown(UnsupportedOperationException)
+    }
+
+    def "separate variable coercion and conditional selection for every entry"() {
+        when:
+        def batch = batch(GraphQL.newGraphQL(schema).build(),
+                'query($id: Int!,$include:Boolean! = true) { value(id:$id) @include(if:$include) }',
+                [[id: 1], [id: 2, include: false], [id: 'bad'], [id: 1]])
+        def results = batch.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        results.size() == 4
+        results[0].data == [value: 1]
+        results[1].data == [:]
+        !results[2].dataPresent
+        results[2].errors.size() == 1
+        results[3].data == [value: 1]
+    }
+
+    def "common request errors are returned for every index"() {
+        when:
+        def results = batch(GraphQL.newGraphQL(schema).build(), query, [[:], [:]])
+                .resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        results.size() == 2
+        results.every { !it.errors.empty && !it.dataPresent }
+
+        where:
+        query << ['{', '{ missing }', 'query A { value } query B { value }', 'fragment F on Query { value }']
+    }
+
+    def "shared dataloaders use ordinary dispatch and cache repeated keys"() {
+        given:
+        def calls = []
+        def registry = new DataLoaderRegistry()
+        registry.register('values', DataLoaderFactory.newDataLoader({ keys ->
+            calls.add(new ArrayList(keys))
+            CompletableFuture.completedFuture(keys)
+        } as BatchLoader))
+        def loadedSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env -> env.getDataLoader('values').load(env.getArgument('id')) } as DataFetcher]])
+        def graphQL = GraphQL.newGraphQL(loadedSchema).build()
+
+        when:
+        def input = ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                .variables([[id: 1], [id: 2], [id: 1]])
+                .dataLoaderRegistry(registry).build()
+        VariableBatchExecutionResult result = graphQL.execute(input)
+        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        entries*.data == [[value: 1], [value: 2], [value: 1]]
+        calls == [[1], [2]]
+    }
+
+    def "manual dispatch still applies to the shared registry"() {
+        given:
+        def calls = []
+        def registry = new DataLoaderRegistry().register('values', DataLoaderFactory.newDataLoader({ keys ->
+            calls.add(new ArrayList(keys))
+            CompletableFuture.completedFuture(keys)
+        } as BatchLoader))
+        def localSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env -> env.getDataLoader('values').load(env.getArgument('id')) } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                .variables([[id: 1], [id: 2], [id: 1]]).dataLoaderRegistry(registry).build()
+
+        when:
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema)
+                .doNotAutomaticallyDispatchDataLoader().build().execute(input)
+
+        then:
+        result.results.every { !it.done }
+        calls.empty
+
+        when:
+        registry.dispatchAll()
+
+        then:
+        result.resultsAsync.get(5, TimeUnit.SECONDS)*.data == [[value: 1], [value: 2], [value: 1]]
+        calls == [[1, 2]]
+    }
+
+    def "asynchronous chained loaders share their registry using the selected dispatch mode"() {
+        given:
+        def pending = [(1): new CompletableFuture<List<Integer>>(), (2): new CompletableFuture<List<Integer>>()]
+        def firstCalls = []
+        def secondCalls = []
+        def registry = new DataLoaderRegistry()
+        registry.register('first', DataLoaderFactory.newDataLoader({ keys ->
+            firstCalls.add(new ArrayList(keys))
+            pending[keys[0]]
+        } as BatchLoader))
+        registry.register('second', DataLoaderFactory.newDataLoader({ keys ->
+            secondCalls.add(new ArrayList(keys))
+            CompletableFuture.completedFuture(keys)
+        } as BatchLoader))
+        def loadedSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env ->
+                    env.getDataLoader('first').load(env.getArgument('id')).thenCompose { value ->
+                        env.getDataLoader('second').load(value)
+                    }
+                } as DataFetcher]])
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(loadedSchema).build().execute(
+                ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                        .variables([[id: 1], [id: 2], [id: 1]]).dataLoaderRegistry(registry)
+                        .graphQLContext([(dispatchOption): true]).build())
+
+        expect:
+        firstCalls == [[1], [2]]
+        secondCalls.empty
+
+        when:
+        pending[2].complete([2])
+
+        then:
+        result.results[1].get(5, TimeUnit.SECONDS).data == [value: 2]
+        !result.results[0].done
+        !result.results[2].done
+
+        when:
+        pending[1].complete([1])
+
+        then:
+        result.resultsAsync.get(5, TimeUnit.SECONDS)*.data == [[value: 1], [value: 2], [value: 1]]
+        secondCalls == [[2], [1]]
+
+        where:
+        dispatchOption << [ENABLE_DATA_LOADER_CHAINING, ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING]
+    }
+
+    def "execution futures can be consumed independently in any completion order"() {
+        given:
+        def values = [new CompletableFuture<Integer>(), new CompletableFuture<Integer>()]
+        def asyncSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env -> values[env.getArgument('id')] } as DataFetcher]])
+        def result = batch(GraphQL.newGraphQL(asyncSchema).build(),
+                'query($id:Int!) { value(id:$id) }', [[id: 0], [id: 1]])
+
+        when:
+        values[1].complete(11)
+
+        then:
+        result.results[1].get(5, TimeUnit.SECONDS).data == [value: 11]
+        !result.results[0].done
+
+        when:
+        values[0].complete(10)
+
+        then:
+        result.results[0].get(5, TimeUnit.SECONDS).data == [value: 10]
+    }
+
+    def "non-null failure is confined to its execution"() {
+        given:
+        def failingSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env -> env.getArgument('id') == 1 ? null : 2 } as DataFetcher]])
+
+        when:
+        def results = batch(GraphQL.newGraphQL(failingSchema).build(),
+                'query($id:Int!) { value(id:$id) }', [[id: 1], [id: 2]]).resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        results[0].data == null
+        results[0].errors[0].path == ['value']
+        results[1].toSpecification() == [data: [value: 2]]
+    }
+
+    def "instrumentation sees individual inputs contexts and ids"() {
+        given:
+        def seen = []
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            ExecutionInput instrumentExecutionInput(ExecutionInput input, InstrumentationExecutionParameters parameters,
+                                                      InstrumentationState state) {
+                seen.add(input)
+                input.graphQLContext.put('entry', input.variableIndex)
+                input.transform { it.variables([id: input.variables.id + 10]) }
+            }
+        }
+        def graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
+        def input = ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                .variables([[id: 1], [id: 2]]).executionId(ExecutionId.from('batch'))
+                .graphQLContext([app: 'shared']).build()
+
+        when:
+        VariableBatchExecutionResult result = graphQL.execute(input)
+        def results = result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        results*.data == [[value: 11], [value: 12]]
+        seen*.variableIndex == [0, 1]
+        seen*.variableBatchId*.toString() == ['batch', 'batch']
+        seen*.executionId.toSet().size() == 2
+        !seen[0].graphQLContext.is(seen[1].graphQLContext)
+        !input.graphQLContext.hasKey('entry')
+        seen.every { it.graphQLContext.get('app') == 'shared' }
+    }
+
+    def "batch input cancellation reaches every running entry"() {
+        given:
+        def invoked = []
+        def pending = (1..3).collect { new CompletableFuture<Integer>() }
+        def asyncSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env ->
+                    invoked.add(env.getArgument('id'))
+                    pending[env.getArgument('id') - 1]
+                } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                .variables([[id: 1], [id: 2], [id: 3]]).build()
+        VariableBatchExecutionResult batch = GraphQL.newGraphQL(asyncSchema).build().execute(input)
+        def result = batch.resultsAsync
+
+        when:
+        input.cancel()
+        pending.each { it.complete(7) }
+
+        then:
+        result.get(5, TimeUnit.SECONDS).every { !it.errors.empty }
+        invoked == [1, 2, 3]
+    }
+
+    def "subscription batches throw before producing a batch result"() {
+        given:
+        def invoked = false
+        def subscriptionSchema = TestUtil.schema('type Query { value:Int } type Subscription { value:Int }',
+                [Subscription: [value: { invoked = true } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput(query).operationName(operationName).variables([[:], [:]]).build()
+
+        when:
+        GraphQL.newGraphQL(subscriptionSchema).build().execute(input)
+
+        then:
+        def error = thrown(IllegalArgumentException)
+        error.message == 'Variable batching does not support subscription operations; supply at most one variable map.'
+        !invoked
+
+        where:
+        query                                             | operationName
+        'subscription { value }'                          | null
+        '# comment\nsubscription S { value }'              | 'S'
+        'subscription { missing }'                        | null
+        'query Q { value } subscription S { value }'       | 'S'
+    }
+
+    def "async subscription batches fail before instrumentation or variable coercion"() {
+        given:
+        def instrumentation = Mock(graphql.execution.instrumentation.Instrumentation)
+        def input = ExecutionInput.newExecutionInput('subscription($id:Int!) { value(id:$id) }')
+                .variables([[id: 'bad'], [:]]).build()
+
+        when:
+        def result = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build().executeAsync(input)
+        result.get(5, TimeUnit.SECONDS)
+
+        then:
+        def error = thrown(java.util.concurrent.ExecutionException)
+        error.cause instanceof IllegalArgumentException
+        error.cause.message.contains('subscription operations')
+        0 * instrumentation._
+    }
+
+    def "empty and singleton variable lists still allow ordinary subscriptions"() {
+        given:
+        def subscriptionSchema = TestUtil.schema('type Query { value:Int } type Subscription { value:Int }',
+                [Subscription: [value: { Flux.just(7) } as DataFetcher]])
+
+        when:
+        def result = GraphQL.newGraphQL(subscriptionSchema).build().execute(
+                ExecutionInput.newExecutionInput('subscription { value }').variables(variables).build())
+        def events = Flux.from(result.data).collectList().block(Duration.ofSeconds(5))
+
+        then:
+        !(result instanceof VariableBatchExecutionResult)
+        events*.data == [[value: 7]]
+
+        where:
+        variables << [[], [[:]]]
+    }
+
+    def "a query can be selected from a document that also contains a subscription"() {
+        given:
+        def subscriptionSchema = TestUtil.schema('type Query { value:Int } type Subscription { value:Int }',
+                [Query: [value: { 7 } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput('query Q { value } subscription S { value }')
+                .operationName('Q').variables([[:], [:]]).build()
+
+        when:
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(subscriptionSchema).build().execute(input)
+
+        then:
+        result.resultsAsync.get(5, TimeUnit.SECONDS)*.toSpecification() == [[data: [value: 7]], [data: [value: 7]]]
+    }
+
+    def "cached persisted subscriptions fail the whole batch before any resolver runs"() {
+        given:
+        def invoked = false
+        def subscriptionSchema = TestUtil.schema('type Query { value:Int } type Subscription { value:Int }',
+                [Subscription: [value: { invoked = true; Flux.just(7) } as DataFetcher]])
+        def provider = { input, compute -> CompletableFuture.completedFuture(
+                new PreparsedDocumentEntry(Parser.parse('subscription { value }'))) } as PreparsedDocumentProvider
+        def input = ExecutionInput.newExecutionInput(ExecutionInput.PERSISTED_QUERY_MARKER).variables([[:], [:]]).build()
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(subscriptionSchema).preparsedDocumentProvider(provider).build().execute(input)
+
+        when:
+        result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        def error = thrown(java.util.concurrent.ExecutionException)
+        error.cause instanceof IllegalArgumentException
+        error.cause.message.contains('subscription operations')
+        !invoked
+    }
+
+    def "document instrumentation cannot introduce a batched subscription"() {
+        given:
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables value,
+                    InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                value.transform { it.document(Parser.parse('subscription { missing }')) }
+            }
+        }
+
+        when:
+        batch(GraphQL.newGraphQL(schema).instrumentation(instrumentation).build(), '{ value }', [[:], [:]])
+                .resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        def error = thrown(java.util.concurrent.ExecutionException)
+        error.cause instanceof IllegalArgumentException
+        error.cause.message.contains('subscription operations')
+    }
+
+    def "replacing an execution input cannot bypass the subscription batch restriction"() {
+        given:
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            ExecutionInput instrumentExecutionInput(ExecutionInput input, InstrumentationExecutionParameters parameters,
+                                                      InstrumentationState state) {
+                ExecutionInput.newExecutionInput('subscription { value }').build()
+            }
+        }
+
+        when:
+        batch(GraphQL.newGraphQL(schema).instrumentation(instrumentation).build(), '{ value }', [[:], [:]])
+                .resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        def error = thrown(java.util.concurrent.ExecutionException)
+        error.cause instanceof IllegalArgumentException
+        error.cause.message.contains('subscription operations')
+    }
+
+    def "collected results keep input order across asynchronous completion"() {
+        given:
+        def values = [new CompletableFuture<Integer>(), new CompletableFuture<Integer>()]
+        def asyncSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env -> values[env.getArgument('id')] } as DataFetcher]])
+        def result = batch(GraphQL.newGraphQL(asyncSchema).build(), 'query($id:Int!) { value(id:$id) }',
+                [[id: 0], [id: 1]]).resultsAsync
+
+        when:
+        values[1].complete(11)
+        values[0].complete(10)
+
+        then:
+        result.get(5, TimeUnit.SECONDS)*.data == [[value: 10], [value: 11]]
+    }
+
+    def "mutation fields stay serial and cache invalidation applies to the shared registry"() {
+        given:
+        def values = [key: 0]
+        def calls = []
+        def registry = new DataLoaderRegistry()
+        def loader = DataLoaderFactory.newDataLoader({ keys ->
+            calls.add(new ArrayList(keys))
+            CompletableFuture.completedFuture(keys.collect { values[it] })
+        } as BatchLoader)
+        registry.register('values', loader)
+        def mutationSchema = TestUtil.schema('''
+            type Query { value:Int }
+            type Mutation { update(value:Int!):Int! read:Int! }
+        ''', [Mutation: [update: { env ->
+            values.key = env.getArgument('value')
+            env.getDataLoader('values').clear('key').prime('key', values.key)
+            values.key
+        } as DataFetcher, read: { env -> env.getDataLoader('values').load('key') } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput('mutation($value:Int!) { update(value:$value) read }')
+                .variables([[value: 1], [value: 2]]).dataLoaderRegistry(registry).build()
+
+        when:
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(mutationSchema)
+                .build().execute(input)
+        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        entries*.data == [[update: 1, read: 1], [update: 2, read: 2]]
+        calls.empty
+        values.key == 2
+    }
+
+    def "extension builders are isolated including a supplied builder"() {
+        given:
+        def extensions = ExtensionsBuilder.newExtensionsBuilder().addValue('initial', true)
+        def localSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env ->
+                    env.graphQlContext.get(ExtensionsBuilder).addValue('entry', env.getArgument('id'))
+                    env.getArgument('id')
+                } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                .variables([[id: 1], [id: 2]]).graphQLContext([(ExtensionsBuilder): extensions]).context('legacy').build()
+
+        when:
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema).build().execute(input)
+        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        entries*.extensions == [[initial: true, entry: 1], [initial: true, entry: 2]]
+        extensions.buildExtensions() == [initial: true]
+    }
+
+    def "custom document instrumentation and preparsed providers retain per-entry behavior"() {
+        given:
+        def seen = []
+        def provider = { ExecutionInput input, compute ->
+            seen.add(input.variables.id)
+            CompletableFuture.completedFuture(compute.apply(input))
+        } as PreparsedDocumentProvider
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables value,
+                    InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                value.transform { it.variables([id: parameters.variables.id + 10]) }
+            }
+        }
+
+        when:
+        def result = batch(GraphQL.newGraphQL(schema).preparsedDocumentProvider(provider)
+                .instrumentation(instrumentation).build(), 'query($id:Int!) { value(id:$id) }', [[id: 1], [id: 2]])
+        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        seen == [1, 2]
+        entries*.data == [[value: 11], [value: 12]]
+    }
+
+    def "default batch preparation runs eagerly and is reused by every entry"() {
+        given:
+        def calls = new AtomicInteger()
+        def listener = { token -> if (token.text == 'query') calls.incrementAndGet() } as ParsingListener
+        def options = ParserOptions.newParserOptions().parsingListener(listener).build()
+        def input = ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                .variables([[id: 1], [id: 2]]).graphQLContext([(ParserOptions): options]).build()
+
+        when:
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(schema).build().execute(input)
+
+        then:
+        calls.get() == 1
+
+        when:
+        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        entries*.data == [[value: 1], [value: 2]]
+        calls.get() == 1
+    }
+
+    def "incremental execution remains available per variable entry"() {
+        given:
+        def seen = []
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult result,
+                    InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                seen.add(result)
+                CompletableFuture.completedFuture(result)
+            }
+        }
+        def registry = new DataLoaderRegistry()
+        registry.register('values', DataLoaderFactory.newDataLoader({ keys -> CompletableFuture.completedFuture(keys) } as BatchLoader))
+        def localSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env -> env.getDataLoader('values').load(env.getArgument('id')) } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput('query($id:Int!) { ... @defer { value(id:$id) } }')
+                .variables([[id: 1], [id: 2]]).dataLoaderRegistry(registry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true]).build()
+
+        when:
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema).instrumentation(instrumentation).build().execute(input)
+        def entries = result.resultsAsync.get(5, TimeUnit.SECONDS)
+        def payloads = entries.collect { IncrementalExecutionResult entry ->
+            Flux.from(entry.incrementalItemPublisher).collectList().block(Duration.ofSeconds(5))
+        }
+
+        then:
+        entries.every { it instanceof IncrementalExecutionResult }
+        entries[0].is(seen[0])
+        entries[1].is(seen[1])
+        payloads.collect { it[0].incremental[0].data } == [[value: 1], [value: 2]]
+    }
+
+    def "an asynchronous shared loader failure belongs to each affected entry"() {
+        given:
+        def pending = new CompletableFuture<List<Integer>>()
+        def keysSeen = []
+        def registry = new DataLoaderRegistry().register('values', DataLoaderFactory.newDataLoader({ keys ->
+            keysSeen.add(new ArrayList(keys))
+            pending
+        } as BatchLoader))
+        def localSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env -> env.getDataLoader('values').load(env.getArgument('id')) } as DataFetcher]])
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema).build().execute(
+                ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                        .variables([[id: 1], [id: 2]]).dataLoaderRegistry(registry).build())
+        def entries = result.resultsAsync
+
+        when:
+        pending.completeExceptionally(new IllegalStateException('backend unavailable'))
+
+        then:
+        entries.get(5, TimeUnit.SECONDS).every { it.data == null && it.errors[0].path == ['value'] }
+        keysSeen == [[1], [2]]
+    }
+
+    def "cancelling an individual execution does not cancel a shared loader future"() {
+        given:
+        def seen = []
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            ExecutionInput instrumentExecutionInput(ExecutionInput input, InstrumentationExecutionParameters parameters,
+                                                      InstrumentationState state) {
+                seen.add(input)
+                input
+            }
+        }
+        def pending = new CompletableFuture<List<Integer>>()
+        def registry = new DataLoaderRegistry().register('values', DataLoaderFactory.newDataLoader({ keys -> pending } as BatchLoader))
+        def localSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env -> env.getDataLoader('values').load(env.getArgument('id')) } as DataFetcher]])
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(localSchema).instrumentation(instrumentation).build().execute(
+                ExecutionInput.newExecutionInput('query($id:Int!) { value(id:$id) }')
+                        .variables([[id: 1], [id: 1]]).dataLoaderRegistry(registry).build())
+        def entries = result.resultsAsync
+
+        when:
+        seen[0].cancel()
+        pending.complete([10])
+
+        then:
+        !pending.cancelled
+        !entries.get(5, TimeUnit.SECONDS)[0].errors.empty
+        entries.get(5, TimeUnit.SECONDS)[1].toSpecification() == [data: [value: 10]]
+    }
+
+    def "pre-cancelled input cancels every entry before fetching"() {
+        given:
+        def calls = []
+        def localSchema = TestUtil.schema('type Query { value:Int! }',
+                [Query: [value: { calls.add(1); 7 } as DataFetcher]])
+        def input = ExecutionInput.newExecutionInput('{ value }').variables([[:], [:]]).build()
+        input.cancel()
+
+        when:
+        VariableBatchExecutionResult batch = GraphQL.newGraphQL(localSchema).build().execute(input)
+
+        then:
+        batch.resultsAsync.get(5, TimeUnit.SECONDS).every { !it.errors.empty }
+        calls.empty
+    }
+
+    def "cancelling result collection leaves the independent executions running"() {
+        given:
+        def values = [new CompletableFuture<Integer>(), new CompletableFuture<Integer>()]
+        def asyncSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env -> values[env.getArgument('id')] } as DataFetcher]])
+        def result = batch(GraphQL.newGraphQL(asyncSchema).build(),
+                'query($id:Int!) { value(id:$id) }', [[id: 0], [id: 1]])
+        def collected = result.resultsAsync
+
+        when:
+        collected.cancel(false)
+        values[1].complete(11)
+        values[0].complete(10)
+
+        then:
+        collected.cancelled
+        result.resultsAsync.get(5, TimeUnit.SECONDS)*.data == [[value: 10], [value: 11]]
+    }
+
+    def "batch exposes immutable futures and supports repeated result collection"() {
+        given:
+        def result = batch(GraphQL.newGraphQL(schema).build(), '{ value }', [[:], [:]])
+        def collected = result.resultsAsync.get(5, TimeUnit.SECONDS)
+
+        expect:
+        result.data.is(result.results)
+        result.size == 2
+        result.resultsAsync.get(5, TimeUnit.SECONDS) == collected
+
+        when:
+        result.results.clear()
+
+        then:
+        thrown(UnsupportedOperationException)
+
+        when:
+        collected.clear()
+
+        then:
+        thrown(UnsupportedOperationException)
+
+        when:
+        result.toSpecification()
+
+        then:
+        thrown(UnsupportedOperationException)
+    }
+
+    def "an exceptional execution does not prevent the other entries from starting"() {
+        given:
+        def seen = []
+        def instrumentation = new SimplePerformantInstrumentation() {
+            @Override
+            ExecutionInput instrumentExecutionInput(ExecutionInput input, InstrumentationExecutionParameters parameters,
+                                                      InstrumentationState state) {
+                seen.add(input.variableIndex)
+                if (input.variableIndex == 0) throw new IllegalStateException('broken instrumentation')
+                input
+            }
+        }
+
+        when:
+        batch(GraphQL.newGraphQL(schema).instrumentation(instrumentation).build(),
+                '{ value }', [[:], [:]]).resultsAsync.get(5, TimeUnit.SECONDS)
+
+        then:
+        def failure = thrown(java.util.concurrent.ExecutionException)
+        failure.cause.message == 'broken instrumentation'
+        seen == [0, 1]
+    }
+
+    def "all entries start immediately without batch size or concurrency limits"() {
+        given:
+        def called = []
+        def pending = (0..1024).collect { new CompletableFuture<Integer>() }
+        def localSchema = TestUtil.schema('type Query { value(id:Int!):Int! }',
+                [Query: [value: { env ->
+                    def id = env.getArgument('id')
+                    called.add(id)
+                    pending[id]
+                } as DataFetcher]])
+
+        when:
+        def result = batch(GraphQL.newGraphQL(localSchema).build(),
+                'query($id:Int!) { value(id:$id) }', (0..1024).collect { [id: it] })
+
+        then:
+        called == (0..1024).toList()
+        result.results.every { !it.done }
+
+        when:
+        (1024..0).each { pending[it].complete(it) }
+
+        then:
+        result.resultsAsync.get(5, TimeUnit.SECONDS)*.data == (0..1024).collect { [value: it] }
+    }
+
+    def "persisted query lookup can replace the query while retaining every variables map"() {
+        given:
+        def seen = []
+        def provider = { ExecutionInput input, compute ->
+            seen.add(input.extensions.id)
+            CompletableFuture.completedFuture(compute.apply(input.transform {
+                it.query('query($id:Int!) { value(id:$id) }')
+            }))
+        } as PreparsedDocumentProvider
+        def input = ExecutionInput.newExecutionInput(graphql.execution.preparsed.persisted.PersistedQuerySupport.PERSISTED_QUERY_MARKER)
+                .extensions([id: 'known-query']).variables([[id: 1], [id: 2]]).build()
+
+        when:
+        VariableBatchExecutionResult result = GraphQL.newGraphQL(schema).preparsedDocumentProvider(provider).build().execute(input)
+
+        then:
+        result.resultsAsync.get(5, TimeUnit.SECONDS)*.data == [[value: 1], [value: 2]]
+        seen == ['known-query', 'known-query']
+    }
+
+    def "variable lists reject a null list or a null entry"() {
+        when:
+        ExecutionInput.newExecutionInput('{ value }').variables((List<Map<String, Object>>) values)
+
+        then:
+        thrown(AssertException)
+
+        where:
+        values << [null, [[id: 1], null]]
+    }
+
+    private static VariableBatchExecutionResult batch(GraphQL graphQL, String query, List<Map<String, Object>> variables) {
+        graphQL.execute(ExecutionInput.newExecutionInput(query).variables(variables).build()) as VariableBatchExecutionResult
+    }
+}

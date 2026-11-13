@@ -2,6 +2,7 @@ package graphql.extensions;
 
 import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionResult;
+import graphql.Internal;
 import graphql.PublicApi;
 import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
@@ -60,6 +61,13 @@ public class ExtensionsBuilder {
      */
     public int getChangeCount() {
         return changes.size();
+    }
+
+    @Internal
+    public ExtensionsBuilder copy() {
+        ExtensionsBuilder copy = new ExtensionsBuilder(extensionsMerger);
+        copy.changes.addAll(changes);
+        return copy;
     }
 
     /**
