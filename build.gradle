@@ -406,6 +406,7 @@ def annotationsToRemoveFromShadedJar = [
         'Lcom/google/errorprone/annotations/ForOverride;',
         'Lcom/google/errorprone/annotations/InlineMe;',
         'Lcom/google/errorprone/annotations/InlineMeValidationDisabled;',
+        'Lcom/google/errorprone/annotations/RestrictedApi;',
         'Lcom/google/errorprone/annotations/concurrent/GuardedBy;',
         'Lcom/google/j2objc/annotations/RetainedWith;',
         'Lcom/google/j2objc/annotations/Weak;',
