@@ -4,6 +4,7 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
+import graphql.Contract;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import org.jspecify.annotations.NullMarked;
@@ -59,6 +60,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
     }
 
     @SuppressWarnings("unchecked")
+    @Contract("!null -> !null")
     protected <V extends Node> @Nullable V deepCopy(@Nullable V nullableObj) {
         if (nullableObj == null) {
             return null;
@@ -67,6 +69,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
     }
 
     @SuppressWarnings("unchecked")
+    @Contract("!null -> !null")
     protected <V extends Node> @Nullable List<V> deepCopy(@Nullable List<? extends Node> list) {
         if (list == null) {
             return null;

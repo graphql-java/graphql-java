@@ -42,8 +42,8 @@ public class UnionTypeExtensionDefinition extends UnionTypeDefinition implements
     @Override
     public UnionTypeExtensionDefinition deepCopy() {
         return new UnionTypeExtensionDefinition(getName(),
-                assertNotNull(deepCopy(getDirectives()), "directives deepCopy should not return null"),
-                assertNotNull(deepCopy(getMemberTypes()), "memberTypes deepCopy should not return null"),
+                deepCopy(getDirectives()),
+                deepCopy(getMemberTypes()),
                 getDescription(),
                 getSourceLocation(),
                 getComments(),

@@ -45,6 +45,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.LightDataFetcher;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -314,15 +315,14 @@ public abstract class ExecutionStrategy {
         return fieldValuesCombinedBuilder(fieldValueInfos).await(cancelCF, WAIT_FOR_PENDING);
     }
 
-    @SuppressWarnings("unchecked")
-    protected static List<FieldValueInfo> nonNullFieldValueInfos(List<? extends @Nullable FieldValueInfo> completeValueInfos) {
+    protected static <T extends @Nullable FieldValueInfo> List<@NonNull T> nonNullFieldValueInfos(List<T> completeValueInfos) {
         boolean hasNulls = completeValueInfos.contains(null);
         if (!hasNulls) {
             // The null-element check above establishes the stronger element contract.
-            return (List<FieldValueInfo>) completeValueInfos;
+            return (List<@NonNull T>) completeValueInfos;
         }
-        List<FieldValueInfo> result = new ArrayList<>(completeValueInfos.size());
-        for (FieldValueInfo completeValueInfo : completeValueInfos) {
+        List<@NonNull T> result = new ArrayList<>(completeValueInfos.size());
+        for (T completeValueInfo : completeValueInfos) {
             if (completeValueInfo != null) {
                 result.add(completeValueInfo);
             }

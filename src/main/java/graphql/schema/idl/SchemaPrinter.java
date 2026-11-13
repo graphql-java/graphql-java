@@ -634,7 +634,7 @@ public class SchemaPrinter {
             }
 
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, Assert.assertNotNull(type.getDefinition(), "AST definition should exist when printing as AST"), type.getExtensionDefinitions());
+                printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
                 if (type.getInterfaces().isEmpty()) {
@@ -670,7 +670,7 @@ public class SchemaPrinter {
             Comparator<? super GraphQLSchemaElement> comparator = getComparator(GraphQLUnionType.class, GraphQLOutputType.class);
 
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, Assert.assertNotNull(type.getDefinition(), "AST definition should exist when printing as AST"), type.getExtensionDefinitions());
+                printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
                 out.format("union %s%s = ", type.getName(), directivesString(GraphQLUnionType.class, type));
@@ -708,7 +708,7 @@ public class SchemaPrinter {
                 return;
             }
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, Assert.assertNotNull(type.getDefinition(), "AST definition should exist when printing as AST"), type.getExtensionDefinitions());
+                printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
                 if (type.getInterfaces().isEmpty()) {
@@ -741,7 +741,7 @@ public class SchemaPrinter {
                 return;
             }
             if (shouldPrintAsAst(type.getDefinition())) {
-                printAsAst(out, Assert.assertNotNull(type.getDefinition(), "AST definition should exist when printing as AST"), type.getExtensionDefinitions());
+                printAsAst(out, type.getDefinition(), type.getExtensionDefinitions());
             } else {
                 printComments(out, type, "");
 
@@ -781,6 +781,7 @@ public class SchemaPrinter {
      *
      * @return true if we should print using AST nodes
      */
+    @Contract("null -> false")
     private boolean shouldPrintAsAst(@Nullable TypeDefinition<?> definition) {
         return options.isUseAstDefinitions() && definition != null;
     }
@@ -792,6 +793,7 @@ public class SchemaPrinter {
      *
      * @return true if we should print using AST nodes
      */
+    @Contract("null -> false")
     private boolean shouldPrintAsAst(@Nullable SchemaDefinition definition) {
         return options.isUseAstDefinitions() && definition != null;
     }
@@ -823,8 +825,8 @@ public class SchemaPrinter {
      * @param definition the AST schema definition
      * @param extensions a list of schema definition extensions
      */
-    private void printAsAst(PrintWriter out, @Nullable SchemaDefinition definition, List<SchemaExtensionDefinition> extensions) {
-        out.printf("%s\n", AstPrinter.printAst(Assert.assertNotNull(definition, "definition should not be null - guard with shouldPrintAsAst")));
+    private void printAsAst(PrintWriter out, SchemaDefinition definition, List<SchemaExtensionDefinition> extensions) {
+        out.printf("%s\n", AstPrinter.printAst(definition));
         if (extensions != null) {
             for (SchemaExtensionDefinition extension : extensions) {
                 out.printf("\n%s\n", AstPrinter.printAst(extension));

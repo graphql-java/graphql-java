@@ -14,6 +14,10 @@ import java.util.concurrent.CompletableFuture;
 
 @NullMarked
 public abstract class NullableExecutionStrategyUsage extends AbstractAsyncExecutionStrategy {
+    public <T extends FieldValueInfo> List<T> filterSubtype(List<@Nullable T> fields) {
+        return nonNullFieldValueInfos(fields);
+    }
+
     public void nullableResults(ExecutionContext context, ExecutionStrategyParameters parameters,
                                 List<String> names, List<@Nullable Object> values,
                                 List<@Nullable FieldValueInfo> cancelledFields, Throwable failure) {

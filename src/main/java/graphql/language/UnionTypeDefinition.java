@@ -135,8 +135,8 @@ public class UnionTypeDefinition extends AbstractDescribedNode<UnionTypeDefiniti
     @Override
     public UnionTypeDefinition deepCopy() {
         return new UnionTypeDefinition(name,
-                assertNotNull(deepCopy(directives.getDirectives()), "directives deepCopy should not return null"),
-                assertNotNull(deepCopy(memberTypes), "memberTypes deepCopy should not return null"),
+                deepCopy(directives.getDirectives()),
+                deepCopy(memberTypes),
                 description,
                 getSourceLocation(),
                 getComments(),

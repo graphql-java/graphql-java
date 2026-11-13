@@ -26,7 +26,6 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -68,7 +67,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
-        this.arguments = builder.arguments == null ? Collections::emptyMap : builder.arguments;
+        this.arguments = builder.arguments == null ? ImmutableKit::emptyMap : builder.arguments;
         this.context = builder.context;
         this.graphQLContext = Assert.assertNotNull(builder.graphQLContext);
         this.localContext = builder.localContext;
