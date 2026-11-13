@@ -45,7 +45,7 @@ public class DataFetcherExceptionHandlerParameters {
         return dataFetchingEnvironment.getFieldDefinition();
     }
 
-    public Map<String, Object> getArgumentValues() {
+    public Map<String, @Nullable Object> getArgumentValues() {
         return dataFetchingEnvironment.getArguments();
     }
 

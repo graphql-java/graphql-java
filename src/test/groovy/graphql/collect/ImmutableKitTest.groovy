@@ -1,6 +1,7 @@
 package graphql.collect
 
 import com.google.common.collect.ImmutableList
+import graphql.AssertException
 import spock.lang.Specification
 
 class ImmutableKitTest extends Specification {
@@ -73,6 +74,27 @@ class ImmutableKitTest extends Specification {
         def flatList = ImmutableKit.flatMapList(listOfLists)
         then:
         flatList == ["A", "B", "C", "D", "E",]
+    }
+
+    def "variable args predicates see nulls but cannot select them for the result"() {
+        given:
+        def seen = []
+
+        when:
+        def result = ImmutableKit.filterVarArgs({ String value ->
+            seen.add(value)
+            value != null
+        }, null, 'value')
+
+        then:
+        seen == [null, 'value']
+        result == ['value']
+
+        when:
+        ImmutableKit.filterVarArgs({ String value -> true }, (String) null)
+
+        then:
+        thrown(AssertException)
     }
 
     def "can filter variable args"() {

@@ -1,6 +1,8 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -16,6 +18,7 @@ import java.util.Set;
  * @param <T> type of tree node
  */
 @PublicApi
+@NullMarked
 public interface TraverserContext<T> {
 
     enum Phase {
@@ -34,14 +37,14 @@ public interface TraverserContext<T> {
      *
      * @throws graphql.AssertException if the current node is deleted
      */
-    T thisNode();
+    @Nullable T thisNode();
 
     /**
      * Returns the original, unchanged, not deleted Node.
      *
      * @return the original node
      */
-    T originalThisNode();
+    @Nullable T originalThisNode();
 
     /**
      * Change the current node to the provided node. Only applicable in enter.
@@ -78,7 +81,7 @@ public interface TraverserContext<T> {
      *
      * @return context associated with the node parent
      */
-    TraverserContext<T> getParentContext();
+    @Nullable TraverserContext<T> getParentContext();
 
     /**
      * The list of parent nodes starting from the current parent.
@@ -92,7 +95,7 @@ public interface TraverserContext<T> {
      *
      * @return The parent node.
      */
-    T getParentNode();
+    @Nullable T getParentNode();
 
 
     /**
@@ -107,7 +110,7 @@ public interface TraverserContext<T> {
      *
      * @return the position or null if this node is a root node
      */
-    NodeLocation getLocation();
+    @Nullable NodeLocation getLocation();
 
     /**
      * Informs that the current node has been already "visited"
@@ -132,7 +135,7 @@ public interface TraverserContext<T> {
      *
      * @return a variable value or {@code null}
      */
-    <S> S getVar(Class<? super S> key);
+    <S> @Nullable S getVar(Class<? super S> key);
 
     /**
      * Searches for a context variable starting from the parent
@@ -143,7 +146,7 @@ public interface TraverserContext<T> {
      *
      * @return a variable value or {@code null}
      */
-    <S> S getVarFromParents(Class<? super S> key);
+    <S> @Nullable S getVarFromParents(Class<? super S> key);
 
     /**
      * Stores a variable in the context
@@ -162,9 +165,9 @@ public interface TraverserContext<T> {
      *
      * Can be retrieved by {@link #getNewAccumulate()}
      *
-     * @param accumulate to set
+     * @param accumulate to set, or null to clear the accumulated value
      */
-    void setAccumulate(Object accumulate);
+    void setAccumulate(@Nullable Object accumulate);
 
     /**
      * The new accumulate value, previously set by {@link #setAccumulate(Object)}
@@ -172,27 +175,27 @@ public interface TraverserContext<T> {
      *
      * @param <U> and me
      *
-     * @return the new accumulate value
+     * @return the new accumulate value, or null if none has been set
      */
-    <U> U getNewAccumulate();
+    <U> @Nullable U getNewAccumulate();
 
     /**
      * The current accumulate value used as "input" for the current step.
      *
      * @param <U> and me
      *
-     * @return the current accumulate value
+     * @return the current accumulate value, or null if none has been set
      */
-    <U> U getCurrentAccumulate();
+    <U> @Nullable U getCurrentAccumulate();
 
     /**
      * Used to share something across all TraverserContext.
      *
      * @param <U> and me
      *
-     * @return contextData
+     * @return contextData, or null if none was supplied
      */
-    <U> U getSharedContextData();
+    <U> @Nullable U getSharedContextData();
 
     /**
      * Returns true for the root context, which doesn't have a node or a position.
@@ -206,7 +209,7 @@ public interface TraverserContext<T> {
      *
      * @return the children contexts. If the childs are a simple list the key is null.
      */
-    Map<String, List<TraverserContext<T>>> getChildrenContexts();
+    Map<@Nullable String, List<TraverserContext<T>>> getChildrenContexts();
 
     /**
      * @return the phase in which the node visits currently happens (Enter,Leave or BackRef)

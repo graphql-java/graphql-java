@@ -4,6 +4,8 @@ import graphql.Internal;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.Map;
 
 /**
@@ -15,7 +17,7 @@ public interface IntrospectionDataFetchingEnvironment {
 
     <T> T getSource();
 
-    Map<String, Object> getArguments();
+    Map<String, @Nullable Object> getArguments();
 
     GraphQLSchema getGraphQLSchema();
 

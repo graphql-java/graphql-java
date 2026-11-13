@@ -1,13 +1,16 @@
 package graphql.util;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Queue;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 
 @PublicApi
+@NullMarked
 public class TreeTransformerUtil {
 
     /**
@@ -22,10 +25,10 @@ public class TreeTransformerUtil {
     public static <T> TraversalControl changeNode(TraverserContext<T> context, T changedNode) {
         boolean changed = context.isChanged();
         if (context.isParallel()) {
-            List<NodeZipper<T>> zippers = context.getVar(List.class);
-            NodeAdapter adapter = context.getVar(NodeAdapter.class);
+            List<NodeZipper<T>> zippers = assertNotNull(context.getVar(List.class), "zippers should not be null");
+            NodeAdapter<T> adapter = context.getVar(NodeAdapter.class);
             if (changed) {
-                replaceZipperForNode(zippers, context.thisNode(), changedNode);
+                replaceZipperForNode(zippers, assertNotNull(context.thisNode(), "thisNode should not be null"), changedNode);
                 context.changeNode(changedNode);
             } else {
                 NodeZipper<T> nodeZipper = new NodeZipper<>(changedNode, context.getBreadcrumbs(), adapter);
@@ -34,11 +37,11 @@ public class TreeTransformerUtil {
             }
             return TraversalControl.CONTINUE;
         } else {
-            NodeZipper<T> zipperWithChangedNode = context.getVar(NodeZipper.class).withNewNode(changedNode);
-            List<NodeZipper<T>> zippers = context.getSharedContextData();
+            NodeZipper<T> zipperWithChangedNode = ((NodeZipper<T>) assertNotNull(context.getVar(NodeZipper.class), "nodeZipper should not be null")).withNewNode(changedNode);
+            List<NodeZipper<T>> zippers = assertNotNull(context.getSharedContextData(), "shared zippers should not be null");
             if (changed) {
                 // this is potentially expensive
-                replaceZipperForNode(zippers, context.thisNode(), changedNode);
+                replaceZipperForNode(zippers, assertNotNull(context.thisNode(), "thisNode should not be null"), changedNode);
                 context.changeNode(changedNode);
             } else {
                 zippers.add(zipperWithChangedNode);
@@ -57,15 +60,15 @@ public class TreeTransformerUtil {
 
     public static <T> TraversalControl deleteNode(TraverserContext<T> context) {
         if (context.isParallel()) {
-            NodeAdapter adapter = context.getVar(NodeAdapter.class);
-            NodeZipper<T> deleteNodeZipper = new NodeZipper<>(context.thisNode(), context.getBreadcrumbs(), adapter).deleteNode();
-            List<NodeZipper<T>> zippers = context.getVar(List.class);
+            NodeAdapter<T> adapter = context.getVar(NodeAdapter.class);
+            NodeZipper<T> deleteNodeZipper = new NodeZipper<>(assertNotNull(context.thisNode(), "thisNode should not be null"), context.getBreadcrumbs(), adapter).deleteNode();
+            List<NodeZipper<T>> zippers = assertNotNull(context.getVar(List.class), "zippers should not be null");
             zippers.add(deleteNodeZipper);
             context.deleteNode();
             return TraversalControl.CONTINUE;
         } else {
-            NodeZipper<T> deleteNodeZipper = context.getVar(NodeZipper.class).deleteNode();
-            Queue<NodeZipper<T>> zippers = context.getSharedContextData();
+            NodeZipper<T> deleteNodeZipper = ((NodeZipper<T>) assertNotNull(context.getVar(NodeZipper.class), "nodeZipper should not be null")).deleteNode();
+            Queue<NodeZipper<T>> zippers = assertNotNull(context.getSharedContextData(), "shared zippers should not be null");
             zippers.add(deleteNodeZipper);
             context.deleteNode();
             return TraversalControl.CONTINUE;
@@ -74,14 +77,14 @@ public class TreeTransformerUtil {
 
     public static <T> TraversalControl insertAfter(TraverserContext<T> context, T toInsertAfter) {
         if (context.isParallel()) {
-            NodeAdapter adapter = context.getVar(NodeAdapter.class);
-            NodeZipper<T> insertNodeZipper = new NodeZipper<>(context.originalThisNode(), context.getBreadcrumbs(), adapter).insertAfter(toInsertAfter);
-            List<NodeZipper<T>> zippers = context.getVar(List.class);
+            NodeAdapter<T> adapter = context.getVar(NodeAdapter.class);
+            NodeZipper<T> insertNodeZipper = new NodeZipper<>(assertNotNull(context.originalThisNode(), "originalThisNode should not be null"), context.getBreadcrumbs(), adapter).insertAfter(toInsertAfter);
+            List<NodeZipper<T>> zippers = assertNotNull(context.getVar(List.class), "zippers should not be null");
             zippers.add(insertNodeZipper);
             return TraversalControl.CONTINUE;
         } else {
-            NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertAfter(toInsertAfter);
-            Queue<NodeZipper<T>> zippers = context.getSharedContextData();
+            NodeZipper<T> insertNodeZipper = ((NodeZipper<T>) assertNotNull(context.getVar(NodeZipper.class), "nodeZipper should not be null")).insertAfter(toInsertAfter);
+            Queue<NodeZipper<T>> zippers = assertNotNull(context.getSharedContextData(), "shared zippers should not be null");
             zippers.add(insertNodeZipper);
             return TraversalControl.CONTINUE;
         }
@@ -89,14 +92,14 @@ public class TreeTransformerUtil {
 
     public static <T> TraversalControl insertBefore(TraverserContext<T> context, T toInsertBefore) {
         if (context.isParallel()) {
-            NodeAdapter adapter = context.getVar(NodeAdapter.class);
-            NodeZipper<T> insertNodeZipper = new NodeZipper<>(context.originalThisNode(), context.getBreadcrumbs(), adapter).insertBefore(toInsertBefore);
-            List<NodeZipper<T>> zippers = context.getVar(List.class);
+            NodeAdapter<T> adapter = context.getVar(NodeAdapter.class);
+            NodeZipper<T> insertNodeZipper = new NodeZipper<>(assertNotNull(context.originalThisNode(), "originalThisNode should not be null"), context.getBreadcrumbs(), adapter).insertBefore(toInsertBefore);
+            List<NodeZipper<T>> zippers = assertNotNull(context.getVar(List.class), "zippers should not be null");
             zippers.add(insertNodeZipper);
             return TraversalControl.CONTINUE;
         } else {
-            NodeZipper<T> insertNodeZipper = context.getVar(NodeZipper.class).insertBefore(toInsertBefore);
-            Queue<NodeZipper<T>> zippers = context.getSharedContextData();
+            NodeZipper<T> insertNodeZipper = ((NodeZipper<T>) assertNotNull(context.getVar(NodeZipper.class), "nodeZipper should not be null")).insertBefore(toInsertBefore);
+            Queue<NodeZipper<T>> zippers = assertNotNull(context.getSharedContextData(), "shared zippers should not be null");
             zippers.add(insertNodeZipper);
             return TraversalControl.CONTINUE;
         }

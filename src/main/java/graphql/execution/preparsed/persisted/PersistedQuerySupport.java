@@ -6,6 +6,7 @@ import graphql.GraphqlErrorBuilder;
 import graphql.PublicSpi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -22,6 +23,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * @see graphql.execution.preparsed.PreparsedDocumentProvider
  * @see graphql.GraphQL.Builder#preparsedDocumentProvider(graphql.execution.preparsed.PreparsedDocumentProvider)
  */
+@NullMarked
 @PublicSpi
 public abstract class PersistedQuerySupport implements PreparsedDocumentProvider {
 

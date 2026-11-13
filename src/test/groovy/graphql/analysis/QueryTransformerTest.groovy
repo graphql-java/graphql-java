@@ -106,6 +106,26 @@ class QueryTransformerTest extends Specification {
                 "{root{fooA{midB{leafB}}fooB{midB{leafB}}}}"
     }
 
+    def "deleting the transformation root returns null"() {
+        given:
+        def schema = TestUtil.schema('type Query { field: String }')
+        def transformer = QueryTransformer.newQueryTransformer()
+                .schema(schema)
+                .root(newField('field').build())
+                .rootParentType(schema.queryType)
+                .fragmentsByName([:])
+                .variables([:])
+                .build()
+        QueryVisitor visitor = Stub() {
+            visitFieldWithControl(_) >> { QueryVisitorFieldEnvironment environment ->
+                deleteNode(environment.traverserContext)
+            }
+        }
+
+        expect:
+        transformer.transform(visitor) == null
+    }
+
     def "transform query add midA sibling"() {
         def query = TestUtil.parseQuery("{ root { fooA { midA { leafA } } } }")
 

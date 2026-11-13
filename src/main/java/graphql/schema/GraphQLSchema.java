@@ -450,7 +450,7 @@ public class GraphQLSchema {
             }
             return Assert.assertShouldNeverHappen("The system field name %s is unknown", fieldName);
         }
-        String typeName = fieldCoordinates.getTypeName();
+        String typeName = Assert.assertNotNull(fieldCoordinates.getTypeName(), "non-system coordinates must have a type name");
         GraphQLType graphQLType = getType(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLFieldsContainer,
@@ -497,7 +497,7 @@ public class GraphQLSchema {
      *
      * @return list of types implementing provided interface
      */
-    public @Nullable List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
+    public List<GraphQLObjectType> getImplementations(GraphQLInterfaceType type) {
         return interfaceNameToObjectTypes.getOrDefault(type.getName(), emptyList());
     }
 

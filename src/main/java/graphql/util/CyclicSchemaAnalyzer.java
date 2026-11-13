@@ -8,6 +8,8 @@ import graphql.schema.diffing.Edge;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.SchemaGraphFactory;
 import graphql.schema.diffing.Vertex;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -18,10 +20,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertNotNull;
+
 /**
  * Finds all cycles in a GraphQL Schema.
  * Cycles caused by built-in introspection types are filtered out.
  */
+@NullMarked
 @ExperimentalApi
 public class CyclicSchemaAnalyzer {
 
@@ -121,19 +126,19 @@ public class CyclicSchemaAnalyzer {
         private final SchemaGraph graph;
 
         // The main state of the algorithm.
-        private Vertex[] iToV = null;
-        private Map<Vertex, Integer> vToI = null;
-        private Set<Vertex> blocked = null;
-        private Map<Vertex, Set<Vertex>> bSets = null;
-        private ArrayDeque<Vertex> stack = null;
+        private Vertex[] iToV;
+        private Map<Vertex, Integer> vToI;
+        private Set<Vertex> blocked;
+        private Map<Vertex, Set<Vertex>> bSets;
+        private ArrayDeque<Vertex> stack;
 
         // The state of the embedded Tarjan SCC algorithm.
-        private List<Set<Vertex>> foundSCCs = null;
+        private @Nullable List<Set<Vertex>> foundSCCs = null;
         private int index = 0;
-        private Map<Vertex, Integer> vIndex = null;
-        private Map<Vertex, Integer> vLowlink = null;
-        private ArrayDeque<Vertex> path = null;
-        private Set<Vertex> pathSet = null;
+        private @Nullable Map<Vertex, Integer> vIndex = null;
+        private @Nullable Map<Vertex, Integer> vLowlink = null;
+        private @Nullable ArrayDeque<Vertex> path = null;
+        private @Nullable Set<Vertex> pathSet = null;
 
         private List<List<Vertex>> foundCycles = new ArrayList<>();
 
@@ -176,7 +181,7 @@ public class CyclicSchemaAnalyzer {
             return this.foundCycles;
         }
 
-        private GraphAndIndex findMinSCSG(int startIndex) {
+        private @Nullable GraphAndIndex findMinSCSG(int startIndex) {
             /*
              * Per Johnson : "adjacency structure of strong component $K$ with least vertex in subgraph
              * of $G$ induced by $(s, s + 1, n)$". Or in contemporary terms: the strongly connected
@@ -237,16 +242,20 @@ public class CyclicSchemaAnalyzer {
                 if (vI < startIndex) {
                     continue;
                 }
-                if (!vIndex.containsKey(v)) {
+                if (!assertNotNull(vIndex, "SCC indices must be initialized").containsKey(v)) {
                     getSCCs(startIndex, vI);
                 }
             }
-            List<Set<Vertex>> result = foundSCCs;
+            List<Set<Vertex>> result = assertNotNull(foundSCCs, "SCC results must be initialized");
             foundSCCs = null;
             return result;
         }
 
         private void getSCCs(int startIndex, int vertexIndex) {
+            Map<Vertex, Integer> vIndex = assertNotNull(this.vIndex, "SCC indices must be initialized");
+            Map<Vertex, Integer> vLowlink = assertNotNull(this.vLowlink, "SCC low-link indices must be initialized");
+            ArrayDeque<Vertex> path = assertNotNull(this.path, "SCC path must be initialized");
+            Set<Vertex> pathSet = assertNotNull(this.pathSet, "SCC path set must be initialized");
             Vertex vertex = toV(vertexIndex);
             vIndex.put(vertex, index);
             vLowlink.put(vertex, index);
@@ -263,7 +272,7 @@ public class CyclicSchemaAnalyzer {
                 }
                 if (!vIndex.containsKey(successor)) {
                     getSCCs(startIndex, successorIndex);
-                    vLowlink.put(vertex, Math.min(vLowlink.get(vertex), vLowlink.get(successor)));
+                    vLowlink.put(vertex, Math.min(vLowlink.get(vertex), assertNotNull(vLowlink.get(successor), "Visited successor must have a low-link index")));
                 } else if (pathSet.contains(successor)) {
                     vLowlink.put(vertex, Math.min(vLowlink.get(vertex), vIndex.get(successor)));
                 }
@@ -279,10 +288,10 @@ public class CyclicSchemaAnalyzer {
                 if (result.size() == 1) {
                     Vertex v = result.iterator().next();
                     if (graph.containsEdge(vertex, v)) {
-                        foundSCCs.add(result);
+                        assertNotNull(foundSCCs, "SCC results must be initialized").add(result);
                     }
                 } else {
-                    foundSCCs.add(result);
+                    assertNotNull(foundSCCs, "SCC results must be initialized").add(result);
                 }
             }
         }
@@ -354,7 +363,7 @@ public class CyclicSchemaAnalyzer {
         }
 
         private Integer toI(Vertex vertex) {
-            return vToI.get(vertex);
+            return assertNotNull(vToI.get(vertex), "Vertex must belong to the indexed graph");
         }
 
         private Vertex toV(Integer i) {

@@ -4,12 +4,14 @@ import graphql.ExecutionResult;
 import graphql.PublicSpi;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
  * This is called when an exception is thrown during {@link graphql.schema.DataFetcher#get(DataFetchingEnvironment)} execution
  */
+@NullMarked
 @PublicSpi
 public interface DataFetcherExceptionHandler {
 

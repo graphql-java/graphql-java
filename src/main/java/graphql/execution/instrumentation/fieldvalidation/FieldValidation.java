@@ -2,6 +2,7 @@ package graphql.execution.instrumentation.fieldvalidation;
 
 import graphql.GraphQLError;
 import graphql.PublicSpi;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ import java.util.List;
  * @see FieldValidationEnvironment
  * @see SimpleFieldValidation
  */
+@NullMarked
 @PublicSpi
 public interface FieldValidation {
 

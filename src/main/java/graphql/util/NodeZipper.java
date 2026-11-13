@@ -2,6 +2,8 @@ package graphql.util;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,6 +15,7 @@ import java.util.function.Function;
 import static graphql.Assert.assertNotNull;
 
 @PublicApi
+@NullMarked
 public class NodeZipper<T> {
 
 
@@ -24,18 +27,18 @@ public class NodeZipper<T> {
     }
 
     private final T curNode;
-    private final NodeAdapter<T> nodeAdapter;
+    private final @Nullable NodeAdapter<T> nodeAdapter;
     // reverse: the breadCrumbs start from curNode upwards
     private final List<Breadcrumb<T>> breadcrumbs;
 
     private final ModificationType modificationType;
 
 
-    public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, NodeAdapter<T> nodeAdapter) {
+    public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, @Nullable NodeAdapter<T> nodeAdapter) {
         this(curNode, breadcrumbs, nodeAdapter, ModificationType.REPLACE);
     }
 
-    public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, NodeAdapter<T> nodeAdapter, ModificationType modificationType) {
+    public NodeZipper(T curNode, List<Breadcrumb<T>> breadcrumbs, @Nullable NodeAdapter<T> nodeAdapter, ModificationType modificationType) {
         this.curNode = assertNotNull(curNode);
         this.breadcrumbs = ImmutableList.copyOf(assertNotNull(breadcrumbs));
         this.nodeAdapter = nodeAdapter;
@@ -58,7 +61,7 @@ public class NodeZipper<T> {
         return breadcrumbs.get(0).getNode();
     }
 
-    public static <T> NodeZipper<T> rootZipper(T rootNode, NodeAdapter<T> nodeAdapter) {
+    public static <T> NodeZipper<T> rootZipper(T rootNode, @Nullable NodeAdapter<T> nodeAdapter) {
         return new NodeZipper<T>(rootNode, new ArrayList<>(), nodeAdapter);
     }
 
@@ -92,7 +95,7 @@ public class NodeZipper<T> {
     /**
      * @return null if it is the root node and marked as deleted, otherwise never null
      */
-    public T toRoot() {
+    public @Nullable T toRoot() {
         if (breadcrumbs.size() == 0 && modificationType != ModificationType.DELETE) {
             return this.curNode;
         }
@@ -101,6 +104,7 @@ public class NodeZipper<T> {
         }
         T curNode = this.curNode;
 
+        NodeAdapter<T> nodeAdapter = assertNotNull(this.nodeAdapter, "Rebuilding parents requires a node adapter");
         Breadcrumb<T> firstBreadcrumb = breadcrumbs.get(0);
         Map<String, List<T>> childrenForParent = new HashMap<>(nodeAdapter.getNamedChildren(firstBreadcrumb.getNode()));
         NodeLocation locationInParent = firstBreadcrumb.getLocation();

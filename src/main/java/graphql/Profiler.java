@@ -28,7 +28,7 @@ public interface Profiler {
 
     }
 
-    default void fieldFetched(Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path, GraphQLFieldDefinition fieldDef, GraphQLOutputType parentType) {
+    default void fieldFetched(@Nullable Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path, GraphQLFieldDefinition fieldDef, GraphQLOutputType parentType) {
 
     }
 

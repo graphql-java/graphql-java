@@ -595,7 +595,7 @@ public class GraphQL {
         } else {
             parseInstrumentationCtx.onCompleted(parseResult.getDocument(), null);
 
-            DocumentAndVariables documentAndVariables = parseResult.getDocumentAndVariables();
+            DocumentAndVariables documentAndVariables = assertNotNull(parseResult.getDocumentAndVariables(), "Successful parsing must produce a document and variables");
             documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters, instrumentationState);
             return ParseAndValidateResult.newResult()
                     .document(documentAndVariables.getDocument()).variables(documentAndVariables.getVariables()).build();

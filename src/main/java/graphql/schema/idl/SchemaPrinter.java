@@ -1,11 +1,14 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.Contract;
 import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.ValuesResolver;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.language.AstPrinter;
 import graphql.language.Comment;
 import graphql.language.Description;
@@ -77,6 +80,7 @@ import static java.util.stream.Collectors.toList;
  * This can print an in memory GraphQL schema back to a logical schema definition
  */
 @PublicApi
+@NullMarked
 public class SchemaPrinter {
     /**
      * This predicate excludes all directives which are specified by the GraphQL Specification.
@@ -777,7 +781,8 @@ public class SchemaPrinter {
      *
      * @return true if we should print using AST nodes
      */
-    private boolean shouldPrintAsAst(TypeDefinition<?> definition) {
+    @Contract("null -> false")
+    private boolean shouldPrintAsAst(@Nullable TypeDefinition<?> definition) {
         return options.isUseAstDefinitions() && definition != null;
     }
 
@@ -788,7 +793,8 @@ public class SchemaPrinter {
      *
      * @return true if we should print using AST nodes
      */
-    private boolean shouldPrintAsAst(SchemaDefinition definition) {
+    @Contract("null -> false")
+    private boolean shouldPrintAsAst(@Nullable SchemaDefinition definition) {
         return options.isUseAstDefinitions() && definition != null;
     }
 
@@ -896,7 +902,7 @@ public class SchemaPrinter {
         return argsString(null, arguments);
     }
 
-    String argsString(Class<? extends GraphQLSchemaElement> parent, List<GraphQLArgument> arguments) {
+    String argsString(@Nullable Class<? extends GraphQLSchemaElement> parent, List<GraphQLArgument> arguments) {
         boolean hasAstDefinitionComments = arguments.stream().anyMatch(this::hasAstDefinitionComments);
         boolean hasDescriptions = arguments.stream().anyMatch(this::hasDescription);
         String halfPrefix = hasAstDefinitionComments || hasDescriptions ? "  " : "";
@@ -1062,7 +1068,7 @@ public class SchemaPrinter {
         return directives;
     }
 
-    private GraphQLAppliedDirective createDeprecatedDirective(String reason) {
+    private GraphQLAppliedDirective createDeprecatedDirective(@Nullable String reason) {
         GraphQLAppliedDirectiveArgument arg = GraphQLAppliedDirectiveArgument.newArgument()
                 .name("reason")
                 .valueProgrammatic(reason)
@@ -1074,7 +1080,7 @@ public class SchemaPrinter {
                 .build();
     }
 
-    private List<GraphQLAppliedDirective> updateDeprecatedDirective(List<GraphQLAppliedDirective> directives, String reason) {
+    private List<GraphQLAppliedDirective> updateDeprecatedDirective(List<GraphQLAppliedDirective> directives, @Nullable String reason) {
         GraphQLAppliedDirectiveArgument newArg = GraphQLAppliedDirectiveArgument.newArgument()
                 .name("reason")
                 .valueProgrammatic(reason)
@@ -1084,7 +1090,7 @@ public class SchemaPrinter {
         return directives.stream().map(d -> {
             if (isDeprecatedDirective(d)) {
                 // Don't include reason is deliberately replaced with NOT_SET, for example in Anonymizer
-                if (d.getArgument("reason").getArgumentValue() != InputValueWithState.NOT_SET) {
+                if (Assert.assertNotNull(d.getArgument("reason"), "deprecated reason argument must exist").getArgumentValue() != InputValueWithState.NOT_SET) {
                     return d.transform(builder -> builder.argument(newArg));
                 }
             }
@@ -1092,7 +1098,7 @@ public class SchemaPrinter {
         }).collect(toList());
     }
 
-    private String getDeprecationReason(GraphQLDirectiveContainer directiveContainer) {
+    private @Nullable String getDeprecationReason(GraphQLDirectiveContainer directiveContainer) {
         if (directiveContainer instanceof GraphQLFieldDefinition) {
             GraphQLFieldDefinition type = (GraphQLFieldDefinition) directiveContainer;
             return type.getDeprecationReason();
@@ -1264,7 +1270,7 @@ public class SchemaPrinter {
         return !isNullOrEmpty(comments);
     }
 
-    private String getAstDefinitionComments(Object commentHolder) {
+    private @Nullable String getAstDefinitionComments(Object commentHolder) {
         if (commentHolder instanceof GraphQLObjectType) {
             GraphQLObjectType type = (GraphQLObjectType) commentHolder;
             return comments(ofNullable(type.getDefinition()).map(ObjectTypeDefinition::getComments).orElse(null));
@@ -1306,7 +1312,7 @@ public class SchemaPrinter {
         }
     }
 
-    private String comments(List<Comment> comments) {
+    private @Nullable String comments(@Nullable List<Comment> comments) {
         if (comments == null || comments.isEmpty()) {
             return null;
         }
@@ -1319,7 +1325,7 @@ public class SchemaPrinter {
         return !isNullOrEmpty(description);
     }
 
-    private String getDescription(Object descriptionHolder) {
+    private @Nullable String getDescription(Object descriptionHolder) {
         if (descriptionHolder instanceof GraphQLObjectType) {
             GraphQLObjectType type = (GraphQLObjectType) descriptionHolder;
             return description(type.getDescription(), ofNullable(type.getDefinition()).map(ObjectTypeDefinition::getDescription).orElse(null));
@@ -1361,7 +1367,7 @@ public class SchemaPrinter {
         }
     }
 
-    String description(String runtimeDescription, Description descriptionAst) {
+    @Nullable String description(@Nullable String runtimeDescription, @Nullable Description descriptionAst) {
         //
         // 95% of the time if the schema was built from SchemaGenerator then the runtime description is the only description
         // So the other code here is a really defensive way to get the description
@@ -1375,7 +1381,7 @@ public class SchemaPrinter {
         return descriptionText;
     }
 
-    private Comparator<? super GraphQLSchemaElement> getComparator(Class<? extends GraphQLSchemaElement> parentType, Class<? extends GraphQLSchemaElement> elementType) {
+    private Comparator<? super GraphQLSchemaElement> getComparator(@Nullable Class<? extends GraphQLSchemaElement> parentType, @Nullable Class<? extends GraphQLSchemaElement> elementType) {
         GraphqlTypeComparatorEnvironment environment = GraphqlTypeComparatorEnvironment.newEnvironment()
                 .parentType(parentType)
                 .elementType(elementType)
@@ -1390,7 +1396,8 @@ public class SchemaPrinter {
         return s;
     }
 
-    private static boolean isNullOrEmpty(String s) {
+    @Contract("null -> true")
+    private static boolean isNullOrEmpty(@Nullable String s) {
         return s == null || s.isEmpty();
     }
 }
