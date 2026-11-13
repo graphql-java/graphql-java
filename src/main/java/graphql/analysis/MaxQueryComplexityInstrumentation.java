@@ -95,13 +95,13 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters, @Nullable InstrumentationState rawState) {
-        State state = ofState(assertNotNull(rawState, "Instrumentation state must be created before callbacks"));
+        State state = ofState(rawState);
         QueryComplexityCalculator queryComplexityCalculator = newQueryComplexityCalculator(instrumentationExecuteOperationParameters.getExecutionContext());
         int totalComplexity = queryComplexityCalculator.calculate();
         if (totalComplexity > maxComplexity) {
             QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
                     .complexity(totalComplexity)
-                    .instrumentationValidationParameters(state.instrumentationValidationParameters.get())
+                    .instrumentationValidationParameters(assertNotNull(state, "Instrumentation state must be created before callbacks").instrumentationValidationParameters.get())
                     .instrumentationExecuteOperationParameters(instrumentationExecuteOperationParameters)
                     .build();
             boolean throwAbortException = maxQueryComplexityExceededFunction.apply(queryComplexityInfo);

@@ -42,6 +42,8 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
+
 /**
  * This can parse graphql syntax, both Query syntax and Schema Definition Language (SDL) syntax, into an
  * Abstract Syntax Tree (AST) represented by a {@link Document}
@@ -257,7 +259,7 @@ public class Parser {
 
         CodePointCharStream charStream = setupCharStream(safeTokenReader);
 
-        GraphqlLexer lexer = setupGraphqlLexer(environment, parserOptions, multiSourceReader, charStream);
+        GraphqlLexer lexer = setupGraphqlLexer(environment, multiSourceReader, charStream);
 
         // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
         SafeTokenSource safeTokenSource = getSafeTokenSource(environment, parserOptions, multiSourceReader, lexer);
@@ -369,7 +371,7 @@ public class Parser {
         }
     }
 
-    private static GraphqlLexer setupGraphqlLexer(ParserEnvironment environment, ParserOptions parserOptions, MultiSourceReader multiSourceReader, CodePointCharStream charStream) {
+    private static GraphqlLexer setupGraphqlLexer(ParserEnvironment environment, MultiSourceReader multiSourceReader, CodePointCharStream charStream) {
         GraphqlLexer lexer = new GraphqlLexer(charStream);
         lexer.setInterpreter(new GraphqlLexerATNSimulator(lexer));
         lexer.removeErrorListeners();
@@ -380,7 +382,7 @@ public class Parser {
                 String preview = AntlrHelper.createPreview(multiSourceReader, line);
                 String msgKey;
                 List<Object> args;
-                if (antlerMsg == null || parserOptions.isRedactTokenParserErrorMessages()) {
+                if (antlerMsg == null || assertNotNull(environment.getParserOptions(), "Lexer error rendering requires parser options").isRedactTokenParserErrorMessages()) {
                     msgKey = "InvalidSyntax.noMessage";
                     args = ImmutableList.of(sourceLocation.getLine(), sourceLocation.getColumn());
                 } else {

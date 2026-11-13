@@ -8,6 +8,8 @@ import org.jspecify.annotations.Nullable;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import static graphql.Assert.assertNotNull;
+
 /**
  * Defines the scope to control where the registered {@code Comparator} can be applied.
  * <p>
@@ -65,7 +67,7 @@ public class GraphqlTypeComparatorEnvironment {
         }
 
         GraphqlTypeComparatorEnvironment that = (GraphqlTypeComparatorEnvironment) o;
-        return Objects.equals(parentType, that.parentType) && Objects.equals(elementType, that.elementType);
+        return Objects.equals(parentType, that.parentType) && assertNotNull(elementType, "elementType must exist for equality").equals(that.elementType);
     }
 
     @Override

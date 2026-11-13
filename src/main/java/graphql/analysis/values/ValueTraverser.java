@@ -22,7 +22,6 @@ import graphql.schema.GraphQLTypeUtil;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,7 +30,6 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.analysis.values.ValueVisitor.ABSENCE_SENTINEL;
-import static java.util.Collections.unmodifiableList;
 
 /**
  * This class allows you to traverse a set of input values according to the type system and optional
@@ -281,29 +279,29 @@ public class ValueTraverser {
         }
         if (newList != null) {
             GraphQLInputType inputType = GraphQLTypeUtil.unwrapOneAs(listInputType);
-            List<@Nullable Object> copiedList = null;
+            ImmutableList.Builder<Object> copiedList = null;
             int i = 0;
             for (Object subValue : newList) {
                 Object newValue = visitPreOrderImpl(subValue, inputType, containingElements, visitor);
                 if (copiedList != null) {
                     if (newValue != ABSENCE_SENTINEL) {
-                        copiedList.add(newValue);
+                        copiedList.add(assertNotNull(newValue, "list element must not be null"));
                     }
                 } else if (hasChanged(newValue, subValue)) {
                     // go into copy mode because something has changed
                     // copy previous values up to this point
-                    copiedList = new ArrayList<>(newList.size());
+                    copiedList = ImmutableList.builder();
                     for (int j = 0; j < i; j++) {
-                        copiedList.add(newList.get(j));
+                        copiedList.add(assertNotNull(newList.get(j), "list element must not be null"));
                     }
                     if (newValue != ABSENCE_SENTINEL) {
-                        copiedList.add(newValue);
+                        copiedList.add(assertNotNull(newValue, "list element must not be null"));
                     }
                 }
                 i++;
             }
             if (copiedList != null) {
-                return unmodifiableList(copiedList);
+                return copiedList.build();
             } else {
                 return newList;
             }

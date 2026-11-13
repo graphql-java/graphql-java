@@ -18,6 +18,7 @@ import graphql.schema.DataFetcherFactories;
 import graphql.schema.DataFetcherFactory;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DelegatingDataFetchingEnvironment;
+import graphql.util.NodeZipper;
 import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -90,5 +91,9 @@ public class NullableApiUsage {
 
     public static Map<@Nullable String, List<TraverserContext<Node<?>>>> nullableChildKeys(TraverserContext<Node<?>> context) {
         return context.getChildrenContexts();
+    }
+
+    public static @Nullable String rootZipperWithoutAdapter() {
+        return NodeZipper.rootZipper("root", null).toRoot();
     }
 }

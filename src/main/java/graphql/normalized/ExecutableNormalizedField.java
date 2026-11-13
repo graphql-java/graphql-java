@@ -145,7 +145,7 @@ public class ExecutableNormalizedField {
         }
 
         for (GraphQLInterfaceType commonParentOutputInterface : parent.getInterfacesCommonToAllOutputTypes(schema)) {
-            List<GraphQLObjectType> implementations = assertNotNull(schema.getImplementations(commonParentOutputInterface), "implementations should not be null");
+            List<GraphQLObjectType> implementations = schema.getImplementations(commonParentOutputInterface);
             // __typename
             if (fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && implementations.size() == objectTypeNames.size()) {
                 return false;

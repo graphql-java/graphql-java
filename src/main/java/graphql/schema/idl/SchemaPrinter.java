@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.Assert;
+import graphql.Contract;
 import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.GraphQLContext;
@@ -1087,8 +1088,7 @@ public class SchemaPrinter {
         return directives.stream().map(d -> {
             if (isDeprecatedDirective(d)) {
                 // Don't include reason is deliberately replaced with NOT_SET, for example in Anonymizer
-                GraphQLAppliedDirectiveArgument reasonArg = d.getArgument("reason");
-                if (reasonArg == null || reasonArg.getArgumentValue() != InputValueWithState.NOT_SET) {
+                if (Assert.assertNotNull(d.getArgument("reason"), "deprecated reason argument must exist").getArgumentValue() != InputValueWithState.NOT_SET) {
                     return d.transform(builder -> builder.argument(newArg));
                 }
             }
@@ -1219,7 +1219,7 @@ public class SchemaPrinter {
 
     private void printComments(PrintWriter out, Object graphQLType, String prefix) {
         String descriptionText = getDescription(graphQLType);
-        if (descriptionText != null && !descriptionText.isEmpty()) {
+        if (!isNullOrEmpty(descriptionText)) {
             List<String> lines = Arrays.asList(descriptionText.split("\n"));
             if (options.isDescriptionsAsHashComments()) {
                 // a # comment ends at a carriage return as well as a line feed
@@ -1235,7 +1235,7 @@ public class SchemaPrinter {
 
         if (options.isIncludeAstDefinitionComments()) {
             String commentsText = getAstDefinitionComments(graphQLType);
-            if (commentsText != null) {
+            if (!isNullOrEmpty(commentsText)) {
                 List<String> lines = Arrays.asList(commentsText.split("\n"));
                 if (!lines.isEmpty()) {
                     printMultiLineHashDescription(out, prefix, lines);
@@ -1394,6 +1394,7 @@ public class SchemaPrinter {
         return s;
     }
 
+    @Contract("null -> true")
     private static boolean isNullOrEmpty(@Nullable String s) {
         return s == null || s.isEmpty();
     }

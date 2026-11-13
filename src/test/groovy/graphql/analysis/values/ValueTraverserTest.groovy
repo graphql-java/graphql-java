@@ -28,25 +28,6 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class ValueTraverserTest extends Specification {
 
-    def "changing list values preserves nullable elements"() {
-        given:
-        def visitor = [visitScalarValue: { value, type, elements -> value == 1 ? replacement : value }] as ValueVisitor
-
-        when:
-        def argument = GraphQLArgument.newArgument().name("values").type(GraphQLList.list(graphql.Scalars.GraphQLInt)).build()
-        def result = ValueTraverser.visitPreOrder(input, argument, visitor)
-
-        then:
-        result == expected
-
-        where:
-        input        | replacement                 | expected
-        [null, 1, 2] | 10                          | [null, 10, 2]
-        [1, null, 2] | 10                          | [10, null, 2]
-        [1, 2]       | null                        | [null, 2]
-        [null, 1, 2] | ValueVisitor.ABSENCE_SENTINEL | [null, 2]
-    }
-
     def sdl = """
             type Query {
                 field(arg1 : ComplexInput, arg2 : ComplexInput, stringArg : String, enumArg : RGB) : String

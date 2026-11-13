@@ -126,19 +126,19 @@ public class CyclicSchemaAnalyzer {
         private final SchemaGraph graph;
 
         // The main state of the algorithm.
-        private final Vertex[] iToV;
-        private final Map<Vertex, Integer> vToI;
-        private final Set<Vertex> blocked;
-        private final Map<Vertex, Set<Vertex>> bSets;
-        private final ArrayDeque<Vertex> stack;
+        private Vertex[] iToV;
+        private Map<Vertex, Integer> vToI;
+        private Set<Vertex> blocked;
+        private Map<Vertex, Set<Vertex>> bSets;
+        private ArrayDeque<Vertex> stack;
 
         // The state of the embedded Tarjan SCC algorithm.
-        private final List<Set<Vertex>> foundSCCs = new ArrayList<>();
+        private @Nullable List<Set<Vertex>> foundSCCs = null;
         private int index = 0;
-        private final Map<Vertex, Integer> vIndex = new LinkedHashMap<>();
-        private final Map<Vertex, Integer> vLowlink = new LinkedHashMap<>();
-        private final ArrayDeque<Vertex> path = new ArrayDeque<>();
-        private final Set<Vertex> pathSet = new LinkedHashSet<>();
+        private @Nullable Map<Vertex, Integer> vIndex = null;
+        private @Nullable Map<Vertex, Integer> vLowlink = null;
+        private @Nullable ArrayDeque<Vertex> path = null;
+        private @Nullable Set<Vertex> pathSet = null;
 
         private List<List<Vertex>> foundCycles = new ArrayList<>();
 
@@ -242,14 +242,20 @@ public class CyclicSchemaAnalyzer {
                 if (vI < startIndex) {
                     continue;
                 }
-                if (!vIndex.containsKey(v)) {
+                if (!assertNotNull(vIndex, "SCC indices must be initialized").containsKey(v)) {
                     getSCCs(startIndex, vI);
                 }
             }
-            return foundSCCs;
+            List<Set<Vertex>> result = assertNotNull(foundSCCs, "SCC results must be initialized");
+            foundSCCs = null;
+            return result;
         }
 
         private void getSCCs(int startIndex, int vertexIndex) {
+            Map<Vertex, Integer> vIndex = assertNotNull(this.vIndex, "SCC indices must be initialized");
+            Map<Vertex, Integer> vLowlink = assertNotNull(this.vLowlink, "SCC low-link indices must be initialized");
+            ArrayDeque<Vertex> path = assertNotNull(this.path, "SCC path must be initialized");
+            Set<Vertex> pathSet = assertNotNull(this.pathSet, "SCC path set must be initialized");
             Vertex vertex = toV(vertexIndex);
             vIndex.put(vertex, index);
             vLowlink.put(vertex, index);
@@ -282,10 +288,10 @@ public class CyclicSchemaAnalyzer {
                 if (result.size() == 1) {
                     Vertex v = result.iterator().next();
                     if (graph.containsEdge(vertex, v)) {
-                        foundSCCs.add(result);
+                        assertNotNull(foundSCCs, "SCC results must be initialized").add(result);
                     }
                 } else {
-                    foundSCCs.add(result);
+                    assertNotNull(foundSCCs, "SCC results must be initialized").add(result);
                 }
             }
         }
@@ -340,20 +346,20 @@ public class CyclicSchemaAnalyzer {
 
         private void initMinSCGState() {
             index = 0;
-            foundSCCs.clear();
-            vIndex.clear();
-            vLowlink.clear();
-            path.clear();
-            pathSet.clear();
+            foundSCCs = new ArrayList<>();
+            vIndex = new LinkedHashMap<>();
+            vLowlink = new LinkedHashMap<>();
+            path = new ArrayDeque<>();
+            pathSet = new LinkedHashSet<>();
         }
 
         private void clearMinSCCState() {
             index = 0;
-            foundSCCs.clear();
-            vIndex.clear();
-            vLowlink.clear();
-            path.clear();
-            pathSet.clear();
+            foundSCCs = null;
+            vIndex = null;
+            vLowlink = null;
+            path = null;
+            pathSet = null;
         }
 
         private Integer toI(Vertex vertex) {

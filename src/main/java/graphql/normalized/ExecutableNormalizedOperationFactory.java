@@ -71,7 +71,6 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
 import static graphql.util.FpKit.intersection;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toCollection;
@@ -656,7 +655,7 @@ public class ExecutableNormalizedOperationFactory {
                     nfListBuilder.add(nf);
 
                     if (this.options.deferSupport) {
-                        nf.addDeferredExecutions(fieldGroup.deferredExecutions);
+                        nf.addDeferredExecutions(assertNotNull(fieldGroup.deferredExecutions, "Deferred executions must exist when defer support is enabled"));
                     }
                 }
                 if (commonParentsGroups.size() > 1) {
@@ -714,12 +713,12 @@ public class ExecutableNormalizedOperationFactory {
             Set<GraphQLObjectType> allRelevantObjects = objectTypes.build();
             Map<GraphQLType, ImmutableList<CollectedField>> groupByAstParent = groupingBy(fields, fieldAndType -> fieldAndType.astTypeCondition);
             if (groupByAstParent.size() == 1) {
-                return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects, emptySet()));
+                return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects, null));
             }
             ImmutableList.Builder<CollectedFieldGroup> result = ImmutableList.builder();
             for (GraphQLObjectType objectType : allRelevantObjects) {
                 Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
-                result.add(new CollectedFieldGroup(relevantFields, singleton(objectType), emptySet()));
+                result.add(new CollectedFieldGroup(relevantFields, singleton(objectType), null));
             }
             return result.build();
         }
@@ -937,7 +936,7 @@ public class ExecutableNormalizedOperationFactory {
             if (type instanceof GraphQLObjectType) {
                 return ImmutableSet.of((GraphQLObjectType) type);
             } else if (type instanceof GraphQLInterfaceType) {
-                return ImmutableSet.copyOf(assertNotNull(graphQLSchema.getImplementations((GraphQLInterfaceType) type), "implementations should not be null"));
+                return ImmutableSet.copyOf(graphQLSchema.getImplementations((GraphQLInterfaceType) type));
             } else if (type instanceof GraphQLUnionType) {
                 List<GraphQLNamedOutputType> unionTypes = ((GraphQLUnionType) type).getTypes();
                 return ImmutableSet.copyOf(ImmutableKit.map(unionTypes, GraphQLObjectType.class::cast));
@@ -973,9 +972,9 @@ public class ExecutableNormalizedOperationFactory {
         private static class CollectedFieldGroup {
             Set<GraphQLObjectType> objectTypes;
             Set<CollectedField> fields;
-            Set<NormalizedDeferredExecution> deferredExecutions;
+            @Nullable Set<NormalizedDeferredExecution> deferredExecutions;
 
-            public CollectedFieldGroup(Set<CollectedField> fields, Set<GraphQLObjectType> objectTypes, Set<NormalizedDeferredExecution> deferredExecutions) {
+            public CollectedFieldGroup(Set<CollectedField> fields, Set<GraphQLObjectType> objectTypes, @Nullable Set<NormalizedDeferredExecution> deferredExecutions) {
                 this.fields = fields;
                 this.objectTypes = objectTypes;
                 this.deferredExecutions = deferredExecutions;
