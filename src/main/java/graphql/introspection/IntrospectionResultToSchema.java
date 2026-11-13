@@ -281,8 +281,8 @@ public class IntrospectionResultToSchema {
 
         ObjectTypeDefinition.Builder objectTypeDefinition = ObjectTypeDefinition.newObjectTypeDefinition().name(assertValidName((String) input.get("name")));
         objectTypeDefinition.description(toDescription(input));
-        List<Map<String, Object>> interfaces = (List<Map<String, Object>>) input.get("interfaces");
-        if (interfaces != null) {
+        if (input.containsKey("interfaces")) {
+            List<Map<String, Object>> interfaces = assertNotNull((List<Map<String, Object>>) input.get("interfaces"), "interfaces expected when supplied");
             objectTypeDefinition.implementz(
                     map(interfaces, this::createTypeIndirection)
             );

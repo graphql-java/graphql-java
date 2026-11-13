@@ -214,8 +214,8 @@ public final class ImmutableKit {
         }
         ImmutableList.Builder<T> builder = ImmutableList.builderWithExpectedSize(args.length);
         for (@Nullable T arg : args) {
-            if (arg != null && filter.test(arg)) {
-                builder.add(arg);
+            if (filter.test(arg)) {
+                builder.add(assertNotNull(arg, "Selected list element must not be null"));
             }
         }
         return builder.build();

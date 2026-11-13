@@ -30,15 +30,16 @@ class JSpecifyConsumerContractsTest extends Specification {
         fixture << ['NullableApiUsage', 'NullableExecutionStrategyUsage', 'NullableNormalizedUsage']
     }
 
-    def "NullAway rejects dereferencing absent arguments and traversal state"() {
+    def "NullAway rejects dereferencing absent arguments, traversal state and deleted roots"() {
         when:
         def result = compileConsumer('UnsafeApiUsage')
 
         then:
         result.exitCode != 0
-        result.output.count('error: [NullAway]') == 5
+        result.output.count('error: [NullAway]') == 6
         result.output.contains('getArgumentOrDefault')
         result.output.contains('depthFirst')
+        result.output.contains('transform')
         result.output.contains('getSharedContextData')
         result.output.contains('getCurrentAccumulate')
         result.output.contains('getNewAccumulate')

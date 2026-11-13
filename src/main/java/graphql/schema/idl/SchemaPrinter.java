@@ -1088,7 +1088,7 @@ public class SchemaPrinter {
             if (isDeprecatedDirective(d)) {
                 // Don't include reason is deliberately replaced with NOT_SET, for example in Anonymizer
                 GraphQLAppliedDirectiveArgument reasonArg = d.getArgument("reason");
-                if (reasonArg != null && reasonArg.getArgumentValue() != InputValueWithState.NOT_SET) {
+                if (reasonArg == null || reasonArg.getArgumentValue() != InputValueWithState.NOT_SET) {
                     return d.transform(builder -> builder.argument(newArg));
                 }
             }
