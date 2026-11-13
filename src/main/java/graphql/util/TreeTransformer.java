@@ -36,7 +36,6 @@ public class TreeTransformer<T> {
             public TraversalControl enter(TraverserContext<T> context) {
                 NodeZipper<T> nodeZipper = new NodeZipper<>(assertNotNull(context.thisNode(), "thisNode should not be null"), context.getBreadcrumbs(), nodeAdapter);
                 context.setVar(NodeZipper.class, nodeZipper);
-                context.setVar(NodeAdapter.class, nodeAdapter);
                 return traverserVisitor.enter(context);
             }
 
