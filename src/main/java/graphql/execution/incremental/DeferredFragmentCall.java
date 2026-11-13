@@ -84,9 +84,9 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
         if (throwable != null) {
             Throwable cause = throwable.getCause();
             if (cause instanceof NonNullableFieldWasNullException) {
-                GraphQLError error = new NonNullableFieldWasNullError((NonNullableFieldWasNullException) cause);
+                List<GraphQLError> errors = alternativeCallContext.getErrors();
                 return DeferPayload.newDeferredItem()
-                        .errors(Collections.singletonList(error))
+                        .errors(errors.isEmpty() ? Collections.singletonList(new NonNullableFieldWasNullError((NonNullableFieldWasNullException) cause)) : errors)
                         .label(label)
                         .path(path)
                         .build();
