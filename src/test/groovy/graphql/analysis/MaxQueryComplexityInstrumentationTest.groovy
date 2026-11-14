@@ -52,6 +52,33 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
     }
 
 
+    def "fields of a fragment count for every spread of it"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                scalar: String
+                foo: Foo
+            }
+        """)
+        def query = createQuery("""
+            {f1: foo {...F} f2: foo {...F} }
+            fragment F on Foo {scalar foo {scalar}}
+            """)
+        MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(7)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        def state = createInstrumentationState(queryComplexityInstrumentation)
+        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema, state)
+        when:
+        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters, state)
+        then:
+        def e = thrown(AbortExecutionException)
+        e.message == "maximum query complexity exceeded 8 > 7"
+    }
+
     def "complexity calculator works with __typename field with score 0"() {
         given:
         def schema = TestUtil.schema("""

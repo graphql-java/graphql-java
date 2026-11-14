@@ -33,6 +33,7 @@ import graphql.util.TraverserContext;
 import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
@@ -116,6 +117,9 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
         if (context.getPhase() == LEAVE) {
             postOrderCallback.visitFragmentDefinition(fragmentEnvironment);
+            // the traverser enters a node only once, so forget the fragment once it has been left and a later
+            // spread of it is followed again. a spread of the fragment inside itself still finds it visited.
+            forgetVisited(context.visitedNodes(), fragmentDefinition);
             return TraversalControl.CONTINUE;
         }
         preOrderCallback.visitFragmentDefinition(fragmentEnvironment);
@@ -123,6 +127,13 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
         context.setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), fragmentDefinition, graphQLContext));
         return TraversalControl.CONTINUE;
+    }
+
+    private static void forgetVisited(Set<Node> visitedNodes, Node<?> node) {
+        visitedNodes.remove(node);
+        for (Node<?> child : node.getChildren()) {
+            forgetVisited(visitedNodes, child);
+        }
     }
 
     @Override
