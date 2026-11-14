@@ -79,9 +79,11 @@ public interface QueryDirectives {
      * <p>
      * Variable values in normalized form are supplied during execution and by the raw-variable methods of
      * {@link graphql.normalized.ExecutableNormalizedOperationFactory}. The factory's coerced-variable methods
-     * do not supply them, so this method returns an empty map for those operations.
+     * do not supply them, so requesting normalized arguments for their directives throws an assertion exception.
+     * Fields without directives return an empty map without requesting normalized variables.
      *
      * @return a map of applied directive to named argument values
+     * @throws graphql.AssertException if directives are present but normalized variables are unavailable
      */
     Map<QueryAppliedDirective, Map<String, NormalizedInputValue>> getNormalizedInputValueByImmediateAppliedDirectives();
 

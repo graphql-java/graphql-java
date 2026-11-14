@@ -109,10 +109,8 @@ public class QueryDirectivesImpl implements QueryDirectives {
         if (astDirectivesByAppliedDirective.isEmpty()) {
             return emptyMap();
         }
-        NormalizedVariables normalizedVariables = normalizedVariableValues.get();
-        if (normalizedVariables == null) {
-            return emptyMap();
-        }
+        NormalizedVariables normalizedVariables = assertNotNull(normalizedVariableValues.get(),
+                "Normalized variables are required to compute normalized directive arguments");
 
         Map<QueryAppliedDirective, Map<String, NormalizedInputValue>> result = new LinkedHashMap<>();
         Map<String, NormalizedInputValue> variables = normalizedVariables.toMap();

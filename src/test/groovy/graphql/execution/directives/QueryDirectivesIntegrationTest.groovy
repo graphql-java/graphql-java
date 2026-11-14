@@ -1,5 +1,6 @@
 package graphql.execution.directives
 
+import graphql.AssertException
 import graphql.GraphQL
 import graphql.execution.CoercedVariables
 import graphql.TestUtil
@@ -221,15 +222,31 @@ class QueryDirectivesIntegrationTest extends Specification {
         0 * coercing.valueToLiteral(_, _, _)
     }
 
-    def "normalized directives remain unavailable for an operation built from coerced variables"() {
+    def "normalized directive lookup rejects an operation built from coerced variables"() {
         def operation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(
                 schema, TestUtil.parseQuery('query($timeout: Int) { books @timeout(afterMillis: $timeout) { title } }'),
                 null, CoercedVariables.of([timeout: 5]))
         def queryDirectives = operation.getQueryDirectives(operation.topLevelFields[0])
 
-        expect:
-        queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives().isEmpty()
-        queryDirectives.getImmediateAppliedDirective("timeout")[0].getArgument("afterMillis").getValue() == 5
+        when:
+        def applied = queryDirectives.getImmediateAppliedDirective("timeout")
+
+        then:
+        applied[0].getArgument("afterMillis").getValue() == 5
+
+        when:
+        queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives()
+
+        then:
+        def exception = thrown(AssertException)
+        exception.message == "Normalized variables are required to compute normalized directive arguments"
+
+        when:
+        def appliedAfterFailure = queryDirectives.getImmediateAppliedDirective("timeout")
+
+        then:
+        appliedAfterFailure.is(applied)
+        appliedAfterFailure[0].getArgument("afterMillis").getValue() == 5
     }
 
     def "can capture directive argument values inside ENO path"() {
