@@ -10,8 +10,8 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQL;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
-import graphql.GraphQLUnusualConfiguration;
 import graphql.GraphQLException;
+import graphql.GraphQLUnusualConfiguration;
 import graphql.Internal;
 import graphql.Profiler;
 import graphql.execution.directives.OperationDirectivesResolver;
@@ -35,11 +35,13 @@ import graphql.language.Document;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
+import graphql.normalized.NormalizedDocument;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
 import graphql.util.FpKit;
 import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
 import java.util.Collections;
@@ -84,6 +86,10 @@ public class Execution {
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState, EngineRunningState engineRunningState, Profiler profiler) {
+        return execute(document, graphQLSchema, executionId, executionInput, instrumentationState, engineRunningState, profiler, null);
+    }
+
+    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState, EngineRunningState engineRunningState, Profiler profiler, @Nullable NormalizedDocument normalizedDocument) {
         NodeUtil.GetOperationResult getOperationResult;
         CoercedVariables coercedVariables;
         Supplier<NormalizedVariables> normalizedVariableValues;
@@ -131,6 +137,7 @@ public class Execution {
                 .coercedVariables(coercedVariables)
                 .normalizedVariableValues(normalizedVariableValues)
                 .document(document)
+                .normalizedDocument(normalizedDocument)
                 .operationDefinition(getOperationResult.operationDefinition)
                 .operationDirectives(operationDirectives)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())

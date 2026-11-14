@@ -549,7 +549,7 @@ class TypeResolverExecutionTest extends Specification {
         }
         '''
 
-        def er = graphQL.execute(query)
+        def er = graphQL.execute { it.query(query).graphQLContext([(graphql.normalized.NormalizedDocument.ENABLED): true]) }
 
         then:
         er.errors.isEmpty()
@@ -574,7 +574,7 @@ class TypeResolverExecutionTest extends Specification {
         }
         '''
 
-        er = graphQL.execute(query)
+        er = graphQL.execute { it.query(query).graphQLContext([(graphql.normalized.NormalizedDocument.ENABLED): true]) }
 
         then:
         er.errors.isEmpty()

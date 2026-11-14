@@ -2,12 +2,9 @@ package graphql.execution.directives
 
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.execution.RawVariables
 import graphql.language.IntValue
-import graphql.normalized.ExecutableNormalizedOperationFactory
 import graphql.normalized.NormalizedInputValue
 import graphql.schema.DataFetcher
-import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -171,21 +168,16 @@ class QueryDirectivesIntegrationTest extends Specification {
         joinArgs(immediate) == "cached(forMillis:10)"
     }
 
-    def "can capture directive argument values inside ENO path"() {
-        def query = TestUtil.parseQuery(pathologicalQuery)
+    def "can capture normalized directive argument values during execution"() {
         when:
-        def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
-                schema, query, "Books", RawVariables.emptyVariables())
-
+        def result = execute(pathologicalQuery)
 
         then:
-        def booksENF = eno.getTopLevelFields()[0]
-        booksENF != null
-        def bookQueryDirectives = eno.getQueryDirectives(booksENF)
-        bookQueryDirectives.immediateAppliedDirectivesByName.isEmpty()
-
-        def reviewField = eno.getCoordinatesToNormalizedFields().get(FieldCoordinates.coordinates("Book", "review"))
-        def reviewQueryDirectives = eno.getQueryDirectives(reviewField[0])
+        result.errors.empty
+        def reviewQueryDirectives = capturedDirectives["review"]
+        reviewQueryDirectives.immediateAppliedDirectivesByField.size() == 3
+        reviewQueryDirectives.immediateDirectivesByField.size() == 3
+        reviewQueryDirectives.immediateAppliedDirectivesByField.values()*.size() == [2, 1, 2]
         def reviewImmediateDirectivesMap = reviewQueryDirectives.immediateAppliedDirectivesByName
         def argInputValues = simplifiedInputValuesWithState(reviewImmediateDirectivesMap)
         argInputValues == [

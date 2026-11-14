@@ -2,13 +2,13 @@ package nullability;
 
 import graphql.analysis.QueryReducer;
 import graphql.analysis.QueryTraverser;
-import graphql.normalized.nf.NormalizedField;
-import graphql.normalized.nf.NormalizedOperation;
-import graphql.normalized.nf.NormalizedOperationToAstCompiler;
+import graphql.language.FragmentDefinition;
+import graphql.normalized.NormalizedDocument;
+import graphql.normalized.NormalizedSelectionScope;
+import graphql.execution.preparsed.PreparsedDocumentEntry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
-import java.util.Map;
 
 @NullMarked
 public class NullableNormalizedUsage {
@@ -18,12 +18,10 @@ public class NullableNormalizedUsage {
         return traverser.reducePostOrder(reducer, null);
     }
 
-    public static void absentMetadata(NormalizedField field, NormalizedOperation operation,
-                                      NormalizedOperationToAstCompiler.CompilerResult compiled) {
-        @Nullable String name = operation.getOperationName();
-        @Nullable String alias = field.getAlias();
-        @Nullable NormalizedField parent = field.getParent();
-        @Nullable Map<String, @Nullable Object> variables = compiled.getVariables();
-        field.replaceParent(null);
+    public static void absentMetadata(NormalizedSelectionScope scope,
+                                      PreparsedDocumentEntry entry) {
+        @Nullable String condition = scope.getTypeCondition();
+        @Nullable FragmentDefinition fragment = scope.getFragmentDefinition();
+        @Nullable NormalizedDocument document = entry.getNormalizedDocument();
     }
 }

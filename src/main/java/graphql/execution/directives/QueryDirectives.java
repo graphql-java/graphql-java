@@ -2,7 +2,6 @@ package graphql.execution.directives;
 
 import graphql.GraphQLContext;
 import graphql.PublicApi;
-import org.jspecify.annotations.NullMarked;
 import graphql.execution.CoercedVariables;
 import graphql.execution.MergedField;
 import graphql.execution.NormalizedVariables;
@@ -10,6 +9,7 @@ import graphql.language.Field;
 import graphql.normalized.NormalizedInputValue;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Locale;
@@ -73,9 +73,6 @@ public interface QueryDirectives {
 
     /**
      * This will return a map of {@link QueryAppliedDirective} to a map of their argument values in {@link NormalizedInputValue} form
-     * <p>
-     * NOTE : This will only be available when {@link graphql.normalized.ExecutableNormalizedOperationFactory} is used
-     * to create the {@link QueryAppliedDirective} information
      *
      * @return a map of applied directive to named argument values
      */

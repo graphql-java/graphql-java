@@ -5,6 +5,7 @@ import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.i18n.I18n;
 import graphql.language.Document;
+import graphql.normalized.NormalizedDocument;
 import graphql.schema.GraphQLSchema;
 import org.jspecify.annotations.Nullable;
 
@@ -47,11 +48,17 @@ public class Validator {
     }
 
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<OperationValidationRule> rulePredicate, Locale locale, QueryComplexityLimits limits, @Nullable GraphQLContext graphQLContext) {
+        return validateDocumentWithResult(schema, document, rulePredicate, locale, limits, graphQLContext).errors();
+    }
+
+    public DocumentValidationResult validateDocumentWithResult(GraphQLSchema schema, Document document, Predicate<OperationValidationRule> rulePredicate, Locale locale, @Nullable QueryComplexityLimits limits, @Nullable GraphQLContext graphQLContext) {
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, locale);
         ValidationContext validationContext = new ValidationContext(schema, document, i18n, limits, graphQLContext);
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector(MAX_VALIDATION_ERRORS);
-        OperationValidator operationValidator = new OperationValidator(validationContext, validationErrorCollector, rulePredicate);
+        NormalizedDocumentBuilder normalizedDocumentBuilder = graphQLContext != null && graphQLContext.getBoolean(NormalizedDocument.ENABLED)
+                ? new NormalizedDocumentBuilder(validationContext) : null;
+        OperationValidator operationValidator = new OperationValidator(validationContext, validationErrorCollector, rulePredicate, normalizedDocumentBuilder);
 
         try {
             operationValidator.validate();
@@ -65,6 +72,8 @@ public class Validator {
                     .build());
         }
 
-        return validationErrorCollector.getErrors();
+        List<ValidationError> errors = validationErrorCollector.getErrors();
+        NormalizedDocument normalizedDocument = errors.isEmpty() && normalizedDocumentBuilder != null ? normalizedDocumentBuilder.build() : null;
+        return new DocumentValidationResult(errors, normalizedDocument);
     }
 }

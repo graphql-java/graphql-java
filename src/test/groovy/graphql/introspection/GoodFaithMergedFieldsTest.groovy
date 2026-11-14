@@ -3,8 +3,6 @@ package graphql.introspection
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.execution.CoercedVariables
-import graphql.normalized.ExecutableNormalizedOperationFactory
 import graphql.parser.Parser
 import graphql.validation.GoodFaithIntrospectionExceeded
 import graphql.validation.OperationValidationRule
@@ -262,15 +260,11 @@ class GoodFaithMergedFieldsTest extends Specification {
             type B implements I { name: String child: B extra: String }
             union U = A | B
         ''')
-        def base = "{ __type(name: \"Query\") { name } $selection } $fragments"
-        def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(abstractSchema, Parser.parse(base),
-                null, CoercedVariables.emptyVariables())
         def padding = (1..(500 - mergedFieldCount)).collect { "p$it: normalField" }.join(' ')
         def atLimit = "{ __type(name: \"Query\") { name } $padding $selection } $fragments"
         def aboveLimit = "{ __type(name: \"Query\") { name } extra: normalField $padding $selection } $fragments"
 
         expect:
-        eno.operationFieldCount == normalizationFieldCount
         new Validator().validateDocument(abstractSchema, Parser.parse(atLimit), Locale.ENGLISH).empty
 
         when:
@@ -280,16 +274,16 @@ class GoodFaithMergedFieldsTest extends Specification {
         thrown(GoodFaithIntrospectionExceeded)
 
         where:
-        selection                                                                        | fragments                      | mergedFieldCount | normalizationFieldCount
-        'node { name name }'                                                              | ''                             | 4                | 4
-        'node { ...on I { name } ...on A { name } }'                                       | ''                             | 4                | 5
-        'node { ...on A { name } ...on B { name } }'                                       | ''                             | 5                | 5
-        'union { ...on A { name } ...on B { name } }'                                      | ''                             | 5                | 5
-        'node { ...on A { ...on I { name } } }'                                            | ''                             | 4                | 4
-        'node { ...on A { ...F } ...on B { ...F } }'                                       | 'fragment F on I { name }'      | 4                | 4
-        'node { ...on A { ...on I { child { ...on I { name } ...on B { extra } } } } }'     | ''                             | 6                | 5
-        'node { child { name } ...on A { child { name extra } } }'                         | ''                             | 6                | 8
-        'node { ...F } alias: node { ...F }'                                              | 'fragment F on I { name }'      | 6                | 6
+        selection                                                                        | fragments                      | mergedFieldCount
+        'node { name name }'                                                              | ''                             | 4
+        'node { ...on I { name } ...on A { name } }'                                       | ''                             | 4
+        'node { ...on A { name } ...on B { name } }'                                       | ''                             | 5
+        'union { ...on A { name } ...on B { name } }'                                      | ''                             | 5
+        'node { ...on A { ...on I { name } } }'                                            | ''                             | 4
+        'node { ...on A { ...F } ...on B { ...F } }'                                       | 'fragment F on I { name }'      | 4
+        'node { ...on A { ...on I { child { ...on I { name } ...on B { extra } } } } }'     | ''                             | 6
+        'node { child { name } ...on A { child { name extra } } }'                         | ''                             | 6
+        'node { ...F } alias: node { ...F }'                                              | 'fragment F on I { name }'      | 6
     }
 
     def "Good Faith counts fragments already checked by another operation"() {

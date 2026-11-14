@@ -10,6 +10,11 @@ import java.util.Map;
  * This class allows you to retrieve the selection set of fields that have been asked for when the
  * {@link DataFetcher} was invoked.
  * <p>
+ * Inspection requires {@link graphql.normalized.NormalizedDocument#ENABLED} to be true in
+ * {@link graphql.GraphQLContext} before validation and the resulting graph to be retained
+ * in any preparsed cache. Otherwise inspection methods throw {@link IllegalStateException}.
+ * Creation is off by default; inspection does not build a missing graph.
+ * <p>
  * For example imagine we are fetching the field 'user' in the following query
  *
  * <pre>
@@ -59,7 +64,7 @@ import java.util.Map;
  * <pre>
  * {@code
  *  selectionSet.contains("name") == true
- *  selectionSet.contains("Dog.name", "Cat.name") == true
+ *  selectionSet.containsAllOf("Dog.name", "Cat.name") == true
  *
  *  List<SelectedField> petNames = selectionSet.getFields("name")
  *  petNames.size() == 2
@@ -148,11 +153,11 @@ public interface DataFetchingFieldSelectionSet {
     /**
      * This will return all selected fields.
      * <p>
-     * The fields are guaranteed to be in pre-order as they appear in the query.
+     * Fields are in preorder. At each level, concrete types are ordered by name;
+     * within each type, result keys follow their first active occurrence in the query.
      * <p>
-     * A selected field may have an alias - and hence is a unique field in the returned list.  It may
-     * have the same field names as others in the list but when you also consider the alias then it is indeed unique
-     * because it would be another entry in the graphql result.
+     * Each entry represents one concrete parent type and result key. Different types can
+     * have separate entries with the same field name and alias.
      *
      * @return a list of all selected fields or empty list if none match
      */
@@ -162,11 +167,11 @@ public interface DataFetchingFieldSelectionSet {
      * This will return all selected fields that are immediate child fields
      * of the field being fetched.
      * <p>
-     * The fields are guaranteed to be in pre-order as they appear in the query.
+     * Fields are in preorder. At each level, concrete types are ordered by name;
+     * within each type, result keys follow their first active occurrence in the query.
      * <p>
-     * A selected field may have an alias - and hence is a unique field in the returned list.  It may
-     * have the same field names as others in the list but when you also consider the alias then it is indeed unique
-     * because it would be another entry in the graphql result.
+     * Each entry represents one concrete parent type and result key. Different types can
+     * have separate entries with the same field name and alias.
      *
      * @return a list of all selected immediate child fields or empty list if none match
      */
@@ -179,11 +184,11 @@ public interface DataFetchingFieldSelectionSet {
      * This will allow you to use '*', '**' and '?' as special matching characters such that "invoice/customer*" would
      * match an invoice field with child fields that start with 'customer'.
      * <p>
-     * The fields are guaranteed to be in pre-order as they appear in the query.
+     * Fields are in preorder. At each level, concrete types are ordered by name;
+     * within each type, result keys follow their first active occurrence in the query.
      * <p>
-     * A selected field may have an alias - and hence is a unique field in the returned list.  It may
-     * have the same field names as others in the list but when you also consider the alias then it is indeed unique
-     * because it would be another entry in the graphql result.
+     * Each entry represents one concrete parent type and result key. Different types can
+     * have separate entries with the same field name and alias.
      *
      * @param fieldGlobPattern  the glob pattern to match fields against
      * @param fieldGlobPatterns optionally more glob pattern to match fields against
@@ -195,8 +200,8 @@ public interface DataFetchingFieldSelectionSet {
     /**
      * The result key of a selected field represents what the graphql return value will be.  The same {@link graphql.schema.GraphQLFieldDefinition}
      * may lead to a field being asked for multiple times (with differing arguments) if field aliases are used.  This method
-     * helps you get all possible field invocations grouped by their result key.  The arguments are guaranteed to be the same if
-     * the result key is the same, otherwise the query would not have validated correctly.
+     * helps you get all possible field invocations grouped by their result key. Entries on
+     * mutually exclusive concrete types can have different field names and arguments.
      *
      * @return a map of selected fields grouped by result key or an empty map if none match
      */
@@ -205,8 +210,8 @@ public interface DataFetchingFieldSelectionSet {
     /**
      * The result key of a selected field represents what the graphql return value will be.  The same {@link graphql.schema.GraphQLFieldDefinition}
      * may lead to a field being asked for multiple times (with differing arguments) if field aliases are used.  This method
-     * helps you get all possible field invocations grouped by their result key.  The arguments are guaranteed to be the same if
-     * the result key is the same, otherwise the query would not have validated correctly.
+     * helps you get all possible field invocations grouped by their result key. Entries on
+     * mutually exclusive concrete types can have different field names and arguments.
      *
      * @param fieldGlobPattern  the glob pattern to match fields against
      * @param fieldGlobPatterns optionally more glob pattern to match fields against

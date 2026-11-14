@@ -159,13 +159,6 @@ class OperationDirectivesResolverTest extends Specification {
         commonIntegrationAsserts(resolveDirectives)
 
         when:
-        def normalizedOperation = executionContext.getNormalizedQueryTree().get()
-        def enoResolveDirectives = normalizedOperation.getOperationDirectives()
-
-        then:
-        commonIntegrationAsserts(enoResolveDirectives)
-
-        when:
         def allOperationDirectives = executionContext.getAllOperationDirectives()
 
         then:
