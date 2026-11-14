@@ -206,6 +206,22 @@ class QueryDirectivesImplTest extends Specification {
         appliedDirectivesByName.keySet().sort() == ["cached", "timeout", "upper"]
     }
 
+    def "builder normalizes literal directive arguments without variable configuration"() {
+        def queryDirectives = QueryDirectives.newQueryDirectives()
+                .field(TestUtil.parseField('f @cached(forMillis: 15)'))
+                .schema(schema)
+                .build()
+
+        when:
+        def normalized = queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives()
+        def applied = queryDirectives.getImmediateAppliedDirective("cached")[0]
+
+        then:
+        normalized[applied].forMillis.typeName == "Int"
+        printAst(normalized[applied].forMillis.value) == "15"
+        applied.getArgument("forMillis").getValue() == 15
+    }
+
     def "gets repeated definitions"() {
         def f1 = TestUtil.parseField("f1 @rep(place: \$var) @rep(place: \"HELLO\")")
 
