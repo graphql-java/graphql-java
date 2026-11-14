@@ -2,11 +2,16 @@ package graphql.execution.reactive
 
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.CapturingSubscription
+import org.awaitility.Awaitility
 import org.reactivestreams.Subscriber
 import spock.lang.Specification
 
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.function.Function
 
 /**
@@ -207,6 +212,83 @@ class CompletionStageSubscriberTest extends Specification {
         !subscription.isCancelled()
         capturingSubscriber.isCompleted()
         capturingSubscriber.events == expectedOrderingOfAsyncCompletion()
+    }
+
+    def "onNext is not signalled concurrently when promises complete on different threads"() {
+        def active = new AtomicInteger()
+        def maxActive = new AtomicInteger()
+        def bothEntered = new CountDownLatch(2)
+        def capturingSubscriber = new CapturingSubscriber<Object>() {
+            @Override
+            void onNext(Object o) {
+                maxActive.accumulateAndGet(active.incrementAndGet(), { a, b -> Math.max(a, b) })
+                bothEntered.countDown()
+                // if the signals can overlap, the other thread enters onNext while this one waits
+                bothEntered.await(500, TimeUnit.MILLISECONDS)
+                active.decrementAndGet()
+                super.onNext(o)
+            }
+        }
+        def subscription = new CapturingSubscription()
+        List<Runnable> promises = []
+        Function<Integer, CompletionStage<String>> mapper = mapperThatDoesNotComplete(promises)
+
+        Subscriber<Integer> completionStageSubscriber = createSubscriber(mapper, capturingSubscriber)
+
+        when:
+        completionStageSubscriber.onSubscribe(subscription)
+        completionStageSubscriber.onNext(0)
+        completionStageSubscriber.onNext(1)
+        def threads = promises.collect { promise -> Thread.start { promise.run() } }
+        threads.each { it.join() }
+
+        then:
+        maxActive.get() == 1
+        capturingSubscriber.events.sort() == ["0", "1"]
+    }
+
+    def "onNext is not signalled after onError when a promise completes while another is being delivered"() {
+        def deliveringZero = new CountDownLatch(1)
+        def release = new CountDownLatch(1)
+        def capturingSubscriber = new CapturingSubscriber<Object>() {
+            @Override
+            void onNext(Object o) {
+                if (o == "0") {
+                    deliveringZero.countDown()
+                    release.await(5, TimeUnit.SECONDS)
+                }
+                super.onNext(o)
+            }
+        }
+        def subscription = new CapturingSubscription()
+        List<Runnable> promises = []
+        Function<Integer, CompletionStage<String>> mapper = mapperThatDoesNotComplete(promises)
+
+        def completionStageSubscriber = createSubscriber(mapper, capturingSubscriber)
+
+        when:
+        completionStageSubscriber.onSubscribe(subscription)
+        completionStageSubscriber.onNext(0)
+        completionStageSubscriber.onNext(1)
+        def completeZero = Thread.start { promises[0].run() }
+        deliveringZero.await(5, TimeUnit.SECONDS)
+        def completeOne = Thread.start { promises[1].run() }
+        waitUntilWaitingOrDone(completeOne)
+        def fail = Thread.start { completionStageSubscriber.onError(new RuntimeException("Bang")) }
+        Awaitility.await().atMost(Duration.ofSeconds(5)).until { completionStageSubscriber.isTerminal() }
+        waitUntilWaitingOrDone(fail)
+        release.countDown()
+        [completeZero, completeOne, fail].each { it.join() }
+
+        then:
+        capturingSubscriber.events == ["0"]
+        capturingSubscriber.throwable.getMessage() == "Bang"
+    }
+
+    static void waitUntilWaitingOrDone(Thread thread) {
+        Awaitility.await().atMost(Duration.ofSeconds(5)).until {
+            thread.state == Thread.State.WAITING || thread.state == Thread.State.TERMINATED
+        }
     }
 
 
