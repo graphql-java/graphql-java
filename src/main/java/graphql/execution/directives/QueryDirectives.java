@@ -74,8 +74,12 @@ public interface QueryDirectives {
     /**
      * This will return a map of {@link QueryAppliedDirective} to a map of their argument values in {@link NormalizedInputValue} form
      * <p>
-     * NOTE : This will only be available when {@link graphql.normalized.ExecutableNormalizedOperationFactory} is used
-     * to create the {@link QueryAppliedDirective} information
+     * Normalized arguments are computed lazily when this method is called. Ordinary directive lookups do not
+     * request normalized variables or compute normalized arguments.
+     * <p>
+     * Variable values in normalized form are supplied during execution and by the raw-variable methods of
+     * {@link graphql.normalized.ExecutableNormalizedOperationFactory}. The factory's coerced-variable methods
+     * do not supply them, so this method returns an empty map for those operations.
      *
      * @return a map of applied directive to named argument values
      */
