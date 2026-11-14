@@ -1,22 +1,22 @@
 {
   "tests": {
     "java17": {
-      "total": 6356,
-      "passed": 6301,
+      "total": 6369,
+      "passed": 6314,
       "failed": 0,
       "errors": 0,
       "skipped": 55
     },
     "java21": {
-      "total": 6356,
-      "passed": 6301,
+      "total": 6369,
+      "passed": 6314,
       "failed": 0,
       "errors": 0,
       "skipped": 55
     },
     "java25": {
-      "total": 6356,
-      "passed": 6301,
+      "total": 6369,
+      "passed": 6314,
       "failed": 0,
       "errors": 0,
       "skipped": 55
@@ -32,16 +32,16 @@
   "coverage": {
     "overall": {
       "branch": {
-        "covered": 7677,
-        "missed": 1172
+        "covered": 7681,
+        "missed": 1170
       },
       "line": {
-        "covered": 26780,
-        "missed": 2702
+        "covered": 26783,
+        "missed": 2698
       },
       "method": {
-        "covered": 7412,
-        "missed": 1093
+        "covered": 7414,
+        "missed": 1091
       }
     },
     "classes": {
@@ -152067,25 +152067,25 @@
       },
       "graphql.execution.directives.QueryDirectivesImpl": {
         "line": {
-          "covered": 71,
-          "missed": 2
+          "covered": 72,
+          "missed": 0
         },
         "branch": {
-          "covered": 6,
-          "missed": 2
+          "covered": 10,
+          "missed": 0
         },
         "method": {
-          "covered": 15,
-          "missed": 1
+          "covered": 16,
+          "missed": 0
         },
         "methods": [
           {
             "name": "&lt;init&gt;",
             "desc": "(Lgraphql/execution/MergedField;Lgraphql/schema/GraphQLSchema;Lgraphql/execution/CoercedVariables;Ljava/util/function/Supplier;Lgraphql/GraphQLContext;Ljava/util/Locale;)V",
-            "line": 39,
+            "line": 38,
             "counters": {
               "line": {
-                "covered": 10,
+                "covered": 12,
                 "missed": 0
               },
               "branch": {
@@ -152101,7 +152101,7 @@
           {
             "name": "computeValuesLazily",
             "desc": "()V",
-            "line": 64,
+            "line": 65,
             "counters": {
               "line": {
                 "covered": 2,
@@ -152118,28 +152118,85 @@
             }
           },
           {
-            "name": "getImmediateDirectivesByField",
-            "desc": "()Ljava/util/Map;",
-            "line": 131,
+            "name": "computeDirectiveValues",
+            "desc": "()V",
+            "line": 69,
             "counters": {
               "line": {
-                "covered": 0,
-                "missed": 2
+                "covered": 22,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 8,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "computeNormalizedValues",
+            "desc": "()Ljava/util/Map;",
+            "line": 108,
+            "counters": {
+              "line": {
+                "covered": 8,
+                "missed": 0
+              },
+              "branch": {
+                "covered": 2,
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "normalizeDirectiveArguments",
+            "desc": "(Lgraphql/execution/directives/QueryAppliedDirective;Ljava/util/Map;)Ljava/util/Map;",
+            "line": 124,
+            "counters": {
+              "line": {
+                "covered": 3,
+                "missed": 0
               },
               "branch": {
                 "covered": 0,
                 "missed": 0
               },
               "method": {
+                "covered": 1,
+                "missed": 0
+              }
+            }
+          },
+          {
+            "name": "getImmediateDirectivesByField",
+            "desc": "()Ljava/util/Map;",
+            "line": 132,
+            "counters": {
+              "line": {
+                "covered": 2,
+                "missed": 0
+              },
+              "branch": {
                 "covered": 0,
-                "missed": 1
+                "missed": 0
+              },
+              "method": {
+                "covered": 1,
+                "missed": 0
               }
             }
           },
           {
             "name": "getImmediateAppliedDirectivesByField",
             "desc": "()Ljava/util/Map;",
-            "line": 137,
+            "line": 138,
             "counters": {
               "line": {
                 "covered": 2,
@@ -152158,10 +152215,10 @@
           {
             "name": "getNormalizedInputValueByImmediateAppliedDirectives",
             "desc": "()Ljava/util/Map;",
-            "line": 143,
+            "line": 144,
             "counters": {
               "line": {
-                "covered": 2,
+                "covered": 1,
                 "missed": 0
               },
               "branch": {
@@ -152251,47 +152308,9 @@
             }
           },
           {
-            "name": "lambda$computeValuesLazily$0",
-            "desc": "()V",
-            "line": 66,
-            "counters": {
-              "line": {
-                "covered": 19,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 1,
-                "missed": 1
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "lambda$computeValuesLazily$6",
-            "desc": "(Lcom/google/common/collect/BiMap;Lcom/google/common/collect/BiMap;Lgraphql/execution/NormalizedVariables;Ljava/util/Map;Ljava/util/List;)V",
-            "line": 107,
-            "counters": {
-              "line": {
-                "covered": 9,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 3,
-                "missed": 1
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "lambda$computeValuesLazily$2",
-            "desc": "(Ljava/util/Map;Lcom/google/common/collect/BiMap;Ljava/util/Map;Lgraphql/language/Field;Ljava/util/List;)V",
-            "line": 94,
+            "name": "lambda$computeNormalizedValues$0",
+            "desc": "(Ljava/util/Map;Ljava/util/Map;Ljava/util/List;)V",
+            "line": 117,
             "counters": {
               "line": {
                 "covered": 1,
@@ -152308,28 +152327,9 @@
             }
           },
           {
-            "name": "lambda$computeValuesLazily$3",
-            "desc": "(Ljava/util/Map;Lcom/google/common/collect/BiMap;Ljava/util/Map;Lgraphql/schema/GraphQLDirective;)V",
-            "line": 95,
-            "counters": {
-              "line": {
-                "covered": 5,
-                "missed": 0
-              },
-              "branch": {
-                "covered": 0,
-                "missed": 0
-              },
-              "method": {
-                "covered": 1,
-                "missed": 0
-              }
-            }
-          },
-          {
-            "name": "lambda$computeValuesLazily$5",
-            "desc": "(Ljava/lang/String;)Ljava/util/List;",
-            "line": 99,
+            "name": "lambda$computeNormalizedValues$1",
+            "desc": "(Ljava/util/Map;Ljava/util/Map;Lgraphql/execution/directives/QueryAppliedDirective;)V",
+            "line": 118,
             "counters": {
               "line": {
                 "covered": 1,
@@ -152346,12 +152346,12 @@
             }
           },
           {
-            "name": "lambda$computeValuesLazily$4",
-            "desc": "(Ljava/lang/String;)Ljava/util/List;",
-            "line": 96,
+            "name": "lambda$computeDirectiveValues$0",
+            "desc": "(Ljava/util/Map;Ljava/util/Map;Ljava/util/Map;Lgraphql/language/Field;)V",
+            "line": 74,
             "counters": {
               "line": {
-                "covered": 1,
+                "covered": 7,
                 "missed": 0
               },
               "branch": {
@@ -152365,16 +152365,16 @@
             }
           },
           {
-            "name": "lambda$computeValuesLazily$1",
-            "desc": "(Lcom/google/common/collect/BiMap;Lcom/google/common/collect/BiMap;Ljava/util/Map;Ljava/util/Map;Lgraphql/language/Field;)V",
-            "line": 73,
+            "name": "lambda$computeDirectiveValues$1",
+            "desc": "(Lcom/google/common/collect/ImmutableList$Builder;Ljava/util/Map;Lgraphql/schema/GraphQLDirective;Lgraphql/language/Directive;)V",
+            "line": 80,
             "counters": {
               "line": {
-                "covered": 14,
+                "covered": 4,
                 "missed": 0
               },
               "branch": {
-                "covered": 2,
+                "covered": 0,
                 "missed": 0
               },
               "method": {
@@ -152589,7 +152589,7 @@
           {
             "name": "newQueryDirectives",
             "desc": "()Lgraphql/execution/directives/QueryDirectives$Builder;",
-            "line": 113,
+            "line": 119,
             "counters": {
               "line": {
                 "covered": 1,
@@ -153021,16 +153021,16 @@
       },
       "graphql.execution.directives.QueryDirectivesBuilder": {
         "line": {
-          "covered": 18,
-          "missed": 2
+          "covered": 20,
+          "missed": 0
         },
         "branch": {
           "covered": 0,
           "missed": 0
         },
         "method": {
-          "covered": 8,
-          "missed": 1
+          "covered": 9,
+          "missed": 0
         },
         "methods": [
           {
@@ -153096,16 +153096,16 @@
             "line": 38,
             "counters": {
               "line": {
-                "covered": 0,
-                "missed": 2
+                "covered": 2,
+                "missed": 0
               },
               "branch": {
                 "covered": 0,
                 "missed": 0
               },
               "method": {
-                "covered": 0,
-                "missed": 1
+                "covered": 1,
+                "missed": 0
               }
             }
           },
