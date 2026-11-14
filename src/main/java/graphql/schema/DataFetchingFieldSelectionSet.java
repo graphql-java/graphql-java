@@ -15,6 +15,13 @@ import java.util.Map;
  * in any preparsed cache. Otherwise inspection methods throw {@link IllegalStateException}.
  * Creation is off by default; inspection does not build a missing graph.
  * <p>
+ * Enumeration is bounded by {@link graphql.validation.QueryComplexityLimits#getMaxFieldOccurrences()},
+ * using request-specific limits or the JVM defaults. Each collected field counts once per concrete
+ * parent type, response key and path. The field being resolved is excluded. Immediate inspection
+ * counts only immediate fields; full inspection counts all descendants, including fields that
+ * do not match a requested glob. Exceeding the limit throws {@link IllegalStateException};
+ * results are never truncated. {@link graphql.validation.QueryComplexityLimits#NONE} disables this bound.
+ * <p>
  * For example imagine we are fetching the field 'user' in the following query
  *
  * <pre>

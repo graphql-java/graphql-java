@@ -6,6 +6,8 @@ import graphql.execution.MergedField;
 import graphql.language.Field;
 import graphql.normalized.NormalizedDocument;
 import graphql.normalized.NormalizedFieldCollector;
+import graphql.util.LockKit;
+import graphql.validation.QueryComplexityLimits;
 import org.jspecify.annotations.Nullable;
 
 import java.io.File;
@@ -34,7 +36,9 @@ public final class DataFetchingFieldSelectionSetImpl implements DataFetchingFiel
     private final @Nullable SelectedField parent;
     private final String simplePrefix;
     private final String typePrefix;
-    private final Supplier<List<SelectedField>> immediateFields;
+    private final int maxFieldOccurrences;
+    private final LockKit.ReentrantLock immediateFieldsLock = new LockKit.ReentrantLock();
+    private @Nullable List<SelectedField> immediateFields;
     private final Supplier<List<SelectedField>> allFields;
 
     public static DataFetchingFieldSelectionSet newCollector(ExecutionContext context, MergedField field, GraphQLOutputType outputType, int parentLevel) {
@@ -53,7 +57,8 @@ public final class DataFetchingFieldSelectionSetImpl implements DataFetchingFiel
         this.parent = parent;
         this.simplePrefix = simplePrefix;
         this.typePrefix = typePrefix;
-        this.immediateFields = interThreadMemoize(this::collectImmediateFields);
+        QueryComplexityLimits limits = context.getGraphQLContext().get(QueryComplexityLimits.KEY);
+        this.maxFieldOccurrences = (limits == null ? QueryComplexityLimits.getDefaultLimits() : limits).getMaxFieldOccurrences();
         this.allFields = interThreadMemoize(this::collectAllFields);
     }
 
@@ -65,12 +70,12 @@ public final class DataFetchingFieldSelectionSetImpl implements DataFetchingFiel
         return document;
     }
 
-    private List<SelectedField> collectImmediateFields() {
+    private List<SelectedField> collectImmediateFields(LookaheadFieldBudget budget) {
         NormalizedFieldCollector collector = new NormalizedFieldCollector(requireDocument(), context);
         List<GraphQLObjectType> types = possibleTypes();
         List<SelectedField> fields = new ArrayList<>();
         for (GraphQLObjectType type : types) {
-            addFields(fields, collector.collect(parentFields, type), type, types.size() > 1);
+            addFields(fields, collector.collect(parentFields, type), type, types.size() > 1, budget);
         }
         return List.copyOf(fields);
     }
@@ -90,8 +95,9 @@ public final class DataFetchingFieldSelectionSetImpl implements DataFetchingFiel
         return types;
     }
 
-    private void addFields(List<SelectedField> result, List<List<Field>> groups, GraphQLObjectType objectType, boolean conditional) {
+    private void addFields(List<SelectedField> result, List<List<Field>> groups, GraphQLObjectType objectType, boolean conditional, LookaheadFieldBudget budget) {
         for (List<Field> fields : groups) {
+            budget.consume(1);
             result.add(new SelectedFieldImpl(context, fields, objectType, parentLevel + 1, conditional, parent, simplePrefix, typePrefix));
         }
     }
@@ -99,11 +105,12 @@ public final class DataFetchingFieldSelectionSetImpl implements DataFetchingFiel
     private List<SelectedField> collectAllFields() {
         List<SelectedField> result = new ArrayList<>();
         Deque<SelectedField> pending = new ArrayDeque<>();
-        pushReverse(pending, getImmediateFields());
+        LookaheadFieldBudget budget = new LookaheadFieldBudget(maxFieldOccurrences);
+        pushReverse(pending, getImmediateFields(budget));
         while (!pending.isEmpty()) {
             SelectedFieldImpl field = (SelectedFieldImpl) pending.pop();
             result.add(field);
-            pushReverse(pending, field.getTraversalChildren());
+            pushReverse(pending, field.getTraversalChildren(budget));
         }
         return List.copyOf(result);
     }
@@ -116,8 +123,20 @@ public final class DataFetchingFieldSelectionSetImpl implements DataFetchingFiel
 
     @Override
     public List<SelectedField> getImmediateFields() {
+        return getImmediateFields(new LookaheadFieldBudget(maxFieldOccurrences));
+    }
+
+    public List<SelectedField> getImmediateFields(LookaheadFieldBudget budget) {
         requireDocument();
-        return immediateFields.get();
+        return immediateFieldsLock.callLocked(() -> {
+            if (immediateFields != null) {
+                budget.consume(immediateFields.size());
+                return immediateFields;
+            }
+            List<SelectedField> fields = collectImmediateFields(budget);
+            immediateFields = fields;
+            return fields;
+        });
     }
 
     @Override

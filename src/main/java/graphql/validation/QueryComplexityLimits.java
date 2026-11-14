@@ -7,7 +7,7 @@ import org.jspecify.annotations.NullUnmarked;
 import java.util.function.Consumer;
 
 /**
- * Configuration class for query complexity limits enforced during validation.
+ * Configuration class for query complexity limits enforced during validation and lookahead.
  * Limits the number and depth of merged fields using the same selections as field-merging validation.
  * Fields with the same response name (alias, or field name when unaliased) and a common parent type
  * count once at each response position. Their child selections are combined before counting.
@@ -29,6 +29,14 @@ import java.util.function.Consumer;
  * For example, {@code { node { name name } }} has three field occurrences and two merged fields.
  * Occurrences are limited separately for each operation, regardless of directives or runtime types.
  * Complexity limits are enforced independently of the validation-rule predicate.
+ *
+ * <p>When lookahead is enabled, the occurrence threshold also bounds each selection-set enumeration.
+ * This count is separate from validation: it counts collected fields at every concrete-type path,
+ * merging active selections with the same concrete parent type and response key at that position.
+ * Immediate inspection counts only immediate fields; full inspection counts all descendants,
+ * including fields that do not match a requested glob. Exceeding this threshold throws
+ * {@link IllegalStateException} instead of returning a partial result. See
+ * {@link graphql.schema.DataFetchingFieldSelectionSet}.
  *
  * <p>The JVM-wide defaults initially enforce limits (maxDepth=100, maxMergedFieldCount=10000,
  * maxFieldOccurrences=100000), with introspection protections enabled at 500 merged fields and depth 20.
@@ -113,7 +121,7 @@ public class QueryComplexityLimits {
     public static final QueryComplexityLimits DEFAULT = new Builder().build();
 
     /**
-     * Disables general complexity limits and all introspection protections.
+     * Disables general complexity limits, lookahead enumeration limits and all introspection protections.
      * The introspection thresholds retain their library defaults, so transforming this instance
      * to re-enable introspection restores the default introspection protections.
      */
@@ -127,7 +135,7 @@ public class QueryComplexityLimits {
     private static volatile QueryComplexityLimits defaultLimits = DEFAULT;
 
     /**
-     * Sets the JVM-wide defaults used by new builders and by validation when no limits
+     * Sets the JVM-wide defaults used by new builders, validation and lookahead when no limits
      * are specified in GraphQLContext. Existing builders and limits remain unchanged.
      * This is useful for testing or for applications that want different global defaults.
      *
@@ -178,8 +186,8 @@ public class QueryComplexityLimits {
     }
 
     /**
-     * @return the maximum field occurrences in each operation after fragment expansion,
-     * or {@link Integer#MAX_VALUE} when occurrence counting is disabled
+     * @return the maximum field occurrences in each operation after fragment expansion and,
+     * separately, in each lookahead enumeration; or {@link Integer#MAX_VALUE} to disable these limits
      */
     public int getMaxFieldOccurrences() {
         return maxFieldOccurrences;
@@ -295,6 +303,10 @@ public class QueryComplexityLimits {
          * contribute at every spread, even when their response names merge. All selections count
          * regardless of {@code @skip} or {@code @include}. Fragment definitions that are not
          * referenced by an operation do not contribute to its count.
+         * <p>The same threshold separately bounds lookahead enumeration of collected fields at
+         * every concrete-type path. Active selections that merge count once at that position;
+         * glob filtering does not reduce the count. Exceeding the lookahead limit throws
+         * {@link IllegalStateException}.
          *
          * @param maxFieldOccurrences the positive limit, or {@link Integer#MAX_VALUE} to disable it
          * @return this builder

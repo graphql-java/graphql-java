@@ -26,7 +26,7 @@ public final class SelectedFieldImpl implements SelectedField {
     private final String fullyQualifiedName;
     private final Supplier<Map<String, Object>> arguments;
     private final Supplier<DataFetchingFieldSelectionSet> children;
-    private final Supplier<List<SelectedField>> traversalChildren;
+    private final Supplier<DataFetchingFieldSelectionSetImpl> traversalChildren;
 
     public SelectedFieldImpl(ExecutionContext context, List<Field> fields, GraphQLObjectType objectType, int level,
                              boolean conditional, @Nullable SelectedField parent, String simplePrefix, String typePrefix) {
@@ -42,19 +42,19 @@ public final class SelectedFieldImpl implements SelectedField {
         this.arguments = interThreadMemoize(() -> ValuesResolver.getArgumentValues(context.getGraphQLSchema().getCodeRegistry(),
                 definition.getArguments(), fields.get(0).getArguments(), context.getCoercedVariables(), context.getGraphQLContext(), context.getLocale()));
         this.children = interThreadMemoize(() -> childSelectionSet("", ""));
-        this.traversalChildren = interThreadMemoize(() -> childSelectionSet(qualifiedName, fullyQualifiedName).getImmediateFields());
+        this.traversalChildren = interThreadMemoize(() -> childSelectionSet(qualifiedName, fullyQualifiedName));
     }
 
     private String qualify(String prefix, String name) {
         return prefix.isEmpty() ? name : prefix + "/" + name;
     }
 
-    private DataFetchingFieldSelectionSet childSelectionSet(String simplePrefix, String typePrefix) {
+    private DataFetchingFieldSelectionSetImpl childSelectionSet(String simplePrefix, String typePrefix) {
         return new DataFetchingFieldSelectionSetImpl(context, fields, getType(), level, this, simplePrefix, typePrefix);
     }
 
-    public List<SelectedField> getTraversalChildren() {
-        return traversalChildren.get();
+    public List<SelectedField> getTraversalChildren(LookaheadFieldBudget budget) {
+        return traversalChildren.get().getImmediateFields(budget);
     }
 
     @Override

@@ -187,11 +187,45 @@ For resource protection, continue to use parser limits and
 `QueryComplexityLimits` during validation. `NormalizedDocument.getFields().size()`
 counts stored AST fields, not expanded occurrences or merged execution fields.
 
-## Open draft question: flat lookahead paths
+## Bounded lookahead enumeration
 
-The stored graph stays shared, but full `getFields()` enumeration can expand
-many concrete-type paths through nested interfaces. With two implementations
-at every level, the number of such paths can grow exponentially with depth.
-The current draft has not added an enumeration budget. The remaining choice is
-whether to bound these compatibility methods with the configured occurrence
-limit or replace them with an API that exposes shared graph views.
+The stored graph stays shared, but flat lookahead expands concrete-type paths.
+To bound this expansion, each enumeration uses the configured
+`QueryComplexityLimits.maxFieldOccurrences` (initial default: 100,000).
+Request-specific limits override the current JVM defaults. Each selection-set
+view captures its limit when created. `QueryComplexityLimits.NONE`, or setting
+`maxFieldOccurrences(Integer.MAX_VALUE)`, disables this bound.
+
+Validation and lookahead use the same threshold for **different counts**:
+
+- Validation counts AST field occurrences after fragment expansion, without
+  merging duplicates or expanding possible runtime types.
+- Lookahead counts collected fields at every concrete-type path. Active
+  selections with the same concrete parent type and response key merge into one
+  entry at that position. The field whose selection set is inspected is excluded.
+
+For example, suppose `Node` has two implementations, `A` and `B`, and both expose
+`next: Node` and `value: String`:
+
+```graphql
+{ node { next { next { value } } } }
+```
+
+Validation counts **4** occurrences: `node`, two `next` fields, and `value`.
+The `node` data fetcher's full lookahead counts **14**: 2 immediate `next`
+entries, 4 second-level `next` entries, and 8 `value` entries. A limit of 13
+therefore permits validation but rejects full lookahead. With further nested
+`next` selections, the AST grows linearly while concrete paths grow exponentially.
+
+`getImmediateFields()` bounds only its immediate entries. `getFields()`, glob
+matching (`getFields(pattern)`, `contains` and their variants), and result-key
+grouping bound the full enumeration. Non-matching entries still count because
+enumeration precedes filtering. Inspecting a selected field's own selection set
+starts a separate count relative to that field; counts are not cumulative across
+calls or data fetchers.
+
+Exceeding the limit throws `IllegalStateException` identifying
+`QueryComplexityLimits.maxFieldOccurrences` and the configured limit; results
+are never truncated. The check occurs before constructing each selected-field
+entry. Previously cached child lists still count toward the total, and concurrent
+enumerations use separate counters. Successful complete results remain cached.
