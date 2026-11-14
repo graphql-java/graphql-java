@@ -73,8 +73,15 @@ public interface QueryDirectives {
 
     /**
      * This will return a map of {@link QueryAppliedDirective} to a map of their argument values in {@link NormalizedInputValue} form
+     * <p>
+     * Normalized arguments are computed lazily when this method is called. Ordinary directive lookups do not
+     * request normalized variables or compute normalized arguments.
+     * <p>
+     * Variable values in normalized form are supplied during execution. Fields without directives return
+     * an empty map without requesting normalized variables.
      *
      * @return a map of applied directive to named argument values
+     * @throws graphql.AssertException if directives are present but normalized variables are unavailable
      */
     Map<QueryAppliedDirective, Map<String, NormalizedInputValue>> getNormalizedInputValueByImmediateAppliedDirectives();
 

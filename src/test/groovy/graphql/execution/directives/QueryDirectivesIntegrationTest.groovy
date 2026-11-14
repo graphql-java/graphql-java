@@ -3,11 +3,16 @@ package graphql.execution.directives
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.IntValue
+import graphql.language.StringValue
 import graphql.normalized.NormalizedInputValue
+import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
+
+import static graphql.schema.GraphQLScalarType.newScalar
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 
 /**
  * This test currently has way more directives than can be handled today but in the spirit of TDD
@@ -166,6 +171,50 @@ class QueryDirectivesIntegrationTest extends Specification {
 
         def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
         joinArgs(immediate) == "cached(forMillis:10)"
+    }
+
+    def "ordinary directive lookup during execution does not convert custom scalar variables to literals"() {
+        Coercing coercing = Mock(Coercing)
+        QueryDirectives queryDirectives
+        def runtimeWiring = newRuntimeWiring()
+                .scalar(newScalar().name("Opaque").coercing(coercing).build())
+                .type("Query", { type -> type.dataFetcher("f", { env ->
+                    queryDirectives = env.getQueryDirectives()
+                    queryDirectives.getImmediateAppliedDirective("tag")[0].getArgument("value").getValue()
+                }) })
+        def schema = TestUtil.schema("""
+            scalar Opaque
+            directive @tag(value: Opaque) on FIELD
+            type Query { f: String }
+        """, runtimeWiring)
+        def graphql = GraphQL.newGraphQL(schema).build()
+
+        when:
+        def result = graphql.execute { input ->
+            input.query('query($value: Opaque) { f @tag(value: $value) }').variables([value: "raw"])
+        }
+
+        then:
+        result.errors.isEmpty()
+        result.data == [f: "coerced"]
+        1 * coercing.parseValue("raw", _, _) >> "coerced"
+        0 * coercing.valueToLiteral(_, _, _)
+
+        when:
+        def normalized = queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives()
+        def applied = queryDirectives.getImmediateAppliedDirective("tag")[0]
+
+        then:
+        1 * coercing.valueToLiteral("raw", _, _) >> StringValue.of("literal")
+        normalized[applied].value.typeName == "Opaque"
+        normalized[applied].value.value.value == "literal"
+
+        when:
+        def again = queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives()
+
+        then:
+        again.is(normalized)
+        0 * coercing.valueToLiteral(_, _, _)
     }
 
     def "can capture normalized directive argument values during execution"() {
