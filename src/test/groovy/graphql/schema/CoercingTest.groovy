@@ -13,11 +13,16 @@ import graphql.language.ObjectValue
 import graphql.language.StringValue
 import graphql.language.VariableReference
 import graphql.schema.idl.RuntimeWiring
+import graphql.schema.idl.SchemaPrinter
 import graphql.schema.idl.TypeRuntimeWiring
 import spock.lang.Specification
 
 import java.time.ZonedDateTime
 
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLScalarType.newScalar
 
 class CoercingTest extends Specification {
@@ -296,5 +301,51 @@ class CoercingTest extends Specification {
         notThrown(Exception)
         er.errors.isEmpty()
         er.data == [field: ZonedDateTime.parse("2022-05-16T19:52:37Z")]
+    }
+    def "valueToLiteral is called with the external value of a programmatic default value, and not for an internal default value"() {
+        def valueToLiteralInputs = []
+        def serializeInputs = []
+        def dateTimeScalar = newScalar().name("DateTime").coercing(new Coercing<ZonedDateTime, String>() {
+            @Override
+            String serialize(Object input, GraphQLContext graphQLContext, Locale locale) {
+                serializeInputs.add(input)
+                return ((ZonedDateTime) input).toString()
+            }
+
+            @Override
+            ZonedDateTime parseValue(Object input, GraphQLContext graphQLContext, Locale locale) {
+                return ZonedDateTime.parse((String) input)
+            }
+
+            @Override
+            ZonedDateTime parseLiteral(graphql.language.Value<?> input, graphql.execution.CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
+                return ZonedDateTime.parse(((StringValue) input).getValue())
+            }
+
+            @Override
+            graphql.language.Value<?> valueToLiteral(Object input, GraphQLContext graphQLContext, Locale locale) {
+                valueToLiteralInputs.add(input)
+                return new StringValue((String) input)
+            }
+        }).build()
+
+        def query = newObject().name("Query")
+                .field(newFieldDefinition().name("programmatic").type(GraphQLString)
+                        .argument(newArgument().name("at").type(dateTimeScalar)
+                                .defaultValueProgrammatic("2022-05-16T19:52:37Z")))
+                .field(newFieldDefinition().name("internal").type(GraphQLString)
+                        .argument(newArgument().name("at").type(dateTimeScalar)
+                                .defaultValue(ZonedDateTime.parse("2023-01-01T00:00:00Z"))))
+                .build()
+        def schema = GraphQLSchema.newSchema().query(query).build()
+
+        when:
+        def printed = new SchemaPrinter().print(schema)
+
+        then:
+        printed.contains('programmatic(at: DateTime = "2022-05-16T19:52:37Z"): String')
+        printed.contains('internal(at: DateTime = "2023-01-01T00:00Z"): String')
+        valueToLiteralInputs == ["2022-05-16T19:52:37Z"]
+        serializeInputs == [ZonedDateTime.parse("2023-01-01T00:00:00Z")]
     }
 }

@@ -25,13 +25,25 @@ import static graphql.Assert.assertNotNull;
  * Input coercion is made out of three different methods {@link #parseLiteral(Object)} which converts an literal Ast
  * into an internal input value, {@link #parseValue(Object)} which converts an external input value into an internal one
  * and {@link #valueToLiteral(Object)} which is a translation between an external input value into a literal.
- * <br>
+ * <p>
+ * The three forms of an input value are:
+ * <ul>
+ *     <li><b>external</b>: the value as it arrives from outside graphql-java, for example a query variable after
+ *     JSON decoding, such as the {@code String} {@code "2022-05-16T19:52:37Z"}</li>
+ *     <li><b>internal</b>: the Java object your data fetchers work with, such as a {@code java.time.ZonedDateTime}</li>
+ *     <li><b>literal</b>: the AST {@link Value} as written in a query or SDL document, such as
+ *     {@code StringValue("2022-05-16T19:52:37Z")}</li>
+ * </ul>
  * The relationship between these three methods is as follows:
  * It is required that every valid external input values for {@link #parseValue(Object)} is also valid for
  * {@link #valueToLiteral(Object)}
  * and vice versa.
  * Furthermore the literals returned by {@link #valueToLiteral(Object)} are required to be valid for
  * {@link #parseLiteral(Object)}.
+ * <p>
+ * Note that {@link #valueToLiteral(Object, GraphQLContext, Locale)} receives an <b>external</b> value, the same kind
+ * of value that {@link #parseValue(Object, GraphQLContext, Locale)} receives, and not an internal value or the result
+ * of {@link #serialize(Object, GraphQLContext, Locale)}. See that method for when it is called.
  */
 @NullMarked
 @PublicSpi
@@ -226,7 +238,28 @@ public interface Coercing<I, O> {
     /**
      * Converts an external input value to a literal (Ast Value).
      * <p>
-     * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object)}.
+     * The {@code input} is an <b>external</b> value, the same kind of value that
+     * {@link #parseValue(Object, GraphQLContext, Locale)} accepts (for example a {@code String} for a date time scalar).
+     * It is not an internal value, so you should not call {@link #serialize(Object, GraphQLContext, Locale)} on it.
+     * The returned literal must be accepted by {@link #parseLiteral(Value, CoercedVariables, GraphQLContext, Locale)}.
+     * <p>
+     * The normal execution of a query does not call this method. graphql-java calls it when it needs to turn an
+     * external value into a literal, for example:
+     * <ul>
+     *     <li>when a schema element holds an external value, such as an argument or input field default value set via
+     *     {@code defaultValueProgrammatic(Object)} or an applied directive argument set via
+     *     {@code valueProgrammatic(Object)}, and that value is printed by {@link graphql.schema.idl.SchemaPrinter},
+     *     returned by introspection or checked during validation</li>
+     *     <li>when normalized variables are computed from the query variables, see
+     *     {@link graphql.execution.ValuesResolver#getNormalizedVariableValues}</li>
+     * </ul>
+     * Values set via {@code defaultValueLiteral(Value)} are already literals, and values set via the deprecated
+     * {@code defaultValue(Object)} are internal values that are converted with
+     * {@link #serialize(Object, GraphQLContext, Locale)} instead. If your schema only uses those, this method is never
+     * called and the default implementation, which throws {@link UnsupportedOperationException}, does no harm.
+     * Implement it if your scalar can appear in any of the cases above.
+     * <p>
+     * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object, GraphQLContext, Locale)}.
      *
      * @param input          an external input value
      * @param graphQLContext the graphql context in place
