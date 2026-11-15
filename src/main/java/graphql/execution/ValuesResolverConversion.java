@@ -146,14 +146,14 @@ class ValuesResolverConversion {
                     locale);
         }
         if (inputValueWithState.isExternal()) {
-            return externalValueToInternalValueImpl(
+            return externalValueToInternalValueWithOneOfCheck(
                     inputInterceptor,
                     fieldVisibility,
                     inputType,
                     inputValueWithState.getValue(),
                     graphqlContext,
                     locale,
-                    0, Integer.MAX_VALUE);
+                    Integer.MAX_VALUE);
         }
         return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
@@ -399,6 +399,8 @@ class ValuesResolverConversion {
                             CoercedVariables.emptyVariables(),
                             graphqlContext,
                             locale);
+                    // checked here like a supplied value, arguments that reference the variable do not check it again
+                    ValuesResolverOneOfValidation.validateOneOfInputTypes(variableInputType, coercedDefaultValue, defaultValue, locale);
                     coercedValues.put(variableName, coercedDefaultValue);
                 } else if (isNonNull(variableType) && (!hasValue || value == null)) {
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
@@ -439,8 +441,27 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
-        return externalValueToInternalValueImpl(inputInterceptor, fieldVisibility, graphQLType,
-                originalValue, graphqlContext, locale, 0, maxInputDepth(graphqlContext));
+        return externalValueToInternalValueWithOneOfCheck(inputInterceptor, fieldVisibility, graphQLType,
+                originalValue, graphqlContext, locale, maxInputDepth(graphqlContext));
+    }
+
+    /**
+     * Coerces the whole external value and then checks the @oneOf rules once over the result, rather than
+     * walking every nested input object again at each level above it
+     */
+    private static Object externalValueToInternalValueWithOneOfCheck(
+            InputInterceptor inputInterceptor,
+            GraphqlFieldVisibility fieldVisibility,
+            GraphQLInputType graphQLType,
+            Object originalValue,
+            GraphQLContext graphqlContext,
+            Locale locale,
+            int maxDepth
+    ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
+        Object coercedValue = externalValueToInternalValueImpl(inputInterceptor, fieldVisibility, graphQLType,
+                originalValue, graphqlContext, locale, 0, maxDepth);
+        ValuesResolverOneOfValidation.validateOneOfInputTypes(graphQLType, coercedValue, null, locale);
+        return coercedValue;
     }
 
     private static Object externalValueToInternalValueImpl(
@@ -518,8 +539,6 @@ class ValuesResolverConversion {
                         locale,
                         depth + 1,
                         maxDepth);
-
-                ValuesResolverOneOfValidation.validateOneOfInputTypes(inputObjectType, coercedMap, null, locale);
                 return coercedMap;
             } else {
                 throw CoercingParseValueException.newCoercingParseValueException()
@@ -928,14 +947,14 @@ class ValuesResolverConversion {
         }
         if (defaultValue.isExternal()) {
             // The schema already validated the default's depth; request overrides only bound supplied values.
-            return externalValueToInternalValueImpl(
+            return externalValueToInternalValueWithOneOfCheck(
                     inputInterceptor,
                     fieldVisibility,
                     type,
                     defaultValue.getValue(),
                     graphqlContext,
                     locale,
-                    0, Integer.MAX_VALUE);
+                    Integer.MAX_VALUE);
         }
         return assertShouldNeverHappen();
     }
