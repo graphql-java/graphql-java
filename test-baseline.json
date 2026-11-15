@@ -1,22 +1,22 @@
 {
   "tests": {
     "java17": {
-      "total": 6369,
-      "passed": 6314,
+      "total": 6370,
+      "passed": 6315,
       "failed": 0,
       "errors": 0,
       "skipped": 55
     },
     "java21": {
-      "total": 6369,
-      "passed": 6314,
+      "total": 6370,
+      "passed": 6315,
       "failed": 0,
       "errors": 0,
       "skipped": 55
     },
     "java25": {
-      "total": 6369,
-      "passed": 6314,
+      "total": 6370,
+      "passed": 6315,
       "failed": 0,
       "errors": 0,
       "skipped": 55
@@ -116086,7 +116086,7 @@
           {
             "name": "serialize",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Object;",
-            "line": 59,
+            "line": 71,
             "counters": {
               "line": {
                 "covered": 0,
@@ -116105,7 +116105,7 @@
           {
             "name": "serialize",
             "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Object;",
-            "line": 80,
+            "line": 92,
             "counters": {
               "line": {
                 "covered": 3,
@@ -116124,7 +116124,7 @@
           {
             "name": "parseValue",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Object;",
-            "line": 103,
+            "line": 115,
             "counters": {
               "line": {
                 "covered": 0,
@@ -116143,7 +116143,7 @@
           {
             "name": "parseValue",
             "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Object;",
-            "line": 124,
+            "line": 136,
             "counters": {
               "line": {
                 "covered": 4,
@@ -116162,7 +116162,7 @@
           {
             "name": "parseLiteral",
             "desc": "(Ljava/lang/Object;)Ljava/lang/Object;",
-            "line": 149,
+            "line": 161,
             "counters": {
               "line": {
                 "covered": 0,
@@ -116181,7 +116181,7 @@
           {
             "name": "parseLiteral",
             "desc": "(Ljava/lang/Object;Ljava/util/Map;)Ljava/lang/Object;",
-            "line": 177,
+            "line": 189,
             "counters": {
               "line": {
                 "covered": 1,
@@ -116200,7 +116200,7 @@
           {
             "name": "parseLiteral",
             "desc": "(Lgraphql/language/Value;Lgraphql/execution/CoercedVariables;Lgraphql/GraphQLContext;Ljava/util/Locale;)Ljava/lang/Object;",
-            "line": 203,
+            "line": 215,
             "counters": {
               "line": {
                 "covered": 4,
@@ -116219,7 +116219,7 @@
           {
             "name": "valueToLiteral",
             "desc": "(Ljava/lang/Object;)Lgraphql/language/Value;",
-            "line": 223,
+            "line": 235,
             "counters": {
               "line": {
                 "covered": 0,
@@ -116238,7 +116238,7 @@
           {
             "name": "valueToLiteral",
             "desc": "(Ljava/lang/Object;Lgraphql/GraphQLContext;Ljava/util/Locale;)Lgraphql/language/Value;",
-            "line": 238,
+            "line": 271,
             "counters": {
               "line": {
                 "covered": 4,
