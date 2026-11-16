@@ -15,10 +15,12 @@ public final class DataLoaderDispatchingContextKeys {
     }
 
     /**
-     * Enables the ability to chain DataLoader dispatching.
+     * Enables chained DataLoader dispatching using the per-level strategy.
      * <p>
-     * Because this requires that all DataLoaders are accessed via DataFetchingEnvironment.getLoader()
-     * this is not completely backwards compatible and therefore disabled by default.
+     * This is disabled by default. Enabling it selects per-level dispatching unless exhausted dispatching
+     * is explicitly configured. Explicitly enabling both strategies is invalid.
+     * DataLoaders must be accessed via {@link graphql.schema.DataFetchingEnvironment#getDataLoader(String)}.
+     * The default exhausted strategy supports chaining independently of this setting.
      * <p>
      * Expects a boolean value.
      */
@@ -26,25 +28,30 @@ public final class DataLoaderDispatchingContextKeys {
 
 
     /**
-     * Enabled a different dispatching strategy that mimics the JS event loop based one:
+     * Enables a dispatching strategy that mimics the JS event loop based one:
      * DataLoader will be dispatched as soon as there is no data fetcher or batch loader currently running.
-     *
+     * Since version 27, this defaults to true unless {@link #ENABLE_DATA_LOADER_CHAINING} is true.
+     * Set this to false to use per-level dispatching. DataLoaders must be accessed via
+     * {@link graphql.schema.DataFetchingEnvironment#getDataLoader(String)} so their load calls can be tracked.
      */
     public static final String ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING = "__GJ_enable_data_loader_exhausted_dispatching";
 
     /**
-     * Enables the ability that chained DataLoaders are dispatched automatically.
+     * Enables automatic dispatching of chained DataLoaders using the per-level strategy.
      *
-     * @param graphQLContext
+     * @param graphQLContext the execution context
+     * @param enabled whether to enable per-level chained dispatching
      */
     public static void setEnableDataLoaderChaining(GraphQLContext graphQLContext, boolean enabled) {
         graphQLContext.put(ENABLE_DATA_LOADER_CHAINING, enabled);
     }
 
     /**
-     * Enables the ability that chained DataLoaders are dispatched automatically.
+     * Configures exhausted dispatching, which is the default since version 27 unless per-level chained
+     * dispatching is explicitly enabled. Set this to false to use per-level dispatching.
      *
-     * @param graphQLContext
+     * @param graphQLContext the execution context
+     * @param enabled whether to use exhausted dispatching
      */
     public static void setEnableDataLoaderExhaustedDispatching(GraphQLContext graphQLContext, boolean enabled) {
         graphQLContext.put(ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, enabled);

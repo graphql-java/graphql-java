@@ -295,8 +295,10 @@ public class Execution {
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }
-        if (executionContext.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, false)) {
-            if (executionContext.getGraphQLContext().getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)) {
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
+        boolean chainingEnabled = graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false);
+        if (graphQLContext.getBoolean(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING, !chainingEnabled)) {
+            if (chainingEnabled) {
                 throw new GraphQLException("enabling data loader chaining and exhausted dispatching at the same time ambiguous");
             }
             return new ExhaustedDataLoaderDispatchStrategy(executionContext);
