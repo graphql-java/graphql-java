@@ -1,6 +1,8 @@
 package graphql.parser;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 import java.util.function.Consumer;
 
@@ -10,6 +12,7 @@ import static graphql.Assert.assertNotNull;
  * Options that control how the {@link Parser} behaves.
  */
 @PublicApi
+@NullMarked
 public class ParserOptions {
     /**
      * A graphql hacking vector is to send nonsensical queries with large tokens that contain a repeated characters
@@ -306,7 +309,7 @@ public class ParserOptions {
     /**
      * A numeric literal is represented by a single token, regardless of how many characters it contains. Converting
      * very large numeric literals into arbitrary precision numbers can consume excessive CPU and memory. This limit
-     * stops parsing before that conversion takes place.
+     * stops lexing before a larger literal is fully matched or converted.
      *
      * @return the maximum number of characters permitted in an integer or floating-point literal
      */
@@ -349,6 +352,7 @@ public class ParserOptions {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder {
 
         private boolean captureIgnoredChars = false;
@@ -416,7 +420,7 @@ public class ParserOptions {
 
         /**
          * Sets the maximum number of characters permitted in an integer or floating-point literal. Parsing is
-         * cancelled before converting a larger literal into an arbitrary precision number.
+         * cancelled before a larger literal is fully matched or converted into an arbitrary precision number.
          *
          * @param maxNumericLiteralCharacters the maximum number of characters permitted in a numeric literal
          *

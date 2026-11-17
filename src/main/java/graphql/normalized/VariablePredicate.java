@@ -2,11 +2,13 @@ package graphql.normalized;
 
 import graphql.PublicSpi;
 import graphql.execution.directives.QueryAppliedDirective;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This predicate indicates whether a variable should be made for this field argument OR whether it will be compiled
  * into a graphql AST literal.
  */
+@NullMarked
 @PublicSpi
 public interface VariablePredicate {
     /**

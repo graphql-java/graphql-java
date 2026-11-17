@@ -11,9 +11,12 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.querygenerator.QueryGeneratorFieldSelection.FieldSelection;
 import graphql.util.querygenerator.QueryGeneratorFieldSelection.FieldSelectionResult;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.stream.Stream;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * Generates a GraphQL query string based on the provided operation field path, operation name, arguments, and type classifier.
@@ -27,6 +30,7 @@ import java.util.stream.Stream;
  * <p>
  *
  */
+@NullMarked
 @ExperimentalApi
 public class QueryGenerator {
     private final GraphQLSchema schema;
@@ -97,7 +101,7 @@ public class QueryGenerator {
             throw new IllegalArgumentException("Operation must be 'Query', 'Mutation' or 'Subscription'");
         }
 
-        GraphQLFieldsContainer fieldContainer = schema.getObjectType(operation);
+        GraphQLFieldsContainer fieldContainer = assertNotNull(schema.getObjectType(operation), "Operation type %s must exist in schema", operation);
 
         for (int i = 1; i < fieldParts.length - 1; i++) {
             String fieldName = fieldParts[i];

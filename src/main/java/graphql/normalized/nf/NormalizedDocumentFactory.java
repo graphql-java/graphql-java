@@ -34,6 +34,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.impl.SchemaUtil;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -56,6 +57,7 @@ import static graphql.util.FpKit.intersection;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
+@NullMarked
 @ExperimentalApi
 public class NormalizedDocumentFactory {
 
@@ -254,7 +256,7 @@ public class NormalizedDocumentFactory {
 
         private final Set<String> skipIncludeVariableNames = new LinkedHashSet<>();
 
-        private Map<String, Boolean> assumedSkipIncludeVariableValues;
+        private @Nullable Map<String, Boolean> assumedSkipIncludeVariableValues;
 
         private NormalizedDocumentFactoryImpl(
                 GraphQLSchema graphQLSchema,
@@ -351,6 +353,7 @@ public class NormalizedDocumentFactory {
 
             // special handling for the root selection Set
             if (normalizedField == null) {
+                assertNotNull(operationDefinition, "Root fields require an operation definition");
                 GraphQLObjectType rootType = SchemaUtil.getOperationRootType(graphQLSchema, operationDefinition);
                 possibleObjects = ImmutableSet.of(rootType);
                 collectedFields = new ArrayList<>();
@@ -362,7 +365,7 @@ public class NormalizedDocumentFactory {
                     return;
                 }
                 collectedFields = new ArrayList<>();
-                for (CollectedField fieldAndAstParent : fieldAndAstParents) {
+                for (CollectedField fieldAndAstParent : assertNotNull(fieldAndAstParents, "Child fields require their collected AST fields")) {
                     if (fieldAndAstParent.field.getSelectionSet() == null) {
                         continue;
                     }
@@ -449,7 +452,7 @@ public class NormalizedDocumentFactory {
                                Map<String, List<CollectedField>> fieldsByName,
                                ImmutableListMultimap.Builder<NormalizedField, CollectedField> normalizedFieldToAstFields,
                                int level,
-                               NormalizedField parent) {
+                               @Nullable NormalizedField parent) {
             for (String resultKey : fieldsByName.keySet()) {
                 List<CollectedField> fieldsWithSameResultKey = fieldsByName.get(resultKey);
                 List<CollectedFieldGroup> commonParentsGroups = groupByCommonParents(fieldsWithSameResultKey);
@@ -465,7 +468,7 @@ public class NormalizedDocumentFactory {
 
                 }
                 if (commonParentsGroups.size() > 1) {
-                    possibleMergerList.add(new PossibleMerger(parent, resultKey));
+                    possibleMergerList.add(new PossibleMerger(assertNotNull(parent, "Fields with multiple concrete parent types require a parent"), resultKey));
                 }
             }
         }
@@ -473,7 +476,7 @@ public class NormalizedDocumentFactory {
         // new single ENF
         private NormalizedField createNF(CollectedFieldGroup collectedFieldGroup,
                                          int level,
-                                         NormalizedField parent) {
+                                         @Nullable NormalizedField parent) {
 
             this.fieldCount++;
             if (this.fieldCount > this.options.getMaxFieldsCount()) {
@@ -567,7 +570,7 @@ public class NormalizedDocumentFactory {
             GraphQLCompositeType newAstTypeCondition = astTypeCondition;
 
             if (inlineFragment.getTypeCondition() != null) {
-                newAstTypeCondition = (GraphQLCompositeType) this.graphQLSchema.getType(inlineFragment.getTypeCondition().getName());
+                newAstTypeCondition = (GraphQLCompositeType) assertNotNull(this.graphQLSchema.getType(inlineFragment.getTypeCondition().getName()), "Inline fragment type must exist");
                 newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newAstTypeCondition);
 
             }

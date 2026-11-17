@@ -4,7 +4,6 @@ import graphql.ExperimentalApi
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
 import graphql.validation.SpecValidationSchema
@@ -24,9 +23,9 @@ class DeferDirectiveLabelTest extends Specification {
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(SpecValidationSchema.specValidationSchema, document, i18n)
         validationContext.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
-                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_LABEL }))
+
+        new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.DEFER_DIRECTIVE_LABEL }).validate()
     }
 
     def "Allow unique label directive"() {

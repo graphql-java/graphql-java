@@ -3,6 +3,7 @@ package graphql.execution
 import graphql.TestUtil
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.NodeUtil
 import graphql.language.InlineFragment
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
@@ -14,6 +15,40 @@ import static graphql.execution.FieldCollectorParameters.newParameters
 
 class FieldCollectorTest extends Specification {
 
+
+    def "fragment traversal preserves sibling order and deferred execution scope"() {
+        given:
+        def schema = TestUtil.schema('type Query { name: String }')
+        def document = Parser.parse('''{
+            first: name
+            ...F @defer(label: "outer")
+            last: name
+            ...F
+        }
+        fragment F on Query {
+            middle: name
+            ... on Query @defer(label: "inner") { inner: name }
+            afterInner: name
+        }''')
+        def parameters = newParameters().schema(schema).objectType(schema.queryType)
+                .fragments(NodeUtil.getFragmentsByName(document)).variables([:]).build()
+        def selections = document.getDefinitionsOfType(OperationDefinition).first().selectionSet
+
+        when:
+        def fields = new FieldCollector().collectFields(parameters, selections, incrementalSupport).subFields
+
+        then:
+        fields.keySet().toList() == ['first', 'middle', 'inner', 'afterInner', 'last']
+        fields.values().every { it.fields.size() == 1 }
+        fields.first.deferredExecutions.empty
+        fields.last.deferredExecutions.empty
+        fields.middle.deferredExecutions*.label == (incrementalSupport ? ['outer'] : [])
+        fields.inner.deferredExecutions*.label == (incrementalSupport ? ['inner'] : [])
+        fields.afterInner.deferredExecutions == fields.middle.deferredExecutions
+
+        where:
+        incrementalSupport << [false, true]
+    }
 
     def "collect fields"() {
         given:

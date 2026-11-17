@@ -10,10 +10,12 @@ import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import static graphql.Assert.assertNotNull;
 import static java.lang.String.format;
 
 /*
@@ -21,6 +23,7 @@ import static java.lang.String.format;
  * The type of the input field must be nullable.
  * The input field must not have a default value.
  */
+@NullMarked
 @ExperimentalApi
 public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
 
@@ -32,7 +35,7 @@ public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
         SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
         if (!canBeProvidedAFiniteValue(inputObjectType, new LinkedHashSet<>())) {
             String message = format("OneOf Input Object %s must be inhabited but all fields recursively reference only other OneOf Input Objects forming an unresolvable cycle.", inputObjectType.getName());
-            errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNotInhabited, message));
+            assertNotNull(errorCollector, "Schema validation requires an error collector").addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNotInhabited, message));
         }
         return TraversalControl.CONTINUE;
     }
@@ -65,7 +68,7 @@ public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField inputObjectField, TraverserContext<GraphQLSchemaElement> context) {
-        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) context.getParentNode();
+        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) assertNotNull(context.getParentNode(), "Input field validation requires its containing input object");
         if (!inputObjectType.isOneOf()) {
             return TraversalControl.CONTINUE;
         }
@@ -73,12 +76,12 @@ public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
         // error messages take from the reference implementation
         if (inputObjectField.hasSetDefaultValue()) {
             String message = format("OneOf input field %s.%s cannot have a default value.", inputObjectType.getName(), inputObjectField.getName());
-            errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.OneOfDefaultValueOnField, message));
+            assertNotNull(errorCollector, "Schema validation requires an error collector").addError(new SchemaValidationError(SchemaValidationErrorType.OneOfDefaultValueOnField, message));
         }
 
         if (GraphQLTypeUtil.isNonNull(inputObjectField.getType())) {
             String message = format("OneOf input field %s.%s must be nullable.", inputObjectType.getName(), inputObjectField.getName());
-            errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNonNullableField, message));
+            assertNotNull(errorCollector, "Schema validation requires an error collector").addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNonNullableField, message));
         }
         return TraversalControl.CONTINUE;
     }

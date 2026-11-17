@@ -1,8 +1,10 @@
 package graphql.introspection;
 
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
 
 @PublicApi
+@NullMarked
 public interface IntrospectionQuery {
     /**
      * This is the default introspection query provided by graphql-java

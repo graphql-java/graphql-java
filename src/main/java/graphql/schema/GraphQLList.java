@@ -95,7 +95,7 @@ public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutput
 
     @Override
     public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
-        return list(newChildren.getChildOrNull(CHILD_WRAPPED_TYPE));
+        return list(graphql.Assert.assertNotNull(newChildren.getChildOrNull(CHILD_WRAPPED_TYPE), "wrappedType should not be null"));
     }
 
     @Override

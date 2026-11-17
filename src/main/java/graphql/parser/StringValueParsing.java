@@ -5,6 +5,8 @@ import graphql.Internal;
 import graphql.i18n.I18n;
 import graphql.language.SourceLocation;
 
+import java.util.regex.Pattern;
+
 /**
  * Contains parsing code for the StringValue types in the grammar
  */
@@ -12,6 +14,7 @@ import graphql.language.SourceLocation;
 public class StringValueParsing {
     private final static String ESCAPED_TRIPLE_QUOTES = "\\\"\"\"";
     private final static String THREE_QUOTES = "\"\"\"";
+    private static final Pattern LINE_TERMINATORS = Pattern.compile("\\r\\n|[\\r\\n]");
 
     public static String parseTripleQuotedString(String strText) {
         int end = strText.length() - 3;
@@ -24,7 +27,7 @@ public class StringValueParsing {
        See https://github.com/facebook/graphql/pull/327/files#diff-fe406b08746616e2f5f00909488cce66R758
      */
     public static String removeIndentation(String rawValue) {
-        String[] lines = rawValue.split("\n");
+        String[] lines = LINE_TERMINATORS.split(rawValue);
         Integer commonIndent = null;
         for (int i = 0; i < lines.length; i++) {
             if (i == 0) {

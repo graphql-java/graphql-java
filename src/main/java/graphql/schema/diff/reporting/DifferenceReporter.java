@@ -2,10 +2,12 @@ package graphql.schema.diff.reporting;
 
 import graphql.PublicSpi;
 import graphql.schema.diff.DiffEvent;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * This is called with each different encountered (including info ones) by a {@link graphql.schema.diff.SchemaDiff} operation
  */
+@NullMarked
 @PublicSpi
 public interface DifferenceReporter {
 

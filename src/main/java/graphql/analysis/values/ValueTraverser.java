@@ -107,8 +107,8 @@ public class ValueTraverser {
      */
     public static DataFetchingEnvironment visitPreOrder(DataFetchingEnvironment environment, ValueVisitor visitor) {
         GraphQLFieldDefinition fieldDefinition = environment.getFieldDefinition();
-        Map<String, Object> originalArgs = environment.getArguments();
-        Map<String, Object> newArgs = visitPreOrder(originalArgs, fieldDefinition, visitor);
+        Map<String, @Nullable Object> originalArgs = environment.getArguments();
+        Map<String, @Nullable Object> newArgs = visitPreOrder(originalArgs, fieldDefinition, visitor);
         if (newArgs != originalArgs) {
             return DataFetchingEnvironmentImpl.newDataFetchingEnvironment(environment).arguments(newArgs).build();
         }
@@ -124,7 +124,7 @@ public class ValueTraverser {
      *
      * @return the same set of arguments if nothing changes or new ones if the visitor changes anything
      */
-    public static Map<String, Object> visitPreOrder(Map<String, Object> coercedArgumentValues, GraphQLFieldDefinition fieldDefinition, ValueVisitor visitor) {
+    public static Map<String, @Nullable Object> visitPreOrder(Map<String, @Nullable Object> coercedArgumentValues, GraphQLFieldDefinition fieldDefinition, ValueVisitor visitor) {
         List<GraphQLArgument> fieldArguments = fieldDefinition.getArguments();
         boolean copied = false;
         for (GraphQLArgument fieldArgument : fieldArguments) {
@@ -227,8 +227,8 @@ public class ValueTraverser {
             assertTrue(coercedValue instanceof Map, "A input object type MUST have an Map<String,Object> value");
         }
         @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) coercedValue;
-        Map<String, Object> newMap = visitor.visitInputObjectValue(map, inputObjectType, containingElements);
+        Map<String, @Nullable Object> map = (Map<String, @Nullable Object>) coercedValue;
+        Map<String, @Nullable Object> newMap = visitor.visitInputObjectValue(map, inputObjectType, containingElements);
         if (newMap == ABSENCE_SENTINEL) {
             return ABSENCE_SENTINEL;
         }
@@ -272,8 +272,8 @@ public class ValueTraverser {
             assertTrue(coercedValue instanceof List, "A list type MUST have an List value");
         }
         @SuppressWarnings("unchecked")
-        List<Object> list = (List<Object>) coercedValue;
-        List<Object> newList = visitor.visitListValue(list, listInputType, containingElements);
+        List<@Nullable Object> list = (List<@Nullable Object>) coercedValue;
+        List<@Nullable Object> newList = visitor.visitListValue(list, listInputType, containingElements);
         if (newList == ABSENCE_SENTINEL) {
             return ABSENCE_SENTINEL;
         }
@@ -292,7 +292,7 @@ public class ValueTraverser {
                     // copy previous values up to this point
                     copiedList = ImmutableList.builder();
                     for (int j = 0; j < i; j++) {
-                        copiedList.add(newList.get(j));
+                        copiedList.add(assertNotNull(newList.get(j), "list element must not be null"));
                     }
                     if (newValue != ABSENCE_SENTINEL) {
                         copiedList.add(assertNotNull(newValue, "list element must not be null"));
@@ -314,7 +314,7 @@ public class ValueTraverser {
         return newValue != oldValue || newValue == ABSENCE_SENTINEL;
     }
 
-    private static void setNewValue(Map<String, Object> newMap, String key, @Nullable Object newValue) {
+    private static void setNewValue(Map<String, @Nullable Object> newMap, String key, @Nullable Object newValue) {
         if (newValue == ABSENCE_SENTINEL) {
             newMap.remove(key);
         } else {

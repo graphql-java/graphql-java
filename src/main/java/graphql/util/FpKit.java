@@ -178,6 +178,10 @@ public class FpKit {
         return result.getClass().isArray() || result instanceof Iterable || result instanceof Stream || result instanceof Iterator;
     }
 
+    public static boolean isCollectionOrArray(Object result) {
+        return result instanceof Collection || result.getClass().isArray();
+    }
+
 
     @SuppressWarnings("unchecked")
     public static <T> Iterable<T> toIterable(Object iterableResult) {
@@ -238,22 +242,6 @@ public class FpKit {
         }
 
         return OptionalInt.empty();
-    }
-
-    /**
-     * Concatenates (appends) a single elements to an existing list
-     *
-     * @param l   the list onto which to append the element
-     * @param t   the element to append
-     * @param <T> the type of elements of the list
-     *
-     * @return a <strong>new</strong> list composed of the first list elements and the new element
-     */
-    public static <T> List<T> concat(List<T> l, T t) {
-        List<T> list = new ArrayList<>(l.size() + 1);
-        list.addAll(l);
-        list.add(t);
-        return list;
     }
 
     /**

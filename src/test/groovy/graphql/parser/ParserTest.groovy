@@ -806,16 +806,16 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         field.getIgnoredChars().getLeft().size() == 3
         field.getIgnoredChars().getLeft()[0] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(1, 2))
         field.getIgnoredChars().getLeft()[1] == new IgnoredChar("\r", IgnoredChar.IgnoredCharKind.CR, new SourceLocation(1, 3))
-        field.getIgnoredChars().getLeft()[2] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(1, 4))
+        field.getIgnoredChars().getLeft()[2] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(2, 1))
 
         field.getIgnoredChars().getRight().size() == 2
-        field.getIgnoredChars().getRight()[0] == new IgnoredChar("\n", IgnoredChar.IgnoredCharKind.LF, new SourceLocation(1, 7))
-        field.getIgnoredChars().getRight()[1] == new IgnoredChar("\t", IgnoredChar.IgnoredCharKind.TAB, new SourceLocation(2, 1))
+        field.getIgnoredChars().getRight()[0] == new IgnoredChar("\n", IgnoredChar.IgnoredCharKind.LF, new SourceLocation(2, 4))
+        field.getIgnoredChars().getRight()[1] == new IgnoredChar("\t", IgnoredChar.IgnoredCharKind.TAB, new SourceLocation(3, 1))
 
         document.getIgnoredChars().getRight().size() == 3
-        document.getIgnoredChars().getRight()[0] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(2, 3))
-        document.getIgnoredChars().getRight()[1] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(2, 4))
-        document.getIgnoredChars().getRight()[2] == new IgnoredChar("\n", IgnoredChar.IgnoredCharKind.LF, new SourceLocation(2, 5))
+        document.getIgnoredChars().getRight()[0] == new IgnoredChar(" ", IgnoredChar.IgnoredCharKind.SPACE, new SourceLocation(3, 3))
+        document.getIgnoredChars().getRight()[1] == new IgnoredChar(",", IgnoredChar.IgnoredCharKind.COMMA, new SourceLocation(3, 4))
+        document.getIgnoredChars().getRight()[2] == new IgnoredChar("\n", IgnoredChar.IgnoredCharKind.LF, new SourceLocation(3, 5))
     }
 
     def "parsed float with positive exponent"() {
@@ -1092,6 +1092,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
     }
 
     def "ignored chars can be set on or off"() {
+        def originalOptions = ParserOptions.getDefaultParserOptions()
         def s = '''
             
                type X    {
@@ -1138,6 +1139,9 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         type.getIgnoredChars() != IgnoredChars.EMPTY
         !type.getIgnoredChars().getLeft().isEmpty()
         !type.getIgnoredChars().getRight().isEmpty()
+
+        cleanup:
+        ParserOptions.setDefaultParserOptions(originalOptions)
     }
 
     def "allow braced escaped unicode"() {

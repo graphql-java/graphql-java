@@ -1,6 +1,7 @@
 package graphql.parser
 
 import graphql.parser.antlr.GraphqlLexer
+import graphql.parser.antlr.NumericLiteralTooLongException
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.Token
 import spock.lang.Specification
@@ -34,7 +35,7 @@ class SafeTokenSourceTest extends Specification {
             offendingToken = token
             throw new IllegalStateException("stop at $max")
         }
-        def tokenSource = new SafeTokenSource(graphqlLexer, 50, 1000, Integer.MAX_VALUE, onTooManyTokens, { max, token -> })
+        def tokenSource = new SafeTokenSource(graphqlLexer, 50, 1000, Integer.MAX_VALUE, onTooManyTokens)
 
         consumeAllTokens(tokenSource)
         assert false, "This is not meant to actually consume all tokens"
@@ -59,7 +60,7 @@ class SafeTokenSourceTest extends Specification {
             offendingToken = token
             throw new IllegalStateException("stop at $max")
         }
-        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, Integer.MAX_VALUE, onTooManyTokens, { max, token -> })
+        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, Integer.MAX_VALUE, onTooManyTokens)
 
         consumeAllTokens(tokenSource)
         assert false, "This is not meant to actually consume all tokens"
@@ -82,7 +83,7 @@ class SafeTokenSourceTest extends Specification {
             offendingToken = token
             throw new IllegalStateException("stop at $max")
         }
-        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, Integer.MAX_VALUE, onTooManyTokens, { max, token -> })
+        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, Integer.MAX_VALUE, onTooManyTokens)
 
         consumeAllTokens(tokenSource)
 
@@ -91,31 +92,103 @@ class SafeTokenSourceTest extends Specification {
         offendingToken == null
     }
 
-    def "can call back before returning an oversized numeric literal"() {
+    def "can stop numeric input while the lexer matches it"() {
         given:
-        GraphqlLexer graphqlLexer = lexer("query { field(arg: ${"9" * 101}) }")
-        Token offendingToken = null
-        BiConsumer<Integer, Token> onTooManyNumericLiteralCharacters = { max, token ->
-            offendingToken = token
-            throw new IllegalStateException("stop at $max")
-        }
+        def prefix = "\n  "
+        GraphqlLexer graphqlLexer = lexer(prefix + numericInput)
         def tokenSource = new SafeTokenSource(
                 graphqlLexer,
                 1000,
                 200_000,
-                100,
-                { max, token -> },
-                onTooManyNumericLiteralCharacters
+                configuredLimit,
+                { max, token -> }
         )
 
         when:
         consumeAllTokens(tokenSource)
 
         then:
-        def exception = thrown(IllegalStateException)
-        exception.message == "stop at 100"
-        offendingToken.type == GraphqlLexer.IntValue
-        offendingToken.stopIndex - offendingToken.startIndex + 1 == 101
+        def exception = thrown(NumericLiteralTooLongException)
+        exception.maxCharacters == configuredLimit
+        exception.line == 2
+        exception.column == 2
+        graphqlLexer.inputStream.index() <= prefix.length() + configuredLimit + 1
+
+        where:
+        numericInput                                      | configuredLimit
+        "9" * 101                                        | 100
+        "9" * 2001                                       | 2000
+        "-" + "9" * 2000                                 | 2000
+        "9" * 800 + "." + "9" * 800 + "e+" + "9" * 398 | 2000
+        "1e" + "9" * 1999 + "x"                          | 2000
+        "9" * 10_000                                      | 2000
+        "-1"                                             | 1
+        "0"                                              | 0
+        "9"                                              | 0
+        "0.1"                                            | 2
+        "1e+2"                                           | 3
+    }
+
+    def "numeric literals at the configured character limit are accepted"() {
+        given:
+        GraphqlLexer graphqlLexer = lexer(numericInput)
+        def tokenSource = new SafeTokenSource(
+                graphqlLexer,
+                1000,
+                200_000,
+                configuredLimit,
+                { max, token -> }
+        )
+
+        when:
+        consumeAllTokens(tokenSource)
+
+        then:
+        noExceptionThrown()
+
+        where:
+        numericInput | configuredLimit
+        "0"          | 1
+        "9"          | 1
+        "-0"         | 2
+        "-1"         | 2
+        "1e+2"       | 4
+    }
+
+    def "character limit is applied to each numeric token separately"() {
+        given:
+        GraphqlLexer graphqlLexer = lexer("${"9" * 600}-${"9" * 599}")
+        def tokenSource = new SafeTokenSource(
+                graphqlLexer,
+                1000,
+                200_000,
+                600,
+                { max, token -> }
+        )
+
+        when:
+        consumeAllTokens(tokenSource)
+
+        then:
+        noExceptionThrown()
+    }
+
+    def "numeric punctuation fits exactly at the character limit"() {
+        given:
+        GraphqlLexer graphqlLexer = lexer("${"9" * 500}.${"9" * 500}")
+        def tokenSource = new SafeTokenSource(
+                graphqlLexer,
+                1000,
+                200_000,
+                1001,
+                { max, token -> }
+        )
+
+        when:
+        consumeAllTokens(tokenSource)
+
+        then:
+        noExceptionThrown()
     }
 
 }

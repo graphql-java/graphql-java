@@ -47,7 +47,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
     /**
      * @return the arguments that have been passed in via the graphql query
      */
-    Map<String, Object> getArguments();
+    Map<String, @Nullable Object> getArguments();
 
     /**
      * Returns true of the named argument is present
@@ -70,15 +70,15 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
     <T> T getArgument(String name);
 
     /**
-     * Returns the named argument or the default value
+     * Returns the named argument or the default value. An explicitly null argument remains null.
      *
      * @param name         the name of the argument
-     * @param defaultValue the default value if the argument is not present
+     * @param defaultValue the default value if the argument is not present, which may be null
      * @param <T>          you decide what type it is
      *
      * @return the named argument or the default if it's not present
      */
-    <T> T getArgumentOrDefault(String name, T defaultValue);
+    <T> @Nullable T getArgumentOrDefault(String name, @Nullable T defaultValue);
 
     /**
      * Returns a legacy context argument that is set up when the {@link graphql.GraphQL#execute(graphql.ExecutionInput)} method
@@ -273,7 +273,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @return the coerced variables that have been passed to the query that is being executed
      */
-    Map<String, Object> getVariables();
+    Map<String, @Nullable Object> getVariables();
 
 
     /**

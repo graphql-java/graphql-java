@@ -44,14 +44,16 @@ public class ParseAndValidate {
      * for execution.
      *
      * @param graphQLSchema  the schema to validate against
-     * @param executionInput the execution input containing the query
+     * @param executionInput the execution input containing the query and request-specific complexity limits
      *
      * @return a result object that indicates how this operation went
      */
     public static ParseAndValidateResult parseAndValidate(@NonNull GraphQLSchema graphQLSchema, @NonNull ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
-            List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"), executionInput.getLocale());
+            QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
+            List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"),
+                    rule -> true, executionInput.getLocale(), limits);
             return result.transform(builder -> builder.validationErrors(errors));
         }
         return result;

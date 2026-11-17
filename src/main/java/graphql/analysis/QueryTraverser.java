@@ -16,6 +16,10 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.util.MutableRef;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -23,7 +27,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.jspecify.annotations.NullUnmarked;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -41,6 +44,7 @@ import static java.util.Collections.singletonList;
  * It also doesn't consider field merging, which means for example {@code { user{firstName} user{firstName}} } will result in four
  * visitField calls.
  */
+@NullMarked
 @PublicApi
 public class QueryTraverser {
 
@@ -54,7 +58,7 @@ public class QueryTraverser {
 
     private QueryTraverser(GraphQLSchema schema,
                            Document document,
-                           String operation,
+                           @Nullable String operation,
                            CoercedVariables coercedVariables,
                            QueryTraversalOptions options
                            ) {
@@ -69,7 +73,7 @@ public class QueryTraverser {
 
     private QueryTraverser(GraphQLSchema schema,
                            Document document,
-                           String operation,
+                           @Nullable String operation,
                            RawVariables rawVariables,
                            QueryTraversalOptions options
     ) {
@@ -98,7 +102,7 @@ public class QueryTraverser {
         this.options = options;
     }
 
-    public Object visitDepthFirst(QueryVisitor queryVisitor) {
+    public @Nullable Object visitDepthFirst(QueryVisitor queryVisitor) {
         return visitImpl(queryVisitor, null);
     }
 
@@ -130,17 +134,16 @@ public class QueryTraverser {
      *
      * @return the calculated overall value
      */
-    @SuppressWarnings("unchecked")
-    public <T> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
-        // compiler hack to make acc final and mutable :-)
-        final Object[] acc = {initialValue};
+    public <T extends @Nullable Object> T reducePostOrder(QueryReducer<T> queryReducer, T initialValue) {
+        MutableRef<T> acc = new MutableRef<>();
+        acc.value = initialValue;
         visitPostOrder(new QueryVisitorStub() {
             @Override
             public void visitField(QueryVisitorFieldEnvironment env) {
-                acc[0] = queryReducer.reduceField(env, (T) acc[0]);
+                acc.value = queryReducer.reduceField(env, acc.value);
             }
         });
-        return (T) acc[0];
+        return acc.value;
     }
 
     /**
@@ -152,17 +155,16 @@ public class QueryTraverser {
      *
      * @return the calculated overall value
      */
-    @SuppressWarnings("unchecked")
-    public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
-        // compiler hack to make acc final and mutable :-)
-        final Object[] acc = {initialValue};
+    public <T extends @Nullable Object> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
+        MutableRef<T> acc = new MutableRef<>();
+        acc.value = initialValue;
         visitPreOrder(new QueryVisitorStub() {
             @Override
             public void visitField(QueryVisitorFieldEnvironment env) {
-                acc[0] = queryReducer.reduceField(env, (T) acc[0]);
+                acc.value = queryReducer.reduceField(env, acc.value);
             }
         });
-        return (T) acc[0];
+        return acc.value;
     }
 
     private GraphQLObjectType getRootTypeFromOperation(OperationDefinition operationDefinition) {
@@ -183,10 +185,10 @@ public class QueryTraverser {
             return node.getChildren();
         }
         FragmentSpread fragmentSpread = (FragmentSpread) node;
-        return singletonList(fragmentsByName.get(fragmentSpread.getName()));
+        return singletonList(assertNotNull(fragmentsByName.get(fragmentSpread.getName()), "Fragment %s must exist", fragmentSpread.getName()));
     }
 
-    private Object visitImpl(QueryVisitor visitFieldCallback, Boolean preOrder) {
+    private @Nullable Object visitImpl(QueryVisitor visitFieldCallback, @Nullable Boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null, GraphQLContext.getDefault()));
 

@@ -21,13 +21,18 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLTypeVisitor;
 import graphql.schema.GraphQLUnionType;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This visitor interface offers more "smarts" above {@link GraphQLTypeVisitor} and aims to be easier to use
  * with more type safe helpers.
  * <p>
+ * Environment container getters return null when the visited element is a traversal root.
+ * <p>
  * You would use it places that need a {@link GraphQLTypeVisitor} by doing `new GraphQLSchemaVisitor() { ...}.toTypeVisitor()`
  */
+@NullMarked
 @PublicSpi
 public interface GraphQLSchemaVisitor {
 
@@ -35,7 +40,7 @@ public interface GraphQLSchemaVisitor {
      * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLAppliedDirective}
      */
     interface AppliedDirectiveVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLAppliedDirective> {
-        GraphQLDirectiveContainer getContainer();
+        @Nullable GraphQLDirectiveContainer getContainer();
     }
 
     /**
@@ -55,7 +60,7 @@ public interface GraphQLSchemaVisitor {
      */
     interface AppliedDirectiveArgumentVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLAppliedDirectiveArgument> {
 
-        GraphQLAppliedDirective getContainer();
+        @Nullable GraphQLAppliedDirective getContainer();
 
         /**
          * @return this elements type that has been unwrapped of {@link graphql.schema.GraphQLNonNull} and {@link graphql.schema.GraphQLList}
@@ -82,7 +87,7 @@ public interface GraphQLSchemaVisitor {
         /**
          * @return either a {@link GraphQLFieldDefinition} or a {@link graphql.schema.GraphQLDirective}
          */
-        GraphQLNamedSchemaElement getContainer();
+        @Nullable GraphQLNamedSchemaElement getContainer();
 
         /**
          * @return this elements type that has been unwrapped of {@link graphql.schema.GraphQLNonNull} and {@link graphql.schema.GraphQLList}
@@ -138,7 +143,7 @@ public interface GraphQLSchemaVisitor {
      * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLEnumValueDefinition}
      */
     interface EnumValueDefinitionVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLEnumValueDefinition> {
-        GraphQLEnumType getContainer();
+        @Nullable GraphQLEnumType getContainer();
     }
 
     /**
@@ -158,7 +163,7 @@ public interface GraphQLSchemaVisitor {
      * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLFieldDefinition}
      */
     interface FieldDefinitionVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLFieldDefinition> {
-        GraphQLFieldsContainer getContainer();
+        @Nullable GraphQLFieldsContainer getContainer();
 
         /**
          * @return this elements type that has been unwrapped of {@link graphql.schema.GraphQLNonNull} and {@link graphql.schema.GraphQLList}
@@ -182,7 +187,7 @@ public interface GraphQLSchemaVisitor {
      * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLInputObjectField}
      */
     interface InputObjectFieldVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLInputObjectField> {
-        GraphQLInputObjectType getContainer();
+        @Nullable GraphQLInputObjectType getContainer();
 
         /**
          * @return this elements type that has been unwrapped of {@link graphql.schema.GraphQLNonNull} and {@link graphql.schema.GraphQLList}

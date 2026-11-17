@@ -6,7 +6,6 @@ import graphql.TestUtil
 import graphql.i18n.I18n
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
-import graphql.validation.LanguageTraversal
 import graphql.validation.OperationValidationRule
 import graphql.validation.OperationValidator
 import graphql.validation.ValidationContext
@@ -21,9 +20,9 @@ class VariableTypesMatchTest extends Specification {
         def document = Parser.parse(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         def validationContext = new ValidationContext(schema, document, i18n)
-        def languageTraversal = new LanguageTraversal()
-        languageTraversal.traverse(document, new OperationValidator(validationContext, errorCollector,
-                { rule -> rule == OperationValidationRule.VARIABLE_TYPES_MATCH }))
+
+        new OperationValidator(validationContext, errorCollector,
+                { rule -> rule == OperationValidationRule.VARIABLE_TYPES_MATCH }).validate()
     }
 
     def "valid variables"() {

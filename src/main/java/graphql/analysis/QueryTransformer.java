@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.language.AstNodeAdapter.AST_NODE_ADAPTER;
@@ -64,11 +65,11 @@ public class QueryTransformer {
      *
      * @param queryVisitor the query visitor that will be called back.
      *
-     * @return changed root
+     * @return changed root, or null if the root was deleted
      *
      * @throws IllegalArgumentException if there are multiple root nodes.
      */
-    public Node transform(QueryVisitor queryVisitor) {
+    public @Nullable Node transform(QueryVisitor queryVisitor) {
         QueryVisitor noOp = new QueryVisitorStub();
         NodeVisitorWithTypeTracking nodeVisitor = new NodeVisitorWithTypeTracking(queryVisitor,
                 noOp,
@@ -84,7 +85,7 @@ public class QueryTransformer {
 
             @Override
             public TraversalControl enter(TraverserContext<Node> context) {
-                return context.thisNode().accept(context, nodeVisitor);
+                return assertNotNull(context.thisNode(), "thisNode should not be null").accept(context, nodeVisitor);
             }
 
             @Override

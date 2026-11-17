@@ -87,7 +87,7 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, @Nullable InstrumentationState rawState) {
-        State state = ofState(rawState);
+        State state = ofState(assertNotNull(rawState, "Instrumentation state must be created before callbacks"));
         // for API backwards compatibility reasons we capture the validation parameters, so we can put them into QueryComplexityInfo
         state.instrumentationValidationParameters.set(parameters);
         return noOp();
@@ -101,7 +101,7 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
         if (totalComplexity > maxComplexity) {
             QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
                     .complexity(totalComplexity)
-                    .instrumentationValidationParameters(state.instrumentationValidationParameters.get())
+                    .instrumentationValidationParameters(assertNotNull(state, "Instrumentation state must be created before callbacks").instrumentationValidationParameters.get())
                     .instrumentationExecuteOperationParameters(instrumentationExecuteOperationParameters)
                     .build();
             boolean throwAbortException = maxQueryComplexityExceededFunction.apply(queryComplexityInfo);

@@ -19,12 +19,12 @@ public class DefaultValueUnboxer implements ValueUnboxer {
 
 
     @Override
-    public @Nullable Object unbox(final Object object) {
+    public @Nullable Object unbox(final @Nullable Object object) {
         return unboxValue(object);
     }
 
     @Internal // used by next-gen at the moment
-    public static @Nullable Object unboxValue(Object result) {
+    public static @Nullable Object unboxValue(@Nullable Object result) {
         if (result instanceof Optional) {
             Optional optional = (Optional) result;
             return optional.orElse(null);

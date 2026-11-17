@@ -2,6 +2,8 @@ package graphql.schema.idl;
 
 import graphql.PublicApi;
 import graphql.language.NamedNode;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import graphql.language.NodeParentTree;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLAppliedDirective;
@@ -21,6 +23,7 @@ import java.util.Map;
  * @param <T> the type of the object in play
  */
 @PublicApi
+@NullMarked
 public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveContainer> {
 
     /**
@@ -43,7 +46,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      * @deprecated use {@link #getAppliedDirective()}
      */
     @Deprecated(since = "2022-06-21")
-    GraphQLDirective getDirective();
+    @Nullable GraphQLDirective getDirective();
 
     /**
      * This returns the applied directive that the {@link graphql.schema.idl.SchemaDirectiveWiring} was registered
@@ -57,7 +60,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      * @return the applied directive that was registered under specific directive name or null if it was not
      * registered this way
      */
-    GraphQLAppliedDirective getAppliedDirective();
+    @Nullable GraphQLAppliedDirective getAppliedDirective();
 
     /**
      * @return all of the directives that are on the runtime element
@@ -77,7 +80,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      * @deprecated use {@link #getAppliedDirective(String)}  instead
      */
     @Deprecated(since = "2022-06-21")
-    GraphQLDirective getDirective(String directiveName);
+    @Nullable GraphQLDirective getDirective(String directiveName);
 
     /**
      * @return all of the directives that are on the runtime element
@@ -91,7 +94,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @return a named directive or null
      */
-    GraphQLAppliedDirective getAppliedDirective(String directiveName);
+    @Nullable GraphQLAppliedDirective getAppliedDirective(String directiveName);
 
     /**
      * Returns true if the named directive is present

@@ -3,13 +3,15 @@ package graphql.execution.instrumentation;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.execution.FieldValueInfo;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
 
+@NullMarked
 @PublicSpi
-public interface ExecuteObjectInstrumentationContext extends InstrumentationContext<Map<String, Object>> {
+public interface ExecuteObjectInstrumentationContext extends InstrumentationContext<Map<String, @Nullable Object>> {
 
     @Internal
     ExecuteObjectInstrumentationContext NOOP = new ExecuteObjectInstrumentationContext() {
@@ -18,7 +20,7 @@ public interface ExecuteObjectInstrumentationContext extends InstrumentationCont
         }
 
         @Override
-        public void onCompleted(Map<String, Object> result, Throwable t) {
+        public void onCompleted(@Nullable Map<String, @Nullable Object> result, @Nullable Throwable t) {
         }
     };
 
@@ -29,9 +31,8 @@ public interface ExecuteObjectInstrumentationContext extends InstrumentationCont
      *
      * @return a non null {@link InstrumentationContext} that maybe a no-op
      */
-    @NonNull
     @Internal
-    static ExecuteObjectInstrumentationContext nonNullCtx(ExecuteObjectInstrumentationContext nullableContext) {
+    static ExecuteObjectInstrumentationContext nonNullCtx(@Nullable ExecuteObjectInstrumentationContext nullableContext) {
         return nullableContext == null ? NOOP : nullableContext;
     }
 

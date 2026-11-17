@@ -3,6 +3,7 @@ package graphql.schema.transform;
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.introspection.Introspection;
+import org.jspecify.annotations.NullMarked;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
@@ -42,6 +43,7 @@ import static graphql.schema.SchemaTransformer.transformSchemaWithDeletes;
  * fail with an {@link graphql.schema.validation.InvalidSchemaException}.
  */
 @PublicApi
+@NullMarked
 public class FieldVisibilitySchemaTransformation {
 
     private static final VisibleInterfaceImplementationPredicate ALL_INTERFACE_IMPLEMENTATIONS_VISIBLE = environment -> true;

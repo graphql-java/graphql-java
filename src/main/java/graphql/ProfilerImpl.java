@@ -62,7 +62,7 @@ public class ProfilerImpl implements Profiler {
 
 
     @Override
-    public void fieldFetched(Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path, GraphQLFieldDefinition fieldDef, GraphQLOutputType parentType) {
+    public void fieldFetched(@Nullable Object fetchedObject, DataFetcher<?> originalDataFetcher, DataFetcher<?> dataFetcher, ResultPath path, GraphQLFieldDefinition fieldDef, GraphQLOutputType parentType) {
         String key = "/" + String.join("/", path.getKeysOnly());
         if (Introspection.isIntrospectionTypes(GraphQLTypeUtil.unwrapAll(fieldDef.getType()))
                 || Introspection.isIntrospectionTypes(GraphQLTypeUtil.unwrapAll(parentType))

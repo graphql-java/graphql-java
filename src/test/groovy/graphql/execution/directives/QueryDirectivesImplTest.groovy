@@ -6,8 +6,11 @@ import graphql.execution.CoercedVariables
 import graphql.execution.MergedField
 import graphql.execution.NormalizedVariables
 import graphql.language.IntValue
+import graphql.language.StringValue
 import graphql.normalized.NormalizedInputValue
 import spock.lang.Specification
+
+import java.util.function.Supplier
 
 import static graphql.language.AstPrinter.printAst
 
@@ -73,6 +76,114 @@ class QueryDirectivesImplTest extends Specification {
         appliedResult[1].getArgument("forMillis").getValue() == 10
     }
 
+    def "ordinary directive lookup does not request normalized variables: #getter"() {
+        def normalizedVariables = Mock(Supplier)
+        def queryDirectives = QueryDirectives.newQueryDirectives()
+                .field(TestUtil.parseField('f @cached(forMillis: $var)'))
+                .schema(schema)
+                .coercedVariables(CoercedVariables.of([var: 10]))
+                .normalizedVariables(normalizedVariables)
+                .build()
+
+        when:
+        def result = queryDirectives."$getter"(*arguments)
+
+        then:
+        !result.isEmpty()
+        0 * normalizedVariables.get()
+
+        where:
+        getter                                | arguments
+        "getImmediateDirectivesByName"        | []
+        "getImmediateDirectivesByField"       | []
+        "getImmediateDirective"               | ["cached"]
+        "getImmediateAppliedDirectivesByName"  | []
+        "getImmediateAppliedDirectivesByField" | []
+        "getImmediateAppliedDirective"        | ["cached"]
+    }
+
+    def "normalized directives reuse resolved instances and are cached with normalized first: #normalizedFirst"() {
+        def firstField = TestUtil.parseField('f @rep(place: $var) @cached @rep(place: "HELLO")')
+        def secondField = TestUtil.parseField('f @rep(place: "second")')
+        int normalizations = 0
+        def queryDirectives = QueryDirectives.newQueryDirectives()
+                .mergedField(MergedField.newMergedField([firstField, secondField]).build())
+                .schema(schema)
+                .coercedVariables(CoercedVariables.of([var: "ABC"]))
+                .normalizedVariables({
+                    normalizations++
+                    NormalizedVariables.of([var: new NormalizedInputValue("String", StringValue.of("ABC"))])
+                })
+                .build()
+
+        when:
+        def firstResult = normalizedFirst ? queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives() :
+                queryDirectives.getImmediateAppliedDirectivesByName()
+
+        then:
+        normalizations == (normalizedFirst ? 1 : 0)
+
+        when:
+        def normalized = queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives()
+        def applied = queryDirectives.getImmediateAppliedDirectivesByName()
+
+        then:
+        normalizations == 1
+        normalized.keySet().toList() == applied.values().flatten()
+        applied.rep.collect { normalized[it].place.typeName } == ["String", "String", "String"]
+        applied.rep.collect { printAst(normalized[it].place.value) } == ['"ABC"', '"HELLO"', '"second"']
+        normalized[applied.cached[0]] == [:]
+        applied.cached[0].getArgument("forMillis").getValue() == 99
+        queryDirectives.getImmediateAppliedDirectivesByField()[firstField] == [applied.rep[0], applied.cached[0], applied.rep[1]]
+        queryDirectives.getImmediateAppliedDirectivesByField()[secondField] == [applied.rep[2]]
+        queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives().is(normalized)
+        firstResult.is(normalizedFirst ? normalized : applied)
+        normalizations == 1
+
+        where:
+        normalizedFirst << [true, false]
+    }
+
+    def "fields without directives do not request normalized variables even for normalized lookup"() {
+        def normalizedVariables = Mock(Supplier)
+        def queryDirectives = QueryDirectives.newQueryDirectives()
+                .field(TestUtil.parseField("f"))
+                .schema(schema)
+                .normalizedVariables(normalizedVariables)
+                .build()
+
+        when:
+        def normalized = queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives()
+        def applied = queryDirectives.getImmediateAppliedDirectivesByName()
+
+        then:
+        normalized.isEmpty()
+        applied.isEmpty()
+        0 * normalizedVariables.get()
+    }
+
+    def "a failed normalized lookup leaves ordinary directive values available"() {
+        def queryDirectives = QueryDirectives.newQueryDirectives()
+                .field(TestUtil.parseField('f @cached(forMillis: $var)'))
+                .schema(schema)
+                .coercedVariables(CoercedVariables.of([var: 10]))
+                .normalizedVariables({ throw new UnsupportedOperationException("valueToLiteral is not supported") })
+                .build()
+
+        when:
+        queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives()
+
+        then:
+        thrown(UnsupportedOperationException)
+
+        when:
+        def applied = queryDirectives.getImmediateAppliedDirective("cached")
+
+        then:
+        applied[0].getArgument("forMillis").getValue() == 10
+        queryDirectives.getImmediateDirective("cached")[0].getArgument("forMillis").getArgumentValue().value == 10
+    }
+
     def "builder works as expected"() {
         def f1 = TestUtil.parseField("f1 @cached @upper")
         def f2 = TestUtil.parseField("f2 @cached(forMillis : \$var) @timeout")
@@ -93,6 +204,22 @@ class QueryDirectivesImplTest extends Specification {
 
         then:
         appliedDirectivesByName.keySet().sort() == ["cached", "timeout", "upper"]
+    }
+
+    def "builder normalizes literal directive arguments without variable configuration"() {
+        def queryDirectives = QueryDirectives.newQueryDirectives()
+                .field(TestUtil.parseField('f @cached(forMillis: 15)'))
+                .schema(schema)
+                .build()
+
+        when:
+        def normalized = queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives()
+        def applied = queryDirectives.getImmediateAppliedDirective("cached")[0]
+
+        then:
+        normalized[applied].forMillis.typeName == "Int"
+        printAst(normalized[applied].forMillis.value) == "15"
+        applied.getArgument("forMillis").getValue() == 15
     }
 
     def "gets repeated definitions"() {

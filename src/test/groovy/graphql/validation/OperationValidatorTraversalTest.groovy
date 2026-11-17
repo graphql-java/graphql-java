@@ -205,6 +205,25 @@ class OperationValidatorTraversalTest extends Specification {
         errors[0].queryPath == []
     }
 
+    def "fragment expansion preserves variable error order and ancestor paths"() {
+        given:
+        def document = Parser.parse('''{
+            node { ...F @include(if: $spread) ...F @include(if: $repeated) }
+        }
+        fragment F on Node { name @include(if: $inside) }
+        ''')
+
+        when:
+        def errors = validate(document)
+
+        then:
+        errors*.validationErrorType == [ValidationErrorType.UndefinedVariable, ValidationErrorType.UndefinedVariable, ValidationErrorType.UndefinedVariable]
+        errors*.queryPath == [['node', 'F', 'name'], ['node'], ['node']]
+        errors*.description[0].contains('inside')
+        errors*.description[1].contains('spread')
+        errors*.description[2].contains('repeated')
+    }
+
     private List<ValidationError> validate(String query) {
         def document = Parser.parse(query)
         return validate(document)
@@ -220,9 +239,7 @@ class OperationValidatorTraversalTest extends Specification {
         def validationContext = new ValidationContext(schema, document, i18n)
         validationContext.graphQLContext.put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
         def errorCollector = new ValidationErrorCollector()
-        new LanguageTraversal().traverse(
-                document,
-                new OperationValidator(validationContext, errorCollector, { true }))
+        new OperationValidator(validationContext, errorCollector, { true }).validate()
         return errorCollector.errors
     }
 }

@@ -46,6 +46,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.impl.SchemaUtil;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -80,6 +81,7 @@ import static java.util.stream.Collectors.toSet;
  * during a given graphql operation.
  */
 @PublicApi
+@NullMarked
 public class ExecutableNormalizedOperationFactory {
 
     public static class Options {
@@ -489,8 +491,9 @@ public class ExecutableNormalizedOperationFactory {
             buildEnfsRecursively(null, null, 0);
 
             for (PossibleMerger possibleMerger : possibleMergerList) {
-                List<ExecutableNormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
-                ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema, options.deferSupport);
+                ExecutableNormalizedField mergerParent = assertNotNull(possibleMerger.parent, "possibleMerger.parent should not be null");
+                List<ExecutableNormalizedField> childrenWithSameResultKey = mergerParent.getChildrenWithSameResultKey(possibleMerger.resultKey);
+                ENFMerger.merge(mergerParent, childrenWithSameResultKey, graphQLSchema, options.deferSupport);
             }
 
             Map<String, ImmutableList<QueryAppliedDirective>> operationDirectives = directivesResolver.resolveDirectivesByName(operationDefinition,
@@ -549,7 +552,7 @@ public class ExecutableNormalizedOperationFactory {
                     return;
                 }
                 collectedFields = new ArrayList<>();
-                for (CollectedField fieldAndAstParent : fieldAndAstParents) {
+                for (CollectedField fieldAndAstParent : assertNotNull(fieldAndAstParents, "fieldAndAstParents should not be null")) {
                     if (fieldAndAstParent.field.getSelectionSet() == null) {
                         continue;
                     }
@@ -637,7 +640,7 @@ public class ExecutableNormalizedOperationFactory {
                                Map<String, List<CollectedField>> fieldsByName,
                                ImmutableListMultimap.Builder<ExecutableNormalizedField, CollectedField> normalizedFieldToAstFields,
                                int level,
-                               ExecutableNormalizedField parent) {
+                               @Nullable ExecutableNormalizedField parent) {
             for (String resultKey : fieldsByName.keySet()) {
                 List<CollectedField> fieldsWithSameResultKey = fieldsByName.get(resultKey);
                 List<CollectedFieldGroup> commonParentsGroups = groupByCommonParents(fieldsWithSameResultKey);
@@ -652,7 +655,7 @@ public class ExecutableNormalizedOperationFactory {
                     nfListBuilder.add(nf);
 
                     if (this.options.deferSupport) {
-                        nf.addDeferredExecutions(fieldGroup.deferredExecutions);
+                        nf.addDeferredExecutions(assertNotNull(fieldGroup.deferredExecutions, "Deferred executions must exist when defer support is enabled"));
                     }
                 }
                 if (commonParentsGroups.size() > 1) {
@@ -664,7 +667,7 @@ public class ExecutableNormalizedOperationFactory {
         // new single ENF
         private ExecutableNormalizedField createNF(CollectedFieldGroup collectedFieldGroup,
                                                    int level,
-                                                   ExecutableNormalizedField parent) {
+                                                   @Nullable ExecutableNormalizedField parent) {
 
             this.fieldCount++;
             if (this.fieldCount > this.options.getMaxFieldsCount()) {
@@ -786,7 +789,7 @@ public class ExecutableNormalizedOperationFactory {
                                              List<CollectedField> result,
                                              GraphQLCompositeType astTypeCondition,
                                              Set<GraphQLObjectType> possibleObjects,
-                                             NormalizedDeferredExecution deferredExecution,
+                                             @Nullable NormalizedDeferredExecution deferredExecution,
                                              Map<Directive, NormalizedDeferredExecution> deferredExecutions
         ) {
             for (Selection<?> selection : selectionSet.getSelections()) {
@@ -843,7 +846,7 @@ public class ExecutableNormalizedOperationFactory {
             GraphQLCompositeType newAstTypeCondition = astTypeCondition;
 
             if (inlineFragment.getTypeCondition() != null) {
-                newAstTypeCondition = (GraphQLCompositeType) this.graphQLSchema.getType(inlineFragment.getTypeCondition().getName());
+                newAstTypeCondition = (GraphQLCompositeType) assertNotNull(this.graphQLSchema.getType(inlineFragment.getTypeCondition().getName()), "type should not be null");
                 newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newAstTypeCondition);
 
             }
@@ -889,7 +892,7 @@ public class ExecutableNormalizedOperationFactory {
                                   Field field,
                                   Set<GraphQLObjectType> possibleObjectTypes,
                                   GraphQLCompositeType astTypeCondition,
-                                  NormalizedDeferredExecution deferredExecution
+                                  @Nullable NormalizedDeferredExecution deferredExecution
         ) {
             if (!conditionalNodes.shouldInclude(field,
                     this.coercedVariableValues.toMap(),
@@ -943,10 +946,10 @@ public class ExecutableNormalizedOperationFactory {
         }
 
         private static class PossibleMerger {
-            ExecutableNormalizedField parent;
+            @Nullable ExecutableNormalizedField parent;
             String resultKey;
 
-            public PossibleMerger(ExecutableNormalizedField parent, String resultKey) {
+            public PossibleMerger(@Nullable ExecutableNormalizedField parent, String resultKey) {
                 this.parent = parent;
                 this.resultKey = resultKey;
             }
@@ -956,9 +959,9 @@ public class ExecutableNormalizedOperationFactory {
             Field field;
             Set<GraphQLObjectType> objectTypes;
             GraphQLCompositeType astTypeCondition;
-            NormalizedDeferredExecution deferredExecution;
+            @Nullable NormalizedDeferredExecution deferredExecution;
 
-            public CollectedField(Field field, Set<GraphQLObjectType> objectTypes, GraphQLCompositeType astTypeCondition, NormalizedDeferredExecution deferredExecution) {
+            public CollectedField(Field field, Set<GraphQLObjectType> objectTypes, GraphQLCompositeType astTypeCondition, @Nullable NormalizedDeferredExecution deferredExecution) {
                 this.field = field;
                 this.objectTypes = objectTypes;
                 this.astTypeCondition = astTypeCondition;
@@ -969,9 +972,9 @@ public class ExecutableNormalizedOperationFactory {
         private static class CollectedFieldGroup {
             Set<GraphQLObjectType> objectTypes;
             Set<CollectedField> fields;
-            Set<NormalizedDeferredExecution> deferredExecutions;
+            @Nullable Set<NormalizedDeferredExecution> deferredExecutions;
 
-            public CollectedFieldGroup(Set<CollectedField> fields, Set<GraphQLObjectType> objectTypes, Set<NormalizedDeferredExecution> deferredExecutions) {
+            public CollectedFieldGroup(Set<CollectedField> fields, Set<GraphQLObjectType> objectTypes, @Nullable Set<NormalizedDeferredExecution> deferredExecutions) {
                 this.fields = fields;
                 this.objectTypes = objectTypes;
                 this.deferredExecutions = deferredExecutions;

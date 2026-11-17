@@ -4,8 +4,11 @@ import graphql.ErrorClassification;
 import graphql.ErrorType;
 import graphql.GraphqlErrorException;
 import graphql.PublicApi;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.NullUnmarked;
 
 @PublicApi
+@NullMarked
 public class CoercingSerializeException extends GraphqlErrorException {
 
     public CoercingSerializeException() {
@@ -37,6 +40,7 @@ public class CoercingSerializeException extends GraphqlErrorException {
         return new Builder();
     }
 
+    @NullUnmarked
     public static class Builder extends BuilderBase<Builder, CoercingSerializeException> {
         public CoercingSerializeException build() {
             return new CoercingSerializeException(this);

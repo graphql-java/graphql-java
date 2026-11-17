@@ -114,7 +114,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                                      List<String> fieldNames,
                                      @Nullable CompletableFuture<Void> cancelCF,
                                      CompletableFuture<ExecutionResult> overallResult) {
-        Async.CombinedBuilder<Object> fieldValuesFutures = fieldValuesCombinedBuilder(completeValueInfos);
+        Async.CombinedBuilder<@Nullable Object> fieldValuesFutures = fieldValuesCombinedBuilder(completeValueInfos);
         // null entries only occur when capturePartialResults(..) is enabled; the instrumentation callbacks
         // should not see them, so filter them out (nonNullFieldValueInfos returns the list as-is if none)
         List<FieldValueInfo> valueInfosForInstrumentation = nonNullFieldValueInfos(completeValueInfos);

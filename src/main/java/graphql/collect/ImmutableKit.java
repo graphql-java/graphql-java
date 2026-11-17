@@ -208,14 +208,14 @@ public final class ImmutableKit {
      * @return a filtered list
      */
     @SafeVarargs
-    public static <T> List<T> filterVarArgs(Predicate<? super T> filter, T... args) {
+    public static <T> List<T> filterVarArgs(Predicate<? super @Nullable T> filter, @Nullable T... args) {
         if (args.length == 0) {
             return ImmutableList.of();
         }
         ImmutableList.Builder<T> builder = ImmutableList.builderWithExpectedSize(args.length);
-        for (T arg : args) {
+        for (@Nullable T arg : args) {
             if (filter.test(arg)) {
-                builder.add(arg);
+                builder.add(assertNotNull(arg, "Selected list element must not be null"));
             }
         }
         return builder.build();

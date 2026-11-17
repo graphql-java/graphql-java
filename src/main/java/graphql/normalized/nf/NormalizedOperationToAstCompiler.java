@@ -18,7 +18,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.Field.newField;
 import static graphql.language.InlineFragment.newInlineFragment;
@@ -45,6 +46,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * You could for example send that operation text onto to some other graphql server if it
  * has the same schema as the one provided.
  */
+@NullMarked
 @ExperimentalApi
 public class NormalizedOperationToAstCompiler {
 
@@ -54,9 +56,9 @@ public class NormalizedOperationToAstCompiler {
      */
     public static class CompilerResult {
         private final Document document;
-        private final Map<String, Object> variables;
+        private final @Nullable Map<String, @Nullable Object> variables;
 
-        public CompilerResult(Document document, Map<String, Object> variables) {
+        public CompilerResult(Document document, @Nullable Map<String, @Nullable Object> variables) {
             this.document = document;
             this.variables = variables;
         }
@@ -65,7 +67,7 @@ public class NormalizedOperationToAstCompiler {
             return document;
         }
 
-        public Map<String, Object> getVariables() {
+        public @Nullable Map<String, @Nullable Object> getVariables() {
             return variables;
         }
     }
@@ -129,7 +131,7 @@ public class NormalizedOperationToAstCompiler {
 
 
     private static List<Selection<?>> subSelectionsForNormalizedFields(GraphQLSchema schema,
-                                                                       @NonNull String parentOutputType,
+                                                                       String parentOutputType,
                                                                        List<NormalizedField> normalizedFields
     ) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
@@ -223,23 +225,22 @@ public class NormalizedOperationToAstCompiler {
     }
 
 
-    @NonNull
     private static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema,
                                                              String parentType,
                                                              NormalizedField nf) {
-        return Introspection.getFieldDef(schema, (GraphQLCompositeType) schema.getType(parentType), nf.getName());
+        return Introspection.getFieldDef(schema, (GraphQLCompositeType) assertNotNull(schema.getType(parentType), "Parent type %s must exist", parentType), nf.getName());
     }
 
 
-    private static GraphQLObjectType getOperationType(@NonNull GraphQLSchema schema,
-                                                      OperationDefinition.@NonNull Operation operationKind) {
+    private static GraphQLObjectType getOperationType(GraphQLSchema schema,
+                                                      OperationDefinition.Operation operationKind) {
         switch (operationKind) {
             case QUERY:
                 return schema.getQueryType();
             case MUTATION:
-                return schema.getMutationType();
+                return assertNotNull(schema.getMutationType(), "Schema must define a mutation root");
             case SUBSCRIPTION:
-                return schema.getSubscriptionType();
+                return assertNotNull(schema.getSubscriptionType(), "Schema must define a subscription root");
         }
 
         return Assert.assertShouldNeverHappen("Unknown operation kind " + operationKind);

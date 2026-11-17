@@ -4,7 +4,7 @@ import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.execution.DataFetcherResult;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -14,6 +14,7 @@ import org.jspecify.annotations.Nullable;
  * you to know if the field value is a completely materialised field or if it's a {@link java.util.concurrent.CompletableFuture}
  * promise to a value.
  */
+@NullMarked
 @PublicSpi
 public interface FieldFetchingInstrumentationContext extends InstrumentationContext<Object> {
 
@@ -24,7 +25,7 @@ public interface FieldFetchingInstrumentationContext extends InstrumentationCont
      *
      * @param fetchedValue a value that a field's {@link graphql.schema.DataFetcher} returned
      */
-    default void onFetchedValue(Object fetchedValue) {
+    default void onFetchedValue(@Nullable Object fetchedValue) {
     }
 
     /**
@@ -43,7 +44,7 @@ public interface FieldFetchingInstrumentationContext extends InstrumentationCont
         }
 
         @Override
-        public void onCompleted(Object result, Throwable t) {
+        public void onCompleted(@Nullable Object result, @Nullable Throwable t) {
         }
     };
 
@@ -53,14 +54,13 @@ public interface FieldFetchingInstrumentationContext extends InstrumentationCont
      * @param nullableContext a {@link InstrumentationContext} that can be null
      * @return a non-null {@link InstrumentationContext} that maybe a no-op
      */
-    @NonNull
     @Internal
-    static FieldFetchingInstrumentationContext nonNullCtx(FieldFetchingInstrumentationContext nullableContext) {
+    static FieldFetchingInstrumentationContext nonNullCtx(@Nullable FieldFetchingInstrumentationContext nullableContext) {
         return nullableContext == null ? NOOP : nullableContext;
     }
 
     @Internal
-    static FieldFetchingInstrumentationContext adapter(@Nullable InstrumentationContext<Object> context) {
+    static @Nullable FieldFetchingInstrumentationContext adapter(@Nullable InstrumentationContext<Object> context) {
         if (context == null) {
             return null;
         }
@@ -71,7 +71,7 @@ public interface FieldFetchingInstrumentationContext extends InstrumentationCont
             }
 
             @Override
-            public void onCompleted(Object result, Throwable t) {
+            public void onCompleted(@Nullable Object result, @Nullable Throwable t) {
                 context.onCompleted(result, t);
             }
         };

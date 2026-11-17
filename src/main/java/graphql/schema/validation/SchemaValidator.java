@@ -1,6 +1,7 @@
 package graphql.schema.validation;
 
 import graphql.Internal;
+import graphql.execution.InputValueLimits;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeVisitor;
 import graphql.schema.SchemaTraverser;
@@ -36,6 +37,10 @@ public class SchemaValidator {
 
     public Set<SchemaValidationError> validateSchema(GraphQLSchema schema) {
         SchemaValidationErrorCollector validationErrorCollector = new SchemaValidationErrorCollector();
+        new DefaultValueDepth(InputValueLimits.getDefaultLimits().getMaxDepth()).check(schema, validationErrorCollector);
+        if (!validationErrorCollector.getErrors().isEmpty()) {
+            return validationErrorCollector.getErrors();
+        }
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(GraphQLSchema.class, schema);
         rootVars.put(SchemaValidationErrorCollector.class, validationErrorCollector);

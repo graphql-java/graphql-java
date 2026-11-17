@@ -47,5 +47,6 @@ public enum ValidationErrorType implements ValidationErrorClassification {
     UniqueObjectFieldName,
     UnknownOperation,
     MaxQueryDepthExceeded,
-    MaxQueryFieldsExceeded
+    MaxQueryMergedFieldCountExceeded,
+    MaxQueryFieldOccurrencesExceeded
 }

@@ -188,7 +188,4 @@ public enum OperationValidationRule {
 
     /** Defer directive must not be used in subscription operations. Requires operation context. */
     DEFER_DIRECTIVE_ON_VALID_OPERATION,
-
-    /** Good faith introspection check. */
-    GOOD_FAITH_INTROSPECTION,
 }

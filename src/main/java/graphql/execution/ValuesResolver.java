@@ -92,7 +92,8 @@ public class ValuesResolver {
 
 
     /**
-     * Normalized variables values are Literals with type information. No validation here!
+     * Normalized variable values are Literals with type information. Variable values are assumed
+     * to be valid, but input value depth is still limited.
      *
      * @param schema              the schema to use
      * @param variableDefinitions the list of variable definitions
@@ -375,7 +376,7 @@ public class ValuesResolver {
                     coercedValues.put(argumentName, value);
                 }
 
-                ValuesResolverOneOfValidation.validateOneOfInputTypes(argumentType, value, argumentValue, argumentName, locale);
+                ValuesResolverOneOfValidation.validateOneOfInputTypes(argumentType, value, argumentValue, locale);
 
             }
         }

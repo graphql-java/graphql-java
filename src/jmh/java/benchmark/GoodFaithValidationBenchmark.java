@@ -32,7 +32,7 @@ import static graphql.Assert.assertTrue;
 @Measurement(iterations = 8, time = 1)
 @Fork(2)
 public class GoodFaithValidationBenchmark {
-    @Param({"tiny", "minimal", "simple", "fragments", "wideScalars", "wide", "wideLarge", "fragmentHeavy", "deep", "multiOperation", "mixedAbstract", "introspection"})
+    @Param({"tiny", "minimal", "simple", "fragments", "wideScalars", "wide", "wideLarge", "fragmentHeavy", "deep", "multiOperation", "mixedAbstract", "introspection", "fragmentChain"})
     public String scenario;
 
     private GraphQLSchema schema;
@@ -79,6 +79,8 @@ public class GoodFaithValidationBenchmark {
             case "mixedAbstract":
                 return repeatedFields(200, "node { name child { name } "
                         + "... on A { name child { name extraA } } ... on B { name child { name extraB } } }");
+            case "fragmentChain":
+                return fragmentChain();
             case "introspection":
                 return IntrospectionQuery.INTROSPECTION_QUERY;
             default:
@@ -105,6 +107,14 @@ public class GoodFaithValidationBenchmark {
 
     private String fragments() {
         return "fragment F on Node { name child { ...G } } fragment G on Node { name }";
+    }
+
+    private String fragmentChain() {
+        StringBuilder query = new StringBuilder("{ node { ...F0 } }");
+        for (int index = 0; index < 1500; index++) {
+            query.append("fragment F").append(index).append(" on Node { ...F").append(index + 1).append(" } ");
+        }
+        return query.append("fragment F1500 on Node { name }").toString();
     }
 
     @Benchmark

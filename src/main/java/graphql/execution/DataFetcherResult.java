@@ -49,9 +49,9 @@ public class DataFetcherResult<T extends @Nullable Object> {
     private final @Nullable T data;
     private final List<GraphQLError> errors;
     private final @Nullable Object localContext;
-    private final @Nullable Map<Object, Object> extensions;
+    private final @Nullable Map<Object, @Nullable Object> extensions;
 
-    private DataFetcherResult(@Nullable T data, List<GraphQLError> errors, @Nullable Object localContext, @Nullable Map<Object, Object> extensions) {
+    private DataFetcherResult(@Nullable T data, List<GraphQLError> errors, @Nullable Object localContext, @Nullable Map<Object, @Nullable Object> extensions) {
         this.data = data;
         this.errors = ImmutableList.copyOf(assertNotNull(errors));
         this.localContext = localContext;
@@ -100,7 +100,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
      * @see graphql.extensions.ExtensionsBuilder
      * @see graphql.extensions.ExtensionsMerger
      */
-    public @Nullable Map<Object, Object> getExtensions() {
+    public @Nullable Map<Object, @Nullable Object> getExtensions() {
         return extensions;
     }
 
@@ -192,7 +192,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
         private @Nullable T data;
         private @Nullable Object localContext;
         private final List<GraphQLError> errors = new ArrayList<>();
-        private @Nullable Map<Object, Object> extensions;
+        private @Nullable Map<Object, @Nullable Object> extensions;
 
         public Builder(DataFetcherResult<T> existing) {
             data = existing.getData();
@@ -240,7 +240,7 @@ public class DataFetcherResult<T extends @Nullable Object> {
             return this;
         }
 
-        public Builder<T> extensions(@Nullable Map<Object, Object> extensions) {
+        public Builder<T> extensions(@Nullable Map<Object, @Nullable Object> extensions) {
             this.extensions = extensions;
             return this;
         }

@@ -1,7 +1,10 @@
 package graphql.execution.instrumentation;
 
+import graphql.Contract;
 import graphql.PublicSpi;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * An {@link Instrumentation} implementation can create this as a stateful object that is then passed
@@ -9,6 +12,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationCreateStatePa
  *
  * @see Instrumentation#createStateAsync(InstrumentationCreateStateParameters)
  */
+@NullMarked
 @PublicSpi
 public interface InstrumentationState {
 
@@ -18,9 +22,10 @@ public interface InstrumentationState {
      * @param rawState the raw InstrumentationState
      * @param <T>      for two
      *
-     * @return a cast custom InstrumentationState
+     * @return a cast custom InstrumentationState, or null when rawState is null
      */
-    static <T extends InstrumentationState> T ofState(InstrumentationState rawState) {
+    @Contract("!null -> !null")
+    static <T extends InstrumentationState> @Nullable T ofState(@Nullable InstrumentationState rawState) {
         //noinspection unchecked
         return (T) rawState;
     }

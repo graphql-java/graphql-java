@@ -23,27 +23,23 @@ import java.util.function.BiConsumer;
 @Internal
 public class SafeTokenSource implements TokenSource {
 
-    private final TokenSource lexer;
+    private final GraphqlLexer lexer;
     private final int maxTokens;
     private final int maxWhitespaceTokens;
-    private final int maxNumericLiteralCharacters;
     private final BiConsumer<Integer, Token> whenMaxTokensExceeded;
-    private final BiConsumer<Integer, Token> whenMaxNumericLiteralCharactersExceeded;
     private final int channelCounts[];
 
-    public SafeTokenSource(TokenSource lexer, int maxTokens, int maxWhitespaceTokens, int maxNumericLiteralCharacters,
-                           BiConsumer<Integer, Token> whenMaxTokensExceeded,
-                           BiConsumer<Integer, Token> whenMaxNumericLiteralCharactersExceeded) {
+    public SafeTokenSource(GraphqlLexer lexer, int maxTokens, int maxWhitespaceTokens, int maxNumericLiteralCharacters,
+                           BiConsumer<Integer, Token> whenMaxTokensExceeded) {
         this.lexer = lexer;
         this.maxTokens = maxTokens;
         this.maxWhitespaceTokens = maxWhitespaceTokens;
-        this.maxNumericLiteralCharacters = maxNumericLiteralCharacters;
         this.whenMaxTokensExceeded = whenMaxTokensExceeded;
-        this.whenMaxNumericLiteralCharactersExceeded = whenMaxNumericLiteralCharactersExceeded;
         // this could be a Map<int,int> however we want it to be faster as possible.
         // we only have 3 channels - but they are 0,2 and 3 so use 5 for safety - still faster than a map get/put
         // if we ever add another channel beyond 5 it will IOBEx during tests so future changes will be handled before release!
         this.channelCounts = new int[]{0, 0, 0, 0, 0};
+        lexer.setMaxNumericLiteralCharacters(maxNumericLiteralCharacters);
     }
 
 
@@ -51,7 +47,6 @@ public class SafeTokenSource implements TokenSource {
     public Token nextToken() {
         Token token = lexer.nextToken();
         if (token != null) {
-            callbackIfNumericLiteralTooLong(token);
             int channel = token.getChannel();
             int currentCount = ++channelCounts[channel];
             if (channel == Parser.CHANNEL_WHITESPACE) {
@@ -62,18 +57,6 @@ public class SafeTokenSource implements TokenSource {
             }
         }
         return token;
-    }
-
-    private void callbackIfNumericLiteralTooLong(Token token) {
-        int tokenType = token.getType();
-        if (tokenType != GraphqlLexer.IntValue && tokenType != GraphqlLexer.FloatValue) {
-            return;
-        }
-
-        int characterCount = token.getStopIndex() - token.getStartIndex() + 1;
-        if (characterCount > maxNumericLiteralCharacters) {
-            whenMaxNumericLiteralCharactersExceeded.accept(maxNumericLiteralCharacters, token);
-        }
     }
 
     private void callbackIfMaxExceeded(int maxCount, int currentCount, Token token) {

@@ -10,6 +10,7 @@ import graphql.schema.GraphQLInputSchemaElement;
 import graphql.schema.GraphQLInputValueDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -18,6 +19,7 @@ import java.util.Map;
 /**
  * A visitor callback used by {@link ValueTraverser}
  */
+@NullMarked
 @PublicSpi
 public interface ValueVisitor {
 
@@ -56,7 +58,7 @@ public interface ValueVisitor {
          *
          * @return the last {@link GraphQLInputValueDefinition} that contains this value
          */
-        GraphQLInputValueDefinition getLastInputValueDefinition();
+        @Nullable GraphQLInputValueDefinition getLastInputValueDefinition();
     }
 
     /**
@@ -108,7 +110,7 @@ public interface ValueVisitor {
      *
      * @return the same value or a new value
      */
-    default @Nullable Map<String, Object> visitInputObjectValue(@Nullable Map<String, Object> coercedValue, GraphQLInputObjectType inputObjectType, InputElements inputElements) {
+    default @Nullable Map<String, @Nullable Object> visitInputObjectValue(@Nullable Map<String, @Nullable Object> coercedValue, GraphQLInputObjectType inputObjectType, InputElements inputElements) {
         return coercedValue;
     }
 
@@ -121,7 +123,7 @@ public interface ValueVisitor {
      *
      * @return the same value or a new value
      */
-    default @Nullable List<Object> visitListValue(@Nullable List<Object> coercedValue, GraphQLList listInputType, InputElements inputElements) {
+    default @Nullable List<@Nullable Object> visitListValue(@Nullable List<@Nullable Object> coercedValue, GraphQLList listInputType, InputElements inputElements) {
         return coercedValue;
     }
 

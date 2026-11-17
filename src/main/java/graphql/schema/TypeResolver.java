@@ -3,11 +3,14 @@ package graphql.schema;
 
 import graphql.PublicSpi;
 import graphql.TypeResolutionEnvironment;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 /**
  * This is called during type resolution to work out what concrete {@link graphql.schema.GraphQLObjectType} should be used
  * dynamically during runtime for {@link GraphQLInterfaceType}s and {@link GraphQLUnionType}s
  */
+@NullMarked
 @PublicSpi
 public interface TypeResolver {
 
@@ -17,8 +20,8 @@ public interface TypeResolver {
      *
      * @param env the runtime environment
      *
-     * @return a graphql object type to use based on examining the environment
+     * @return a graphql object type to use based on examining the environment, or null if the type cannot be resolved
      */
-    GraphQLObjectType getType(TypeResolutionEnvironment env);
+    @Nullable GraphQLObjectType getType(TypeResolutionEnvironment env);
 
 }

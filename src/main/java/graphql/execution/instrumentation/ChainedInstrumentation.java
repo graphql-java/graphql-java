@@ -76,7 +76,7 @@ public class ChainedInstrumentation implements Instrumentation {
         return (ChainedInstrumentationState) assertNotNull(state);
     }
 
-    private <T> @Nullable InstrumentationContext<T> chainedCtx(@Nullable InstrumentationState state, BiFunction<Instrumentation, @Nullable InstrumentationState, InstrumentationContext<T>> mapper) {
+    private <T> @Nullable InstrumentationContext<T> chainedCtx(@Nullable InstrumentationState state, BiFunction<Instrumentation, @Nullable InstrumentationState, @Nullable InstrumentationContext<T>> mapper) {
         // if we have zero or 1 instrumentations (and 1 is the most common), then we can avoid an object allocation
         // of the ChainedInstrumentationContext since it won't be needed
         if (instrumentations.isEmpty()) {
@@ -378,7 +378,7 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onCompleted(@Nullable Map<String, Object> result, @Nullable Throwable t) {
+        public void onCompleted(@Nullable Map<String, @Nullable Object> result, @Nullable Throwable t) {
             contexts.forEach(context -> context.onCompleted(result, t));
         }
 
@@ -407,7 +407,7 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onFetchedValue(Object fetchedValue) {
+        public void onFetchedValue(@Nullable Object fetchedValue) {
             contexts.forEach(context -> context.onFetchedValue(fetchedValue));
         }
 
