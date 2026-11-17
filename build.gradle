@@ -308,26 +308,30 @@ shadowJar {
     }
 }
 
-// Apply bnd to shadowJar task manually for Gradle 9 compatibility
+// Apply bnd to shadowJar task manually for Gradle 9 compatibility.
+// The bnd builder plugin only adds a BundleTaskExtension to the 'jar' task, so
+// the extension must be created here and its build action registered
+// explicitly; otherwise the published jar has no OSGi headers.
 tasks.named('shadowJar').configure {
-    // Get the BundleTaskExtension added by bnd plugin
-    def bundle = extensions.findByType(BundleTaskExtension)
-    if (bundle != null) {
-        //Configure bnd for shadowJar
-        // -exportcontents: graphql.*  Adds all packages of graphql and below to the exported packages list
-        // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and 
-        //                                  also the repackaged packages like guava, which would be wrong after repackaging.
-        // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
-        //                  Guava was repackaged and included inside the jar, so we need to remove it.
-        //                  ANTLR was shaded, so we need to remove it.
-        //                  sun.misc is a JRE internal-only class that is not directly used by graphql-java. It was causing problems in libraries using graphql-java.
-        //                  The last ,* copies all the existing imports from the other dependencies, which is required.
-        bundle.bnd('''
+    def bundle = extensions.create(BundleTaskExtension.NAME, BundleTaskExtension, it)
+    //Configure bnd for shadowJar
+    // Bundle-SymbolicName / Bundle-Name: bnd defaults them to the archive name, which includes the 'shadow' classifier.
+    // -exportcontents: graphql.*  Adds all packages of graphql and below to the exported packages list
+    // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and
+    //                                  also the repackaged packages like guava, which would be wrong after repackaging.
+    // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
+    //                  Guava was repackaged and included inside the jar, so we need to remove it.
+    //                  ANTLR was shaded, so we need to remove it.
+    //                  sun.misc is a JRE internal-only class that is not directly used by graphql-java. It was causing problems in libraries using graphql-java.
+    //                  The last ,* copies all the existing imports from the other dependencies, which is required.
+    bundle.bnd('''
+Bundle-SymbolicName: graphql-java
+Bundle-Name: graphql-java
 -exportcontents: graphql.*
 -removeheaders: Private-Package
 Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.annotations;resolution:=optional,*
 ''')
-    }
+    doLast(bundle.buildAction())
 }
 
 tasks.named('jmhJar') {
@@ -587,7 +591,46 @@ def compileShadedJarConsumer = tasks.register('compileShadedJarConsumer', JavaCo
     options.compilerArgs.addAll(['-Xlint:classfile', '-Werror'])
 }
 
-check.dependsOn verifyShadedClassAnnotations, compileShadedJarConsumer
+/**
+ * Verifies that the published jar is a valid OSGi bundle: it must carry the
+ * bnd-generated headers for graphql-java, export the graphql packages and must
+ * not import the shaded Guava and ANTLR packages.
+ */
+def verifyOsgiManifest = tasks.register('verifyOsgiManifest') {
+    group = 'verification'
+    description = 'Verify the published jar has the expected OSGi manifest headers'
+    dependsOn buildFinalJar
+
+    def finalJar = buildFinalJar.flatMap { it.archiveFile }
+    inputs.file(finalJar)
+
+    doLast {
+        def attributes = new java.util.jar.JarFile(finalJar.get().asFile).withCloseable { it.manifest.mainAttributes }
+        def errors = []
+        if (attributes.getValue('Bundle-SymbolicName') != 'graphql-java') {
+            errors.add("Bundle-SymbolicName is '${attributes.getValue('Bundle-SymbolicName')}', expected 'graphql-java'")
+        }
+        if (!attributes.getValue('Bundle-Version')) {
+            errors.add('Bundle-Version is missing')
+        }
+        def exportPackage = attributes.getValue('Export-Package') ?: ''
+        if (!(exportPackage =~ /(^|,)graphql;/)) {
+            errors.add('Export-Package does not export the graphql package')
+        }
+        if (attributes.getValue('Private-Package') != null) {
+            errors.add('Private-Package header should have been removed')
+        }
+        def importPackage = attributes.getValue('Import-Package') ?: ''
+        if (importPackage =~ /(^|,)(com\.google|org\.antlr)\./) {
+            errors.add("Import-Package references shaded packages: ${importPackage}")
+        }
+        if (!errors.isEmpty()) {
+            throw new GradleException("Invalid OSGi manifest in ${finalJar.get().asFile.name}:\n${errors.join('\n')}")
+        }
+    }
+}
+
+check.dependsOn verifyShadedClassAnnotations, compileShadedJarConsumer, verifyOsgiManifest
 
 
 // --- TestNG TCK skip verification ---
