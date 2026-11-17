@@ -861,7 +861,7 @@ type Profile {
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
                 GraphQLFieldsContainer fieldsContainer = env.getFieldsContainer()
                 GraphQLFieldDefinition fieldDefinition = env.getFieldDefinition()
-                if (! fieldsContainer instanceof GraphQLObjectType) {
+                if (!(fieldsContainer instanceof GraphQLObjectType)) {
                     return fieldDefinition
                 }
                 GraphQLObjectType containingObjectType = env.getFieldsContainer() as GraphQLObjectType

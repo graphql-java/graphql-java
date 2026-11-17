@@ -326,7 +326,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> directiveEnv) {
                 GraphQLFieldDefinition field = directiveEnv.getElement()
                 def container = directiveEnv.fieldsContainer
-                if (!container instanceof GraphQLObjectType) {
+                if (!(container instanceof GraphQLObjectType)) {
                     return field
                 }
                 //
@@ -491,7 +491,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
                 GraphQLFieldDefinition element = environment.getElement()
 
                 def container = environment.fieldsContainer
-                if (! container instanceof GraphQLObjectType) {
+                if (!(container instanceof GraphQLObjectType)) {
                     return element
                 }
                 return wrapField(container as GraphQLObjectType, element, environment.getBuildContext(), environment.getCodeRegistry())

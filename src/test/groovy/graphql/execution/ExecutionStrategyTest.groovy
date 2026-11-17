@@ -477,27 +477,22 @@ class ExecutionStrategyTest extends Specification {
 
         when:
         def parameters = newParameters()
-                .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(fieldType))
+                .executionStepInfo(typeInfo)
                 .source(result)
                 .fields(mergedSelectionSet(["dummy": []]))
                 .nonNullFieldValidator(nullableFieldValidator)
                 .build()
 
-        Exception actualException = null
+        Throwable actualException = null
         try {
-            executionStrategy.completeValue(executionContext, parameters)
-        } catch (Exception e) {
-            actualException = e
+            executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
+        } catch (CompletionException e) {
+            actualException = e.cause
         }
 
         then:
-        if (errorExpected) {
-            actualException instanceof NonNullableFieldWasNullException
-            executionContext.errors.size() == 1
-        } else {
-            actualException != null
-            executionContext.errors.size() == 0
-        }
+        (actualException instanceof NonNullableFieldWasNullException) == errorExpected
+        executionContext.errors.size() == (errorExpected ? 1 : 0)
 
 
         where:

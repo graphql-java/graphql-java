@@ -452,7 +452,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         for (int i = 0; i < messages.size(); i++) {
             def message = messages[i]
             if (i == 5) {
-                message.data == null
+                assert message.data == ["newMessage": null]
                 assert message.errors.size() == 2
                 assert message.errors[0].errorType == ErrorType.NullValueInNonNullableField
                 assert message.errors[0].message.contains("/newMessage/sender")
