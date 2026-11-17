@@ -86,10 +86,13 @@ class InstrumentationFieldFetchParametersTest extends Specification {
 
         Map<String, Boolean> leafByField = [:]
         List<Object> suppliedFieldDefinitions = []
+        List<Boolean> stepInfoMatchesField = []
         def instrumentation = new SimplePerformantInstrumentation() {
             @Override
             InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
                 suppliedFieldDefinitions.add(suppliedFieldDefinition(parameters))
+                // the lazily built step info is still available and agrees with the eagerly supplied definition
+                stepInfoMatchesField.add(parameters.getExecutionStepInfo().getFieldDefinition() == parameters.getField())
                 return SimpleInstrumentationContext.noOp()
             }
 
@@ -112,6 +115,9 @@ class InstrumentationFieldFetchParametersTest extends Specification {
         // every field execution and field fetch was given the field definition eagerly by the engine
         !suppliedFieldDefinitions.isEmpty()
         suppliedFieldDefinitions.every { it != null }
+        // the lazy execution step info path in beginFieldExecution still works alongside the eager definition
+        !stepInfoMatchesField.isEmpty()
+        stepInfoMatchesField.every { it }
     }
 
     private static Object suppliedFieldDefinition(InstrumentationFieldParameters parameters) {
