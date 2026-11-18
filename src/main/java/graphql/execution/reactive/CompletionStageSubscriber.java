@@ -92,12 +92,22 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
             if (throwable != null) {
                 handleThrowableDuringMapping(throwable);
             } else {
-                downstreamSubscriber.onNext(d);
+                onNextDownstream(d);
             }
         } finally {
             removeFromInFlightQ(completionStage);
             finallyAfterEachPromiseFinishes();
         }
+    }
+
+    private void onNextDownstream(D d) {
+        // promises can complete on different threads, but the downstream signals must not overlap
+        // (reactive streams rule 1.3) and no onNext may follow onError
+        lock.runLocked(() -> {
+            if (!isTerminal()) {
+                downstreamSubscriber.onNext(d);
+            }
+        });
     }
 
     protected void finallyAfterEachPromiseFinishes() {
@@ -115,7 +125,7 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
     protected void handleThrowableDuringMapping(Throwable throwable) {
         // only do this once
         if (isTerminal.compareAndSet(false, true)) {
-            downstreamSubscriber.onError(throwable);
+            lock.runLocked(() -> downstreamSubscriber.onError(throwable));
             //
             // Reactive semantics say that IF an exception happens on a publisher,
             // then onError is called and no more messages flow.  But since the exception happened
@@ -133,7 +143,7 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
     public void onError(Throwable t) {
         // we immediately terminate - we don't wait for any promises to complete
         if (isTerminal.compareAndSet(false, true)) {
-            downstreamSubscriber.onError(t);
+            lock.runLocked(() -> downstreamSubscriber.onError(t));
             cancelInFlightFutures();
         }
     }

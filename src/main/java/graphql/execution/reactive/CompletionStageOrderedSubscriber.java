@@ -44,7 +44,7 @@ public class CompletionStageOrderedSubscriber<U, D> extends CompletionStageSubsc
             //
             // from the top of the in flight queue, take all the CFs that have
             // completed... but stop if they are not done
-            while (!inFlightDataQ.isEmpty()) {
+            while (!inFlightDataQ.isEmpty() && !isTerminal()) {
                 CompletionStage<?> cs = inFlightDataQ.peek();
                 if (cs != null) {
                     //
