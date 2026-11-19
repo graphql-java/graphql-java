@@ -4,11 +4,13 @@ import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
 import graphql.execution.RawVariables;
 import graphql.execution.preparsed.persisted.PersistedQuerySupport;
+import graphql.extensions.ExtensionsBuilder;
 import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -24,13 +26,16 @@ import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegist
 @PublicApi
 @NullMarked
 public class ExecutionInput {
+    private static final List<RawVariables> EMPTY_VARIABLES_LIST = List.of(RawVariables.emptyVariables());
     private final String query;
     private final String operationName;
     private final @Nullable Object context;
     private final GraphQLContext graphQLContext;
     private final @Nullable Object localContext;
     private final Object root;
-    private final RawVariables rawVariables;
+    private final List<RawVariables> rawVariablesList;
+    private final @Nullable Integer variableIndex;
+    private final @Nullable ExecutionId variableBatchId;
     private final Map<String, Object> extensions;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final ExecutionId executionId;
@@ -55,7 +60,9 @@ public class ExecutionInput {
         this.context = builder.context;
         this.graphQLContext = assertNotNull(builder.graphQLContext);
         this.root = builder.root;
-        this.rawVariables = builder.rawVariables;
+        this.rawVariablesList = builder.rawVariablesList;
+        this.variableIndex = builder.variableIndex;
+        this.variableBatchId = builder.variableBatchId;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.executionId = builder.executionId;
         this.locale = builder.locale != null ? builder.locale : Locale.getDefault(); // always have a locale in place
@@ -143,16 +150,74 @@ public class ExecutionInput {
 
     /**
      * @return a map of raw variables that can be referenced via $syntax in the query.
+     * @throws AssertException if more than one variable map is present; use {@link #getVariablesList()} instead
      */
     public Map<String, Object> getVariables() {
-        return rawVariables.toMap();
+        return getRawVariables().toMap();
     }
 
     /**
      * @return a map of raw variables that can be referenced via $syntax in the query.
+     * @throws AssertException if more than one variable map is present; use {@link #getVariablesList()} instead
      */
     public RawVariables getRawVariables() {
-        return rawVariables;
+        Assert.assertTrue(rawVariablesList.size() <= 1,
+                "getRawVariables() requires at most one variable map; use getVariablesList() for variable batches");
+        return rawVariablesList.isEmpty() ? RawVariables.emptyVariables() : rawVariablesList.get(0);
+    }
+
+    /**
+     * Returns the variable maps in input order. An empty list or a singleton uses ordinary execution;
+     * a larger list executes the selected operation once per map, sharing the DataLoader registry.
+     * The {@link #getVariables()} and {@link #getRawVariables()} accessors require at most one map,
+     * and return an empty map when the list is empty.
+     *
+     * @return the immutable list of immutable variable maps (values can be null)
+     */
+    @ExperimentalApi
+    public List<Map<String, Object>> getVariablesList() {
+        return ImmutableKit.map(rawVariablesList, RawVariables::toMap);
+    }
+
+    /** @return whether this input requests multiple executions */
+    @ExperimentalApi
+    public boolean isVariableBatch() {
+        return rawVariablesList.size() > 1;
+    }
+
+    /** @return the zero-based index for an individual batch execution, otherwise null */
+    @ExperimentalApi
+    public @Nullable Integer getVariableIndex() {
+        return variableIndex;
+    }
+
+    /** @return the shared batch id for an individual batch execution, otherwise null */
+    @ExperimentalApi
+    public @Nullable ExecutionId getVariableBatchId() {
+        return variableBatchId;
+    }
+
+    @Internal
+    public ExecutionInput newVariableBatchEntry(int index, ExecutionId batchId) {
+        GraphQLContext entryContext = GraphQLContext.newContext().build().putAll(graphQLContext);
+        ExtensionsBuilder extensionsBuilder = graphQLContext.get(ExtensionsBuilder.class);
+        if (extensionsBuilder != null) {
+            entryContext.put(ExtensionsBuilder.class, extensionsBuilder.copy());
+        }
+        Builder builder = newExecutionInput(query)
+                .operationName(operationName)
+                .internalTransferContext(entryContext)
+                .context(context == graphQLContext ? entryContext : context)
+                .localContext(localContext)
+                .root(root)
+                .variables(rawVariablesList.get(index).toMap())
+                .extensions(extensions)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .locale(locale)
+                .profileExecution(profileExecution);
+        builder.variableIndex = index;
+        builder.variableBatchId = batchId;
+        return builder.build();
     }
 
     /**
@@ -257,10 +322,12 @@ public class ExecutionInput {
                 .localContext(this.localContext)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
-                .variables(this.rawVariables.toMap())
                 .extensions(this.extensions)
                 .executionId(this.executionId)
                 .locale(this.locale);
+        builder.rawVariablesList = this.rawVariablesList;
+        builder.variableIndex = this.variableIndex;
+        builder.variableBatchId = this.variableBatchId;
 
         builderConsumer.accept(builder);
 
@@ -275,7 +342,7 @@ public class ExecutionInput {
                 ", context=" + context +
                 ", graphQLContext=" + graphQLContext +
                 ", root=" + root +
-                ", rawVariables=" + rawVariables +
+                ", rawVariablesList=" + rawVariablesList +
                 ", dataLoaderRegistry=" + dataLoaderRegistry +
                 ", executionId= " + executionId +
                 ", locale= " + locale +
@@ -309,7 +376,9 @@ public class ExecutionInput {
         private Object context = graphQLContext; // we make these the same object on purpose - legacy code will get the same object if this change nothing
         private Object localContext;
         private Object root;
-        private RawVariables rawVariables = RawVariables.emptyVariables();
+        private List<RawVariables> rawVariablesList = EMPTY_VARIABLES_LIST;
+        private Integer variableIndex;
+        private ExecutionId variableBatchId;
         private Map<String, Object> extensions = ImmutableKit.emptyMap();
         //
         // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize
@@ -444,7 +513,23 @@ public class ExecutionInput {
          */
         public Builder variables(Map<String, Object> rawVariables) {
             assertNotNull(rawVariables, "variables map can't be null");
-            this.rawVariables = RawVariables.of(rawVariables);
+            this.rawVariablesList = List.of(RawVariables.of(rawVariables));
+            return this;
+        }
+
+        /**
+         * Supplies complete variable maps for the same selected operation. An empty list executes once
+         * with empty variables; a singleton executes normally. Larger lists return a
+         * {@link VariableBatchExecutionResult}. Entries are never deduplicated. Subscriptions cannot be batched.
+         *
+         * @param variables the maps in input order; neither the list nor its entries may be null
+         * @return this builder
+         */
+        @ExperimentalApi
+        public Builder variables(List<Map<String, Object>> variables) {
+            assertNotNull(variables, "variables list can't be null");
+            this.rawVariablesList = List.copyOf(ImmutableKit.map(variables,
+                    value -> RawVariables.of(assertNotNull(value, "variables list entry can't be null"))));
             return this;
         }
 
@@ -456,7 +541,9 @@ public class ExecutionInput {
         /**
          * You should create new {@link org.dataloader.DataLoaderRegistry}s and new {@link org.dataloader.DataLoader}s for each execution.  Do not
          * re-use
-         * instances as this will create unexpected results.
+         * instances across independent requests as this will create unexpected results. Variable batching
+         * shares the supplied registry and its caches across all entries in that batch, including mutations.
+         * Mutation resolvers should clear or prime affected cache entries as usual.
          *
          * @param dataLoaderRegistry a registry of {@link org.dataloader.DataLoader}s
          *
