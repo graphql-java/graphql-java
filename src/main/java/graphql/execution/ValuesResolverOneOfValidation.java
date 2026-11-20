@@ -7,6 +7,7 @@ import graphql.language.ArrayValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.Value;
+import graphql.language.VariableReference;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
@@ -26,6 +27,11 @@ final class ValuesResolverOneOfValidation {
 
     @SuppressWarnings("unchecked")
     static void validateOneOfInputTypes(GraphQLType type, Object inputValue, Value<?> argumentValue, Locale locale) {
+        if (argumentValue instanceof VariableReference) {
+            // variable values were already checked when the variables were coerced, walking them again here
+            // would repeat that work for every field that references the variable
+            return;
+        }
         GraphQLType unwrappedNonNullType = GraphQLTypeUtil.unwrapNonNull(type);
 
         if (isList(unwrappedNonNullType)

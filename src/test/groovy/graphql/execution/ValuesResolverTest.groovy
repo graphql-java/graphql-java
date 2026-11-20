@@ -24,6 +24,7 @@ import graphql.language.VariableReference
 import graphql.schema.CoercingParseValueException
 import graphql.schema.DataFetcher
 import spock.lang.Specification
+import spock.lang.Timeout
 import spock.lang.Unroll
 
 import static graphql.ExecutionInput.newExecutionInput
@@ -120,6 +121,85 @@ class ValuesResolverTest extends Specification {
         ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: [a: 'x', b: 'y']]), graphQLContext, locale)
         then:
         thrown(OneOfTooManyKeysException.class)
+    }
+
+    def "getVariableValues: invalid oneOf variable values are rejected when the variables are coerced - #testCase"() {
+        given:
+        def oneOfType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField().name("a").type(GraphQLString))
+                .field(newInputObjectField().name("b").type(GraphQLInt))
+                .build()
+        def parentType = newInputObject()
+                .name("ParentInputObject")
+                .field(newInputObjectField().name("oneOfField").type(oneOfType))
+                .build()
+        def schema = TestUtil.schemaWithInputType(parentType)
+        VariableDefinition variableDefinition = new VariableDefinition("var", variableType)
+
+        when:
+        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([var: inputValue]), graphQLContext, locale)
+
+        then:
+        def e = thrown(expectedException)
+        e.message == expectedMessage
+
+        where:
+        testCase                                    | variableType                                        | inputValue                              | expectedException         | expectedMessage
+        '{ a: "abc", b: 123 }'                      | new TypeName("oneOfInputObject")                    | [a: "abc", b: 123]                      | OneOfTooManyKeysException | "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+        '{}'                                        | new TypeName("oneOfInputObject")                    | [:]                                     | OneOfTooManyKeysException | "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+        '{ a: "xyz", b: 789 } non-null'             | new NonNullType(new TypeName("oneOfInputObject"))   | [a: "xyz", b: 789]                      | OneOfTooManyKeysException | "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+        '{ oneOfField: { a: "abc", b: 123 } }'      | new TypeName("ParentInputObject")                   | [oneOfField: [a: "abc", b: 123]]        | OneOfTooManyKeysException | "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+        '{ oneOfField: {} }'                        | new TypeName("ParentInputObject")                   | [oneOfField: [:]]                       | OneOfTooManyKeysException | "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+        '[{ a: "abc" }, { a: "xyz", b: 789 }]'      | new ListType(new TypeName("oneOfInputObject"))      | [[a: "abc"], [a: "xyz", b: 789]]        | OneOfTooManyKeysException | "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+        '[{ a: "abc", b: 123 }]'                    | new ListType(new TypeName("oneOfInputObject"))      | [[a: "abc", b: 123]]                    | OneOfTooManyKeysException | "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+        '[{ a: null }]'                             | new ListType(new TypeName("oneOfInputObject"))      | [[a: null]]                             | OneOfNullValueException   | "OneOf type field 'oneOfInputObject.a' must be non-null."
+    }
+
+    def "getVariableValues: an invalid oneOf variable default value is rejected when the variables are coerced"() {
+        given:
+        def oneOfType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField().name("a").type(GraphQLString))
+                .field(newInputObjectField().name("b").type(GraphQLInt))
+                .build()
+        def schema = TestUtil.schemaWithInputType(oneOfType)
+        def defaultValue = ArrayValue.newArrayValue().value(buildObjectLiteral([a: NullValue.of()])).build()
+        VariableDefinition variableDefinition = new VariableDefinition("var", new ListType(new TypeName("oneOfInputObject")), defaultValue)
+
+        when:
+        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.emptyVariables(), graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfNullValueException)
+        e.message == "OneOf type field 'oneOfInputObject.a' must be non-null."
+    }
+
+    @Timeout(10)
+    def "a variable value is not walked again for every field that references it"() {
+        def sdl = '''
+            input Filter { and: [Filter!] eq: String }
+            type Item { f(filter: Filter): Int }
+            type Query { items: [Item] }
+        '''
+
+        DataFetcher items = { env -> (1..10_000).collect { [:] } }
+        DataFetcher f = { env -> 1 }
+        def graphQL = TestUtil.graphQL(sdl, [Query: [items: items], Item: [f: f]]).build()
+
+        // one 100,000 element filter, referenced by Item.f once per item
+        def filter = [and: (1..100_000).collect { [eq: "x"] }]
+
+        when:
+        def er = graphQL.execute(
+                newExecutionInput('query ($filter: Filter) { items { f(filter: $filter) } }').variables([filter: filter])
+        )
+
+        then:
+        er.errors.isEmpty()
+        er.data["items"].size() == 10_000
     }
 
     def "can validate inner input oneOf fields"() {
@@ -509,12 +589,6 @@ class ValuesResolverTest extends Specification {
                 a: VariableReference.of("a"),
                 b: VariableReference.of("v")
         ])                                                  | CoercedVariables.of(["a": "abc"])
-
-        '$var {var : { a : "abc", b : 123}}' | VariableReference.of("var")
-                                                            | CoercedVariables.of(["var": ["a": "abc", "b": 123]])
-
-        '$var {var : {}}'                    | VariableReference.of("var")
-                                                            | CoercedVariables.of(["var": [:]])
     }
 
     def "getArgumentValues: invalid oneOf nested input because of duplicate keys - #testCase"() {
@@ -599,11 +673,6 @@ class ValuesResolverTest extends Specification {
                         b: VariableReference.of("v")
                 ]
         ])                                                                | CoercedVariables.of(["a": "abc"])
-        '$var {var : {oneOfField: { a : "abc", b : 123}}}' | VariableReference.of("var")
-                                                                          | CoercedVariables.of(["var": ["oneOfField": ["a": "abc", "b": 123]]])
-
-        '$var {var : {oneOfField: {} }}'                   | VariableReference.of("var")
-                                                                          | CoercedVariables.of(["var": ["oneOfField": [:]]])
 
     }
 
@@ -745,16 +814,6 @@ class ValuesResolverTest extends Specification {
                 ]).build()
                               | CoercedVariables.emptyVariables()
 
-        '[{ a: "abc" }, $var ] [{ a: "abc" }, { a: "xyz", b: 789 }]'
-                 | ArrayValue.newArrayValue()
-                .values([
-                        buildObjectLiteral([
-                                a: StringValue.of("abc")
-                        ]),
-                        VariableReference.of("var")
-                ]).build()
-                              | CoercedVariables.of("var": [a: "xyz", b: 789])
-
     }
 
     def "getArgumentValues: invalid oneOf list input because element contains null value - #testCase"() {
@@ -844,10 +903,6 @@ class ValuesResolverTest extends Specification {
                 a: NullValue.of()
         ])                    | CoercedVariables.emptyVariables()
 
-        '$var [{ a: null }]'
-                 | VariableReference.of("var")
-                              | CoercedVariables.of("var": [[a: null]])
-
     }
 
     def "getArgumentValues: invalid oneOf list input without an array literal because element contains duplicate key - #testCase"() {
@@ -883,10 +938,6 @@ class ValuesResolverTest extends Specification {
                 a: StringValue.of("abc"),
                 b: IntValue.of(123)
         ])                    | CoercedVariables.emptyVariables()
-
-        '$var [{ a: "abc", b: 123 }]'
-                 | VariableReference.of("var")
-                              | CoercedVariables.of("var": [[a: "abc", b: 123]])
 
     }
 
@@ -939,16 +990,6 @@ class ValuesResolverTest extends Specification {
                 ]).build()
                               | CoercedVariables.emptyVariables()
 
-        '[{ a: "abc" }, $var ] [{ a: "abc" }, { a: "xyz", b: 789 }]'
-                 | ArrayValue.newArrayValue()
-                .values([
-                        buildObjectLiteral([
-                                a: StringValue.of("abc")
-                        ]),
-                        VariableReference.of("var")
-                ]).build()
-                              | CoercedVariables.of("var": [a: "xyz", b: 789])
-
     }
 
     def "getArgumentValues: invalid oneOf list input with non-nullable elements, because element contains duplicate key - #testCase"() {
@@ -999,16 +1040,6 @@ class ValuesResolverTest extends Specification {
                         ]),
                 ]).build()
                               | CoercedVariables.emptyVariables()
-
-        '[{ a: "abc" }, $var ] [{ a: "abc" }, { a: "xyz", b: 789 }]'
-                 | ArrayValue.newArrayValue()
-                .values([
-                        buildObjectLiteral([
-                                a: StringValue.of("abc")
-                        ]),
-                        VariableReference.of("var")
-                ]).build()
-                              | CoercedVariables.of("var": [a: "xyz", b: 789])
 
     }
 
