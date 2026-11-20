@@ -15,11 +15,14 @@ class NodeUtilTest extends Specification {
         ''')
 
         when:
-        NodeUtil.getOperation(doc, null)
+        NodeUtil.getOperation(doc, operationName)
 
         then:
         def ex = thrown(UnknownOperationException)
         ex.message == "Must provide operation name if query contains multiple operations."
+
+        where:
+        operationName << [null, '']
     }
 
     def "getOperation: when multiple operations are defined in the query and operation name doesn't match any of the query operations then it should throw UnknownOperationException"() {
