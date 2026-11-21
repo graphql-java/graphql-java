@@ -44,6 +44,10 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
         return path;
     }
 
+    public AlternativeCallContext getAlternativeCallContext() {
+        return alternativeCallContext;
+    }
+
     private final ResultPath path;
     private final List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls;
     private final AlternativeCallContext alternativeCallContext;
