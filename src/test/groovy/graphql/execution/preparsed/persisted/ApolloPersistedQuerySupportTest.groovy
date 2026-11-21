@@ -1,8 +1,11 @@
 package graphql.execution.preparsed.persisted
 
 import graphql.ExecutionInput
+import graphql.GraphQL
+import graphql.TestUtil
 import graphql.execution.preparsed.PreparsedDocumentEntry
 import graphql.parser.Parser
+import graphql.schema.DataFetcher
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -100,12 +103,12 @@ class ApolloPersistedQuerySupportTest extends Specification {
         persistedQueryCache.parseCount.size() == 0
     }
 
-    def "will use query hash in preference to query text"() {
+    def "will use query hash when the query text matches it"() {
         CacheImplementation persistedQueryCache = new CacheImplementation()
         def apolloSupport = new ApolloPersistedQuerySupport(persistedQueryCache)
 
         when:
-        def ei = mkEI(hashOne, "{normal}")
+        def ei = mkEI(hashOne, "query { oneTwoThree }")
         def documentEntry = apolloSupport.getDocumentAsync(ei, engineParser).join()
         def doc = documentEntry.getDocument()
         then:
@@ -113,6 +116,42 @@ class ApolloPersistedQuerySupportTest extends Specification {
         persistedQueryCache.keyCount[hashOne] == 1
         persistedQueryCache.parseCount[hashOne] == 1
 
+    }
+
+    def "will have error if the query text does not match the query hash"() {
+        CacheImplementation persistedQueryCache = new CacheImplementation()
+        def apolloSupport = new ApolloPersistedQuerySupport(persistedQueryCache)
+
+        when:
+        def ei = mkEI(hashOne, "{normal}")
+        def documentEntry = apolloSupport.getDocumentAsync(ei, engineParser).join()
+        then:
+        documentEntry.getDocument() == null
+        def error = documentEntry.getErrors()[0]
+        error.message == "PersistedQueryIdInvalid"
+        error.getExtensions()["persistedQueryId"] == hashOne
+        persistedQueryCache.keyCount[hashOne] == null
+    }
+
+    def "will have error if the query text does not match a query hash that is already cached"() {
+        def schema = TestUtil.schema("type Query { public : String secret : String }",
+                [Query: [public: { env -> "public" } as DataFetcher, secret: { env -> "secret" } as DataFetcher]])
+        def cache = new InMemoryPersistedQueryCache([:])
+        def graphQL = GraphQL.newGraphQL(schema).preparsedDocumentProvider(new ApolloPersistedQuerySupport(cache)).build()
+        // sha256 of "{ secret }"
+        def secretHash = "d039e560fffc8b5c8f910b1e30d0ede1df97a362ad5f0c25738f6d4ffd431dc4"
+
+        when:
+        def er = graphQL.execute(mkEI(secretHash, "{ secret }"))
+        then:
+        er.errors.isEmpty()
+        er.data == [secret: "secret"]
+
+        when:
+        er = graphQL.execute(mkEI(secretHash, "{ public }"))
+        then:
+        er.data == null
+        er.errors[0].message == "PersistedQueryIdInvalid"
     }
 
     def "will have error if we dont return any query text on cache miss"() {
