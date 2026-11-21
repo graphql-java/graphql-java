@@ -42,8 +42,16 @@ public class SchemaElementChildrenContainer {
     }
 
     public List<GraphQLSchemaElement> getChildrenAsList() {
-        List<GraphQLSchemaElement> result = new ArrayList<>();
-        children.values().forEach(result::addAll);
+        int size = 0;
+        for (List<GraphQLSchemaElement> childList : children.values()) {
+            size += childList.size();
+        }
+        List<GraphQLSchemaElement> result = new ArrayList<>(size);
+        for (List<GraphQLSchemaElement> childList : children.values()) {
+            for (GraphQLSchemaElement child : childList) {
+                result.add(child);
+            }
+        }
         return result;
     }
 

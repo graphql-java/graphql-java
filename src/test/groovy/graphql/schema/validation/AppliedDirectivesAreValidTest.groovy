@@ -13,6 +13,37 @@ import static graphql.schema.GraphQLSchema.newSchema
 
 class AppliedDirectivesAreValidTest extends Specification {
 
+    def "undefined directives are rejected alongside fields without directives"() {
+        given:
+        def directive = mkDirective("missing", FIELD_DEFINITION)
+        def query = newObject().name("Query")
+                .field(newFieldDefinition().name("plain").type(GraphQLString))
+                .field(newFieldDefinition().name("annotated").type(GraphQLString).withDirective(directive))
+                .build()
+
+        when:
+        newSchema().query(query).build()
+
+        then:
+        def exception = thrown(InvalidSchemaException)
+        exception.errors.size() == 1
+        hasError(exception, "A definition for directive 'missing' could not be found")
+    }
+
+    def "repeatable directives are valid alongside fields without directives"() {
+        when:
+        def schema = TestUtil.schema('''
+            directive @tag repeatable on FIELD_DEFINITION
+            type Query {
+                plain: String
+                annotated: String @tag @tag
+            }
+        ''')
+
+        then:
+        schema.queryType.getFieldDefinition("annotated").getDirectives("tag").size() == 2
+    }
+
     def "non repeatable directives cannot be repeated"() {
         def sdl = '''
 

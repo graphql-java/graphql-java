@@ -3,8 +3,10 @@ package graphql.util;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,7 +25,7 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     private final TraverserContext<T> parent;
     private final Set<T> visited;
-    private final Map<Class<?>, Object> vars;
+    private @Nullable Map<Class<?>, Object> vars;
     private final Object sharedContextData;
 
     private Object newAccValue;
@@ -33,12 +35,13 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
     private final boolean isRootContext;
     private Map<String, List<TraverserContext<T>>> children;
     private Phase phase;
-    private final List<Breadcrumb<T>> breadcrumbs;
+    private final Breadcrumb<T> breadcrumb;
+    private volatile List<Breadcrumb<T>> breadcrumbs;
 
     public DefaultTraverserContext(T curNode,
                                    TraverserContext<T> parent,
                                    Set<T> visited,
-                                   Map<Class<?>, Object> vars,
+                                   @Nullable Map<Class<?>, Object> vars,
                                    Object sharedContextData,
                                    NodeLocation location,
                                    boolean isRootContext) {
@@ -51,13 +54,17 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         this.isRootContext = isRootContext;
 
         if (parent == null || parent.isRootContext()) {
+            this.breadcrumb = null;
             this.breadcrumbs = ImmutableKit.emptyList();
         } else {
-            this.breadcrumbs = ImmutableList.<Breadcrumb<T>>builderWithExpectedSize(parent.getBreadcrumbs().size() + 1)
-                    .add(new Breadcrumb<>(this.parent.thisNode(), this.location))
-                    .addAll(parent.getBreadcrumbs())
-                    .build();
-
+            // Capture the parent now: visitors can change or delete it before breadcrumbs are requested.
+            this.breadcrumb = new Breadcrumb<>(parent.thisNode(), location);
+            if (parent.getClass() != DefaultTraverserContext.class) {
+                this.breadcrumbs = ImmutableList.<Breadcrumb<T>>builderWithExpectedSize(parent.getBreadcrumbs().size() + 1)
+                        .add(breadcrumb)
+                        .addAll(parent.getBreadcrumbs())
+                        .build();
+            }
         }
     }
 
@@ -127,6 +134,15 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public List<Breadcrumb<T>> getBreadcrumbs() {
+        if (breadcrumbs == null) {
+            ImmutableList.Builder<Breadcrumb<T>> builder = ImmutableList.builder();
+            DefaultTraverserContext<T> context = this;
+            while (context.breadcrumbs == null) {
+                builder.add(context.breadcrumb);
+                context = (DefaultTraverserContext<T>) context.parent;
+            }
+            breadcrumbs = builder.addAll(context.breadcrumbs).build();
+        }
         return breadcrumbs;
     }
 
@@ -150,11 +166,17 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
 
     @Override
     public <S> S getVar(Class<? super S> key) {
+        if (vars == null) {
+            return null;
+        }
         return (S) key.cast(vars.get(key));
     }
 
     @Override
     public <S> TraverserContext<T> setVar(Class<? super S> key, S value) {
+        if (vars == null) {
+            vars = new LinkedHashMap<>();
+        }
         vars.put(key, value);
         return this;
     }

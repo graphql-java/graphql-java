@@ -1,0 +1,207 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/opt/graphql-schema-perf/jars/idl-b2-20261106.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 25.0.4.1, OpenJDK 64-Bit Server VM, 25.0.4.1+1-1-26.04.4-Ubuntu
+# VM invoker: /usr/lib/jvm/java-25-openjdk-amd64/bin/java
+# VM options: -Xms24g -Xmx24g -XX:+UseZGC -XX:+UseCompactObjectHeaders -XX:+UseDynamicNumberOfGCThreads -XX:+AlwaysPreTouch -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -Xlog:gc:file=gc-%p.log:uptime,level,tags
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 10 iterations, 10 s each
+# Measurement: 5 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Average time, time/op
+# Benchmark: benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast
+# Parameters: (schemaFile = large-schema-5.graphqls)
+
+# Run progress: 0.00% complete, ETA 00:07:30
+# Fork: 1 of 3
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/opt/graphql-schema-perf/jars/idl-b2-20261106.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 5129.081 ms/op
+# Warmup Iteration   2: 4238.035 ms/op
+# Warmup Iteration   3: 4264.832 ms/op
+# Warmup Iteration   4: 4234.497 ms/op
+# Warmup Iteration   5: 4117.145 ms/op
+# Warmup Iteration   6: 4100.338 ms/op
+# Warmup Iteration   7: 4038.298 ms/op
+# Warmup Iteration   8: 4241.964 ms/op
+# Warmup Iteration   9: 4111.984 ms/op
+# Warmup Iteration  10: 4182.424 ms/op
+Iteration   1: 4030.905 ms/op
+                 gc.alloc.rate:      1341.461 MB/sec
+                 gc.alloc.rate.norm: 5670075864.000 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            47.000 ms
+
+Iteration   2: 4197.268 ms/op
+                 gc.alloc.rate:      1288.292 MB/sec
+                 gc.alloc.rate.norm: 5670072981.333 B/op
+                 gc.count:           8.000 counts
+                 gc.time:            4399.000 ms
+
+Iteration   3: 4091.669 ms/op
+                 gc.alloc.rate:      1321.542 MB/sec
+                 gc.alloc.rate.norm: 5670072530.667 B/op
+                 gc.count:           6.000 counts
+                 gc.time:            2257.000 ms
+
+Iteration   4: 4124.046 ms/op
+                 gc.alloc.rate:      1311.165 MB/sec
+                 gc.alloc.rate.norm: 5670071917.333 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            2502.000 ms
+
+Iteration   5: 4110.866 ms/op
+                 gc.alloc.rate:      1315.370 MB/sec
+                 gc.alloc.rate.norm: 5670067973.333 B/op
+                 gc.count:           5.000 counts
+                 gc.time:            993.000 ms
+
+
+# Run progress: 33.33% complete, ETA 00:06:43
+# Fork: 2 of 3
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/opt/graphql-schema-perf/jars/idl-b2-20261106.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 5095.634 ms/op
+# Warmup Iteration   2: 4149.381 ms/op
+# Warmup Iteration   3: 4188.399 ms/op
+# Warmup Iteration   4: 4023.926 ms/op
+# Warmup Iteration   5: 4076.854 ms/op
+# Warmup Iteration   6: 4043.243 ms/op
+# Warmup Iteration   7: 4093.494 ms/op
+# Warmup Iteration   8: 4102.905 ms/op
+# Warmup Iteration   9: 4167.941 ms/op
+# Warmup Iteration  10: 3995.585 ms/op
+Iteration   1: 4023.188 ms/op
+                 gc.alloc.rate:      1355.606 MB/sec
+                 gc.alloc.rate.norm: 5718880328.000 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            2657.000 ms
+
+Iteration   2: 4119.738 ms/op
+                 gc.alloc.rate:      1323.999 MB/sec
+                 gc.alloc.rate.norm: 5719585704.000 B/op
+                 gc.count:           10.000 counts
+                 gc.time:            1624.000 ms
+
+Iteration   3: 4076.867 ms/op
+                 gc.alloc.rate:      1337.752 MB/sec
+                 gc.alloc.rate.norm: 5718871792.000 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            921.000 ms
+
+Iteration   4: 4000.880 ms/op
+                 gc.alloc.rate:      1363.165 MB/sec
+                 gc.alloc.rate.norm: 5718872656.000 B/op
+                 gc.count:           1.000 counts
+                 gc.time:            ≈ 0 ms
+
+Iteration   5: 4250.158 ms/op
+                 gc.alloc.rate:      1283.210 MB/sec
+                 gc.alloc.rate.norm: 5718872240.000 B/op
+                 gc.count:           13.000 counts
+                 gc.time:            7304.000 ms
+
+
+# Run progress: 66.67% complete, ETA 00:03:20
+# Fork: 3 of 3
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/opt/graphql-schema-perf/jars/idl-b2-20261106.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: 5138.013 ms/op
+# Warmup Iteration   2: 4160.392 ms/op
+# Warmup Iteration   3: 4247.767 ms/op
+# Warmup Iteration   4: 4039.669 ms/op
+# Warmup Iteration   5: 4095.122 ms/op
+# Warmup Iteration   6: 4116.199 ms/op
+# Warmup Iteration   7: 4117.024 ms/op
+# Warmup Iteration   8: 4101.732 ms/op
+# Warmup Iteration   9: 4348.242 ms/op
+# Warmup Iteration  10: 4057.793 ms/op
+Iteration   1: 4105.963 ms/op
+                 gc.alloc.rate:      1325.217 MB/sec
+                 gc.alloc.rate.norm: 5705701053.333 B/op
+                 gc.count:           5.000 counts
+                 gc.time:            3492.000 ms
+
+Iteration   2: 4063.323 ms/op
+                 gc.alloc.rate:      1339.126 MB/sec
+                 gc.alloc.rate.norm: 5705698178.667 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            1303.000 ms
+
+Iteration   3: 4170.133 ms/op
+                 gc.alloc.rate:      1304.761 MB/sec
+                 gc.alloc.rate.norm: 5705693938.667 B/op
+                 gc.count:           7.000 counts
+                 gc.time:            2498.000 ms
+
+Iteration   4: 4160.504 ms/op
+                 gc.alloc.rate:      1307.840 MB/sec
+                 gc.alloc.rate.norm: 5705692277.333 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            1338.000 ms
+
+Iteration   5: 4123.895 ms/op
+                 gc.alloc.rate:      1319.451 MB/sec
+                 gc.alloc.rate.norm: 5705691504.000 B/op
+                 gc.count:           4.000 counts
+                 gc.time:            1021.000 ms
+
+
+
+Result "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast":
+  4109.960 ±(99.9%) 71.852 ms/op [Average]
+  (min, avg, max) = (4000.880, 4109.960, 4250.158), stdev = 67.210
+  CI (99.9%): [4038.108, 4181.812] (assumes normal distribution)
+
+Secondary result "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast:gc.alloc.rate":
+  1322.530 ±(99.9%) 24.009 MB/sec [Average]
+  (min, avg, max) = (1283.210, 1322.530, 1363.165), stdev = 22.458
+  CI (99.9%): [1298.522, 1346.539] (assumes normal distribution)
+
+Secondary result "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast:gc.alloc.rate.norm":
+  5698261395.911 ±(99.9%) 22864166.858 B/op [Average]
+  (min, avg, max) = (5670067973.333, 5698261395.911, 5719585704.000), stdev = 21387155.867
+  CI (99.9%): [5675397229.053, 5721125562.769] (assumes normal distribution)
+
+Secondary result "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast:gc.count":
+  83.000 ±(99.9%) 0.001 counts [Sum]
+  (min, avg, max) = (1.000, 5.533, 13.000), stdev = 2.949
+  CI (99.9%): [83.000, 83.000] (assumes normal distribution)
+
+Secondary result "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast:gc.time":
+  32356.000 ±(99.9%) 0.001 ms [Sum]
+  (min, avg, max) = (≈ 0, 2157.067, 7304.000), stdev = 1866.198
+  CI (99.9%): [32356.000, 32356.000] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:10:01
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                                                                                  (schemaFile)  Mode  Cnt           Score          Error   Units
+CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast                     large-schema-5.graphqls  avgt   15        4109.960 ±       71.852   ms/op
+CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast:gc.alloc.rate       large-schema-5.graphqls  avgt   15        1322.530 ±       24.009  MB/sec
+CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast:gc.alloc.rate.norm  large-schema-5.graphqls  avgt   15  5698261395.911 ± 22864166.858    B/op
+CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast:gc.count            large-schema-5.graphqls  avgt   15          83.000                 counts
+CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast:gc.time             large-schema-5.graphqls  avgt   15       32356.000                     ms
+
+Benchmark result is saved to /opt/graphql-schema-perf/results/comparison-idl-base-20261106-vs-idl-b2-20261106/idl-b2-20261106-benchmarkLargeSchemaCreateAvgTimeFast-5.json

@@ -20,18 +20,22 @@ public class AppliedDirectivesAreValid extends GraphQLTypeVisitorStub {
 
     @Override
     protected TraversalControl visitGraphQLType(GraphQLSchemaElement node, TraverserContext<GraphQLSchemaElement> context) {
+        if (!(node instanceof GraphQLDirectiveContainer directiveContainer)) {
+            return TraversalControl.CONTINUE;
+        }
+        Map<String, List<GraphQLDirective>> directivesByName = directiveContainer.getAllDirectivesByName();
+        if (directivesByName.isEmpty()) {
+            return TraversalControl.CONTINUE;
+        }
         SchemaValidationErrorCollector collector = context.getVarFromParents(SchemaValidationErrorCollector.class);
         GraphQLSchema schema = context.getVarFromParents(GraphQLSchema.class);
-        if (node instanceof GraphQLDirectiveContainer) {
-            GraphQLDirectiveContainer directiveContainer = (GraphQLDirectiveContainer) node;
-            for (Map.Entry<String, List<GraphQLDirective>> entry : directiveContainer.getAllDirectivesByName().entrySet()) {
-                String directiveName = entry.getKey();
-                GraphQLDirective directiveDef = schema.getDirective(directiveName);
-                if (directiveDef != null) {
-                    checkNonRepeatable(collector, directiveContainer, directiveDef, entry.getValue());
-                } else {
-                    addError(collector, format("A definition for directive '%s' could not be found", directiveName));
-                }
+        for (Map.Entry<String, List<GraphQLDirective>> entry : directivesByName.entrySet()) {
+            String directiveName = entry.getKey();
+            GraphQLDirective directiveDef = schema.getDirective(directiveName);
+            if (directiveDef != null) {
+                checkNonRepeatable(collector, directiveContainer, directiveDef, entry.getValue());
+            } else {
+                addError(collector, format("A definition for directive '%s' could not be found", directiveName));
             }
         }
 

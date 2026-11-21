@@ -1,0 +1,16 @@
+{
+  "started": "2026-11-06T02:49:22.164948+00:00",
+  "jvm_arguments": "-Xms24g -Xmx24g -XX:+UseZGC -XX:+UseCompactObjectHeaders -XX:+UseDynamicNumberOfGCThreads -XX:+AlwaysPreTouch -XX:+UnlockDiagnosticVMOptions -XX:+DebugNonSafepoints -Xlog:gc:file=gc-%p.log:uptime,level,tags",
+  "forks": 3,
+  "warmup": "10 x 10 seconds per fork",
+  "measurement": "5 x 10 seconds per fork",
+  "ordering": "Alternate A/B and B/A by method and reverse that order for each successive schema; never overlapping",
+  "jars": {
+    "baseline": "fcf01dcd3583de790301da5392aa8166ee85fd395203e81ba9d97b6295235b49",
+    "optimized": "39c4363db65041bf69067b4f5ede72b775c9d06b76ba22b0a9d703dc449107a7"
+  },
+  "source_variants": {
+    "baseline": "idl-base-20261106",
+    "optimized": "idl-b2-20261106"
+  }
+}

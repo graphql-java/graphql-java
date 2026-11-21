@@ -1,0 +1,3351 @@
+{
+  "revision": "idl-b2-20261106",
+  "jar_sha256": "39c4363db65041bf69067b4f5ede72b775c9d06b76ba22b0a9d703dc449107a7",
+  "cases": [
+    {
+      "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTime",
+      "fixture": "large-schema-4.graphqls",
+      "warmup": {
+        "last_five_cv_pct": 0.8724042312725752,
+        "last_five_fitted_drift_pct": 0.7335356131845246,
+        "inspect": false
+      },
+      "allocation_stalls": [],
+      "cpu": {
+        "total_weight": 3500,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 168,
+            "share_pct": 4.8
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 22,
+            "share_pct": 0.6285714285714286
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 27,
+            "share_pct": 0.7714285714285715
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 7,
+            "share_pct": 0.2
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 1,
+            "share_pct": 0.02857142857142857
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 52,
+            "share_pct": 1.4857142857142858
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 385,
+            "share_pct": 11.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 95,
+            "share_pct": 2.7142857142857144
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 81,
+            "share_pct": 2.3142857142857145
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 18,
+            "share_pct": 0.5142857142857142
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 2659,
+            "share_pct": 75.97142857142858
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 1634,
+            "share_pct": 46.68571428571428
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 172,
+            "share_pct": 4.914285714285715
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 547,
+            "share_pct": 15.628571428571428
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 299,
+            "share_pct": 8.542857142857143
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java/util/HashMap.getNode",
+            "weight": 700,
+            "share_pct": 20.0
+          },
+          {
+            "frame": "java/util/HashMap.resize",
+            "weight": 309,
+            "share_pct": 8.82857142857143
+          },
+          {
+            "frame": "itable stub",
+            "weight": 143,
+            "share_pct": 4.085714285714285
+          },
+          {
+            "frame": "java/util/ArrayList.<init>",
+            "weight": 118,
+            "share_pct": 3.3714285714285714
+          },
+          {
+            "frame": "java/util/HashMap.putVal",
+            "weight": 101,
+            "share_pct": 2.8857142857142857
+          },
+          {
+            "frame": "graphql/util/TraverserState$StackTraverserState.lambda$pushAll$0",
+            "weight": 93,
+            "share_pct": 2.657142857142857
+          },
+          {
+            "frame": "java/util/HashMap.hash",
+            "weight": 72,
+            "share_pct": 2.057142857142857
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.enter",
+            "weight": 64,
+            "share_pct": 1.8285714285714285
+          },
+          {
+            "frame": "vframe::sender",
+            "weight": 59,
+            "share_pct": 1.6857142857142857
+          },
+          {
+            "frame": "java/util/HashMap.computeIfAbsent",
+            "weight": 57,
+            "share_pct": 1.6285714285714286
+          },
+          {
+            "frame": "ZRelocateWork<ZRelocateSmallAllocator>::do_forwarding",
+            "weight": 56,
+            "share_pct": 1.6
+          },
+          {
+            "frame": "java/util/HashMap.putMapEntries",
+            "weight": 52,
+            "share_pct": 1.4857142857142858
+          },
+          {
+            "frame": "graphql/util/Traverser.traverse",
+            "weight": 43,
+            "share_pct": 1.2285714285714286
+          },
+          {
+            "frame": "oopDesc::klass",
+            "weight": 43,
+            "share_pct": 1.2285714285714286
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVarFromParents",
+            "weight": 43,
+            "share_pct": 1.2285714285714286
+          },
+          {
+            "frame": "java/lang/String.hashCode",
+            "weight": 39,
+            "share_pct": 1.1142857142857143
+          },
+          {
+            "frame": "graphql/schema/SchemaElementChildrenContainer$Builder.children",
+            "weight": 31,
+            "share_pct": 0.8857142857142857
+          },
+          {
+            "frame": "ZBarrier::mark_from_young_slow_path",
+            "weight": 29,
+            "share_pct": 0.8285714285714286
+          },
+          {
+            "frame": "void OopOopIterateDispatch<ZMarkBarrierFollowOopClosure<false, (ZGenerationIdOptional)0> >::Table::oop_oop_iterate<InstanceKlass, oopDesc*>",
+            "weight": 26,
+            "share_pct": 0.7428571428571429
+          },
+          {
+            "frame": "java/util/ArrayList$Itr.next",
+            "weight": 25,
+            "share_pct": 0.7142857142857143
+          },
+          {
+            "frame": "java/lang/String.equals",
+            "weight": 24,
+            "share_pct": 0.6857142857142857
+          },
+          {
+            "frame": "jdk/internal/util/ArraysSupport.hashCodeOfUnsigned",
+            "weight": 24,
+            "share_pct": 0.6857142857142857
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectivesAreValid.visitGraphQLType",
+            "weight": 24,
+            "share_pct": 0.6857142857142857
+          },
+          {
+            "frame": "oop_arraycopy",
+            "weight": 23,
+            "share_pct": 0.6571428571428571
+          },
+          {
+            "frame": "java/lang/Object.hashCode",
+            "weight": 22,
+            "share_pct": 0.6285714285714286
+          }
+        ]
+      },
+      "allocation": {
+        "total_weight": 64757960576,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 2678063104,
+            "share_pct": 4.135496362423308
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 26214400,
+            "share_pct": 0.040480583030768486
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 295698432,
+            "share_pct": 0.45662097658706846
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 139460608,
+            "share_pct": 0.21535670172368832
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 40894464,
+            "share_pct": 0.06314970952799884
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 1320157184,
+            "share_pct": 2.038602161429501
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 9284092128,
+            "share_pct": 14.336603632080385
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 3261071360,
+            "share_pct": 5.035784529027599
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 2861563904,
+            "share_pct": 4.418860443638688
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 597688320,
+            "share_pct": 0.9229572931015214
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 52489621152,
+            "share_pct": 81.05508679569694
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 40665876736,
+            "share_pct": 62.79672240183427
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 1693450240,
+            "share_pct": 2.615045663787644
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 2847935936,
+            "share_pct": 4.397815976087851
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java.util.LinkedHashMap$Entry",
+            "weight": 11323572224,
+            "share_pct": 17.485992645970754
+          },
+          {
+            "frame": "java.util.HashMap$Node[]",
+            "weight": 10921971584,
+            "share_pct": 16.865836241371383
+          },
+          {
+            "frame": "java.lang.Object[]",
+            "weight": 8480882688,
+            "share_pct": 13.09627822211422
+          },
+          {
+            "frame": "java.util.LinkedHashMap",
+            "weight": 8057257984,
+            "share_pct": 12.442112000337001
+          },
+          {
+            "frame": "graphql.util.DefaultTraverserContext",
+            "weight": 6531579904,
+            "share_pct": 10.086142067946275
+          },
+          {
+            "frame": "java.util.ArrayList",
+            "weight": 3274702848,
+            "share_pct": 5.0568344322035985
+          },
+          {
+            "frame": "java.util.Collections$SingletonMap",
+            "weight": 2173698048,
+            "share_pct": 3.3566499449113225
+          },
+          {
+            "frame": "graphql.util.TraverserState$StackTraverserState$$Lambda.0x000000001a1d3000",
+            "weight": 1333788672,
+            "share_pct": 2.0596520646055003
+          },
+          {
+            "frame": "graphql.util.Breadcrumb",
+            "weight": 1254096896,
+            "share_pct": 1.9365910921919642
+          },
+          {
+            "frame": "graphql.util.NodeLocation",
+            "weight": 1198522368,
+            "share_pct": 1.850772256166735
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntryIterator",
+            "weight": 951058432,
+            "share_pct": 1.4686355523562806
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedValues",
+            "weight": 703594496,
+            "share_pct": 1.086498848545826
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$Head",
+            "weight": 583008256,
+            "share_pct": 0.900288166604291
+          },
+          {
+            "frame": "java.util.Collections$SingletonSet",
+            "weight": 565182464,
+            "share_pct": 0.8727613701433685
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntrySet",
+            "weight": 555745280,
+            "share_pct": 0.8581883602522918
+          },
+          {
+            "frame": "graphql.util.TraverserState$EndList",
+            "weight": 524288000,
+            "share_pct": 0.8096116606153696
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$2",
+            "weight": 421527552,
+            "share_pct": 0.6509277751347572
+          },
+          {
+            "frame": "java.util.concurrent.ConcurrentHashMap",
+            "weight": 409993216,
+            "share_pct": 0.6331163186012191
+          },
+          {
+            "frame": "graphql.schema.SchemaElementChildrenContainer$Builder",
+            "weight": 347078656,
+            "share_pct": 0.5359629193273747
+          },
+          {
+            "frame": "graphql.schema.SchemaElementChildrenContainer",
+            "weight": 332398592,
+            "share_pct": 0.5132937928301443
+          },
+          {
+            "frame": "java.util.Spliterators$ArraySpliterator",
+            "weight": 243269632,
+            "share_pct": 0.37565981052553155
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument$Builder",
+            "weight": 239075328,
+            "share_pct": 0.3691829172406086
+          },
+          {
+            "frame": "java.util.HashMap$Node",
+            "weight": 234881024,
+            "share_pct": 0.36270602395568563
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument",
+            "weight": 210763776,
+            "share_pct": 0.3254638875673786
+          },
+          {
+            "frame": "com.google.common.collect.Iterators$SingletonIterator",
+            "weight": 197132288,
+            "share_pct": 0.304413984391379
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTime",
+      "fixture": "large-schema-5.graphqls",
+      "warmup": {
+        "last_five_cv_pct": 1.6550326341673294,
+        "last_five_fitted_drift_pct": -1.282298113958045,
+        "inspect": false
+      },
+      "allocation_stalls": [],
+      "cpu": {
+        "total_weight": 5597,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 98,
+            "share_pct": 1.75093800250134
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 14,
+            "share_pct": 0.2501340003573343
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 8,
+            "share_pct": 0.1429337144899053
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 4,
+            "share_pct": 0.07146685724495265
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 40,
+            "share_pct": 0.7146685724495265
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 327,
+            "share_pct": 5.84241557977488
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 161,
+            "share_pct": 2.8765410041093444
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 149,
+            "share_pct": 2.6621404323744864
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 73,
+            "share_pct": 1.304270144720386
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 3737,
+            "share_pct": 66.76791138109702
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 2299,
+            "share_pct": 41.075576201536535
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 194,
+            "share_pct": 3.4661425763802036
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 983,
+            "share_pct": 17.562980167947114
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 415,
+            "share_pct": 7.414686439163837
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java/util/HashMap.getNode",
+            "weight": 1040,
+            "share_pct": 18.58138288368769
+          },
+          {
+            "frame": "java/util/HashMap.resize",
+            "weight": 364,
+            "share_pct": 6.503484009290691
+          },
+          {
+            "frame": "ZRelocateWork<ZRelocateSmallAllocator>::do_forwarding",
+            "weight": 309,
+            "share_pct": 5.5208147221725925
+          },
+          {
+            "frame": "oopDesc::klass",
+            "weight": 292,
+            "share_pct": 5.217080578881544
+          },
+          {
+            "frame": "ZBarrier::mark_from_young_slow_path",
+            "weight": 278,
+            "share_pct": 4.966946578524209
+          },
+          {
+            "frame": "void OopOopIterateDispatch<ZMarkBarrierFollowOopClosure<false, (ZGenerationIdOptional)0> >::Table::oop_oop_iterate<InstanceKlass, oopDesc*>",
+            "weight": 167,
+            "share_pct": 2.9837412899767735
+          },
+          {
+            "frame": "itable stub",
+            "weight": 144,
+            "share_pct": 2.5728068608182957
+          },
+          {
+            "frame": "java/util/HashMap.putVal",
+            "weight": 133,
+            "share_pct": 2.3762730033946755
+          },
+          {
+            "frame": "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList",
+            "weight": 129,
+            "share_pct": 2.304806146149723
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVarFromParents",
+            "weight": 111,
+            "share_pct": 1.983205288547436
+          },
+          {
+            "frame": "graphql/util/TraverserState$StackTraverserState.lambda$pushAll$0",
+            "weight": 109,
+            "share_pct": 1.9474718599249599
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.enter",
+            "weight": 94,
+            "share_pct": 1.6794711452563873
+          },
+          {
+            "frame": "vframe::sender",
+            "weight": 90,
+            "share_pct": 1.6080042880114347
+          },
+          {
+            "frame": "java/util/HashMap.hash",
+            "weight": 87,
+            "share_pct": 1.5544041450777202
+          },
+          {
+            "frame": "ZRelocate::relocate_object",
+            "weight": 86,
+            "share_pct": 1.536537430766482
+          },
+          {
+            "frame": "java/util/HashMap.computeIfAbsent",
+            "weight": 84,
+            "share_pct": 1.5008040021440057
+          },
+          {
+            "frame": "graphql/util/Traverser.traverse",
+            "weight": 59,
+            "share_pct": 1.0541361443630517
+          },
+          {
+            "frame": "jdk/internal/util/ArraysSupport.hashCodeOfUnsigned",
+            "weight": 54,
+            "share_pct": 0.9648025728068608
+          },
+          {
+            "frame": "ZMark::mark_and_follow",
+            "weight": 51,
+            "share_pct": 0.9112024298731464
+          },
+          {
+            "frame": "ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded",
+            "weight": 46,
+            "share_pct": 0.8218688583169556
+          },
+          {
+            "frame": "java/util/HashMap.putMapEntries",
+            "weight": 40,
+            "share_pct": 0.7146685724495265
+          },
+          {
+            "frame": "graphql/util/Traverser.lambda$wrapListFunction$0",
+            "weight": 38,
+            "share_pct": 0.6789351438270502
+          },
+          {
+            "frame": "java/util/ArrayList$Itr.next",
+            "weight": 37,
+            "share_pct": 0.661068429515812
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectivesAreValid.visitGraphQLType",
+            "weight": 37,
+            "share_pct": 0.661068429515812
+          },
+          {
+            "frame": "/usr/lib/x86_64-linux-gnu/libc.so.6",
+            "weight": 35,
+            "share_pct": 0.6253350008933357
+          }
+        ]
+      },
+      "allocation": {
+        "total_weight": 76644615776,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 1670381568,
+            "share_pct": 2.179385402468222
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 1048576,
+            "share_pct": 0.0013681013198168373
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 93323264,
+            "share_pct": 0.12176101746369854
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 68157440,
+            "share_pct": 0.08892658578809444
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 11534336,
+            "share_pct": 0.015049114517985213
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 1078984704,
+            "share_pct": 1.4077762580915256
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 7657750560,
+            "share_pct": 9.991243980373502
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 4891607040,
+            "share_pct": 6.382192656945547
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 4593811456,
+            "share_pct": 5.993651882117565
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 2530213888,
+            "share_pct": 3.301228484718029
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 67203237440,
+            "share_pct": 87.68161567461806
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 52570358800,
+            "share_pct": 68.58976102592916
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 2434793472,
+            "share_pct": 3.1767312646146966
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 3704620544,
+            "share_pct": 4.833503966967554
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java.util.HashMap$Node[]",
+            "weight": 14128514656,
+            "share_pct": 18.43379931252015
+          },
+          {
+            "frame": "java.util.LinkedHashMap$Entry",
+            "weight": 13626245120,
+            "share_pct": 17.7784766510198
+          },
+          {
+            "frame": "java.lang.Object[]",
+            "weight": 11669602304,
+            "share_pct": 15.225599588241584
+          },
+          {
+            "frame": "graphql.util.DefaultTraverserContext",
+            "weight": 9922674688,
+            "share_pct": 12.946342789426733
+          },
+          {
+            "frame": "java.util.LinkedHashMap",
+            "weight": 9499049984,
+            "share_pct": 12.39362985622073
+          },
+          {
+            "frame": "java.util.ArrayList",
+            "weight": 4238344192,
+            "share_pct": 5.529865534699657
+          },
+          {
+            "frame": "graphql.util.NodeLocation",
+            "weight": 2061500416,
+            "share_pct": 2.6896871947599026
+          },
+          {
+            "frame": "graphql.util.Breadcrumb",
+            "weight": 2028994560,
+            "share_pct": 2.6472760538455806
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntryIterator",
+            "weight": 1347420160,
+            "share_pct": 1.7580101959646361
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedValues",
+            "weight": 853540864,
+            "share_pct": 1.1136344743309057
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntrySet",
+            "weight": 768606208,
+            "share_pct": 1.0028182674257418
+          },
+          {
+            "frame": "graphql.util.TraverserState$EndList",
+            "weight": 747634688,
+            "share_pct": 0.9754562410294051
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument$Builder",
+            "weight": 572522496,
+            "share_pct": 0.7469833206199933
+          },
+          {
+            "frame": "graphql.schema.SchemaElementChildrenContainer",
+            "weight": 492830720,
+            "share_pct": 0.6430076203139136
+          },
+          {
+            "frame": "graphql.schema.SchemaElementChildrenContainer$Builder",
+            "weight": 485490688,
+            "share_pct": 0.6334309110751958
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument",
+            "weight": 450887680,
+            "share_pct": 0.5882835675212401
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$Head",
+            "weight": 315621376,
+            "share_pct": 0.41179849726486806
+          },
+          {
+            "frame": "graphql.schema.GraphQLAppliedDirectiveArgument",
+            "weight": 294649856,
+            "share_pct": 0.38443647086853133
+          },
+          {
+            "frame": "java.util.concurrent.ConcurrentHashMap",
+            "weight": 282066944,
+            "share_pct": 0.3680192550307293
+          },
+          {
+            "frame": "graphql.schema.GraphQLAppliedDirectiveArgument$Builder",
+            "weight": 257949696,
+            "share_pct": 0.336552924674942
+          },
+          {
+            "frame": "com.google.common.collect.Iterators$ArrayItr",
+            "weight": 164626432,
+            "share_pct": 0.21479190721124347
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$2",
+            "weight": 161480704,
+            "share_pct": 0.21068760325179298
+          },
+          {
+            "frame": "graphql.schema.impl.MultiReadOnlyGraphQLTypeVisitor$$Lambda.0x00000000931fb400",
+            "weight": 140509184,
+            "share_pct": 0.18332557685545622
+          },
+          {
+            "frame": "java.util.Spliterators$ArraySpliterator",
+            "weight": 125829120,
+            "share_pct": 0.1641721583780205
+          },
+          {
+            "frame": "graphql.schema.GraphQLDirective$Builder",
+            "weight": 109051904,
+            "share_pct": 0.14228253726095108
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTimeFast",
+      "fixture": "large-schema-4.graphqls",
+      "warmup": {
+        "last_five_cv_pct": 0.9463615599049338,
+        "last_five_fitted_drift_pct": -0.6699826039521791,
+        "inspect": false
+      },
+      "allocation_stalls": [],
+      "cpu": {
+        "total_weight": 3131,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 285,
+            "share_pct": 9.10252315554136
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 37,
+            "share_pct": 1.1817310763334399
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 40,
+            "share_pct": 1.2775471095496647
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 17,
+            "share_pct": 0.5429575215586074
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 95,
+            "share_pct": 3.0341743851804535
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 665,
+            "share_pct": 21.239220696263175
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 169,
+            "share_pct": 5.397636537847333
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 140,
+            "share_pct": 4.471414883423826
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 26,
+            "share_pct": 0.830405621207282
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 363,
+            "share_pct": 11.593740019163207
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 159,
+            "share_pct": 5.078249760459917
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java/util/HashMap.getNode",
+            "weight": 421,
+            "share_pct": 13.446183328010221
+          },
+          {
+            "frame": "java/util/HashMap.resize",
+            "weight": 181,
+            "share_pct": 5.780900670712232
+          },
+          {
+            "frame": "itable stub",
+            "weight": 160,
+            "share_pct": 5.110188438198659
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.enter",
+            "weight": 117,
+            "share_pct": 3.736825295432769
+          },
+          {
+            "frame": "java/util/HashMap.hash",
+            "weight": 80,
+            "share_pct": 2.5550942190993293
+          },
+          {
+            "frame": "java/util/HashMap.putVal",
+            "weight": 79,
+            "share_pct": 2.5231555413605875
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVarFromParents",
+            "weight": 69,
+            "share_pct": 2.2037687639731716
+          },
+          {
+            "frame": "graphql/util/TraverserState$StackTraverserState.lambda$pushAll$0",
+            "weight": 64,
+            "share_pct": 2.0440753752794634
+          },
+          {
+            "frame": "java/lang/String.hashCode",
+            "weight": 57,
+            "share_pct": 1.8205046311082722
+          },
+          {
+            "frame": "java/lang/String.equals",
+            "weight": 50,
+            "share_pct": 1.5969338869370808
+          },
+          {
+            "frame": "vframe::sender",
+            "weight": 34,
+            "share_pct": 1.0859150431172149
+          },
+          {
+            "frame": "graphql/schema/ShallowTypeRefCollector.scanAppliedDirectives",
+            "weight": 34,
+            "share_pct": 1.0859150431172149
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectivesAreValid.visitGraphQLType",
+            "weight": 34,
+            "share_pct": 1.0859150431172149
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectiveArgumentsAreValid.visitGraphQLDirective",
+            "weight": 33,
+            "share_pct": 1.0539763653784733
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.backRef",
+            "weight": 33,
+            "share_pct": 1.0539763653784733
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVar",
+            "weight": 31,
+            "share_pct": 0.9900990099009901
+          },
+          {
+            "frame": "graphql/util/FpKit.toMap",
+            "weight": 30,
+            "share_pct": 0.9581603321622485
+          },
+          {
+            "frame": "graphql/DirectivesUtil$DirectivesHolder.<init>",
+            "weight": 30,
+            "share_pct": 0.9581603321622485
+          },
+          {
+            "frame": "graphql/util/Traverser.traverse",
+            "weight": 29,
+            "share_pct": 0.9262216544235069
+          },
+          {
+            "frame": "java/util/ArrayList$Itr.next",
+            "weight": 28,
+            "share_pct": 0.8942829766847652
+          },
+          {
+            "frame": "java/lang/Object.hashCode",
+            "weight": 24,
+            "share_pct": 0.7665282657297988
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectiveArgumentsAreValid.visitGraphQLAppliedDirective",
+            "weight": 24,
+            "share_pct": 0.7665282657297988
+          },
+          {
+            "frame": "java/util/Arrays.copyOf",
+            "weight": 23,
+            "share_pct": 0.7345895879910572
+          },
+          {
+            "frame": "graphql/schema/GraphQLCodeRegistry.buildDataFetcherByNames",
+            "weight": 22,
+            "share_pct": 0.7026509102523155
+          },
+          {
+            "frame": "graphql/schema/GraphQLTypeVisitor.visitBackRef",
+            "weight": 21,
+            "share_pct": 0.6707122325135739
+          }
+        ]
+      },
+      "allocation": {
+        "total_weight": 42626714352,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 4624220160,
+            "share_pct": 10.848174038971026
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 58720256,
+            "share_pct": 0.13775459097106063
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 478150656,
+            "share_pct": 1.1217159550500653
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 204472320,
+            "share_pct": 0.4796811649885147
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 46137344,
+            "share_pct": 0.1082357500486905
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 2207252480,
+            "share_pct": 5.178096678465761
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 17151558000,
+            "share_pct": 40.23664094390908
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 5567938560,
+            "share_pct": 13.062087108148786
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 4850712576,
+            "share_pct": 11.379513175573688
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 925892608,
+            "share_pct": 2.1720947112044025
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 1594886128,
+            "share_pct": 3.7415178538741154
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java.lang.Object[]",
+            "weight": 5782896640,
+            "share_pct": 13.566367307239275
+          },
+          {
+            "frame": "java.util.HashMap$Node[]",
+            "weight": 5531241200,
+            "share_pct": 12.97599705744264
+          },
+          {
+            "frame": "java.util.LinkedHashMap$Entry",
+            "weight": 5392826368,
+            "share_pct": 12.651283238645801
+          },
+          {
+            "frame": "java.util.LinkedHashMap",
+            "weight": 4050649088,
+            "share_pct": 9.502606873592987
+          },
+          {
+            "frame": "graphql.util.DefaultTraverserContext",
+            "weight": 3709861888,
+            "share_pct": 8.703138265278795
+          },
+          {
+            "frame": "java.util.ArrayList",
+            "weight": 1644167168,
+            "share_pct": 3.857128547189698
+          },
+          {
+            "frame": "java.util.Collections$SingletonMap",
+            "weight": 1217396736,
+            "share_pct": 2.855947859239311
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$Head",
+            "weight": 976224256,
+            "share_pct": 2.290170074893883
+          },
+          {
+            "frame": "graphql.util.TraverserState$StackTraverserState$$Lambda.0x00000000901d6c00",
+            "weight": 782237696,
+            "share_pct": 1.8350879440073435
+          },
+          {
+            "frame": "graphql.util.NodeLocation",
+            "weight": 740294656,
+            "share_pct": 1.736691807599443
+          },
+          {
+            "frame": "graphql.util.Breadcrumb",
+            "weight": 711983104,
+            "share_pct": 1.6702744155241103
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$2",
+            "weight": 707788800,
+            "share_pct": 1.6604348018833202
+          },
+          {
+            "frame": "graphql.schema.idl.SchemaDirectiveWiringEnvironmentImpl",
+            "weight": 631242752,
+            "share_pct": 1.480861852938902
+          },
+          {
+            "frame": "java.util.concurrent.ConcurrentHashMap",
+            "weight": 603979776,
+            "share_pct": 1.4169043642737664
+          },
+          {
+            "frame": "java.util.HashMap",
+            "weight": 512753664,
+            "share_pct": 1.202892767586583
+          },
+          {
+            "frame": "java.util.Spliterators$ArraySpliterator",
+            "weight": 446693376,
+            "share_pct": 1.0479188527441399
+          },
+          {
+            "frame": "com.google.common.collect.Iterators$SingletonIterator",
+            "weight": 406847488,
+            "share_pct": 0.9544425231566344
+          },
+          {
+            "frame": "java.util.HashMap$Node",
+            "weight": 398458880,
+            "share_pct": 0.9347632958750544
+          },
+          {
+            "frame": "graphql.schema.idl.SchemaGeneratorDirectiveHelper$Parameters",
+            "weight": 397410304,
+            "share_pct": 0.9323033924648568
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument$Builder",
+            "weight": 360710144,
+            "share_pct": 0.8462067731079439
+          },
+          {
+            "frame": "graphql.util.TraverserState$EndList",
+            "weight": 335544320,
+            "share_pct": 0.7871690912632037
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument",
+            "weight": 322961408,
+            "share_pct": 0.7576502503408334
+          },
+          {
+            "frame": "java.util.Collections$SingletonSet",
+            "weight": 311427072,
+            "share_pct": 0.7305913128286609
+          },
+          {
+            "frame": "com.google.common.collect.Iterators$ArrayItr",
+            "weight": 297795584,
+            "share_pct": 0.6986125684960932
+          },
+          {
+            "frame": "graphql.schema.GraphQLFieldDefinition$Builder",
+            "weight": 260046848,
+            "share_pct": 0.6100560457289829
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "benchmark.BuildSchemaBenchmark.benchmarkBuildSchemaAvgTimeFast",
+      "fixture": "large-schema-5.graphqls",
+      "warmup": {
+        "last_five_cv_pct": 0.5900976343384521,
+        "last_five_fitted_drift_pct": 0.9740619982418007,
+        "inspect": false
+      },
+      "allocation_stalls": [],
+      "cpu": {
+        "total_weight": 3203,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 151,
+            "share_pct": 4.714330315329379
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 16,
+            "share_pct": 0.49953168904152356
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 17,
+            "share_pct": 0.5307524196066188
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 5,
+            "share_pct": 0.1561036528254761
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 1,
+            "share_pct": 0.031220730565095223
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 62,
+            "share_pct": 1.9356852950359038
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 502,
+            "share_pct": 15.672806743677802
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 270,
+            "share_pct": 8.42959725257571
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 262,
+            "share_pct": 8.179831408054948
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 162,
+            "share_pct": 5.057758351545426
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 516,
+            "share_pct": 16.109896971589134
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 232,
+            "share_pct": 7.243209491102092
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java/util/HashMap.getNode",
+            "weight": 542,
+            "share_pct": 16.92163596628161
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVarFromParents",
+            "weight": 205,
+            "share_pct": 6.400249765844521
+          },
+          {
+            "frame": "java/util/HashMap.resize",
+            "weight": 186,
+            "share_pct": 5.807055885107712
+          },
+          {
+            "frame": "java/util/HashMap.putVal",
+            "weight": 137,
+            "share_pct": 4.277240087418045
+          },
+          {
+            "frame": "itable stub",
+            "weight": 131,
+            "share_pct": 4.089915704027474
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.enter",
+            "weight": 123,
+            "share_pct": 3.8401498595067123
+          },
+          {
+            "frame": "java/util/HashMap.hash",
+            "weight": 84,
+            "share_pct": 2.6225413674679987
+          },
+          {
+            "frame": "graphql/util/TraverserState$StackTraverserState.lambda$pushAll$0",
+            "weight": 69,
+            "share_pct": 2.1542304089915705
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.backRef",
+            "weight": 62,
+            "share_pct": 1.9356852950359038
+          },
+          {
+            "frame": "vframe::sender",
+            "weight": 44,
+            "share_pct": 1.3737121448641898
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVar",
+            "weight": 43,
+            "share_pct": 1.3424914142990947
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectiveArgumentsAreValid.visitGraphQLDirective",
+            "weight": 43,
+            "share_pct": 1.3424914142990947
+          },
+          {
+            "frame": "ZRelocateWork<ZRelocateSmallAllocator>::do_forwarding",
+            "weight": 42,
+            "share_pct": 1.3112706837339994
+          },
+          {
+            "frame": "oopDesc::klass",
+            "weight": 41,
+            "share_pct": 1.2800499531689042
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectivesAreValid.visitGraphQLType",
+            "weight": 39,
+            "share_pct": 1.2176084920387138
+          },
+          {
+            "frame": "graphql/util/Traverser.traverse",
+            "weight": 36,
+            "share_pct": 1.123946300343428
+          },
+          {
+            "frame": "java/util/ArrayList$Itr.next",
+            "weight": 36,
+            "share_pct": 1.123946300343428
+          },
+          {
+            "frame": "graphql/Assert.isValidName",
+            "weight": 34,
+            "share_pct": 1.0615048392132376
+          },
+          {
+            "frame": "graphql/schema/ShallowTypeRefCollector.scanAppliedDirectives",
+            "weight": 33,
+            "share_pct": 1.0302841086481425
+          },
+          {
+            "frame": "graphql/schema/GraphQLTypeVisitor.visitBackRef",
+            "weight": 30,
+            "share_pct": 0.9366219169528567
+          },
+          {
+            "frame": "java/util/HashMap.computeIfAbsent",
+            "weight": 30,
+            "share_pct": 0.9366219169528567
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectiveArgumentsAreValid.visitGraphQLAppliedDirective",
+            "weight": 29,
+            "share_pct": 0.9054011863877615
+          },
+          {
+            "frame": "graphql/schema/GraphQLAppliedDirectiveArgument.accept",
+            "weight": 27,
+            "share_pct": 0.842959725257571
+          },
+          {
+            "frame": "java/lang/String.equals",
+            "weight": 26,
+            "share_pct": 0.8117389946924758
+          },
+          {
+            "frame": "ZBarrier::mark_from_young_slow_path",
+            "weight": 26,
+            "share_pct": 0.8117389946924758
+          }
+        ]
+      },
+      "allocation": {
+        "total_weight": 38638978032,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 2440036352,
+            "share_pct": 6.314960892545379
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 4194304,
+            "share_pct": 0.010855111117396439
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 184549376,
+            "share_pct": 0.4776248891654433
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 102760448,
+            "share_pct": 0.26595022237621274
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 16777216,
+            "share_pct": 0.043420444469585755
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 1552941056,
+            "share_pct": 4.019104891216032
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 11293163616,
+            "share_pct": 29.22738693204369
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 7124025344,
+            "share_pct": 18.437406232897853
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 6703546368,
+            "share_pct": 17.34918134337886
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 3778019328,
+            "share_pct": 9.777741338994844
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 1927283520,
+            "share_pct": 4.987925711709725
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java.lang.Object[]",
+            "weight": 6416236544,
+            "share_pct": 16.605606231837204
+          },
+          {
+            "frame": "java.util.HashMap$Node[]",
+            "weight": 5209326576,
+            "share_pct": 13.482050616571028
+          },
+          {
+            "frame": "graphql.util.DefaultTraverserContext",
+            "weight": 5069864960,
+            "share_pct": 13.121115563152946
+          },
+          {
+            "frame": "java.util.LinkedHashMap$Entry",
+            "weight": 5011144704,
+            "share_pct": 12.969144007509396
+          },
+          {
+            "frame": "java.util.LinkedHashMap",
+            "weight": 3067084800,
+            "share_pct": 7.937800004596147
+          },
+          {
+            "frame": "java.util.ArrayList",
+            "weight": 1786773504,
+            "share_pct": 4.624277336010883
+          },
+          {
+            "frame": "java.util.Collections$SingletonMap",
+            "weight": 1469054976,
+            "share_pct": 3.802002668868103
+          },
+          {
+            "frame": "graphql.util.NodeLocation",
+            "weight": 1050673152,
+            "share_pct": 2.7192053349078082
+          },
+          {
+            "frame": "graphql.util.TraverserState$StackTraverserState$$Lambda.0x000000009e1e2c00",
+            "weight": 917504000,
+            "share_pct": 2.374555556930471
+          },
+          {
+            "frame": "graphql.util.Breadcrumb",
+            "weight": 909115392,
+            "share_pct": 2.352845334695678
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument",
+            "weight": 698351616,
+            "share_pct": 1.8073760010465072
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument$Builder",
+            "weight": 656408576,
+            "share_pct": 1.6988248898725429
+          },
+          {
+            "frame": "graphql.schema.GraphQLAppliedDirectiveArgument$Builder",
+            "weight": 437256192,
+            "share_pct": 1.1316453339885788
+          },
+          {
+            "frame": "graphql.schema.GraphQLAppliedDirectiveArgument",
+            "weight": 408944640,
+            "share_pct": 1.058373333946153
+          },
+          {
+            "frame": "java.util.concurrent.ConcurrentHashMap",
+            "weight": 395313152,
+            "share_pct": 1.0230942228146145
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$Head",
+            "weight": 392167424,
+            "share_pct": 1.0149528894765671
+          },
+          {
+            "frame": "graphql.util.TraverserState$EndList",
+            "weight": 371195904,
+            "share_pct": 0.9606773338895849
+          },
+          {
+            "frame": "java.util.Collections$SingletonSet",
+            "weight": 355467264,
+            "share_pct": 0.9199706671993483
+          },
+          {
+            "frame": "com.google.common.collect.Iterators$ArrayItr",
+            "weight": 261095424,
+            "share_pct": 0.6757306670579284
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$2",
+            "weight": 233832448,
+            "share_pct": 0.6051724447948515
+          },
+          {
+            "frame": "com.google.common.collect.Iterators$SingletonIterator",
+            "weight": 190840832,
+            "share_pct": 0.493907555841538
+          },
+          {
+            "frame": "graphql.schema.GraphQLDirective$Builder",
+            "weight": 179306496,
+            "share_pct": 0.4640560002686978
+          },
+          {
+            "frame": "java.util.Spliterators$ArraySpliterator",
+            "weight": 167772160,
+            "share_pct": 0.43420444469585756
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntryIterator",
+            "weight": 146800640,
+            "share_pct": 0.3799288891088754
+          },
+          {
+            "frame": "graphql.schema.GraphQLDirective",
+            "weight": 143654912,
+            "share_pct": 0.37178755577082806
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTime",
+      "fixture": "large-schema-4.graphqls",
+      "warmup": {
+        "last_five_cv_pct": 0.5001143655197899,
+        "last_five_fitted_drift_pct": -0.6580462169952506,
+        "inspect": false
+      },
+      "allocation_stalls": [],
+      "cpu": {
+        "total_weight": 3212,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 189,
+            "share_pct": 5.884184308841843
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 23,
+            "share_pct": 0.7160647571606475
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 31,
+            "share_pct": 0.9651307596513076
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 9,
+            "share_pct": 0.28019925280199254
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 62,
+            "share_pct": 1.9302615193026151
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 335,
+            "share_pct": 10.429638854296389
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 88,
+            "share_pct": 2.73972602739726
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 72,
+            "share_pct": 2.2415940224159403
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 19,
+            "share_pct": 0.5915317559153176
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 1888,
+            "share_pct": 58.779576587795766
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 1153,
+            "share_pct": 35.89663760896637
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 135,
+            "share_pct": 4.202988792029888
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 354,
+            "share_pct": 11.021170610211707
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 220,
+            "share_pct": 6.8493150684931505
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java/util/HashMap.getNode",
+            "weight": 412,
+            "share_pct": 12.826899128268991
+          },
+          {
+            "frame": "java/util/HashMap.resize",
+            "weight": 211,
+            "share_pct": 6.569115815691158
+          },
+          {
+            "frame": "itable stub",
+            "weight": 121,
+            "share_pct": 3.767123287671233
+          },
+          {
+            "frame": "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList",
+            "weight": 105,
+            "share_pct": 3.268991282689913
+          },
+          {
+            "frame": "java/util/HashMap.hash",
+            "weight": 68,
+            "share_pct": 2.1170610211706102
+          },
+          {
+            "frame": "java/util/HashMap.putVal",
+            "weight": 64,
+            "share_pct": 1.9925280199252802
+          },
+          {
+            "frame": "graphql/util/TraverserState$StackTraverserState.lambda$pushAll$0",
+            "weight": 58,
+            "share_pct": 1.805728518057285
+          },
+          {
+            "frame": "java/util/HashMap.computeIfAbsent",
+            "weight": 58,
+            "share_pct": 1.805728518057285
+          },
+          {
+            "frame": "vframe::sender",
+            "weight": 49,
+            "share_pct": 1.5255292652552928
+          },
+          {
+            "frame": "jdk/internal/util/ArraysSupport.hashCodeOfUnsigned",
+            "weight": 42,
+            "share_pct": 1.307596513075965
+          },
+          {
+            "frame": "java/util/ArrayList.add",
+            "weight": 38,
+            "share_pct": 1.1830635118306352
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.enter",
+            "weight": 38,
+            "share_pct": 1.1830635118306352
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVarFromParents",
+            "weight": 37,
+            "share_pct": 1.1519302615193026
+          },
+          {
+            "frame": "java/util/ArrayList.elementData",
+            "weight": 35,
+            "share_pct": 1.0896637608966375
+          },
+          {
+            "frame": "graphql/util/Traverser.traverse",
+            "weight": 34,
+            "share_pct": 1.0585305105853051
+          },
+          {
+            "frame": "java/util/ArrayList$Itr.next",
+            "weight": 33,
+            "share_pct": 1.0273972602739727
+          },
+          {
+            "frame": "oopDesc::klass",
+            "weight": 31,
+            "share_pct": 0.9651307596513076
+          },
+          {
+            "frame": "org/antlr/v4/runtime/ParserRuleContext.getChild",
+            "weight": 29,
+            "share_pct": 0.9028642590286425
+          },
+          {
+            "frame": "org/antlr/v4/runtime/RuleContext.getText",
+            "weight": 29,
+            "share_pct": 0.9028642590286425
+          },
+          {
+            "frame": "java/lang/String.equals",
+            "weight": 29,
+            "share_pct": 0.9028642590286425
+          },
+          {
+            "frame": "org/antlr/v4/runtime/ParserRuleContext.getRuleContexts",
+            "weight": 28,
+            "share_pct": 0.8717310087173101
+          },
+          {
+            "frame": "java/util/ArrayDeque.addFirst",
+            "weight": 28,
+            "share_pct": 0.8717310087173101
+          },
+          {
+            "frame": "java/lang/String.hashCode",
+            "weight": 26,
+            "share_pct": 0.8094645080946451
+          },
+          {
+            "frame": "ZBarrier::mark_from_young_slow_path",
+            "weight": 26,
+            "share_pct": 0.8094645080946451
+          },
+          {
+            "frame": "org/antlr/v4/runtime/atn/LexerATNSimulator.getExistingTargetState",
+            "weight": 23,
+            "share_pct": 0.7160647571606475
+          }
+        ]
+      },
+      "allocation": {
+        "total_weight": 53811076912,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 1871708160,
+            "share_pct": 3.478295301654899
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 14680064,
+            "share_pct": 0.02728074746395999
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 222298112,
+            "share_pct": 0.41310846159710846
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 88080384,
+            "share_pct": 0.16368448478375994
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 17825792,
+            "share_pct": 0.03312662192052285
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 875560960,
+            "share_pct": 1.627101723743328
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 6384779392,
+            "share_pct": 11.865176759872982
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 2251292672,
+            "share_pct": 4.18369748608015
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 1946157056,
+            "share_pct": 3.616647663793553
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 362807296,
+            "share_pct": 0.6742241873235826
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 33767295680,
+            "share_pct": 62.751570155753214
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 26473399984,
+            "share_pct": 49.19693398311523
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 1210056704,
+            "share_pct": 2.248713040957845
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 2083523072,
+            "share_pct": 3.871922272448276
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java.lang.Object[]",
+            "weight": 9525401904,
+            "share_pct": 17.701563415237676
+          },
+          {
+            "frame": "java.util.LinkedHashMap$Entry",
+            "weight": 8113881088,
+            "share_pct": 15.078458848294458
+          },
+          {
+            "frame": "java.util.HashMap$Node[]",
+            "weight": 7880051520,
+            "share_pct": 14.643920865747866
+          },
+          {
+            "frame": "java.util.LinkedHashMap",
+            "weight": 6390022144,
+            "share_pct": 11.874919646098013
+          },
+          {
+            "frame": "graphql.util.DefaultTraverserContext",
+            "weight": 4565499904,
+            "share_pct": 8.484312461291557
+          },
+          {
+            "frame": "java.util.ArrayList",
+            "weight": 2932867072,
+            "share_pct": 5.450303618335435
+          },
+          {
+            "frame": "byte[]",
+            "weight": 1478605504,
+            "share_pct": 2.747771627797078
+          },
+          {
+            "frame": "org.antlr.v4.runtime.CommonToken",
+            "weight": 1372585984,
+            "share_pct": 2.5507498878802592
+          },
+          {
+            "frame": "graphql.util.NodeLocation",
+            "weight": 959447040,
+            "share_pct": 1.7829917092516707
+          },
+          {
+            "frame": "graphql.util.Breadcrumb",
+            "weight": 846200832,
+            "share_pct": 1.572540228815408
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntrySet",
+            "weight": 563085312,
+            "share_pct": 1.046411527724751
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedValues",
+            "weight": 472907776,
+            "share_pct": 0.8788297933032826
+          },
+          {
+            "frame": "java.lang.String",
+            "weight": 455081984,
+            "share_pct": 0.8457031713827597
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$Head",
+            "weight": 403701760,
+            "share_pct": 0.7502205552588997
+          },
+          {
+            "frame": "graphql.util.TraverserState$EndList",
+            "weight": 396361728,
+            "share_pct": 0.7365801815269197
+          },
+          {
+            "frame": "org.antlr.v4.runtime.tree.TerminalNodeImpl",
+            "weight": 312475648,
+            "share_pct": 0.580690196018577
+          },
+          {
+            "frame": "graphql.parser.antlr.GraphqlParser$BaseNameContext",
+            "weight": 312475648,
+            "share_pct": 0.580690196018577
+          },
+          {
+            "frame": "graphql.parser.antlr.GraphqlParser$NameContext",
+            "weight": 278921216,
+            "share_pct": 0.5183342018152398
+          },
+          {
+            "frame": "java.util.concurrent.ConcurrentHashMap",
+            "weight": 276824064,
+            "share_pct": 0.5144369521775313
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$2",
+            "weight": 253755392,
+            "share_pct": 0.471567206162737
+          },
+          {
+            "frame": "graphql.schema.SchemaElementChildrenContainer$Builder",
+            "weight": 250609664,
+            "share_pct": 0.46572133170617414
+          },
+          {
+            "frame": "graphql.schema.SchemaElementChildrenContainer",
+            "weight": 227540992,
+            "share_pct": 0.42285158569137987
+          },
+          {
+            "frame": "org.antlr.v4.runtime.atn.LexerATNConfig",
+            "weight": 186646528,
+            "share_pct": 0.34685521775606276
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument$Builder",
+            "weight": 170917888,
+            "share_pct": 0.31762584547324846
+          },
+          {
+            "frame": "java.util.Spliterators$ArraySpliterator",
+            "weight": 169869312,
+            "share_pct": 0.3156772206543942
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTime",
+      "fixture": "large-schema-5.graphqls",
+      "warmup": {
+        "last_five_cv_pct": 0.5414838764735123,
+        "last_five_fitted_drift_pct": 1.0591708140288476,
+        "inspect": false
+      },
+      "allocation_stalls": [],
+      "cpu": {
+        "total_weight": 6284,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 162,
+            "share_pct": 2.577975811584978
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 13,
+            "share_pct": 0.2068746021642266
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 16,
+            "share_pct": 0.2546148949713558
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 5,
+            "share_pct": 0.07956715467854869
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 51,
+            "share_pct": 0.8115849777211966
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 370,
+            "share_pct": 5.887969446212604
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 169,
+            "share_pct": 2.689369828134946
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 155,
+            "share_pct": 2.4665817950350095
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 71,
+            "share_pct": 1.1298535964353915
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 3700,
+            "share_pct": 58.87969446212603
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 2305,
+            "share_pct": 36.68045830681095
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 156,
+            "share_pct": 2.482495225970719
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 983,
+            "share_pct": 15.642902609802674
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 453,
+            "share_pct": 7.208784213876512
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java/util/HashMap.getNode",
+            "weight": 1049,
+            "share_pct": 16.693189051559518
+          },
+          {
+            "frame": "java/util/HashMap.resize",
+            "weight": 374,
+            "share_pct": 5.951623169955442
+          },
+          {
+            "frame": "oopDesc::klass",
+            "weight": 322,
+            "share_pct": 5.124124761298536
+          },
+          {
+            "frame": "ZRelocateWork<ZRelocateSmallAllocator>::do_forwarding",
+            "weight": 305,
+            "share_pct": 4.85359643539147
+          },
+          {
+            "frame": "ZBarrier::mark_from_young_slow_path",
+            "weight": 275,
+            "share_pct": 4.3761935073201785
+          },
+          {
+            "frame": "ZRelocate::relocate_object",
+            "weight": 199,
+            "share_pct": 3.166772756206238
+          },
+          {
+            "frame": "itable stub",
+            "weight": 175,
+            "share_pct": 2.7848504137492043
+          },
+          {
+            "frame": "void OopOopIterateDispatch<ZMarkBarrierFollowOopClosure<false, (ZGenerationIdOptional)0> >::Table::oop_oop_iterate<InstanceKlass, oopDesc*>",
+            "weight": 168,
+            "share_pct": 2.673456397199236
+          },
+          {
+            "frame": "java/util/HashMap.putVal",
+            "weight": 162,
+            "share_pct": 2.577975811584978
+          },
+          {
+            "frame": "graphql/util/TraverserState$StackTraverserState.lambda$pushAll$0",
+            "weight": 115,
+            "share_pct": 1.83004455760662
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVarFromParents",
+            "weight": 113,
+            "share_pct": 1.7982176957352005
+          },
+          {
+            "frame": "java/util/HashMap.hash",
+            "weight": 112,
+            "share_pct": 1.7823042647994907
+          },
+          {
+            "frame": "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList",
+            "weight": 90,
+            "share_pct": 1.4322087842138764
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.enter",
+            "weight": 87,
+            "share_pct": 1.3844684914067473
+          },
+          {
+            "frame": "java/util/HashMap.computeIfAbsent",
+            "weight": 84,
+            "share_pct": 1.336728198599618
+          },
+          {
+            "frame": "ZMark::mark_and_follow",
+            "weight": 80,
+            "share_pct": 1.273074474856779
+          },
+          {
+            "frame": "vframe::sender",
+            "weight": 73,
+            "share_pct": 1.161680458306811
+          },
+          {
+            "frame": "graphql/util/Traverser.traverse",
+            "weight": 52,
+            "share_pct": 0.8274984086569064
+          },
+          {
+            "frame": "java/util/HashMap.putMapEntries",
+            "weight": 49,
+            "share_pct": 0.7797581158497772
+          },
+          {
+            "frame": "java/util/ArrayList$Itr.next",
+            "weight": 45,
+            "share_pct": 0.7161043921069382
+          },
+          {
+            "frame": "java/util/ArrayList.add",
+            "weight": 45,
+            "share_pct": 0.7161043921069382
+          },
+          {
+            "frame": "vtable stub",
+            "weight": 41,
+            "share_pct": 0.6524506683640993
+          },
+          {
+            "frame": "jdk/internal/util/ArraysSupport.hashCodeOfUnsigned",
+            "weight": 38,
+            "share_pct": 0.60471037555697
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.backRef",
+            "weight": 33,
+            "share_pct": 0.5251432208784214
+          },
+          {
+            "frame": "java/lang/String.equals",
+            "weight": 31,
+            "share_pct": 0.49331635900700194
+          }
+        ]
+      },
+      "allocation": {
+        "total_weight": 85423471264,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 1728053248,
+            "share_pct": 2.0229255758753664
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 5242880,
+            "share_pct": 0.006137516917097591
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 96468992,
+            "share_pct": 0.11293031127459568
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 73400320,
+            "share_pct": 0.08592523683936629
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 10485760,
+            "share_pct": 0.012275033834195183
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 1135607808,
+            "share_pct": 1.3293861642433384
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 7949254688,
+            "share_pct": 9.305703187163799
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 5024776192,
+            "share_pct": 5.882196213346332
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 4769972224,
+            "share_pct": 5.583912891175389
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 2600468480,
+            "share_pct": 3.0442083908804056
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 67427632720,
+            "share_pct": 78.93337945916045
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 52776928240,
+            "share_pct": 61.78270147427475
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 2448424960,
+            "share_pct": 2.8662204002845755
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 3828352544,
+            "share_pct": 4.481616688425751
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java.lang.Object[]",
+            "weight": 14324678848,
+            "share_pct": 16.769019844358453
+          },
+          {
+            "frame": "java.util.HashMap$Node[]",
+            "weight": 14229177968,
+            "share_pct": 16.65722284221503
+          },
+          {
+            "frame": "java.util.LinkedHashMap$Entry",
+            "weight": 14021558272,
+            "share_pct": 16.4141752430858
+          },
+          {
+            "frame": "graphql.util.DefaultTraverserContext",
+            "weight": 10169090048,
+            "share_pct": 11.904327812402489
+          },
+          {
+            "frame": "java.util.LinkedHashMap",
+            "weight": 9949937664,
+            "share_pct": 11.647779605267809
+          },
+          {
+            "frame": "java.util.ArrayList",
+            "weight": 4639948800,
+            "share_pct": 5.431702471631369
+          },
+          {
+            "frame": "graphql.util.Breadcrumb",
+            "weight": 2025848832,
+            "share_pct": 2.3715365367665093
+          },
+          {
+            "frame": "graphql.util.NodeLocation",
+            "weight": 1934622720,
+            "share_pct": 2.2647437424090113
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntryIterator",
+            "weight": 1579155456,
+            "share_pct": 1.8486200954297947
+          },
+          {
+            "frame": "byte[]",
+            "weight": 1074885488,
+            "share_pct": 1.2583022816739464
+          },
+          {
+            "frame": "org.antlr.v4.runtime.CommonToken",
+            "weight": 988807168,
+            "share_pct": 1.1575356905646057
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntrySet",
+            "weight": 948961280,
+            "share_pct": 1.110890561994664
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedValues",
+            "weight": 835715072,
+            "share_pct": 0.9783201965853561
+          },
+          {
+            "frame": "graphql.util.TraverserState$EndList",
+            "weight": 734003200,
+            "share_pct": 0.8592523683936628
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument$Builder",
+            "weight": 581959680,
+            "share_pct": 0.6812643777978327
+          },
+          {
+            "frame": "graphql.schema.SchemaElementChildrenContainer",
+            "weight": 497025024,
+            "share_pct": 0.5818366037408517
+          },
+          {
+            "frame": "graphql.schema.SchemaElementChildrenContainer$Builder",
+            "weight": 476053504,
+            "share_pct": 0.5572865360724614
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument",
+            "weight": 460324864,
+            "share_pct": 0.5388739853211686
+          },
+          {
+            "frame": "java.lang.String",
+            "weight": 372244480,
+            "share_pct": 0.43576370111392904
+          },
+          {
+            "frame": "graphql.schema.GraphQLAppliedDirectiveArgument",
+            "weight": 297795584,
+            "share_pct": 0.3486109608911432
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$Head",
+            "weight": 275775488,
+            "share_pct": 0.32283338983933335
+          },
+          {
+            "frame": "graphql.schema.GraphQLAppliedDirectiveArgument$Builder",
+            "weight": 268435456,
+            "share_pct": 0.3142408661553967
+          },
+          {
+            "frame": "java.util.concurrent.ConcurrentHashMap",
+            "weight": 255852544,
+            "share_pct": 0.2995108255543625
+          },
+          {
+            "frame": "org.antlr.v4.runtime.tree.TerminalNodeImpl",
+            "weight": 248512512,
+            "share_pct": 0.29091830187042583
+          },
+          {
+            "frame": "graphql.parser.antlr.GraphqlParser$BaseNameContext",
+            "weight": 197132288,
+            "share_pct": 0.23077063608286946
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast",
+      "fixture": "large-schema-4.graphqls",
+      "warmup": {
+        "last_five_cv_pct": 1.23773263707716,
+        "last_five_fitted_drift_pct": -2.086435204631089,
+        "inspect": false
+      },
+      "allocation_stalls": [],
+      "cpu": {
+        "total_weight": 3285,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 287,
+            "share_pct": 8.736681887366819
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 30,
+            "share_pct": 0.91324200913242
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 42,
+            "share_pct": 1.278538812785388
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 14,
+            "share_pct": 0.426179604261796
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 1,
+            "share_pct": 0.030441400304414
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 91,
+            "share_pct": 2.7701674277016743
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 511,
+            "share_pct": 15.555555555555555
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 117,
+            "share_pct": 3.5616438356164384
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 101,
+            "share_pct": 3.0745814307458144
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 12,
+            "share_pct": 0.365296803652968
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 241,
+            "share_pct": 7.3363774733637745
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 107,
+            "share_pct": 3.2572298325722984
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java/util/HashMap.getNode",
+            "weight": 294,
+            "share_pct": 8.949771689497718
+          },
+          {
+            "frame": "java/util/HashMap.putVal",
+            "weight": 167,
+            "share_pct": 5.083713850837139
+          },
+          {
+            "frame": "java/util/HashMap.resize",
+            "weight": 127,
+            "share_pct": 3.8660578386605784
+          },
+          {
+            "frame": "itable stub",
+            "weight": 118,
+            "share_pct": 3.592085235920852
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.enter",
+            "weight": 78,
+            "share_pct": 2.374429223744292
+          },
+          {
+            "frame": "java/util/HashMap.hash",
+            "weight": 76,
+            "share_pct": 2.313546423135464
+          },
+          {
+            "frame": "org/antlr/v4/runtime/ParserRuleContext.getChild",
+            "weight": 67,
+            "share_pct": 2.0395738203957383
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVarFromParents",
+            "weight": 57,
+            "share_pct": 1.735159817351598
+          },
+          {
+            "frame": "org/antlr/v4/runtime/ParserRuleContext.getRuleContexts",
+            "weight": 49,
+            "share_pct": 1.491628614916286
+          },
+          {
+            "frame": "java/util/ArrayList$Itr.next",
+            "weight": 42,
+            "share_pct": 1.278538812785388
+          },
+          {
+            "frame": "vframe::sender",
+            "weight": 41,
+            "share_pct": 1.248097412480974
+          },
+          {
+            "frame": "java/util/ArrayList.elementData",
+            "weight": 41,
+            "share_pct": 1.248097412480974
+          },
+          {
+            "frame": "graphql/util/TraverserState$StackTraverserState.lambda$pushAll$0",
+            "weight": 39,
+            "share_pct": 1.187214611872146
+          },
+          {
+            "frame": "java/lang/String.equals",
+            "weight": 38,
+            "share_pct": 1.156773211567732
+          },
+          {
+            "frame": "ZRelocateWork<ZRelocateSmallAllocator>::do_forwarding",
+            "weight": 38,
+            "share_pct": 1.156773211567732
+          },
+          {
+            "frame": "org/antlr/v4/runtime/atn/LexerATNSimulator.getExistingTargetState",
+            "weight": 36,
+            "share_pct": 1.095890410958904
+          },
+          {
+            "frame": "org/antlr/v4/runtime/RuleContext.getText",
+            "weight": 34,
+            "share_pct": 1.035007610350076
+          },
+          {
+            "frame": "java/lang/String.hashCode",
+            "weight": 29,
+            "share_pct": 0.882800608828006
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectivesAreValid.visitGraphQLType",
+            "weight": 29,
+            "share_pct": 0.882800608828006
+          },
+          {
+            "frame": "org/antlr/v4/runtime/CommonTokenStream.LT",
+            "weight": 29,
+            "share_pct": 0.882800608828006
+          },
+          {
+            "frame": "org/antlr/v4/runtime/BufferedTokenStream.nextTokenOnChannel",
+            "weight": 29,
+            "share_pct": 0.882800608828006
+          },
+          {
+            "frame": "oopDesc::klass",
+            "weight": 29,
+            "share_pct": 0.882800608828006
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectiveArgumentsAreValid.checkArgument",
+            "weight": 27,
+            "share_pct": 0.821917808219178
+          },
+          {
+            "frame": "org/antlr/v4/runtime/BufferedTokenStream.previousTokenOnChannel",
+            "weight": 27,
+            "share_pct": 0.821917808219178
+          },
+          {
+            "frame": "java/lang/String.isLatin1",
+            "weight": 25,
+            "share_pct": 0.76103500761035
+          }
+        ]
+      },
+      "allocation": {
+        "total_weight": 46385887824,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 3027238912,
+            "share_pct": 6.526206684856661
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 29360128,
+            "share_pct": 0.06329538869968358
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 344981504,
+            "share_pct": 0.7437208172212821
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 131072000,
+            "share_pct": 0.28256869955215885
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 32505856,
+            "share_pct": 0.0700770374889354
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 1475346432,
+            "share_pct": 3.1805932821591
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 10372514032,
+            "share_pct": 22.361357125158385
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 3577741312,
+            "share_pct": 7.712995222975728
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 3122659328,
+            "share_pct": 6.731916698130632
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 627048448,
+            "share_pct": 1.351808658657528
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 1112540416,
+            "share_pct": 2.398445881258681
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java.lang.Object[]",
+            "weight": 9752657584,
+            "share_pct": 21.025053182131803
+          },
+          {
+            "frame": "java.util.LinkedHashMap",
+            "weight": 4035969024,
+            "share_pct": 8.700855396610075
+          },
+          {
+            "frame": "java.util.LinkedHashMap$Entry",
+            "weight": 3793747968,
+            "share_pct": 8.178668439837686
+          },
+          {
+            "frame": "java.util.HashMap$Node[]",
+            "weight": 3721398016,
+            "share_pct": 8.022694380928833
+          },
+          {
+            "frame": "graphql.util.DefaultTraverserContext",
+            "weight": 2539651072,
+            "share_pct": 5.47505112252263
+          },
+          {
+            "frame": "byte[]",
+            "weight": 2372056224,
+            "share_pct": 5.1137454412863494
+          },
+          {
+            "frame": "org.antlr.v4.runtime.CommonToken",
+            "weight": 2200961024,
+            "share_pct": 4.744893602879851
+          },
+          {
+            "frame": "java.util.ArrayList",
+            "weight": 2096103424,
+            "share_pct": 4.518838643238125
+          },
+          {
+            "frame": "java.util.Collections$SingletonMap",
+            "weight": 849346560,
+            "share_pct": 1.8310451730979895
+          },
+          {
+            "frame": "java.lang.String",
+            "weight": 824180736,
+            "share_pct": 1.7767919827839749
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$Head",
+            "weight": 699400192,
+            "share_pct": 1.5077865808103197
+          },
+          {
+            "frame": "graphql.util.TraverserState$StackTraverserState$$Lambda.0x00000000341d6c00",
+            "weight": 527433728,
+            "share_pct": 1.1370564469978872
+          },
+          {
+            "frame": "graphql.util.NodeLocation",
+            "weight": 526385152,
+            "share_pct": 1.13479589740147
+          },
+          {
+            "frame": "graphql.parser.antlr.GraphqlParser$BaseNameContext",
+            "weight": 515899392,
+            "share_pct": 1.1121904014372972
+          },
+          {
+            "frame": "org.antlr.v4.runtime.tree.TerminalNodeImpl",
+            "weight": 495976448,
+            "share_pct": 1.0692399591053692
+          },
+          {
+            "frame": "graphql.util.Breadcrumb",
+            "weight": 487587840,
+            "share_pct": 1.051155562334031
+          },
+          {
+            "frame": "graphql.parser.antlr.GraphqlParser$NameContext",
+            "weight": 446693376,
+            "share_pct": 0.9629941280737574
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$2",
+            "weight": 414187520,
+            "share_pct": 0.892917090584822
+          },
+          {
+            "frame": "java.util.concurrent.ConcurrentHashMap",
+            "weight": 408944640,
+            "share_pct": 0.8816143426027356
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntrySet",
+            "weight": 349175808,
+            "share_pct": 0.7527630156069512
+          },
+          {
+            "frame": "org.antlr.v4.runtime.atn.LexerATNConfig",
+            "weight": 311427072,
+            "share_pct": 0.6713832301359295
+          },
+          {
+            "frame": "com.google.common.collect.Iterators$SingletonIterator",
+            "weight": 294649856,
+            "share_pct": 0.6352144365932532
+          },
+          {
+            "frame": "graphql.language.SourceLocation",
+            "weight": 283115520,
+            "share_pct": 0.6103483910326631
+          },
+          {
+            "frame": "java.util.HashMap$Node",
+            "weight": 274726912,
+            "share_pct": 0.5922639942613249
+          },
+          {
+            "frame": "java.util.Spliterators$ArraySpliterator",
+            "weight": 257949696,
+            "share_pct": 0.5560952007186486
+          }
+        ]
+      }
+    },
+    {
+      "benchmark": "benchmark.CreateSchemaBenchmark.benchmarkLargeSchemaCreateAvgTimeFast",
+      "fixture": "large-schema-5.graphqls",
+      "warmup": {
+        "last_five_cv_pct": 0.8362507293425689,
+        "last_five_fitted_drift_pct": 0.03604709831110205,
+        "inspect": false
+      },
+      "allocation_stalls": [],
+      "cpu": {
+        "total_weight": 4288,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 219,
+            "share_pct": 5.107276119402985
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 21,
+            "share_pct": 0.48973880597014924
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 26,
+            "share_pct": 0.6063432835820896
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 14,
+            "share_pct": 0.32649253731343286
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 78,
+            "share_pct": 1.8190298507462686
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 520,
+            "share_pct": 12.126865671641792
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 264,
+            "share_pct": 6.156716417910448
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 244,
+            "share_pct": 5.690298507462686
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 116,
+            "share_pct": 2.705223880597015
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 541,
+            "share_pct": 12.61660447761194
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 217,
+            "share_pct": 5.060634328358209
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java/util/HashMap.getNode",
+            "weight": 568,
+            "share_pct": 13.246268656716419
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVarFromParents",
+            "weight": 207,
+            "share_pct": 4.827425373134329
+          },
+          {
+            "frame": "java/util/HashMap.resize",
+            "weight": 175,
+            "share_pct": 4.081156716417911
+          },
+          {
+            "frame": "oopDesc::klass",
+            "weight": 142,
+            "share_pct": 3.3115671641791047
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.enter",
+            "weight": 133,
+            "share_pct": 3.1016791044776117
+          },
+          {
+            "frame": "itable stub",
+            "weight": 127,
+            "share_pct": 2.9617537313432836
+          },
+          {
+            "frame": "java/util/HashMap.hash",
+            "weight": 98,
+            "share_pct": 2.28544776119403
+          },
+          {
+            "frame": "ZBarrier::mark_from_young_slow_path",
+            "weight": 89,
+            "share_pct": 2.075559701492537
+          },
+          {
+            "frame": "ZRelocateWork<ZRelocateSmallAllocator>::do_forwarding",
+            "weight": 79,
+            "share_pct": 1.8423507462686568
+          },
+          {
+            "frame": "void OopOopIterateDispatch<ZMarkBarrierFollowOopClosure<false, (ZGenerationIdOptional)0> >::Table::oop_oop_iterate<InstanceKlass, oopDesc*>",
+            "weight": 74,
+            "share_pct": 1.7257462686567164
+          },
+          {
+            "frame": "java/util/HashMap.putVal",
+            "weight": 69,
+            "share_pct": 1.609141791044776
+          },
+          {
+            "frame": "graphql/util/TraverserState$StackTraverserState.lambda$pushAll$0",
+            "weight": 65,
+            "share_pct": 1.515858208955224
+          },
+          {
+            "frame": "java/util/ArrayList$Itr.next",
+            "weight": 58,
+            "share_pct": 1.3526119402985075
+          },
+          {
+            "frame": "graphql/schema/SchemaTraverser$TraverserDelegateListVisitor.backRef",
+            "weight": 56,
+            "share_pct": 1.3059701492537314
+          },
+          {
+            "frame": "graphql/util/DefaultTraverserContext.getVar",
+            "weight": 49,
+            "share_pct": 1.142723880597015
+          },
+          {
+            "frame": "vframe::sender",
+            "weight": 45,
+            "share_pct": 1.0494402985074627
+          },
+          {
+            "frame": "java/lang/String.equals",
+            "weight": 44,
+            "share_pct": 1.0261194029850746
+          },
+          {
+            "frame": "java/util/HashMap.computeIfAbsent",
+            "weight": 37,
+            "share_pct": 0.8628731343283582
+          },
+          {
+            "frame": "graphql/schema/ShallowTypeRefCollector.scanAppliedDirectives",
+            "weight": 35,
+            "share_pct": 0.816231343283582
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectivesAreValid.visitGraphQLType",
+            "weight": 35,
+            "share_pct": 0.816231343283582
+          },
+          {
+            "frame": "java/lang/Object.hashCode",
+            "weight": 34,
+            "share_pct": 0.792910447761194
+          },
+          {
+            "frame": "graphql/Assert.isValidName",
+            "weight": 34,
+            "share_pct": 0.792910447761194
+          },
+          {
+            "frame": "java/util/ArrayList.elementData",
+            "weight": 34,
+            "share_pct": 0.792910447761194
+          },
+          {
+            "frame": "graphql/schema/validation/AppliedDirectiveArgumentsAreValid.visitGraphQLDirective",
+            "weight": 33,
+            "share_pct": 0.769589552238806
+          },
+          {
+            "frame": "graphql/schema/GraphQLTypeVisitor.visitBackRef",
+            "weight": 32,
+            "share_pct": 0.746268656716418
+          }
+        ]
+      },
+      "allocation": {
+        "total_weight": 51125959648,
+        "inclusive_targets": {
+          "graphql/schema/idl/SchemaTypeChecker.checkTypeRegistry": {
+            "weight": 2427453440,
+            "share_pct": 4.74798606561698
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkFieldTypesPresent": {
+            "weight": 15728640,
+            "share_pct": 0.03076448854611434
+          },
+          "graphql/schema/idl/SchemaTypeChecker.checkNamedUniqueness": {
+            "weight": 123731968,
+            "share_pct": 0.24201397656276616
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkInterfaceIsImplemented": {
+            "weight": 80740352,
+            "share_pct": 0.15792437453672029
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.checkArgumentConsistency": {
+            "weight": 16777216,
+            "share_pct": 0.03281545444918863
+          },
+          "graphql/schema/idl/ImplementingTypesChecker.sameType": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/language/AstPrinter.printAstCompact": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaTypeDirectivesChecker.checkDirectiveArguments": {
+            "weight": 1556086784,
+            "share_pct": 3.0436334001622454
+          },
+          "graphql/schema/idl/SchemaGeneratorHelper.buildOutputType": {
+            "weight": 11287920720,
+            "share_pct": 22.078648103071007
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives": {
+            "weight": 7200571392,
+            "share_pct": 14.083982856411145
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirective": {
+            "weight": 6766460928,
+            "share_pct": 13.23488297253839
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.transferMissingArguments": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/idl/SchemaGeneratorAppliedDirectiveHelper.addMissingArguments": {
+            "weight": 3775922176,
+            "share_pct": 7.385528216970516
+          },
+          "graphql/schema/GraphQLSchema$Builder.buildImpl": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaTraverser.doTraverse": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/schema/SchemaElementChildrenContainer.getChildrenAsList": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/DefaultTraverserContext.isVisited": {
+            "weight": 0,
+            "share_pct": 0.0
+          },
+          "graphql/util/TraverserState.addVisited": {
+            "weight": 1927283520,
+            "share_pct": 3.7696769572038606
+          }
+        },
+        "top_leaves": [
+          {
+            "frame": "java.lang.Object[]",
+            "weight": 9807730432,
+            "share_pct": 19.183464720321723
+          },
+          {
+            "frame": "java.util.HashMap$Node[]",
+            "weight": 5330961360,
+            "share_pct": 10.427112560240309
+          },
+          {
+            "frame": "graphql.util.DefaultTraverserContext",
+            "weight": 5162139648,
+            "share_pct": 10.096905140834727
+          },
+          {
+            "frame": "java.util.LinkedHashMap$Entry",
+            "weight": 5053087744,
+            "share_pct": 9.883604686915001
+          },
+          {
+            "frame": "java.util.LinkedHashMap",
+            "weight": 3866099712,
+            "share_pct": 7.561911284634905
+          },
+          {
+            "frame": "java.util.ArrayList",
+            "weight": 2373976064,
+            "share_pct": 4.643386804560191
+          },
+          {
+            "frame": "byte[]",
+            "weight": 1596072208,
+            "share_pct": 3.1218430304074243
+          },
+          {
+            "frame": "org.antlr.v4.runtime.CommonToken",
+            "weight": 1510998016,
+            "share_pct": 2.9554418663300512
+          },
+          {
+            "frame": "java.util.Collections$SingletonMap",
+            "weight": 1455423488,
+            "share_pct": 2.8467406734671137
+          },
+          {
+            "frame": "graphql.util.NodeLocation",
+            "weight": 1048576000,
+            "share_pct": 2.0509659030742893
+          },
+          {
+            "frame": "graphql.util.Breadcrumb",
+            "weight": 980418560,
+            "share_pct": 1.9176531193744606
+          },
+          {
+            "frame": "graphql.util.TraverserState$StackTraverserState$$Lambda.0x00000000751e2c00",
+            "weight": 973078528,
+            "share_pct": 1.9032963580529405
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument$Builder",
+            "weight": 787480576,
+            "share_pct": 1.5402753932087914
+          },
+          {
+            "frame": "graphql.schema.GraphQLArgument",
+            "weight": 685768704,
+            "share_pct": 1.3413317006105854
+          },
+          {
+            "frame": "java.lang.String",
+            "weight": 558891008,
+            "share_pct": 1.0931648263385962
+          },
+          {
+            "frame": "java.util.LinkedHashMap$LinkedEntryIterator",
+            "weight": 484442112,
+            "share_pct": 0.9475462472203217
+          },
+          {
+            "frame": "graphql.schema.GraphQLAppliedDirectiveArgument",
+            "weight": 445644800,
+            "share_pct": 0.871660508806573
+          },
+          {
+            "frame": "java.util.concurrent.ConcurrentHashMap",
+            "weight": 445644800,
+            "share_pct": 0.871660508806573
+          },
+          {
+            "frame": "java.util.stream.ReferencePipeline$Head",
+            "weight": 439353344,
+            "share_pct": 0.8593547133881273
+          },
+          {
+            "frame": "graphql.schema.GraphQLAppliedDirectiveArgument$Builder",
+            "weight": 403701760,
+            "share_pct": 0.7896218726836014
+          },
+          {
+            "frame": "graphql.util.TraverserState$EndList",
+            "weight": 387973120,
+            "share_pct": 0.758857384137487
+          },
+          {
+            "frame": "org.antlr.v4.runtime.tree.TerminalNodeImpl",
+            "weight": 360710144,
+            "share_pct": 0.7055322706575555
+          },
+          {
+            "frame": "java.util.Collections$SingletonSet",
+            "weight": 357564416,
+            "share_pct": 0.6993793729483327
+          },
+          {
+            "frame": "graphql.parser.antlr.GraphqlParser$NameContext",
+            "weight": 316669952,
+            "share_pct": 0.6193917027284354
+          },
+          {
+            "frame": "graphql.parser.antlr.GraphqlParser$BaseNameContext",
+            "weight": 311427072,
+            "share_pct": 0.609136873213064
+          }
+        ]
+      }
+    }
+  ],
+  "interpretation": "Inclusive shares overlap. Profiles are separate diagnostic runs, not speedup evidence. Zero weight means not sampled; it does not prove zero cost. Differences in shares do not establish differences in absolute cost or explain timing regressions by themselves."
+}

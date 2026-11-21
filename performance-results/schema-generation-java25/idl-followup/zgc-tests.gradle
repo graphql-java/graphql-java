@@ -1,0 +1,5 @@
+allprojects {
+    tasks.withType(Test).configureEach {
+        jvmArgs '-XX:+UseZGC', '-XX:+UseCompactObjectHeaders', '-XX:+UseDynamicNumberOfGCThreads'
+    }
+}

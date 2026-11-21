@@ -1,0 +1,1911 @@
+{
+  "warmup_forks": 120,
+  "flagged_forks": [
+    {
+      "log": "idl-b2-20261106-benchmarkBuildSchemaAvgTime-4.log",
+      "fork": 3,
+      "warmup_values": [
+        1791.817,
+        1489.636,
+        1507.994,
+        1494.639,
+        1477.22,
+        1493.221,
+        1487.855,
+        1514.484,
+        1567.247,
+        1558.598
+      ],
+      "last_five_cv_pct": 2.4129896000696585,
+      "last_five_fitted_drift_pct": 5.5146262401748745,
+      "inspect": true,
+      "measurement_ms": [
+        1539.752475142857,
+        1562.8401474285715,
+        1557.8268395714285,
+        1557.4981812857143,
+        1572.4754171428572
+      ],
+      "measurement_bytes_per_op": [
+        2887650298.285714,
+        2887650742.857143,
+        2887651409.142857,
+        2887649633.142857,
+        2887642878.857143
+      ],
+      "measurement_cv_pct": 0.7635911593201518,
+      "interpretation": "Measurement remained around the late-warmup level, rather than continuing the same rise. This is the slowest candidate fork for this case; it is retained in full. The small aggregate time difference has overlapping JMH intervals."
+    },
+    {
+      "log": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTime-5.log",
+      "fork": 3,
+      "warmup_values": [
+        8667.754,
+        7786.869,
+        8072.067,
+        7964.663,
+        7795.286,
+        7411.907,
+        7627.953,
+        7810.532,
+        8040.048,
+        7933.173
+      ],
+      "last_five_cv_pct": 3.2162294925947577,
+      "last_five_fitted_drift_pct": 7.49351689653407,
+      "inspect": true,
+      "measurement_ms": [
+        7817.1355365,
+        7540.0411845,
+        7442.3512245,
+        8028.3716875,
+        7918.4057765
+      ],
+      "measurement_bytes_per_op": [
+        13927352380.0,
+        13927346020.0,
+        13927335708.0,
+        13927336660.0,
+        13927335752.0
+      ],
+      "measurement_cv_pct": 3.220212764199732,
+      "interpretation": "Measurement oscillated between 7442 and 8028 ms/op instead of continuing the warmup rise. Allocation remained stable within the fork. All observations are retained; the small aggregate time difference has overlapping JMH intervals."
+    }
+  ],
+  "gc_log_count": 120,
+  "allocation_stalls": 0,
+  "environment_snapshots": [
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTime-1",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.04",
+        "1.06",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.6Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 54000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60625,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTime-2",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.16",
+        "1.11",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       3.9Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 58750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60500,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTime-3",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.02",
+        "1.05",
+        "1.07"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.4Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 3/4 pages [12KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 56000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60500,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTime-4",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.20",
+        "1.15",
+        "1.10"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.3Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 57750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60750,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTime-5",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.18",
+        "1.27",
+        "1.25"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.3Gi        56Gi       4.1Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 56250,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60750,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTimeFast-1",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.16",
+        "1.10",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 54500,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60750,
+        "/sys/class/hwmon/hwmon0/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTimeFast-2",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.21",
+        "1.12",
+        "1.10"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.1Gi        56Gi       4.0Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 56000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 61000,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTimeFast-3",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.01",
+        "1.05",
+        "1.07"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.3Gi        55Gi       3.9Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 3/4 pages [12KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 54750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60625,
+        "/sys/class/hwmon/hwmon0/temp3_input": 31850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTimeFast-4",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.02",
+        "1.09",
+        "1.13"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 57250,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60125,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkBuildSchemaAvgTimeFast-5",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.46",
+        "1.41",
+        "1.34"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 57500,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60250,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTime-1",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.17",
+        "1.14",
+        "1.10"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 1/4 pages [4KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 53750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60500,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTime-2",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.18",
+        "1.12",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.4Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 3/4 pages [12KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 53250,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60500,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTime-3",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.06",
+        "1.11",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.0Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 56750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60375,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 31850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTime-4",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.22",
+        "1.16",
+        "1.13"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       3.9Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 3/4 pages [12KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 52250,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60250,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 31850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTime-5",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.29",
+        "1.34",
+        "1.31"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.1Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 56500,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60875,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTimeFast-1",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.19",
+        "1.17",
+        "1.11"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.1Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 55750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 61125,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTimeFast-2",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.01",
+        "1.06",
+        "1.08"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.3Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 55750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60625,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTimeFast-3",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.17",
+        "1.13",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.1Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 1/4 pages [4KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 56750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60125,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTimeFast-4",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.19",
+        "1.15",
+        "1.15"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 1/4 pages [4KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 55750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60750,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-b2-20261106-benchmarkLargeSchemaCreateAvgTimeFast-5",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.22",
+        "1.36",
+        "1.35"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.4Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 3/4 pages [12KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 52000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 61000,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 32850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTime-1",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "0.89",
+        "0.92",
+        "1.10"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 52000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 57625,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTime-2",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.05",
+        "1.09",
+        "1.08"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.1Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 53000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60875,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTime-3",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.25",
+        "1.13",
+        "1.10"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 55750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 61125,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTime-4",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.23",
+        "1.20",
+        "1.15"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.2Gi        56Gi       4.3Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 0/4 pages [0KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 54250,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60500,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTime-5",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.18",
+        "1.17",
+        "1.17"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.0Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 0/4 pages [0KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 53500,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60625,
+        "/sys/class/hwmon/hwmon0/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-1",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.17",
+        "1.12",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.4Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 54000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60750,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-2",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.18",
+        "1.11",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 54000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60750,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-3",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.24",
+        "1.14",
+        "1.10"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.1Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 1/4 pages [4KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 55750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60750,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-4",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.34",
+        "1.20",
+        "1.17"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.1Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 58750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60250,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkBuildSchemaAvgTimeFast-5",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.26",
+        "1.23",
+        "1.26"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.8Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 3/4 pages [12KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 55000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60375,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-1",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.08",
+        "1.09",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.3Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 53000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60625,
+        "/sys/class/hwmon/hwmon0/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-2",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.15",
+        "1.08",
+        "1.08"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 56750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60375,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-3",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.17",
+        "1.11",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.0Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 54750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60750,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-4",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.19",
+        "1.20",
+        "1.16"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.0Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 4/4 pages [16KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 57250,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60000,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 31850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTime-5",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.22",
+        "1.19",
+        "1.23"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.3Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 3/4 pages [12KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 53500,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60875,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 31850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-1",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.16",
+        "1.13",
+        "1.10"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.1Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 56000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60625,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-2",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.08",
+        "1.10",
+        "1.09"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.3Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 3/4 pages [12KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 54250,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60500,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-3",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.26",
+        "1.16",
+        "1.11"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.0Gi        56Gi       4.2Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 54000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 61125,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-4",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.22",
+        "1.16",
+        "1.15"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.3Gi        55Gi       4.4Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 3/4 pages [12KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 52750,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60625,
+        "/sys/class/hwmon/hwmon0/temp3_input": 28850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    },
+    {
+      "case": "idl-base-20261106-benchmarkLargeSchemaCreateAvgTimeFast-5",
+      "governors": [
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance",
+        "performance"
+      ],
+      "flags": {
+        "UseZGC": "true",
+        "UseCompactObjectHeaders": "true",
+        "UseDynamicNumberOfGCThreads": "true",
+        "UseCompressedOops": "false",
+        "UseCompressedClassPointers": "true",
+        "ParallelGCThreads": "8",
+        "ConcGCThreads": "3",
+        "InitialHeapSize": "25769803776",
+        "MaxHeapSize": "25769803776"
+      },
+      "load_averages": [
+        "1.21",
+        "1.27",
+        "1.32"
+      ],
+      "memory": "               total        used        free      shared  buff/cache   available\nMem:            62Gi       1.7Gi        55Gi       4.0Mi       6.1Gi        61Gi\nSwap:           31Gi          0B        31Gi\n",
+      "raid": "Personalities : [raid1] \nmd2 : active raid1 nvme1n1p3[1] nvme0n1p3[0]\n      465370432 blocks super 1.2 [2/2] [UU]\n      bitmap: 2/4 pages [8KB], 65536KB chunk\n\nmd0 : active raid1 nvme1n1p1[1] nvme0n1p1[0]\n      33520640 blocks super 1.2 [2/2] [UU]\n      \nmd1 : active raid1 nvme1n1p2[1] nvme0n1p2[0]\n      1046528 blocks super 1.2 [2/2] [UU]\n      \nunused devices: <none>\n",
+      "temperatures_millicelsius": {
+        "/sys/class/hwmon/hwmon2/temp3_input": 55000,
+        "/sys/class/hwmon/hwmon2/temp1_input": 60625,
+        "/sys/class/hwmon/hwmon0/temp3_input": 29850,
+        "/sys/class/hwmon/hwmon0/temp1_input": 30850,
+        "/sys/class/hwmon/hwmon0/temp2_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp3_input": 30850,
+        "/sys/class/hwmon/hwmon1/temp1_input": 29850,
+        "/sys/class/hwmon/hwmon1/temp2_input": 29850
+      }
+    }
+  ],
+  "cases_with_overlapping_jmh_time_intervals": [
+    {
+      "fixture": 3,
+      "scope": "SchemaGenerator parse + generation"
+    },
+    {
+      "fixture": 4,
+      "scope": "SchemaGenerator generation"
+    },
+    {
+      "fixture": 4,
+      "scope": "SchemaGenerator parse + generation"
+    },
+    {
+      "fixture": 5,
+      "scope": "SchemaGenerator generation"
+    },
+    {
+      "fixture": 5,
+      "scope": "FastSchemaGenerator generation"
+    },
+    {
+      "fixture": 5,
+      "scope": "SchemaGenerator parse + generation"
+    },
+    {
+      "fixture": 5,
+      "scope": "FastSchemaGenerator parse + generation"
+    }
+  ],
+  "retention": "Retain A and B2 as the combined follow-up. Final mean time is lower in 19/20 cases and allocation in all 20. The 0.23% higher time on SG parsing fixture 3 has overlapping fork means and intervals; no time gain is claimed there. Exploratory regressions remain in the evidence. Final comparison does not independently resolve every A-versus-B2 difference.",
+  "host_restored_utc": "2026-11-06T09:03:47.338592+00:00"
+}

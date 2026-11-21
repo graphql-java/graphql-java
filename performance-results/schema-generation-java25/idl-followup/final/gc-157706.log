@@ -1,0 +1,259 @@
+[11.472s][info][gc] Using The Z Garbage Collector
+[13.621s][info][gc] GC(0) Major Collection (Warmup)
+[13.634s][info][gc] GC(0) Major Collection (Warmup) 2476M(10%)->62M(0%) 0.012s
+[15.823s][info][gc] GC(1) Major Collection (Warmup)
+[15.845s][info][gc] GC(1) Major Collection (Warmup) 4932M(20%)->94M(0%) 0.022s
+[19.030s][info][gc] GC(2) Major Collection (Warmup)
+[19.049s][info][gc] GC(2) Major Collection (Warmup) 7390M(30%)->90M(0%) 0.020s
+[23.409s][info][gc] GC(3) Major Collection (Proactive)
+[23.430s][info][gc] GC(3) Major Collection (Proactive) 10204M(42%)->88M(0%) 0.021s
+[26.458s][info][gc] GC(4) Major Collection (Proactive)
+[26.476s][info][gc] GC(4) Major Collection (Proactive) 7150M(29%)->86M(0%) 0.018s
+[28.573s][info][gc] GC(5) Major Collection (Proactive)
+[28.592s][info][gc] GC(5) Major Collection (Proactive) 5036M(20%)->84M(0%) 0.018s
+[30.167s][info][gc] GC(6) Major Collection (Proactive)
+[30.185s][info][gc] GC(6) Major Collection (Proactive) 3812M(16%)->84M(0%) 0.018s
+[31.496s][info][gc] GC(7) Major Collection (Proactive)
+[31.514s][info][gc] GC(7) Major Collection (Proactive) 3184M(13%)->82M(0%) 0.017s
+[32.656s][info][gc] GC(8) Major Collection (Proactive)
+[32.673s][info][gc] GC(8) Major Collection (Proactive) 2778M(11%)->82M(0%) 0.017s
+[33.725s][info][gc] GC(9) Major Collection (Proactive)
+[33.741s][info][gc] GC(9) Major Collection (Proactive) 2562M(10%)->80M(0%) 0.016s
+[34.783s][info][gc] GC(10) Major Collection (Proactive)
+[34.799s][info][gc] GC(10) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.016s
+[35.841s][info][gc] GC(11) Major Collection (Proactive)
+[35.857s][info][gc] GC(11) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[36.898s][info][gc] GC(12) Major Collection (Proactive)
+[36.915s][info][gc] GC(12) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[37.955s][info][gc] GC(13) Major Collection (Proactive)
+[37.972s][info][gc] GC(13) Major Collection (Proactive) 2540M(10%)->84M(0%) 0.017s
+[39.022s][info][gc] GC(14) Major Collection (Proactive)
+[39.042s][info][gc] GC(14) Major Collection (Proactive) 2564M(10%)->82M(0%) 0.020s
+[40.271s][info][gc] GC(15) Major Collection (Proactive)
+[40.288s][info][gc] GC(15) Major Collection (Proactive) 2950M(12%)->84M(0%) 0.018s
+[41.466s][info][gc] GC(16) Major Collection (Proactive)
+[41.484s][info][gc] GC(16) Major Collection (Proactive) 2824M(11%)->82M(0%) 0.017s
+[42.538s][info][gc] GC(17) Major Collection (Proactive)
+[42.556s][info][gc] GC(17) Major Collection (Proactive) 2542M(10%)->82M(0%) 0.018s
+[43.600s][info][gc] GC(18) Major Collection (Proactive)
+[43.619s][info][gc] GC(18) Major Collection (Proactive) 2540M(10%)->90M(0%) 0.019s
+[44.702s][info][gc] GC(19) Major Collection (Proactive)
+[44.720s][info][gc] GC(19) Major Collection (Proactive) 2638M(11%)->86M(0%) 0.018s
+[45.773s][info][gc] GC(20) Major Collection (Proactive)
+[45.790s][info][gc] GC(20) Major Collection (Proactive) 2564M(10%)->82M(0%) 0.017s
+[46.832s][info][gc] GC(21) Major Collection (Proactive)
+[46.848s][info][gc] GC(21) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.016s
+[47.891s][info][gc] GC(22) Major Collection (Proactive)
+[47.907s][info][gc] GC(22) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.016s
+[48.951s][info][gc] GC(23) Major Collection (Proactive)
+[48.967s][info][gc] GC(23) Major Collection (Proactive) 2540M(10%)->78M(0%) 0.017s
+[50.011s][info][gc] GC(24) Major Collection (Proactive)
+[50.028s][info][gc] GC(24) Major Collection (Proactive) 2536M(10%)->80M(0%) 0.017s
+[51.070s][info][gc] GC(25) Major Collection (Proactive)
+[51.087s][info][gc] GC(25) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.017s
+[52.129s][info][gc] GC(26) Major Collection (Proactive)
+[52.146s][info][gc] GC(26) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.018s
+[53.194s][info][gc] GC(27) Major Collection (Proactive)
+[53.211s][info][gc] GC(27) Major Collection (Proactive) 2560M(10%)->82M(0%) 0.017s
+[54.252s][info][gc] GC(28) Major Collection (Proactive)
+[54.268s][info][gc] GC(28) Major Collection (Proactive) 2540M(10%)->78M(0%) 0.017s
+[55.308s][info][gc] GC(29) Major Collection (Proactive)
+[55.325s][info][gc] GC(29) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.017s
+[56.366s][info][gc] GC(30) Major Collection (Proactive)
+[56.382s][info][gc] GC(30) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.016s
+[57.422s][info][gc] GC(31) Major Collection (Proactive)
+[57.440s][info][gc] GC(31) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[58.479s][info][gc] GC(32) Major Collection (Proactive)
+[58.495s][info][gc] GC(32) Major Collection (Proactive) 2540M(10%)->78M(0%) 0.016s
+[59.535s][info][gc] GC(33) Major Collection (Proactive)
+[59.551s][info][gc] GC(33) Major Collection (Proactive) 2540M(10%)->78M(0%) 0.016s
+[60.592s][info][gc] GC(34) Major Collection (Proactive)
+[60.608s][info][gc] GC(34) Major Collection (Proactive) 2536M(10%)->78M(0%) 0.016s
+[61.651s][info][gc] GC(35) Major Collection (Proactive)
+[61.667s][info][gc] GC(35) Major Collection (Proactive) 2538M(10%)->78M(0%) 0.016s
+[62.708s][info][gc] GC(36) Major Collection (Proactive)
+[62.724s][info][gc] GC(36) Major Collection (Proactive) 2540M(10%)->78M(0%) 0.016s
+[63.762s][info][gc] GC(37) Major Collection (Proactive)
+[63.778s][info][gc] GC(37) Major Collection (Proactive) 2536M(10%)->80M(0%) 0.016s
+[64.819s][info][gc] GC(38) Major Collection (Proactive)
+[64.836s][info][gc] GC(38) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[65.879s][info][gc] GC(39) Major Collection (Proactive)
+[65.896s][info][gc] GC(39) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.016s
+[66.937s][info][gc] GC(40) Major Collection (Proactive)
+[66.954s][info][gc] GC(40) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[67.995s][info][gc] GC(41) Major Collection (Proactive)
+[68.012s][info][gc] GC(41) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.017s
+[69.052s][info][gc] GC(42) Major Collection (Proactive)
+[69.068s][info][gc] GC(42) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.016s
+[70.110s][info][gc] GC(43) Major Collection (Proactive)
+[70.126s][info][gc] GC(43) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.016s
+[71.168s][info][gc] GC(44) Major Collection (Proactive)
+[71.184s][info][gc] GC(44) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.017s
+[72.232s][info][gc] GC(45) Major Collection (Proactive)
+[72.249s][info][gc] GC(45) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.018s
+[73.314s][info][gc] GC(46) Major Collection (Proactive)
+[73.331s][info][gc] GC(46) Major Collection (Proactive) 2560M(10%)->82M(0%) 0.018s
+[74.388s][info][gc] GC(47) Major Collection (Proactive)
+[74.405s][info][gc] GC(47) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[75.459s][info][gc] GC(48) Major Collection (Proactive)
+[75.475s][info][gc] GC(48) Major Collection (Proactive) 2542M(10%)->82M(0%) 0.016s
+[76.542s][info][gc] GC(49) Major Collection (Proactive)
+[76.559s][info][gc] GC(49) Major Collection (Proactive) 2562M(10%)->80M(0%) 0.017s
+[77.616s][info][gc] GC(50) Major Collection (Proactive)
+[77.633s][info][gc] GC(50) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[78.686s][info][gc] GC(51) Major Collection (Proactive)
+[78.703s][info][gc] GC(51) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.017s
+[79.757s][info][gc] GC(52) Major Collection (Proactive)
+[79.775s][info][gc] GC(52) Major Collection (Proactive) 2538M(10%)->82M(0%) 0.018s
+[80.839s][info][gc] GC(53) Major Collection (Proactive)
+[80.856s][info][gc] GC(53) Major Collection (Proactive) 2562M(10%)->80M(0%) 0.017s
+[81.911s][info][gc] GC(54) Major Collection (Proactive)
+[81.928s][info][gc] GC(54) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.017s
+[82.985s][info][gc] GC(55) Major Collection (Proactive)
+[83.002s][info][gc] GC(55) Major Collection (Proactive) 2538M(10%)->82M(0%) 0.017s
+[84.057s][info][gc] GC(56) Major Collection (Proactive)
+[84.074s][info][gc] GC(56) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[85.129s][info][gc] GC(57) Major Collection (Proactive)
+[85.146s][info][gc] GC(57) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.016s
+[86.200s][info][gc] GC(58) Major Collection (Proactive)
+[86.216s][info][gc] GC(58) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[87.270s][info][gc] GC(59) Major Collection (Proactive)
+[87.286s][info][gc] GC(59) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.016s
+[88.351s][info][gc] GC(60) Major Collection (Proactive)
+[88.368s][info][gc] GC(60) Major Collection (Proactive) 2562M(10%)->78M(0%) 0.016s
+[89.435s][info][gc] GC(61) Major Collection (Proactive)
+[89.453s][info][gc] GC(61) Major Collection (Proactive) 2548M(10%)->80M(0%) 0.018s
+[90.501s][info][gc] GC(62) Major Collection (Proactive)
+[90.519s][info][gc] GC(62) Major Collection (Proactive) 2554M(10%)->82M(0%) 0.017s
+[91.556s][info][gc] GC(63) Major Collection (Proactive)
+[91.573s][info][gc] GC(63) Major Collection (Proactive) 2538M(10%)->82M(0%) 0.017s
+[92.612s][info][gc] GC(64) Major Collection (Proactive)
+[92.628s][info][gc] GC(64) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.017s
+[93.666s][info][gc] GC(65) Major Collection (Proactive)
+[93.683s][info][gc] GC(65) Major Collection (Proactive) 2538M(10%)->82M(0%) 0.016s
+[94.723s][info][gc] GC(66) Major Collection (Proactive)
+[94.740s][info][gc] GC(66) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[95.778s][info][gc] GC(67) Major Collection (Proactive)
+[95.795s][info][gc] GC(67) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.017s
+[96.832s][info][gc] GC(68) Major Collection (Proactive)
+[96.849s][info][gc] GC(68) Major Collection (Proactive) 2538M(10%)->82M(0%) 0.017s
+[97.888s][info][gc] GC(69) Major Collection (Proactive)
+[97.906s][info][gc] GC(69) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.017s
+[98.944s][info][gc] GC(70) Major Collection (Proactive)
+[98.961s][info][gc] GC(70) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.017s
+[99.999s][info][gc] GC(71) Major Collection (Proactive)
+[100.016s][info][gc] GC(71) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.017s
+[101.054s][info][gc] GC(72) Major Collection (Proactive)
+[101.071s][info][gc] GC(72) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.017s
+[102.115s][info][gc] GC(73) Major Collection (Proactive)
+[102.131s][info][gc] GC(73) Major Collection (Proactive) 2540M(10%)->78M(0%) 0.016s
+[103.183s][info][gc] GC(74) Major Collection (Proactive)
+[103.198s][info][gc] GC(74) Major Collection (Proactive) 2538M(10%)->78M(0%) 0.015s
+[104.250s][info][gc] GC(75) Major Collection (Proactive)
+[104.268s][info][gc] GC(75) Major Collection (Proactive) 2536M(10%)->82M(0%) 0.017s
+[105.319s][info][gc] GC(76) Major Collection (Proactive)
+[105.337s][info][gc] GC(76) Major Collection (Proactive) 2540M(10%)->84M(0%) 0.018s
+[106.390s][info][gc] GC(77) Major Collection (Proactive)
+[106.407s][info][gc] GC(77) Major Collection (Proactive) 2544M(10%)->80M(0%) 0.017s
+[107.459s][info][gc] GC(78) Major Collection (Proactive)
+[107.476s][info][gc] GC(78) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[108.528s][info][gc] GC(79) Major Collection (Proactive)
+[108.547s][info][gc] GC(79) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.020s
+[109.741s][info][gc] GC(80) Major Collection (Proactive)
+[109.758s][info][gc] GC(80) Major Collection (Proactive) 2870M(12%)->80M(0%) 0.017s
+[110.858s][info][gc] GC(81) Major Collection (Proactive)
+[110.876s][info][gc] GC(81) Major Collection (Proactive) 2684M(11%)->80M(0%) 0.017s
+[111.914s][info][gc] GC(82) Major Collection (Proactive)
+[111.933s][info][gc] GC(82) Major Collection (Proactive) 2538M(10%)->84M(0%) 0.019s
+[112.999s][info][gc] GC(83) Major Collection (Proactive)
+[113.016s][info][gc] GC(83) Major Collection (Proactive) 2610M(11%)->82M(0%) 0.017s
+[114.054s][info][gc] GC(84) Major Collection (Proactive)
+[114.087s][info][gc] GC(84) Major Collection (Proactive) 2540M(10%)->84M(0%) 0.032s
+[115.315s][info][gc] GC(85) Major Collection (Proactive)
+[115.332s][info][gc] GC(85) Major Collection (Proactive) 2990M(12%)->82M(0%) 0.017s
+[116.485s][info][gc] GC(86) Major Collection (Proactive)
+[116.502s][info][gc] GC(86) Major Collection (Proactive) 2804M(11%)->82M(0%) 0.017s
+[117.541s][info][gc] GC(87) Major Collection (Proactive)
+[117.558s][info][gc] GC(87) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[118.600s][info][gc] GC(88) Major Collection (Proactive)
+[118.617s][info][gc] GC(88) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.017s
+[119.657s][info][gc] GC(89) Major Collection (Proactive)
+[119.674s][info][gc] GC(89) Major Collection (Proactive) 2538M(10%)->82M(0%) 0.017s
+[120.725s][info][gc] GC(90) Major Collection (Proactive)
+[120.742s][info][gc] GC(90) Major Collection (Proactive) 2562M(10%)->82M(0%) 0.017s
+[121.793s][info][gc] GC(91) Major Collection (Proactive)
+[121.810s][info][gc] GC(91) Major Collection (Proactive) 2562M(10%)->80M(0%) 0.018s
+[122.848s][info][gc] GC(92) Major Collection (Proactive)
+[122.865s][info][gc] GC(92) Major Collection (Proactive) 2538M(10%)->82M(0%) 0.017s
+[123.904s][info][gc] GC(93) Major Collection (Proactive)
+[123.921s][info][gc] GC(93) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[124.960s][info][gc] GC(94) Major Collection (Proactive)
+[124.977s][info][gc] GC(94) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[126.017s][info][gc] GC(95) Major Collection (Proactive)
+[126.034s][info][gc] GC(95) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[127.072s][info][gc] GC(96) Major Collection (Proactive)
+[127.089s][info][gc] GC(96) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[128.127s][info][gc] GC(97) Major Collection (Proactive)
+[128.143s][info][gc] GC(97) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.016s
+[129.181s][info][gc] GC(98) Major Collection (Proactive)
+[129.199s][info][gc] GC(98) Major Collection (Proactive) 2538M(10%)->82M(0%) 0.018s
+[130.246s][info][gc] GC(99) Major Collection (Proactive)
+[130.263s][info][gc] GC(99) Major Collection (Proactive) 2560M(10%)->80M(0%) 0.017s
+[131.301s][info][gc] GC(100) Major Collection (Proactive)
+[131.317s][info][gc] GC(100) Major Collection (Proactive) 2538M(10%)->78M(0%) 0.016s
+[132.357s][info][gc] GC(101) Major Collection (Proactive)
+[132.374s][info][gc] GC(101) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.017s
+[133.410s][info][gc] GC(102) Major Collection (Proactive)
+[133.428s][info][gc] GC(102) Major Collection (Proactive) 2538M(10%)->84M(0%) 0.018s
+[134.474s][info][gc] GC(103) Major Collection (Proactive)
+[134.490s][info][gc] GC(103) Major Collection (Proactive) 2562M(10%)->82M(0%) 0.017s
+[135.529s][info][gc] GC(104) Major Collection (Proactive)
+[135.545s][info][gc] GC(104) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.016s
+[136.585s][info][gc] GC(105) Major Collection (Proactive)
+[136.602s][info][gc] GC(105) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[137.640s][info][gc] GC(106) Major Collection (Proactive)
+[137.657s][info][gc] GC(106) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[138.695s][info][gc] GC(107) Major Collection (Proactive)
+[138.711s][info][gc] GC(107) Major Collection (Proactive) 2540M(10%)->78M(0%) 0.016s
+[139.749s][info][gc] GC(108) Major Collection (Proactive)
+[139.766s][info][gc] GC(108) Major Collection (Proactive) 2536M(10%)->80M(0%) 0.016s
+[140.804s][info][gc] GC(109) Major Collection (Proactive)
+[140.820s][info][gc] GC(109) Major Collection (Proactive) 2538M(10%)->80M(0%) 0.016s
+[141.860s][info][gc] GC(110) Major Collection (Proactive)
+[141.877s][info][gc] GC(110) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[142.925s][info][gc] GC(111) Major Collection (Proactive)
+[142.942s][info][gc] GC(111) Major Collection (Proactive) 2560M(10%)->82M(0%) 0.016s
+[143.983s][info][gc] GC(112) Major Collection (Proactive)
+[143.999s][info][gc] GC(112) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[145.040s][info][gc] GC(113) Major Collection (Proactive)
+[145.056s][info][gc] GC(113) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.016s
+[146.095s][info][gc] GC(114) Major Collection (Proactive)
+[146.113s][info][gc] GC(114) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[147.150s][info][gc] GC(115) Major Collection (Proactive)
+[147.167s][info][gc] GC(115) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[148.206s][info][gc] GC(116) Major Collection (Proactive)
+[148.223s][info][gc] GC(116) Major Collection (Proactive) 2542M(10%)->80M(0%) 0.017s
+[149.270s][info][gc] GC(117) Major Collection (Proactive)
+[149.287s][info][gc] GC(117) Major Collection (Proactive) 2560M(10%)->82M(0%) 0.017s
+[150.335s][info][gc] GC(118) Major Collection (Proactive)
+[150.353s][info][gc] GC(118) Major Collection (Proactive) 2562M(10%)->82M(0%) 0.018s
+[151.400s][info][gc] GC(119) Major Collection (Proactive)
+[151.417s][info][gc] GC(119) Major Collection (Proactive) 2562M(10%)->82M(0%) 0.017s
+[152.465s][info][gc] GC(120) Major Collection (Proactive)
+[152.484s][info][gc] GC(120) Major Collection (Proactive) 2562M(10%)->88M(0%) 0.019s
+[153.660s][info][gc] GC(121) Major Collection (Proactive)
+[153.678s][info][gc] GC(121) Major Collection (Proactive) 2874M(12%)->84M(0%) 0.017s
+[154.777s][info][gc] GC(122) Major Collection (Proactive)
+[154.794s][info][gc] GC(122) Major Collection (Proactive) 2686M(11%)->82M(0%) 0.017s
+[155.841s][info][gc] GC(123) Major Collection (Proactive)
+[155.858s][info][gc] GC(123) Major Collection (Proactive) 2562M(10%)->82M(0%) 0.017s
+[156.898s][info][gc] GC(124) Major Collection (Proactive)
+[156.915s][info][gc] GC(124) Major Collection (Proactive) 2540M(10%)->82M(0%) 0.017s
+[157.955s][info][gc] GC(125) Major Collection (Proactive)
+[157.971s][info][gc] GC(125) Major Collection (Proactive) 2540M(10%)->80M(0%) 0.016s
+[159.011s][info][gc] GC(126) Major Collection (Proactive)
+[159.028s][info][gc] GC(126) Major Collection (Proactive) 2538M(10%)->82M(0%) 0.017s
+[160.077s][info][gc] GC(127) Major Collection (Proactive)
+[160.094s][info][gc] GC(127) Major Collection (Proactive) 2562M(10%)->82M(0%) 0.017s
+[161.142s][info][gc] GC(128) Major Collection (Proactive)
+[161.159s][info][gc] GC(128) Major Collection (Proactive) 2562M(10%)->82M(0%) 0.017s

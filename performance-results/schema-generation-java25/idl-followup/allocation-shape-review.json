@@ -1,0 +1,290 @@
+{
+  "note": "Diagnostic allocation samples only; shares are not normalized bytes per operation. Existing allocation paths vary across forks. Does not prove JIT causation.",
+  "profiles": [
+    {
+      "variant": "idl-base-20261106",
+      "case": "benchmarkBuildSchemaAvgTime-4-profile",
+      "total_sampled_weight": 63335042704,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-base-20261106",
+      "case": "benchmarkBuildSchemaAvgTime-5-profile",
+      "total_sampled_weight": 78735476384,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-base-20261106",
+      "case": "benchmarkBuildSchemaAvgTimeFast-4-profile",
+      "total_sampled_weight": 45014321888,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-base-20261106",
+      "case": "benchmarkBuildSchemaAvgTimeFast-5-profile",
+      "total_sampled_weight": 41292923840,
+      "weights": {
+        "singleton_map": 1453326336,
+        "singleton_set": 365953024,
+        "stack_callback": 894435328
+      },
+      "shares_pct": {
+        "singleton_map": 3.519552990801244,
+        "singleton_set": 0.8862366477558689,
+        "stack_callback": 2.1660740989563214
+      }
+    },
+    {
+      "variant": "idl-base-20261106",
+      "case": "benchmarkLargeSchemaCreateAvgTime-4-profile",
+      "total_sampled_weight": 56599807704,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-base-20261106",
+      "case": "benchmarkLargeSchemaCreateAvgTime-5-profile",
+      "total_sampled_weight": 87208956656,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-base-20261106",
+      "case": "benchmarkLargeSchemaCreateAvgTimeFast-4-profile",
+      "total_sampled_weight": 49310716136,
+      "weights": {
+        "singleton_map": 865075200,
+        "singleton_set": 211812352,
+        "stack_callback": 534773760
+      },
+      "shares_pct": {
+        "singleton_map": 1.754335097495044,
+        "singleton_set": 0.4295462905381805,
+        "stack_callback": 1.0844980602696637
+      }
+    },
+    {
+      "variant": "idl-base-20261106",
+      "case": "benchmarkLargeSchemaCreateAvgTimeFast-5-profile",
+      "total_sampled_weight": 50698770264,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-a-20261106",
+      "case": "benchmarkBuildSchemaAvgTime-5-profile",
+      "total_sampled_weight": 77810632384,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-a-20261106",
+      "case": "benchmarkLargeSchemaCreateAvgTime-5-profile",
+      "total_sampled_weight": 85391590416,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-b2-20261106",
+      "case": "benchmarkBuildSchemaAvgTime-4-profile",
+      "total_sampled_weight": 64757960576,
+      "weights": {
+        "singleton_map": 2173698048,
+        "singleton_set": 565182464,
+        "stack_callback": 1333788672
+      },
+      "shares_pct": {
+        "singleton_map": 3.3566499449113225,
+        "singleton_set": 0.8727613701433685,
+        "stack_callback": 2.0596520646055003
+      }
+    },
+    {
+      "variant": "idl-b2-20261106",
+      "case": "benchmarkBuildSchemaAvgTime-5-profile",
+      "total_sampled_weight": 76644615776,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-b2-20261106",
+      "case": "benchmarkBuildSchemaAvgTimeFast-4-profile",
+      "total_sampled_weight": 42626714352,
+      "weights": {
+        "singleton_map": 1217396736,
+        "singleton_set": 311427072,
+        "stack_callback": 782237696
+      },
+      "shares_pct": {
+        "singleton_map": 2.855947859239311,
+        "singleton_set": 0.7305913128286609,
+        "stack_callback": 1.8350879440073435
+      }
+    },
+    {
+      "variant": "idl-b2-20261106",
+      "case": "benchmarkBuildSchemaAvgTimeFast-5-profile",
+      "total_sampled_weight": 38638978032,
+      "weights": {
+        "singleton_map": 1469054976,
+        "singleton_set": 355467264,
+        "stack_callback": 917504000
+      },
+      "shares_pct": {
+        "singleton_map": 3.802002668868103,
+        "singleton_set": 0.9199706671993483,
+        "stack_callback": 2.374555556930471
+      }
+    },
+    {
+      "variant": "idl-b2-20261106",
+      "case": "benchmarkLargeSchemaCreateAvgTime-4-profile",
+      "total_sampled_weight": 53811076912,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-b2-20261106",
+      "case": "benchmarkLargeSchemaCreateAvgTime-5-profile",
+      "total_sampled_weight": 85423471264,
+      "weights": {
+        "singleton_map": 0,
+        "singleton_set": 0,
+        "stack_callback": 0
+      },
+      "shares_pct": {
+        "singleton_map": 0.0,
+        "singleton_set": 0.0,
+        "stack_callback": 0.0
+      }
+    },
+    {
+      "variant": "idl-b2-20261106",
+      "case": "benchmarkLargeSchemaCreateAvgTimeFast-4-profile",
+      "total_sampled_weight": 46385887824,
+      "weights": {
+        "singleton_map": 849346560,
+        "singleton_set": 184549376,
+        "stack_callback": 527433728
+      },
+      "shares_pct": {
+        "singleton_map": 1.8310451730979895,
+        "singleton_set": 0.3978567289694397,
+        "stack_callback": 1.1370564469978872
+      }
+    },
+    {
+      "variant": "idl-b2-20261106",
+      "case": "benchmarkLargeSchemaCreateAvgTimeFast-5-profile",
+      "total_sampled_weight": 51125959648,
+      "weights": {
+        "singleton_map": 1455423488,
+        "singleton_set": 357564416,
+        "stack_callback": 973078528
+      },
+      "shares_pct": {
+        "singleton_map": 2.8467406734671137,
+        "singleton_set": 0.6993793729483327,
+        "stack_callback": 1.9032963580529405
+      }
+    },
+    {
+      "variant": "idl-a-20261106",
+      "case": "benchmarkBuildSchemaAvgTime-4-profile",
+      "total_sampled_weight": 65072533168,
+      "weights": {
+        "singleton_map": 2105540608,
+        "singleton_set": 550502400,
+        "stack_callback": 1310720000
+      },
+      "shares_pct": {
+        "singleton_map": 3.2356825614334905,
+        "singleton_set": 0.8459827414106487,
+        "stack_callback": 2.014244622406306
+      }
+    }
+  ]
+}
