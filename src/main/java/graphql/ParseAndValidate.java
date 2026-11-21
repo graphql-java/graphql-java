@@ -6,6 +6,7 @@ import graphql.parser.Parser;
 import graphql.parser.ParserEnvironment;
 import graphql.parser.ParserOptions;
 import graphql.schema.GraphQLSchema;
+import graphql.validation.DocumentValidationResult;
 import graphql.validation.OperationValidationRule;
 import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationError;
@@ -52,9 +53,10 @@ public class ParseAndValidate {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
             QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
-            List<ValidationError> errors = validate(graphQLSchema, assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"),
-                    rule -> true, executionInput.getLocale(), limits);
-            return result.transform(builder -> builder.validationErrors(errors));
+            DocumentValidationResult validation = new Validator().validateDocumentWithResult(graphQLSchema,
+                    assertNotNull(result.getDocument(), "Parse result document cannot be null when parse succeeded"),
+                    rule -> true, executionInput.getLocale(), limits, executionInput.getGraphQLContext());
+            return result.transform(builder -> builder.validationErrors(validation.errors()).normalizedDocument(validation.normalizedDocument()));
         }
         return result;
     }

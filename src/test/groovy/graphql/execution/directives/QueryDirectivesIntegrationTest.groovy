@@ -1,17 +1,12 @@
 package graphql.execution.directives
 
-import graphql.AssertException
 import graphql.GraphQL
-import graphql.execution.CoercedVariables
 import graphql.TestUtil
-import graphql.execution.RawVariables
 import graphql.language.IntValue
 import graphql.language.StringValue
-import graphql.normalized.ExecutableNormalizedOperationFactory
 import graphql.normalized.NormalizedInputValue
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
-import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -222,48 +217,16 @@ class QueryDirectivesIntegrationTest extends Specification {
         0 * coercing.valueToLiteral(_, _, _)
     }
 
-    def "normalized directive lookup rejects an operation built from coerced variables"() {
-        def operation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(
-                schema, TestUtil.parseQuery('query($timeout: Int) { books @timeout(afterMillis: $timeout) { title } }'),
-                null, CoercedVariables.of([timeout: 5]))
-        def queryDirectives = operation.getQueryDirectives(operation.topLevelFields[0])
-
+    def "can capture normalized directive argument values during execution"() {
         when:
-        def applied = queryDirectives.getImmediateAppliedDirective("timeout")
+        def result = execute(pathologicalQuery)
 
         then:
-        applied[0].getArgument("afterMillis").getValue() == 5
-
-        when:
-        queryDirectives.getNormalizedInputValueByImmediateAppliedDirectives()
-
-        then:
-        def exception = thrown(AssertException)
-        exception.message == "Normalized variables are required to compute normalized directive arguments"
-
-        when:
-        def appliedAfterFailure = queryDirectives.getImmediateAppliedDirective("timeout")
-
-        then:
-        appliedAfterFailure.is(applied)
-        appliedAfterFailure[0].getArgument("afterMillis").getValue() == 5
-    }
-
-    def "can capture directive argument values inside ENO path"() {
-        def query = TestUtil.parseQuery(pathologicalQuery)
-        when:
-        def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
-                schema, query, "Books", RawVariables.emptyVariables())
-
-
-        then:
-        def booksENF = eno.getTopLevelFields()[0]
-        booksENF != null
-        def bookQueryDirectives = eno.getQueryDirectives(booksENF)
-        bookQueryDirectives.immediateAppliedDirectivesByName.isEmpty()
-
-        def reviewField = eno.getCoordinatesToNormalizedFields().get(FieldCoordinates.coordinates("Book", "review"))
-        def reviewQueryDirectives = eno.getQueryDirectives(reviewField[0])
+        result.errors.empty
+        def reviewQueryDirectives = capturedDirectives["review"]
+        reviewQueryDirectives.immediateAppliedDirectivesByField.size() == 3
+        reviewQueryDirectives.immediateDirectivesByField.size() == 3
+        reviewQueryDirectives.immediateAppliedDirectivesByField.values()*.size() == [2, 1, 2]
         def reviewImmediateDirectivesMap = reviewQueryDirectives.immediateAppliedDirectivesByName
         def argInputValues = simplifiedInputValuesWithState(reviewImmediateDirectivesMap)
         argInputValues == [

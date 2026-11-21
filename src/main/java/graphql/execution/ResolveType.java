@@ -3,8 +3,6 @@ package graphql.execution;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.TypeResolutionEnvironment;
-import graphql.normalized.ExecutableNormalizedField;
-import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLInterfaceType;
@@ -15,7 +13,6 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.TypeResolver;
 
-import java.util.function.Supplier;
 
 @Internal
 public class ResolveType {
@@ -43,9 +40,7 @@ public class ResolveType {
     }
 
     private DataFetchingFieldSelectionSet buildSelectionSet(ExecutionContext executionContext, MergedField field, GraphQLOutputType fieldType, ExecutionStepInfo executionStepInfo) {
-        Supplier<ExecutableNormalizedOperation> normalizedQuery = executionContext.getNormalizedQueryTree();
-        Supplier<ExecutableNormalizedField> normalizedFieldSupplier = () -> normalizedQuery.get().getNormalizedField(field, executionStepInfo.getObjectType(), executionStepInfo.getPath());
-        return DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldType, normalizedFieldSupplier);
+        return DataFetchingFieldSelectionSetImpl.newCollector(executionContext, field, fieldType, executionStepInfo.getPath().getLevel());
     }
 
     public GraphQLObjectType resolveTypeForInterface(TypeResolutionEnvironment env, GraphQLInterfaceType abstractType) {

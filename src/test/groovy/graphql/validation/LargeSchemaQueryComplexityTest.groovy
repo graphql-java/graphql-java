@@ -1,18 +1,13 @@
 package graphql.validation
 
-import graphql.execution.CoercedVariables
-import graphql.execution.TypeFromAST
+import graphql.GraphQLContext
+import graphql.normalized.NormalizedDocument
 import graphql.introspection.Introspection
-import graphql.language.BooleanValue
-import graphql.language.Directive
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.Node
-import graphql.language.NodeChildrenContainer
 import graphql.language.OperationDefinition
-import graphql.normalized.ExecutableNormalizedField
-import graphql.normalized.ExecutableNormalizedOperationFactory
 import graphql.parser.Parser
 import graphql.parser.ParserEnvironment
 import graphql.parser.ParserOptions
@@ -20,12 +15,7 @@ import graphql.parser.exceptions.ParseCancelledException
 import graphql.parser.exceptions.ParseCancelledTooDeepException
 import graphql.parser.exceptions.ParseCancelledTooManyCharsException
 import graphql.parser.exceptions.ParseCancelledTooManyNumericLiteralCharactersException
-import graphql.schema.GraphQLEnumType
-import graphql.schema.GraphQLInputObjectType
-import graphql.schema.GraphQLList
-import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLType
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
@@ -110,23 +100,19 @@ class LargeSchemaQueryComplexityTest extends Specification {
         'maxNumericLiteralCharacters' | 5       | ParseCancelledTooManyNumericLiteralCharactersException
     }
 
-    def "ENF creation count and final tree differ from validation groups with all selections retained"() {
+    def "the prepared graph stores AST fields once without requiring execution variables"() {
         given:
-        def operation = document.getDefinitionsOfType(OperationDefinition).first()
-        // These stand-in coerced values satisfy arguments; they are not production request variables.
-        def variables = operation.variableDefinitions.collectEntries {
-            [(it.name): sampleValue(TypeFromAST.getTypeFromAST(schema, it.type))]
-        }
-        def structuralDocument = (Document) retainAllConditionalSelections(document)
+        def context = GraphQLContext.of([(NormalizedDocument.ENABLED): true])
 
         when:
-        def normalized = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(
-                schema, structuralDocument, operation.name, CoercedVariables.of(variables))
+        def result = new Validator().validateDocumentWithResult(schema, document, { true }, Locale.ENGLISH,
+                QueryComplexityLimits.DEFAULT, context)
 
         then:
-        normalized.operationFieldCount == 5648
-        normalized.operationDepth == 15
-        countNormalizedFields(normalized.topLevelFields) == 3882
+        result.errors().empty
+        result.normalizedDocument().fields.size() == 5687
+        result.normalizedDocument().operations.size() == 1
+        result.normalizedDocument().document.is(document)
     }
 
     private List<ValidationError> validate(QueryComplexityLimits limits) {
@@ -141,53 +127,4 @@ class LargeSchemaQueryComplexityTest extends Specification {
         [node] + node.children.collectMany { collectNodes(it) }
     }
 
-    private static int countNormalizedFields(List<ExecutableNormalizedField> fields) {
-        fields.sum(0) { 1 + countNormalizedFields(it.children) } as int
-    }
-
-    private static Node retainAllConditionalSelections(Node node) {
-        if (node instanceof Directive && node.name in ['skip', 'include']) {
-            return retainConditionalSelection(node)
-        }
-        def children = node.namedChildren.children.collectEntries { name, values ->
-            [(name): values.collect { retainAllConditionalSelections(it) }]
-        }
-        node.withNewChildren(NodeChildrenContainer.newNodeChildrenContainer(children).build())
-    }
-
-    private static Directive retainConditionalSelection(Directive directive) {
-        def value = BooleanValue.newBooleanValue(directive.name == 'include').build()
-        def arguments = directive.arguments.collect { argument -> argument.transform { it.value(value) } }
-        directive.transform { it.arguments(arguments) }
-    }
-
-    private static Object sampleValue(GraphQLType type) {
-        if (type instanceof GraphQLNonNull) {
-            return sampleValue(type.wrappedType)
-        }
-        if (type instanceof GraphQLList) {
-            return []
-        }
-        if (type instanceof GraphQLInputObjectType) {
-            return sampleInputObject(type)
-        }
-        if (type instanceof GraphQLEnumType) {
-            return type.values.first().value
-        }
-        switch (type.name) {
-            case 'Boolean': return true
-            case 'Int': return 1
-            case 'Float': return 1.0d
-            default: return 'example'
-        }
-    }
-
-    private static Map<String, Object> sampleInputObject(GraphQLInputObjectType type) {
-        if (type.isOneOf()) {
-            def field = type.fieldDefinitions.first()
-            return [(field.name): sampleValue(field.type)]
-        }
-        type.fieldDefinitions.findAll { it.type instanceof GraphQLNonNull && !it.hasSetDefaultValue() }
-                .collectEntries { [(it.name): sampleValue(it.type)] }
-    }
 }

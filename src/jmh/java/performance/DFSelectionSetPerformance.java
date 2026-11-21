@@ -1,11 +1,13 @@
 package performance;
 
-import graphql.execution.CoercedVariables;
-import graphql.language.Document;
-import graphql.normalized.ExecutableNormalizedField;
-import graphql.normalized.ExecutableNormalizedOperation;
-import graphql.normalized.ExecutableNormalizedOperationFactory;
-import graphql.parser.Parser;
+import graphql.ExecutionInput;
+import graphql.ParseAndValidate;
+import graphql.ParseAndValidateResult;
+import graphql.execution.ExecutionContext;
+import graphql.execution.ExecutionContextBuilder;
+import graphql.execution.MergedField;
+import graphql.language.Field;
+import graphql.normalized.NormalizedDocument;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLOutputType;
@@ -22,97 +24,52 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
 @Fork(2)
+@BenchmarkMode(Mode.AverageTime)
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class DFSelectionSetPerformance {
+    private ExecutionContext context;
+    private MergedField field;
+    private GraphQLOutputType fieldType;
 
-    @State(Scope.Benchmark)
-    public static class MyState {
-
-        public ExecutableNormalizedField normalisedField;
-        public GraphQLOutputType outputFieldType;
-        GraphQLSchema schema;
-        Document document;
-
-        @Setup
-        public void setup() {
-            try {
-                String schemaString = PerformanceTestingUtils.loadResource("large-schema-2.graphqls");
-                schema = SchemaGenerator.createdMockedSchema(schemaString);
-
-                String query = PerformanceTestingUtils.loadResource("large-schema-2-query.graphql");
-                document = Parser.parse(query);
-
-                ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(schema, document, null, CoercedVariables.emptyVariables());
-
-                normalisedField = executableNormalizedOperation.getTopLevelFields().get(0);
-
-                outputFieldType = schema.getObjectType("Object42");
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
+    @Setup
+    public void setup() throws Exception {
+        GraphQLSchema schema = SchemaGenerator.createdMockedSchema(PerformanceTestingUtils.loadResource("large-schema-2.graphqls"));
+        ExecutionInput input = ExecutionInput.newExecutionInput(PerformanceTestingUtils.loadResource("large-schema-2-query.graphql"))
+                .graphQLContext(Map.of(NormalizedDocument.ENABLED, true)).build();
+        ParseAndValidateResult result = ParseAndValidate.parseAndValidate(schema, input);
+        assertTrue(!result.isFailure(), () -> result.getErrors().toString());
+        NormalizedDocument document = assertNotNull(result.getNormalizedDocument());
+        Field root = (Field) document.getOperations().get(0).getSource().getSelectionSet().getSelections().get(0);
+        field = MergedField.newMergedField(root).build();
+        fieldType = assertNotNull(schema.getQueryType().getFieldDefinition(root.getName())).getType();
+        context = ExecutionContextBuilder.newExecutionContextBuilder().executionId(graphql.execution.ExecutionId.generate()).graphQLSchema(schema)
+                .graphQLContext(input.getGraphQLContext()).locale(input.getLocale())
+                .document(result.getDocument()).normalizedDocument(document).build();
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkAvgTime(MyState myState, Blackhole blackhole) {
-        List<SelectedField> fields = getSelectedFields(myState);
-        blackhole.consume(fields);
+    public List<SelectedField> benchMarkAvgTime() {
+        return collector().getFields("wontBeFound");
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkThroughput(MyState myState, Blackhole blackhole) {
-        List<SelectedField> fields = getSelectedFields(myState);
-        blackhole.consume(fields);
+    public List<SelectedField> benchMarkAvgTime_getImmediateFields() {
+        return collector().getImmediateFields();
     }
 
-    @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkAvgTime_getImmediateFields(MyState myState, Blackhole blackhole) {
-        List<SelectedField> fields = getImmediateFields(myState);
-        blackhole.consume(fields);
+    private DataFetchingFieldSelectionSet collector() {
+        return DataFetchingFieldSelectionSetImpl.newCollector(context, field, fieldType, 1);
     }
-
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkThroughput_getImmediateFields(MyState myState, Blackhole blackhole) {
-        List<SelectedField> fields = getImmediateFields(myState);
-        blackhole.consume(fields);
-    }
-
-    private List<SelectedField> getSelectedFields(MyState myState) {
-        DataFetchingFieldSelectionSet dataFetchingFieldSelectionSet = DataFetchingFieldSelectionSetImpl.newCollector(myState.schema, myState.outputFieldType, () -> myState.normalisedField);
-        return dataFetchingFieldSelectionSet.getFields("wontBeFound");
-    }
-
-    private List<SelectedField> getImmediateFields(MyState myState) {
-        DataFetchingFieldSelectionSet dataFetchingFieldSelectionSet = DataFetchingFieldSelectionSetImpl.newCollector(myState.schema, myState.outputFieldType, () -> myState.normalisedField);
-        return dataFetchingFieldSelectionSet.getImmediateFields();
-    }
-
-    public static void mainX(String[] args) throws InterruptedException {
-        MyState myState = new MyState();
-        myState.setup();
-
-        while (true) {
-            List<SelectedField> selectedFields = new DFSelectionSetPerformance().getSelectedFields(myState);
-            Thread.sleep(500);
-        }
-    }
-
 }

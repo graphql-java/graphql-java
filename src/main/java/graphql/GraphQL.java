@@ -24,13 +24,17 @@ import graphql.execution.preparsed.NoOpPreparsedDocumentProvider;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 import graphql.language.Document;
+import graphql.normalized.NormalizedDocument;
 import graphql.schema.GraphQLSchema;
+import graphql.validation.DocumentValidationResult;
 import graphql.validation.GoodFaithIntrospectionExceeded;
 import graphql.validation.OperationValidationRule;
 import graphql.validation.QueryComplexityLimits;
 import graphql.validation.ValidationError;
+import graphql.validation.Validator;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -549,7 +553,7 @@ public class GraphQL {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
             try {
-                return execute(Assert.assertNotNull(executionInputRef.get()), assertNotNull(preparsedDocumentEntry.getDocument(), "document must not be null"), graphQLSchema, instrumentationState, engineRunningState, profiler);
+                return execute(Assert.assertNotNull(executionInputRef.get()), assertNotNull(preparsedDocumentEntry.getDocument(), "document must not be null"), preparsedDocumentEntry.getNormalizedDocument(), graphQLSchema, instrumentationState, engineRunningState, profiler);
             } catch (AbortExecutionException e) {
                 return CompletableFuture.completedFuture(e.toExecutionResult());
             }
@@ -569,17 +573,13 @@ public class GraphQL {
             executionInput = executionInput.transform(builder -> builder.variables(parseResult.getVariables()));
             executionInputRef.set(executionInput);
 
-            final List<ValidationError> errors;
+            final DocumentValidationResult validation;
             try {
-                errors = validate(executionInput, document, graphQLSchema, instrumentationState);
+                validation = validate(executionInput, document, graphQLSchema, instrumentationState);
             } catch (GoodFaithIntrospectionExceeded e) {
                 return new PreparsedDocumentEntry(document, List.of(e.toBadFaithError()));
             }
-            if (!errors.isEmpty()) {
-                return new PreparsedDocumentEntry(document, errors);
-            }
-
-            return new PreparsedDocumentEntry(document);
+            return new PreparsedDocumentEntry(document, validation.errors(), validation.normalizedDocument());
         }
     }
 
@@ -602,7 +602,7 @@ public class GraphQL {
         }
     }
 
-    private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private DocumentValidationResult validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         InstrumentationContext<List<ValidationError>> validationCtx = nonNullCtx(instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema), instrumentationState));
         validationCtx.onDispatched();
 
@@ -610,14 +610,15 @@ public class GraphQL {
         Locale locale = executionInput.getLocale();
         QueryComplexityLimits limits = executionInput.getGraphQLContext().get(QueryComplexityLimits.KEY);
 
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale, limits);
+        DocumentValidationResult validation = new Validator().validateDocumentWithResult(graphQLSchema, document, validationRulePredicate, locale, limits, executionInput.getGraphQLContext());
 
-        validationCtx.onCompleted(validationErrors, null);
-        return validationErrors;
+        validationCtx.onCompleted(validation.errors(), null);
+        return validation;
     }
 
     private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput,
                                                        Document document,
+                                                       @Nullable NormalizedDocument normalizedDocument,
                                                        GraphQLSchema graphQLSchema,
                                                        InstrumentationState instrumentationState,
                                                        EngineRunningState engineRunningState,
@@ -627,7 +628,7 @@ public class GraphQL {
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader);
         ExecutionId executionId = executionInput.getExecutionId();
 
-        return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState, engineRunningState, profiler);
+        return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState, engineRunningState, profiler, normalizedDocument);
     }
 
 }

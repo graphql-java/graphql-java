@@ -29,8 +29,6 @@ import graphql.execution.reactive.ReactiveSupport;
 import graphql.extensions.ExtensionsBuilder;
 import graphql.introspection.Introspection;
 import graphql.language.Field;
-import graphql.normalized.ExecutableNormalizedField;
-import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -525,10 +523,8 @@ public abstract class ExecutionStrategy {
 
             Supplier<Map<String, @Nullable Object>> argumentValues = () -> executionStepInfo.get().getArguments();
 
-            Supplier<ExecutableNormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, executionStepInfo);
-
-            // DataFetchingFieldSelectionSet and QueryDirectives is a supplier of sorts - eg a lazy pattern
-            DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldDef.getType(), normalizedFieldSupplier);
+            DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(
+                    executionContext, field, fieldDef.getType(), parameters.getPath().getLevel());
             QueryDirectives queryDirectives = new QueryDirectivesImpl(field,
                     executionContext.getGraphQLSchema(),
                     executionContext.getCoercedVariables(),
@@ -627,11 +623,6 @@ public abstract class ExecutionStrategy {
             fetchedValue = Async.exceptionallyCompletedFuture(e);
         }
         return fetchedValue;
-    }
-
-    protected Supplier<ExecutableNormalizedField> getNormalizedField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Supplier<ExecutionStepInfo> executionStepInfo) {
-        Supplier<ExecutableNormalizedOperation> normalizedQuery = executionContext.getNormalizedQueryTree();
-        return () -> normalizedQuery.get().getNormalizedField(assertNotNull(parameters.getField(), "Field execution requires a merged field"), assertNotNull(executionStepInfo.get().getObjectType(), "Normalized field lookup requires its object type"), executionStepInfo.get().getPath());
     }
 
     /**
