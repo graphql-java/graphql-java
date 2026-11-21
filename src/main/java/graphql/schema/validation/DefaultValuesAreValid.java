@@ -1,91 +1,51 @@
 package graphql.schema.validation;
 
-import graphql.GraphQLContext;
-import graphql.execution.NonNullableValueCoercedAsNullException;
-import graphql.execution.ValuesResolver;
-import graphql.language.Value;
-import graphql.schema.CoercingParseValueException;
+import graphql.Internal;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
-import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
-import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.InputValueWithState;
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
-import graphql.validation.ValidationUtil;
-
-import java.util.Locale;
+import org.jspecify.annotations.NullMarked;
 
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static java.lang.String.format;
 
-public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
+/**
+ * Schema validation rule ensuring argument and input field default values are valid for their types.
+ */
+@Internal
+@NullMarked
+public class DefaultValuesAreValid implements SchemaValidationRule {
 
-    private ValidationUtil validationUtil = new ValidationUtil();
+    private final InputValueValidator inputValueValidator;
+    private final SchemaValidationErrorCollector errors;
 
-    private final GraphQLContext graphQLContext = GraphQLContext.getDefault();
-
-
-    @Override
-    public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-        return super.visitGraphQLInputObjectType(node, context);
+    public DefaultValuesAreValid(InputValueValidator inputValueValidator, SchemaValidationErrorCollector errors) {
+        this.inputValueValidator = inputValueValidator;
+        this.errors = errors;
     }
 
     @Override
-    public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField inputObjectField, TraverserContext<GraphQLSchemaElement> context) {
-        if (!inputObjectField.hasSetDefaultValue()) {
-            return TraversalControl.CONTINUE;
+    public void checkInputObjectField(GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField) {
+        if (inputObjectField.hasSetDefaultValue()) {
+            checkDefaultValue(inputObjectField.getInputFieldDefaultValue(), inputObjectField.getType());
         }
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
-        GraphQLSchema schema = context.getVarFromParents(GraphQLSchema.class);
-        InputValueWithState defaultValue = inputObjectField.getInputFieldDefaultValue();
-        boolean invalid = false;
-        if (defaultValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), inputObjectField.getType(), schema, graphQLContext, Locale.getDefault())) {
-            invalid = true;
-        } else if (defaultValue.isExternal() &&
-                !isValidExternalValue(schema, defaultValue.getValue(), inputObjectField.getType(), graphQLContext)) {
-            invalid = true;
-        }
-        if (invalid) {
-            String message = format("Invalid default value %s for type %s", defaultValue.getValue(), simplePrint(inputObjectField.getType()));
-            errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.InvalidDefaultValue, message));
-        }
-        return TraversalControl.CONTINUE;
     }
 
     @Override
-    public TraversalControl visitGraphQLArgument(GraphQLArgument argument, TraverserContext<GraphQLSchemaElement> context) {
-        if (!argument.hasSetDefaultValue()) {
-            return TraversalControl.CONTINUE;
+    public void checkArgument(GraphQLSchemaElement fieldOrDirective, GraphQLArgument argument) {
+        if (argument.hasSetDefaultValue()) {
+            checkDefaultValue(argument.getArgumentDefaultValue(), argument.getType());
         }
-        GraphQLSchema schema = context.getVarFromParents(GraphQLSchema.class);
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
-        InputValueWithState defaultValue = argument.getArgumentDefaultValue();
-        boolean invalid = false;
-        if (defaultValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), argument.getType(), schema, graphQLContext, Locale.getDefault())) {
-            invalid = true;
-        } else if (defaultValue.isExternal() &&
-                !isValidExternalValue(schema, defaultValue.getValue(), argument.getType(), graphQLContext)) {
-            invalid = true;
-        }
-        if (invalid) {
-            String message = format("Invalid default value %s for type %s", defaultValue.getValue(), simplePrint(argument.getType()));
-            errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.InvalidDefaultValue, message));
-        }
-        return TraversalControl.CONTINUE;
     }
 
-    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, GraphQLContext graphQLContext) {
-        try {
-            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext, Locale.getDefault());
-            return true;
-        } catch (CoercingParseValueException | NonNullableValueCoercedAsNullException e) {
-            return false;
+    private void checkDefaultValue(InputValueWithState defaultValue, GraphQLInputType type) {
+        if (inputValueValidator.isValidValue(defaultValue, type)) {
+            return;
         }
+        errors.addError(new SchemaValidationError(SchemaValidationErrorType.InvalidDefaultValue,
+                format("Invalid default value %s for type %s", defaultValue.getValue(), simplePrint(type))));
     }
 }

@@ -3,23 +3,22 @@ package graphql.schema.validation;
 import graphql.Internal;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLNonNull;
-import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeVisitorStub;
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
 
 import static graphql.schema.GraphQLTypeUtil.isList;
-import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 /**
@@ -27,58 +26,54 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * as such a type would be impossible to satisfy
  */
 @Internal
-public class NoUnbrokenInputCycles extends GraphQLTypeVisitorStub {
+@NullMarked
+public class NoUnbrokenInputCycles implements SchemaValidationRule {
+
+    private final SchemaValidationErrorCollector errors;
+    // results only depend on the argument's input type, so each type is explored once
+    private final Set<GraphQLInputObjectType> checkedArgumentTypes = Collections.newSetFromMap(new IdentityHashMap<>());
+
+    public NoUnbrokenInputCycles(SchemaValidationErrorCollector errors) {
+        this.errors = errors;
+    }
 
     @Override
-    public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDef, TraverserContext<GraphQLSchemaElement> context) {
-        SchemaValidationErrorCollector validationErrorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
-        for (GraphQLArgument argument : fieldDef.getArguments()) {
+    public void checkFieldDefinition(GraphQLFieldsContainer container, GraphQLFieldDefinition fieldDefinition) {
+        for (GraphQLArgument argument : fieldDefinition.getArguments()) {
             GraphQLInputType argumentType = argument.getType();
-            if (argumentType instanceof GraphQLInputObjectType) {
-                List<String> path = new ArrayList<>();
-                check((GraphQLInputObjectType) argumentType, new LinkedHashSet<>(), path, validationErrorCollector);
+            if (argumentType instanceof GraphQLInputObjectType && checkedArgumentTypes.add((GraphQLInputObjectType) argumentType)) {
+                check((GraphQLInputObjectType) argumentType, Collections.newSetFromMap(new IdentityHashMap<>()), new ArrayList<>());
             }
         }
-        return TraversalControl.CONTINUE;
     }
 
-    private void check(GraphQLInputObjectType type, Set<GraphQLType> seen, List<String> path, SchemaValidationErrorCollector validationErrorCollector) {
-        if (seen.contains(type)) {
-            validationErrorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.UnbrokenInputCycle, getErrorMessage(path)));
+    // path entries deliberately accumulate across sibling fields, which existing error messages rely on
+    private void check(GraphQLInputObjectType type, Set<GraphQLInputObjectType> pathTypes, List<String> path) {
+        if (!pathTypes.add(type)) {
+            errors.addError(new SchemaValidationError(SchemaValidationErrorType.UnbrokenInputCycle, "[" + String.join(".", path) + "] forms an unsatisfiable cycle"));
             return;
         }
-        seen.add(type);
-
+        int pathSizeOnEntry = path.size();
         for (GraphQLInputObjectField field : type.getFieldDefinitions()) {
-            if (isNonNull(field.getType())) {
-                GraphQLType unwrapped = unwrapNonNull((GraphQLNonNull) field.getType());
-                if (unwrapped instanceof GraphQLInputObjectType) {
-                    path = new ArrayList<>(path);
-                    path.add(field.getName() + "!");
-                    check((GraphQLInputObjectType) unwrapped, new LinkedHashSet<>(seen), path, validationErrorCollector);
-                }
+            GraphQLInputObjectType next = nonNullInputObjectType(field.getType());
+            if (next != null) {
+                path.add(field.getName() + "!");
+                check(next, pathTypes, path);
             }
         }
+        path.subList(pathSizeOnEntry, path.size()).clear();
+        pathTypes.remove(type);
     }
 
-    private GraphQLType unwrapNonNull(GraphQLNonNull type) {
-        GraphQLType wrappedType = type.getWrappedType();
+    private @Nullable GraphQLInputObjectType nonNullInputObjectType(GraphQLInputType type) {
+        if (!(type instanceof GraphQLNonNull)) {
+            return null;
+        }
+        GraphQLType wrappedType = ((GraphQLNonNull) type).getWrappedType();
         if (isList(wrappedType)) {
-            return wrappedType;
+            return null;
         }
-        return unwrapAll(wrappedType);
-    }
-
-    private String getErrorMessage(List<String> path) {
-        StringBuilder message = new StringBuilder();
-        message.append("[");
-        for (int i = 0; i < path.size(); i++) {
-            if (i != 0) {
-                message.append(".");
-            }
-            message.append(path.get(i));
-        }
-        message.append("] forms an unsatisfiable cycle");
-        return message.toString();
+        GraphQLType unwrapped = unwrapAll(wrappedType);
+        return unwrapped instanceof GraphQLInputObjectType ? (GraphQLInputObjectType) unwrapped : null;
     }
 }

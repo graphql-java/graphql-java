@@ -1,10 +1,15 @@
 package graphql.schema.validation
 
+import graphql.TestUtil
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLOutputType
+import graphql.schema.GraphQLSchemaElement
+import graphql.schema.GraphQLUnionType
+import graphql.schema.TypeResolver
 import spock.lang.Specification
 
-import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
@@ -14,9 +19,40 @@ import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLSchema.newSchema
 import static graphql.schema.GraphQLUnionType.newUnionType
 
 class TypesImplementInterfacesTest extends Specification {
+
+    // each implementing type gets a schema of its own so its errors can be checked in isolation
+    static Set<String> errorsFor(GraphQLObjectType implementingType) {
+        def query = newObject().name("Query")
+                .field(newFieldDefinition().name("impl").type(implementingType))
+                .build()
+        try {
+            newSchema().query(query).codeRegistry(codeRegistryWithTypeResolvers(query)).build()
+            return [] as Set
+        } catch (InvalidSchemaException e) {
+            return e.errors.collect { it.description } as Set
+        }
+    }
+
+    static GraphQLCodeRegistry codeRegistryWithTypeResolvers(GraphQLObjectType queryType) {
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+        Set<GraphQLSchemaElement> seen = Collections.newSetFromMap(new IdentityHashMap<>())
+        Deque<GraphQLSchemaElement> stack = new ArrayDeque<>([queryType])
+        while (!stack.isEmpty()) {
+            def element = stack.pop()
+            if (!seen.add(element)) {
+                continue
+            }
+            if (element instanceof GraphQLInterfaceType || element instanceof GraphQLUnionType) {
+                codeRegistry.typeResolver(element.name, { null } as TypeResolver)
+            }
+            stack.addAll(element.children)
+        }
+        codeRegistry.build()
+    }
 
     def "field argument defaults do not affect interface implementation validity"() {
         given:
@@ -37,13 +73,9 @@ class TypesImplementInterfacesTest extends Specification {
                 .withInterface(account)
                 .field(newFieldDefinition().name("memberOf").type(GraphQLString).argument(implementingArgument))
                 .build()
-        def errors = new SchemaValidationErrorCollector()
 
-        when:
-        new TypesImplementInterfaces().check(host, errors)
-
-        then:
-        errors.getErrors().isEmpty()
+        expect:
+        errorsFor(host).isEmpty()
 
         where:
         interfaceDefault | implementingDefault
@@ -52,438 +84,250 @@ class TypesImplementInterfacesTest extends Specification {
         null             | 150
     }
 
-    GraphQLInterfaceType InterfaceType = newInterface()
-            .name("Interface")
-
-            .field(newFieldDefinition().name("name").type(GraphQLString))
-            .field(newFieldDefinition().name("friends").type(list(GraphQLString)))
-            .field(newFieldDefinition().name("age").type(GraphQLInt))
-            .field(newFieldDefinition().name("address").type(list(GraphQLString)))
-
-            .field(newFieldDefinition().name("argField1").type(GraphQLString)
-            .argument(newArgument().name("arg1").type(GraphQLString))
-            .argument(newArgument().name("arg2").type(GraphQLInt))
-            .argument(newArgument().name("arg3").type(GraphQLBoolean))
-            .argument(newArgument().name("arg4").type(GraphQLString).defaultValueProgrammatic("ABC"))
-    )
-
-            .field(newFieldDefinition().name("argField2").type(GraphQLString)
-            .argument(newArgument().name("arg1").type(GraphQLString))
-            .argument(newArgument().name("arg2").type(GraphQLInt))
-            .argument(newArgument().name("arg3").type(GraphQLBoolean))
-    )
-            .build()
-
     def "objects implement interfaces"() {
         given:
-
-        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
-        GraphQLObjectType objType = newObject()
+        def interfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("name").type(GraphQLString))
+                .field(newFieldDefinition().name("friends").type(list(GraphQLString)))
+                .field(newFieldDefinition().name("age").type(GraphQLInt))
+                .field(newFieldDefinition().name("address").type(list(GraphQLString)))
+                .field(newFieldDefinition().name("argField1").type(GraphQLString)
+                        .argument(newArgument().name("arg1").type(GraphQLString))
+                        .argument(newArgument().name("arg2").type(GraphQLInt))
+                        .argument(newArgument().name("arg3").type(GraphQLBoolean))
+                        .argument(newArgument().name("arg4").type(GraphQLString).defaultValueProgrammatic("ABC")))
+                .field(newFieldDefinition().name("argField2").type(GraphQLString)
+                        .argument(newArgument().name("arg1").type(GraphQLString))
+                        .argument(newArgument().name("arg2").type(GraphQLInt))
+                        .argument(newArgument().name("arg3").type(GraphQLBoolean)))
+                .build()
+        def objType = newObject()
                 .name("obj")
-                .withInterface(InterfaceType)
+                .withInterface(interfaceType)
                 .field(newFieldDefinition().name("name").type(GraphQLString))
                 .field(newFieldDefinition().name("missing").type(list(GraphQLString)))
                 .field(newFieldDefinition().name("age").type(GraphQLString))
                 .field(newFieldDefinition().name("address").type(list(nonNull(GraphQLString))))
-
                 .field(newFieldDefinition().name("argField1").type(GraphQLString)
-                .argument(newArgument().name("arg1").type(GraphQLInt))
-                .argument(newArgument().name("arg2").type(GraphQLInt))
-                .argument(newArgument().name("arg3").type(GraphQLInt))
-                .argument(newArgument().name("arg4").type(GraphQLString).defaultValueProgrammatic("XYZ"))
-        )
-
+                        .argument(newArgument().name("arg1").type(GraphQLInt))
+                        .argument(newArgument().name("arg2").type(GraphQLInt))
+                        .argument(newArgument().name("arg3").type(GraphQLInt))
+                        .argument(newArgument().name("arg4").type(GraphQLString).defaultValueProgrammatic("XYZ")))
                 .field(newFieldDefinition().name("argField2").type(GraphQLString)
-                .argument(newArgument().name("arg1").type(GraphQLString))
-        )
-
+                        .argument(newArgument().name("arg1").type(GraphQLString)))
                 .build()
 
         when:
-        new TypesImplementInterfaces().check(objType, errorCollector)
+        def errors = errorsFor(objType)
 
         then:
-
-        errorCollector.containsValidationError(ObjectDoesNotImplementItsInterfaces)
-        def errors = errorCollector.getErrors()
-        errors.size() == 5
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
-                "object type 'obj' does not implement interface 'Interface' because field 'friends' is missing"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
-                "object type 'obj' does not implement interface 'Interface' because field 'age' is defined as 'String' type and not as 'Int' type"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
-                "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg1' is defined differently"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
-                "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg3' is defined differently"))
-        errors.contains(new SchemaValidationError(ObjectDoesNotImplementItsInterfaces,
-                "object type 'obj' does not implement interface 'Interface' because field 'argField2' is missing argument(s): 'arg2, arg3'"))
+        errors == [
+                "object type 'obj' does not implement interface 'Interface' because field 'friends' is missing",
+                "object type 'obj' does not implement interface 'Interface' because field 'age' is defined as 'String' type and not as 'Int' type",
+                "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg1' is defined differently",
+                "object type 'obj' does not implement interface 'Interface' because field 'argField1' argument 'arg3' is defined differently",
+                "object type 'obj' does not implement interface 'Interface' because field 'argField2' is missing argument(s): 'arg2, arg3'",
+        ] as Set
     }
 
-    def "field is object implementing interface"() {
+    def "field type compatibility: #scenario"() {
         given:
-        def person = newInterface()
-                .name("Person")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .build()
-
-        def actor = newObject()
-                .name("Actor")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .withInterface(person)
-                .build()
-
-        def prop = newObject()
-                .name("Prop")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .build()
-
-        GraphQLInterfaceType interfaceType = newInterface()
+        def (interfaceFieldType, goodFieldType, badFieldType) = fieldTypes(scenario)
+        def interfaceType = newInterface()
                 .name("TestInterface")
-                .field(newFieldDefinition().name("field").type(person).build())
+                .field(newFieldDefinition().name("field").type(interfaceFieldType))
                 .build()
-
-        GraphQLObjectType goodImpl = newObject()
+        def goodImpl = newObject()
                 .name("GoodImpl")
-                .field(newFieldDefinition().name("field").type(actor).build())
+                .field(newFieldDefinition().name("field").type(goodFieldType))
                 .withInterface(interfaceType)
                 .build()
-
-        GraphQLObjectType badImpl = newObject()
+        def badImpl = newObject()
                 .name("BadImpl")
-                .field(newFieldDefinition().name("field").type(prop).build())
+                .field(newFieldDefinition().name("field").type(badFieldType))
                 .withInterface(interfaceType)
                 .build()
 
-        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
-        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
+        expect:
+        errorsFor(goodImpl).isEmpty()
+        !errorsFor(badImpl).isEmpty()
 
-        when:
-        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
-        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
-
-        then:
-        goodErrorCollector.getErrors().isEmpty()
-        !badErrorCollector.getErrors().isEmpty()
+        where:
+        scenario << [
+                "object implementing interface",
+                "list of objects implementing interface",
+                "list of interfaces implementing interface",
+                "member of union",
+                "non-null",
+        ]
     }
 
-    def "field is list of objects implementing interface"() {
+    // returns the interface field type, a compatible implementing field type and an incompatible one
+    static List<GraphQLOutputType> fieldTypes(String scenario) {
+        def person = newInterface().name("Person").field(newFieldDefinition().name("name").type(GraphQLString)).build()
+        def prop = newObject().name("Prop").field(newFieldDefinition().name("name").type(GraphQLString)).build()
+        switch (scenario) {
+            case "object implementing interface":
+                return [person, actorImplementing(person), prop]
+            case "list of objects implementing interface":
+                return [list(person), list(actorImplementing(person)), list(prop)]
+            case "list of interfaces implementing interface":
+                def actor = newInterface().name("Actor").field(newFieldDefinition().name("name").type(GraphQLString)).withInterface(person).build()
+                return [list(person), list(actor), list(prop)]
+            case "member of union":
+                def actor = newObject().name("Actor").field(newFieldDefinition().name("name").type(GraphQLString)).build()
+                def director = newObject().name("Director").field(newFieldDefinition().name("name").type(GraphQLString)).build()
+                def union = newUnionType().name("Person").possibleType(actor).possibleType(director).build()
+                return [union, actor, prop]
+            case "non-null":
+                return [GraphQLString, nonNull(GraphQLString), nonNull(GraphQLInt)]
+        }
+        throw new IllegalArgumentException(scenario)
+    }
+
+    static GraphQLObjectType actorImplementing(GraphQLInterfaceType person) {
+        newObject().name("Actor").field(newFieldDefinition().name("name").type(GraphQLString)).withInterface(person).build()
+    }
+
+    def "list and non-list types are not interchangeable: #scenario"() {
         given:
-        def person = newInterface()
-                .name("Person")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+        def interfaceType = newInterface()
+                .name("Interface")
+                .field(newFieldDefinition().name("field").type(interfaceFieldType))
+                .field(newFieldDefinition().name("withArg").type(GraphQLString)
+                        .argument(newArgument().name("arg").type(interfaceArgType)))
                 .build()
-
-        def actor = newObject()
-                .name("Actor")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .withInterface(person)
-                .build()
-
-        def prop = newObject()
-                .name("Prop")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .build()
-
-        GraphQLInterfaceType interfaceType = newInterface()
-                .name("TestInterface")
-                .field(newFieldDefinition().name("field").type(list(person)).build())
-                .build()
-
-        GraphQLObjectType goodImpl = newObject()
-                .name("GoodImpl")
-                .field(newFieldDefinition().name("field").type(list(actor)).build())
+        def objType = newObject()
+                .name("Object")
                 .withInterface(interfaceType)
+                .field(newFieldDefinition().name("field").type(objectFieldType))
+                .field(newFieldDefinition().name("withArg").type(GraphQLString)
+                        .argument(newArgument().name("arg").type(objectArgType)))
                 .build()
 
-        GraphQLObjectType badImpl = newObject()
-                .name("BadImpl")
-                .field(newFieldDefinition().name("field").type(list(prop)).build())
-                .withInterface(interfaceType)
-                .build()
+        expect:
+        errorsFor(objType) == expected as Set
 
-        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
-        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
-
-        when:
-        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
-        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
-
-        then:
-        goodErrorCollector.getErrors().isEmpty()
-        !badErrorCollector.getErrors().isEmpty()
+        where:
+        scenario               | interfaceFieldType   | objectFieldType | interfaceArgType     | objectArgType || expected
+        "field list vs scalar" | list(GraphQLString)  | GraphQLString   | GraphQLString        | GraphQLString || ["object type 'Object' does not implement interface 'Interface' because field 'field' is defined as 'String' type and not as '[String]' type"]
+        "argument list vs scalar" | GraphQLString     | GraphQLString   | list(GraphQLString)  | GraphQLString || ["object type 'Object' does not implement interface 'Interface' because field 'withArg' argument 'arg' is defined differently"]
     }
-
-    def "field is list of interfaces implementing interface" () {
-        given:
-        def person = newInterface()
-                .name("Person")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .build()
-
-        def actor = newInterface()
-                .name("Actor")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .withInterface(person)
-                .build()
-
-        def prop = newObject()
-                .name("Prop")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .build()
-
-        GraphQLInterfaceType interfaceType = newInterface()
-                .name("TestInterface")
-                .field(newFieldDefinition().name("field").type(list(person)).build())
-                .build()
-
-        GraphQLObjectType goodImpl = newObject()
-                .name("GoodImpl")
-                .field(newFieldDefinition().name("field").type(list(actor)).build())
-                .withInterface(interfaceType)
-                .build()
-
-        GraphQLObjectType badImpl = newObject()
-                .name("BadImpl")
-                .field(newFieldDefinition().name("field").type(list(prop)).build())
-                .withInterface(interfaceType)
-                .build()
-
-        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
-        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
-
-        when:
-        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
-        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
-
-        then:
-        goodErrorCollector.getErrors().isEmpty()
-        !badErrorCollector.getErrors().isEmpty()
-    }
-
-    def "field is member of union"() {
-        given:
-        def actor = newObject()
-                .name("Actor")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .build()
-
-        def director = newObject()
-                .name("Director")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .build()
-
-        def person = newUnionType()
-                .name("Person")
-                .possibleType(actor)
-                .possibleType(director)
-                .build()
-
-        def prop = newObject()
-                .name("Prop")
-                .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .build()
-
-        GraphQLInterfaceType interfaceType = newInterface()
-                .name("TestInterface")
-                .field(newFieldDefinition().name("field").type(person).build())
-                .build()
-
-        GraphQLObjectType goodImpl = newObject()
-                .name("GoodImpl")
-                .field(newFieldDefinition().name("field").type(actor).build())
-                .withInterface(interfaceType)
-                .build()
-
-        GraphQLObjectType badImpl = newObject()
-                .name("BadImpl")
-                .field(newFieldDefinition().name("field").type(prop).build())
-                .withInterface(interfaceType)
-                .build()
-
-        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
-        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
-
-        when:
-        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
-        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
-
-        then:
-        goodErrorCollector.getErrors().isEmpty()
-        !badErrorCollector.getErrors().isEmpty()
-    }
-
-    def "field is non-null"() {
-        given:
-        GraphQLInterfaceType interfaceType = newInterface()
-                .name("TestInterface")
-                .field(newFieldDefinition().name("field").type(GraphQLString).build())
-                .build()
-
-        GraphQLObjectType goodImpl = newObject()
-                .name("GoodImpl")
-                .field(newFieldDefinition().name("field").type(nonNull(GraphQLString)).build())
-                .withInterface(interfaceType)
-                .build()
-
-        GraphQLObjectType badImpl = newObject()
-                .name("BadImpl")
-                .field(newFieldDefinition().name("field").type(nonNull(GraphQLInt)).build())
-                .withInterface(interfaceType)
-                .build()
-
-        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
-        SchemaValidationErrorCollector badErrorCollector = new SchemaValidationErrorCollector()
-
-        when:
-        new TypesImplementInterfaces().check(goodImpl, goodErrorCollector)
-        new TypesImplementInterfaces().check(badImpl, badErrorCollector)
-
-        then:
-        goodErrorCollector.getErrors().isEmpty()
-        !badErrorCollector.getErrors().isEmpty()
-    }
-
 
     def "field is a non null object"() {
         given:
-        GraphQLInterfaceType memberInterface = newInterface()
+        def memberInterface = newInterface()
                 .name("TestMemberInterface")
-                .field(newFieldDefinition().name("field").type(GraphQLString).build())
+                .field(newFieldDefinition().name("field").type(GraphQLString))
                 .build()
-
-        GraphQLObjectType memberInterfaceImpl = newObject()
+        def memberInterfaceImpl = newObject()
                 .name("TestMemberInterfaceImpl")
-                .field(newFieldDefinition().name("field").type(GraphQLString).build())
+                .field(newFieldDefinition().name("field").type(GraphQLString))
                 .withInterface(memberInterface)
                 .build()
-
-        GraphQLInterfaceType testInterface = newInterface()
+        def testInterface = newInterface()
                 .name("TestInterface")
-                .field(newFieldDefinition().name("field").type(nonNull(memberInterface)).build())
+                .field(newFieldDefinition().name("field").type(nonNull(memberInterface)))
                 .build()
-
-        GraphQLObjectType testInterfaceImpl = newObject()
+        def testInterfaceImpl = newObject()
                 .name("TestInterfaceImpl")
-                .field(newFieldDefinition().name("field").type(nonNull(memberInterfaceImpl)).build())
+                .field(newFieldDefinition().name("field").type(nonNull(memberInterfaceImpl)))
                 .withInterface(testInterface)
                 .build()
 
-        SchemaValidationErrorCollector goodErrorCollector = new SchemaValidationErrorCollector()
-
-        when:
-        new TypesImplementInterfaces().check(testInterfaceImpl, goodErrorCollector)
-
-        then:
-        goodErrorCollector.getErrors().isEmpty()
+        expect:
+        errorsFor(testInterfaceImpl).isEmpty()
     }
 
     def "type can declare extra optional field arguments"() {
         given:
-
-        GraphQLInterfaceType InterfaceType = newInterface()
+        def interfaceType = newInterface()
                 .name("Interface")
                 .field(newFieldDefinition().name("argField").type(GraphQLString))
                 .build()
-
-        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
-
-        GraphQLObjectType objType = newObject()
+        def objType = newObject()
                 .name("Object")
-                .withInterface(InterfaceType)
+                .withInterface(interfaceType)
                 .field(newFieldDefinition().name("argField").type(GraphQLString)
-                        .argument(newArgument().name("arg1").type(GraphQLInt))
-                )
+                        .argument(newArgument().name("arg1").type(GraphQLInt)))
                 .build()
 
-        when:
-        new TypesImplementInterfaces().check(objType, errorCollector)
-
-        then:
-        def errors = errorCollector.getErrors()
-        errors.isEmpty()
+        expect:
+        errorsFor(objType).isEmpty()
     }
 
     def "type should declare all arguments present in implemented interface"() {
         given:
-
-        GraphQLInterfaceType InterfaceType = newInterface()
+        def interfaceType = newInterface()
                 .name("Interface")
                 .field(newFieldDefinition().name("argField").type(GraphQLString)
                         .argument(newArgument().name("arg1").type(GraphQLInt))
-                        .argument(newArgument().name("arg2").type(GraphQLInt))
-                )
+                        .argument(newArgument().name("arg2").type(GraphQLInt)))
                 .build()
-
-        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
-
-        GraphQLObjectType objType = newObject()
+        def objType = newObject()
                 .name("Object")
-                .withInterface(InterfaceType)
+                .withInterface(interfaceType)
                 .field(newFieldDefinition().name("argField").type(GraphQLString)
                         .argument(newArgument().name("argX").type(GraphQLInt))
-                        .argument(newArgument().name("argZ").type(GraphQLInt))
-                )
+                        .argument(newArgument().name("argZ").type(GraphQLInt)))
                 .build()
 
         when:
-        new TypesImplementInterfaces().check(objType, errorCollector)
+        def errors = errorsFor(objType)
 
         then:
-        def errors = errorCollector.getErrors()
-        errors.size() == 1
-        errors.iterator().next().description == "object type 'Object' does not implement interface 'Interface' because field 'argField' is missing argument(s): 'arg1, arg2'"
+        errors == ["object type 'Object' does not implement interface 'Interface' because field 'argField' is missing argument(s): 'arg1, arg2'"] as Set
     }
 
     def "type cannot declare extra non-null field arguments"() {
         given:
-
-        GraphQLInterfaceType InterfaceType = newInterface()
+        def interfaceType = newInterface()
                 .name("Interface")
                 .field(newFieldDefinition().name("argField").type(GraphQLString))
                 .build()
-
-        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
-
-        GraphQLObjectType objType = newObject()
+        def objType = newObject()
                 .name("Object")
-                .withInterface(InterfaceType)
+                .withInterface(interfaceType)
                 .field(newFieldDefinition().name("argField").type(GraphQLString)
-                        .argument(newArgument().name("arg1").type(nonNull(GraphQLInt)))
-                )
+                        .argument(newArgument().name("arg1").type(nonNull(GraphQLInt))))
                 .build()
 
         when:
-        new TypesImplementInterfaces().check(objType, errorCollector)
+        def errors = errorsFor(objType)
 
         then:
-        def errors = errorCollector.getErrors()
-        errors.size() == 1
-        errors.iterator().next().description == "object type 'Object' field 'argField' defines an additional non-optional argument 'arg1' which is not allowed because field is also defined in interface 'Interface'"
+        errors == ["object type 'Object' field 'argField' defines an additional non-optional argument 'arg1' which is not allowed because field is also defined in interface 'Interface'"] as Set
     }
 
-    def "type can change order of field arguments"() {
+    def "type can change order of fields"() {
         given:
-
-        GraphQLInterfaceType InterfaceType = newInterface()
+        def interfaceType = newInterface()
                 .name("Interface")
                 .field(newFieldDefinition().name("argField1").type(GraphQLString))
                 .field(newFieldDefinition().name("argField2").type(GraphQLString))
                 .build()
-
-        SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
-
-        GraphQLObjectType objType = newObject()
+        def objType = newObject()
                 .name("Object")
-                .withInterface(InterfaceType)
+                .withInterface(interfaceType)
                 .field(newFieldDefinition().name("argField2").type(GraphQLString))
                 .field(newFieldDefinition().name("argField1").type(GraphQLString))
                 .build()
 
+        expect:
+        errorsFor(objType).isEmpty()
+    }
+
+    def "interfaces declaring their transitive interfaces are valid"() {
         when:
-        new TypesImplementInterfaces().check(objType, errorCollector)
+        TestUtil.schema('''
+            type Query { find: Image }
+            interface Node { id: ID! }
+            interface Resource implements Node { id: ID! url: String }
+            interface Image implements Resource & Node { id: ID! url: String thumbnail: String }
+        ''')
 
         then:
-        def errors = errorCollector.getErrors()
-        errors.isEmpty()
+        noExceptionThrown()
     }
 }

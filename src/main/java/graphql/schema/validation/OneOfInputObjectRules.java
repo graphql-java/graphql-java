@@ -1,65 +1,66 @@
 package graphql.schema.validation;
 
-import graphql.ExperimentalApi;
+import graphql.Internal;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
-import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeUtil;
-import graphql.schema.GraphQLTypeVisitorStub;
-import graphql.schema.GraphQLUnmodifiedType;
-import graphql.util.TraversalControl;
-import graphql.util.TraverserContext;
 import org.jspecify.annotations.NullMarked;
 
-import java.util.LinkedHashSet;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Set;
 
-import static graphql.Assert.assertNotNull;
+import static graphql.schema.GraphQLTypeUtil.isList;
+import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static java.lang.String.format;
 
-/*
- * Spec: If the Input Object is a OneOf Input Object then:
- * The type of the input field must be nullable.
- * The input field must not have a default value.
+/**
+ * Spec: if the Input Object is a OneOf Input Object then the type of each input field must be nullable,
+ * no input field can have a default value, and the type must be inhabited by a finite value.
  */
+@Internal
 @NullMarked
-@ExperimentalApi
-public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
+public class OneOfInputObjectRules implements SchemaValidationRule {
+
+    private final SchemaValidationErrorCollector errors;
+
+    public OneOfInputObjectRules(SchemaValidationErrorCollector errors) {
+        this.errors = errors;
+    }
 
     @Override
-    public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType inputObjectType, TraverserContext<GraphQLSchemaElement> context) {
+    public void checkInputObjectType(GraphQLInputObjectType inputObjectType) {
         if (!inputObjectType.isOneOf()) {
-            return TraversalControl.CONTINUE;
+            return;
         }
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
-        if (!canBeProvidedAFiniteValue(inputObjectType, new LinkedHashSet<>())) {
-            String message = format("OneOf Input Object %s must be inhabited but all fields recursively reference only other OneOf Input Objects forming an unresolvable cycle.", inputObjectType.getName());
-            assertNotNull(errorCollector, "Schema validation requires an error collector").addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNotInhabited, message));
+        if (!canBeProvidedAFiniteValue(inputObjectType, Collections.newSetFromMap(new IdentityHashMap<>()))) {
+            addError(SchemaValidationErrorType.OneOfNotInhabited,
+                    format("OneOf Input Object %s must be inhabited but all fields recursively reference only other OneOf Input Objects forming an unresolvable cycle.", inputObjectType.getName()));
         }
-        return TraversalControl.CONTINUE;
     }
 
     private boolean canBeProvidedAFiniteValue(GraphQLInputObjectType oneOfInputObject, Set<GraphQLInputObjectType> visited) {
-        if (visited.contains(oneOfInputObject)) {
+        if (!visited.add(oneOfInputObject)) {
             return false;
         }
-        Set<GraphQLInputObjectType> nextVisited = new LinkedHashSet<>(visited);
-        nextVisited.add(oneOfInputObject);
+        boolean result = anyFieldCanBeProvidedAFiniteValue(oneOfInputObject, visited);
+        visited.remove(oneOfInputObject);
+        return result;
+    }
+
+    private boolean anyFieldCanBeProvidedAFiniteValue(GraphQLInputObjectType oneOfInputObject, Set<GraphQLInputObjectType> visited) {
         for (GraphQLInputObjectField field : oneOfInputObject.getFieldDefinitions()) {
             GraphQLType fieldType = field.getType();
-            if (GraphQLTypeUtil.isList(fieldType)) {
+            if (isList(fieldType)) {
                 return true;
             }
-            GraphQLUnmodifiedType namedFieldType = GraphQLTypeUtil.unwrapAll(fieldType);
+            GraphQLType namedFieldType = unwrapAll(fieldType);
             if (!(namedFieldType instanceof GraphQLInputObjectType)) {
                 return true;
             }
             GraphQLInputObjectType inputFieldType = (GraphQLInputObjectType) namedFieldType;
-            if (!inputFieldType.isOneOf()) {
-                return true;
-            }
-            if (canBeProvidedAFiniteValue(inputFieldType, nextVisited)) {
+            if (!inputFieldType.isOneOf() || canBeProvidedAFiniteValue(inputFieldType, visited)) {
                 return true;
             }
         }
@@ -67,22 +68,21 @@ public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
     }
 
     @Override
-    public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField inputObjectField, TraverserContext<GraphQLSchemaElement> context) {
-        GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) assertNotNull(context.getParentNode(), "Input field validation requires its containing input object");
+    public void checkInputObjectField(GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField) {
         if (!inputObjectType.isOneOf()) {
-            return TraversalControl.CONTINUE;
+            return;
         }
-        SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
-        // error messages take from the reference implementation
         if (inputObjectField.hasSetDefaultValue()) {
-            String message = format("OneOf input field %s.%s cannot have a default value.", inputObjectType.getName(), inputObjectField.getName());
-            assertNotNull(errorCollector, "Schema validation requires an error collector").addError(new SchemaValidationError(SchemaValidationErrorType.OneOfDefaultValueOnField, message));
+            addError(SchemaValidationErrorType.OneOfDefaultValueOnField,
+                    format("OneOf input field %s.%s cannot have a default value.", inputObjectType.getName(), inputObjectField.getName()));
         }
+        if (isNonNull(inputObjectField.getType())) {
+            addError(SchemaValidationErrorType.OneOfNonNullableField,
+                    format("OneOf input field %s.%s must be nullable.", inputObjectType.getName(), inputObjectField.getName()));
+        }
+    }
 
-        if (GraphQLTypeUtil.isNonNull(inputObjectField.getType())) {
-            String message = format("OneOf input field %s.%s must be nullable.", inputObjectType.getName(), inputObjectField.getName());
-            assertNotNull(errorCollector, "Schema validation requires an error collector").addError(new SchemaValidationError(SchemaValidationErrorType.OneOfNonNullableField, message));
-        }
-        return TraversalControl.CONTINUE;
+    private void addError(SchemaValidationErrorType errorType, String message) {
+        errors.addError(new SchemaValidationError(errorType, message));
     }
 }
