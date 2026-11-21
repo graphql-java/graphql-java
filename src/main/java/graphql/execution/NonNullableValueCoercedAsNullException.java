@@ -6,6 +6,7 @@ import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
 import graphql.language.VariableDefinition;
+import graphql.language.VariableReference;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLType;
@@ -70,6 +71,13 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
         super(format("Input field '%s' has coerced Null value for NonNull type '%s'",
                 inputTypeField.getName(), GraphQLTypeUtil.simplePrint(inputTypeField.getType())));
         this.path = path;
+    }
+
+    public NonNullableValueCoercedAsNullException(String directiveName, VariableReference variableReference) {
+        super(format("Variable '%s' has coerced Null value for the non-null 'if' argument of directive '@%s'",
+                variableReference.getName(), directiveName));
+        SourceLocation sourceLocation = variableReference.getSourceLocation();
+        this.sourceLocations = sourceLocation == null ? null : Collections.singletonList(sourceLocation);
     }
 
     public NonNullableValueCoercedAsNullException(GraphQLArgument graphQLArgument) {
