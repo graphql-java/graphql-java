@@ -272,6 +272,41 @@ class IncrementalCallStateDeferTest extends Specification {
         results[2].incremental[0].data["a"] == "A"
     }
 
+    def "child call is delivered after its parent call even when child completes first"() {
+        given:
+        def incrementalCallState = new IncrementalCallState()
+        def parentCall = offThread("Parent", 150, "/obj")
+        def childCall = offThread("Child", 10, "/obj/inner")
+        def siblingCall = offThread("Sibling", 30, "/other")
+
+        incrementalCallState.enqueue(parentCall)
+        incrementalCallState.enqueue(childCall, parentCall.getAlternativeCallContext())
+        incrementalCallState.enqueue(siblingCall)
+
+        when:
+        List<DelayedIncrementalPartialResult> results = startAndWaitCalls(incrementalCallState)
+
+        then:
+        assertResultsSizeAndHasNextRule(3, results)
+        results[0].incremental[0].data["sibling"] == "Sibling"
+        results[1].incremental[0].data["parent"] == "Parent"
+        results[2].incremental[0].data["child"] == "Child"
+    }
+
+    def "call with an unregistered parent context is not blocked"() {
+        given:
+        def incrementalCallState = new IncrementalCallState()
+        def unregisteredContext = new AlternativeCallContext()
+        incrementalCallState.enqueue(offThread("A", 10, "/field/path"), unregisteredContext)
+
+        when:
+        List<DelayedIncrementalPartialResult> results = startAndWaitCalls(incrementalCallState)
+
+        then:
+        assertResultsSizeAndHasNextRule(1, results)
+        results[0].incremental[0].data["a"] == "A"
+    }
+
     private static DeferredFragmentCall offThread(String data, int sleepTime, String path) {
         offThread(() -> data, sleepTime, path)
     }
