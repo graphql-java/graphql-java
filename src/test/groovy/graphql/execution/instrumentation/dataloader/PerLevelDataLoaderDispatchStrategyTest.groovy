@@ -196,6 +196,66 @@ class PerLevelDataLoaderDispatchStrategyTest extends Specification {
         strategy.initialCallStack.get(0).happenedCompletionFinishedCount > 0
     }
 
+    def "call stack keeps per-level counters beyond its initial capacity"() {
+        given:
+        def callStack = new PerLevelDataLoaderDispatchStrategy.CallStack()
+
+        when:
+        callStack.increaseHappenedExecuteObjectCalls(3)
+        callStack.increaseHappenedExecuteObjectCalls(40)
+        callStack.increaseHappenedExecuteObjectCalls(40)
+        callStack.increaseHappenedCompletionFinishedCount(40)
+
+        then:
+        callStack.get(3).happenedExecuteObjectCalls == 1
+        callStack.get(40).happenedExecuteObjectCalls == 2
+        callStack.get(40).happenedCompletionFinishedCount == 1
+        !callStack.allExecuteObjectCallsCompleted(40)
+
+        when:
+        callStack.increaseHappenedCompletionFinishedCount(40)
+
+        then:
+        callStack.allExecuteObjectCallsCompleted(40)
+        !callStack.allExecuteObjectCallsCompleted(41)
+
+        when:
+        callStack.clear()
+
+        then:
+        callStack.get(3).happenedExecuteObjectCalls == 0
+        callStack.get(40).happenedExecuteObjectCalls == 0
+    }
+
+    def "call stack counters do not lose concurrent increments"() {
+        given:
+        def callStack = new PerLevelDataLoaderDispatchStrategy.CallStack()
+        def threads = 8
+        def incrementsPerThread = 10_000
+        def startLatch = new CountDownLatch(1)
+        def executor = Executors.newFixedThreadPool(threads)
+
+        when:
+        def futures = (1..threads).collect { thread ->
+            executor.submit({
+                startLatch.await()
+                for (int i = 0; i < incrementsPerThread; i++) {
+                    int level = (thread + i) % 20
+                    callStack.increaseHappenedExecuteObjectCalls(level)
+                    callStack.increaseHappenedCompletionFinishedCount(level)
+                }
+            } as Runnable)
+        }
+        startLatch.countDown()
+        futures*.get(10, TimeUnit.SECONDS)
+        executor.shutdown()
+
+        then:
+        (0..<20).sum { callStack.get(it).happenedExecuteObjectCalls } == threads * incrementsPerThread
+        (0..<20).sum { callStack.get(it).happenedCompletionFinishedCount } == threads * incrementsPerThread
+        (0..<20).every { callStack.allExecuteObjectCallsCompleted(it) }
+    }
+
     private Map alternativeCallContextMap() {
         def field = PerLevelDataLoaderDispatchStrategy.getDeclaredField("alternativeCallContextMap")
         field.accessible = true
