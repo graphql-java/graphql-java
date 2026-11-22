@@ -329,18 +329,26 @@ public class GraphQLUnusualConfiguration {
         }
 
         /**
-         * returns true if chained data loader dispatching is enabled
+         * Returns true if the per-level strategy's chained DataLoader dispatching is enabled.
+         * Exhausted dispatching supports chaining independently of this setting.
          */
         public boolean isDataLoaderChainingEnabled() {
             return contextConfig.getBoolean(ENABLE_DATA_LOADER_CHAINING);
         }
 
+        /**
+         * Returns true if exhausted dispatching is enabled. Since version 27, this defaults to true
+         * unless per-level chained dispatching is explicitly enabled.
+         */
         public boolean isDataLoaderExhaustedDispatchingEnabled() {
-            return contextConfig.get(ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING);
+            Boolean enabled = contextConfig.get(ENABLE_DATA_LOADER_EXHAUSTED_DISPATCHING);
+            return enabled != null ? enabled : !isDataLoaderChainingEnabled();
         }
 
         /**
-         * Enables the ability that chained DataLoaders are dispatched automatically.
+         * Enables automatic dispatching of chained DataLoaders using the per-level strategy.
+         * This selects per-level dispatching when exhausted dispatching is not explicitly configured.
+         * Explicitly enabling both strategies is invalid.
          */
         @ExperimentalApi
         public DataloaderConfig enableDataLoaderChaining(boolean enable) {
@@ -351,6 +359,11 @@ public class GraphQLUnusualConfiguration {
         /**
          * Enables a dispatching strategy that will dispatch as long as there is no
          * other data fetcher or batch loader running.
+         * Since version 27, this is the default unless per-level chained dispatching is explicitly enabled.
+         * DataLoaders must be obtained through {@link graphql.schema.DataFetchingEnvironment#getDataLoader(String)}
+         * so that their load calls can be tracked, including chained loads.
+         * Set this to false to use per-level dispatching. Explicitly enabling both exhausted dispatching
+         * and per-level chained dispatching is invalid.
          */
         @ExperimentalApi
         public DataloaderConfig enableDataLoaderExhaustedDispatching(boolean enable) {

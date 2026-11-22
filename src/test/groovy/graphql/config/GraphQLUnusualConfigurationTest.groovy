@@ -133,6 +133,33 @@ class GraphQLUnusualConfigurationTest extends Specification {
         GraphQL.unusualConfiguration(graphqlContext).dataloaderConfig().isDataLoaderChainingEnabled()
     }
 
+    def "exhausted dispatch configuration reports the effective default for contexts and builders"() {
+        given:
+        def builder = GraphQLContext.newContext()
+        def config = GraphQL.unusualConfiguration(builder).dataloaderConfig()
+        if (chaining != null) {
+            config.enableDataLoaderChaining(chaining)
+        }
+        if (exhausted != null) {
+            config.enableDataLoaderExhaustedDispatching(exhausted)
+        }
+
+        expect:
+        config.isDataLoaderExhaustedDispatchingEnabled() == expected
+        GraphQL.unusualConfiguration(builder.build()).dataloaderConfig().isDataLoaderExhaustedDispatchingEnabled() == expected
+
+        where:
+        exhausted | chaining | expected
+        null      | null     | true
+        null      | false    | true
+        null      | true     | false
+        false     | null     | false
+        false     | false    | false
+        false     | true     | false
+        true      | null     | true
+        true      | false    | true
+    }
+
     def "we can access via the ExecutionInput"() {
         when:
         def eiBuilder = ExecutionInput.newExecutionInput("query q {f}")
