@@ -13,6 +13,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeReference;
+import graphql.validation.QueryComplexityLimits;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static graphql.Assert.assertTrue;
 import static graphql.Scalars.GraphQLString;
 
 @Warmup(iterations = 2, time = 5)
@@ -43,6 +45,17 @@ public class TwitterBenchmark {
     static String query = mkQuery();
     static Object queryId = "QUERY_ID";
     static GraphQL graphQL = buildGraphQL();
+
+    // the query is deliberately deeper than the default max depth enforced by validation
+    private static final QueryComplexityLimits LIMITS = QueryComplexityLimits.newLimits()
+            .maxDepth(DEPTH + 1)
+            .build();
+
+    static {
+        // fail fast rather than silently benchmarking a validation error
+        ExecutionResult result = execute();
+        assertTrue(result.getErrors().isEmpty(), "TwitterBenchmark query failed: %s", result.getErrors());
+    }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
@@ -58,7 +71,11 @@ public class TwitterBenchmark {
     }
 
     private static ExecutionResult execute() {
-        return graphQL.execute(query);
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .graphQLContext(ctx -> ctx.put(QueryComplexityLimits.KEY, LIMITS))
+                .build();
+        return graphQL.execute(executionInput);
     }
 
     public static String mkQuery() {
