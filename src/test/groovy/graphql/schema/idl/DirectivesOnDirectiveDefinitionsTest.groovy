@@ -219,6 +219,28 @@ class DirectivesOnDirectiveDefinitionsTest extends Specification {
             }
             type Query { field: String }
         '''
+        "input extension cycle" | "loop -> LoopInput" | '''
+            directive @loop(arg: LoopInput) on INPUT_FIELD_DEFINITION
+            input LoopInput {
+                base: String
+            }
+            extend input LoopInput {
+                field: String @loop
+            }
+            type Query { field: String }
+        '''
+        "enum value cycle"      | "loop -> LoopEnum"  | '''
+            directive @loop(arg: LoopEnum) on ENUM_VALUE
+            enum LoopEnum {
+                VALUE @loop
+            }
+            type Query { field: String }
+        '''
+        "scalar cycle"           | "loop -> LoopScalar" | '''
+            directive @loop(arg: LoopScalar) on SCALAR
+            scalar LoopScalar @loop
+            type Query { field: String }
+        '''
         "type-led cycle"        | "b -> YInput -> XInput -> b" | '''
             directive @a(arg: XInput) on FIELD_DEFINITION
             directive @b(arg: YInput) on INPUT_OBJECT
