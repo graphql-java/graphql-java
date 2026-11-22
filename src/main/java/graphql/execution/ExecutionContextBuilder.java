@@ -53,7 +53,7 @@ public class ExecutionContextBuilder {
     Object localContext;
     ExecutionInput executionInput;
     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
-    boolean propagateErrorsOnNonNullContractFailure = true;
+    OnError onError = OnError.PROPAGATE;
     EngineRunningState engineRunningState;
     ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
     Profiler profiler;
@@ -104,7 +104,7 @@ public class ExecutionContextBuilder {
         valueUnboxer = other.getValueUnboxer();
         executionInput = other.getExecutionInput();
         dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
-        propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
+        onError = other.getOnError();
         engineRunningState = other.getEngineRunningState();
         responseMapFactory = other.getResponseMapFactory();
         profiler = other.getProfiler();
@@ -245,8 +245,8 @@ public class ExecutionContextBuilder {
     }
 
     @ExperimentalApi
-    public ExecutionContextBuilder propagapropagateErrorsOnNonNullContractFailureeErrors(boolean propagateErrorsOnNonNullContractFailure) {
-        this.propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure;
+    public ExecutionContextBuilder onError(OnError onError) {
+        this.onError = onError;
         return this;
     }
 
