@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -86,10 +87,8 @@ public class IncrementalCallState {
         int remainingCalls = pendingCalls.get();
         while (!toEmit.isEmpty()) {
             IncrementalCall<? extends IncrementalPayload> nextCall = toEmit.poll();
-            IncrementalPayload nextPayload = readyPayloads.remove(nextCall);
-            if (nextPayload != null) {
-                remainingCalls = publishPayload(nextPayload);
-            }
+            IncrementalPayload nextPayload = Objects.requireNonNull(readyPayloads.remove(nextCall));
+            remainingCalls = publishPayload(nextPayload);
             releaseChildren(nextCall, toEmit);
         }
         return remainingCalls;
