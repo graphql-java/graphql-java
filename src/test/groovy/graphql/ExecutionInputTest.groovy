@@ -51,6 +51,45 @@ class ExecutionInputTest extends Specification {
         executionInput.toString() != null
     }
 
+    def "single-map variable accessors accept empty and singleton lists"() {
+        given:
+        def input = ExecutionInput.newExecutionInput(query).variables(variableMaps).build()
+
+        expect:
+        input.getRawVariables().toMap() == expected
+        input.getVariables() == expected
+
+        where:
+        variableMaps   | expected
+        []             | [:]
+        [[:]]          | [:]
+        [[id: 1]]      | [id: 1]
+        [[id: null]]   | [id: null]
+    }
+
+    def "single-map variable accessors reject multiple maps"() {
+        given:
+        def input = ExecutionInput.newExecutionInput(query).variables(variableMaps).build()
+
+        when:
+        input.getRawVariables()
+
+        then:
+        def rawVariablesError = thrown(AssertException)
+        rawVariablesError.message.contains('requires at most one variable map')
+
+        when:
+        input.getVariables()
+
+        then:
+        def variablesError = thrown(AssertException)
+        variablesError.message.contains('getVariablesList()')
+        input.getVariablesList() == variableMaps
+
+        where:
+        variableMaps << [[[:], [:]], [[id: 1], [id: 2]], [[id: 1], [id: 2], [id: 3]]]
+    }
+
     def "build without locale"() {
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
