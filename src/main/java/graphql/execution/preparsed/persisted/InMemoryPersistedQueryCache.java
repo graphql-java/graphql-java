@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -37,19 +38,29 @@ public class InMemoryPersistedQueryCache implements PersistedQueryCache {
                 return v;
             }
 
-            //get the query from the execution input. Make sure it's not null, empty or the APQ marker.
-            // if it is, fallback to the known queries.
-            String queryText = executionInput.getQuery();
-            if (queryText == null || queryText.isEmpty() || queryText.equals(PersistedQuerySupport.PERSISTED_QUERY_MARKER)) {
-                queryText = knownQueries.get(persistedQueryId);
-            }
-
+            String queryText = getQueryText(persistedQueryId, executionInput);
             if (queryText == null) {
                 throw new PersistedQueryNotFound(persistedQueryId);
             }
             return onCacheMiss.apply(queryText);
         });
         return CompletableFuture.completedFuture(documentEntry);
+    }
+
+    private @Nullable String getQueryText(Object persistedQueryId, ExecutionInput executionInput) {
+        // the known queries are the source of truth for an id, so they take precedence over the
+        // query text in the execution input. Only an id that is not known can be registered from the input.
+        String knownQueryText = knownQueries.get(persistedQueryId);
+        if (knownQueryText != null) {
+            return knownQueryText;
+        }
+
+        //get the query from the execution input. Make sure it's not null, empty or the APQ marker.
+        String queryText = executionInput.getQuery();
+        if (queryText == null || queryText.isEmpty() || queryText.equals(PersistedQuerySupport.PERSISTED_QUERY_MARKER)) {
+            return null;
+        }
+        return queryText;
     }
 
     public static Builder newInMemoryPersistedQueryCache() {
