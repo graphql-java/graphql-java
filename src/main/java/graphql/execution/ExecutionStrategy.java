@@ -399,7 +399,10 @@ public abstract class ExecutionStrategy {
 
         MergedSelectionSet fields = parameters.getFields();
 
-        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
+        executionContext.getIncrementalCallState().enqueue(
+                deferredExecutionSupport.createCalls(),
+                parameters.getAlternativeCallContext()
+        );
 
         // Only non-deferred fields should be considered for calculating the expected size of futures.
         Async.CombinedBuilder<FieldValueInfo> futures = Async

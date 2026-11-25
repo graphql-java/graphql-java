@@ -1874,6 +1874,190 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         ]
     }
 
+    def "nested defer is delivered after its parent defer even when nested resolves faster"() {
+        given:
+        def sdl = '''
+            type Query { obj: Obj }
+            type Obj { fast: String slow: String inner: Inner }
+            type Inner { fast: String }
+        '''
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(newTypeWiring("Query")
+                        .dataFetcher("obj", { [:] } as DataFetcher)
+                )
+                .type(newTypeWiring("Obj")
+                        .dataFetcher("fast", { "obj-fast" } as DataFetcher)
+                        .dataFetcher("slow", resolve("obj-slow", 200))
+                        .dataFetcher("inner", { [:] } as DataFetcher)
+                )
+                .type(newTypeWiring("Inner")
+                        .dataFetcher("fast", { "inner-fast" } as DataFetcher)
+                )
+                .build()
+
+        def schema = TestUtil.schema(sdl, runtimeWiring)
+                .transform({ b -> b.additionalDirective(Directives.DeferDirective) })
+        def testGraphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = '''
+            query {
+                obj {
+                    fast
+                    ... @defer(label: "parent") {
+                        slow
+                        inner {
+                            ... @defer(label: "child") {
+                                fast
+                            }
+                        }
+                    }
+                }
+            }
+        '''
+
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .graphQLContext([
+                        (ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT)             : true,
+                        (IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START): eagerStart
+                ])
+                .query(query)
+                .build()
+        IncrementalExecutionResult initialResult = testGraphQL.execute(executionInput) as IncrementalExecutionResult
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [obj: [fast: "obj-fast"]],
+                hasNext: true
+        ]
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        label: "parent",
+                                        path : ["obj"],
+                                        data : [slow: "obj-slow", inner: [:]]
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        label: "child",
+                                        path : ["obj", "inner"],
+                                        data : [fast: "inner-fast"]
+                                ]
+                        ]
+                ]
+        ]
+
+        where:
+        eagerStart << [false, true]
+    }
+
+    def "deeply nested defers are delivered in parent-before-child order when inner resolves faster"() {
+        given:
+        def sdl = '''
+            type Query { obj: Obj }
+            type Obj { fast: String slowOuter: String mid: Mid }
+            type Mid { slowMid: String inner: Inner }
+            type Inner { fast: String }
+        '''
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(newTypeWiring("Query")
+                        .dataFetcher("obj", { [:] } as DataFetcher)
+                )
+                .type(newTypeWiring("Obj")
+                        .dataFetcher("fast", { "obj-fast" } as DataFetcher)
+                        .dataFetcher("slowOuter", resolve("outer-val", 250))
+                        .dataFetcher("mid", { [:] } as DataFetcher)
+                )
+                .type(newTypeWiring("Mid")
+                        .dataFetcher("slowMid", resolve("mid-val", 100))
+                        .dataFetcher("inner", { [:] } as DataFetcher)
+                )
+                .type(newTypeWiring("Inner")
+                        .dataFetcher("fast", { "inner-val" } as DataFetcher)
+                )
+                .build()
+
+        def schema = TestUtil.schema(sdl, runtimeWiring)
+                .transform({ b -> b.additionalDirective(Directives.DeferDirective) })
+        def testGraphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = '''
+            query {
+                obj {
+                    fast
+                    ... @defer(label: "grandparent") {
+                        slowOuter
+                        mid {
+                            ... @defer(label: "parent") {
+                                slowMid
+                                inner {
+                                    ... @defer(label: "child") {
+                                        fast
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        '''
+
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .graphQLContext([
+                        (ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT)             : true,
+                        (IncrementalExecutionContextKeys.ENABLE_EAGER_DEFER_START): eagerStart
+                ])
+                .query(query)
+                .build()
+        IncrementalExecutionResult initialResult = testGraphQL.execute(executionInput) as IncrementalExecutionResult
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        label: "grandparent",
+                                        path : ["obj"],
+                                        data : [slowOuter: "outer-val", mid: [:]]
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        label: "parent",
+                                        path : ["obj", "mid"],
+                                        data : [slowMid: "mid-val", inner: [:]]
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        label: "child",
+                                        path : ["obj", "mid", "inner"],
+                                        data : [fast: "inner-val"]
+                                ]
+                        ]
+                ]
+        ]
+
+        where:
+        eagerStart << [false, true]
+    }
+
 
     private ExecutionResult executeQuery(String query) {
         return this.executeQuery(query, true, [:])
