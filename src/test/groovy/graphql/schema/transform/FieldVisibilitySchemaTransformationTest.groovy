@@ -6,16 +6,27 @@ import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLUnionType
 import graphql.schema.TypeResolver
 import graphql.schema.idl.SchemaPrinter
+import graphql.schema.validation.InvalidSchemaException
 import spock.lang.Specification
+import spock.lang.Unroll
 
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.schema.GraphQLInputObjectType.newInputObject
 import static graphql.schema.GraphQLInterfaceType.newInterface
+import static graphql.schema.GraphQLList.list
+import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLTypeReference.typeRef
+import static graphql.schema.GraphQLUnionType.newUnionType
 
 class FieldVisibilitySchemaTransformationTest extends Specification {
 
@@ -2076,6 +2087,316 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("PizzaToBeRemoved") == null
 
         and: "the resulting schema is valid - previously this would produce an invalid schema"
+        assertSchemaIsValid(restrictedSchema)
+    }
+
+    @Unroll
+    def "cascades removal when #scenario references a type whose fields are all hidden"() {
+        given:
+        def header = "directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION\n"
+        GraphQLSchema schema = TestUtil.schema(header + sdl)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType(removedType) == null
+        def queryType = restrictedSchema.getType("Query") as GraphQLObjectType
+        queryType.getFieldDefinition("keep") != null
+        assertSchemaIsValid(restrictedSchema)
+
+        where:
+        scenario                              | removedType | sdl
+        "nullable field of emptied type"      | "Empty"     | "type Query { keep: String ref: Empty } type Empty { secret: String @private }"
+        "non-null field of emptied type"      | "Empty"     | "type Query { keep: String ref: Empty! } type Empty { secret: String @private }"
+        "list field of emptied type"          | "Empty"     | "type Query { keep: String ref: [Empty] } type Empty { secret: String @private }"
+        "non-null list of emptied type"       | "Empty"     | "type Query { keep: String ref: [Empty!]! } type Empty { secret: String @private }"
+        "nullable argument of emptied input"  | "EmptyIn"   | "type Query { keep: String f(a: EmptyIn): String } input EmptyIn { secret: String @private }"
+        "non-null argument of emptied input"  | "EmptyIn"   | "type Query { keep: String f(a: EmptyIn!): String } input EmptyIn { secret: String @private }"
+        "nullable input field of emptied"     | "EmptyIn"   | "type Query { keep: String f(a: Outer): String } input Outer { keep: String ref: EmptyIn } input EmptyIn { secret: String @private }"
+        "non-null input field of emptied"     | "EmptyIn"   | "type Query { keep: String f(a: Outer): String } input Outer { keep: String ref: EmptyIn! } input EmptyIn { secret: String @private }"
+        "field of emptied interface"          | "I"         | "type Query { keep: String i: I } interface I { s: String @private } type A implements I { s: String @private }"
+        "union with all members emptied"      | "U"         | "type Query { keep: String u: U } union U = A | B type A { s: String @private } type B { s: String @private }"
+    }
+
+    def "removes only argument referencing emptied input type while preserving field and other arguments"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on INPUT_FIELD_DEFINITION
+
+        type Query {
+            keep: String
+            search(filter: EmptyFilter, limit: Int): String
+        }
+
+        input EmptyFilter {
+            secret: String @private
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType("EmptyFilter") == null
+        def searchField = (restrictedSchema.getType("Query") as GraphQLObjectType).getFieldDefinition("search")
+        searchField != null
+        searchField.getArgument("filter") == null
+        searchField.getArgument("limit") != null
+        assertSchemaIsValid(restrictedSchema)
+    }
+
+    def "cascades multi-hop deletions across object, interface, union, and input types"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+        type Query {
+            keep: String
+            entry: Level1
+            withInput(input: OuterInput): String
+        }
+
+        type Level1 {
+            level2: [Level2!]!
+        }
+
+        type Level2 {
+            unionField: Combined
+        }
+
+        union Combined = LeafA | LeafB
+
+        type LeafA {
+            iface: EmptyInterface
+        }
+
+        type LeafB {
+            secret: String @private
+        }
+
+        interface EmptyInterface {
+            secret: String @private
+        }
+
+        input OuterInput {
+            inner: InnerInput!
+        }
+
+        input InnerInput {
+            secret: String @private
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        def queryType = restrictedSchema.getType("Query") as GraphQLObjectType
+        queryType.getFieldDefinition("keep") != null
+        queryType.getFieldDefinition("entry") == null
+        def withInputField = queryType.getFieldDefinition("withInput")
+        withInputField != null
+        withInputField.getArgument("input") == null
+        ["Level1", "Level2", "Combined", "LeafA", "LeafB", "EmptyInterface", "OuterInput", "InnerInput"].each {
+            assert restrictedSchema.getType(it) == null
+        }
+        assertSchemaIsValid(restrictedSchema)
+    }
+
+    def "removes directive arguments referencing emptied input types"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on INPUT_FIELD_DEFINITION
+        directive @meta(config: EmptyConfig, label: String) on FIELD_DEFINITION
+
+        type Query {
+            keep: String @meta(config: { secret: "hidden" }, label: "ok")
+        }
+
+        input EmptyConfig {
+            secret: String @private
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType("EmptyConfig") == null
+        def directive = restrictedSchema.getDirective("meta")
+        directive.getArgument("config") == null
+        directive.getArgument("label") != null
+        def appliedDirective = (restrictedSchema.getType("Query") as GraphQLObjectType)
+                .getFieldDefinition("keep")
+                .getAppliedDirective("meta")
+        appliedDirective.getArgument("config") == null
+        appliedDirective.getArgument("label") != null
+        assertSchemaIsValid(restrictedSchema)
+    }
+
+    def "drops emptied interface from implementing object that retains other fields"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            node: Node
+            item: Item
+        }
+
+        interface Node {
+            secret: String @private
+        }
+
+        type Item implements Node {
+            secret: String @private
+            name: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType("Node") == null
+        def queryType = restrictedSchema.getType("Query") as GraphQLObjectType
+        queryType.getFieldDefinition("node") == null
+        queryType.getFieldDefinition("item") != null
+        def itemType = restrictedSchema.getType("Item") as GraphQLObjectType
+        itemType.interfaces.empty
+        itemType.getFieldDefinition("secret") == null
+        itemType.getFieldDefinition("name") != null
+        assertSchemaIsValid(restrictedSchema)
+    }
+
+    def "handles type references to emptied types across fields, inputs, arguments, interfaces, and unions"() {
+        given:
+        def privateDirective = GraphQLAppliedDirective.newDirective().name("private").build()
+        def emptyType = newObject()
+                .name("Empty")
+                .field(newFieldDefinition().name("secret").type(GraphQLString).withAppliedDirective(privateDirective))
+                .build()
+        def emptyInterface = newInterface()
+                .name("EmptyInterface")
+                .field(newFieldDefinition().name("secret").type(GraphQLString).withAppliedDirective(privateDirective))
+                .build()
+        def emptyInput = newInputObject()
+                .name("EmptyInput")
+                .field(newInputObjectField().name("secret").type(GraphQLString).withAppliedDirective(privateDirective))
+                .build()
+        def keptUnionMember = newObject()
+                .name("KeptMember")
+                .field(newFieldDefinition().name("id").type(GraphQLString))
+                .field(newFieldDefinition().name("secret").type(GraphQLString).withAppliedDirective(privateDirective))
+                .withInterface(typeRef("EmptyInterface"))
+                .build()
+        def outerInput = newInputObject()
+                .name("OuterInput")
+                .field(newInputObjectField().name("keep").type(GraphQLString))
+                .field(newInputObjectField().name("ref").type(nonNull(typeRef("EmptyInput"))))
+                .build()
+        def unionType = newUnionType()
+                .name("MixedUnion")
+                .possibleType(typeRef("Empty"))
+                .possibleType(typeRef("KeptMember"))
+                .build()
+        def query = newObject()
+                .name("Query")
+                .field(newFieldDefinition().name("keep").type(GraphQLString))
+                .field(newFieldDefinition().name("ref").type(list(typeRef("Empty"))))
+                .field(newFieldDefinition().name("iface").type(typeRef("EmptyInterface")))
+                .field(newFieldDefinition().name("unionField").type(typeRef("MixedUnion")))
+                .field(newFieldDefinition()
+                        .name("withArg")
+                        .type(GraphQLString)
+                        .argument(newArgument().name("emptyArg").type(typeRef("EmptyInput")))
+                        .argument(newArgument().name("outerArg").type(typeRef("OuterInput"))))
+                .build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("EmptyInterface", { env -> null } as TypeResolver)
+                .typeResolver("MixedUnion", { env -> null } as TypeResolver)
+                .build()
+        def schema = GraphQLSchema.newSchema()
+                .query(query)
+                .additionalType(emptyType)
+                .additionalType(emptyInterface)
+                .additionalType(emptyInput)
+                .additionalType(keptUnionMember)
+                .additionalType(outerInput)
+                .additionalType(unionType)
+                .codeRegistry(codeRegistry)
+                .build()
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getType("Empty") == null
+        restrictedSchema.getType("EmptyInterface") == null
+        restrictedSchema.getType("EmptyInput") == null
+        def restrictedQuery = restrictedSchema.getType("Query") as GraphQLObjectType
+        restrictedQuery.getFieldDefinition("keep") != null
+        restrictedQuery.getFieldDefinition("ref") == null
+        restrictedQuery.getFieldDefinition("iface") == null
+        restrictedQuery.getFieldDefinition("unionField") != null
+        def withArg = restrictedQuery.getFieldDefinition("withArg")
+        withArg.getArgument("emptyArg") == null
+        withArg.getArgument("outerArg") != null
+        def restrictedOuterInput = restrictedSchema.getType("OuterInput") as GraphQLInputObjectType
+        restrictedOuterInput.getFieldDefinition("keep") != null
+        restrictedOuterInput.getFieldDefinition("ref") == null
+        def restrictedUnion = restrictedSchema.getType("MixedUnion") as GraphQLUnionType
+        restrictedUnion.types*.name == ["KeptMember"]
+        (restrictedSchema.getType("KeptMember") as GraphQLObjectType).interfaces.empty
+    }
+
+    def "throws InvalidSchemaException when cascading deletion empties Query type"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            ref: Empty
+        }
+
+        type Empty {
+            secret: String @private
+        }
+        """)
+
+        when:
+        visibilitySchemaTransformation.apply(schema)
+
+        then:
+        thrown(InvalidSchemaException)
+    }
+
+    def "removes Mutation type when cascading deletion empties all mutation fields"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            keep: String
+        }
+
+        type Mutation {
+            doSecret: Empty
+        }
+
+        type Empty {
+            secret: String @private
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        restrictedSchema.getMutationType() == null
+        restrictedSchema.getType("Empty") == null
         assertSchemaIsValid(restrictedSchema)
     }
 
