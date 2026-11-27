@@ -1,0 +1,2324 @@
+{
+  "warmups": [
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-1.log",
+      "fork": 1,
+      "iterations_ms": [
+        3.302,
+        2.978,
+        2.98,
+        2.948,
+        2.946,
+        2.949,
+        2.95,
+        2.948,
+        2.946,
+        2.94
+      ],
+      "last_five_cv_percent": 0.13489857404705027,
+      "last_five_fitted_drift_percent": -0.29864929070793184,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-1.log",
+      "fork": 2,
+      "iterations_ms": [
+        3.281,
+        2.992,
+        2.946,
+        2.948,
+        2.937,
+        2.938,
+        2.936,
+        2.939,
+        2.943,
+        2.944
+      ],
+      "last_five_cv_percent": 0.11534574801233405,
+      "last_five_fitted_drift_percent": 0.25850340136053995,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-1.log",
+      "fork": 3,
+      "iterations_ms": [
+        3.375,
+        3.063,
+        3.046,
+        2.997,
+        3.022,
+        3.028,
+        3.016,
+        3.017,
+        3.002,
+        3.004
+      ],
+      "last_five_cv_percent": 0.35245020368625013,
+      "last_five_fitted_drift_percent": -0.8229906417999638,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-1.log",
+      "fork": 1,
+      "iterations_ms": [
+        2.066,
+        1.829,
+        1.814,
+        1.822,
+        1.812,
+        1.809,
+        1.809,
+        1.809,
+        1.811,
+        1.808
+      ],
+      "last_five_cv_percent": 0.06054859136691923,
+      "last_five_fitted_drift_percent": 4.909232918970403e-15,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-1.log",
+      "fork": 2,
+      "iterations_ms": [
+        2.068,
+        1.806,
+        1.811,
+        1.797,
+        1.794,
+        1.79,
+        1.793,
+        1.794,
+        1.804,
+        1.795
+      ],
+      "last_five_cv_percent": 0.29317507502096285,
+      "last_five_fitted_drift_percent": 0.4679144385026718,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-1.log",
+      "fork": 3,
+      "iterations_ms": [
+        2.058,
+        1.816,
+        1.803,
+        1.805,
+        1.801,
+        1.816,
+        1.819,
+        1.815,
+        1.821,
+        1.816
+      ],
+      "last_five_cv_percent": 0.1381082909432265,
+      "last_five_fitted_drift_percent": 0.04401892813909985,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-1.log",
+      "fork": 1,
+      "iterations_ms": [
+        5.007,
+        4.378,
+        4.377,
+        4.319,
+        4.274,
+        4.297,
+        4.32,
+        4.312,
+        4.294,
+        4.281
+      ],
+      "last_five_cv_percent": 0.35772548562941786,
+      "last_five_fitted_drift_percent": -0.5394345238095305,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-1.log",
+      "fork": 2,
+      "iterations_ms": [
+        5.031,
+        4.322,
+        4.297,
+        4.257,
+        4.205,
+        4.212,
+        4.207,
+        4.211,
+        4.207,
+        4.207
+      ],
+      "last_five_cv_percent": 0.05916127921492613,
+      "last_five_fitted_drift_percent": -0.09503896597604816,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-1.log",
+      "fork": 3,
+      "iterations_ms": [
+        5.093,
+        4.343,
+        4.35,
+        4.292,
+        4.272,
+        4.27,
+        4.272,
+        4.259,
+        4.251,
+        4.257
+      ],
+      "last_five_cv_percent": 0.20947687944685686,
+      "last_five_fitted_drift_percent": -0.44112816180956127,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-1.log",
+      "fork": 1,
+      "iterations_ms": [
+        3.71,
+        3.201,
+        3.168,
+        3.143,
+        3.144,
+        3.14,
+        3.144,
+        3.144,
+        3.175,
+        3.155
+      ],
+      "last_five_cv_percent": 0.45130157542451893,
+      "last_five_fitted_drift_percent": 0.7742099251173887,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-1.log",
+      "fork": 2,
+      "iterations_ms": [
+        3.768,
+        3.268,
+        3.205,
+        3.198,
+        3.178,
+        3.18,
+        3.18,
+        3.179,
+        3.182,
+        3.181
+      ],
+      "last_five_cv_percent": 0.03585006367435381,
+      "last_five_fitted_drift_percent": 0.0503081373412094,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-1.log",
+      "fork": 3,
+      "iterations_ms": [
+        3.794,
+        3.225,
+        3.234,
+        3.195,
+        3.187,
+        3.194,
+        3.179,
+        3.172,
+        3.207,
+        3.183
+      ],
+      "last_five_cv_percent": 0.4307979359192318,
+      "last_five_fitted_drift_percent": 0.07530593034201172,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-2.log",
+      "fork": 1,
+      "iterations_ms": [
+        51.257,
+        46.911,
+        46.788,
+        46.908,
+        46.95,
+        46.942,
+        47.336,
+        47.235,
+        46.888,
+        46.634
+      ],
+      "last_five_cv_percent": 0.5995748599264303,
+      "last_five_fitted_drift_percent": -0.9053970685217096,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-2.log",
+      "fork": 2,
+      "iterations_ms": [
+        50.986,
+        46.044,
+        46.027,
+        46.021,
+        46.488,
+        46.056,
+        46.508,
+        46.511,
+        46.498,
+        46.518
+      ],
+      "last_five_cv_percent": 0.43647438670483973,
+      "last_five_fitted_drift_percent": 0.7876220965052514,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-2.log",
+      "fork": 3,
+      "iterations_ms": [
+        51.297,
+        46.81,
+        46.473,
+        46.427,
+        46.329,
+        46.355,
+        46.528,
+        46.43,
+        46.469,
+        46.405
+      ],
+      "last_five_cv_percent": 0.14080413259614535,
+      "last_five_fitted_drift_percent": 0.03531636138113765,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-2.log",
+      "fork": 1,
+      "iterations_ms": [
+        34.154,
+        31.561,
+        31.401,
+        31.451,
+        31.463,
+        31.093,
+        30.972,
+        31.376,
+        31.374,
+        30.981
+      ],
+      "last_five_cv_percent": 0.6504780090569244,
+      "last_five_fitted_drift_percent": 0.22850394105111918,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-2.log",
+      "fork": 2,
+      "iterations_ms": [
+        33.994,
+        31.062,
+        31.016,
+        30.84,
+        30.986,
+        31.08,
+        31.009,
+        31.002,
+        31.007,
+        31.034
+      ],
+      "last_five_cv_percent": 0.1045037668646742,
+      "last_five_fitted_drift_percent": -0.12118711806719136,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-2.log",
+      "fork": 3,
+      "iterations_ms": [
+        33.422,
+        30.53,
+        30.41,
+        30.389,
+        30.396,
+        30.347,
+        30.272,
+        30.243,
+        30.346,
+        30.098
+      ],
+      "last_five_cv_percent": 0.3371414108306578,
+      "last_five_fitted_drift_percent": -0.560453650218766,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-2.log",
+      "fork": 1,
+      "iterations_ms": [
+        71.956,
+        63.7,
+        63.285,
+        62.759,
+        62.711,
+        62.702,
+        62.906,
+        62.779,
+        62.822,
+        62.536
+      ],
+      "last_five_cv_percent": 0.223190793597692,
+      "last_five_fitted_drift_percent": -0.2651835089005337,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-2.log",
+      "fork": 2,
+      "iterations_ms": [
+        71.218,
+        63.575,
+        63.585,
+        63.245,
+        63.062,
+        62.798,
+        63.028,
+        62.69,
+        63.451,
+        63.494
+      ],
+      "last_five_cv_percent": 0.5837710469373923,
+      "last_five_fitted_drift_percent": 1.150696916576057,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-2.log",
+      "fork": 3,
+      "iterations_ms": [
+        71.746,
+        63.27,
+        62.712,
+        62.764,
+        62.8,
+        62.193,
+        62.521,
+        62.569,
+        62.216,
+        61.983
+      ],
+      "last_five_cv_percent": 0.39330670448091876,
+      "last_five_fitted_drift_percent": -0.46551646644107947,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-2.log",
+      "fork": 1,
+      "iterations_ms": [
+        55.624,
+        49.309,
+        48.445,
+        47.928,
+        47.829,
+        47.841,
+        47.833,
+        48.201,
+        48.219,
+        48.364
+      ],
+      "last_five_cv_percent": 0.5008586110443444,
+      "last_five_fitted_drift_percent": 1.1910603930831953,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-2.log",
+      "fork": 2,
+      "iterations_ms": [
+        54.888,
+        47.636,
+        47.525,
+        47.701,
+        47.411,
+        47.287,
+        46.971,
+        46.893,
+        47.302,
+        47.08
+      ],
+      "last_five_cv_percent": 0.39063401224097877,
+      "last_five_fitted_drift_percent": -0.07047844675692867,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-2.log",
+      "fork": 3,
+      "iterations_ms": [
+        55.252,
+        48.1,
+        47.669,
+        47.755,
+        47.603,
+        47.368,
+        47.609,
+        47.479,
+        47.51,
+        47.418
+      ],
+      "last_five_cv_percent": 0.19384409447797962,
+      "last_five_fitted_drift_percent": 0.0008425167660756951,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-3.log",
+      "fork": 1,
+      "iterations_ms": [
+        162.869,
+        139.735,
+        140.89,
+        139.072,
+        139.233,
+        138.834,
+        139.29,
+        138.783,
+        138.553,
+        139.234
+      ],
+      "last_five_cv_percent": 0.22605573832271408,
+      "last_five_fitted_drift_percent": 0.01813748211443214,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-3.log",
+      "fork": 2,
+      "iterations_ms": [
+        162.509,
+        139.299,
+        139.079,
+        138.642,
+        137.475,
+        137.788,
+        138.214,
+        137.06,
+        137.563,
+        137.015
+      ],
+      "last_five_cv_percent": 0.3674703431515133,
+      "last_five_fitted_drift_percent": -0.638997149671357,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-3.log",
+      "fork": 3,
+      "iterations_ms": [
+        164.371,
+        142.149,
+        141.9,
+        141.53,
+        140.255,
+        140.392,
+        139.98,
+        140.011,
+        140.17,
+        139.997
+      ],
+      "last_five_cv_percent": 0.12494977516352397,
+      "last_five_fitted_drift_percent": -0.17129398329882692,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-3.log",
+      "fork": 1,
+      "iterations_ms": [
+        94.789,
+        80.335,
+        80.527,
+        80.682,
+        80.36,
+        80.22,
+        80.198,
+        80.309,
+        80.122,
+        79.835
+      ],
+      "last_five_cv_percent": 0.22636202512490472,
+      "last_five_fitted_drift_percent": -0.42227790478282323,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-3.log",
+      "fork": 2,
+      "iterations_ms": [
+        94.849,
+        80.183,
+        80.165,
+        79.856,
+        80.064,
+        79.223,
+        79.323,
+        79.44,
+        79.225,
+        79.327
+      ],
+      "last_five_cv_percent": 0.11299639748513131,
+      "last_five_fitted_drift_percent": 0.05548018096626273,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-3.log",
+      "fork": 3,
+      "iterations_ms": [
+        95.344,
+        79.319,
+        80.115,
+        80.275,
+        79.527,
+        80.023,
+        80.045,
+        79.333,
+        80.077,
+        78.874
+      ],
+      "last_five_cv_percent": 0.6811739624811903,
+      "last_five_fitted_drift_percent": -1.1376872715588249,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-3.log",
+      "fork": 1,
+      "iterations_ms": [
+        248.176,
+        207.97,
+        205.482,
+        204.717,
+        205.881,
+        204.897,
+        204.403,
+        204.387,
+        204.419,
+        205.761
+      ],
+      "last_five_cv_percent": 0.28919027982313844,
+      "last_five_fitted_drift_percent": 0.3406692470799485,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-3.log",
+      "fork": 2,
+      "iterations_ms": [
+        252.949,
+        205.842,
+        205.776,
+        204.58,
+        204.124,
+        204.099,
+        205.055,
+        204.625,
+        203.514,
+        204.319
+      ],
+      "last_five_cv_percent": 0.2823950582382499,
+      "last_five_fitted_drift_percent": -0.21554171250924992,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-3.log",
+      "fork": 3,
+      "iterations_ms": [
+        247.477,
+        204.312,
+        203.304,
+        203.124,
+        203.314,
+        203.235,
+        203.569,
+        203.378,
+        204.086,
+        203.94
+      ],
+      "last_five_cv_percent": 0.17817606943299746,
+      "last_five_fitted_drift_percent": 0.378508124076808,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-3.log",
+      "fork": 1,
+      "iterations_ms": [
+        178.749,
+        147.804,
+        147.994,
+        147.0,
+        146.7,
+        149.058,
+        146.903,
+        145.101,
+        145.518,
+        145.067
+      ],
+      "last_five_cv_percent": 1.1605188641393092,
+      "last_five_fitted_drift_percent": -2.5605244058951824,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-3.log",
+      "fork": 2,
+      "iterations_ms": [
+        176.857,
+        146.756,
+        145.048,
+        144.98,
+        147.183,
+        145.586,
+        144.49,
+        145.299,
+        144.135,
+        144.974
+      ],
+      "last_five_cv_percent": 0.4066225606830976,
+      "last_five_fitted_drift_percent": -0.43589644491805596,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-3.log",
+      "fork": 3,
+      "iterations_ms": [
+        181.09,
+        147.483,
+        147.028,
+        149.622,
+        147.966,
+        147.039,
+        147.135,
+        146.314,
+        146.77,
+        146.852
+      ],
+      "last_five_cv_percent": 0.2171850046333154,
+      "last_five_fitted_drift_percent": -0.20133222541579532,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-4.log",
+      "fork": 1,
+      "iterations_ms": [
+        2244.538,
+        1833.559,
+        1823.856,
+        1826.939,
+        1811.126,
+        1823.294,
+        1810.231,
+        1799.514,
+        1842.646,
+        1803.09
+      ],
+      "last_five_cv_percent": 0.9675748249154015,
+      "last_five_fitted_drift_percent": -0.17608102414698887,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-4.log",
+      "fork": 2,
+      "iterations_ms": [
+        2240.776,
+        1823.355,
+        1850.848,
+        1802.816,
+        1808.203,
+        1803.898,
+        1855.414,
+        1814.861,
+        1785.37,
+        1821.773
+      ],
+      "last_five_cv_percent": 1.423120658333289,
+      "last_five_fitted_drift_percent": -0.7552649858236427,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-4.log",
+      "fork": 3,
+      "iterations_ms": [
+        2226.847,
+        1798.639,
+        1831.035,
+        1806.71,
+        1786.733,
+        1814.6,
+        1796.903,
+        1796.917,
+        1814.695,
+        1796.532
+      ],
+      "last_five_cv_percent": 0.5424556904365582,
+      "last_five_fitted_drift_percent": -0.406756495015826,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-4.log",
+      "fork": 1,
+      "iterations_ms": [
+        1190.153,
+        1019.86,
+        1000.167,
+        993.741,
+        1003.378,
+        1001.169,
+        1002.291,
+        997.703,
+        998.634,
+        1008.671
+      ],
+      "last_five_cv_percent": 0.4311327840001563,
+      "last_five_fitted_drift_percent": 0.4531126084862714,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-4.log",
+      "fork": 2,
+      "iterations_ms": [
+        1159.02,
+        994.594,
+        991.397,
+        984.438,
+        999.929,
+        975.947,
+        989.681,
+        990.606,
+        989.726,
+        987.268
+      ],
+      "last_five_cv_percent": 0.6190756790512001,
+      "last_five_fitted_drift_percent": 0.9197628814236849,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-4.log",
+      "fork": 3,
+      "iterations_ms": [
+        1178.824,
+        991.254,
+        988.8,
+        974.236,
+        984.396,
+        972.57,
+        977.185,
+        975.967,
+        973.287,
+        974.225
+      ],
+      "last_five_cv_percent": 0.19551840362572234,
+      "last_five_fitted_drift_percent": -0.024131818829137505,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-4.log",
+      "fork": 1,
+      "iterations_ms": [
+        2925.246,
+        2310.649,
+        2313.154,
+        2290.995,
+        2293.069,
+        2270.906,
+        2279.418,
+        2264.555,
+        2314.417,
+        2280.485
+      ],
+      "last_five_cv_percent": 0.8449872933376641,
+      "last_five_fitted_drift_percent": 0.9493083171359757,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-4.log",
+      "fork": 2,
+      "iterations_ms": [
+        2874.838,
+        2320.238,
+        2288.948,
+        2315.466,
+        2287.337,
+        2264.556,
+        2300.113,
+        2327.487,
+        2273.375,
+        2291.976
+      ],
+      "last_five_cv_percent": 1.0742699605245494,
+      "last_five_fitted_drift_percent": 0.49054301254191357,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-4.log",
+      "fork": 3,
+      "iterations_ms": [
+        2832.93,
+        2286.238,
+        2252.507,
+        2264.281,
+        2296.476,
+        2257.5,
+        2271.181,
+        2257.248,
+        2252.551,
+        2310.477
+      ],
+      "last_five_cv_percent": 1.047891551097143,
+      "last_five_fitted_drift_percent": 1.538890313885225,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-4.log",
+      "fork": 1,
+      "iterations_ms": [
+        1792.908,
+        1460.202,
+        1457.721,
+        1460.369,
+        1446.501,
+        1455.952,
+        1451.659,
+        1453.832,
+        1438.926,
+        1448.822
+      ],
+      "last_five_cv_percent": 0.4584943121358,
+      "last_five_fitted_drift_percent": -0.7447175829689242,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-4.log",
+      "fork": 2,
+      "iterations_ms": [
+        1811.449,
+        1465.259,
+        1462.484,
+        1454.154,
+        1458.715,
+        1439.555,
+        1473.519,
+        1450.734,
+        1456.276,
+        1439.263
+      ],
+      "last_five_cv_percent": 0.9740506261639623,
+      "last_five_fitted_drift_percent": -0.49114610446367213,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-4.log",
+      "fork": 3,
+      "iterations_ms": [
+        1782.275,
+        1483.29,
+        1482.246,
+        1480.312,
+        1480.97,
+        1479.197,
+        1484.574,
+        1471.328,
+        1473.197,
+        1469.418
+      ],
+      "last_five_cv_percent": 0.42282169150687665,
+      "last_five_fitted_drift_percent": -0.8386066469912001,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-5.log",
+      "fork": 1,
+      "iterations_ms": [
+        10508.203,
+        9001.04,
+        8709.372,
+        8743.375,
+        8769.486,
+        8819.799,
+        8655.839,
+        8766.314,
+        8756.932,
+        8815.549
+      ],
+      "last_five_cv_percent": 0.7552213852444317,
+      "last_five_fitted_drift_percent": 0.42265981166525995,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-5.log",
+      "fork": 2,
+      "iterations_ms": [
+        10491.244,
+        9057.995,
+        9050.056,
+        9000.345,
+        9031.261,
+        8903.124,
+        9069.801,
+        8867.888,
+        9076.58,
+        9088.904
+      ],
+      "last_five_cv_percent": 1.1844997314959855,
+      "last_five_fitted_drift_percent": 1.6812714007553287,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTime-5.log",
+      "fork": 3,
+      "iterations_ms": [
+        10867.875,
+        8983.375,
+        8966.128,
+        8838.787,
+        8719.188,
+        8814.477,
+        8681.938,
+        8805.62,
+        8695.931,
+        8696.439
+      ],
+      "last_five_cv_percent": 0.7472576106596774,
+      "last_five_fitted_drift_percent": -1.016528317527155,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-5.log",
+      "fork": 1,
+      "iterations_ms": [
+        5473.742,
+        4639.521,
+        4619.722,
+        4563.241,
+        4461.488,
+        4592.574,
+        4390.807,
+        4472.713,
+        4435.382,
+        4530.776
+      ],
+      "last_five_cv_percent": 1.7682403613097424,
+      "last_five_fitted_drift_percent": -0.7048444554097397,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-5.log",
+      "fork": 2,
+      "iterations_ms": [
+        5325.324,
+        4561.983,
+        4624.503,
+        4378.729,
+        4476.195,
+        4408.14,
+        4458.544,
+        4323.883,
+        4428.697,
+        4427.851
+      ],
+      "last_five_cv_percent": 1.1587624272915291,
+      "last_five_fitted_drift_percent": 0.0868594371644445,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkBuildSchemaAvgTimeFast-5.log",
+      "fork": 3,
+      "iterations_ms": [
+        5358.951,
+        4643.109,
+        4599.928,
+        4444.856,
+        4556.861,
+        4552.486,
+        4525.976,
+        4514.351,
+        4446.987,
+        4499.81
+      ],
+      "last_five_cv_percent": 0.8685573558613,
+      "last_five_fitted_drift_percent": -1.6357070951981738,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-5.log",
+      "fork": 1,
+      "iterations_ms": [
+        11598.611,
+        10212.473,
+        10005.205,
+        9931.754,
+        9905.95,
+        10010.834,
+        9967.424,
+        9846.411,
+        9873.833,
+        9926.526
+      ],
+      "last_five_cv_percent": 0.6752109388876125,
+      "last_five_fitted_drift_percent": -1.0567530561393421,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-5.log",
+      "fork": 2,
+      "iterations_ms": [
+        11546.088,
+        9801.443,
+        9631.704,
+        9779.639,
+        9866.908,
+        9731.099,
+        9653.126,
+        9577.416,
+        9848.397,
+        9678.122
+      ],
+      "last_five_cv_percent": 1.0396959247863053,
+      "last_five_fitted_drift_percent": 0.36840746277028913,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTime-5.log",
+      "fork": 3,
+      "iterations_ms": [
+        11144.766,
+        9565.436,
+        9446.768,
+        9536.22,
+        9381.311,
+        9400.427,
+        9381.384,
+        9466.472,
+        9358.166,
+        9414.63
+      ],
+      "last_five_cv_percent": 0.43325987317677117,
+      "last_five_fitted_drift_percent": 0.022066699064895057,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-5.log",
+      "fork": 1,
+      "iterations_ms": [
+        6595.492,
+        5519.607,
+        5495.68,
+        5328.352,
+        5466.627,
+        5388.877,
+        5417.139,
+        5316.043,
+        5416.379,
+        5424.895
+      ],
+      "last_five_cv_percent": 0.8337133137162331,
+      "last_five_fitted_drift_percent": 0.5286883487289931,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-5.log",
+      "fork": 2,
+      "iterations_ms": [
+        6219.264,
+        5268.505,
+        5381.033,
+        5378.285,
+        5291.658,
+        5295.425,
+        5367.498,
+        5221.037,
+        5332.472,
+        5504.288
+      ],
+      "last_five_cv_percent": 1.9593383168494622,
+      "last_five_fitted_drift_percent": 2.8644437724731886,
+      "requires_inspection": false
+    },
+    {
+      "log": "baseline-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-5.log",
+      "fork": 3,
+      "iterations_ms": [
+        6325.936,
+        5235.437,
+        5238.575,
+        5243.186,
+        5212.721,
+        5170.614,
+        5072.969,
+        5097.849,
+        5067.216,
+        5180.08
+      ],
+      "last_five_cv_percent": 1.0538261818465413,
+      "last_five_fitted_drift_percent": 0.10300629245815578,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-1.log",
+      "fork": 1,
+      "iterations_ms": [
+        3.003,
+        2.729,
+        2.708,
+        2.714,
+        2.713,
+        2.715,
+        2.714,
+        2.683,
+        2.681,
+        2.679
+      ],
+      "last_five_cv_percent": 0.6831398672709943,
+      "last_five_fitted_drift_percent": -1.5587885985748218,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-1.log",
+      "fork": 2,
+      "iterations_ms": [
+        3.105,
+        2.808,
+        2.768,
+        2.766,
+        2.772,
+        2.754,
+        2.747,
+        2.749,
+        2.748,
+        2.745
+      ],
+      "last_five_cv_percent": 0.12230034427687922,
+      "last_five_fitted_drift_percent": -0.24739867568943402,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-1.log",
+      "fork": 3,
+      "iterations_ms": [
+        3.04,
+        2.743,
+        2.716,
+        2.704,
+        2.704,
+        2.729,
+        2.7,
+        2.711,
+        2.719,
+        2.712
+      ],
+      "last_five_cv_percent": 0.39458435592042557,
+      "last_five_fitted_drift_percent": -0.22105961240881472,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-1.log",
+      "fork": 1,
+      "iterations_ms": [
+        1.949,
+        1.727,
+        1.719,
+        1.725,
+        1.724,
+        1.718,
+        1.723,
+        1.736,
+        1.718,
+        1.72
+      ],
+      "last_five_cv_percent": 0.43817959577891796,
+      "last_five_fitted_drift_percent": -0.023215322112596908,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-1.log",
+      "fork": 2,
+      "iterations_ms": [
+        1.925,
+        1.711,
+        1.713,
+        1.701,
+        1.695,
+        1.696,
+        1.695,
+        1.702,
+        1.692,
+        1.71
+      ],
+      "last_five_cv_percent": 0.4203312789018741,
+      "last_five_fitted_drift_percent": 0.5885815185403157,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-1.log",
+      "fork": 3,
+      "iterations_ms": [
+        1.998,
+        1.774,
+        1.765,
+        1.77,
+        1.761,
+        1.753,
+        1.748,
+        1.751,
+        1.771,
+        1.767
+      ],
+      "last_five_cv_percent": 0.5856444903860627,
+      "last_five_fitted_drift_percent": 1.1604095563139916,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-1.log",
+      "fork": 1,
+      "iterations_ms": [
+        4.691,
+        4.079,
+        4.047,
+        3.987,
+        3.998,
+        4.014,
+        4.03,
+        3.998,
+        4.026,
+        4.03
+      ],
+      "last_five_cv_percent": 0.341836282959849,
+      "last_five_fitted_drift_percent": 0.2786346900189031,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-1.log",
+      "fork": 2,
+      "iterations_ms": [
+        4.747,
+        4.051,
+        4.035,
+        3.973,
+        3.964,
+        4.004,
+        4.006,
+        4.012,
+        3.979,
+        3.966
+      ],
+      "last_five_cv_percent": 0.49692980103588974,
+      "last_five_fitted_drift_percent": -1.0317023088095245,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-1.log",
+      "fork": 3,
+      "iterations_ms": [
+        4.82,
+        4.124,
+        4.093,
+        4.076,
+        4.079,
+        4.092,
+        4.073,
+        4.067,
+        4.081,
+        4.079
+      ],
+      "last_five_cv_percent": 0.22975101559674785,
+      "last_five_fitted_drift_percent": -0.17653981953707135,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-1.log",
+      "fork": 1,
+      "iterations_ms": [
+        3.599,
+        3.076,
+        3.048,
+        3.039,
+        3.021,
+        3.025,
+        3.021,
+        3.023,
+        3.025,
+        3.026
+      ],
+      "last_five_cv_percent": 0.06613756613756436,
+      "last_five_fitted_drift_percent": 0.0793650793650765,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-1.log",
+      "fork": 2,
+      "iterations_ms": [
+        3.666,
+        3.067,
+        3.035,
+        3.024,
+        3.029,
+        3.025,
+        3.028,
+        3.029,
+        3.03,
+        3.03
+      ],
+      "last_five_cv_percent": 0.06847325767179785,
+      "last_five_fitted_drift_percent": 0.15849953770967598,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-1.log",
+      "fork": 3,
+      "iterations_ms": [
+        3.735,
+        3.127,
+        3.088,
+        3.062,
+        3.058,
+        3.06,
+        3.058,
+        3.07,
+        3.087,
+        3.098
+      ],
+      "last_five_cv_percent": 0.5659646584051582,
+      "last_five_fitted_drift_percent": 1.3660313536720223,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-2.log",
+      "fork": 1,
+      "iterations_ms": [
+        48.495,
+        43.908,
+        43.978,
+        43.746,
+        43.94,
+        43.846,
+        44.4,
+        44.165,
+        43.929,
+        43.834
+      ],
+      "last_five_cv_percent": 0.5533374400397851,
+      "last_five_fitted_drift_percent": -0.4496443721783528,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-2.log",
+      "fork": 2,
+      "iterations_ms": [
+        48.166,
+        43.714,
+        43.617,
+        43.539,
+        43.398,
+        43.483,
+        43.623,
+        43.494,
+        43.644,
+        43.82
+      ],
+      "last_five_cv_percent": 0.31390779988937706,
+      "last_five_fitted_drift_percent": 0.637427544207212,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-2.log",
+      "fork": 3,
+      "iterations_ms": [
+        47.784,
+        43.744,
+        43.322,
+        43.043,
+        43.364,
+        43.495,
+        43.252,
+        43.129,
+        43.467,
+        43.339
+      ],
+      "last_five_cv_percent": 0.3506290134243015,
+      "last_five_fitted_drift_percent": -0.08953212541881772,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-2.log",
+      "fork": 1,
+      "iterations_ms": [
+        32.642,
+        30.11,
+        30.323,
+        29.977,
+        30.234,
+        30.248,
+        30.159,
+        30.254,
+        30.088,
+        29.993
+      ],
+      "last_five_cv_percent": 0.36704595810459123,
+      "last_five_fitted_drift_percent": -0.7708535112974527,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-2.log",
+      "fork": 2,
+      "iterations_ms": [
+        31.53,
+        28.822,
+        28.869,
+        28.788,
+        28.883,
+        28.946,
+        28.813,
+        28.721,
+        28.847,
+        28.56
+      ],
+      "last_five_cv_percent": 0.5065005025215704,
+      "last_five_fitted_drift_percent": -1.0258049719571651,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-2.log",
+      "fork": 3,
+      "iterations_ms": [
+        32.24,
+        29.38,
+        29.329,
+        29.135,
+        29.129,
+        29.04,
+        29.05,
+        29.181,
+        29.077,
+        29.059
+      ],
+      "last_five_cv_percent": 0.1970934569294904,
+      "last_five_fitted_drift_percent": 0.0894042240057285,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-2.log",
+      "fork": 1,
+      "iterations_ms": [
+        69.238,
+        60.807,
+        59.957,
+        60.109,
+        59.632,
+        60.013,
+        60.177,
+        59.843,
+        60.261,
+        59.445
+      ],
+      "last_five_cv_percent": 0.5396746933513793,
+      "last_five_fitted_drift_percent": -0.7019440246347606,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-2.log",
+      "fork": 2,
+      "iterations_ms": [
+        67.908,
+        61.276,
+        60.482,
+        60.473,
+        60.028,
+        60.075,
+        59.885,
+        59.847,
+        59.907,
+        59.954
+      ],
+      "last_five_cv_percent": 0.14683674155592186,
+      "last_five_fitted_drift_percent": -0.1468291576010825,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-2.log",
+      "fork": 3,
+      "iterations_ms": [
+        68.569,
+        61.644,
+        61.182,
+        60.692,
+        60.342,
+        61.108,
+        60.536,
+        60.165,
+        60.772,
+        60.069
+      ],
+      "last_five_cv_percent": 0.7098294219459238,
+      "last_five_fitted_drift_percent": -1.2172476457954677,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-2.log",
+      "fork": 1,
+      "iterations_ms": [
+        53.555,
+        46.935,
+        47.04,
+        46.809,
+        46.424,
+        46.294,
+        46.26,
+        46.115,
+        46.302,
+        46.24
+      ],
+      "last_five_cv_percent": 0.1631267853750304,
+      "last_five_fitted_drift_percent": -0.05709070935205358,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-2.log",
+      "fork": 2,
+      "iterations_ms": [
+        52.866,
+        46.018,
+        45.798,
+        45.69,
+        45.413,
+        45.433,
+        45.353,
+        45.487,
+        45.51,
+        45.37
+      ],
+      "last_five_cv_percent": 0.15244202080764102,
+      "last_five_fitted_drift_percent": 0.027294378678680627,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-2.log",
+      "fork": 3,
+      "iterations_ms": [
+        53.01,
+        47.841,
+        47.433,
+        47.463,
+        47.383,
+        47.244,
+        47.306,
+        47.185,
+        47.331,
+        47.24
+      ],
+      "last_five_cv_percent": 0.1226072638943379,
+      "last_five_fitted_drift_percent": 0.014388123873291511,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-3.log",
+      "fork": 1,
+      "iterations_ms": [
+        147.916,
+        125.829,
+        124.869,
+        126.25,
+        125.329,
+        125.134,
+        125.276,
+        125.564,
+        125.589,
+        123.881
+      ],
+      "last_five_cv_percent": 0.561296232879836,
+      "last_five_fitted_drift_percent": -0.7012618236005136,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-3.log",
+      "fork": 2,
+      "iterations_ms": [
+        140.393,
+        119.806,
+        119.698,
+        120.422,
+        120.061,
+        119.152,
+        119.501,
+        118.972,
+        118.825,
+        119.006
+      ],
+      "last_five_cv_percent": 0.21570573714530597,
+      "last_five_fitted_drift_percent": -0.32512897678418007,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-3.log",
+      "fork": 3,
+      "iterations_ms": [
+        144.552,
+        122.964,
+        124.783,
+        124.665,
+        124.061,
+        123.953,
+        123.055,
+        122.715,
+        123.817,
+        122.935
+      ],
+      "last_five_cv_percent": 0.4495820482644234,
+      "last_five_fitted_drift_percent": -0.4133176527839783,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-3.log",
+      "fork": 1,
+      "iterations_ms": [
+        88.355,
+        73.957,
+        74.688,
+        73.796,
+        73.798,
+        74.029,
+        74.481,
+        74.44,
+        74.41,
+        74.037
+      ],
+      "last_five_cv_percent": 0.30473667949375866,
+      "last_five_fitted_drift_percent": -0.029617902137054637,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-3.log",
+      "fork": 2,
+      "iterations_ms": [
+        88.777,
+        74.328,
+        74.256,
+        74.759,
+        73.899,
+        73.817,
+        74.018,
+        74.058,
+        73.89,
+        73.949
+      ],
+      "last_five_cv_percent": 0.13096191739227037,
+      "last_five_fitted_drift_percent": 0.07356679973603036,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-3.log",
+      "fork": 3,
+      "iterations_ms": [
+        87.58,
+        73.995,
+        73.893,
+        73.549,
+        73.169,
+        72.635,
+        72.706,
+        72.698,
+        72.627,
+        72.662
+      ],
+      "last_five_cv_percent": 0.04924101641192094,
+      "last_five_fitted_drift_percent": -0.013761669896075,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-3.log",
+      "fork": 1,
+      "iterations_ms": [
+        229.378,
+        190.057,
+        188.373,
+        190.496,
+        192.019,
+        191.412,
+        189.672,
+        188.729,
+        189.952,
+        188.993
+      ],
+      "last_five_cv_percent": 0.5542708216868552,
+      "last_five_fitted_drift_percent": -0.9608351128528079,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-3.log",
+      "fork": 2,
+      "iterations_ms": [
+        229.463,
+        190.293,
+        188.285,
+        187.582,
+        188.089,
+        187.022,
+        187.289,
+        187.514,
+        188.736,
+        190.044
+      ],
+      "last_five_cv_percent": 0.6694772251780078,
+      "last_five_fitted_drift_percent": 1.5928046310619317,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-3.log",
+      "fork": 3,
+      "iterations_ms": [
+        229.593,
+        190.332,
+        189.168,
+        188.905,
+        188.448,
+        188.652,
+        188.644,
+        188.137,
+        188.716,
+        190.448
+      ],
+      "last_five_cv_percent": 0.4687965728296194,
+      "last_five_fitted_drift_percent": 0.7757805709736626,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-3.log",
+      "fork": 1,
+      "iterations_ms": [
+        170.992,
+        139.571,
+        138.688,
+        138.36,
+        137.835,
+        137.692,
+        137.818,
+        137.04,
+        138.151,
+        137.392
+      ],
+      "last_five_cv_percent": 0.3071579841493478,
+      "last_five_fitted_drift_percent": -0.07760578875239955,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-3.log",
+      "fork": 2,
+      "iterations_ms": [
+        166.948,
+        139.218,
+        138.84,
+        139.028,
+        137.927,
+        137.066,
+        136.573,
+        136.449,
+        138.109,
+        135.91
+      ],
+      "last_five_cv_percent": 0.6058787828920528,
+      "last_five_fitted_drift_percent": -0.22686509566486246,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-3.log",
+      "fork": 3,
+      "iterations_ms": [
+        166.957,
+        138.294,
+        137.009,
+        136.693,
+        136.679,
+        136.626,
+        137.11,
+        136.675,
+        137.868,
+        135.787
+      ],
+      "last_five_cv_percent": 0.5552040713312913,
+      "last_five_fitted_drift_percent": -0.2689798937529467,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-4.log",
+      "fork": 1,
+      "iterations_ms": [
+        1844.301,
+        1528.47,
+        1546.644,
+        1535.01,
+        1510.208,
+        1526.791,
+        1517.652,
+        1515.12,
+        1505.958,
+        1545.245
+      ],
+      "last_five_cv_percent": 0.9781661624673994,
+      "last_five_fitted_drift_percent": 0.6625877079915462,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-4.log",
+      "fork": 2,
+      "iterations_ms": [
+        1840.765,
+        1527.834,
+        1511.294,
+        1528.583,
+        1509.997,
+        1510.121,
+        1522.439,
+        1524.913,
+        1529.752,
+        1509.564
+      ],
+      "last_five_cv_percent": 0.5974803008035545,
+      "last_five_fitted_drift_percent": 0.16320053117178435,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-4.log",
+      "fork": 3,
+      "iterations_ms": [
+        1873.718,
+        1543.546,
+        1543.028,
+        1530.882,
+        1532.053,
+        1541.949,
+        1520.283,
+        1530.938,
+        1548.35,
+        1529.879
+      ],
+      "last_five_cv_percent": 0.7163798892982609,
+      "last_five_fitted_drift_percent": 0.10238028291840066,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-4.log",
+      "fork": 1,
+      "iterations_ms": [
+        1040.581,
+        859.438,
+        851.925,
+        844.896,
+        861.615,
+        848.04,
+        852.875,
+        850.727,
+        848.03,
+        867.621
+      ],
+      "last_five_cv_percent": 0.9576597565959794,
+      "last_five_fitted_drift_percent": 1.6083732708300091,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-4.log",
+      "fork": 2,
+      "iterations_ms": [
+        1052.4,
+        890.848,
+        887.758,
+        882.516,
+        876.692,
+        883.649,
+        878.61,
+        876.533,
+        885.79,
+        888.561
+      ],
+      "last_five_cv_percent": 0.5651697051833099,
+      "last_five_fitted_drift_percent": 0.7706072520197066,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-4.log",
+      "fork": 3,
+      "iterations_ms": [
+        1046.021,
+        875.223,
+        855.829,
+        850.996,
+        875.842,
+        851.233,
+        854.301,
+        857.85,
+        859.47,
+        854.491
+      ],
+      "last_five_cv_percent": 0.3785193179567916,
+      "last_five_fitted_drift_percent": 0.5463669636187896,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-4.log",
+      "fork": 1,
+      "iterations_ms": [
+        2632.616,
+        2046.9,
+        2032.72,
+        2033.148,
+        1998.904,
+        2047.804,
+        2011.864,
+        2036.483,
+        2005.283,
+        2009.576
+      ],
+      "last_five_cv_percent": 0.9290849867427434,
+      "last_five_fitted_drift_percent": -1.6425065349554644,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-4.log",
+      "fork": 2,
+      "iterations_ms": [
+        2640.526,
+        2052.762,
+        2058.128,
+        2095.489,
+        2053.843,
+        2043.122,
+        2071.735,
+        2060.826,
+        2073.385,
+        2083.638
+      ],
+      "last_five_cv_percent": 0.7446549350810352,
+      "last_five_fitted_drift_percent": 1.6003939335929966,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-4.log",
+      "fork": 3,
+      "iterations_ms": [
+        2627.613,
+        2053.637,
+        2007.467,
+        1997.606,
+        2008.878,
+        2014.949,
+        2008.537,
+        1990.021,
+        1981.796,
+        1995.195
+      ],
+      "last_five_cv_percent": 0.6771923629425467,
+      "last_five_fitted_drift_percent": -1.326240193431804,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-4.log",
+      "fork": 1,
+      "iterations_ms": [
+        1701.02,
+        1357.422,
+        1342.662,
+        1340.843,
+        1334.777,
+        1346.959,
+        1328.707,
+        1332.032,
+        1333.85,
+        1345.338
+      ],
+      "last_five_cv_percent": 0.615881169425487,
+      "last_five_fitted_drift_percent": 0.056857556716223744,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-4.log",
+      "fork": 2,
+      "iterations_ms": [
+        1676.228,
+        1330.817,
+        1335.193,
+        1335.476,
+        1335.783,
+        1341.236,
+        1337.746,
+        1321.489,
+        1337.357,
+        1352.905
+      ],
+      "last_five_cv_percent": 0.8401870912290273,
+      "last_five_fitted_drift_percent": 0.6859935974130074,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-4.log",
+      "fork": 3,
+      "iterations_ms": [
+        1616.928,
+        1332.644,
+        1335.265,
+        1326.835,
+        1339.375,
+        1329.049,
+        1332.142,
+        1329.994,
+        1332.481,
+        1341.951
+      ],
+      "last_five_cv_percent": 0.3855932221983161,
+      "last_five_fitted_drift_percent": 0.7844135059065058,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-5.log",
+      "fork": 1,
+      "iterations_ms": [
+        7972.521,
+        6837.344,
+        6921.825,
+        6690.768,
+        6858.1,
+        6959.818,
+        6906.869,
+        6879.437,
+        6556.019,
+        6887.889
+      ],
+      "last_five_cv_percent": 2.350143688161463,
+      "last_five_fitted_drift_percent": -2.893872693655271,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-5.log",
+      "fork": 2,
+      "iterations_ms": [
+        8075.51,
+        7145.589,
+        6815.355,
+        6970.344,
+        6883.624,
+        7063.857,
+        7023.68,
+        6771.874,
+        7138.92,
+        7170.731
+      ],
+      "last_five_cv_percent": 2.2412859753739833,
+      "last_five_fitted_drift_percent": 1.8708943673277345,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTime-5.log",
+      "fork": 3,
+      "iterations_ms": [
+        7978.576,
+        6897.339,
+        7160.227,
+        7241.932,
+        7236.049,
+        7207.635,
+        7190.223,
+        7069.783,
+        6929.324,
+        7143.855
+      ],
+      "last_five_cv_percent": 1.5941171182372051,
+      "last_five_fitted_drift_percent": -2.185987830331442,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-5.log",
+      "fork": 1,
+      "iterations_ms": [
+        4227.464,
+        3568.65,
+        3402.413,
+        3628.149,
+        3422.896,
+        3511.794,
+        3403.066,
+        3377.725,
+        3499.567,
+        3526.498
+      ],
+      "last_five_cv_percent": 1.9693079967740574,
+      "last_five_fitted_drift_percent": 1.454027883235709,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-5.log",
+      "fork": 2,
+      "iterations_ms": [
+        4134.532,
+        3547.91,
+        3348.025,
+        3420.63,
+        3310.56,
+        3428.765,
+        3350.341,
+        3310.488,
+        3283.982,
+        3295.843
+      ],
+      "last_five_cv_percent": 1.7591229944352513,
+      "last_five_fitted_drift_percent": -3.985777788655981,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkBuildSchemaAvgTimeFast-5.log",
+      "fork": 3,
+      "iterations_ms": [
+        4068.353,
+        3275.562,
+        3339.466,
+        3266.368,
+        3289.594,
+        3239.725,
+        3340.07,
+        3318.739,
+        3435.233,
+        3297.406
+      ],
+      "last_five_cv_percent": 2.1492756814540037,
+      "last_five_fitted_drift_percent": 2.5316915409394163,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-5.log",
+      "fork": 1,
+      "iterations_ms": [
+        9186.512,
+        8278.284,
+        8454.816,
+        8115.95,
+        8145.759,
+        8055.712,
+        8140.343,
+        8166.977,
+        8243.125,
+        8135.796
+      ],
+      "last_five_cv_percent": 0.8262857440233761,
+      "last_five_fitted_drift_percent": 1.2908070459950696,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-5.log",
+      "fork": 2,
+      "iterations_ms": [
+        9352.533,
+        8524.193,
+        8190.183,
+        8316.793,
+        8291.319,
+        8079.195,
+        8023.785,
+        8263.452,
+        7994.607,
+        7959.943
+      ],
+      "last_five_cv_percent": 1.4838198614509603,
+      "last_five_fitted_drift_percent": -1.3277553607201276,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-5.log",
+      "fork": 3,
+      "iterations_ms": [
+        8934.66,
+        8036.823,
+        7853.388,
+        8002.638,
+        7950.076,
+        7951.552,
+        7919.09,
+        7879.471,
+        7578.234,
+        7548.696
+      ],
+      "last_five_cv_percent": 2.5134757997161015,
+      "last_five_fitted_drift_percent": -5.898432141559734,
+      "requires_inspection": true
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-5.log",
+      "fork": 1,
+      "iterations_ms": [
+        5326.091,
+        4187.607,
+        4188.773,
+        4292.956,
+        4252.407,
+        4208.672,
+        4275.082,
+        4193.68,
+        4169.961,
+        4209.237
+      ],
+      "last_five_cv_percent": 0.927190588118976,
+      "last_five_fitted_drift_percent": -0.9877268121511464,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-5.log",
+      "fork": 2,
+      "iterations_ms": [
+        5327.166,
+        4253.77,
+        4263.989,
+        4228.892,
+        4244.347,
+        4319.53,
+        4178.099,
+        4200.639,
+        4140.915,
+        4284.392
+      ],
+      "last_five_cv_percent": 1.7684047930296103,
+      "last_five_fitted_drift_percent": -1.0174414132077552,
+      "requires_inspection": false
+    },
+    {
+      "log": "round3-zgc24-benchmarkLargeSchemaCreateAvgTimeFast-5.log",
+      "fork": 3,
+      "iterations_ms": [
+        5312.727,
+        4212.254,
+        4242.382,
+        4204.884,
+        4176.134,
+        4163.541,
+        4151.361,
+        4319.575,
+        4330.378,
+        4205.581
+      ],
+      "last_five_cv_percent": 2.0183610239465257,
+      "last_five_fitted_drift_percent": 2.485513288436759,
+      "requires_inspection": false
+    }
+  ],
+  "actual_allocation_stall_events": [],
+  "warmup_screening_note": "Last-five CV or absolute fitted drift above 5% prompts inspection; it is not a significance test.",
+  "regressions_to_inspect": [],
+  "allocation_increases_to_inspect": [],
+  "manual_warmup_review": [
+    {
+      "case": "round3-zgc24-benchmarkLargeSchemaCreateAvgTime-5",
+      "fork": 3,
+      "warmup_last_five_ms": [
+        7951.552,
+        7919.09,
+        7879.471,
+        7578.234,
+        7548.696
+      ],
+      "warmup_cv_percent": 2.513475799716102,
+      "warmup_fitted_drift_percent": -5.898432141559734,
+      "measurement_ms": [
+        7515.890659,
+        8011.4818895,
+        7936.5797895,
+        7722.138262,
+        7984.801404
+      ],
+      "measurement_cv_percent": 2.6962433433039883,
+      "measurement_fitted_drift_percent": 3.3110191232498893,
+      "decision": "Retain all original samples. Last two warmups dipped; timed values rebound rather than continuing a downward trend. This is a screening flag, not proof of inadequate warmup. All three optimized fork means are below all three baseline means, with no allocation stalls. Disclose flag and inspection in final report; do not remove individual iterations or rerun just the favorable variant."
+    }
+  ],
+  "gc_log_count": 120,
+  "environment_review": {
+    "snapshots": 40,
+    "consistent_java_and_relevant_gc_flags": true,
+    "all_12_cpu_governors_performance_in_every_snapshot": true,
+    "all_raid_arrays_healthy_and_no_resync": true,
+    "swap_used_bytes_in_every_snapshot": 0,
+    "other_process_cpu_over_one_percent_in_snapshots": false,
+    "limitation": "Environment snapshots are taken between cases; they do not provide continuous host activity tracing."
+  },
+  "final_review_complete": true
+}

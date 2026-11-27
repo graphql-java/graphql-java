@@ -272,13 +272,14 @@ public class SchemaTypeChecker {
      * @param errorFunction     the function producing an error
      */
     static <T, E extends GraphQLError> void checkNamedUniqueness(List<GraphQLError> errors, List<T> listOfNamedThings, Function<T, String> namer, BiFunction<String, T, E> errorFunction) {
+        if (listOfNamedThings.size() < 2) {
+            return;
+        }
         Set<String> names = new LinkedHashSet<>();
         listOfNamedThings.forEach(thing -> {
             String name = namer.apply(thing);
-            if (names.contains(name)) {
+            if (!names.add(name)) {
                 errors.add(errorFunction.apply(name, thing));
-            } else {
-                names.add(name);
             }
         });
     }
@@ -308,18 +309,15 @@ public class SchemaTypeChecker {
     }
 
     private void checkFieldTypesPresent(TypeDefinitionRegistry typeRegistry, List<GraphQLError> errors, TypeDefinition typeDefinition, List<FieldDefinition> fields) {
-        List<Type> fieldTypes = ImmutableKit.map(fields, FieldDefinition::getType);
-        fieldTypes.forEach(checkTypeExists("field", typeRegistry, errors, typeDefinition));
+        Consumer<Type> checkFieldType = checkTypeExists("field", typeRegistry, errors, typeDefinition);
+        fields.forEach(field -> checkFieldType.accept(field.getType()));
 
-        List<Type> fieldInputValues = fields.stream()
-                .map(f -> f.getInputValueDefinitions()
-                        .stream()
-                        .map(InputValueDefinition::getType)
-                        .collect(toList()))
-                .flatMap(Collection::stream)
-                .collect(toList());
-
-        fieldInputValues.forEach(checkTypeExists("field input", typeRegistry, errors, typeDefinition));
+        Consumer<Type> checkInputType = checkTypeExists("field input", typeRegistry, errors, typeDefinition);
+        for (FieldDefinition field : fields) {
+            for (InputValueDefinition argument : field.getInputValueDefinitions()) {
+                checkInputType.accept(argument.getType());
+            }
+        }
     }
 
 

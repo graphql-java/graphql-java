@@ -1,0 +1,27 @@
+[11.449s][info][gc] Using The Z Garbage Collector
+[14.626s][info][gc] GC(0) Major Collection (Warmup)
+[14.871s][info][gc] GC(0) Major Collection (Warmup) 2472M(10%)->350M(1%) 0.245s
+[18.809s][info][gc] GC(1) Major Collection (Warmup)
+[19.189s][info][gc] GC(1) Major Collection (Warmup) 4916M(20%)->1220M(5%) 0.380s
+[24.036s][info][gc] GC(2) Major Collection (Warmup)
+[24.223s][info][gc] GC(2) Major Collection (Warmup) 7390M(30%)->458M(2%) 0.187s
+[38.990s][info][gc] GC(3) Minor Collection (Allocation Rate)
+[39.716s][info][gc] GC(3) Minor Collection (Allocation Rate) 19752M(80%)->1574M(6%) 0.726s
+[54.581s][info][gc] GC(4) Minor Collection (Allocation Rate)
+[54.969s][info][gc] GC(4) Minor Collection (Allocation Rate) 21334M(87%)->668M(3%) 0.388s
+[70.799s][info][gc] GC(5) Minor Collection (Allocation Rate)
+[71.495s][info][gc] GC(5) Minor Collection (Allocation Rate) 21652M(88%)->1534M(6%) 0.697s
+[77.821s][info][gc] GC(6) Major Collection (Proactive)
+[78.554s][info][gc] GC(6) Major Collection (Proactive) 9886M(40%)->1358M(6%) 0.733s
+[94.271s][info][gc] GC(7) Minor Collection (Allocation Rate)
+[94.475s][info][gc] GC(7) Minor Collection (Allocation Rate) 22162M(90%)->446M(2%) 0.204s
+[110.785s][info][gc] GC(8) Minor Collection (Allocation Rate)
+[110.799s][info][gc] GC(8) Minor Collection (Allocation Rate) 21964M(89%)->188M(1%) 0.013s
+[127.692s][info][gc] GC(9) Minor Collection (Allocation Rate)
+[127.956s][info][gc] GC(9) Minor Collection (Allocation Rate) 22650M(92%)->474M(2%) 0.264s
+[130.582s][info][gc] GC(10) Major Collection (Proactive)
+[131.455s][info][gc] GC(10) Major Collection (Proactive) 3822M(16%)->1640M(7%) 0.873s
+[146.102s][info][gc] GC(11) Minor Collection (Allocation Rate)
+[146.179s][info][gc] GC(11) Minor Collection (Allocation Rate) 20906M(85%)->368M(1%) 0.077s
+[162.090s][info][gc] GC(12) Minor Collection (Allocation Rate)
+[162.404s][info][gc] GC(12) Minor Collection (Allocation Rate) 21548M(88%)->504M(2%) 0.315s

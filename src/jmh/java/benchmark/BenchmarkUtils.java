@@ -12,6 +12,13 @@ import java.util.concurrent.Callable;
 
 public class BenchmarkUtils {
 
+    public static String loadLargeSchema(String name) {
+        if (name.equals("large-schema-5.graphqls")) {
+            return loadResource(name + ".part1") + loadResource(name + ".part2");
+        }
+        return loadResource(name);
+    }
+
     @SuppressWarnings("UnstableApiUsage")
     static String loadResource(String name) {
         return asRTE(() -> {
