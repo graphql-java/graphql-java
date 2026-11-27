@@ -16,6 +16,7 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
+import graphql.normalized.NormalizedDocument;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 import org.jspecify.annotations.Nullable;
@@ -42,6 +43,7 @@ public class ExecutionContextBuilder {
     GraphQLContext graphQLContext;
     Object root;
     Document document;
+    @Nullable NormalizedDocument normalizedDocument;
     OperationDefinition operationDefinition;
     CoercedVariables coercedVariables = CoercedVariables.emptyVariables();
     Supplier<NormalizedVariables> normalizedVariables = NormalizedVariables::emptyVariables;
@@ -95,6 +97,7 @@ public class ExecutionContextBuilder {
         localContext = other.getLocalContext();
         root = other.getRoot();
         document = other.getDocument();
+        normalizedDocument = other.getNormalizedDocument();
         operationDefinition = other.getOperationDefinition();
         coercedVariables = other.getCoercedVariables();
         fragmentsByName = ImmutableMap.copyOf(other.getFragmentsByName());
@@ -108,6 +111,11 @@ public class ExecutionContextBuilder {
         engineRunningState = other.getEngineRunningState();
         responseMapFactory = other.getResponseMapFactory();
         profiler = other.getProfiler();
+    }
+
+    public ExecutionContextBuilder normalizedDocument(@Nullable NormalizedDocument normalizedDocument) {
+        this.normalizedDocument = normalizedDocument;
+        return this;
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {

@@ -2,6 +2,7 @@ package graphql.schema
 
 import graphql.ExecutionInput
 import graphql.GraphQL
+import graphql.normalized.NormalizedDocument
 import graphql.StarWarsData
 import graphql.TestUtil
 import graphql.schema.idl.RuntimeWiring
@@ -56,7 +57,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
     def "glob pattern matching works"() {
 
-        def ei = ExecutionInput.newExecutionInput(starWarsQuery).build()
+        def ei = ExecutionInput.newExecutionInput(starWarsQuery).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = starWarsGraphql.execute(ei)
 
         expect:
@@ -179,7 +180,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
     def "test getting sub selected fields by name"() {
 
         when:
-        def ei = ExecutionInput.newExecutionInput(relayQuery).build()
+        def ei = ExecutionInput.newExecutionInput(relayQuery).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = relayGraphql.execute(ei)
 
         then:
@@ -227,7 +228,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
     def "test getting sub selected fields by glob"() {
 
         when:
-        def ei = ExecutionInput.newExecutionInput(relayQuery).build()
+        def ei = ExecutionInput.newExecutionInput(relayQuery).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = relayGraphql.execute(ei)
 
         then:
@@ -257,7 +258,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
     def "test that aster aster is equal to get all"() {
         when:
-        def ei = ExecutionInput.newExecutionInput(relayQuery).build()
+        def ei = ExecutionInput.newExecutionInput(relayQuery).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = relayGraphql.execute(ei)
 
         then:
@@ -317,7 +318,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
     def "fields are returned in pre order"() {
 
         when:
-        def ei = ExecutionInput.newExecutionInput(relayQuery).build()
+        def ei = ExecutionInput.newExecutionInput(relayQuery).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = relayGraphql.execute(ei)
 
         then:
@@ -352,7 +353,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
     def "immediate fields followed by fields are computed"() {
 
         when:
-        def ei = ExecutionInput.newExecutionInput(relayQuery).build()
+        def ei = ExecutionInput.newExecutionInput(relayQuery).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = relayGraphql.execute(ei)
 
         then:
@@ -513,7 +514,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
  
         }
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
@@ -534,12 +535,12 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def selectedFields = petSelectionSet.getFields("name")
 
         then:
-        selectedFields.size() == 3
-        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name", "n1:Cat.name", "n2:Cat.name"])
+        selectedFields.size() == 5
+        assertTheyAreExpected(selectedFields, ["Bird.name", "Cat.name", "Dog.name", "n1:Cat.name", "n2:Cat.name"])
 
         def byResultKey = petSelectionSet.getFieldsGroupedByResultKey("name")
         byResultKey.size() == 3
-        assertTheyAreExpected(byResultKey["name"], ["[Bird, Cat, Dog].name"])
+        assertTheyAreExpected(byResultKey["name"], ["Bird.name", "Cat.name", "Dog.name"])
         assertTheyAreExpected(byResultKey["n1"], ["n1:Cat.name"])
         assertTheyAreExpected(byResultKey["n2"], ["n2:Cat.name"])
 
@@ -556,8 +557,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields.sort(byName())
 
         then:
-        selectedFields.size() == 1
-        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].lead"])
+        selectedFields.size() == 3
+        assertTheyAreExpected(selectedFields, ["Bird.lead", "Cat.lead", "Dog.lead"])
         // we can work our sub selection from them as well
         selectedFields[0].getSelectionSet().contains("material")
         !selectedFields[0].getSelectionSet().contains("rubbish")
@@ -568,9 +569,9 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields.sort(byName())
 
         then:
-        selectedFields.size() == 1 //one for the Cat and Dog and Bird entries
-        assertTheyAreExpected(selectedFields, ["Lead.material"])
-        selectedFields[0].getParentField().getFullyQualifiedName() == "[Bird, Cat, Dog].lead"
+        selectedFields.size() == 3
+        assertTheyAreExpected(selectedFields, ["Lead.material", "Lead.material", "Lead.material"])
+        selectedFields[0].getParentField().getFullyQualifiedName() == "Bird.lead"
 
         // parents can have computed selection sets
         def birdLead = selectedFields[0].getParentField()
@@ -580,7 +581,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         when:
         selectedFields = petSelectionSet.getFields("name", "lead**")
         then:
-        selectedFields.size() == 5
+        selectedFields.size() == 11
     }
 
     def "aliasing returns values as selected fields"() {
@@ -596,18 +597,18 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
  
         }
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
 
         def selectedFields = petSelectionSet.getFields("name")
-        selectedFields.size() == 2
-        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name", "aliasedName:Dog.name"])
+        selectedFields.size() == 4
+        assertTheyAreExpected(selectedFields, ["Bird.name", "Cat.name", "Dog.name", "aliasedName:Dog.name"])
 
         def getFields = petSelectionSet.getFields()
-        getFields.size() == 2
-        assertTheyAreExpected(getFields, ["[Bird, Cat, Dog].name", "aliasedName:Dog.name"])
+        getFields.size() == 4
+        assertTheyAreExpected(getFields, ["Bird.name", "Cat.name", "Dog.name", "aliasedName:Dog.name"])
 
         def byResultKey = petSelectionSet.getFieldsGroupedByResultKey()
         byResultKey.size() == 2
@@ -648,7 +649,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
         }
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
@@ -665,8 +666,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         when:
         def selectedFields = petUnionSelectionSet.getFields("name")
         then:
-        selectedFields.size() == 1
-        assertTheyAreExpected(selectedFields, ["[Cat, Dog].name"])
+        selectedFields.size() == 2
+        assertTheyAreExpected(selectedFields, ["Cat.name", "Dog.name"])
     }
 
     def "test normalised selection occurs on objects"() {
@@ -679,7 +680,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
         }      
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
@@ -713,7 +714,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
  
         }
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
@@ -722,8 +723,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def selectedFields = petSelectionSet.getFields("name")
 
         then:
-        selectedFields.size() == 3
-        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name", "n1:Cat.name", "n2:Cat.name"])
+        selectedFields.size() == 5
+        assertTheyAreExpected(selectedFields, ["Bird.name", "Cat.name", "Dog.name", "n1:Cat.name", "n2:Cat.name"])
 
         def byResultKey = petSelectionSet.getFieldsGroupedByResultKey("name")
         byResultKey.size() == 3
@@ -743,7 +744,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
          }
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
@@ -753,13 +754,13 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields.sort(byName())
 
         then:
-        selectedFields[0].getObjectTypeNames() == ["Bird", "Cat", "Dog"]
+        selectedFields*.objectTypeNames == [["Bird"], ["Cat"], ["Dog"]]
+        selectedFields*.fieldDefinitions*.size() == [1, 1, 1]
         selectedFields[0].getName() == "name"
 
     }
 
     def "fragments inline and defined work as expected"() {
-        // this is repeating a lot of the underlying NormalisedField tests - so this is not extensively tested here
         when:
         def query = '''
         {
@@ -776,7 +777,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             name
         }
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
@@ -786,8 +787,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         selectedFields.sort(byName())
 
         then:
-        selectedFields.size() == 1
-        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name"])
+        selectedFields.size() == 3
+        assertTheyAreExpected(selectedFields, ["Bird.name", "Cat.name", "Dog.name"])
 
     }
 
@@ -809,7 +810,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
          }
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
@@ -817,7 +818,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def selectedFields = petSelectionSet.getImmediateFields()
         then:
         assertTheyAreExpected(selectedFields, [
-                "Cat.meow", "Dog.woof", "[Bird, Cat, Dog].lead", "[Bird, Cat, Dog].name"])
+                "Bird.lead", "Bird.name", "Cat.lead", "Cat.meow", "Cat.name", "Dog.lead", "Dog.name", "Dog.woof"])
 
         when:
         selectedFields = petSelectionSet.getFields("lead")
@@ -835,7 +836,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
          }
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
@@ -854,7 +855,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
             }
          }
         '''
-        def ei = ExecutionInput.newExecutionInput(query).build()
+        def ei = ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build()
         def er = petSchema.execute(ei)
         then:
         er.errors.isEmpty()
@@ -901,13 +902,13 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         when:
-        def er = graphQL.execute('''mutation M { 
+        def er = graphQL.execute(ExecutionInput.newExecutionInput('''mutation M {
             mutate {
                 selectedFieldNames
                 b
                 c
             }
-        }''')
+        }''').graphQLContext([(NormalizedDocument.ENABLED): true]).build())
         then:
         er.errors.isEmpty()
         er.data["mutate"]["selectedFieldNames"] == ["selectedFieldNames", "b", "c"]
@@ -955,7 +956,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         when:
-        def er = graphQL.execute(query)
+        def er = graphQL.execute(ExecutionInput.newExecutionInput(query).graphQLContext([(NormalizedDocument.ENABLED): true]).build())
         then:
         er.errors.isEmpty()
 

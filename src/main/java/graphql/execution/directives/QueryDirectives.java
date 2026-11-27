@@ -2,7 +2,6 @@ package graphql.execution.directives;
 
 import graphql.GraphQLContext;
 import graphql.PublicApi;
-import org.jspecify.annotations.NullMarked;
 import graphql.execution.CoercedVariables;
 import graphql.execution.MergedField;
 import graphql.execution.NormalizedVariables;
@@ -10,6 +9,7 @@ import graphql.language.Field;
 import graphql.normalized.NormalizedInputValue;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Locale;
@@ -77,10 +77,8 @@ public interface QueryDirectives {
      * Normalized arguments are computed lazily when this method is called. Ordinary directive lookups do not
      * request normalized variables or compute normalized arguments.
      * <p>
-     * Variable values in normalized form are supplied during execution and by the raw-variable methods of
-     * {@link graphql.normalized.ExecutableNormalizedOperationFactory}. The factory's coerced-variable methods
-     * do not supply them, so requesting normalized arguments for their directives throws an assertion exception.
-     * Fields without directives return an empty map without requesting normalized variables.
+     * Variable values in normalized form are supplied during execution. Fields without directives return
+     * an empty map without requesting normalized variables.
      *
      * @return a map of applied directive to named argument values
      * @throws graphql.AssertException if directives are present but normalized variables are unavailable

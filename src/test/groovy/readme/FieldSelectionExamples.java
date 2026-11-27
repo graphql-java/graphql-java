@@ -1,14 +1,22 @@
 package readme;
 
+import graphql.ExecutionInput;
+import graphql.normalized.NormalizedDocument;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.SelectedField;
 
 import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings({"unused", "Convert2Lambda"})
 public class FieldSelectionExamples {
+
+    ExecutionInput enableLookahead(String query) {
+        return ExecutionInput.newExecutionInput(query)
+                .graphQLContext(Map.of(NormalizedDocument.ENABLED, true)).build();
+    }
 
     void usingSelectionSet() {
         DataFetcher smartUserDF = new DataFetcher() {

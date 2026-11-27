@@ -30,24 +30,24 @@ public interface SelectedField {
 
     /**
      * The selected field has a more complex type qualified name which is the path of field names to it
-     * as well as the object type of the parent.  For example `[Invoice, Statement].payments/[Payment].amount`
+     * as well as the object type of the parent.  For example `Invoice.payments/Payment.amount`
      *
      * @return the fully qualified name of the selected field
      */
     String getFullyQualifiedName();
 
     /**
-     * @return the object types of this SelectedField
+     * @return the singleton list containing this entry's concrete parent object type
      */
     List<GraphQLObjectType> getObjectTypes();
 
     /**
-     * @return The list of all object types
+     * @return the singleton list containing this entry's concrete parent type name
      */
     List<String> getObjectTypeNames();
 
     /**
-     * @return the field runtime definition
+     * @return the singleton list containing the concrete field definition
      */
     List<GraphQLFieldDefinition> getFieldDefinitions();
 
@@ -57,7 +57,7 @@ public interface SelectedField {
     GraphQLOutputType getType();
 
     /**
-     * @return a map of the arguments to this selected field
+     * @return the arguments resolved on demand with this concrete definition and execution variables
      */
     Map<String, Object> getArguments();
 
@@ -67,7 +67,7 @@ public interface SelectedField {
     int getLevel();
 
     /**
-     * @return whether the field is conditionally present.
+     * @return whether this entry is one of several possible concrete parent types at its level
      */
     boolean isConditional();
 
@@ -84,8 +84,8 @@ public interface SelectedField {
     String getResultKey();
 
     /**
-     * This will return the parent of the selected field OR null if there is no single parent, it that field
-     * was a top level field OR the parent was a non concrete field.
+     * Returns the parent within this lookahead view. Immediate fields in the data fetcher's
+     * view have no parent; descendants refer to their parent selected field.
      *
      * @return the fields selected parent or null if there is not one
      */

@@ -3,6 +3,7 @@ package graphql.execution.preparsed;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.language.Document;
+import graphql.normalized.NormalizedDocument;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -27,25 +28,33 @@ import static java.util.Collections.singletonList;
 @PublicApi
 public class PreparsedDocumentEntry implements Serializable {
     private final @Nullable Document document;
+    private final @Nullable NormalizedDocument normalizedDocument;
     private final List<? extends GraphQLError> errors;
 
     public PreparsedDocumentEntry(Document document,
                                   List<? extends GraphQLError> errors) {
+        this(document, errors, null);
+    }
+
+    /** Retains the optional validation artifact alongside the exact AST used to build it. */
+    public PreparsedDocumentEntry(Document document, List<? extends GraphQLError> errors, @Nullable NormalizedDocument normalizedDocument) {
         assertNotNull(document);
         assertNotNull(errors);
+        graphql.Assert.assertTrue(normalizedDocument == null || (normalizedDocument.getDocument() == document && errors.isEmpty()),
+                () -> "NormalizedDocument requires its validated document and no errors");
+        this.normalizedDocument = normalizedDocument;
         this.document = document;
         this.errors = errors;
     }
 
     public PreparsedDocumentEntry(Document document) {
-        assertNotNull(document);
-        this.document = document;
-        this.errors = Collections.emptyList();
+        this(document, Collections.emptyList(), null);
     }
 
     public PreparsedDocumentEntry(List<? extends GraphQLError> errors) {
         assertNotNull(errors);
         this.document = null;
+        this.normalizedDocument = null;
         this.errors = errors;
     }
 
@@ -61,6 +70,11 @@ public class PreparsedDocumentEntry implements Serializable {
     @Nullable
     public List<? extends GraphQLError> getErrors() {
         return errors;
+    }
+
+    /** @return the optional validated selection graph, or null when not supplied */
+    public @Nullable NormalizedDocument getNormalizedDocument() {
+        return normalizedDocument;
     }
 
     public boolean hasErrors() {

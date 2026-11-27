@@ -13,8 +13,8 @@ import graphql.execution.MergedSelectionSet;
 import graphql.execution.TypeFromAST;
 import graphql.execution.ValuesResolver;
 import graphql.i18n.I18nMsg;
-import graphql.introspection.Introspection;
 import graphql.introspection.Introspection.DirectiveLocation;
+import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.AstComparator;
@@ -77,7 +77,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -85,6 +84,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
+import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isInput;
 import static graphql.schema.GraphQLTypeUtil.isLeaf;
@@ -96,7 +96,6 @@ import static graphql.schema.GraphQLTypeUtil.isScalar;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
-
 import static graphql.validation.ValidationError.newValidationError;
 import static graphql.validation.ValidationErrorType.BadValueForDefaultArg;
 import static graphql.validation.ValidationErrorType.DuplicateArgumentNames;
@@ -118,12 +117,13 @@ import static graphql.validation.ValidationErrorType.MissingFieldArgument;
 import static graphql.validation.ValidationErrorType.NonExecutableDefinition;
 import static graphql.validation.ValidationErrorType.NonInputTypeOnVariable;
 import static graphql.validation.ValidationErrorType.NullValueForNonNullArgument;
-import static graphql.validation.ValidationErrorType.SubselectionNotAllowed;
-import static graphql.validation.ValidationErrorType.SubselectionRequired;
 import static graphql.validation.ValidationErrorType.SubscriptionIntrospectionRootField;
 import static graphql.validation.ValidationErrorType.SubscriptionMultipleRootFields;
+import static graphql.validation.ValidationErrorType.SubselectionNotAllowed;
+import static graphql.validation.ValidationErrorType.SubselectionRequired;
 import static graphql.validation.ValidationErrorType.UndefinedFragment;
 import static graphql.validation.ValidationErrorType.UndefinedVariable;
+import static graphql.validation.ValidationErrorType.UniqueObjectFieldName;
 import static graphql.validation.ValidationErrorType.UnknownArgument;
 import static graphql.validation.ValidationErrorType.UnknownDirective;
 import static graphql.validation.ValidationErrorType.UnknownOperation;
@@ -134,8 +134,6 @@ import static graphql.validation.ValidationErrorType.VariableNotAllowed;
 import static graphql.validation.ValidationErrorType.VariableTypeMismatch;
 import static graphql.validation.ValidationErrorType.WrongType;
 import static java.lang.System.arraycopy;
-import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
-import static graphql.validation.ValidationErrorType.UniqueObjectFieldName;
 
 /**
  * Validates the document and its operations with one iterative traversal.
@@ -258,8 +256,14 @@ public class OperationValidator {
     // A current operation means fragment traversal and operation-scoped rules are active
 
     private final boolean allRulesEnabled;
+    private final @Nullable NormalizedDocumentBuilder normalizedDocumentBuilder;
 
     public OperationValidator(ValidationContext validationContext, ValidationErrorCollector errorCollector, Predicate<OperationValidationRule> rulePredicate) {
+        this(validationContext, errorCollector, rulePredicate, null);
+    }
+
+    public OperationValidator(ValidationContext validationContext, ValidationErrorCollector errorCollector, Predicate<OperationValidationRule> rulePredicate, @Nullable NormalizedDocumentBuilder normalizedDocumentBuilder) {
+        this.normalizedDocumentBuilder = normalizedDocumentBuilder;
         this.validationContext = validationContext;
         this.errorCollector = errorCollector;
         this.validationUtil = new ValidationUtil();
@@ -367,6 +371,9 @@ public class OperationValidator {
     private void enterTraversal(Node node, List<Node> ancestors) {
         if (node instanceof SelectionSet) {
             parentTypeStack.add(resolveSelectionSetParent(ancestors));
+            if (normalizedDocumentBuilder != null) {
+                normalizedDocumentBuilder.selectionSet((SelectionSet) node);
+            }
         } else if (node instanceof Field) {
             enterField((Field) node);
         } else if (node instanceof Directive) {
@@ -390,6 +397,9 @@ public class OperationValidator {
                 ? null
                 : getFieldDefinition(parentType, field.getName());
         fieldDefinitionStack.add(fieldDefinition);
+        if (normalizedDocumentBuilder != null && parentType != null && fieldDefinition != null) {
+            normalizedDocumentBuilder.field(field, parentType);
+        }
         enterName(field.getName());
     }
 

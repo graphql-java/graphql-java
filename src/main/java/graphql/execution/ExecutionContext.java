@@ -18,7 +18,7 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
-import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.normalized.NormalizedDocument;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
@@ -35,8 +35,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static graphql.normalized.ExecutableNormalizedOperationFactory.Options;
-import static graphql.normalized.ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation;
+
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
@@ -70,7 +69,7 @@ public class ExecutionContext {
     private final ResponseMapFactory responseMapFactory;
 
     private final ExecutionInput executionInput;
-    private final Supplier<ExecutableNormalizedOperation> queryTree;
+    private final @Nullable NormalizedDocument normalizedDocument;
     private final boolean propagateErrorsOnNonNullContractFailure;
 
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
@@ -110,17 +109,9 @@ public class ExecutionContext {
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
         this.profiler = builder.profiler;
-        // lazy loading for performance
-        this.queryTree = mkExecutableNormalizedOperation();
+        this.normalizedDocument = builder.normalizedDocument;
         this.allOperationsDirectives = builder.allOperationsDirectives;
         this.operationDirectives = mkOpDirectives(builder.allOperationsDirectives);
-    }
-
-    private Supplier<ExecutableNormalizedOperation> mkExecutableNormalizedOperation() {
-        return FpKit.interThreadMemoize(() -> {
-            Options options = Options.defaultOptions().graphQLContext(graphQLContext).locale(locale);
-            return createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables, options);
-        });
     }
 
     private Supplier<Map<String, ImmutableList<QueryAppliedDirective>>> mkOpDirectives(Supplier<Map<OperationDefinition, ImmutableList<QueryAppliedDirective>>> allOperationsDirectives) {
@@ -375,8 +366,9 @@ public class ExecutionContext {
         }
     }
 
-    public Supplier<ExecutableNormalizedOperation> getNormalizedQueryTree() {
-        return queryTree;
+    /** @return the graph prepared during validation, or null when creation was disabled */
+    public @Nullable NormalizedDocument getNormalizedDocument() {
+        return normalizedDocument;
     }
 
     @Internal
