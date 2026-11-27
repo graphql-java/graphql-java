@@ -212,11 +212,21 @@ public class Execution {
                 .graphQLContext(graphQLContext)
                 .build();
 
-        MergedSelectionSet fields = fieldCollector.collectFields(
-                collectorParameters,
-                operationDefinition.getSelectionSet(),
-                executionContext.hasIncrementalSupport()
-        );
+        MergedSelectionSet fields;
+        try {
+            fields = fieldCollector.collectFields(
+                    collectorParameters,
+                    operationDefinition.getSelectionSet(),
+                    executionContext.hasIncrementalSupport()
+            );
+        } catch (NonNullableValueCoercedAsNullException e) {
+            // a root level @skip / @include 'if' argument coerced to null - there is no enclosing field to null,
+            // so this is reported the same way as any other variable coercion failure
+            ExecutionResult executionResult = new ExecutionResultImpl(Collections.singletonList(e));
+            executeOperationCtx.onDispatched();
+            executeOperationCtx.onCompleted(executionResult, e);
+            return completedFuture(executionResult);
+        }
 
         ResultPath path = ResultPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
