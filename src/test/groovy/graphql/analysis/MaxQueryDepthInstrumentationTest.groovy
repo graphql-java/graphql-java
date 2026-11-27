@@ -48,6 +48,33 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         e.message.contains("maximum query depth exceeded 7 > 6")
     }
 
+    def "throws exception if too deep through a fragment that was spread before"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                scalar: String
+                foo: Foo
+            }
+        """)
+        def query = createQuery("""
+            {f1: foo {...F} f2: foo {foo {foo {foo {...F}}}} }
+            fragment F on Foo {foo {foo {scalar}}}
+            """)
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        def executionContext = executionCtx(executionInput, query, schema)
+        def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
+        when:
+        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters, null)
+        then:
+        def e = thrown(AbortExecutionException)
+        e.message.contains("maximum query depth exceeded 7 > 6")
+    }
+
     def "doesn't throw exception if not deep enough"() {
         given:
         def schema = TestUtil.schema("""
