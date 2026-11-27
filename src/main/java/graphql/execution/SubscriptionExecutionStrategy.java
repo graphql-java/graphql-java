@@ -24,6 +24,7 @@ import org.reactivestreams.Publisher;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.function.Function;
@@ -191,8 +192,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         executionContext.getDataLoaderDispatcherStrategy().subscriptionEventCompletionDone(alternativeCallContext);
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
-                .thenApply(val -> new ExecutionResultImpl(val, alternativeCallContext.getErrors(), eventExtensions))
-                .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult))
+                .handle((value, throwable) -> completeSubscriptionEvent(newParameters, alternativeCallContext, eventExtensions, value, throwable))
                 .whenComplete((executionResult, throwable) -> {
                     executionContext.getDataLoaderDispatcherStrategy().subscriptionEventExecutionDone(alternativeCallContext);
                 });
@@ -207,6 +207,19 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
         overallResult = overallResult.thenCompose(executionResult -> instrumentation.instrumentExecutionResult(executionResult, i13nExecutionParameters, executionContext.getInstrumentationState()));
         return overallResult;
+    }
+
+    private ExecutionResult completeSubscriptionEvent(ExecutionStrategyParameters parameters, AlternativeCallContext alternativeCallContext,
+                                                      @Nullable Map<Object, Object> extensions, @Nullable Object value, @Nullable Throwable throwable) {
+        if (throwable == null) {
+            return wrapWithRootFieldName(parameters, new ExecutionResultImpl(value, alternativeCallContext.getErrors(), extensions));
+        }
+        Throwable cause = throwable instanceof CompletionException ? throwable.getCause() : throwable;
+        if (cause instanceof NonNullableFieldWasNullException) {
+            // A non-null root field makes this event's data null; subsequent source events can still execute.
+            return new ExecutionResultImpl(null, alternativeCallContext.getErrors(), extensions);
+        }
+        throw new CompletionException(cause);
     }
 
     private ExecutionResult wrapWithRootFieldName(ExecutionStrategyParameters parameters, ExecutionResult executionResult) {
