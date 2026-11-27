@@ -1,50 +1,50 @@
 package graphql.schema.validation
 
 import graphql.TestUtil
-import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLFieldDefinition
-import graphql.schema.GraphQLInputObjectField
-import graphql.schema.GraphQLInputObjectType
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
-import graphql.util.TraverserContext
 import spock.lang.Specification
-
-import static graphql.Scalars.GraphQLBoolean
-import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
-import static graphql.schema.GraphQLInputObjectType.newInputObject
-import static graphql.schema.GraphQLNonNull.nonNull
-import static graphql.schema.GraphQLTypeReference.typeRef
 
 class NoUnbrokenInputCyclesTest extends Specification {
 
-    SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
-
     def "infinitely recursive input type results in error"() {
-        given:
-        GraphQLInputObjectType PersonInputType = newInputObject()
-                .name("Person")
-                .field(GraphQLInputObjectField.newInputObjectField()
-                .name("friend")
-                .type(typeRef("Person"))
-                .build())
-                .build()
-
-        GraphQLFieldDefinition field = newFieldDefinition()
-                .name("exists")
-                .type(GraphQLBoolean)
-                .argument(GraphQLArgument.newArgument()
-                        .name("person")
-                        .type(PersonInputType))
-                .build()
-
-        PersonInputType.getFieldDefinition("friend").replacedType = nonNull(PersonInputType)
-        def context = Mock(TraverserContext)
-        context.getVarFromParents(SchemaValidationErrorCollector) >> errorCollector
         when:
-        new NoUnbrokenInputCycles().visitGraphQLFieldDefinition(field, context)
+        TestUtil.schema('''
+            type Query { exists(person: Person): Boolean }
+            input Person { friend: Person! }
+        ''')
+
         then:
-        errorCollector.containsValidationError(SchemaValidationErrorType.UnbrokenInputCycle)
+        def e = thrown(InvalidSchemaException)
+        e.errors*.description == ["[friend!] forms an unsatisfiable cycle"]
+    }
+
+    def "cycle paths include earlier sibling fields"() {
+        when:
+        TestUtil.schema('''
+            type Query { a(arg: A): String }
+            input A { x: B! y: A! }
+            input B { a: A! }
+        ''')
+
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.errors*.description as Set == [
+                "[x!.a!] forms an unsatisfiable cycle",
+                "[x!.y!] forms an unsatisfiable cycle",
+        ] as Set
+    }
+
+    def "input object cycles through a nullable field are allowed"() {
+        when:
+        TestUtil.schema('''
+            type Query { f(a: A): String }
+            input A { b: B }
+            input B { a: A! }
+        ''')
+
+        then:
+        noExceptionThrown()
     }
 
     def "input object cycles through a non-null list are allowed"() {

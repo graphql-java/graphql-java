@@ -2222,7 +2222,7 @@ class FastBuilderTest extends Specification {
     // Regression tests for ShallowTypeRefCollector bug:
     // Applied directives on field arguments and enum values were not scanned for type
     // references, leaving GraphQLTypeReference unresolved and causing spurious
-    // InvalidSchemaException from AppliedDirectiveArgumentsAreValid validator.
+    // InvalidSchemaException from applied directive argument validation.
 
     def "applied directive on object type field argument with type-ref enum arg resolves correctly"() {
         given: "an enum type used as a directive argument type"

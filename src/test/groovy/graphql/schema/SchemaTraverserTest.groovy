@@ -408,6 +408,30 @@ class SchemaTraverserTest extends Specification {
         ]
     }
 
+    def "depthFirstFullSchema visits mutation and subscription types only when the schema has them"() {
+        given:
+        def visited = []
+        def visitor = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                visited.add(node.getName())
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        new SchemaTraverser().depthFirstFullSchema(visitor, TestUtil.schema(sdl))
+
+        then:
+        visited.containsAll(rootTypes)
+        notVisited.every { !visited.contains(it) }
+
+        where:
+        sdl                                                                                         | rootTypes                                  | notVisited
+        "type Query { q: String }"                                                                  | ["Query"]                                  | ["Mutation", "Subscription"]
+        "type Query { q: String } type Mutation { m: String } type Subscription { s: String }"     | ["Query", "Mutation", "Subscription"]      | []
+    }
+
     class GraphQLTestingVisitor extends GraphQLTypeVisitorStub {
 
         def stack = []
